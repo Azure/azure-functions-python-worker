@@ -2,6 +2,10 @@
 
 **TBD**
 
+# Feature planning : first class Python support
+
+https://github.com/Azure/azure-webjobs-sdk-script/issues/335
+
 # Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a

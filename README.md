@@ -1,3 +1,8 @@
+This repository is host to the Python language worker impelementation for Azture Functions. 
+
+# Disclaimer
+The project is currently in progress. Please expect the feature and design patterns to develop or change over time. If you have a feature request or feedback, please file an issue or add comments.
+
 # Getting Started
 
 **TBD**

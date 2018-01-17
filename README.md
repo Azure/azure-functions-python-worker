@@ -3,10 +3,6 @@ This repository is host to the Python language worker impelementation for Azure 
 # Disclaimer
 The project is currently in progress. Please expect the feature and design patterns to develop or change over time. If you have any feedback or requests, you can file an issue or add comments.
 
-# Getting Started
-
-**TBD**
-
 # Feature Planning : First class Python support
 
 https://github.com/Azure/azure-webjobs-sdk-script/issues/335

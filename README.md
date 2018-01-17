@@ -1,4 +1,4 @@
-This repository is host to the Python language worker impelementation for Azture Functions. 
+This repository is host to the Python language worker impelementation for Azure Functions. 
 
 # Disclaimer
 The project is currently in progress. Please expect the feature and design patterns to develop or change over time. If you have any feedback or requests, you can file an issue or add comments.

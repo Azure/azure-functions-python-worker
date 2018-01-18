@@ -1,0 +1,1 @@
+A function that will be run whenever a message is added to a specified Azure Storage queue.

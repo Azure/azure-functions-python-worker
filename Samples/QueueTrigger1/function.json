@@ -1,0 +1,14 @@
+{
+  "scriptFile": "main.py",
+  "entryPoint": "main",
+  "bindings": [
+    {
+      "name": "myQueueItem",
+      "type": "queueTrigger",
+      "direction": "in",
+      "queueName": "py-queue-items",
+      "connection": "AzureWebJobsDashboard"
+    }
+  ],
+  "disabled": false
+}

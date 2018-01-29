@@ -1,0 +1,9 @@
+{
+    "Description":{
+        "Language":"python",
+        "Extension":".py",
+        "DefaultExecutablePath":"python3",
+        "DefaultWorkerPath":"worker.py"
+    },
+    "Arguments":[]
+}

@@ -18,8 +18,9 @@ class WebHost:
         self._proc = proc
         self._addr = addr
 
-    def get_request(self, funcname, *args, **kwargs):
-        return requests.get(self._addr + '/api/' + funcname)
+    def request(self, meth, funcname, *args, **kwargs):
+        request_method = getattr(requests, meth.lower())
+        return request_method(self._addr + '/api/' + funcname, *args, **kwargs)
 
     def stop(self):
         self._proc.terminate()

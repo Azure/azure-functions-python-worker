@@ -4,12 +4,19 @@ Implements loading and execution of Python workers.
 """
 
 
+import typing
 import traceback
 
 from . import bind
 from . import loader
 from . import protos
 from . import types
+
+
+class FunctionInfo(typing.NamedTuple):
+    func: object
+    name: str
+    directory: str
 
 
 class Dispatcher:
@@ -55,7 +62,10 @@ class Dispatcher:
                 func_request.metadata.directory,
                 func_request.metadata.script_file)
 
-            self._functions[function_id] = func
+            self._functions[function_id] = FunctionInfo(
+                func=func,
+                name=func_request.metadata.name,
+                directory=func_request.metadata.directory)
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -81,12 +91,16 @@ class Dispatcher:
 
         try:
             try:
-                func = self._functions[function_id]
+                funcinfo = self._functions[function_id]
             except KeyError:
                 raise RuntimeError(
                     f'unknown function id {function_id}') from None
 
-            call_result = bind.call(func, invoc_request.input_data)
+            ctx = types.Context(
+                funcinfo.name, funcinfo.directory, invocation_id)
+
+            call_result = bind.call(
+                funcinfo.func, ctx, invoc_request.input_data)
 
             return protos.StreamingMessage(
                 request_id=self.request_id,

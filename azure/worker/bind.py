@@ -16,14 +16,17 @@ def parse_input_data(data: typing.Iterable[protos.ParameterBinding]):
 
 
 def call(func: typing.Callable,
+         ctx: types.Context,
          input_data: typing.Iterable[protos.ParameterBinding]):
 
     # TODO: Handle OutputBindings
-    # TODO: Inject Context if needed
 
     params = parse_input_data(input_data)
 
     sig = inspect.signature(func)
+    if 'context' in sig.parameters:
+        params['context'] = ctx
+
     ba = sig.bind(**params)
 
     return func(*ba.args, **ba.kwargs)

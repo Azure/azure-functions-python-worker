@@ -30,7 +30,8 @@
     },
     "functionTimeout": "00:05:00",
     "functions": [
-        "str_return",
-        "str_return_req_json",
+        "return_str",
+        "return_context",
+        "return_request",
     ]
 }

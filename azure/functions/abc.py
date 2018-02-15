@@ -9,7 +9,22 @@ class Out(abc.ABC):
         pass
 
 
-# Types
+class Context(abc.ABC):
+
+    @property
+    @abc.abstractmethod
+    def invocation_id(self) -> str:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def function_name(self) -> str:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def function_directory(self) -> str:
+        pass
 
 
 class TypedData(abc.ABC):

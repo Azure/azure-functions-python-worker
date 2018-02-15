@@ -72,7 +72,7 @@ def start_webhost():
     addr = addr.decode('ascii').strip()
 
     for n in range(10):
-        r = requests.get(addr + '/api/str_return')
+        r = requests.get(addr + '/api/return_str')
         if r.status_code == 200:
             break
         time.sleep(0.5)

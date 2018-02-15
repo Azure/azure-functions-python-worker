@@ -62,7 +62,7 @@ def from_incoming_proto(o: protos.TypedData):
             method=o.http.method,
             url=o.http.url,
             headers=o.http.headers,
-            params=o.http.params,
+            params=o.http.query,
             body=from_incoming_proto(o.http.body))
 
     raise TypeError(

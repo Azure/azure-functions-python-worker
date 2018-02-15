@@ -2,8 +2,6 @@
 
 
 import argparse
-import os
-import sys
 import traceback
 
 
@@ -20,12 +18,9 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # XXX: Inject a path entry so that Python import machinery
-    # can find the azure.worker module.
-    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-
     import azure.functions  # NoQA
     import azure.worker
+
     try:
         azure.worker.start(
             args.host, args.port, args.worker_id, args.request_id)

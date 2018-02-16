@@ -49,7 +49,7 @@ $ pip install -e .
 8. Generate GRPC implementation files:
 
 ```shell
-$ ./grpc_gen.sh
+$ python setup.py gen_grpc
 ```
 
 

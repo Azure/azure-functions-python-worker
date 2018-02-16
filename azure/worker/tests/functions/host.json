@@ -30,6 +30,8 @@
     },
     "functionTimeout": "00:05:00",
     "functions": [
-        "str_return"
+        "return_str",
+        "return_context",
+        "return_request",
     ]
 }

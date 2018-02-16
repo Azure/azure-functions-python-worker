@@ -13,7 +13,7 @@ $ git checkout dev
 $ python3.6 -m venv worker_env
 ```
 
-3. Activate the virtual environment
+3. Activate the virtual environment:
 
 ```shell
 $ source worker_env/bin/activate
@@ -46,10 +46,16 @@ $ pip install -r requirements-dev.txt
 $ pip install -e .
 ```
 
+8. Generate GRPC implementation files:
+
+```shell
+$ ./grpc_gen.sh
+```
+
 
 # Running tests
 
-1. Activate the dev virtual environment
+1. Activate the dev virtual environment:
 
 ```shell
 $ source worker_env/bin/activate
@@ -70,7 +76,7 @@ $ pytest
 
 # Running a web host to call test functions
 
-1. Activate the dev virtual environment
+1. Activate the dev virtual environment:
 
 ```shell
 $ source worker_env/bin/activate

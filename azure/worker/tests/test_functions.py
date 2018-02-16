@@ -19,6 +19,11 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'Hello World!')
 
+    def test_async_return_str(self):
+        r = self.webhost.request('GET', 'async_return_str')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'Hello Async World!')
+
     def test_return_context(self):
         r = self.webhost.request('GET', 'return_context')
         self.assertEqual(r.status_code, 200)

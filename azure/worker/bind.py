@@ -24,9 +24,12 @@ def call(func: typing.Callable,
     params = parse_input_data(input_data)
 
     sig = inspect.signature(func)
+
+    # Cache the signature object so that the next `inspect.signature`
+    # call is faster.
+    func.__signature__ = sig
+
     if 'context' in sig.parameters:
         params['context'] = ctx
 
-    ba = sig.bind(**params)
-
-    return func(*ba.args, **ba.kwargs)
+    return func(**params)

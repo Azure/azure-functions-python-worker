@@ -1,3 +1,4 @@
+import argparse
 import configparser
 import os
 import pathlib
@@ -26,7 +27,7 @@ class WebHost:
         self._proc.terminate()
 
 
-def popen_webhost(*, stdout, stderr):
+def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH):
     testconfig = None
     if WORKER_CONFIG.exists():
         testconfig = configparser.ConfigParser()
@@ -48,10 +49,10 @@ def popen_webhost(*, stdout, stderr):
 
     return subprocess.Popen(
         ['dotnet', dll],
-        cwd=FUNCS_PATH,
+        cwd=script_root,
         env={
             **os.environ,
-            'AzureWebJobsScriptRoot': FUNCS_PATH,
+            'AzureWebJobsScriptRoot': script_root,
             'workers:config:path': WORKER_PATH,
             'workers:python:path': WORKER_PATH / 'python' / 'worker.py',
             'host:logger:consoleLoggingMode': 'always',
@@ -84,9 +85,24 @@ def start_webhost():
     return WebHost(proc, addr)
 
 
-if __name__ == '__main__':
+def main():
+    parser = argparse.ArgumentParser(description='Run a Python worker.')
+    parser.add_argument(
+        '--script-root',
+        dest='script_root',
+        default=FUNCS_PATH,
+        help=f'defaults to {FUNCS_PATH}')
+
+    args = parser.parse_args()
+
+    host = popen_webhost(
+        stdout=sys.stdout, stderr=sys.stderr,
+        script_root=os.path.abspath(args.script_root))
     try:
-        host = popen_webhost(stdout=sys.stdout, stderr=sys.stderr)
         host.wait()
     finally:
         host.terminate()
+
+
+if __name__ == '__main__':
+    main()

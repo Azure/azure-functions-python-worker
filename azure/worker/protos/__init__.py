@@ -9,4 +9,5 @@ from .FunctionRpc_pb2 import (  # NoQA
     RpcException,
     ParameterBinding,
     TypedData,
-    RpcHttp)
+    RpcHttp,
+    RpcLog)

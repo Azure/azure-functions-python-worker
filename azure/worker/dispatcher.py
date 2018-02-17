@@ -5,6 +5,7 @@ Implements loading and execution of Python workers.
 
 import asyncio
 import inspect
+import logging
 import queue
 import threading
 import typing
@@ -25,7 +26,53 @@ class FunctionInfo(typing.NamedTuple):
     directory: str
 
 
-class Dispatcher:
+class AsyncLoggingHandler(logging.Handler):
+
+    def emit(self, record):
+        Dispatcher.current.on_logging(record)
+
+
+class ContextEnabledTask(asyncio.Task):
+
+    def __init__(self, coro, loop):
+        super().__init__(coro, loop=loop)
+
+        current_task = asyncio.Task.current_task(loop)
+        if current_task is not None:
+            invocation_id = getattr(
+                current_task, 'azure_function_invocation_id', None)
+            if invocation_id is not None:
+                self.set_azure_invocation_id(invocation_id)
+
+    def set_azure_invocation_id(self, invocation_id):
+        self.azure_function_invocation_id = invocation_id
+
+    @classmethod
+    def get_current_azure_invocation_id(cls):
+        loop = asyncio._get_running_loop()
+        if loop is None:
+            return None
+
+        current_task = cls.current_task(loop)
+        if current_task is None:
+            return None
+
+        return getattr(current_task, 'azure_function_invocation_id', None)
+
+
+class DispatcherMeta(type):
+
+    __current_dispatcher__ = None
+
+    @property
+    def current(mcls):
+        disp = mcls.__current_dispatcher__
+        if disp is None:
+            raise RuntimeError('no currently running Dispatcher is found')
+        return disp
+
+
+class Dispatcher(metaclass=DispatcherMeta):
 
     _GRPC_STOP_RESPONSE = object()
 
@@ -54,17 +101,34 @@ class Dispatcher:
         return disp
 
     async def dispatch_forever(self):
-        forever = self._loop.create_future()
+        if DispatcherMeta.__current_dispatcher__ is not None:
+            raise RuntimeError(
+                'there can be only one running dispatcher per process')
 
-        self._grpc_resp_queue.put_nowait(
-            protos.StreamingMessage(
-                request_id=self.request_id,
-                start_stream=protos.StartStream(
-                    worker_id=self.worker_id)))
-
+        DispatcherMeta.__current_dispatcher__ = self
         try:
-            await forever
+            forever = self._loop.create_future()
+
+            self._grpc_resp_queue.put_nowait(
+                protos.StreamingMessage(
+                    request_id=self.request_id,
+                    start_stream=protos.StartStream(
+                        worker_id=self.worker_id)))
+
+            logging_handler = AsyncLoggingHandler()
+            root_logger = logging.getLogger()
+            root_logger.addHandler(logging_handler)
+
+            self._old_task_factory = self._loop.get_task_factory()
+            self._loop.set_task_factory(
+                lambda loop, coro: ContextEnabledTask(coro, loop=loop))
+            try:
+                await forever
+            finally:
+                self._loop.set_task_factory(self._old_task_factory)
+                root_logger.removeHandler(logging_handler)
         finally:
+            DispatcherMeta.__current_dispatcher__ = None
             self.stop()
 
     def stop(self):
@@ -72,6 +136,41 @@ class Dispatcher:
             self._grpc_resp_queue.put_nowait(self._GRPC_STOP_RESPONSE)
             self._grpc_thread.join()
             self._grpc_thread = None
+
+    def on_logging(self, record: logging.LogRecord):
+        if record.levelno >= logging.CRITICAL:
+            log_level = protos.RpcLog.Critical
+        elif record.levelno >= logging.ERROR:
+            log_level = protos.RpcLog.Error
+        elif record.levelno >= logging.WARNING:
+            log_level = protos.RpcLog.Warning
+        elif record.levelno >= logging.INFO:
+            log_level = protos.RpcLog.Info
+        elif record.levelno >= logging.DEBUG:
+            log_level = protos.RpcLog.Debug
+        else:
+            log_level = getattr(protos.RpcLog, 'None')
+
+        log = dict(
+            level=log_level,
+            message=record.msg,
+            category=record.name,
+        )
+
+        invocation_id = ContextEnabledTask.get_current_azure_invocation_id()
+        if invocation_id is not None:
+            log['invocation_id'] = invocation_id
+
+        # XXX: When an exception field is set in RpcLog, WebHost doesn't
+        # wait for the call result and simply aborts the execution.
+        #
+        # if record.exc_info and record.exc_info[1] is not None:
+        #     log['exception'] = self._serialize_exception(record.exc_info[1])
+
+        self._grpc_resp_queue.put_nowait(
+            protos.StreamingMessage(
+                request_id=self.request_id,
+                rpc_log=protos.RpcLog(**log)))
 
     @property
     def request_id(self):
@@ -140,6 +239,11 @@ class Dispatcher:
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
 
+        # Set the current `invocation_id` to the current task so
+        # that our logging handler can find it.
+        current_task = asyncio.Task.current_task(self._loop)
+        current_task.set_azure_invocation_id(invocation_id)
+
         try:
             try:
                 funcinfo = self._functions[function_id]
@@ -150,11 +254,13 @@ class Dispatcher:
             ctx = types.Context(
                 funcinfo.name, funcinfo.directory, invocation_id)
 
-            call_result = bind.call(
+            result_or_coro = bind.call(
                 funcinfo.func, ctx, invoc_request.input_data)
 
-            if inspect.iscoroutine(call_result):
-                call_result = await call_result
+            if inspect.iscoroutine(result_or_coro):
+                call_result = await result_or_coro
+            else:
+                call_result = result_or_coro
 
             return protos.StreamingMessage(
                 request_id=self.request_id,

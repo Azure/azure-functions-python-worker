@@ -34,5 +34,7 @@
         "return_str",
         "return_context",
         "return_request",
+        "async_logging",
+        "sync_logging",
     ]
 }

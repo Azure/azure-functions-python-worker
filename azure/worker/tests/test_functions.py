@@ -24,6 +24,18 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'Hello Async World!')
 
+    def test_async_logging(self):
+        # Test that logging doesn't *break* things.
+        r = self.webhost.request('GET', 'async_logging')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-async')
+
+    def test_sync_logging(self):
+        # Test that logging doesn't *break* things.
+        r = self.webhost.request('GET', 'sync_logging')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-sync')
+
     def test_return_context(self):
         r = self.webhost.request('GET', 'return_context')
         self.assertEqual(r.status_code, 200)

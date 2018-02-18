@@ -8,6 +8,17 @@ Source: https://github.com/python/cpython/blob/
 import asyncio
 
 
+def get_running_loop():
+    """Return the running event loop.  Raise a RuntimeError if there is none.
+
+    This function is thread-specific.
+    """
+    loop = asyncio._get_running_loop()
+    if loop is None:
+        raise RuntimeError('no running event loop')
+    return loop
+
+
 def run(main, *, debug=False):
     """Run a coroutine.
 
@@ -70,7 +81,7 @@ def _cancel_all_tasks(loop):
 
 try:
     # Try to import the 'run' function from asyncio.
-    from asyncio import run  # NoQA
+    from asyncio import run, get_running_loop  # NoQA
 except ImportError:
     # Python <= 3.6
     pass

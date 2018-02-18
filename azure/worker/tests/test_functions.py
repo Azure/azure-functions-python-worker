@@ -11,7 +11,7 @@ class TestFunctions(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.webhost.stop()
+        cls.webhost.close()
         cls.webhost = None
 
     def test_return_str(self):

@@ -1,9 +1,17 @@
-from .FunctionRpc_pb2_grpc import FunctionRpcStub  # NoQA
+from .FunctionRpc_pb2_grpc import (  # NoQA
+    FunctionRpcStub,
+    FunctionRpcServicer,
+    add_FunctionRpcServicer_to_server)
+
 from .FunctionRpc_pb2 import (  # NoQA
     StreamingMessage,
     StartStream,
+    WorkerInitRequest,
     WorkerInitResponse,
+    RpcFunctionMetadata,
+    FunctionLoadRequest,
     FunctionLoadResponse,
+    InvocationRequest,
     InvocationResponse,
     StatusResult,
     RpcException,

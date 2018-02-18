@@ -8,18 +8,13 @@ logger = logging.getLogger('my function')
 
 
 async def main(req: azure.functions.HttpRequest):
-    # logger.error('one error')
+    logger.error('one error')
 
-    # await asyncio.sleep(0.1)
+    await asyncio.sleep(0.1)
 
-    # # Create a nested task to check if invocation_id is still
-    # # logged correctly.
-    # await asyncio.ensure_future(nested())
-
-    try:
-        1 / 0
-    except ZeroDivisionError:
-        logger.error('and another error', exc_info=True)
+    # Create a nested task to check if invocation_id is still
+    # logged correctly.
+    await asyncio.ensure_future(nested())
 
     await asyncio.sleep(0.1)
 

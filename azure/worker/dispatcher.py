@@ -105,6 +105,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             raise RuntimeError(
                 'there can be only one running dispatcher per process')
 
+        self._old_task_factory = self._loop.get_task_factory()
         DispatcherMeta.__current_dispatcher__ = self
         try:
             forever = self._loop.create_future()
@@ -115,20 +116,19 @@ class Dispatcher(metaclass=DispatcherMeta):
                     start_stream=protos.StartStream(
                         worker_id=self.worker_id)))
 
+            self._loop.set_task_factory(
+                lambda loop, coro: ContextEnabledTask(coro, loop=loop))
+
             logging_handler = AsyncLoggingHandler()
             root_logger = logging.getLogger()
             root_logger.addHandler(logging_handler)
-
-            self._old_task_factory = self._loop.get_task_factory()
-            self._loop.set_task_factory(
-                lambda loop, coro: ContextEnabledTask(coro, loop=loop))
             try:
                 await forever
             finally:
-                self._loop.set_task_factory(self._old_task_factory)
                 root_logger.removeHandler(logging_handler)
         finally:
             DispatcherMeta.__current_dispatcher__ = None
+            self._loop.set_task_factory(self._old_task_factory)
             self.stop()
 
     def stop(self):
@@ -299,10 +299,17 @@ class Dispatcher(metaclass=DispatcherMeta):
             while True:
                 msg = resp_queue.get()
                 if msg is self._GRPC_STOP_RESPONSE:
+                    grpc_req_stream.cancel()
                     return
                 yield msg
 
         grpc_req_stream = stub.EventStream(gen(self._grpc_resp_queue))
-        for req in grpc_req_stream:
-            self._loop.call_soon_threadsafe(
-                self._loop.create_task, self._dispatch_grpc_request(req))
+        try:
+            for req in grpc_req_stream:
+                self._loop.call_soon_threadsafe(
+                    self._loop.create_task, self._dispatch_grpc_request(req))
+        except Exception as ex:
+            if ex is grpc_req_stream:
+                # Yes, this is how grpc_req_stream iterator exits.
+                return
+            raise

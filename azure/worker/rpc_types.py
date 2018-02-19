@@ -8,12 +8,23 @@ and unmarshaling protobuf objects.
 import types
 import typing
 
-import azure.functions
+import azure.functions as azf
 
 from . import protos
 
 
-class Context(azure.functions.Context):
+class Out(azf.Out):
+    def __init__(self):
+        self.__value = None
+
+    def set(self, val):
+        self.__value = val
+
+    def get(self):
+        return self.__value
+
+
+class Context(azf.Context):
 
     def __init__(self, func_name, func_dir, invocation_id):
         self.__func_name = func_name
@@ -33,7 +44,7 @@ class Context(azure.functions.Context):
         return self.__func_dir
 
 
-class HttpRequest(azure.functions.HttpRequest):
+class HttpRequest(azf.HttpRequest):
     """An HTTP request object."""
 
     __slots__ = ('_method', '_url', '_headers', '_params', '_body')
@@ -91,6 +102,9 @@ def from_incoming_proto(o: protos.TypedData):
 
 
 def to_outgoing_proto(o: typing.Any):
+    if o is None:
+        return None
+
     if isinstance(o, int):
         return protos.TypedData(int=o)
 

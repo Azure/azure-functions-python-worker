@@ -1,7 +1,15 @@
+"""Unittest helpers.
+
+All functions in this file should be considered private APIs,
+and can be changed without a notice.
+"""
+
 import argparse
 import asyncio
 import concurrent.futures
 import configparser
+import functools
+import inspect
 import json
 import os
 import queue
@@ -10,6 +18,7 @@ import subprocess
 import sys
 import time
 import typing
+import unittest
 import uuid
 
 import grpc
@@ -23,6 +32,28 @@ from . import protos
 FUNCS_PATH = pathlib.Path(__file__).parent / 'tests' / 'functions'
 WORKER_PATH = pathlib.Path(__file__).parent.parent.parent
 WORKER_CONFIG = WORKER_PATH / '.testconfig'
+
+
+class AsyncTestCaseMeta(type(unittest.TestCase)):
+
+    def __new__(mcls, name, bases, ns):
+        for attrname, attr in ns.items():
+            if (attrname.startswith('test_') and
+                    inspect.iscoroutinefunction(attr)):
+                ns[attrname] = mcls._sync_wrap(attr)
+
+        return super().__new__(mcls, name, bases, ns)
+
+    @staticmethod
+    def _sync_wrap(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return aio_compat.run(func(*args, **kwargs))
+        return wrapper
+
+
+class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
+    pass
 
 
 class _MockWebHostServicer(protos.FunctionRpcServicer):
@@ -138,7 +169,7 @@ class _MockWebHost:
                 type=b['type'],
                 direction=direction)
 
-        return await self.send(
+        r = await self.send(
             protos.StreamingMessage(
                 function_load_request=protos.FunctionLoadRequest(
                     function_id=func.id,
@@ -148,6 +179,8 @@ class _MockWebHost:
                         script_file=func.script,
                         bindings=bindings))),
             wait_for='function_load_response')
+
+        return func.id, r
 
     async def invoke_function(
             self, name, input_data: typing.List[protos.ParameterBinding]):

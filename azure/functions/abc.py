@@ -2,10 +2,17 @@ import abc
 import typing
 
 
-class Out(abc.ABC):
+_T = typing.TypeVar('T')
+
+
+class Out(abc.ABC, typing.Generic[_T]):
 
     @abc.abstractmethod
-    def set(self):
+    def set(self, val: _T):
+        pass
+
+    @abc.abstractmethod
+    def get(self) -> _T:
         pass
 
 

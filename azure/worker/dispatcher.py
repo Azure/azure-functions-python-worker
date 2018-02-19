@@ -29,7 +29,7 @@ class FunctionInfo(typing.NamedTuple):
 class AsyncLoggingHandler(logging.Handler):
 
     def emit(self, record):
-        Dispatcher.current.on_logging(record)
+        Dispatcher.current._on_logging(record)
 
 
 class ContextEnabledTask(asyncio.Task):
@@ -137,7 +137,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._grpc_thread.join()
             self._grpc_thread = None
 
-    def on_logging(self, record: logging.LogRecord):
+    def _on_logging(self, record: logging.LogRecord):
         if record.levelno >= logging.CRITICAL:
             log_level = protos.RpcLog.Critical
         elif record.levelno >= logging.ERROR:

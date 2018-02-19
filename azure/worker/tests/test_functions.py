@@ -47,6 +47,11 @@ class TestFunctions(unittest.TestCase):
         self.assertIn('return_context', data['ctx_func_dir'])
         self.assertIn('ctx_invocation_id', data)
 
+    def test_remapped_context(self):
+        r = self.webhost.request('GET', 'remapped_context')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'GET')
+
     def test_get_method_request(self):
         r = self.webhost.request(
             'GET', 'return_request',
@@ -81,3 +86,8 @@ class TestFunctions(unittest.TestCase):
         self.assertIn('return_request', req['url'])
 
         self.assertEqual(req['get_body'], 'key=value')
+
+    def test_unhandled_error(self):
+        r = self.webhost.request('GET', 'unhandled_error')
+        self.assertEqual(r.status_code, 500)
+        self.assertIn('Exception: ZeroDivisionError', r.text)

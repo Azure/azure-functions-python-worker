@@ -1,31 +1,8 @@
-import functools
-import inspect
-import unittest
-
-from azure.worker import aio_compat
 from azure.worker import protos
 from azure.worker import testutils
 
 
-class MockHostTestsMeta(type(unittest.TestCase)):
-
-    def __new__(mcls, name, bases, ns):
-        for attrname, attr in ns.items():
-            if (attrname.startswith('test_') and
-                    inspect.iscoroutinefunction(attr)):
-                ns[attrname] = mcls._sync_wrap(attr)
-
-        return super().__new__(mcls, name, bases, ns)
-
-    @staticmethod
-    def _sync_wrap(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return aio_compat.run(func(*args, **kwargs))
-        return wrapper
-
-
-class TestMockHost(unittest.TestCase, metaclass=MockHostTestsMeta):
+class TestMockHost(testutils.AsyncTestCase):
 
     async def test_call_sync_function_check_logs(self):
         async with testutils.start_mockhost() as host:
@@ -76,3 +53,28 @@ class TestMockHost(unittest.TestCase, metaclass=MockHostTestsMeta):
             self.assertEqual(r.logs[1].message, 'and another error')
 
             self.assertEqual(r.response.return_value.string, 'OK-async')
+
+    async def test_call_function_out_int_param(self):
+        async with testutils.start_mockhost() as host:
+            await host.load_function('return_out')
+
+            invoke_id, r = await host.invoke_function(
+                'return_out', [
+                    protos.ParameterBinding(
+                        name='req',
+                        data=protos.TypedData(
+                            http=protos.RpcHttp(
+                                method='GET')))
+                ])
+
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            self.assertEqual(r.response.return_value.string, 'wat')
+
+            self.assertEqual(
+                list(r.response.output_data), [
+                    protos.ParameterBinding(
+                        name='foo',
+                        data=protos.TypedData(int=42))
+                ])

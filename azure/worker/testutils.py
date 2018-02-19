@@ -131,6 +131,13 @@ class _MockWebHost:
 
         func = self._available_functions[name]
 
+        bindings = {}
+        for b in func.desc['bindings']:
+            direction = getattr(protos.BindingInfo, b['direction'])
+            bindings[b['name']] = protos.BindingInfo(
+                type=b['type'],
+                direction=direction)
+
         return await self.send(
             protos.StreamingMessage(
                 function_load_request=protos.FunctionLoadRequest(
@@ -138,7 +145,8 @@ class _MockWebHost:
                     metadata=protos.RpcFunctionMetadata(
                         name=func.name,
                         directory=os.path.dirname(func.script),
-                        script_file=func.script))),
+                        script_file=func.script,
+                        bindings=bindings))),
             wait_for='function_load_response')
 
     async def invoke_function(

@@ -29,6 +29,7 @@ class FunctionInfo(typing.NamedTuple):
     outputs: typing.Set[str]
     requires_context: bool
     is_async: bool
+    has_return: bool
 
 
 class DispatcherMeta(type):
@@ -204,7 +205,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         f'cannot load the {func_name} function: '
                         f'"$return" binding must have direction set to "out"')
 
-                return_binding = desc  # NoQA
+                return_binding = desc
             else:
                 bindings[name] = desc
 
@@ -264,7 +265,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             directory=metadata.directory,
             outputs=frozenset(outputs),
             requires_context=requires_context,
-            is_async=inspect.iscoroutinefunction(func))
+            is_async=inspect.iscoroutinefunction(func),
+            has_return=return_binding is not None)
 
     async def _dispatch_grpc_request(self, request):
         content_type = request.WhichOneof('content')
@@ -366,11 +368,15 @@ class Dispatcher(metaclass=DispatcherMeta):
                             name=name,
                             data=rpc_val))
 
+            return_value = None
+            if fi.has_return:
+                return_value = rpc_types.to_outgoing_proto(call_result)
+
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 invocation_response=protos.InvocationResponse(
                     invocation_id=invocation_id,
-                    return_value=rpc_types.to_outgoing_proto(call_result),
+                    return_value=return_value,
                     result=protos.StatusResult(
                         status=protos.StatusResult.Success),
                     output_data=output_data))

@@ -29,10 +29,4 @@
         "counterThreshold": 0.80
     },
     "functionTimeout": "00:05:00",
-    "functions": [
-        "async_return_str",
-        "return_str",
-        "return_context",
-        "return_request",
-    ]
 }

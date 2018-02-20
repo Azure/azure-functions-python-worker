@@ -50,5 +50,6 @@ setup(
     include_package_data=True,
     cmdclass={
         'gen_grpc': GenGrpcCommand
-    }
+    },
+    test_suite='azure.worker.tests'
 )

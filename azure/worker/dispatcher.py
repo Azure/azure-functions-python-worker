@@ -184,6 +184,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         bindings = {}
         return_binding = None
         for name, desc in metadata.bindings.items():
+            if desc.direction == protos.BindingInfo.inout:
+                raise TypeError(
+                    f'cannot load the {func_name} function: '
+                    f'"inout" bindings are not supported')
+
             if name == '$return':
                 # TODO:
                 # *  add proper gRPC->Python type reflection;
@@ -191,6 +196,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                 # * enforce return type of a function call in Python;
                 # * use the return type information to marshal the result into
                 #   a correct gRPC type.
+
+                if desc.direction != protos.BindingInfo.out:
+                    raise TypeError(
+                        f'cannot load the {func_name} function: '
+                        f'"$return" binding must have direction set to "out"')
+
                 return_binding = desc  # NoQA
             else:
                 bindings[name] = desc

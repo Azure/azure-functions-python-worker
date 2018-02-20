@@ -13,6 +13,7 @@ from .FunctionRpc_pb2 import (  # NoQA
     FunctionLoadResponse,
     InvocationRequest,
     InvocationResponse,
+    WorkerHeartbeat,
     BindingInfo,
     StatusResult,
     RpcException,

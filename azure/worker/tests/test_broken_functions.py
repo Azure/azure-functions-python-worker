@@ -93,3 +93,33 @@ class TestMockHost(testutils.AsyncTestCase):
                              protos.StatusResult.Failure)
 
             self.assertIn('SyntaxError', r.response.result.exception.message)
+
+    async def test_load_broken__inout_param(self):
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function('inout_param')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*cannot load the inout_param function'
+                r'.*"inout" bindings.*')
+
+    async def test_load_broken__return_param_in(self):
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function('return_param_in')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*cannot load the return_param_in function'
+                r'.*"\$return" .* set to "out"')

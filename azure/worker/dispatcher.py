@@ -29,6 +29,7 @@ class FunctionInfo(typing.NamedTuple):
     outputs: typing.Set[str]
     requires_context: bool
     is_async: bool
+    has_return: bool
 
 
 class DispatcherMeta(type):
@@ -73,6 +74,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
+
+        self._logger = logging.getLogger('python-azure-worker')
 
     @classmethod
     async def connect(cls, host, port, worker_id, request_id,
@@ -184,6 +187,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         bindings = {}
         return_binding = None
         for name, desc in metadata.bindings.items():
+            if desc.direction == protos.BindingInfo.inout:
+                raise TypeError(
+                    f'cannot load the {func_name} function: '
+                    f'"inout" bindings are not supported')
+
             if name == '$return':
                 # TODO:
                 # *  add proper gRPC->Python type reflection;
@@ -191,7 +199,13 @@ class Dispatcher(metaclass=DispatcherMeta):
                 # * enforce return type of a function call in Python;
                 # * use the return type information to marshal the result into
                 #   a correct gRPC type.
-                return_binding = desc  # NoQA
+
+                if desc.direction != protos.BindingInfo.out:
+                    raise TypeError(
+                        f'cannot load the {func_name} function: '
+                        f'"$return" binding must have direction set to "out"')
+
+                return_binding = desc
             else:
                 bindings[name] = desc
 
@@ -251,14 +265,19 @@ class Dispatcher(metaclass=DispatcherMeta):
             directory=metadata.directory,
             outputs=frozenset(outputs),
             requires_context=requires_context,
-            is_async=inspect.iscoroutinefunction(func))
+            is_async=inspect.iscoroutinefunction(func),
+            has_return=return_binding is not None)
 
     async def _dispatch_grpc_request(self, request):
         content_type = request.WhichOneof('content')
         request_handler = getattr(self, f'_handle__{content_type}', None)
         if request_handler is None:
-            raise RuntimeError(
+            # Don't crash on unknown messages.  Some of them can be ignored;
+            # and if something goes really wrong the host can always just
+            # kill the worker's process.
+            self._logger.error(
                 f'unknown StreamingMessage content type {content_type}')
+            return
 
         resp = await request_handler(request)
         self._grpc_resp_queue.put_nowait(resp)
@@ -349,11 +368,15 @@ class Dispatcher(metaclass=DispatcherMeta):
                             name=name,
                             data=rpc_val))
 
+            return_value = None
+            if fi.has_return:
+                return_value = rpc_types.to_outgoing_proto(call_result)
+
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 invocation_response=protos.InvocationResponse(
                     invocation_id=invocation_id,
-                    return_value=rpc_types.to_outgoing_proto(call_result),
+                    return_value=return_value,
                     result=protos.StatusResult(
                         status=protos.StatusResult.Success),
                     output_data=output_data))

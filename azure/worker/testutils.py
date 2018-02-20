@@ -89,6 +89,9 @@ class _MockWebHostServicer(protos.FunctionRpcServicer):
 
             yield message
 
+            if wait_for is None:
+                continue
+
             response = None
             logs = []
 
@@ -169,7 +172,7 @@ class _MockWebHost:
                 type=b['type'],
                 direction=direction)
 
-        r = await self.send(
+        r = await self.communicate(
             protos.StreamingMessage(
                 function_load_request=protos.FunctionLoadRequest(
                     function_id=func.id,
@@ -191,7 +194,7 @@ class _MockWebHost:
         func = self._available_functions[name]
         invocation_id = self.make_id()
 
-        r = await self.send(
+        r = await self.communicate(
             protos.StreamingMessage(
                 invocation_request=protos.InvocationRequest(
                     invocation_id=invocation_id,
@@ -201,7 +204,10 @@ class _MockWebHost:
 
         return invocation_id, r
 
-    async def send(self, message, *, wait_for):
+    async def send(self, message):
+        self._in_queue.put_nowait((message, None))
+
+    async def communicate(self, message, *, wait_for):
         self._in_queue.put_nowait((message, wait_for))
         return await self._out_aqueue.get()
 

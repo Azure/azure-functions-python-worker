@@ -74,6 +74,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
 
+        self._logger = logging.getLogger('python-azure-worker')
+
     @classmethod
     async def connect(cls, host, port, worker_id, request_id,
                       connect_timeout):
@@ -268,8 +270,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         content_type = request.WhichOneof('content')
         request_handler = getattr(self, f'_handle__{content_type}', None)
         if request_handler is None:
-            raise RuntimeError(
+            # Don't crash on unknown messages.  Some of them can be ignored;
+            # and if something goes really wrong the host can always just
+            # kill the worker's process.
+            self._logger.error(
                 f'unknown StreamingMessage content type {content_type}')
+            return
 
         resp = await request_handler(request)
         self._grpc_resp_queue.put_nowait(resp)

@@ -78,3 +78,25 @@ class TestMockHost(testutils.AsyncTestCase):
                         name='foo',
                         data=protos.TypedData(int=42))
                 ])
+
+    async def test_handles_unsupported_messages_gracefully(self):
+        async with testutils.start_mockhost() as host:
+            # Intentionally send a message to worker that isn't
+            # going to be ever supported by it.  The idea is that
+            # workers should survive such messages and continue
+            # their operation.  If anything, the host can always
+            # terminate the worker.
+            await host.send(
+                protos.StreamingMessage(
+                    worker_heartbeat=protos.WorkerHeartbeat()))
+
+            _, r = await host.load_function('return_out')
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            for log in r.logs:
+                if 'unknown StreamingMessage' in log.message:
+                    break
+            else:
+                raise AssertionError('the worker did not log about an '
+                                     '"unknown StreamingMessage"')

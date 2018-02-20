@@ -4,6 +4,7 @@ Implements loading and execution of Python workers.
 """
 
 import asyncio
+import concurrent.futures
 import inspect
 import logging
 import queue
@@ -27,40 +28,7 @@ class FunctionInfo(typing.NamedTuple):
     directory: str
     outputs: typing.Set[str]
     requires_context: bool
-
-
-class AsyncLoggingHandler(logging.Handler):
-
-    def emit(self, record):
-        Dispatcher.current._on_logging(record)
-
-
-class ContextEnabledTask(asyncio.Task):
-
-    def __init__(self, coro, loop):
-        super().__init__(coro, loop=loop)
-
-        current_task = asyncio.Task.current_task(loop)
-        if current_task is not None:
-            invocation_id = getattr(
-                current_task, 'azure_function_invocation_id', None)
-            if invocation_id is not None:
-                self.set_azure_invocation_id(invocation_id)
-
-    def set_azure_invocation_id(self, invocation_id):
-        self.azure_function_invocation_id = invocation_id
-
-    @classmethod
-    def get_current_azure_invocation_id(cls):
-        loop = asyncio._get_running_loop()
-        if loop is None:
-            return None
-
-        current_task = cls.current_task(loop)
-        if current_task is None:
-            return None
-
-        return getattr(current_task, 'azure_function_invocation_id', None)
+    is_async: bool
 
 
 class DispatcherMeta(type):
@@ -87,6 +55,18 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._request_id = request_id
         self._worker_id = worker_id
         self._functions = {}
+
+        # A thread-pool for synchronous function calls.  We limit
+        # the number of threads to 1 so that one Python worker can
+        # only run one synchronous function in parallel.  This is
+        # because synchronous code in Python is rarely designed with
+        # concurrency in mind, so we don't want to allow users to
+        # have races in their synchronous functions.  Moreover,
+        # because of the GIL in CPython, it rarely makes sense to
+        # use threads (unless the code is IO bound, but we have
+        # async support for that.)
+        self._sync_call_tp = concurrent.futures.ThreadPoolExecutor(
+            max_workers=1)
 
         self._grpc_connect_timeout = grpc_connect_timeout
         self._grpc_resp_queue = queue.Queue()
@@ -140,6 +120,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._grpc_thread.join()
             self._grpc_thread = None
 
+        if self._sync_call_tp is not None:
+            self._sync_call_tp.shutdown()
+            self._sync_call_tp = None
+
     def _on_logging(self, record: logging.LogRecord):
         if record.levelno >= logging.CRITICAL:
             log_level = protos.RpcLog.Critical
@@ -160,7 +144,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             category=record.name,
         )
 
-        invocation_id = ContextEnabledTask.get_current_azure_invocation_id()
+        invocation_id = get_current_invocation_id()
         if invocation_id is not None:
             log['invocation_id'] = invocation_id
 
@@ -266,7 +250,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             name=func_name,
             directory=metadata.directory,
             outputs=frozenset(outputs),
-            requires_context=requires_context)
+            requires_context=requires_context,
+            is_async=inspect.iscoroutinefunction(func))
 
     async def _dispatch_grpc_request(self, request):
         content_type = request.WhichOneof('content')
@@ -344,12 +329,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                 for name in fi.outputs:
                     params[name] = rpc_types.Out()
 
-            result_or_coro = fi.func(**params)
-
-            if inspect.iscoroutine(result_or_coro):
-                call_result = await result_or_coro
+            if fi.is_async:
+                call_result = await fi.func(**params)
             else:
-                call_result = result_or_coro
+                call_result = await self._loop.run_in_executor(
+                    self._sync_call_tp,
+                    self.__run_sync_func, invocation_id, fi.func, params)
 
             output_data = []
             if fi.outputs:
@@ -381,6 +366,15 @@ class Dispatcher(metaclass=DispatcherMeta):
                     result=protos.StatusResult(
                         status=protos.StatusResult.Failure,
                         exception=self._serialize_exception(ex))))
+
+    def __run_sync_func(self, invocation_id, func, params):
+        # This helper exists because we need to access the current
+        # invocation_id from ThreadPoolExecutor's threads.
+        _invocation_id_local.v = invocation_id
+        try:
+            return func(**params)
+        finally:
+            _invocation_id_local.v = None
 
     def __poll_grpc(self):
         channel = grpc.insecure_channel(f'{self._host}:{self._port}')
@@ -416,3 +410,41 @@ class Dispatcher(metaclass=DispatcherMeta):
                 # Yes, this is how grpc_req_stream iterator exits.
                 return
             raise
+
+
+class AsyncLoggingHandler(logging.Handler):
+
+    def emit(self, record):
+        Dispatcher.current._on_logging(record)
+
+
+class ContextEnabledTask(asyncio.Task):
+
+    _AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
+
+    def __init__(self, coro, loop):
+        super().__init__(coro, loop=loop)
+
+        current_task = asyncio.Task.current_task(loop)
+        if current_task is not None:
+            invocation_id = getattr(
+                current_task, self._AZURE_INVOCATION_ID, None)
+            if invocation_id is not None:
+                self.set_azure_invocation_id(invocation_id)
+
+    def set_azure_invocation_id(self, invocation_id):
+        setattr(self, self._AZURE_INVOCATION_ID, invocation_id)
+
+
+def get_current_invocation_id():
+    loop = asyncio._get_running_loop()
+    if loop is not None:
+        current_task = asyncio.Task.current_task(loop)
+        if current_task is not None:
+            return getattr(
+                current_task, ContextEnabledTask._AZURE_INVOCATION_ID, None)
+
+    return getattr(_invocation_id_local, 'v', None)
+
+
+_invocation_id_local = threading.local()

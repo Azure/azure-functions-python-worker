@@ -29,7 +29,7 @@ from . import dispatcher
 from . import protos
 
 
-FUNCS_PATH = pathlib.Path(__file__).parent / 'tests' / 'functions'
+FUNCS_PATH = pathlib.Path(__file__).parent / 'tests' / 'http_functions'
 WORKER_PATH = pathlib.Path(__file__).parent.parent.parent
 WORKER_CONFIG = WORKER_PATH / '.testconfig'
 
@@ -285,7 +285,7 @@ class _MockWebHostController:
         self._host = None
 
 
-def start_mockhost(*, script_root='functions'):
+def start_mockhost(*, script_root='http_functions'):
     tests_dir = pathlib.Path(__file__).parent / 'tests'
     scripts_dir = tests_dir / script_root
     if not scripts_dir.exists() or not scripts_dir.is_dir():

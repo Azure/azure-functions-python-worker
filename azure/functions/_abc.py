@@ -76,5 +76,6 @@ class HttpResponse(TypedData):
     def headers(self):
         pass
 
-    def set_body(self, body: TypedData):
+    @abc.abstractmethod
+    def get_body(self) -> bytes:
         pass

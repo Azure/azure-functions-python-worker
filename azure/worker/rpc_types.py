@@ -90,6 +90,8 @@ def to_outgoing_proto(o: typing.Any):
         body = o.get_body()
         if body is not None:
             body = protos.TypedData(bytes=body)
+        else:
+            body = protos.TypedData(bytes=b'')
 
         return protos.TypedData(
             http=protos.RpcHttp(

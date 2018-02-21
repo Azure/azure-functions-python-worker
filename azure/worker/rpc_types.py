@@ -5,7 +5,6 @@ and unmarshaling protobuf objects.
 """
 
 
-import types
 import typing
 
 import azure.functions as azf
@@ -44,41 +43,6 @@ class Context(azf.Context):
         return self.__func_dir
 
 
-class HttpRequest(azf.HttpRequest):
-    """An HTTP request object."""
-
-    __slots__ = ('_method', '_url', '_headers', '_params', '_body')
-
-    def __init__(self, method: str, url: str,
-                 headers: typing.Mapping[str, str],
-                 params: typing.Mapping[str, str],
-                 body):
-        self._method = method
-        self._url = url
-        self._headers = types.MappingProxyType(headers)
-        self._params = types.MappingProxyType(params)
-        self._body = body
-
-    @property
-    def url(self):
-        return self._url
-
-    @property
-    def method(self):
-        return self._method.upper()
-
-    @property
-    def headers(self):
-        return self._headers
-
-    @property
-    def params(self):
-        return self._params
-
-    def get_body(self):
-        return self._body
-
-
 def from_incoming_proto(o: protos.TypedData):
     dt = o.WhichOneof('data')
 
@@ -89,7 +53,7 @@ def from_incoming_proto(o: protos.TypedData):
         return getattr(o, dt)
 
     if dt == 'http':
-        return HttpRequest(
+        return azf.HttpRequest(
             method=o.http.method,
             url=o.http.url,
             headers=o.http.headers,
@@ -113,6 +77,26 @@ def to_outgoing_proto(o: typing.Any):
 
     if isinstance(o, bytes):
         return protos.TypedData(bytes=o)
+
+    if isinstance(o, azf.HttpResponse):
+        status = o.status_code
+        headers = dict(o.headers)
+        if 'content-type' not in headers:
+            if o.mimetype.startswith('text/'):
+                headers['content-type'] = f'{o.mimetype}; charset={o.charset}'
+            else:
+                headers['content-type'] = f'{o.mimetype}'
+
+        body = o.get_body()
+        if body is not None:
+            body = protos.TypedData(bytes=body)
+
+        return protos.TypedData(
+            http=protos.RpcHttp(
+                status_code=str(status),
+                headers=headers,
+                is_raw=True,
+                body=body))
 
     raise TypeError(
         f'unable to encode outgoing TypedData: '

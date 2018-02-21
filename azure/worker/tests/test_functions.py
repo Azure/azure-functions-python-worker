@@ -18,6 +18,29 @@ class TestFunctions(unittest.TestCase):
         r = self.webhost.request('GET', 'return_str')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'Hello World!')
+        self.assertTrue(r.headers['content-type'].startswith('text/plain'))
+
+    def test_return_http(self):
+        r = self.webhost.request('GET', 'return_http')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '<h1>Hello World™</h1>')
+        self.assertEqual(r.headers['content-type'], 'text/html; charset=utf-8')
+
+    def test_return_http_404(self):
+        r = self.webhost.request('GET', 'return_http_404')
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.text, 'bye')
+        self.assertEqual(r.headers['content-type'],
+                         'text/plain; charset=utf-8')
+
+    def test_return_http_redirect(self):
+        r = self.webhost.request('GET', 'return_http_redirect')
+        self.assertEqual(r.text, '<h1>Hello World™</h1>')
+        self.assertEqual(r.status_code, 200)
+
+        r = self.webhost.request('GET', 'return_http_redirect',
+                                 allow_redirects=False)
+        self.assertEqual(r.status_code, 302)
 
     def test_no_return(self):
         r = self.webhost.request('GET', 'no_return')

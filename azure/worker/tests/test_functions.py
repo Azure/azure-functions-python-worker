@@ -33,6 +33,15 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(r.headers['content-type'],
                          'text/plain; charset=utf-8')
 
+    def test_return_http_redirect(self):
+        r = self.webhost.request('GET', 'return_http_redirect')
+        self.assertEqual(r.text, '<h1>Hello World™</h1>')
+        self.assertEqual(r.status_code, 200)
+
+        r = self.webhost.request('GET', 'return_http_redirect',
+                                 allow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+
     def test_no_return(self):
         r = self.webhost.request('GET', 'no_return')
         self.assertEqual(r.status_code, 204)

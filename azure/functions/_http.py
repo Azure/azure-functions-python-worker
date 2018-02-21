@@ -48,7 +48,7 @@ class HttpRequest(_abc.HttpRequest):
                  body):
         self.__method = method
         self.__url = url
-        self.__headers = BaseHeaders(headers)
+        self.__headers = RequestHeaders(headers)
         self.__params = types.MappingProxyType(params)
         self.__body = body
 

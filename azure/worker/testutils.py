@@ -342,7 +342,12 @@ class _WebHostProxy:
         return request_method(self._addr + '/api/' + funcname, *args, **kwargs)
 
     def close(self):
-        self._proc.terminate()
+        try:
+            self._proc.stdout.close()
+            self._proc.stderr.close()
+        finally:
+            self._proc.terminate()
+            self._proc.wait()
 
 
 def _find_open_port():

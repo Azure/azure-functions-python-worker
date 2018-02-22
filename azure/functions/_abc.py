@@ -2,17 +2,17 @@ import abc
 import typing
 
 
-_T = typing.TypeVar('T')
+T = typing.TypeVar('T')
 
 
-class Out(abc.ABC, typing.Generic[_T]):
+class Out(abc.ABC, typing.Generic[T]):
 
     @abc.abstractmethod
-    def set(self, val: _T):
+    def set(self, val: T) -> None:
         pass
 
     @abc.abstractmethod
-    def get(self) -> _T:
+    def get(self) -> T:
         pass
 
 
@@ -64,12 +64,12 @@ class HttpResponse(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def status_code(self):
+    def status_code(self) -> int:
         pass
 
     @property
     @abc.abstractmethod
-    def headers(self):
+    def headers(self) -> typing.MutableMapping[str, str]:
         pass
 
     @abc.abstractmethod

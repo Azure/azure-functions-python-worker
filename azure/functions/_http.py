@@ -7,11 +7,12 @@ from . import _abc
 
 class BaseHeaders(collections.abc.Mapping):
 
-    def __init__(self, source=None):
-        if source is None:
-            self.__http_headers__ = {}
-        else:
-            self.__http_headers__ = {k.lower(): v for k, v in source.items()}
+    def __init__(self, source: typing.Optional[typing.Mapping]=None) -> None:
+        self.__http_headers__: typing.Dict[str, str] = {}
+
+        if source is not None:
+            self.__http_headers__.update(
+                {k.lower(): v for k, v in source.items()})
 
     def __getitem__(self, key: str) -> str:
         return self.__http_headers__[key.lower()]
@@ -19,7 +20,7 @@ class BaseHeaders(collections.abc.Mapping):
     def __len__(self):
         return len(self.__http_headers__)
 
-    def __contains__(self, key: str):
+    def __contains__(self, key: typing.Any):
         return key.lower() in self.__http_headers__
 
     def __iter__(self):
@@ -45,7 +46,7 @@ class HttpRequest(_abc.HttpRequest):
     def __init__(self, method: str, url: str,
                  headers: typing.Mapping[str, str],
                  params: typing.Mapping[str, str],
-                 body):
+                 body) -> None:
         self.__method = method
         self.__url = url
         self.__headers = RequestHeaders(headers)
@@ -96,7 +97,7 @@ class HttpResponse(_abc.HttpResponse):
         if body is not None:
             self.__set_body(body)
         else:
-            self.__body = None
+            self.__body = b''
 
     @property
     def mimetype(self):
@@ -123,7 +124,7 @@ class HttpResponse(_abc.HttpResponse):
                 f'reponse is expected to be either of '
                 f'str, bytes, or bytearray, got {type(body).__name__}')
 
-        self.__body = body
+        self.__body = bytes(body)
 
-    def get_body(self):
+    def get_body(self) -> bytes:
         return self.__body

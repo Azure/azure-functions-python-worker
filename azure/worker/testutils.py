@@ -296,7 +296,7 @@ class _MockWebHostController:
 
             if self._host._connected_fut not in done:
                 raise RuntimeError('could not start a worker thread')
-        except:
+        except Exception:
             try:
                 self._host._close()
                 self._worker.stop()

@@ -2,40 +2,68 @@
 
 
 import importlib
+import importlib.machinery
+import importlib.util
 import os.path
+import pathlib
 import sys
 
 
+_AZURE_NAMESPACE = '__azure__'
+
+_submodule_dirs = []
+
+
+def register_function_dir(path: str):
+    _submodule_dirs.append(str(path))
+
+
+def install():
+    if _AZURE_NAMESPACE not in sys.modules:
+        # Create and register the __azure__ namespace package.
+        ns_spec = importlib.machinery.ModuleSpec(_AZURE_NAMESPACE, None)
+        ns_spec.submodule_search_locations = _submodule_dirs
+        ns_pkg = importlib.util.module_from_spec(ns_spec)
+        sys.modules[_AZURE_NAMESPACE] = ns_pkg
+
+
+def uninstall():
+    pass
+
+
 def load_function(name: str, directory: str, script_file: str):
-    # TODO: Implement an importlib.Finder instead of injecting
-    # paths into sys.path.
+    dir_path = pathlib.Path(directory)
+    script_path = pathlib.Path(script_file)
 
-    if not os.path.isfile(script_file):
+    register_function_dir(dir_path.parent)
+
+    try:
+        rel_script_path = script_path.relative_to(dir_path.parent)
+    except ValueError:
         raise RuntimeError(
-            f'cannot load function {name}: '
-            f'script file does not exist {script_file}')
+            f'script path {script_file} is not relative to the specified '
+            f'directory {directory}'
+        )
 
-    path_entry = os.path.dirname(directory)
-    filename = os.path.basename(script_file)
-    modname, ext = os.path.splitext(filename)
+    last_part = rel_script_path.parts[-1]
+    modname, ext = os.path.splitext(last_part)
     if ext != '.py':
         raise RuntimeError(
             f'cannot load function {name}: '
             f'invalid Python filename {script_file}')
 
-    if path_entry not in sys.path:
-        sys.path.append(path_entry)
+    modname_parts = [_AZURE_NAMESPACE]
+    modname_parts.extend(rel_script_path.parts[:-1])
+    modname_parts.append(modname)
 
-    try:
-        mod = importlib.import_module(f'{name}.{modname}')
-    except ImportError as ex:
-        raise RuntimeError(
-            f'could not import module for function {name}') from ex
+    fullmodname = '.'.join(modname_parts)
+
+    mod = importlib.import_module(fullmodname)
 
     func = getattr(mod, 'main', None)
     if func is None or not callable(func):
-        raise ImportError(
+        raise RuntimeError(
             f'cannot load function {name}: no main() function in '
-            f'{filename!r} file')
+            f'{rel_script_path!r} file')
 
     return func

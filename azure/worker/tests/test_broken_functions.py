@@ -94,6 +94,32 @@ class TestMockHost(testutils.AsyncTestCase):
 
             self.assertIn('SyntaxError', r.response.result.exception.message)
 
+    async def test_load_broken__module_not_found_error(self):
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function('module_not_found_error')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertIn('ModuleNotFoundError',
+                          r.response.result.exception.message)
+
+    async def test_load_broken__import_error(self):
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function('import_error')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertIn('ImportError',
+                          r.response.result.exception.message)
+
     async def test_load_broken__inout_param(self):
         async with testutils.start_mockhost(
                 script_root='broken_functions') as host:

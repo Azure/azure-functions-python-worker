@@ -2,7 +2,7 @@
     "Description":{
         "Language":"python",
         "Extension":".py",
-        "DefaultExecutablePath":"python3",
+        "DefaultExecutablePath":"python",
         "DefaultWorkerPath":"worker.py"
     },
     "Arguments":[]

@@ -358,9 +358,8 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         testconfig = configparser.ConfigParser()
         testconfig.read(WORKER_CONFIG)
 
-    if 'PYAZURE_WEBHOST_DLL' in os.environ:
-        dll = os.environ['PYAZURE_WEBHOST_DLL']
-    elif testconfig is not None:
+    dll = os.environ.get('PYAZURE_WEBHOST_DLL')
+    if not dll and testconfig:
         dll = testconfig['webhost'].get('dll')
 
     if not dll or not pathlib.Path(dll).exists():
@@ -372,10 +371,24 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             f'   dll = /path/to/my/Microsoft.Azure.WebJobs.Script.WebHost.dll',
         ]))
 
+    # Paths from environment might contain trailing or leading whitespace.
+    dll = dll.strip()
+
+    worker_path = os.environ.get('PYAZURE_WORKER_DIR')
+    if not worker_path:
+        worker_path = WORKER_PATH
+    else:
+        worker_path = pathlib.Path(worker_path)
+
+    if not worker_path.exists():
+        raise RuntimeError(f'Worker path {worker_path} does not exist')
+
+    # Casting to strings is necessary because Popen doesn't like
+    # path objects there on Windows.
     extra_env = {
-        'AzureWebJobsScriptRoot': script_root,
-        'workers:config:path': WORKER_PATH,
-        'workers:python:path': WORKER_PATH / 'python' / 'worker.py',
+        'AzureWebJobsScriptRoot': str(script_root),
+        'workers:config:path': str(worker_path),
+        'workers:python:path': str(worker_path / 'python' / 'worker.py'),
         'host:logger:consoleLoggingMode': 'always',
     }
 

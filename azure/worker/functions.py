@@ -20,6 +20,13 @@ class FunctionInfo(typing.NamedTuple):
     return_type: typing.Optional[rpc_types.BindType]
 
 
+class FunctionLoadError(RuntimeError):
+
+    def __init__(self, function_name, msg):
+        super().__init__(
+            f'cannot load the {function_name} function: {msg}')
+
+
 class Registry:
 
     _functions: typing.Mapping[str, FunctionInfo]
@@ -49,21 +56,21 @@ class Registry:
         bindings = {}
         for name, desc in metadata.bindings.items():
             if desc.direction == protos.BindingInfo.inout:
-                raise RuntimeError(
-                    f'cannot load the {func_name} function: '
+                raise FunctionLoadError(
+                    func_name,
                     f'"inout" bindings are not supported')
 
             if name == '$return':
                 if desc.direction != protos.BindingInfo.out:
-                    raise RuntimeError(
-                        f'cannot load the {func_name} function: '
+                    raise FunctionLoadError(
+                        func_name,
                         f'"$return" binding must have direction set to "out"')
 
                 try:
                     return_type = rpc_types.BindType(desc.type)
                 except ValueError:
-                    raise RuntimeError(
-                        f'cannot load the {func_name} function: '
+                    raise FunctionLoadError(
+                        func_name,
                         f'unknown type for $return binding: "{desc.type}"')
             else:
                 bindings[name] = desc
@@ -74,21 +81,21 @@ class Registry:
             if ctx_param.annotation is not ctx_param.empty:
                 if (not isinstance(ctx_param.annotation, type) or
                         not issubclass(ctx_param.annotation, azf.Context)):
-                    raise RuntimeError(
-                        f'cannot load the {func_name} function: '
+                    raise FunctionLoadError(
+                        func_name,
                         f'the "context" parameter is expected to be of '
                         f'type azure.functions.Context, got '
                         f'{ctx_param.annotation!r}')
 
         if set(params) - set(bindings):
-            raise RuntimeError(
-                f'cannot load the {func_name} function: '
+            raise FunctionLoadError(
+                func_name,
                 f'the following parameters are declared in Python but '
                 f'not in function.json: {set(params) - set(bindings)!r}')
 
         if set(bindings) - set(params):
-            raise RuntimeError(
-                f'cannot load the {func_name} function: '
+            raise FunctionLoadError(
+                func_name,
                 f'the following parameters are declared in function.json but '
                 f'not in Python: {set(bindings) - set(params)!r}')
 
@@ -102,15 +109,15 @@ class Registry:
             is_binding_out = desc.direction == protos.BindingInfo.out
 
             if is_binding_out and param_has_anno and not is_param_out:
-                raise RuntimeError(
-                    f'cannot load the {func_name} function: '
+                raise FunctionLoadError(
+                    func_name,
                     f'binding {param.name} is declared to have the "out" '
                     f'direction, but its annotation in Python is not '
                     f'a subclass of azure.functions.Out')
 
             if not is_binding_out and is_param_out:
-                raise RuntimeError(
-                    f'cannot load the {func_name} function: '
+                raise FunctionLoadError(
+                    func_name,
                     f'binding {param.name} is declared to have the "in" '
                     f'direction in function.json, but its annotation '
                     f'is azure.functions.Out in Python')
@@ -118,8 +125,8 @@ class Registry:
             try:
                 param_bind_type = rpc_types.BindType(desc.type)
             except ValueError:
-                raise RuntimeError(
-                    f'cannot load the {func_name} function: '
+                raise FunctionLoadError(
+                    func_name,
                     f'unknown type for {param.name} binding: "{desc.type}"')
 
             if is_binding_out:
@@ -136,8 +143,8 @@ class Registry:
                 if param_py_type:
                     if not rpc_types.check_bind_type_matches_py_type(
                             param_bind_type, param_py_type):
-                        raise RuntimeError(
-                            f'cannot load the {func_name} function: '
+                        raise FunctionLoadError(
+                            func_name,
                             f'type of {param.name} binding in function.json '
                             f'"{param_bind_type}" does not match its Python '
                             f'annotation "{param_py_type.__name__}"')
@@ -147,12 +154,12 @@ class Registry:
                 isinstance(sig.return_annotation, type)):
             ra = sig.return_annotation
             if issubclass(ra, azf.Out):
-                raise RuntimeError(
-                    f'cannot load the {func_name} function: '
+                raise FunctionLoadError(
+                    func_name,
                     f'return annotation should not be azure.functions.Out')
             if not rpc_types.check_bind_type_matches_py_type(return_type, ra):
-                raise RuntimeError(
-                    f'cannot load the {func_name} function: '
+                raise FunctionLoadError(
+                    func_name,
                     f'Python return annotation "{ra.__name__}" does not match '
                     f'binding type "{return_type}"')
 

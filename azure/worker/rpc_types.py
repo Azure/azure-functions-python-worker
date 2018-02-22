@@ -44,7 +44,8 @@ class Out(azf.Out):
 
 class Context(azf.Context):
 
-    def __init__(self, func_name, func_dir, invocation_id):
+    def __init__(self, func_name: str, func_dir: str,
+                 invocation_id: str) -> None:
         self.__func_name = func_name
         self.__func_dir = func_dir
         self.__invocation_id = invocation_id

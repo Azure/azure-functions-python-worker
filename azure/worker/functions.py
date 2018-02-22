@@ -9,7 +9,7 @@ from . import protos
 
 class FunctionInfo(typing.NamedTuple):
 
-    func: object
+    func: typing.Callable
 
     name: str
     directory: str
@@ -29,7 +29,7 @@ class FunctionLoadError(RuntimeError):
 
 class Registry:
 
-    _functions: typing.Mapping[str, FunctionInfo]
+    _functions: typing.MutableMapping[str, FunctionInfo]
 
     def __init__(self):
         self._functions = {}
@@ -46,7 +46,7 @@ class Registry:
                      metadata: protos.RpcFunctionMetadata):
         func_name = metadata.name
         sig = inspect.signature(func)
-        params = sig.parameters.copy()
+        params = dict(sig.parameters)
 
         output_types = {}
         return_type = None

@@ -56,7 +56,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             max_workers=1)
 
         self._grpc_connect_timeout = grpc_connect_timeout
-        self._grpc_resp_queue = queue.Queue()
+        self._grpc_resp_queue: queue.Queue = queue.Queue()
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
@@ -226,6 +226,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
         current_task = asyncio.Task.current_task(self._loop)
+        assert isinstance(current_task, ContextEnabledTask)
         current_task.set_azure_invocation_id(invocation_id)
 
         try:

@@ -4,6 +4,7 @@
 import importlib
 import importlib.machinery
 import importlib.util
+import os
 import os.path
 import pathlib
 import sys
@@ -14,8 +15,8 @@ _AZURE_NAMESPACE = '__azure__'
 _submodule_dirs = []
 
 
-def register_function_dir(path: str):
-    _submodule_dirs.append(str(path))
+def register_function_dir(path: os.PathLike):
+    _submodule_dirs.append(os.fspath(path))
 
 
 def install():

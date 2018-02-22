@@ -1,18 +1,11 @@
-import unittest
-
 from azure.worker import testutils
 
 
-class TestFunctions(unittest.TestCase):
+class TestHttpFunctions(testutils.WebHostTestCase):
 
     @classmethod
-    def setUpClass(cls):
-        cls.webhost = testutils.start_webhost()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.webhost.close()
-        cls.webhost = None
+    def get_script_dir(cls):
+        return 'http_functions'
 
     def test_return_str(self):
         r = self.webhost.request('GET', 'return_str')

@@ -30,7 +30,8 @@ from . import dispatcher
 from . import protos
 
 
-FUNCS_PATH = pathlib.Path(__file__).parent / 'tests' / 'http_functions'
+TESTS_ROOT = pathlib.Path(__file__).parent / 'tests'
+FUNCS_PATH = TESTS_ROOT / 'http_functions'
 WORKER_PATH = pathlib.Path(__file__).parent.parent.parent
 WORKER_CONFIG = WORKER_PATH / '.testconfig'
 
@@ -55,6 +56,23 @@ class AsyncTestCaseMeta(type(unittest.TestCase)):
 
 class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
     pass
+
+
+class WebHostTestCase(unittest.TestCase):
+
+    @classmethod
+    def get_script_dir(cls):
+        raise NotImplementedError
+
+    @classmethod
+    def setUpClass(cls):
+        script_dir = cls.get_script_dir()
+        cls.webhost = start_webhost(script_dir=script_dir)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.webhost.close()
+        cls.webhost = None
 
 
 class _MockWebHostServicer(protos.FunctionRpcServicer):
@@ -375,25 +393,28 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         stderr=stderr)
 
 
-def start_webhost():
+def start_webhost(*, script_dir=None):
+    if script_dir:
+        script_root = TESTS_ROOT / script_dir
+    else:
+        script_root = FUNCS_PATH
+
+    port = _find_open_port()
     proc = popen_webhost(stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         port=_find_open_port())
+                         script_root=script_root, port=port)
 
-    while True:
-        line = proc.stdout.readline()
-        if b'Now listening on: ' in line:
-            addr = line[len(b'Now listening on: '):]
-            break
-
-    addr = addr.decode('ascii').strip()
+    addr = f'http://127.0.0.1:{port}'
 
     for n in range(10):
-        r = requests.get(addr + '/api/return_str')
-        if r.status_code == 200:
-            break
-        time.sleep(0.5)
+        try:
+            r = requests.get(f'{addr}/api/ping')
+            if 200 <= r.status_code < 300:
+                break
+        except requests.exceptions.ConnectionError:
+            pass
 
-    if r.status_code != 200:
+        time.sleep(0.5)
+    else:
         proc.terminate()
         raise RuntimeError('could not start the webworker')
 

@@ -123,3 +123,83 @@ class TestMockHost(testutils.AsyncTestCase):
                 r.response.result.exception.message,
                 r'.*cannot load the return_param_in function'
                 r'.*"\$return" .* set to "out"')
+
+    async def test_load_broken__invalid_return_anno(self):
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function('invalid_return_anno')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*cannot load the invalid_return_anno function'
+                r'.*Python return annotation "str" does not match '
+                r'binding type "http"')
+
+    async def test_load_broken__invalid_http_trigger_anno(self):
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function('invalid_http_trigger_anno')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*cannot load the invalid_http_trigger_anno function'
+                r'.*type of req binding .* "httpTrigger" '
+                r'does not match its Python annotation "int"')
+
+    async def test_load_broken__invalid_out_anno(self):
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function('invalid_out_anno')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*cannot load the invalid_out_anno function'
+                r'.*type of ret binding .* "bytes" '
+                r'does not match its Python annotation "float"')
+
+    async def test_load_broken__unsupported_bind_type(self):
+        # Test that we won't load a function with a bind type we don't support.
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function('unsupported_bind_type')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*cannot load the unsupported_bind_type function'
+                r'.*unknown type .* "yolo".*')
+
+    async def test_load_broken__unsupported_ret_type(self):
+        # Test that we won't load a function with a bind type we don't support.
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function('unsupported_ret_type')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*cannot load the unsupported_ret_type function'
+                r'.*unknown type .*\$return.* "yolo".*')

@@ -20,6 +20,12 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(r.text, 'Hello World!')
         self.assertTrue(r.headers['content-type'].startswith('text/plain'))
 
+    def test_return_bytes(self):
+        r = self.webhost.request('GET', 'return_bytes')
+        self.assertEqual(r.status_code, 500)
+        self.assertRegex(
+            r.text, r'.*unsupported type .*http.* for Python type .*bytes.*')
+
     def test_return_http(self):
         r = self.webhost.request('GET', 'return_http')
         self.assertEqual(r.status_code, 200)

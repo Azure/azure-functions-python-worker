@@ -267,7 +267,23 @@ class _MockWebHostController:
 
         self._worker_task = loop.create_task(self._worker.dispatch_forever())
 
-        await self._host._connected_fut
+        done, pending = await asyncio.wait(
+            [self._host._connected_fut, self._worker_task],
+            return_when=asyncio.FIRST_COMPLETED)
+
+        try:
+            if self._worker_task in done:
+                self._worker_task.result()
+
+            if self._host._connected_fut not in done:
+                raise RuntimeError('could not start a worker thread')
+        except:
+            try:
+                self._host._close()
+                self._worker.stop()
+            finally:
+                raise
+
         return self._host
 
     async def __aexit__(self, *exc):

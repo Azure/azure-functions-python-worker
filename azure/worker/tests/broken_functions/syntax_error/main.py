@@ -1,2 +1,2 @@
 def main(req):
-    1 /
+    1 /  # noqa

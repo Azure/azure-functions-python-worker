@@ -5,14 +5,11 @@ Implements loading and execution of Python workers.
 
 import asyncio
 import concurrent.futures
-import inspect
 import logging
 import queue
 import threading
-import typing
 import traceback
 
-import azure.functions as azf
 import grpc
 
 from . import functions
@@ -81,6 +78,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                 'there can be only one running dispatcher per process')
 
         self._old_task_factory = self._loop.get_task_factory()
+
+        loader.install()
+
         DispatcherMeta.__current_dispatcher__ = self
         try:
             forever = self._loop.create_future()
@@ -103,6 +103,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                 root_logger.removeHandler(logging_handler)
         finally:
             DispatcherMeta.__current_dispatcher__ = None
+
+            loader.uninstall()
+
             self._loop.set_task_factory(self._old_task_factory)
             self.stop()
 

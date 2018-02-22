@@ -1,0 +1,14 @@
+sudo: false
+
+language: python
+
+python:
+- 3.6
+
+install:
+- pip install -r requirements-dev.txt
+- pip install -e .
+- python setup.py gen_grpc
+
+script:
+- python setup.py test

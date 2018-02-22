@@ -10,7 +10,7 @@ from . import protos
 class FunctionInfo(typing.NamedTuple):
 
     func: object
-    sig: inspect.Signature
+
     name: str
     directory: str
     requires_context: bool
@@ -158,7 +158,6 @@ class Registry:
 
         self._functions[function_id] = FunctionInfo(
             func=func,
-            sig=sig,
             name=func_name,
             directory=metadata.directory,
             output_types=output_types,

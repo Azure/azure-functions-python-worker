@@ -1,14 +1,23 @@
-sudo: false
+dist: trusty
 
-language: python
+language: csharp
+mono: none
+dotnet: 2.1.2
 
-python:
-- 3.6
+env:
+    global:
+        - PYTHON_VERSION=3.6.3
+        - PYAZURE_WEBHOST_DLL="$PWD/downloads/webhost/Microsoft.Azure.WebJobs.Script.WebHost.dll"
+
+cache:
+    directories:
+        - "downloads"
+
+before_install:
+    - .ci/travis_before_install.sh
 
 install:
-- pip install -r requirements-dev.txt
-- pip install -e .
-- python setup.py gen_grpc
+    - .ci/travis_install.sh
 
 script:
-- python setup.py test
+    - .ci/travis_tests.sh

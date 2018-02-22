@@ -140,6 +140,22 @@ class TestMockHost(testutils.AsyncTestCase):
                 r'.*Python return annotation "str" does not match '
                 r'binding type "http"')
 
+    async def test_load_broken__invalid_return_anno_non_type(self):
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function(
+                'invalid_return_anno_non_type')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*cannot load the invalid_return_anno_non_type function: '
+                r'has invalid non-type return annotation 123')
+
     async def test_load_broken__invalid_http_trigger_anno(self):
         async with testutils.start_mockhost(
                 script_root='broken_functions') as host:
@@ -187,6 +203,21 @@ class TestMockHost(testutils.AsyncTestCase):
                 r'.*cannot load the invalid_in_anno function'
                 r'.*type of req binding .* "httpTrigger" '
                 r'does not match its Python annotation "HttpResponse"')
+
+    async def test_load_broken__invalid_in_anno_non_type(self):
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function('invalid_in_anno_non_type')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*cannot load the invalid_in_anno_non_type function: '
+                r'binding req has invalid non-type annotation 123')
 
     async def test_load_broken__unsupported_bind_type(self):
         # Test that we won't load a function with a bind type we don't support.

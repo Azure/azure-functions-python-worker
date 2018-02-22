@@ -102,8 +102,13 @@ class Registry:
         for param in params.values():
             desc = bindings[param.name]
 
-            param_has_anno = (param.annotation is not param.empty and
-                              isinstance(param.annotation, type))
+            param_has_anno = param.annotation is not param.empty
+            if param_has_anno and not isinstance(param.annotation, type):
+                raise FunctionLoadError(
+                    func_name,
+                    f'binding {param.name} has invalid non-type annotation '
+                    f'{param.annotation!r}')
+
             is_param_out = (param_has_anno and
                             issubclass(param.annotation, azf.Out))
             is_binding_out = desc.direction == protos.BindingInfo.out
@@ -149,14 +154,18 @@ class Registry:
                             f'"{param_bind_type}" does not match its Python '
                             f'annotation "{param_py_type.__name__}"')
 
-        if (return_type is not None and
-                sig.return_annotation is not sig.empty and
-                isinstance(sig.return_annotation, type)):
+        if return_type is not None and sig.return_annotation is not sig.empty:
             ra = sig.return_annotation
+            if not isinstance(ra, type):
+                raise FunctionLoadError(
+                    func_name,
+                    f'has invalid non-type return annotation {ra!r}')
+
             if issubclass(ra, azf.Out):
                 raise FunctionLoadError(
                     func_name,
                     f'return annotation should not be azure.functions.Out')
+
             if not rpc_types.check_bind_type_matches_py_type(return_type, ra):
                 raise FunctionLoadError(
                     func_name,

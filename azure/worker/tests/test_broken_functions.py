@@ -172,6 +172,22 @@ class TestMockHost(testutils.AsyncTestCase):
                 r'.*type of ret binding .* "bytes" '
                 r'does not match its Python annotation "float"')
 
+    async def test_load_broken__invalid_in_anno(self):
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function('invalid_in_anno')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*cannot load the invalid_in_anno function'
+                r'.*type of req binding .* "httpTrigger" '
+                r'does not match its Python annotation "HttpResponse"')
+
     async def test_load_broken__unsupported_bind_type(self):
         # Test that we won't load a function with a bind type we don't support.
         async with testutils.start_mockhost(

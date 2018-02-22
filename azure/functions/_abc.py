@@ -34,11 +34,7 @@ class Context(abc.ABC):
         pass
 
 
-class TypedData(abc.ABC):
-    pass
-
-
-class HttpRequest(TypedData):
+class HttpRequest(abc.ABC):
 
     @property
     @abc.abstractmethod
@@ -60,11 +56,11 @@ class HttpRequest(TypedData):
     def params(self) -> typing.Mapping[str, str]:
         pass
 
-    def get_body(self) -> TypedData:
+    def get_body(self) -> bytes:
         pass
 
 
-class HttpResponse(TypedData):
+class HttpResponse(abc.ABC):
 
     @property
     @abc.abstractmethod

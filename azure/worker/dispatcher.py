@@ -15,21 +15,10 @@ import traceback
 import azure.functions as azf
 import grpc
 
+from . import functions
 from . import loader
 from . import protos
 from . import rpc_types
-
-
-class FunctionInfo(typing.NamedTuple):
-
-    func: object
-    sig: inspect.Signature
-    name: str
-    directory: str
-    outputs: typing.Set[str]
-    requires_context: bool
-    is_async: bool
-    has_return: bool
 
 
 class DispatcherMeta(type):
@@ -55,7 +44,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._port = port
         self._request_id = request_id
         self._worker_id = worker_id
-        self._functions = {}
+        self._functions = functions.Registry()
 
         # A thread-pool for synchronous function calls.  We limit
         # the number of threads to 1 so that one Python worker can
@@ -175,99 +164,6 @@ class Dispatcher(metaclass=DispatcherMeta):
             message=f'{type(exc).__name__}: {exc.args[0]}',
             stack_trace=''.join(traceback.format_tb(exc.__traceback__)))
 
-    def _register_function(self, function_id: str, func: callable,
-                           metadata: protos.RpcFunctionMetadata):
-        func_name = metadata.name
-        sig = inspect.signature(func)
-        params = sig.parameters.copy()
-
-        outputs = set()
-        requires_context = False
-
-        bindings = {}
-        return_binding = None
-        for name, desc in metadata.bindings.items():
-            if desc.direction == protos.BindingInfo.inout:
-                raise TypeError(
-                    f'cannot load the {func_name} function: '
-                    f'"inout" bindings are not supported')
-
-            if name == '$return':
-                # TODO:
-                # *  add proper gRPC->Python type reflection;
-                # * convert the type from function.json to a Python type;
-                # * enforce return type of a function call in Python;
-                # * use the return type information to marshal the result into
-                #   a correct gRPC type.
-
-                if desc.direction != protos.BindingInfo.out:
-                    raise TypeError(
-                        f'cannot load the {func_name} function: '
-                        f'"$return" binding must have direction set to "out"')
-
-                return_binding = desc
-            else:
-                bindings[name] = desc
-
-        if 'context' in params and 'context' not in bindings:
-            requires_context = True
-            ctx_param = params.pop('context')
-            if ctx_param.annotation is not ctx_param.empty:
-                if (not isinstance(ctx_param.annotation, type) or
-                        not issubclass(ctx_param.annotation, azf.Context)):
-                    raise TypeError(
-                        f'cannot load the {func_name} function: '
-                        f'the "context" parameter is expected to be of '
-                        f'type azure.functions.Context, got '
-                        f'{ctx_param.annotation!r}')
-
-        if set(params) - set(bindings):
-            raise RuntimeError(
-                f'cannot load the {func_name} function: '
-                f'the following parameters are declared in Python but '
-                f'not in function.json: {set(params) - set(bindings)!r}')
-
-        if set(bindings) - set(params):
-            raise RuntimeError(
-                f'cannot load the {func_name} function: '
-                f'the following parameters are declared in function.json but '
-                f'not in Python: {set(bindings) - set(params)!r}')
-
-        for param in params.values():
-            desc = bindings[param.name]
-
-            param_has_anno = param.annotation is not param.empty
-            is_param_out = (param_has_anno and
-                            issubclass(param.annotation, azf.Out))
-            is_binding_out = desc.direction == protos.BindingInfo.out
-
-            if is_binding_out and param_has_anno and not is_param_out:
-                raise RuntimeError(
-                    f'cannot load the {func_name} function: '
-                    f'binding {param.name} is declared to have the "out" '
-                    f'direction, but its annotation in Python is not '
-                    f'a subclass of azure.functions.Out')
-
-            if not is_binding_out and is_param_out:
-                raise RuntimeError(
-                    f'cannot load the {func_name} function: '
-                    f'binding {param.name} is declared to have the "in" '
-                    f'direction in function.json, but its annotation '
-                    f'is azure.functions.Out in Python')
-
-            if is_binding_out:
-                outputs.add(param.name)
-
-        self._functions[function_id] = FunctionInfo(
-            func=func,
-            sig=sig,
-            name=func_name,
-            directory=metadata.directory,
-            outputs=frozenset(outputs),
-            requires_context=requires_context,
-            is_async=inspect.iscoroutinefunction(func),
-            has_return=return_binding is not None)
-
     async def _dispatch_grpc_request(self, request):
         content_type = request.WhichOneof('content')
         request_handler = getattr(self, f'_handle__{content_type}', None)
@@ -299,7 +195,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 func_request.metadata.directory,
                 func_request.metadata.script_file)
 
-            self._register_function(
+            self._functions.add_function(
                 function_id, func, func_request.metadata)
 
             return protos.StreamingMessage(
@@ -330,11 +226,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         current_task.set_azure_invocation_id(invocation_id)
 
         try:
-            try:
-                fi: FunctionInfo = self._functions[function_id]
-            except KeyError:
-                raise RuntimeError(
-                    f'unknown function id {function_id}') from None
+            fi: functions.FunctionInfo = self._functions.get(function_id)
 
             params = {}
             for pb in invoc_request.input_data:
@@ -344,8 +236,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 params['context'] = rpc_types.Context(
                     fi.name, fi.directory, invocation_id)
 
-            if fi.outputs:
-                for name in fi.outputs:
+            if fi.output_types:
+                for name in fi.output_types:
                     params[name] = rpc_types.Out()
 
             if fi.is_async:
@@ -356,21 +248,26 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self.__run_sync_func, invocation_id, fi.func, params)
 
             output_data = []
-            if fi.outputs:
-                for name in fi.outputs:
-                    rpc_val = rpc_types.to_outgoing_proto(params[name].get())
-                    if rpc_val is None:
+            if fi.output_types:
+                for out_name, out_type in fi.output_types.items():
+                    val = params[name].get()
+                    if val is None:
                         # TODO: is the "Out" parameter optional?
                         # Can "None" be marshaled into protos.TypedData?
                         continue
+
+                    rpc_val = rpc_types.to_outgoing_proto(out_type, val)
+                    assert rpc_val is not None
+
                     output_data.append(
                         protos.ParameterBinding(
                             name=name,
                             data=rpc_val))
 
             return_value = None
-            if fi.has_return:
-                return_value = rpc_types.to_outgoing_proto(call_result)
+            if fi.return_type is not None:
+                return_value = rpc_types.to_outgoing_proto(
+                    fi.return_type, call_result)
 
             return protos.StreamingMessage(
                 request_id=self.request_id,

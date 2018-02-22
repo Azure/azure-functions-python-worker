@@ -14,6 +14,7 @@ import json
 import os
 import queue
 import pathlib
+import socket
 import subprocess
 import sys
 import time
@@ -326,7 +327,14 @@ class _WebHostProxy:
         self._proc.terminate()
 
 
-def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH):
+def _find_open_port():
+    with socket.socket() as s:
+        s.bind(('127.0.0.1', 0))
+        s.listen(1)
+        return s.getsockname()[1]
+
+
+def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
     testconfig = None
     if WORKER_CONFIG.exists():
         testconfig = configparser.ConfigParser()
@@ -346,22 +354,30 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH):
             f'   dll = /path/to/my/Microsoft.Azure.WebJobs.Script.WebHost.dll',
         ]))
 
+    extra_env = {
+        'AzureWebJobsScriptRoot': script_root,
+        'workers:config:path': WORKER_PATH,
+        'workers:python:path': WORKER_PATH / 'python' / 'worker.py',
+        'host:logger:consoleLoggingMode': 'always',
+    }
+
+    if port is not None:
+        extra_env['ASPNETCORE_URLS'] = f'http://*:{port}'
+
     return subprocess.Popen(
         ['dotnet', dll],
         cwd=script_root,
         env={
             **os.environ,
-            'AzureWebJobsScriptRoot': script_root,
-            'workers:config:path': WORKER_PATH,
-            'workers:python:path': WORKER_PATH / 'python' / 'worker.py',
-            'host:logger:consoleLoggingMode': 'always',
+            **extra_env,
         },
         stdout=stdout,
         stderr=stderr)
 
 
 def start_webhost():
-    proc = popen_webhost(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = popen_webhost(stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                         port=_find_open_port())
 
     while True:
         line = proc.stdout.readline()

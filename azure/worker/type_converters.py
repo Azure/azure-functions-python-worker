@@ -1,66 +1,13 @@
-"""Implementation of 'azure.functions' ABCs.
+"""Facilities for marshaling and unmarshaling gRPC objects."""
 
-Also includes internal facilities for marshaling
-and unmarshaling protobuf objects.
-"""
-
-
-import enum
 import typing
 
 import azure.functions as azf
 
 from . import protos
+from . import type_impl
 
-
-class BindType(str, enum.Enum):
-    """Type names that can appear in FunctionLoadRequest/BindingInfo.
-
-    See also the TypedData struct.
-    """
-
-    string = 'string'
-    json = 'json'
-    bytes = 'bytes'
-    stream = 'stream'
-    http = 'http'
-    int = 'int'
-    double = 'double'
-
-    httpTrigger = 'httpTrigger'
-
-
-class Out(azf.Out):
-
-    def __init__(self):
-        self.__value = None
-
-    def set(self, val):
-        self.__value = val
-
-    def get(self):
-        return self.__value
-
-
-class Context(azf.Context):
-
-    def __init__(self, func_name: str, func_dir: str,
-                 invocation_id: str) -> None:
-        self.__func_name = func_name
-        self.__func_dir = func_dir
-        self.__invocation_id = invocation_id
-
-    @property
-    def invocation_id(self) -> str:
-        return self.__invocation_id
-
-    @property
-    def function_name(self) -> str:
-        return self.__func_name
-
-    @property
-    def function_directory(self) -> str:
-        return self.__func_dir
+from .type_impl import BindType
 
 
 def check_bind_type_matches_py_type(
@@ -79,7 +26,9 @@ def check_bind_type_matches_py_type(
         return issubclass(py_type, float)
 
     if bind_type is BindType.http:
-        return issubclass(py_type, azf.HttpResponse)
+        # We support returning 'str' values from http returning functions
+        # as a shortcut for returning `HttpResponse(status_code=200, data)`.
+        return issubclass(py_type, (azf.HttpResponse, str))
 
     if bind_type is BindType.httpTrigger:
         return issubclass(py_type, azf.HttpRequest)
@@ -88,26 +37,64 @@ def check_bind_type_matches_py_type(
         f'bind type {bind_type} does not have a corresponding Python type')
 
 
-def from_incoming_proto(o: protos.TypedData) -> typing.Any:
+def from_incoming_proto(o_type: BindType, o: protos.TypedData) -> typing.Any:
     dt = o.WhichOneof('data')
 
-    if dt is None:
-        return
+    if o_type is BindType.string and dt == 'string':
+        return o.string
 
-    if dt in {'string', 'json', 'bytes', 'stream', 'int', 'double'}:
-        return getattr(o, dt)
+    if o_type is BindType.bytes and dt == 'bytes':
+        return o.bytes
 
-    if dt == 'http':
-        return azf.HttpRequest(
+    if o_type is BindType.httpTrigger and dt == 'http':
+        body_rpc_val = o.http.body
+        body_rpc_type = body_rpc_val.WhichOneof('data')
+
+        body: typing.Any = None
+        if body_rpc_type == 'json':
+            body_type = BindType.json
+        elif body_rpc_type == 'string':
+            body_type = BindType.string
+        elif body_rpc_type == 'bytes':
+            body_type = BindType.bytes
+        elif body_rpc_type is None:
+            # Means an empty HTTP request body -- we don't want
+            # `HttpResponse.get_body()` to return None as it would
+            # make it more complicated to work with than necessary.
+            # Therefore we normalize the body to an empty bytes
+            # object.
+            body_type = BindType.bytes
+            body = ''
+        else:
+            raise TypeError(
+                f'unsupported HTTP body type from the incoming gRPC data: '
+                f'{body_rpc_type}')
+
+        if body is None:
+            # Not yet decoded from `body_rpc_val`.
+            body = from_incoming_proto(body_type, body_rpc_val)
+
+        return type_impl.HttpRequest(
             method=o.http.method,
             url=o.http.url,
             headers=o.http.headers,
             params=o.http.query,
-            body=from_incoming_proto(o.http.body))
+            body_type=body_type,
+            body=body)
+
+    if o_type is BindType.json and dt == 'json':
+        return o.json
+
+    if o_type is BindType.int and dt == 'int':
+        return o.int
+
+    if o_type is BindType.double and dt == 'double':
+        return o.double
 
     raise TypeError(
         f'unable to decode incoming TypedData: '
-        f'unknown type of TypedData.data: {dt!r}')
+        f'unsupported combination of TypedData field {dt!r} '
+        f'and expected Python type {o_type}')
 
 
 def to_outgoing_proto(o_type: BindType, o: typing.Any) -> protos.TypedData:

@@ -56,7 +56,12 @@ class HttpRequest(abc.ABC):
     def params(self) -> typing.Mapping[str, str]:
         pass
 
-    def get_body(self) -> bytes:
+    @abc.abstractmethod
+    def get_body(self) -> typing.Union[str, bytes]:
+        pass
+
+    @abc.abstractmethod
+    def get_json(self) -> typing.Any:
         pass
 
 

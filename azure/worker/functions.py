@@ -3,7 +3,7 @@ import typing
 
 import azure.functions as azf
 
-from . import rpc_types
+from . import type_converters
 from . import protos
 
 
@@ -16,8 +16,9 @@ class FunctionInfo(typing.NamedTuple):
     requires_context: bool
     is_async: bool
 
-    output_types: typing.Mapping[str, rpc_types.BindType]
-    return_type: typing.Optional[rpc_types.BindType]
+    input_types: typing.Mapping[str, type_converters.BindType]
+    output_types: typing.Mapping[str, type_converters.BindType]
+    return_type: typing.Optional[type_converters.BindType]
 
 
 class FunctionLoadError(RuntimeError):
@@ -48,6 +49,7 @@ class Registry:
         sig = inspect.signature(func)
         params = dict(sig.parameters)
 
+        input_types = {}
         output_types = {}
         return_type = None
 
@@ -67,7 +69,7 @@ class Registry:
                         f'"$return" binding must have direction set to "out"')
 
                 try:
-                    return_type = rpc_types.BindType(desc.type)
+                    return_type = type_converters.BindType(desc.type)
                 except ValueError:
                     raise FunctionLoadError(
                         func_name,
@@ -128,7 +130,7 @@ class Registry:
                     f'is azure.functions.Out in Python')
 
             try:
-                param_bind_type = rpc_types.BindType(desc.type)
+                param_bind_type = type_converters.BindType(desc.type)
             except ValueError:
                 raise FunctionLoadError(
                     func_name,
@@ -136,6 +138,8 @@ class Registry:
 
             if is_binding_out:
                 output_types[param.name] = param_bind_type
+            else:
+                input_types[param.name] = param_bind_type
 
             if param_has_anno:
                 if is_param_out:
@@ -146,7 +150,7 @@ class Registry:
                 else:
                     param_py_type = param.annotation
                 if param_py_type:
-                    if not rpc_types.check_bind_type_matches_py_type(
+                    if not type_converters.check_bind_type_matches_py_type(
                             param_bind_type, param_py_type):
                         raise FunctionLoadError(
                             func_name,
@@ -166,7 +170,8 @@ class Registry:
                     func_name,
                     f'return annotation should not be azure.functions.Out')
 
-            if not rpc_types.check_bind_type_matches_py_type(return_type, ra):
+            if not type_converters.check_bind_type_matches_py_type(
+                    return_type, ra):
                 raise FunctionLoadError(
                     func_name,
                     f'Python return annotation "{ra.__name__}" does not match '
@@ -176,6 +181,7 @@ class Registry:
             func=func,
             name=func_name,
             directory=metadata.directory,
+            input_types=input_types,
             output_types=output_types,
             requires_context=requires_context,
             is_async=inspect.iscoroutinefunction(func),

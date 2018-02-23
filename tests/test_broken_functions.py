@@ -163,7 +163,7 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertRegex(
                 r.response.result.exception.message,
                 r'.*cannot load the invalid_return_anno function'
-                r'.*Python return annotation "str" does not match '
+                r'.*Python return annotation "int" does not match '
                 r'binding type "http"')
 
     async def test_load_broken__invalid_return_anno_non_type(self):

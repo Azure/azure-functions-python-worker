@@ -1,2 +1,3 @@
-grpcio
-grpcio-tools
+# Please list runtime dependencies in setup.py 'install_requires' and
+# 'extras_require'.
+.

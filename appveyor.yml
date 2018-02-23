@@ -9,11 +9,9 @@ environment:
 install:
     - ps: .ci\appveyor_download_webhost.ps1
     - "%PYTHON% -m pip install --upgrade pip wheel setuptools"
-    - "%PYTHON% -m pip install --upgrade -r requirements-dev.txt"
 
 build_script:
-    - "%PYTHON% setup.py build"
-    - "%PYTHON% setup.py gen_grpc"
+    - "%PYTHON% -m pip install -U -e .[dev]"
 
 test_script:
     - set PYAZURE_WEBHOST_DLL=%cd%\%PYAZURE_WEBHOST_PATH%\%PYAZURE_WEBHOST_EXECUTABLE% && %PYTHON% .ci\appveyor_setup_worker.py > worker_path && set /p PYAZURE_WORKER_DIR=<worker_path && %PYTHON% setup.py test

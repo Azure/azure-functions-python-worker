@@ -33,23 +33,11 @@ $ cd azure-functions-python-worker
 dll = /MY/LOCAL/PATH/TO/SiteExtensions/Functions/Microsoft.Azure.WebJobs.Script.WebHost.dll
 ```
 
-6. Install requirements for development and testing:
+6. Setup the 'azure' package in your new virtual environment
+   in development mode:
 
 ```shell
-$ pip install -r requirements-dev.txt
-```
-
-7. Install your local 'azure' package in your new virtual environment
-   (so that Python can import the `azure` package):
-
-```shell
-$ pip install -e .
-```
-
-8. Generate GRPC implementation files:
-
-```shell
-$ python setup.py gen_grpc
+$ pip install -U -e .[dev]
 ```
 
 

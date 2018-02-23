@@ -1,5 +1,6 @@
 """Facilities for marshaling and unmarshaling gRPC objects."""
 
+import json
 import typing
 
 import azure.functions as azf
@@ -32,6 +33,9 @@ def check_bind_type_matches_py_type(
 
     if bind_type is BindType.httpTrigger:
         return issubclass(py_type, azf.HttpRequest)
+
+    if bind_type is BindType.timerTrigger:
+        return issubclass(py_type, azf.TimerRequest)
 
     raise TypeError(
         f'bind type {bind_type} does not have a corresponding Python type')
@@ -90,6 +94,11 @@ def from_incoming_proto(o_type: BindType, o: protos.TypedData) -> typing.Any:
 
     if o_type is BindType.double and dt == 'double':
         return o.double
+
+    if o_type is BindType.timerTrigger and dt == 'json':
+        info = json.loads(o.json)
+        return type_impl.TimerRequest(
+            past_due=info.get('IsPastDue', False))
 
     raise TypeError(
         f'unable to decode incoming TypedData: '

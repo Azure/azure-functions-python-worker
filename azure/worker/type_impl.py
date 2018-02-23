@@ -18,7 +18,6 @@ class BindType(str, enum.Enum):
     string = 'string'
     json = 'json'
     bytes = 'bytes'
-    stream = 'stream'
     http = 'http'
     int = 'int'
     double = 'double'
@@ -98,3 +97,13 @@ class HttpRequest(azf_abc.HttpRequest):
         if self.__body_type is BindType.json:
             return json.loads(self.__body)
         raise ValueError('HTTP request does not have JSON data attached')
+
+
+class TimerRequest(azf_abc.TimerRequest):
+
+    def __init__(self, *, past_due: bool) -> None:
+        self.__past_due = past_due
+
+    @property
+    def past_due(self):
+        return self.__past_due

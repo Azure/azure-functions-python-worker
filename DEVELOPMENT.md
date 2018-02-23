@@ -25,15 +25,31 @@ $ source worker_env/bin/activate
 $ cd azure-functions-python-worker
 ```
 
-5. Create a `.testconfig` file with the following contents (don't forget
-   to change `/MY/LOCAL/PATH/TO` to a real path on your machine):
+5. Download WebHost binaries:
+
+```shell
+$ python setup.py webhost
+```
+
+or download/build manually and then specify the full path to
+`Microsoft.Azure.WebJobs.Script.WebHost.dll` either in the
+`PYAZURE_WEBHOST_PATH` environment variable, or in the `.testconfig`
+configuration file:
 
 ```
 [webhost]
-dll = /MY/LOCAL/PATH/TO/SiteExtensions/Functions/Microsoft.Azure.WebJobs.Script.WebHost.dll
+dll = <path to Microsoft.Azure.WebJobs.Script.WebHost.dll>
 ```
 
-6. Setup the 'azure' package in your new virtual environment
+6. Create a test function app, obtain the `AzureWebJobsStorage` key and
+put it into `.testconfig`:
+
+```
+[azure]
+storage_key = <AzureWebJobsStorage variable>
+```
+
+7. Setup the 'azure' package in your new virtual environment
    in development mode:
 
 ```shell

@@ -342,12 +342,13 @@ class _WebHostProxy:
         return request_method(self._addr + '/api/' + funcname, *args, **kwargs)
 
     def close(self):
-        try:
+        if self._proc.stdout:
             self._proc.stdout.close()
+        if self._proc.stderr:
             self._proc.stderr.close()
-        finally:
-            self._proc.terminate()
-            self._proc.wait()
+
+        self._proc.terminate()
+        self._proc.wait()
 
 
 def _find_open_port():
@@ -397,6 +398,11 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         'host:logger:consoleLoggingMode': 'always',
     }
 
+    if testconfig and 'azure' in testconfig:
+        st = testconfig['azure'].get('storage_key')
+        if st:
+            extra_env['AzureWebJobsStorage'] = st
+
     if port is not None:
         extra_env['ASPNETCORE_URLS'] = f'http://*:{port}'
 
@@ -418,7 +424,7 @@ def start_webhost(*, script_dir=None):
         script_root = FUNCS_PATH
 
     port = _find_open_port()
-    proc = popen_webhost(stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    proc = popen_webhost(stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                          script_root=script_root, port=port)
 
     addr = f'http://127.0.0.1:{port}'

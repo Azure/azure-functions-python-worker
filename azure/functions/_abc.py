@@ -80,3 +80,11 @@ class HttpResponse(abc.ABC):
     @abc.abstractmethod
     def get_body(self) -> bytes:
         pass
+
+
+class TimerRequest(abc.ABC):
+
+    @property
+    @abc.abstractmethod
+    def past_due(self) -> bool:
+        pass

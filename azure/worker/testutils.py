@@ -30,7 +30,10 @@ from . import dispatcher
 from . import protos
 
 
-TESTS_ROOT = pathlib.Path(__file__).parent.parent.parent / 'tests'
+PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
+TESTS_ROOT = PROJECT_ROOT / 'tests'
+DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / \
+    'Microsoft.Azure.WebJobs.Script.WebHost.dll'
 FUNCS_PATH = TESTS_ROOT / 'http_functions'
 WORKER_PATH = pathlib.Path(__file__).parent.parent.parent
 WORKER_CONFIG = WORKER_PATH / '.testconfig'
@@ -365,20 +368,34 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         testconfig.read(WORKER_CONFIG)
 
     dll = os.environ.get('PYAZURE_WEBHOST_DLL')
-    if not dll and testconfig:
+    if not dll and testconfig and testconfig.has_section('webhost'):
         dll = testconfig['webhost'].get('dll')
+
+    if dll:
+        # Paths from environment might contain trailing or leading whitespace.
+        dll = dll.strip()
+
+    if not dll:
+        dll = DEFAULT_WEBHOST_DLL_PATH
 
     if not dll or not pathlib.Path(dll).exists():
         raise RuntimeError('\n'.join([
-            f'Unable to locate "WebHost.dll". Please do one of the following:',
-            f' * set PYAZURE_WEBHOST_DLL environment variable to WebHost.dll;',
-            f' * create {WORKER_CONFIG} file in with the following structure:',
-            f'   [webhost]',
-            f'   dll = /path/to/my/Microsoft.Azure.WebJobs.Script.WebHost.dll',
+            f'Unable to locate Azure Functions Host binary.',
+            f'Please do one of the following:',
+            f' * run the following command from the root folder of the',
+            f'   project:',
+            f'',
+            f'       $ {sys.executable} setup.py webhost',
+            f'',
+            f' * or download or build the Azure Functions Host and then write',
+            f'   the full path to WebHost.dll into the `PYAZURE_WEBHOST_DLL`',
+            f'   environment variable.  Alternatively, you can create the',
+            f'   {WORKER_CONFIG.name} file in the root folder of the project',
+            f'   with the following structure:',
+            f'',
+            f'       [webhost]',
+            f'       dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
         ]))
-
-    # Paths from environment might contain trailing or leading whitespace.
-    dll = dll.strip()
 
     worker_path = os.environ.get('PYAZURE_WORKER_DIR')
     if not worker_path:
@@ -407,7 +424,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         extra_env['ASPNETCORE_URLS'] = f'http://*:{port}'
 
     return subprocess.Popen(
-        ['dotnet', dll],
+        ['dotnet', str(dll)],
         cwd=script_root,
         env={
             **os.environ,

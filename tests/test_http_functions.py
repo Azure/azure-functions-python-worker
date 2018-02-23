@@ -78,7 +78,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'GET')
 
-    def test_get_method_request(self):
+    def test_return_request(self):
         r = self.webhost.request(
             'GET', 'return_request',
             params={'a': 1, 'b': ':%)'},
@@ -94,7 +94,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
         self.assertIn('return_request', req['url'])
 
-    def test_post_method_request(self):
+    def test_post_return_request(self):
         r = self.webhost.request(
             'POST', 'return_request',
             params={'a': 1, 'b': ':%)'},
@@ -112,6 +112,18 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('return_request', req['url'])
 
         self.assertEqual(req['get_body'], 'key=value')
+
+    def test_accept_json(self):
+        r = self.webhost.request(
+            'POST', 'accept_json',
+            json={'a': 'abc', 'd': 42})
+
+        req = r.json()
+
+        self.assertEqual(req['method'], 'POST')
+        self.assertEqual(req['get_json'], {'a': 'abc', 'd': 42})
+
+        self.assertIn('accept_json', req['url'])
 
     def test_unhandled_error(self):
         r = self.webhost.request('GET', 'unhandled_error')

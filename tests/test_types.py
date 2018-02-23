@@ -1,16 +1,18 @@
 import unittest
 
 import azure.functions as azf
+import azure.worker.type_impl as azw
 
 
 class TestFunctions(unittest.TestCase):
 
     def test_http_request(self):
-        r = azf.HttpRequest(
+        r = azw.HttpRequest(
             'get',
             'http://example.com/abc?a=1',
             headers=dict(aaa='zzz', bAb='xYz'),
             params=dict(a='b'),
+            body_type=azw.BindType.bytes,
             body=b'abc')
 
         self.assertEqual(r.method, 'GET')

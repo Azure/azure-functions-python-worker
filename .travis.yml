@@ -18,6 +18,7 @@ env:
         - PYAZURE_WEBHOST_DLL="$PWD/downloads/webhost/Microsoft.Azure.WebJobs.Script.WebHost.dll"
 
 cache:
+    pip: true
     directories:
         - "downloads"
 

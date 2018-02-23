@@ -1,12 +1,12 @@
 dist: trusty
+sudo: required
 
-language: csharp
-mono: none
-dotnet: 2.1.2
+language: python
+python:
+    - 3.6
 
 env:
     global:
-        - PYTHON_VERSION=3.6.3
         - PYAZURE_WEBHOST_DLL="$PWD/downloads/webhost/Microsoft.Azure.WebJobs.Script.WebHost.dll"
 
 cache:

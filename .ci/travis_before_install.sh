@@ -2,13 +2,9 @@
 
 set -e -x
 
-git clone --depth 1 https://github.com/yyuu/pyenv.git ~/.pyenv
-PYENV_ROOT="$HOME/.pyenv"
-PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
+sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-trusty-prod trusty main" > /etc/apt/sources.list.d/dotnetdev.list'
+sudo apt-get update
 
-if ! (pyenv versions | grep "${PYTHON_VERSION}$"); then
-    pyenv install ${PYTHON_VERSION}
-fi
-pyenv global ${PYTHON_VERSION}
-pyenv rehash
+sudo apt-get install dotnet-sdk-2.1.4 -y --allow-unauthenticated
+
+dotnet --version

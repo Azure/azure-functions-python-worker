@@ -13,14 +13,8 @@ addons:
         packages:
             - dotnet-sdk-2.1.4
 
-env:
-    global:
-        - PYAZURE_WEBHOST_DLL="$PWD/downloads/webhost/Microsoft.Azure.WebJobs.Script.WebHost.dll"
-
 cache:
     pip: true
-    directories:
-        - "downloads"
 
 install:
     - .ci/travis_install.sh

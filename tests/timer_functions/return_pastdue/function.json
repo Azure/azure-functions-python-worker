@@ -1,0 +1,19 @@
+{
+  "scriptFile": "main.py",
+  "disabled": false,
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "timerTrigger",
+      "direction": "in",
+      "name": "timer",
+      "schedule": "*/5 * * * * *"
+    },
+    {
+      "direction": "out",
+      "name": "pastdue",
+      "type": "int"
+    }
+  ]
+}
+

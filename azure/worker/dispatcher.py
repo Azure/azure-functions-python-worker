@@ -15,7 +15,8 @@ import grpc
 from . import functions
 from . import loader
 from . import protos
-from . import rpc_types
+from . import type_converters
+from . import type_impl
 
 
 class DispatcherMeta(type):
@@ -234,15 +235,17 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             params = {}
             for pb in invoc_request.input_data:
-                params[pb.name] = rpc_types.from_incoming_proto(pb.data)
+                pb_type = fi.input_types[pb.name]
+                params[pb.name] = type_converters.from_incoming_proto(
+                    pb_type, pb.data)
 
             if fi.requires_context:
-                params['context'] = rpc_types.Context(
+                params['context'] = type_impl.Context(
                     fi.name, fi.directory, invocation_id)
 
             if fi.output_types:
                 for name in fi.output_types:
-                    params[name] = rpc_types.Out()
+                    params[name] = type_impl.Out()
 
             if fi.is_async:
                 call_result = await fi.func(**params)
@@ -260,7 +263,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         # Can "None" be marshaled into protos.TypedData?
                         continue
 
-                    rpc_val = rpc_types.to_outgoing_proto(out_type, val)
+                    rpc_val = type_converters.to_outgoing_proto(out_type, val)
                     assert rpc_val is not None
 
                     output_data.append(
@@ -270,7 +273,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             return_value = None
             if fi.return_type is not None:
-                return_value = rpc_types.to_outgoing_proto(
+                return_value = type_converters.to_outgoing_proto(
                     fi.return_type, call_result)
 
             return protos.StreamingMessage(

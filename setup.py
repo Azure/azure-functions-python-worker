@@ -1,26 +1,19 @@
-import distutils.cmd
 import os
 import subprocess
 import sys
+from distutils.command import build
 
 from setuptools import setup
+from setuptools.command import develop
 
 
-class GenGrpcCommand(distutils.cmd.Command):
-    description = 'Generate GRPC Python bindings.'
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
+class BuildGRPC:
+    """Generate gRPC bindings."""
+    def _gen_grpc(self):
         cwd = os.getcwd()
 
         subprocess.run([
-            'python', '-m', 'grpc_tools.protoc',
+            sys.executable, '-m', 'grpc_tools.protoc',
             '-I', os.sep.join(('azure', 'worker', 'protos')),
             '--python_out', cwd,
             '--grpc_python_out', cwd,
@@ -28,6 +21,18 @@ class GenGrpcCommand(distutils.cmd.Command):
                          'azure', 'worker', 'protos',
                          'FunctionRpc.proto')),
         ], check=True, stdout=sys.stdout, stderr=sys.stderr)
+
+
+class build(build.build, BuildGRPC):
+    def run(self, *args, **kwargs):
+        self._gen_grpc()
+        super().run(*args, **kwargs)
+
+
+class develop(develop.develop, BuildGRPC):
+    def run(self, *args, **kwargs):
+        self._gen_grpc()
+        super().run(*args, **kwargs)
 
 
 setup(
@@ -45,11 +50,25 @@ setup(
         'Development Status :: 3 - Alpha',
     ],
     license='MIT',
-    packages=['azure', 'azure.worker', 'azure.functions'],
+    packages=['azure', 'azure.functions',
+              'azure.worker', 'azure.worker.protos'],
     provides=['azure'],
+    install_requires=[
+        'grpcio',
+        'grpcio-tools',
+    ],
+    extras_require={
+        'dev': [
+            'pytest',
+            'requests',
+            'mypy',
+            'flake8',
+        ]
+    },
     include_package_data=True,
     cmdclass={
-        'gen_grpc': GenGrpcCommand
+        'build': build,
+        'develop': develop
     },
     test_suite='tests'
 )

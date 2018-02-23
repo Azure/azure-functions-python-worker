@@ -1,11 +1,10 @@
-import os.path
+import pathlib
 import subprocess
 import sys
 import unittest
 
 
-ROOT_PATH = os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.dirname(__file__))))
+ROOT_PATH = pathlib.Path(__file__).parent.parent
 
 
 class TestCodeQuality(unittest.TestCase):
@@ -21,7 +20,7 @@ class TestCodeQuality(unittest.TestCase):
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                cwd=ROOT_PATH)
+                cwd=str(ROOT_PATH))
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode()
             raise AssertionError(
@@ -33,17 +32,17 @@ class TestCodeQuality(unittest.TestCase):
         except ImportError:
             raise unittest.SkipTest('flake8 moudule is missing')
 
-        config_path = os.path.join(ROOT_PATH, '.flake8')
-        if not os.path.exists(config_path):
+        config_path = ROOT_PATH / '.flake8'
+        if not config_path.exists():
             raise unittest.SkipTest('could not locate the .flake8 file')
 
         try:
             subprocess.run(
-                [sys.executable, '-m', 'flake8', '--config', config_path],
+                [sys.executable, '-m', 'flake8', '--config', str(config_path)],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                cwd=ROOT_PATH)
+                cwd=str(ROOT_PATH))
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode()
             raise AssertionError(

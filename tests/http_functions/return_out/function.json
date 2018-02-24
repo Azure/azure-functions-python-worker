@@ -11,12 +11,7 @@
     {
       "direction": "out",
       "name": "foo",
-      "type": "int"
-    },
-    {
-      "type": "http",
-      "direction": "out",
-      "name": "$return"
+      "type": "http"
     }
   ]
 }

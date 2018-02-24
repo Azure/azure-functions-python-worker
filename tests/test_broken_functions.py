@@ -211,8 +211,8 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertRegex(
                 r.response.result.exception.message,
                 r'.*cannot load the invalid_out_anno function'
-                r'.*type of ret binding .* "bytes" '
-                r'does not match its Python annotation "float"')
+                r'.*type of ret binding .* "http" '
+                r'does not match its Python annotation "HttpRequest"')
 
     async def test_load_broken__invalid_in_anno(self):
         async with testutils.start_mockhost(

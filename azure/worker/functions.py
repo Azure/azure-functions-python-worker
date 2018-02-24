@@ -3,7 +3,7 @@ import typing
 
 import azure.functions as azf
 
-from . import type_converters
+from . import type_meta
 from . import protos
 
 
@@ -16,9 +16,9 @@ class FunctionInfo(typing.NamedTuple):
     requires_context: bool
     is_async: bool
 
-    input_types: typing.Mapping[str, type_converters.BindType]
-    output_types: typing.Mapping[str, type_converters.BindType]
-    return_type: typing.Optional[type_converters.BindType]
+    input_types: typing.Mapping[str, type_meta.Binding]
+    output_types: typing.Mapping[str, type_meta.Binding]
+    return_type: typing.Optional[type_meta.Binding]
 
 
 class FunctionLoadError(RuntimeError):
@@ -69,7 +69,7 @@ class Registry:
                         f'"$return" binding must have direction set to "out"')
 
                 try:
-                    return_type = type_converters.BindType(desc.type)
+                    return_type = type_meta.Binding(desc.type)
                 except ValueError:
                     raise FunctionLoadError(
                         func_name,
@@ -130,7 +130,7 @@ class Registry:
                     f'is azure.functions.Out in Python')
 
             try:
-                param_bind_type = type_converters.BindType(desc.type)
+                param_bind_type = type_meta.Binding(desc.type)
             except ValueError:
                 raise FunctionLoadError(
                     func_name,
@@ -150,7 +150,7 @@ class Registry:
                 else:
                     param_py_type = param.annotation
                 if param_py_type:
-                    if not type_converters.check_bind_type_matches_py_type(
+                    if not type_meta.check_bind_type_matches_py_type(
                             param_bind_type, param_py_type):
                         raise FunctionLoadError(
                             func_name,
@@ -170,7 +170,7 @@ class Registry:
                     func_name,
                     f'return annotation should not be azure.functions.Out')
 
-            if not type_converters.check_bind_type_matches_py_type(
+            if not type_meta.check_bind_type_matches_py_type(
                     return_type, ra):
                 raise FunctionLoadError(
                     func_name,

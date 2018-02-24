@@ -1,6 +1,5 @@
 import azure.functions as azf
 
 
-def main(req: azf.HttpRequest, foo: azf.Out[int]):
-    foo.set(42)
-    return 'wat'
+def main(req: azf.HttpRequest, foo: azf.Out[azf.HttpResponse]):
+    foo.set(azf.HttpResponse(body='hello', status_code=201))

@@ -32,7 +32,7 @@ class TestTimerFunctions(testutils.AsyncTestCase):
                     list(r.response.output_data), [
                         protos.ParameterBinding(
                             name='pastdue',
-                            data=protos.TypedData(int=int(due)))
+                            data=protos.TypedData(string=str(due)))
                     ])
 
             await call_and_check(True)

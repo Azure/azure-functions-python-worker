@@ -9,21 +9,15 @@ from azure.functions import _abc as azf_abc
 from azure.functions import _http as azf_http
 
 
-class BindType(str, enum.Enum):
-    """Type names that can appear in FunctionLoadRequest/BindingInfo.
+class TypedDataKind(enum.Enum):
 
-    See also the TypedData struct.
-    """
-
-    string = 'string'
-    json = 'json'
-    bytes = 'bytes'
-    http = 'http'
-    int = 'int'
-    double = 'double'
-
-    httpTrigger = 'httpTrigger'
-    timerTrigger = 'timerTrigger'
+    json = 1
+    string = 2
+    bytes = 3
+    int = 4
+    double = 5
+    http = 6
+    stream = 7
 
 
 class Out(azf_abc.Out):
@@ -65,7 +59,7 @@ class HttpRequest(azf_abc.HttpRequest):
     def __init__(self, method: str, url: str,
                  headers: typing.Mapping[str, str],
                  params: typing.Mapping[str, str],
-                 body_type: BindType,
+                 body_type: TypedDataKind,
                  body: typing.Union[str, bytes]) -> None:
         self.__method = method
         self.__url = url
@@ -94,7 +88,7 @@ class HttpRequest(azf_abc.HttpRequest):
         return self.__body
 
     def get_json(self) -> typing.Any:
-        if self.__body_type is BindType.json:
+        if self.__body_type is TypedDataKind.json:
             return json.loads(self.__body)
         raise ValueError('HTTP request does not have JSON data attached')
 

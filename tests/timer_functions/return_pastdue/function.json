@@ -12,7 +12,7 @@
     {
       "direction": "out",
       "name": "pastdue",
-      "type": "int"
+      "type": "http"
     }
   ]
 }

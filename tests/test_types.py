@@ -1,18 +1,18 @@
 import unittest
 
-import azure.functions as azf
-import azure.worker.type_impl as azw
+from azure import functions as azf
+from azure.worker import type_impl
 
 
 class TestFunctions(unittest.TestCase):
 
-    def test_http_request(self):
-        r = azw.HttpRequest(
+    def test_http_request_bytes(self):
+        r = type_impl.HttpRequest(
             'get',
             'http://example.com/abc?a=1',
             headers=dict(aaa='zzz', bAb='xYz'),
             params=dict(a='b'),
-            body_type=azw.BindType.bytes,
+            body_type=type_impl.TypedDataKind.bytes,
             body=b'abc')
 
         self.assertEqual(r.method, 'GET')
@@ -23,6 +23,9 @@ class TestFunctions(unittest.TestCase):
             r.params['a'] = 'z'
 
         self.assertEqual(r.get_body(), b'abc')
+
+        with self.assertRaisesRegex(ValueError, 'does not have JSON'):
+            r.get_json()
 
         h = r.headers
         with self.assertRaises(AttributeError):
@@ -36,6 +39,22 @@ class TestFunctions(unittest.TestCase):
         # test that request headers are read-only
         with self.assertRaises(TypeError):
             h['zzz'] = '123'
+
+    def test_http_request_json(self):
+        r = type_impl.HttpRequest(
+            'POST',
+            'http://example.com/abc?a=1',
+            headers={},
+            params={},
+            body_type=type_impl.TypedDataKind.json,
+            body='{"a":1}')
+
+        self.assertEqual(r.method, 'POST')
+        self.assertEqual(r.url, 'http://example.com/abc?a=1')
+        self.assertEqual(r.params, {})
+
+        self.assertEqual(r.get_body(), '{"a":1}')
+        self.assertEqual(r.get_json(), {'a': 1})
 
     def test_http_response(self):
         r = azf.HttpResponse(

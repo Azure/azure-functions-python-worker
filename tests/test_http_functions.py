@@ -13,6 +13,12 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.text, 'Hello World!')
         self.assertTrue(r.headers['content-type'].startswith('text/plain'))
 
+    def test_return_out(self):
+        r = self.webhost.request('GET', 'return_out')
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.text, 'hello')
+        self.assertTrue(r.headers['content-type'].startswith('text/plain'))
+
     def test_return_bytes(self):
         r = self.webhost.request('GET', 'return_bytes')
         self.assertEqual(r.status_code, 500)

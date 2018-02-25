@@ -54,31 +54,6 @@ class TestMockHost(testutils.AsyncTestCase):
 
             self.assertEqual(r.response.return_value.string, 'OK-async')
 
-    async def test_call_function_out_int_param(self):
-        async with testutils.start_mockhost() as host:
-            await host.load_function('return_out')
-
-            invoke_id, r = await host.invoke_function(
-                'return_out', [
-                    protos.ParameterBinding(
-                        name='req',
-                        data=protos.TypedData(
-                            http=protos.RpcHttp(
-                                method='GET')))
-                ])
-
-            self.assertEqual(r.response.result.status,
-                             protos.StatusResult.Success)
-
-            self.assertEqual(r.response.return_value.string, 'wat')
-
-            self.assertEqual(
-                list(r.response.output_data), [
-                    protos.ParameterBinding(
-                        name='foo',
-                        data=protos.TypedData(int=42))
-                ])
-
     async def test_handles_unsupported_messages_gracefully(self):
         async with testutils.start_mockhost() as host:
             # Intentionally send a message to worker that isn't

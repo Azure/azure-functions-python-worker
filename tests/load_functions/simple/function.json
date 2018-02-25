@@ -9,7 +9,7 @@
       "name": "req"
     },
     {
-      "type": "string",
+      "type": "http",
       "direction": "out",
       "name": "$return"
     }

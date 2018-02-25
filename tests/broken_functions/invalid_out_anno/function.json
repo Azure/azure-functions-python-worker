@@ -9,7 +9,7 @@
       "name": "req"
     },
     {
-      "type": "bytes",
+      "type": "http",
       "direction": "out",
       "name": "ret"
     }

@@ -440,8 +440,13 @@ def start_webhost(*, script_dir=None):
     else:
         script_root = FUNCS_PATH
 
+    if os.environ.get('PYAZURE_WEBHOST_DEBUG'):
+        stdout = sys.stdout
+    else:
+        stdout = subprocess.DEVNULL
+
     port = _find_open_port()
-    proc = popen_webhost(stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    proc = popen_webhost(stdout=stdout, stderr=subprocess.STDOUT,
                          script_root=script_root, port=port)
 
     addr = f'http://127.0.0.1:{port}'

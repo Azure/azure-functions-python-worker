@@ -1,4 +1,5 @@
 import abc
+import datetime
 import io
 import typing
 
@@ -95,4 +96,45 @@ class InputStream(io.BufferedIOBase, abc.ABC):
 
     @abc.abstractmethod
     def read(self, size=-1) -> bytes:
+        pass
+
+
+class QueueMessage(abc.ABC):
+
+    @property
+    @abc.abstractmethod
+    def id(self) -> typing.Optional[str]:
+        pass
+
+    @abc.abstractmethod
+    def get_body(self) -> typing.Union[str, bytes]:
+        pass
+
+    @abc.abstractmethod
+    def get_json(self) -> typing.Any:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def dequeue_count(self) -> typing.Optional[int]:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def expiration_time(self) -> typing.Optional[datetime.datetime]:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def insertion_time(self) -> typing.Optional[datetime.datetime]:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def next_visible_time(self) -> typing.Optional[datetime.datetime]:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def pop_receipt(self) -> typing.Optional[str]:
         pass

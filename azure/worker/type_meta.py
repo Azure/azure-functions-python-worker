@@ -1,5 +1,6 @@
 import abc
 import enum
+import json
 import typing
 
 from . import protos
@@ -13,6 +14,11 @@ class Binding(str, enum.Enum):
     http = 'http'
     httpTrigger = 'httpTrigger'
     timerTrigger = 'timerTrigger'
+    queue = 'queue'
+    queueTrigger = 'queueTrigger'
+
+    def is_trigger(self):
+        return self.endswith('Trigger')
 
 
 class _ConverterMeta(abc.ABCMeta):
@@ -50,11 +56,31 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
     def check_python_type(cls, pytype: type) -> bool:
         pass
 
+    @classmethod
+    def _decode_scalar_typed_data(
+            cls, data: typing.Optional[protos.TypedData]) -> typing.Any:
+        if data is None:
+            return None
+
+        data_type = data.WhichOneof('data')
+        if data_type == 'json':
+            result = json.loads(data.json)
+        elif data_type == 'string':
+            result = data.string
+        elif data_type == 'bytes':
+            result = data.bytes
+        else:
+            raise NotImplementedError(
+                f'unsupported type of field in trigger metadata: {data_type}')
+
+        return result
+
 
 class InConverter(_BaseConverter, binding=None):
 
     @abc.abstractclassmethod
-    def from_proto(cls, data: protos.TypedData) -> typing.Any:
+    def from_proto(cls, data: protos.TypedData,
+                   trigger_metadata) -> typing.Any:
         pass
 
 
@@ -78,7 +104,10 @@ def check_bind_type_matches_py_type(
     return checker(pytype)
 
 
-def from_incoming_proto(binding: Binding, val: protos.TypedData) -> typing.Any:
+def from_incoming_proto(
+        binding: Binding, val: protos.TypedData,
+        trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]])\
+        -> typing.Any:
     converter = _ConverterMeta._from_proto.get(binding)
 
     try:
@@ -87,7 +116,7 @@ def from_incoming_proto(binding: Binding, val: protos.TypedData) -> typing.Any:
         except KeyError:
             raise NotImplementedError
         else:
-            return converter(val)
+            return converter(val, trigger_metadata)
     except NotImplementedError:
         # Either there's no converter or a converter has failed.
         dt = val.WhichOneof('data')

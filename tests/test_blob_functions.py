@@ -12,7 +12,7 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
 
-        r = self.webhost.request('GET', 'get_blob_str', params={'file': ''})
+        r = self.webhost.request('GET', 'get_blob_str')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data')
 

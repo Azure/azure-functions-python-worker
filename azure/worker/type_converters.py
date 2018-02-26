@@ -107,3 +107,46 @@ class TimerRequestConverter(type_meta.InConverter,
         info = json.loads(data.json)
         return type_impl.TimerRequest(
             past_due=info.get('IsPastDue', False))
+
+
+class BlobConverter(type_meta.InConverter,
+                    type_meta.OutConverter,
+                    binding=type_meta.Binding.blob):
+
+    @classmethod
+    def check_python_type(cls, pytype: type) -> bool:
+        return (issubclass(pytype, (str, bytes, bytearray,
+                                    azf.InputStream) or
+                callable(getattr(pytype, 'read', None))))
+
+    @classmethod
+    def to_proto(cls, obj: typing.Any) -> protos.TypedData:
+        if callable(getattr(obj, 'read', None)):
+            # file-like object
+            obj = obj.read()
+
+        if isinstance(obj, str):
+            return protos.TypedData(string=obj)
+
+        elif isinstance(obj, (bytes, bytearray)):
+            return protos.TypedData(bytes=bytes(obj))
+
+        else:
+            raise NotImplementedError
+
+    @classmethod
+    def from_proto(cls, data: protos.TypedData) -> typing.Any:
+        data_type = data.WhichOneof('data')
+        if data_type == 'string':
+            data = data.string.encode('utf-8')
+        elif data_type == 'bytes':
+            data = data.bytes
+        else:
+            raise NotImplementedError
+
+        return type_impl.InputStream(data=data)
+
+
+class BlobTriggerConverter(BlobConverter,
+                           binding=type_meta.Binding.blobTrigger):
+    pass

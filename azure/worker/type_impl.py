@@ -2,6 +2,7 @@
 
 import enum
 import json
+import io
 import types
 import typing
 
@@ -101,3 +102,23 @@ class TimerRequest(azf_abc.TimerRequest):
     @property
     def past_due(self):
         return self.__past_due
+
+
+class InputStream(azf_abc.InputStream):
+    def __init__(self, *, data: bytes) -> None:
+        self._io = io.BytesIO(data)
+
+    def read(self, size=-1) -> bytes:
+        return self._io.read(size)
+
+    def read1(self, size=-1) -> bytes:
+        return self._io.read(size)
+
+    def readable(self) -> bool:
+        return True
+
+    def seekable(self) -> bool:
+        return False
+
+    def writable(self) -> bool:
+        return False

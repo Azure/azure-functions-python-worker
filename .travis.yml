@@ -1,6 +1,7 @@
 dist: trusty
 
 language: python
+
 python:
     - 3.6
 

@@ -1,0 +1,19 @@
+{
+  "scriptFile": "main.py",
+  "disabled": false,
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req"
+    },
+    {
+      "type": "blob",
+      "direction": "out",
+      "name": "$return",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/test-return.txt"
+    }
+  ]
+}

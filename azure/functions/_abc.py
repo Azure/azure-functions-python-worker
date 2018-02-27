@@ -1,4 +1,5 @@
 import abc
+import io
 import typing
 
 
@@ -87,4 +88,15 @@ class TimerRequest(abc.ABC):
     @property
     @abc.abstractmethod
     def past_due(self) -> bool:
+        pass
+
+
+class InputStream(io.BufferedIOBase, abc.ABC):
+
+    @abc.abstractmethod
+    def read(self, size=-1) -> bytes:
+        pass
+
+    @abc.abstractmethod
+    def read1(self, size=-1) -> bytes:
         pass

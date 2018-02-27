@@ -8,6 +8,8 @@ from . import protos
 class Binding(str, enum.Enum):
     """Supported binding types."""
 
+    blob = 'blob'
+    blobTrigger = 'blobTrigger'
     http = 'http'
     httpTrigger = 'httpTrigger'
     timerTrigger = 'timerTrigger'

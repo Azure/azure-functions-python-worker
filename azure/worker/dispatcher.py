@@ -236,8 +236,12 @@ class Dispatcher(metaclass=DispatcherMeta):
             params = {}
             for pb in invoc_request.input_data:
                 pb_type = fi.input_types[pb.name]
+                if pb_type.is_trigger():
+                    trigger_metadata = invoc_request.trigger_metadata
+                else:
+                    trigger_metadata = None
                 params[pb.name] = type_meta.from_incoming_proto(
-                    pb_type, pb.data)
+                    pb_type, pb.data, trigger_metadata)
 
             if fi.requires_context:
                 params['context'] = type_impl.Context(

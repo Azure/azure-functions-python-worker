@@ -8,6 +8,7 @@ import typing
 
 from azure.functions import _abc as azf_abc
 from azure.functions import _http as azf_http
+from azure.functions import _queue as azf_queue
 
 
 class TypedDataKind(enum.Enum):
@@ -119,3 +120,45 @@ class InputStream(azf_abc.InputStream):
 
     def writable(self) -> bool:
         return False
+
+
+class QueueMessage(azf_queue.QueueMessage):
+    """An HTTP response object."""
+
+    def __init__(self, *,
+                 id=None, body=None,
+                 dequeue_count=None,
+                 expiration_time=None,
+                 insertion_time=None,
+                 next_visible_time=None,
+                 pop_receipt=None):
+        super().__init__(id=id, body=body, pop_receipt=pop_receipt)
+        self.__dequeue_count = dequeue_count
+        self.__expiration_time = expiration_time
+        self.__insertion_time = insertion_time
+        self.__next_visible_time = next_visible_time
+
+    @property
+    def dequeue_count(self):
+        return self.__dequeue_count
+
+    @property
+    def expiration_time(self):
+        return self.__expiration_time
+
+    @property
+    def insertion_time(self):
+        return self.__insertion_time
+
+    @property
+    def next_visible_time(self):
+        return self.__next_visible_time
+
+    def __repr__(self) -> str:
+        return (
+            f'<azure.QueueMessage id={self.id} '
+            f'dequeue_count={self.dequeue_count} '
+            f'insertion_time={self.insertion_time} '
+            f'expiration_time={self.expiration_time} '
+            f'at 0x{id(self):0x}>'
+        )

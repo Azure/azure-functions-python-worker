@@ -1,18 +1,19 @@
 import unittest
 
 from azure import functions as azf
-from azure.worker import type_impl
+from azure.worker.bindings import http as bind_http
+from azure.worker.bindings import meta as bind_meta
 
 
 class TestFunctions(unittest.TestCase):
 
     def test_http_request_bytes(self):
-        r = type_impl.HttpRequest(
+        r = bind_http.HttpRequest(
             'get',
             'http://example.com/abc?a=1',
             headers=dict(aaa='zzz', bAb='xYz'),
             params=dict(a='b'),
-            body_type=type_impl.TypedDataKind.bytes,
+            body_type=bind_meta.TypedDataKind.bytes,
             body=b'abc')
 
         self.assertEqual(r.method, 'GET')
@@ -41,12 +42,12 @@ class TestFunctions(unittest.TestCase):
             h['zzz'] = '123'
 
     def test_http_request_json(self):
-        r = type_impl.HttpRequest(
+        r = bind_http.HttpRequest(
             'POST',
             'http://example.com/abc?a=1',
             headers={},
             params={},
-            body_type=type_impl.TypedDataKind.json,
+            body_type=bind_meta.TypedDataKind.json,
             body='{"a":1}')
 
         self.assertEqual(r.method, 'POST')

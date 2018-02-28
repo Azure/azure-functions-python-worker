@@ -3,7 +3,18 @@ import enum
 import json
 import typing
 
-from . import protos
+from .. import protos
+
+
+class TypedDataKind(enum.Enum):
+
+    json = 1
+    string = 2
+    bytes = 3
+    int = 4
+    double = 5
+    http = 6
+    stream = 7
 
 
 class Binding(str, enum.Enum):
@@ -143,6 +154,3 @@ def to_outgoing_proto(binding: Binding, obj: typing.Any) -> protos.TypedData:
             f'unable to encode outgoing TypedData: '
             f'unsupported type "{binding}" for '
             f'Python type "{type(obj).__name__}"')
-
-
-from . import type_converters  # NoQA

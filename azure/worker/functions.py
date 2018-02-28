@@ -3,7 +3,7 @@ import typing
 
 import azure.functions as azf
 
-from . import type_meta
+from . import bindings
 from . import protos
 
 
@@ -16,9 +16,9 @@ class FunctionInfo(typing.NamedTuple):
     requires_context: bool
     is_async: bool
 
-    input_types: typing.Mapping[str, type_meta.Binding]
-    output_types: typing.Mapping[str, type_meta.Binding]
-    return_type: typing.Optional[type_meta.Binding]
+    input_types: typing.Mapping[str, bindings.Binding]
+    output_types: typing.Mapping[str, bindings.Binding]
+    return_type: typing.Optional[bindings.Binding]
 
 
 class FunctionLoadError(RuntimeError):
@@ -55,7 +55,7 @@ class Registry:
 
         requires_context = False
 
-        bindings = {}
+        bound_params = {}
         for name, desc in metadata.bindings.items():
             if desc.direction == protos.BindingInfo.inout:
                 raise FunctionLoadError(
@@ -69,15 +69,15 @@ class Registry:
                         f'"$return" binding must have direction set to "out"')
 
                 try:
-                    return_type = type_meta.Binding(desc.type)
+                    return_type = bindings.Binding(desc.type)
                 except ValueError:
                     raise FunctionLoadError(
                         func_name,
                         f'unknown type for $return binding: "{desc.type}"')
             else:
-                bindings[name] = desc
+                bound_params[name] = desc
 
-        if 'context' in params and 'context' not in bindings:
+        if 'context' in params and 'context' not in bound_params:
             requires_context = True
             ctx_param = params.pop('context')
             if ctx_param.annotation is not ctx_param.empty:
@@ -89,20 +89,20 @@ class Registry:
                         f'type azure.functions.Context, got '
                         f'{ctx_param.annotation!r}')
 
-        if set(params) - set(bindings):
+        if set(params) - set(bound_params):
             raise FunctionLoadError(
                 func_name,
                 f'the following parameters are declared in Python but '
-                f'not in function.json: {set(params) - set(bindings)!r}')
+                f'not in function.json: {set(params) - set(bound_params)!r}')
 
-        if set(bindings) - set(params):
+        if set(bound_params) - set(params):
             raise FunctionLoadError(
                 func_name,
                 f'the following parameters are declared in function.json but '
-                f'not in Python: {set(bindings) - set(params)!r}')
+                f'not in Python: {set(bound_params) - set(params)!r}')
 
         for param in params.values():
-            desc = bindings[param.name]
+            desc = bound_params[param.name]
 
             param_has_anno = param.annotation is not param.empty
             if param_has_anno and not isinstance(param.annotation, type):
@@ -130,7 +130,7 @@ class Registry:
                     f'is azure.functions.Out in Python')
 
             try:
-                param_bind_type = type_meta.Binding(desc.type)
+                param_bind_type = bindings.Binding(desc.type)
             except ValueError:
                 raise FunctionLoadError(
                     func_name,
@@ -150,7 +150,7 @@ class Registry:
                 else:
                     param_py_type = param.annotation
                 if param_py_type:
-                    if not type_meta.check_bind_type_matches_py_type(
+                    if not bindings.check_bind_type_matches_py_type(
                             param_bind_type, param_py_type):
                         raise FunctionLoadError(
                             func_name,
@@ -170,7 +170,7 @@ class Registry:
                     func_name,
                     f'return annotation should not be azure.functions.Out')
 
-            if not type_meta.check_bind_type_matches_py_type(
+            if not bindings.check_bind_type_matches_py_type(
                     return_type, ra):
                 raise FunctionLoadError(
                     func_name,

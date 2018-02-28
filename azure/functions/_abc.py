@@ -76,6 +76,16 @@ class HttpResponse(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def mimetype(self):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def charset(self):
+        pass
+
+    @property
+    @abc.abstractmethod
     def headers(self) -> typing.MutableMapping[str, str]:
         pass
 

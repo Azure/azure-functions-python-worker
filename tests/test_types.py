@@ -55,7 +55,7 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(r.url, 'http://example.com/abc?a=1')
         self.assertEqual(r.params, {})
 
-        self.assertEqual(r.get_body(), '{"a":1}')
+        self.assertEqual(r.get_body(), b'{"a":1}')
         self.assertEqual(r.get_json(), {'a': 1})
 
     def test_http_response(self):

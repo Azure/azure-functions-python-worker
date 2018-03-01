@@ -69,22 +69,62 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
 
     @classmethod
     def _decode_scalar_typed_data(
-            cls, data: typing.Optional[protos.TypedData]) -> typing.Any:
+            cls, data: typing.Optional[protos.TypedData], *,
+            python_type: typing.Union[type, typing.Tuple[type, ...]],
+            context: str='data') -> typing.Any:
         if data is None:
             return None
 
         data_type = data.WhichOneof('data')
         if data_type == 'json':
             result = json.loads(data.json)
+            if isinstance(result, (list, dict)):
+                raise ValueError(
+                    f'unexpected data structure in expected scalar {context}')
+
         elif data_type == 'string':
             result = data.string
-        elif data_type == 'bytes':
-            result = data.bytes
+
+        elif data_type == 'int':
+            result = data.int
+
+        elif data_type == 'double':
+            result = data.double
+
         else:
-            raise NotImplementedError(
-                f'unsupported type of field in trigger metadata: {data_type}')
+            raise ValueError(
+                f'unsupported type of {context}: {data_type}')
+
+        if not isinstance(result, python_type):
+            if isinstance(python_type, tuple):
+                raise ValueError(
+                    f'unexpected value type in {context}: '
+                    f'{type(result).__name__}, expected one of: '
+                    f'{", ".join(t.__name__ for t in python_type)}')
+            else:
+                try:
+                    # Try coercing into the requested type
+                    result = python_type(result)
+                except (TypeError, ValueError) as e:
+                    raise ValueError(
+                        f'cannot convert value of {context} into '
+                        f'{python_type.__name__}: {e}') from None
 
         return result
+
+    @classmethod
+    def _decode_trigger_metadata_field(
+            cls, trigger_metadata: typing.Mapping[str, protos.TypedData],
+            field: str, *,
+            python_type: typing.Union[type, typing.Tuple[type, ...]]) \
+            -> typing.Any:
+        data = trigger_metadata.get(field)
+        if data is None:
+            return None
+        else:
+            return cls._decode_scalar_typed_data(
+                data, python_type=python_type,
+                context=f'field {field!r} in trigger metadata')
 
 
 class InConverter(_BaseConverter, binding=None):

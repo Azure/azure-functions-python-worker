@@ -26,7 +26,7 @@ class InputStream(azf_abc.InputStream):
 
 class BlobConverter(meta.InConverter,
                     meta.OutConverter,
-                    binding=meta.Binding.blob):
+                    binding='blob'):
 
     @classmethod
     def check_python_type(cls, pytype: type) -> bool:
@@ -64,5 +64,5 @@ class BlobConverter(meta.InConverter,
 
 
 class BlobTriggerConverter(BlobConverter,
-                           binding=meta.Binding.blobTrigger):
+                           binding='blobTrigger', trigger=True):
     pass

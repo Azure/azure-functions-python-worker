@@ -52,7 +52,7 @@ class QueueMessage(azf_queue.QueueMessage):
 
 
 class QueueMessageInConverter(meta.InConverter,
-                              binding=meta.Binding.queueTrigger):
+                              binding='queueTrigger', trigger=True):
 
     @classmethod
     def check_python_type(cls, pytype: type) -> bool:
@@ -106,8 +106,7 @@ class QueueMessageInConverter(meta.InConverter,
         return dt.replace(tzinfo=datetime.timezone.utc)
 
 
-class QueueMessageOutConverter(meta.OutConverter,
-                               binding=meta.Binding.queue):
+class QueueMessageOutConverter(meta.OutConverter, binding='queue'):
 
     @classmethod
     def check_python_type(cls, pytype: type) -> bool:

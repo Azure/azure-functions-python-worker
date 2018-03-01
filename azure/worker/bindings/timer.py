@@ -18,7 +18,7 @@ class TimerRequest(azf_abc.TimerRequest):
 
 
 class TimerRequestConverter(meta.InConverter,
-                            binding=meta.Binding.timerTrigger):
+                            binding='timerTrigger', trigger=True):
 
     @classmethod
     def check_python_type(cls, pytype: type) -> bool:

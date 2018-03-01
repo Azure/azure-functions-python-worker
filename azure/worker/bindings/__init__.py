@@ -1,8 +1,11 @@
 from .context import Context
-from .meta import Binding, check_bind_type_matches_py_type
+from .meta import check_type_annotation
+from .meta import is_binding, is_trigger_binding
 from .meta import from_incoming_proto, to_outgoing_proto
 from .out import Out
 
+# Import type implementations and converters
+# to get them registered and available:
 from . import blob  # NoQA
 from . import http  # NoQA
 from . import queue  # NoQA
@@ -10,7 +13,8 @@ from . import timer  # NoQA
 
 
 __all__ = (
-    'Out', 'Context', 'Binding',
-    'check_bind_type_matches_py_type',
+    'Out', 'Context',
+    'is_binding', 'is_trigger_binding',
+    'check_type_annotation',
     'from_incoming_proto', 'to_outgoing_proto',
 )

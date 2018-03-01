@@ -49,8 +49,7 @@ class HttpRequest(azf_abc.HttpRequest):
         raise ValueError('HTTP request does not have JSON data attached')
 
 
-class HttpResponseConverter(meta.OutConverter,
-                            binding=meta.Binding.http):
+class HttpResponseConverter(meta.OutConverter, binding='http'):
 
     @classmethod
     def check_python_type(cls, pytype: type) -> bool:
@@ -88,7 +87,7 @@ class HttpResponseConverter(meta.OutConverter,
 
 
 class HttpRequestConverter(meta.InConverter,
-                           binding=meta.Binding.httpTrigger):
+                           binding='httpTrigger', trigger=True):
 
     @classmethod
     def check_python_type(cls, pytype: type) -> bool:

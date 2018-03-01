@@ -16,9 +16,9 @@ class FunctionInfo(typing.NamedTuple):
     requires_context: bool
     is_async: bool
 
-    input_types: typing.Mapping[str, bindings.Binding]
-    output_types: typing.Mapping[str, bindings.Binding]
-    return_type: typing.Optional[bindings.Binding]
+    input_types: typing.Mapping[str, str]
+    output_types: typing.Mapping[str, str]
+    return_type: typing.Optional[str]
 
 
 class FunctionLoadError(RuntimeError):
@@ -68,9 +68,8 @@ class Registry:
                         func_name,
                         f'"$return" binding must have direction set to "out"')
 
-                try:
-                    return_type = bindings.Binding(desc.type)
-                except ValueError:
+                return_type = desc.type
+                if not bindings.is_binding(return_type):
                     raise FunctionLoadError(
                         func_name,
                         f'unknown type for $return binding: "{desc.type}"')
@@ -129,9 +128,8 @@ class Registry:
                     f'direction in function.json, but its annotation '
                     f'is azure.functions.Out in Python')
 
-            try:
-                param_bind_type = bindings.Binding(desc.type)
-            except ValueError:
+            param_bind_type = desc.type
+            if not bindings.is_binding(param_bind_type):
                 raise FunctionLoadError(
                     func_name,
                     f'unknown type for {param.name} binding: "{desc.type}"')
@@ -150,7 +148,7 @@ class Registry:
                 else:
                     param_py_type = param.annotation
                 if param_py_type:
-                    if not bindings.check_bind_type_matches_py_type(
+                    if not bindings.check_type_annotation(
                             param_bind_type, param_py_type):
                         raise FunctionLoadError(
                             func_name,
@@ -170,7 +168,7 @@ class Registry:
                     func_name,
                     f'return annotation should not be azure.functions.Out')
 
-            if not bindings.check_bind_type_matches_py_type(
+            if not bindings.check_type_annotation(
                     return_type, ra):
                 raise FunctionLoadError(
                     func_name,

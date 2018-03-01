@@ -235,7 +235,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             params = {}
             for pb in invoc_request.input_data:
                 pb_type = fi.input_types[pb.name]
-                if pb_type.is_trigger():
+                if bindings.is_trigger_binding(pb_type):
                     trigger_metadata = invoc_request.trigger_metadata
                 else:
                     trigger_metadata = None

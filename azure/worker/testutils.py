@@ -11,12 +11,14 @@ import configparser
 import functools
 import inspect
 import json
+import logging
 import os
 import queue
 import pathlib
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 import typing
 import unittest
@@ -61,7 +63,30 @@ class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
     pass
 
 
-class WebHostTestCase(unittest.TestCase):
+class WebHostTestCaseMeta(type(unittest.TestCase)):
+
+    def __new__(mcls, name, bases, dct):
+        for attrname, attr in dct.items():
+            if attrname.startswith('test_') and callable(attr):
+
+                @functools.wraps(attr)
+                def wrapper(self, *args, __meth__=attr, **kwargs):
+                    return self._run_test(__meth__, *args, **kwargs)
+
+                dct[attrname] = wrapper
+
+        return super().__new__(mcls, name, bases, dct)
+
+
+class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
+    """Base class for integration tests that need a WebHost.
+
+    In addition to automatically starting up a WebHost instance,
+    this test case class logs WebHost stdout/stderr in case
+    a unit test fails.
+    """
+
+    host_stdout_logger = logging.getLogger('webhosttests')
 
     @classmethod
     def get_script_dir(cls):
@@ -70,12 +95,41 @@ class WebHostTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         script_dir = cls.get_script_dir()
-        cls.webhost = start_webhost(script_dir=script_dir)
+        if os.environ.get('PYAZURE_WEBHOST_DEBUG'):
+            cls.host_stdout = None
+        else:
+            cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
+
+        cls.webhost = start_webhost(script_dir=script_dir,
+                                    stdout=cls.host_stdout)
 
     @classmethod
     def tearDownClass(cls):
         cls.webhost.close()
         cls.webhost = None
+
+        cls.host_stdout.close()
+        cls.host_stdout = None
+
+    def _run_test(self, test, *args, **kwargs):
+        if self.host_stdout is None:
+            test(self, *args, **kwargs)
+        else:
+            # Discard any host stdout left from the previous test or
+            # from the setup.
+            self.host_stdout.read()
+            last_pos = self.host_stdout.tell()
+
+            try:
+                test(self, *args, **kwargs)
+            except Exception:
+                try:
+                    self.host_stdout.seek(last_pos)
+                    host_out = self.host_stdout.read()
+                    self.host_stdout_logger.error(
+                        f'Captured WebHost stdout:\n{host_out}')
+                finally:
+                    raise
 
 
 class _MockWebHostServicer(protos.FunctionRpcServicer):
@@ -434,16 +488,17 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         stderr=stderr)
 
 
-def start_webhost(*, script_dir=None):
+def start_webhost(*, script_dir=None, stdout=None):
     if script_dir:
         script_root = TESTS_ROOT / script_dir
     else:
         script_root = FUNCS_PATH
 
-    if os.environ.get('PYAZURE_WEBHOST_DEBUG'):
-        stdout = sys.stdout
-    else:
-        stdout = subprocess.DEVNULL
+    if stdout is None:
+        if os.environ.get('PYAZURE_WEBHOST_DEBUG'):
+            stdout = sys.stdout
+        else:
+            stdout = subprocess.DEVNULL
 
     port = _find_open_port()
     proc = popen_webhost(stdout=stdout, stderr=subprocess.STDOUT,

@@ -78,32 +78,36 @@ class QueueMessageInConverter(meta.InConverter,
                 f'missing trigger metadata for queue input')
 
         return QueueMessage(
-            id=cls._decode_scalar_typed_data(
-                trigger_metadata.get('Id'), python_type=str),
+            id=cls._decode_trigger_metadata_field(
+                trigger_metadata, 'Id', python_type=str),
             body=body,
-            dequeue_count=cls._decode_scalar_typed_data(
-                trigger_metadata.get('DequeueCount'), python_type=int),
-            expiration_time=cls._parse_datetime(
-                trigger_metadata.get('ExpirationTime')),
-            insertion_time=cls._parse_datetime(
-                trigger_metadata.get('InsertionTime')),
-            next_visible_time=cls._parse_datetime(
-                trigger_metadata.get('NextVisibleTime')),
-            pop_receipt=cls._decode_scalar_typed_data(
-                trigger_metadata.get('PopReceipt'), python_type=str)
+            dequeue_count=cls._decode_trigger_metadata_field(
+                trigger_metadata, 'DequeueCount', python_type=int),
+            expiration_time=cls._parse_datetime_metadata(
+                trigger_metadata, 'ExpirationTime'),
+            insertion_time=cls._parse_datetime_metadata(
+                trigger_metadata, 'InsertionTime'),
+            next_visible_time=cls._parse_datetime_metadata(
+                trigger_metadata, 'NextVisibleTime'),
+            pop_receipt=cls._decode_trigger_metadata_field(
+                trigger_metadata, 'PopReceipt', python_type=str)
         )
 
     @classmethod
-    def _parse_datetime(cls, data: typing.Optional[protos.TypedData]):
-        if data is None:
+    def _parse_datetime_metadata(
+            cls, trigger_metadata: typing.Mapping[str, protos.TypedData],
+            field: str) -> typing.Optional[datetime.datetime]:
+
+        datetime_str = cls._decode_trigger_metadata_field(
+            trigger_metadata, field, python_type=str)
+
+        if datetime_str is None:
             return None
         else:
-            datetime_str = cls._decode_scalar_typed_data(data, python_type=str)
-
-        # UTC ISO 8601 assumed
-        dt = datetime.datetime.strptime(
-            datetime_str, '%Y-%m-%dT%H:%M:%S+00:00')
-        return dt.replace(tzinfo=datetime.timezone.utc)
+            # UTC ISO 8601 assumed
+            dt = datetime.datetime.strptime(
+                datetime_str, '%Y-%m-%dT%H:%M:%S+00:00')
+            return dt.replace(tzinfo=datetime.timezone.utc)
 
 
 class QueueMessageOutConverter(meta.OutConverter, binding='queue'):

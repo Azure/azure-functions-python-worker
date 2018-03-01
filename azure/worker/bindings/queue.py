@@ -79,10 +79,10 @@ class QueueMessageInConverter(meta.InConverter,
 
         return QueueMessage(
             id=cls._decode_scalar_typed_data(
-                trigger_metadata.get('Id')),
+                trigger_metadata.get('Id'), python_type=str),
             body=body,
             dequeue_count=cls._decode_scalar_typed_data(
-                trigger_metadata.get('DequeueCount')),
+                trigger_metadata.get('DequeueCount'), python_type=int),
             expiration_time=cls._parse_datetime(
                 trigger_metadata.get('ExpirationTime')),
             insertion_time=cls._parse_datetime(
@@ -90,7 +90,7 @@ class QueueMessageInConverter(meta.InConverter,
             next_visible_time=cls._parse_datetime(
                 trigger_metadata.get('NextVisibleTime')),
             pop_receipt=cls._decode_scalar_typed_data(
-                trigger_metadata.get('PopReceipt'))
+                trigger_metadata.get('PopReceipt'), python_type=str)
         )
 
     @classmethod
@@ -98,12 +98,7 @@ class QueueMessageInConverter(meta.InConverter,
         if data is None:
             return None
         else:
-            datetime_str = cls._decode_scalar_typed_data(data)
-            if not isinstance(datetime_str, str):
-                data_type = data.WhichOneof('data')
-                raise NotImplementedError(
-                    f'unsupported type of a datetime field '
-                    f'in trigger metadata: {data_type}')
+            datetime_str = cls._decode_scalar_typed_data(data, python_type=str)
 
         # UTC ISO 8601 assumed
         dt = datetime.datetime.strptime(

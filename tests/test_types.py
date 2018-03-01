@@ -1,6 +1,7 @@
 import unittest
 
 from azure import functions as azf
+from azure.worker import protos
 from azure.worker.bindings import http as bind_http
 from azure.worker.bindings import meta as bind_meta
 
@@ -81,3 +82,73 @@ class TestFunctions(unittest.TestCase):
         # test that response headers are mutable
         h['zZz'] = '123'
         self.assertEqual(h['zzz'], '123')
+
+
+class Converter(bind_meta.InConverter, binding='foo'):
+    pass
+
+
+class TestTriggerMetadataDecoder(unittest.TestCase):
+
+    def test_scalar_typed_data_decoder_ok(self):
+        metadata = {
+            'int_as_json': protos.TypedData(json='1'),
+            'int_as_string': protos.TypedData(string='1'),
+            'int_as_int': protos.TypedData(int=1),
+            'string_as_json': protos.TypedData(json='"aaa"'),
+            'string_as_string': protos.TypedData(string='aaa'),
+        }
+
+        cases = [
+            ('int_as_json', int, 1),
+            ('int_as_string', int, 1),
+            ('int_as_int', int, 1),
+            ('string_as_json', str, 'aaa'),
+            ('string_as_string', str, 'aaa'),
+        ]
+
+        for field, pytype, expected in cases:
+            with self.subTest(field=field):
+                value = Converter._decode_trigger_metadata_field(
+                    metadata, field, python_type=pytype)
+
+                self.assertIsInstance(value, pytype)
+                self.assertEqual(value, expected)
+
+    def test_scalar_typed_data_decoder_not_ok(self):
+        metadata = {
+            'unsupported_type': protos.TypedData(stream=b'aaa'),
+            'unexpected_json': protos.TypedData(json='[1, 2, 3]'),
+            'unexpected_data': protos.TypedData(json='"foo"'),
+        }
+
+        cases = [
+            (
+                'unsupported_type', int, ValueError,
+                "unsupported type of field 'unsupported_type' in "
+                "trigger metadata: stream"
+            ),
+            (
+                'unexpected_json', int, ValueError,
+                "unexpected data structure in expected scalar field "
+                "'unexpected_json' in trigger metadata"
+            ),
+            (
+                'unexpected_data', int, ValueError,
+                "cannot convert value of field "
+                "'unexpected_data' in trigger metadata into int: "
+                "invalid literal for int"
+            ),
+            (
+                'unexpected_data', (int, float), ValueError,
+                "unexpected value type in field "
+                "'unexpected_data' in trigger metadata: str, "
+                "expected one of: int, float"
+            ),
+        ]
+
+        for field, pytype, exc, msg in cases:
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(exc, msg):
+                    Converter._decode_trigger_metadata_field(
+                        metadata, field, python_type=pytype)

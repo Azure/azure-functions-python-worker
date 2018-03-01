@@ -121,7 +121,10 @@ class QueueMessageOutConverter(meta.OutConverter, binding='queue'):
         if isinstance(obj, str):
             return protos.TypedData(string=obj)
 
-        if isinstance(obj, azf_queue.QueueMessage):
+        elif isinstance(obj, bytes):
+            return protos.TypedData(bytes=obj)
+
+        elif isinstance(obj, azf_queue.QueueMessage):
             return protos.TypedData(
                 json=json.dumps({
                     'id': obj.id,

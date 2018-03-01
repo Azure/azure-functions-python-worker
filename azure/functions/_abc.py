@@ -59,7 +59,7 @@ class HttpRequest(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_body(self) -> typing.Union[str, bytes]:
+    def get_body(self) -> bytes:
         pass
 
     @abc.abstractmethod

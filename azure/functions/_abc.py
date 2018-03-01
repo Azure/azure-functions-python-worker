@@ -8,62 +8,80 @@ T = typing.TypeVar('T')
 
 
 class Out(abc.ABC, typing.Generic[T]):
+    """An interface to set function output parameters."""
 
     @abc.abstractmethod
     def set(self, val: T) -> None:
+        """Set the value of the output parameter."""
         pass
 
     @abc.abstractmethod
     def get(self) -> T:
+        """Get the value of the output parameter."""
         pass
 
 
 class Context(abc.ABC):
+    """Function invocation context."""
 
     @property
     @abc.abstractmethod
     def invocation_id(self) -> str:
+        """Function invocation ID."""
         pass
 
     @property
     @abc.abstractmethod
     def function_name(self) -> str:
+        """Function name."""
         pass
 
     @property
     @abc.abstractmethod
     def function_directory(self) -> str:
+        """Function directory."""
         pass
 
 
 class HttpRequest(abc.ABC):
+    """HTTP request object."""
 
     @property
     @abc.abstractmethod
     def method(self) -> str:
+        """Request method."""
         pass
 
     @property
     @abc.abstractmethod
     def url(self) -> str:
+        """Request URL."""
         pass
 
     @property
     @abc.abstractmethod
     def headers(self) -> typing.Mapping[str, str]:
+        """A dictionary containing request headers."""
         pass
 
     @property
     @abc.abstractmethod
     def params(self) -> typing.Mapping[str, str]:
+        """A dictionary containing request GET parameters."""
         pass
 
     @abc.abstractmethod
     def get_body(self) -> bytes:
+        """Return request body as bytes."""
         pass
 
     @abc.abstractmethod
     def get_json(self) -> typing.Any:
+        """Decode and return request body as JSON.
+
+        :raises ValueError:
+            when the request does not contain valid JSON data.
+        """
         pass
 
 
@@ -95,17 +113,30 @@ class HttpResponse(abc.ABC):
 
 
 class TimerRequest(abc.ABC):
+    """Timer request object."""
 
     @property
     @abc.abstractmethod
     def past_due(self) -> bool:
+        """Whether the timer is past due."""
         pass
 
 
 class InputStream(io.BufferedIOBase, abc.ABC):
+    """File-like object representing an input blob."""
 
     @abc.abstractmethod
     def read(self, size=-1) -> bytes:
+        """Return and read up to *size* bytes.
+
+        :param int size:
+            The number of bytes to read.  If the argument is omitted,
+            ``None``, or negative, data is read and returned until
+            EOF is reached.
+
+        :return:
+            Bytes read from the input stream.
+        """
         pass
 
 

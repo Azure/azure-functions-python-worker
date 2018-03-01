@@ -12,6 +12,9 @@ from .. import protos
 class HttpRequest(azf_abc.HttpRequest):
     """An HTTP request object."""
 
+    __body_bytes: typing.Optional[bytes]
+    __body_str: typing.Optional[str]
+
     def __init__(self, method: str, url: str,
                  headers: typing.Mapping[str, str],
                  params: typing.Mapping[str, str],
@@ -22,7 +25,16 @@ class HttpRequest(azf_abc.HttpRequest):
         self.__headers = azf_http.HttpRequestHeaders(headers)
         self.__params = types.MappingProxyType(params)
         self.__body_type = body_type
-        self.__body = body
+
+        if isinstance(body, str):
+            self.__body_bytes = None
+            self.__body_str = body
+        elif isinstance(body, bytes):
+            self.__body_bytes = body
+            self.__body_str = None
+        else:
+            raise TypeError(
+                f'unexpected HTTP request body type: {type(body).__name__}')
 
     @property
     def url(self):
@@ -40,12 +52,16 @@ class HttpRequest(azf_abc.HttpRequest):
     def params(self):
         return self.__params
 
-    def get_body(self) -> typing.Union[str, bytes]:
-        return self.__body
+    def get_body(self) -> bytes:
+        if self.__body_bytes is None:
+            assert self.__body_str is not None
+            self.__body_bytes = self.__body_str.encode('utf-8')
+        return self.__body_bytes
 
     def get_json(self) -> typing.Any:
         if self.__body_type is meta.TypedDataKind.json:
-            return json.loads(self.__body)
+            assert self.__body_str is not None
+            return json.loads(self.__body_str)
         raise ValueError('HTTP request does not have JSON data attached')
 
 
@@ -118,7 +134,7 @@ class HttpRequestConverter(meta.InConverter,
             # Therefore we normalize the body to an empty bytes
             # object.
             body_type = meta.TypedDataKind.bytes
-            body = ''
+            body = b''
         else:
             raise TypeError(
                 f'unsupported HTTP body type from the incoming gRPC data: '

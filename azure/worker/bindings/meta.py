@@ -17,45 +17,44 @@ class TypedDataKind(enum.Enum):
     stream = 7
 
 
-class Binding(str, enum.Enum):
-    """Supported binding types."""
-
-    blob = 'blob'
-    blobTrigger = 'blobTrigger'
-    http = 'http'
-    httpTrigger = 'httpTrigger'
-    timerTrigger = 'timerTrigger'
-    queue = 'queue'
-    queueTrigger = 'queueTrigger'
-
-    def is_trigger(self):
-        return self.endswith('Trigger')
-
-
 class _ConverterMeta(abc.ABCMeta):
 
-    _check_py_type: typing.Mapping[Binding, typing.Callable[[type], bool]] = {}
-    _from_proto: typing.Mapping[Binding, typing.Callable] = {}
-    _to_proto: typing.Mapping[Binding, typing.Callable] = {}
+    _check_py_type: typing.Mapping[str, typing.Callable[[type], bool]] = {}
+    _from_proto: typing.Mapping[str, typing.Callable] = {}
+    _to_proto: typing.Mapping[str, typing.Callable] = {}
+    _binding_types: typing.Mapping[str, bool] = {}
 
-    def __new__(mcls, name, bases, dct, *, binding: typing.Optional[Binding]):
+    def __new__(mcls, name, bases, dct, *,
+                binding: typing.Optional[str], trigger: bool=False):
         cls = super().__new__(mcls, name, bases, dct)
         if binding is None:
             return cls
 
+        if binding in mcls._binding_types:
+            raise RuntimeError(
+                f'cannot register a converter for {binding!r} binding: '
+                f'another converter for this binding has already been '
+                f'registered')
+        mcls._binding_types[binding] = trigger
+
         if binding in mcls._check_py_type:
             raise RuntimeError(
-                f'cannot register a converter for {binding} binding: '
-                f'another converter has already been registered')
-
+                f'cannot register a second check_python_type implementation '
+                f'for {binding!r} binding')
         mcls._check_py_type[binding] = getattr(cls, 'check_python_type')
 
         if issubclass(cls, InConverter):
-            assert binding not in mcls._from_proto
+            if binding in mcls._from_proto:
+                raise RuntimeError(
+                    f'cannot register a second from_proto implementation '
+                    f'for {binding!r} binding')
             mcls._from_proto[binding] = getattr(cls, 'from_proto')
 
         if issubclass(cls, OutConverter):
-            assert binding not in mcls._to_proto
+            if binding in mcls._to_proto:
+                raise RuntimeError(
+                    f'cannot register a second to_proto implementation '
+                    f'for {binding!r} binding')
             mcls._to_proto[binding] = getattr(cls, 'to_proto')
 
         return cls
@@ -142,21 +141,30 @@ class OutConverter(_BaseConverter, binding=None):
         pass
 
 
-def check_bind_type_matches_py_type(
-        binding: Binding, pytype: type) -> bool:
+def is_binding(bind_name: str) -> bool:
+    return bind_name in _ConverterMeta._binding_types
 
+
+def is_trigger_binding(bind_name: str) -> bool:
+    try:
+        return _ConverterMeta._binding_types[bind_name]
+    except KeyError:
+        raise ValueError(f'unsupported binding type {bind_name!r}')
+
+
+def check_type_annotation(binding: str, pytype: type) -> bool:
     try:
         checker = _ConverterMeta._check_py_type[binding]
     except KeyError:
         raise TypeError(
-            f'bind type {binding} does not have '
-            'a corresponding Python type') from None
+            f'bind type {binding!r} does not have '
+            f'a corresponding Python type') from None
 
     return checker(pytype)
 
 
 def from_incoming_proto(
-        binding: Binding, val: protos.TypedData,
+        binding: str, val: protos.TypedData,
         trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]])\
         -> typing.Any:
     converter = _ConverterMeta._from_proto.get(binding)
@@ -178,7 +186,7 @@ def from_incoming_proto(
             f'and expected binding type {binding}')
 
 
-def to_outgoing_proto(binding: Binding, obj: typing.Any) -> protos.TypedData:
+def to_outgoing_proto(binding: str, obj: typing.Any) -> protos.TypedData:
     converter = _ConverterMeta._to_proto.get(binding)
 
     try:

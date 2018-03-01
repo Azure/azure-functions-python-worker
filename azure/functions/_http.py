@@ -40,7 +40,25 @@ class HttpResponseHeaders(BaseHeaders, collections.abc.MutableMapping):
 
 
 class HttpResponse(_abc.HttpResponse):
-    """An HTTP response object."""
+    """An HTTP response object.
+
+    :param str/bytes body:
+        Optional response body.
+
+    :param int status_code:
+        Response status code.  If not specified, defaults to 200.
+
+    :param dict headers:
+        An optional mapping containing response HTTP headers.
+
+    :param str mimetype:
+        An optional response MIME type.  If not specified, defaults to
+        ``'text/plain'``.
+
+    :param str charset:
+        Response content text encoding.  If not specified, defaults to
+        ``'utf-8'``.
+    """
 
     def __init__(self, body=None, *,
                  status_code=None, headers=None, mimetype=None, charset=None):
@@ -67,18 +85,22 @@ class HttpResponse(_abc.HttpResponse):
 
     @property
     def mimetype(self):
+        """Response MIME type."""
         return self.__mimetype
 
     @property
     def charset(self):
+        """Response text encoding."""
         return self.__charset
 
     @property
     def headers(self):
+        """A dictionary of response HTTP headers."""
         return self.__headers
 
     @property
     def status_code(self):
+        """Response status code."""
         return self.__status_code
 
     def __set_body(self, body):
@@ -93,4 +115,5 @@ class HttpResponse(_abc.HttpResponse):
         self.__body = bytes(body)
 
     def get_body(self) -> bytes:
+        """Response body as a bytes object."""
         return self.__body

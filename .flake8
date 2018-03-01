@@ -2,4 +2,4 @@
 ignore = E402,E731
 exclude =
     .git, __pycache__, build, dist, .eggs, .github, .local,
-    Samples, azure/worker/protos/
+    Samples, azure/worker/protos/, docs/

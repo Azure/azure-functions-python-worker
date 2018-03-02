@@ -230,37 +230,38 @@ class Dispatcher(metaclass=DispatcherMeta):
         current_task.set_azure_invocation_id(invocation_id)
 
         try:
-            fi: functions.FunctionInfo = self._functions.get(function_id)
+            fi: functions.FunctionInfo = self._functions.get_function(
+                function_id)
 
-            params = {}
+            args = {}
             for pb in invoc_request.input_data:
-                pb_type = fi.input_types[pb.name]
+                pb_type = fi.input_binding_types[pb.name]
                 if bindings.is_trigger_binding(pb_type):
                     trigger_metadata = invoc_request.trigger_metadata
                 else:
                     trigger_metadata = None
-                params[pb.name] = bindings.from_incoming_proto(
+                args[pb.name] = bindings.from_incoming_proto(
                     pb_type, pb.data, trigger_metadata)
 
             if fi.requires_context:
-                params['context'] = bindings.Context(
+                args['context'] = bindings.Context(
                     fi.name, fi.directory, invocation_id)
 
-            if fi.output_types:
-                for name in fi.output_types:
-                    params[name] = bindings.Out()
+            if fi.output_binding_types:
+                for name in fi.output_binding_types:
+                    args[name] = bindings.Out()
 
             if fi.is_async:
-                call_result = await fi.func(**params)
+                call_result = await fi.func(**args)
             else:
                 call_result = await self._loop.run_in_executor(
                     self._sync_call_tp,
-                    self.__run_sync_func, invocation_id, fi.func, params)
+                    self.__run_sync_func, invocation_id, fi.func, args)
 
             output_data = []
-            if fi.output_types:
-                for out_name, out_type in fi.output_types.items():
-                    val = params[name].get()
+            if fi.output_binding_types:
+                for out_name, out_type in fi.output_binding_types.items():
+                    val = args[name].get()
                     if val is None:
                         # TODO: is the "Out" parameter optional?
                         # Can "None" be marshaled into protos.TypedData?
@@ -275,9 +276,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                             data=rpc_val))
 
             return_value = None
-            if fi.return_type is not None:
+            if fi.return_binding_type is not None:
                 return_value = bindings.to_outgoing_proto(
-                    fi.return_type, call_result)
+                    fi.return_binding_type, call_result)
 
             return protos.StreamingMessage(
                 request_id=self.request_id,

@@ -16,9 +16,9 @@ class FunctionInfo(typing.NamedTuple):
     requires_context: bool
     is_async: bool
 
-    input_types: typing.Mapping[str, str]
-    output_types: typing.Mapping[str, str]
-    return_type: typing.Optional[str]
+    input_binding_types: typing.Mapping[str, str]
+    output_binding_types: typing.Mapping[str, str]
+    return_binding_type: typing.Optional[str]
 
 
 class FunctionLoadError(RuntimeError):
@@ -35,7 +35,7 @@ class Registry:
     def __init__(self):
         self._functions = {}
 
-    def get(self, function_id: str):
+    def get_function(self, function_id: str):
         try:
             return self._functions[function_id]
         except KeyError:
@@ -179,8 +179,8 @@ class Registry:
             func=func,
             name=func_name,
             directory=metadata.directory,
-            input_types=input_types,
-            output_types=output_types,
             requires_context=requires_context,
             is_async=inspect.iscoroutinefunction(func),
-            return_type=return_type)
+            input_binding_types=input_types,
+            output_binding_types=output_types,
+            return_binding_type=return_type)

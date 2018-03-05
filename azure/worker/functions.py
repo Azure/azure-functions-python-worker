@@ -7,6 +7,12 @@ from . import bindings
 from . import protos
 
 
+class ParamTypeInfo(typing.NamedTuple):
+
+    binding_name: str
+    pytype: typing.Optional[type]
+
+
 class FunctionInfo(typing.NamedTuple):
 
     func: typing.Callable
@@ -16,9 +22,9 @@ class FunctionInfo(typing.NamedTuple):
     requires_context: bool
     is_async: bool
 
-    input_binding_types: typing.Mapping[str, str]
-    output_binding_types: typing.Mapping[str, str]
-    return_binding_type: typing.Optional[str]
+    input_types: typing.Mapping[str, ParamTypeInfo]
+    output_types: typing.Mapping[str, ParamTypeInfo]
+    return_type: typing.Optional[ParamTypeInfo]
 
 
 class FunctionLoadError(RuntimeError):
@@ -49,9 +55,10 @@ class Registry:
         sig = inspect.signature(func)
         params = dict(sig.parameters)
 
-        input_types = {}
-        output_types = {}
-        return_type = None
+        input_types: typing.Dict[str, ParamTypeInfo] = {}
+        output_types: typing.Dict[str, ParamTypeInfo] = {}
+        return_binding_name: typing.Optional[str] = None
+        return_pytype: typing.Optional[type] = None
 
         requires_context = False
 
@@ -68,8 +75,10 @@ class Registry:
                         func_name,
                         f'"$return" binding must have direction set to "out"')
 
-                return_type = desc.type
-                if not bindings.is_binding(return_type):
+                return_binding_name = desc.type
+                assert return_binding_name is not None
+
+                if not bindings.is_binding(return_binding_name):
                     raise FunctionLoadError(
                         func_name,
                         f'unknown type for $return binding: "{desc.type}"')
@@ -134,11 +143,7 @@ class Registry:
                     func_name,
                     f'unknown type for {param.name} binding: "{desc.type}"')
 
-            if is_binding_out:
-                output_types[param.name] = param_bind_type
-            else:
-                input_types[param.name] = param_bind_type
-
+            param_py_type = None
             if param_has_anno:
                 if is_param_out:
                     assert issubclass(param.annotation, azf.Out)
@@ -156,24 +161,37 @@ class Registry:
                             f'"{param_bind_type}" does not match its Python '
                             f'annotation "{param_py_type.__name__}"')
 
-        if return_type is not None and sig.return_annotation is not sig.empty:
-            ra = sig.return_annotation
-            if not isinstance(ra, type):
+            param_type_info = ParamTypeInfo(param_bind_type, param_py_type)
+            if is_binding_out:
+                output_types[param.name] = param_type_info
+            else:
+                input_types[param.name] = param_type_info
+
+        return_pytype = None
+        if (return_binding_name is not None and
+                sig.return_annotation is not sig.empty):
+            return_pytype = sig.return_annotation
+            if not isinstance(return_pytype, type):
                 raise FunctionLoadError(
                     func_name,
-                    f'has invalid non-type return annotation {ra!r}')
+                    f'has invalid non-type return '
+                    f'annotation {return_pytype!r}')
 
-            if issubclass(ra, azf.Out):
+            if issubclass(return_pytype, azf.Out):
                 raise FunctionLoadError(
                     func_name,
                     f'return annotation should not be azure.functions.Out')
 
             if not bindings.check_type_annotation(
-                    return_type, ra):
+                    return_binding_name, return_pytype):
                 raise FunctionLoadError(
                     func_name,
-                    f'Python return annotation "{ra.__name__}" does not match '
-                    f'binding type "{return_type}"')
+                    f'Python return annotation "{return_pytype.__name__}" '
+                    f'does not match binding type "{return_binding_name}"')
+
+        return_type = None
+        if return_binding_name is not None:
+            return_type = ParamTypeInfo(return_binding_name, return_pytype)
 
         self._functions[function_id] = FunctionInfo(
             func=func,
@@ -181,6 +199,6 @@ class Registry:
             directory=metadata.directory,
             requires_context=requires_context,
             is_async=inspect.iscoroutinefunction(func),
-            input_binding_types=input_types,
-            output_binding_types=output_types,
-            return_binding_type=return_type)
+            input_types=input_types,
+            output_types=output_types,
+            return_type=return_type)

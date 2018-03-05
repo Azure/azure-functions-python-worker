@@ -35,7 +35,8 @@ class BlobConverter(meta.InConverter,
                 callable(getattr(pytype, 'read', None))))
 
     @classmethod
-    def to_proto(cls, obj: typing.Any) -> protos.TypedData:
+    def to_proto(cls, obj: typing.Any, *,
+                 pytype: typing.Optional[type]) -> protos.TypedData:
         if callable(getattr(obj, 'read', None)):
             # file-like object
             obj = obj.read()
@@ -50,7 +51,8 @@ class BlobConverter(meta.InConverter,
             raise NotImplementedError
 
     @classmethod
-    def from_proto(cls, data: protos.TypedData,
+    def from_proto(cls, data: protos.TypedData, *,
+                   pytype: typing.Optional[type],
                    trigger_metadata) -> typing.Any:
         data_type = data.WhichOneof('data')
         if data_type == 'string':

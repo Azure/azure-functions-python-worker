@@ -129,7 +129,8 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
 class InConverter(_BaseConverter, binding=None):
 
     @abc.abstractclassmethod
-    def from_proto(cls, data: protos.TypedData,
+    def from_proto(cls, data: protos.TypedData, *,
+                   pytype: typing.Optional[type],
                    trigger_metadata) -> typing.Any:
         pass
 
@@ -137,7 +138,8 @@ class InConverter(_BaseConverter, binding=None):
 class OutConverter(_BaseConverter, binding=None):
 
     @abc.abstractclassmethod
-    def to_proto(cls, obj: typing.Any) -> protos.TypedData:
+    def to_proto(cls, obj: typing.Any, *,
+                 pytype: typing.Optional[type]) -> protos.TypedData:
         pass
 
 
@@ -164,7 +166,8 @@ def check_type_annotation(binding: str, pytype: type) -> bool:
 
 
 def from_incoming_proto(
-        binding: str, val: protos.TypedData,
+        binding: str, val: protos.TypedData, *,
+        pytype: typing.Optional[type],
         trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]])\
         -> typing.Any:
     converter = _ConverterMeta._from_proto.get(binding)
@@ -175,7 +178,8 @@ def from_incoming_proto(
         except KeyError:
             raise NotImplementedError
         else:
-            return converter(val, trigger_metadata)
+            return converter(val, pytype=pytype,
+                             trigger_metadata=trigger_metadata)
     except NotImplementedError:
         # Either there's no converter or a converter has failed.
         dt = val.WhichOneof('data')
@@ -186,7 +190,8 @@ def from_incoming_proto(
             f'and expected binding type {binding}')
 
 
-def to_outgoing_proto(binding: str, obj: typing.Any) -> protos.TypedData:
+def to_outgoing_proto(binding: str, obj: typing.Any, *,
+                      pytype: typing.Optional[type]) -> protos.TypedData:
     converter = _ConverterMeta._to_proto.get(binding)
 
     try:
@@ -195,7 +200,7 @@ def to_outgoing_proto(binding: str, obj: typing.Any) -> protos.TypedData:
         except KeyError:
             raise NotImplementedError
         else:
-            return converter(obj)
+            return converter(obj, pytype=pytype)
     except NotImplementedError:
         # Either there's no converter or a converter has failed.
         raise TypeError(

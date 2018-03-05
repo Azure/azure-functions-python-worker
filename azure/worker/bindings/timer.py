@@ -25,7 +25,8 @@ class TimerRequestConverter(meta.InConverter,
         return issubclass(pytype, azf_abc.TimerRequest)
 
     @classmethod
-    def from_proto(cls, data: protos.TypedData,
+    def from_proto(cls, data: protos.TypedData, *,
+                   pytype: typing.Optional[type],
                    trigger_metadata) -> typing.Any:
         if data.WhichOneof('data') != 'json':
             raise NotImplementedError

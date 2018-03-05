@@ -72,7 +72,8 @@ class HttpResponseConverter(meta.OutConverter, binding='http'):
         return issubclass(pytype, (azf_abc.HttpResponse, str))
 
     @classmethod
-    def to_proto(cls, obj: typing.Any) -> protos.TypedData:
+    def to_proto(cls, obj: typing.Any, *,
+                 pytype: typing.Optional[type]) -> protos.TypedData:
         if isinstance(obj, str):
             return protos.TypedData(string=obj)
 
@@ -110,7 +111,8 @@ class HttpRequestConverter(meta.InConverter,
         return issubclass(pytype, azf_abc.HttpRequest)
 
     @classmethod
-    def from_proto(cls, data: protos.TypedData,
+    def from_proto(cls, data: protos.TypedData, *,
+                   pytype: typing.Optional[type],
                    trigger_metadata) -> typing.Any:
         if data.WhichOneof('data') != 'http':
             raise NotImplementedError

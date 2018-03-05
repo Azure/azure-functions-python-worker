@@ -524,17 +524,14 @@ def start_webhost(*, script_dir=None, stdout=None):
 
 def _main():
     parser = argparse.ArgumentParser(description='Run a Python worker.')
-    parser.add_argument(
-        '--script-root',
-        dest='script_root',
-        default=FUNCS_PATH,
-        help=f'defaults to {FUNCS_PATH}')
+    parser.add_argument('scriptroot',
+                        help='directory with functions to load')
 
     args = parser.parse_args()
 
     host = popen_webhost(
         stdout=sys.stdout, stderr=sys.stderr,
-        script_root=os.path.abspath(args.script_root))
+        script_root=os.path.abspath(args.scriptroot))
     try:
         host.wait()
     finally:

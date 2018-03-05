@@ -1,5 +1,10 @@
 dist: trusty
 
+branches:
+    only:
+        - master
+        - dev
+
 language: python
 python:
     - 3.6

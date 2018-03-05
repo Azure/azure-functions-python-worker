@@ -59,8 +59,9 @@ class QueueMessageInConverter(meta.InConverter,
         return issubclass(pytype, azf_abc.QueueMessage)
 
     @classmethod
-    def from_proto(cls, data: protos.TypedData,
-                   trigger_metadata) -> azf_abc.QueueMessage:
+    def from_proto(cls, data: protos.TypedData, *,
+                   pytype: typing.Optional[type],
+                   trigger_metadata) -> typing.Any:
         data_type = data.WhichOneof('data')
 
         if data_type == 'string':
@@ -117,7 +118,8 @@ class QueueMessageOutConverter(meta.OutConverter, binding='queue'):
         return issubclass(pytype, (azf_abc.QueueMessage, str, bytes))
 
     @classmethod
-    def to_proto(cls, obj: typing.Any) -> protos.TypedData:
+    def to_proto(cls, obj: typing.Any, *,
+                 pytype: typing.Optional[type]) -> protos.TypedData:
         if isinstance(obj, str):
             return protos.TypedData(string=obj)
 

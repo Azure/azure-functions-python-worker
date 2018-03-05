@@ -235,20 +235,22 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             args = {}
             for pb in invoc_request.input_data:
-                pb_type = fi.input_binding_types[pb.name]
-                if bindings.is_trigger_binding(pb_type):
+                pb_type_info = fi.input_types[pb.name]
+                if bindings.is_trigger_binding(pb_type_info.binding_name):
                     trigger_metadata = invoc_request.trigger_metadata
                 else:
                     trigger_metadata = None
                 args[pb.name] = bindings.from_incoming_proto(
-                    pb_type, pb.data, trigger_metadata)
+                    pb_type_info.binding_name, pb.data,
+                    trigger_metadata=trigger_metadata,
+                    pytype=pb_type_info.pytype)
 
             if fi.requires_context:
                 args['context'] = bindings.Context(
                     fi.name, fi.directory, invocation_id)
 
-            if fi.output_binding_types:
-                for name in fi.output_binding_types:
+            if fi.output_types:
+                for name in fi.output_types:
                     args[name] = bindings.Out()
 
             if fi.is_async:
@@ -259,15 +261,17 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self.__run_sync_func, invocation_id, fi.func, args)
 
             output_data = []
-            if fi.output_binding_types:
-                for out_name, out_type in fi.output_binding_types.items():
+            if fi.output_types:
+                for out_name, out_type_info in fi.output_types.items():
                     val = args[name].get()
                     if val is None:
                         # TODO: is the "Out" parameter optional?
                         # Can "None" be marshaled into protos.TypedData?
                         continue
 
-                    rpc_val = bindings.to_outgoing_proto(out_type, val)
+                    rpc_val = bindings.to_outgoing_proto(
+                        out_type_info.binding_name, val,
+                        pytype=out_type_info.pytype)
                     assert rpc_val is not None
 
                     output_data.append(
@@ -276,9 +280,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                             data=rpc_val))
 
             return_value = None
-            if fi.return_binding_type is not None:
+            if fi.return_type is not None:
                 return_value = bindings.to_outgoing_proto(
-                    fi.return_binding_type, call_result)
+                    fi.return_type.binding_name, call_result,
+                    pytype=fi.return_type.pytype)
 
             return protos.StreamingMessage(
                 request_id=self.request_id,

@@ -21,6 +21,7 @@ class FunctionInfo(typing.NamedTuple):
     directory: str
     requires_context: bool
     is_async: bool
+    has_return: bool
 
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
@@ -61,6 +62,7 @@ class Registry:
         return_pytype: typing.Optional[type] = None
 
         requires_context = False
+        has_return = False
 
         bound_params = {}
         for name, desc in metadata.bindings.items():
@@ -82,6 +84,8 @@ class Registry:
                     raise FunctionLoadError(
                         func_name,
                         f'unknown type for $return binding: "{desc.type}"')
+
+                has_return = True
             else:
                 bound_params[name] = desc
 
@@ -199,6 +203,7 @@ class Registry:
             directory=metadata.directory,
             requires_context=requires_context,
             is_async=inspect.iscoroutinefunction(func),
+            has_return=has_return,
             input_types=input_types,
             output_types=output_types,
             return_type=return_type)

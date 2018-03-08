@@ -51,6 +51,13 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'no_return')
         self.assertEqual(r.status_code, 204)
 
+    def test_no_return_returns(self):
+        r = self.webhost.request('GET', 'no_return_returns')
+        self.assertEqual(r.status_code, 500)
+        self.assertRegex(r.text,
+                         r'.*function .+no_return_returns.+ without a '
+                         r'\$return binding returned a non-None value.*')
+
     def test_async_return_str(self):
         r = self.webhost.request('GET', 'async_return_str')
         self.assertEqual(r.status_code, 200)

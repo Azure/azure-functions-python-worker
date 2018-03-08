@@ -260,6 +260,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self._sync_call_tp,
                     self.__run_sync_func, invocation_id, fi.func, args)
 
+            if call_result is not None and not fi.has_return:
+                raise RuntimeError(
+                    f'function {fi.name!r} without a $return binding '
+                    f'returned a non-None value')
+
             output_data = []
             if fi.output_types:
                 for out_name, out_type_info in fi.output_types.items():

@@ -108,8 +108,9 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         cls.webhost.close()
         cls.webhost = None
 
-        cls.host_stdout.close()
-        cls.host_stdout = None
+        if cls.host_stdout is not None:
+            cls.host_stdout.close()
+            cls.host_stdout = None
 
     def _run_test(self, test, *args, **kwargs):
         if self.host_stdout is None:

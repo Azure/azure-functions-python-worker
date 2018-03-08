@@ -97,6 +97,7 @@ class TestTriggerMetadataDecoder(unittest.TestCase):
             'int_as_int': protos.TypedData(int=1),
             'string_as_json': protos.TypedData(json='"aaa"'),
             'string_as_string': protos.TypedData(string='aaa'),
+            'dict_as_json': protos.TypedData(json='{"foo":"bar"}')
         }
 
         cases = [
@@ -105,6 +106,7 @@ class TestTriggerMetadataDecoder(unittest.TestCase):
             ('int_as_int', int, 1),
             ('string_as_json', str, 'aaa'),
             ('string_as_string', str, 'aaa'),
+            ('dict_as_json', dict, {'foo': 'bar'}),
         ]
 
         for field, pytype, expected in cases:
@@ -130,8 +132,8 @@ class TestTriggerMetadataDecoder(unittest.TestCase):
             ),
             (
                 'unexpected_json', int, ValueError,
-                "unexpected data structure in expected scalar field "
-                "'unexpected_json' in trigger metadata"
+                "cannot convert value of field 'unexpected_json' in "
+                "trigger metadata into int"
             ),
             (
                 'unexpected_data', int, ValueError,

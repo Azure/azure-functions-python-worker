@@ -67,7 +67,7 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
         pass
 
     @classmethod
-    def _decode_scalar_typed_data(
+    def _decode_typed_data(
             cls, data: typing.Optional[protos.TypedData], *,
             python_type: typing.Union[type, typing.Tuple[type, ...]],
             context: str='data') -> typing.Any:
@@ -77,9 +77,6 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
         data_type = data.WhichOneof('data')
         if data_type == 'json':
             result = json.loads(data.json)
-            if isinstance(result, (list, dict)):
-                raise ValueError(
-                    f'unexpected data structure in expected scalar {context}')
 
         elif data_type == 'string':
             result = data.string
@@ -95,7 +92,7 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
                 f'unsupported type of {context}: {data_type}')
 
         if not isinstance(result, python_type):
-            if isinstance(python_type, tuple):
+            if isinstance(python_type, (tuple, list, dict)):
                 raise ValueError(
                     f'unexpected value type in {context}: '
                     f'{type(result).__name__}, expected one of: '
@@ -121,7 +118,7 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
         if data is None:
             return None
         else:
-            return cls._decode_scalar_typed_data(
+            return cls._decode_typed_data(
                 data, python_type=python_type,
                 context=f'field {field!r} in trigger metadata')
 

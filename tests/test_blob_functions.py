@@ -1,3 +1,5 @@
+import time
+
 from azure.worker import testutils
 
 
@@ -42,3 +44,35 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('POST', 'get_blob_return')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'FROM RETURN')
+
+    def test_blob_trigger(self):
+        data = str(round(time.time()))
+
+        r = self.webhost.request('POST', 'put_blob_trigger',
+                                 data=data.encode('utf-8'))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK')
+
+        max_retries = 10
+
+        for try_no in range(max_retries):
+            # Allow trigger to fire
+            time.sleep(2)
+
+            try:
+                # Check that the trigger has fired
+                r = self.webhost.request('GET', 'get_blob_triggered')
+                self.assertEqual(r.status_code, 200)
+                response = r.json()
+
+                self.assertEqual(
+                    response,
+                    {
+                        'name': 'python-worker-tests/test-blob-trigger.txt',
+                        'length': 10,
+                        'content': data
+                    }
+                )
+            except AssertionError:
+                if try_no == max_retries - 1:
+                    raise

@@ -1,2 +1,2 @@
 def main(req):
-    return 'pong'
+    return

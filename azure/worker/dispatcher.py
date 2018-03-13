@@ -96,6 +96,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             logging_handler = AsyncLoggingHandler()
             root_logger = logging.getLogger()
+            root_logger.setLevel(logging.INFO)
             root_logger.addHandler(logging_handler)
             try:
                 await forever
@@ -127,7 +128,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         elif record.levelno >= logging.WARNING:
             log_level = protos.RpcLog.Warning
         elif record.levelno >= logging.INFO:
-            log_level = protos.RpcLog.Info
+            log_level = protos.RpcLog.Information
         elif record.levelno >= logging.DEBUG:
             log_level = protos.RpcLog.Debug
         else:

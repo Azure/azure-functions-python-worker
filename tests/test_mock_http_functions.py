@@ -47,10 +47,12 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertEqual(len(r.logs), 2)
 
             self.assertEqual(r.logs[0].invocation_id, invoke_id)
-            self.assertEqual(r.logs[0].message, 'one error')
+            self.assertEqual(r.logs[0].message, 'hello info')
+            self.assertEqual(r.logs[0].level, protos.RpcLog.Information)
 
             self.assertEqual(r.logs[1].invocation_id, invoke_id)
             self.assertEqual(r.logs[1].message, 'and another error')
+            self.assertEqual(r.logs[1].level, protos.RpcLog.Error)
 
             self.assertEqual(r.response.return_value.string, 'OK-async')
 

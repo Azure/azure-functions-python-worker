@@ -8,7 +8,7 @@ logger = logging.getLogger('my function')
 
 
 async def main(req: azure.functions.HttpRequest):
-    logger.error('one error')
+    logger.info('hello info')
 
     await asyncio.sleep(0.1)
 

@@ -131,7 +131,6 @@ The **request** object has the following attributes.
 method | str | HTTP method of the request
 url | str | Url of the request
 headers | dict | HTTP headers sent with the request
-data | dict | Form data parameters
 params | dict | Query string parameters
 body | bytes | Raw HTTP request body
 
@@ -142,7 +141,7 @@ The **response** object has the following attributes.
 -------------|----------|----------------
 headers | dict | Response headers
 status_code | int | HTTP response status code
-content | str, bytes, dict | Contents of the response
+body | str, bytes, dict | Contents of the response
 
 Similar to any other binding, these can be accessed using the `name` attribute in `function.json`.
 

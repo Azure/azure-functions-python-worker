@@ -2,8 +2,8 @@
     "Description":{
         "Language":"python",
         "Extension":".py",
-        "DefaultExecutablePath":"python",
-        "DefaultWorkerPath":"worker.py"
+        "DefaultExecutablePath":"sh",
+        "DefaultWorkerPath":"start.sh"
     },
     "Arguments":[]
 }

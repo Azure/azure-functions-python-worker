@@ -4,8 +4,8 @@
 This repository will host the Python language worker impelementation for Azure Functions. We'll also be using it to track work items related to first class Python support. Feel free to leave comments about any of the features/design patterns.
 
 # Getting Started
-### Creating a Python Function : [Developer guide](https://pythondeveloperguide.azurewebsites.net/)
-### Understanding how things work : [Python language worker](https://github.com/Azure/azure-functions-python-worker/wiki/Worker-Architecture)
+#### Creating a Python Function : [Developer guide](https://pythondeveloperguide.azurewebsites.net/)
+#### Understanding how things work : [Python language worker](https://github.com/Azure/azure-functions-python-worker/wiki/Worker-Architecture)
 
 # Disclaimer
 The project is currently in progress. Please expect the feature and design patterns to develop or change over time. If you have any feedback or requests, you can file an issue or add comments.

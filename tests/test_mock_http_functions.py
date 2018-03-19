@@ -24,7 +24,8 @@ class TestMockHost(testutils.AsyncTestCase):
 
             log = r.logs[0]
             self.assertEqual(log.invocation_id, invoke_id)
-            self.assertEqual(log.message, 'a gracefully handled error')
+            self.assertTrue(log.message.startswith(
+                'a gracefully handled error'))
 
             self.assertEqual(r.response.return_value.string, 'OK-sync')
 
@@ -51,7 +52,7 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertEqual(r.logs[0].level, protos.RpcLog.Information)
 
             self.assertEqual(r.logs[1].invocation_id, invoke_id)
-            self.assertEqual(r.logs[1].message, 'and another error')
+            self.assertTrue(r.logs[1].message.startswith('and another error'))
             self.assertEqual(r.logs[1].level, protos.RpcLog.Error)
 
             self.assertEqual(r.response.return_value.string, 'OK-async')

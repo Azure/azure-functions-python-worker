@@ -120,7 +120,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._sync_call_tp.shutdown()
             self._sync_call_tp = None
 
-    def _on_logging(self, record: logging.LogRecord):
+    def _on_logging(self, record: logging.LogRecord, formatted_msg: str):
         if record.levelno >= logging.CRITICAL:
             log_level = protos.RpcLog.Critical
         elif record.levelno >= logging.ERROR:
@@ -136,7 +136,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         log = dict(
             level=log_level,
-            message=record.msg,
+            message=formatted_msg,
             category=record.name,
         )
 
@@ -357,7 +357,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 class AsyncLoggingHandler(logging.Handler):
 
     def emit(self, record):
-        Dispatcher.current._on_logging(record)
+        msg = self.format(record)
+        Dispatcher.current._on_logging(record, msg)
 
 
 class ContextEnabledTask(asyncio.Task):

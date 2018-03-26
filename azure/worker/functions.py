@@ -157,8 +157,12 @@ class Registry:
                 else:
                     param_py_type = param.annotation
                 if param_py_type:
-                    if not bindings.check_type_annotation(
-                            param_bind_type, param_py_type):
+                    if is_param_out:
+                        checker = bindings.check_output_type_annotation
+                    else:
+                        checker = bindings.check_input_type_annotation
+
+                    if not checker(param_bind_type, param_py_type):
                         raise FunctionLoadError(
                             func_name,
                             f'type of {param.name} binding in function.json '
@@ -186,7 +190,7 @@ class Registry:
                     func_name,
                     f'return annotation should not be azure.functions.Out')
 
-            if not bindings.check_type_annotation(
+            if not bindings.check_output_type_annotation(
                     return_binding_name, return_pytype):
                 raise FunctionLoadError(
                     func_name,

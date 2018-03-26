@@ -47,7 +47,11 @@ class BlobConverter(meta.InConverter,
                     binding='blob'):
 
     @classmethod
-    def check_python_type(cls, pytype: type) -> bool:
+    def check_input_type_annotation(cls, pytype: type) -> bool:
+        return issubclass(pytype, azf_abc.InputStream)
+
+    @classmethod
+    def check_output_type_annotation(cls, pytype: type) -> bool:
         return (issubclass(pytype, (str, bytes, bytearray,
                                     azf_abc.InputStream) or
                 callable(getattr(pytype, 'read', None))))

@@ -68,7 +68,7 @@ class HttpRequest(azf_abc.HttpRequest):
 class HttpResponseConverter(meta.OutConverter, binding='http'):
 
     @classmethod
-    def check_python_type(cls, pytype: type) -> bool:
+    def check_output_type_annotation(cls, pytype: type) -> bool:
         return issubclass(pytype, (azf_abc.HttpResponse, str))
 
     @classmethod
@@ -107,7 +107,7 @@ class HttpRequestConverter(meta.InConverter,
                            binding='httpTrigger', trigger=True):
 
     @classmethod
-    def check_python_type(cls, pytype: type) -> bool:
+    def check_input_type_annotation(cls, pytype: type) -> bool:
         return issubclass(pytype, azf_abc.HttpRequest)
 
     @classmethod

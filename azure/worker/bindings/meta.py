@@ -19,7 +19,8 @@ class TypedDataKind(enum.Enum):
 
 class _ConverterMeta(abc.ABCMeta):
 
-    _check_py_type: typing.Mapping[str, typing.Callable[[type], bool]] = {}
+    _check_in_typeann: typing.Mapping[str, typing.Callable[[type], bool]] = {}
+    _check_out_typeann: typing.Mapping[str, typing.Callable[[type], bool]] = {}
     _from_proto: typing.Mapping[str, typing.Callable] = {}
     _to_proto: typing.Mapping[str, typing.Callable] = {}
     _binding_types: typing.Mapping[str, bool] = {}
@@ -37,11 +38,23 @@ class _ConverterMeta(abc.ABCMeta):
                 f'registered')
         mcls._binding_types[binding] = trigger
 
-        if binding in mcls._check_py_type:
-            raise RuntimeError(
-                f'cannot register a second check_python_type implementation '
-                f'for {binding!r} binding')
-        mcls._check_py_type[binding] = getattr(cls, 'check_python_type')
+        check_in_typesig = getattr(cls, 'check_input_type_annotation', None)
+        if (check_in_typesig is not None and
+                not getattr(check_in_typesig, '__isabstractmethod__', False)):
+            if binding in mcls._check_in_typeann:
+                raise RuntimeError(
+                    f'cannot register a second check_input_type_annotation '
+                    f'implementation for {binding!r} binding')
+            mcls._check_in_typeann[binding] = check_in_typesig
+
+        check_out_typesig = getattr(cls, 'check_output_type_annotation', None)
+        if (check_out_typesig is not None and
+                not getattr(check_out_typesig, '__isabstractmethod__', False)):
+            if binding in mcls._check_out_typeann:
+                raise RuntimeError(
+                    f'cannot register a second check_output_type_annotation '
+                    f'implementation for {binding!r} binding')
+            mcls._check_out_typeann[binding] = check_out_typesig
 
         if issubclass(cls, InConverter):
             if binding in mcls._from_proto:
@@ -61,10 +74,6 @@ class _ConverterMeta(abc.ABCMeta):
 
 
 class _BaseConverter(metaclass=_ConverterMeta, binding=None):
-
-    @abc.abstractclassmethod
-    def check_python_type(cls, pytype: type) -> bool:
-        pass
 
     @classmethod
     def _decode_typed_data(
@@ -126,6 +135,10 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
 class InConverter(_BaseConverter, binding=None):
 
     @abc.abstractclassmethod
+    def check_input_type_annotation(cls, pytype: type) -> bool:
+        pass
+
+    @abc.abstractclassmethod
     def from_proto(cls, data: protos.TypedData, *,
                    pytype: typing.Optional[type],
                    trigger_metadata) -> typing.Any:
@@ -133,6 +146,10 @@ class InConverter(_BaseConverter, binding=None):
 
 
 class OutConverter(_BaseConverter, binding=None):
+
+    @abc.abstractclassmethod
+    def check_output_type_annotation(cls, pytype: type) -> bool:
+        pass
 
     @abc.abstractclassmethod
     def to_proto(cls, obj: typing.Any, *,
@@ -151,12 +168,23 @@ def is_trigger_binding(bind_name: str) -> bool:
         raise ValueError(f'unsupported binding type {bind_name!r}')
 
 
-def check_type_annotation(binding: str, pytype: type) -> bool:
+def check_input_type_annotation(binding: str, pytype: type) -> bool:
     try:
-        checker = _ConverterMeta._check_py_type[binding]
+        checker = _ConverterMeta._check_in_typeann[binding]
     except KeyError:
         raise TypeError(
-            f'bind type {binding!r} does not have '
+            f'{binding!r} input binding does not have '
+            f'a corresponding Python type') from None
+
+    return checker(pytype)
+
+
+def check_output_type_annotation(binding: str, pytype: type) -> bool:
+    try:
+        checker = _ConverterMeta._check_out_typeann[binding]
+    except KeyError:
+        raise TypeError(
+            f'{binding!r} output binding does not have '
             f'a corresponding Python type') from None
 
     return checker(pytype)

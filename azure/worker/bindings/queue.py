@@ -55,7 +55,7 @@ class QueueMessageInConverter(meta.InConverter,
                               binding='queueTrigger', trigger=True):
 
     @classmethod
-    def check_python_type(cls, pytype: type) -> bool:
+    def check_input_type_annotation(cls, pytype: type) -> bool:
         return issubclass(pytype, azf_abc.QueueMessage)
 
     @classmethod
@@ -114,7 +114,7 @@ class QueueMessageInConverter(meta.InConverter,
 class QueueMessageOutConverter(meta.OutConverter, binding='queue'):
 
     @classmethod
-    def check_python_type(cls, pytype: type) -> bool:
+    def check_output_type_annotation(cls, pytype: type) -> bool:
         return issubclass(pytype, (azf_abc.QueueMessage, str, bytes))
 
     @classmethod

@@ -21,7 +21,7 @@ class TimerRequestConverter(meta.InConverter,
                             binding='timerTrigger', trigger=True):
 
     @classmethod
-    def check_python_type(cls, pytype: type) -> bool:
+    def check_input_type_annotation(cls, pytype: type) -> bool:
         return issubclass(pytype, azf_abc.TimerRequest)
 
     @classmethod

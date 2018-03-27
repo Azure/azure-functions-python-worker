@@ -50,7 +50,7 @@ class QueueMessage(_abc.QueueMessage):
         return None
 
     @property
-    def next_visible_time(self) -> typing.Optional[datetime.datetime]:
+    def time_next_visible(self) -> typing.Optional[datetime.datetime]:
         """A datetime object with the time the message will be visible next."""
         return None
 

@@ -27,7 +27,7 @@ class TestQueueFunctions(testutils.WebHostTestCase):
 
         self.assertEqual(msg['body'], 'test-message')
         for attr in {'id', 'expiration_time', 'insertion_time',
-                     'next_visible_time', 'pop_receipt', 'dequeue_count'}:
+                     'time_next_visible', 'pop_receipt', 'dequeue_count'}:
             self.assertIsNotNone(msg.get(attr))
 
     def test_queue_return(self):

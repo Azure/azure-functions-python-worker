@@ -139,6 +139,24 @@ class InputStream(io.BufferedIOBase, abc.ABC):
         """
         pass
 
+    @property
+    @abc.abstractmethod
+    def name(self) -> typing.Optional[str]:
+        """The name of the blob."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def length(self) -> typing.Optional[int]:
+        """The size of the blob in bytes."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def uri(self) -> typing.Optional[str]:
+        """The blob's primary location URI."""
+        pass
+
 
 class QueueMessage(abc.ABC):
 

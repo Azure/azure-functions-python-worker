@@ -16,7 +16,7 @@ Programming Model
 =================
 
 An Azure function is implemented as a global Python function ``main()`` in the
-file called ``main.py``. The name of the Python function can be changed by
+file called ``__init__.py``. The name of the Python function can be changed by
 specifying the ``entryPoint`` attribute in ``function.json``, and the name of
 the file can be changed by specifying the ``scriptFile`` attribute in
 ``function.json``.
@@ -33,7 +33,7 @@ Below is an example of a simple function triggerred by an HTTP request.
 .. code-block:: json
 
     {
-      "scriptFile": "main.py",
+      "scriptFile": "__init__.py",
       "disabled": false,
       "bindings": [
         {
@@ -51,7 +51,7 @@ Below is an example of a simple function triggerred by an HTTP request.
     }
 
 
-``main.py``:
+``__init__.py``:
 
 .. code-block:: python
 
@@ -124,7 +124,7 @@ Example
 .. code-block:: json
 
     {
-      "scriptFile": "main.py",
+      "scriptFile": "__init__.py",
       "disabled": false,
       "bindings": [
         {
@@ -142,7 +142,7 @@ Example
     }
 
 
-``main.py``:
+``__init__.py``:
 
 .. code-block:: python
 
@@ -189,7 +189,7 @@ Blob storage trigger example
     }
 
 
-``main.py``:
+``__init__.py``:
 
 
 .. code-block:: python
@@ -232,7 +232,7 @@ Blob storage output example
     }
 
 
-``main.py``:
+``__init__.py``:
 
 
 .. code-block:: python
@@ -272,7 +272,7 @@ Example
 .. code-block:: json
 
     {
-      "scriptFile": "main.py",
+      "scriptFile": "__init__.py",
 
       "bindings": [
         {
@@ -293,7 +293,7 @@ Example
     }
 
 
-``main.py``:
+``__init__.py``:
 
 .. code-block:: python
 
@@ -326,7 +326,7 @@ Example
 .. code-block:: json
 
     {
-      "scriptFile": "main.py",
+      "scriptFile": "__init__.py",
 
       "bindings": [
         {
@@ -346,7 +346,7 @@ Example
     }
 
 
-``main.py``:
+``__init__.py``:
 
 .. code-block:: python
 

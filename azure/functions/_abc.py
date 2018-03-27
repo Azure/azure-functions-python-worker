@@ -172,7 +172,7 @@ class QueueMessage(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def next_visible_time(self) -> typing.Optional[datetime.datetime]:
+    def time_next_visible(self) -> typing.Optional[datetime.datetime]:
         pass
 
     @property

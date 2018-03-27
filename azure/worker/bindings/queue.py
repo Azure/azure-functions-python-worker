@@ -17,13 +17,13 @@ class QueueMessage(azf_queue.QueueMessage):
                  dequeue_count=None,
                  expiration_time=None,
                  insertion_time=None,
-                 next_visible_time=None,
+                 time_next_visible=None,
                  pop_receipt=None):
         super().__init__(id=id, body=body, pop_receipt=pop_receipt)
         self.__dequeue_count = dequeue_count
         self.__expiration_time = expiration_time
         self.__insertion_time = insertion_time
-        self.__next_visible_time = next_visible_time
+        self.__time_next_visible = time_next_visible
 
     @property
     def dequeue_count(self):
@@ -38,8 +38,8 @@ class QueueMessage(azf_queue.QueueMessage):
         return self.__insertion_time
 
     @property
-    def next_visible_time(self):
-        return self.__next_visible_time
+    def time_next_visible(self):
+        return self.__time_next_visible
 
     def __repr__(self) -> str:
         return (
@@ -88,7 +88,7 @@ class QueueMessageInConverter(meta.InConverter,
                 trigger_metadata, 'ExpirationTime'),
             insertion_time=cls._parse_datetime_metadata(
                 trigger_metadata, 'InsertionTime'),
-            next_visible_time=cls._parse_datetime_metadata(
+            time_next_visible=cls._parse_datetime_metadata(
                 trigger_metadata, 'NextVisibleTime'),
             pop_receipt=cls._decode_trigger_metadata_field(
                 trigger_metadata, 'PopReceipt', python_type=str)

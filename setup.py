@@ -1,6 +1,8 @@
 import distutils.cmd
+import glob
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -13,8 +15,8 @@ from setuptools.command import develop
 
 
 # TODO: change this to something more stable when available.
-WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/o1fwxf4xscyfygt2'
-               '/artifacts/Functions.Binaries.2.0.11709-alpha.zip')
+WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/r1d0pxmtkib47bc4'
+               '/artifacts/Functions.Binaries.2.0.11737-alpha.zip')
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = [
@@ -28,17 +30,39 @@ AZURE_EXTENSIONS = [
 class BuildGRPC:
     """Generate gRPC bindings."""
     def _gen_grpc(self):
-        cwd = os.getcwd()
+        root = pathlib.Path(__file__).parent
+
+        proto_root_dir = root / 'azure' / 'worker' / 'protos'
+        proto_src_dir = proto_root_dir / '_src' / 'src' / 'proto'
+        staging_root_dir = root / 'build' / 'protos'
+        staging_dir = staging_root_dir / 'azure' / 'worker' / 'protos'
+        build_dir = staging_dir / 'azure' / 'worker' / 'protos'
+
+        if os.path.exists(build_dir):
+            shutil.rmtree(build_dir)
+
+        shutil.copytree(proto_src_dir, build_dir)
 
         subprocess.run([
             sys.executable, '-m', 'grpc_tools.protoc',
             '-I', os.sep.join(('azure', 'worker', 'protos')),
-            '--python_out', cwd,
-            '--grpc_python_out', cwd,
+            '--python_out', str(staging_root_dir),
+            '--grpc_python_out', str(staging_root_dir),
             os.sep.join(('azure', 'worker', 'protos',
                          'azure', 'worker', 'protos',
                          'FunctionRpc.proto')),
-        ], check=True, stdout=sys.stdout, stderr=sys.stderr)
+        ], check=True, stdout=sys.stdout, stderr=sys.stderr,
+            cwd=staging_root_dir)
+
+        compiled = glob.glob(str(staging_dir / '*.py'))
+
+        if not compiled:
+            print('grpc_tools.protoc produced no Python files',
+                  file=sys.stderr)
+            sys.exit(1)
+
+        for f in compiled:
+            shutil.copy(f, proto_root_dir)
 
 
 class build(build.build, BuildGRPC):

@@ -97,7 +97,7 @@ class HttpResponseConverter(meta.OutConverter, binding='http'):
                 http=protos.RpcHttp(
                     status_code=str(status),
                     headers=headers,
-                    is_raw=True,
+                    enable_content_negotiation=False,
                     body=body))
 
         raise NotImplementedError

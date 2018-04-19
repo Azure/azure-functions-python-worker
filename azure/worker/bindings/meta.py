@@ -1,4 +1,5 @@
 import abc
+import datetime
 import enum
 import json
 import typing
@@ -130,6 +131,22 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
             return cls._decode_typed_data(
                 data, python_type=python_type,
                 context=f'field {field!r} in trigger metadata')
+
+    @classmethod
+    def _parse_datetime_metadata(
+            cls, trigger_metadata: typing.Mapping[str, protos.TypedData],
+            field: str) -> typing.Optional[datetime.datetime]:
+
+        datetime_str = cls._decode_trigger_metadata_field(
+            trigger_metadata, field, python_type=str)
+
+        if datetime_str is None:
+            return None
+        else:
+            # UTC ISO 8601 assumed
+            dt = datetime.datetime.strptime(
+                datetime_str, '%Y-%m-%dT%H:%M:%S+00:00')
+            return dt.replace(tzinfo=datetime.timezone.utc)
 
 
 class InConverter(_BaseConverter, binding=None):

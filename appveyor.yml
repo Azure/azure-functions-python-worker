@@ -7,6 +7,9 @@ environment:
     matrix:
         - PYTHON: "C:\\Python36-x64\\python.exe"
 
+install:
+    - choco install azure-functions-core-tools --pre
+
 build_script:
     - "%PYTHON% -m pip install -U -e .[dev]"
     - "%PYTHON% setup.py webhost"

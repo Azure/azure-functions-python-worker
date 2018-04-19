@@ -49,6 +49,26 @@ Timer Bindings
    :members:
 
 
+.. _azure-functions-bindings-cosmosdb:
+
+CosmosDB Bindings
+=================
+
+.. autoclass:: azure.functions.Document
+   :members:
+
+   .. describe:: doc[field]
+
+      Return the field of *doc* with field name *field*.
+
+   .. describe:: doc[field] = value
+
+      Set field of *doc* with field name *field* to *value*.
+
+.. autoclass:: azure.functions.DocumentList
+   :members:
+
+
 .. _azure-functions-bindings-context:
 
 Function Context

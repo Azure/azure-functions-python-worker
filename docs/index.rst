@@ -359,6 +359,105 @@ Example
         return f'{datetime.datetime.now().timestamp()}'
 
 
+.. _azure-bindings-cosmosdb:
+
+CosmosDB Bindings
+-----------------
+
+The trigger and input CosmosDB bindings are passed as
+:class:`DocumentList <azure.functions.DocumentList>` instances.  Output can
+be a :class:`Document <azure.functions.Document>` instance, a
+:class:`DocumentList <azure.functions.DocumentList>` instance or an iterable
+containing ``Document`` instances.
+
+CosmosDB Trigger Example
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+``function.json``:
+
+.. code-block:: json
+
+    {
+      "disabled": false,
+      "bindings": [
+        {
+          "direction": "in",
+          "type": "cosmosDBTrigger",
+          "name": "docs",
+          "databaseName": "test",
+          "collectionName": "items",
+          "leaseCollectionName": "leases",
+        },
+        {
+          "type": "http",
+          "direction": "out",
+          "name": "$return",
+        }
+      ]
+    }
+
+
+``__init__.py``:
+
+
+.. code-block:: python
+
+    import azure.functions as func
+
+    def main(docs: func.DocumentList) -> str:
+        return docs[0].to_json()
+
+
+CosmosDB Output Example
+~~~~~~~~~~~~~~~~~~~~~~~
+
+``function.json``:
+
+.. code-block:: json
+
+    {
+      "scriptFile": "__init__.py",
+      "disabled": false,
+
+      "bindings": [
+        {
+          "authLevel": "anonymous",
+          "type": "httpTrigger",
+          "direction": "in",
+          "name": "req"
+        },
+        {
+          "direction": "out",
+          "type": "cosmosDB",
+          "name": "doc",
+          "databaseName": "test",
+          "collectionName": "items",
+          "leaseCollectionName": "leases",
+          "createIfNotExists": true
+        },
+        {
+          "direction": "out",
+          "name": "$return",
+          "type": "http"
+        }
+      ]
+    }
+
+
+``__init__.py``:
+
+
+.. code-block:: python
+
+    import azure.functions as func
+
+
+    def main(req: func.HttpRequest, doc: func.Out[func.Document]):
+        doc.set(func.Document.from_json(req.get_body()))
+
+        return 'OK'
+
+
 Reference
 ---------
 

@@ -17,6 +17,7 @@ addons:
 
         packages:
             - dotnet-sdk-2.1.4
+            - azure-functions-core-tools
 
 cache:
     pip: true

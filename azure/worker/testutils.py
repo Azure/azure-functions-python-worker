@@ -36,6 +36,7 @@ PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / \
     'Microsoft.Azure.WebJobs.Script.WebHost.dll'
+EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / 'http_functions'
 WORKER_PATH = pathlib.Path(__file__).parent.parent.parent
 WORKER_CONFIG = WORKER_PATH / '.testconfig'
@@ -94,7 +95,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
     @classmethod
     def setUpClass(cls):
-        script_dir = cls.get_script_dir()
+        script_dir = pathlib.Path(cls.get_script_dir())
         if os.environ.get('PYAZURE_WEBHOST_DEBUG'):
             cls.host_stdout = None
         else:
@@ -102,6 +103,17 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         cls.webhost = start_webhost(script_dir=script_dir,
                                     stdout=cls.host_stdout)
+
+        extensions = TESTS_ROOT / script_dir / 'bin'
+
+        if not extensions.exists():
+            if extensions.is_symlink():
+                extensions.unlink()
+
+            extensions.symlink_to(EXTENSIONS_PATH, target_is_directory=True)
+            cls.linked_extensions = True
+        else:
+            cls.linked_extensions = False
 
     @classmethod
     def tearDownClass(cls):
@@ -111,6 +123,10 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         if cls.host_stdout is not None:
             cls.host_stdout.close()
             cls.host_stdout = None
+
+        if cls.linked_extensions:
+            extensions = TESTS_ROOT / cls.get_script_dir() / 'bin'
+            extensions.unlink()
 
     def _run_test(self, test, *args, **kwargs):
         if self.host_stdout is None:
@@ -474,6 +490,10 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         st = testconfig['azure'].get('storage_key')
         if st:
             extra_env['AzureWebJobsStorage'] = st
+
+        cosmos = testconfig['azure'].get('cosmosdb_key')
+        if cosmos:
+            extra_env['AzureWebJobsCosmosDBConnectionString'] = cosmos
 
     if port is not None:
         extra_env['ASPNETCORE_URLS'] = f'http://*:{port}'

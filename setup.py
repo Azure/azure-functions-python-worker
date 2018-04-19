@@ -131,9 +131,9 @@ class webhost(distutils.cmd.Command):
 
 
 setup(
-    name='azure',
+    name='azure-functions-python',
     version='0.0.1',
-    description='Azure Python Functions',
+    description='Python Support for Azure Functions',
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Intended Audience :: Developers',
@@ -145,9 +145,8 @@ setup(
         'Development Status :: 3 - Alpha',
     ],
     license='MIT',
-    packages=['azure', 'azure.functions',
-              'azure.worker', 'azure.worker.protos'],
-    provides=['azure'],
+    packages=['azure.functions', 'azure.worker', 'azure.worker.protos'],
+    provides=['azure.functions'],
     install_requires=[
         'grpcio',
         'grpcio-tools',

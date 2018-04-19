@@ -574,7 +574,7 @@ def start_webhost(*, script_dir=None, stdout=None):
                              params={'code': 'testFunctionKey'})
             if 200 <= r.status_code < 300:
                 # Give the host a bit more time to settle
-                time.sleep(1)
+                time.sleep(2)
                 break
         except requests.exceptions.ConnectionError:
             pass
@@ -594,6 +594,17 @@ def _main():
 
     args = parser.parse_args()
 
+    extensions = pathlib.Path(args.scriptroot) / 'bin'
+
+    if not extensions.exists():
+        if extensions.is_symlink():
+            extensions.unlink()
+
+        extensions.symlink_to(EXTENSIONS_PATH, target_is_directory=True)
+        linked_extensions = True
+    else:
+        linked_extensions = False
+
     host = popen_webhost(
         stdout=sys.stdout, stderr=sys.stderr,
         script_root=os.path.abspath(args.scriptroot))
@@ -601,6 +612,8 @@ def _main():
         host.wait()
     finally:
         host.terminate()
+        if linked_extensions:
+            extensions.unlink()
 
 
 if __name__ == '__main__':

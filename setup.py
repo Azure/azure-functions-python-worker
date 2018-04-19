@@ -28,6 +28,10 @@ AZURE_EXTENSIONS = [
         "id": "Microsoft.Azure.WebJobs.Extensions.EventHubs",
         "version": "3.0.0-beta5"
     },
+    {
+        "id": "Microsoft.Azure.WebJobs.Extensions.EventGrid",
+        "version": "2.0.0-beta1"
+    },
 ]
 
 

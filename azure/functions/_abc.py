@@ -199,6 +199,42 @@ class QueueMessage(abc.ABC):
         pass
 
 
+class EventGridEvent(abc.ABC):
+    @property
+    @abc.abstractmethod
+    def id(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    def get_json(self) -> typing.Any:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def topic(self) -> str:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def subject(self) -> str:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def event_type(self) -> str:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def event_time(self) -> datetime.datetime:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def data_version(self) -> str:
+        pass
+
+
 class Document(abc.ABC):
 
     @classmethod

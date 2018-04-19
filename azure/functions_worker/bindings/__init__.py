@@ -9,6 +9,7 @@ from .out import Out
 # to get them registered and available:
 from . import blob  # NoQA
 from . import cosmosdb  # NoQA
+from . import eventgrid  # NoQA
 from . import eventhub  # NoQA
 from . import http  # NoQA
 from . import queue  # NoQA

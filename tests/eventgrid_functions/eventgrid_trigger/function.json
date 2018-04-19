@@ -1,0 +1,19 @@
+{
+  "scriptFile": "__init__.py",
+  "disabled": false,
+
+  "bindings": [
+    {
+      "type": "eventGridTrigger",
+      "direction": "in",
+      "name": "event",
+    },
+    {
+      "type": "blob",
+      "direction": "out",
+      "name": "$return",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/test-eventgrid-triggered.txt"
+    }
+  ]
+}

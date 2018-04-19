@@ -1,0 +1,28 @@
+{
+  "scriptFile": "__init__.py",
+  "disabled": false,
+
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req"
+    },
+    {
+      "direction": "in",
+      "type": "cosmosDB",
+      "name": "docs",
+      "databaseName": "test",
+      "collectionName": "items",
+      "id": "cosmosdb-input-test",
+      "leaseCollectionName": "leases-1",
+      "createLeaseCollectionIfNotExists": true
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "$return"
+    },
+  ]
+}

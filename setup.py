@@ -13,8 +13,16 @@ from setuptools.command import develop
 
 
 # TODO: change this to something more stable when available.
-WEBHOST_URL = ('http://ci.appveyor.com/api/buildjobs/y6wonxc4o3k529s8'
-               '/artifacts/Functions.Binaries.2.0.11549-alpha.zip')
+WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/fnb1vb963tt4tf75'
+               '/artifacts/Functions.Binaries.2.0.11651-alpha.zip')
+
+# Extensions necessary for non-core bindings.
+AZURE_EXTENSIONS = [
+    {
+        "id": "Microsoft.Azure.WebJobs.Extensions.CosmosDB",
+        "version": "3.0.0-beta7"
+    }
+]
 
 
 class BuildGRPC:
@@ -57,6 +65,7 @@ class webhost(distutils.cmd.Command):
     def initialize_options(self):
         self.webhost_url = None
         self.webhost_dir = None
+        self.extensions_dir = None
 
     def finalize_options(self):
         if self.webhost_url is None:
@@ -66,7 +75,11 @@ class webhost(distutils.cmd.Command):
             self.webhost_dir = \
                 pathlib.Path(__file__).parent / 'build' / 'webhost'
 
-    def run(self):
+        if self.extensions_dir is None:
+            self.extensions_dir = \
+                pathlib.Path(__file__).parent / 'build' / 'extensions'
+
+    def _install_webhost(self):
         with tempfile.NamedTemporaryFile() as zipf:
             zipf.close()
             try:
@@ -97,6 +110,24 @@ class webhost(distutils.cmd.Command):
                     with archive.open(archive_name) as src, \
                             open(destination, 'wb') as dst:
                         dst.write(src.read())
+
+    def _install_extensions(self):
+        if not self.extensions_dir.exists():
+            os.makedirs(self.extensions_dir, exist_ok=True)
+
+        env = os.environ.copy()
+        env['TERM'] = 'xterm'  # ncurses 6.1 workaround
+
+        for ext in AZURE_EXTENSIONS:
+            subprocess.run([
+                'func', 'extensions', 'install', '--package', ext['id'],
+                '--version', ext['version']],
+                check=True, cwd=str(self.extensions_dir),
+                stdout=sys.stdout, stderr=sys.stderr, env=env)
+
+    def run(self):
+        self._install_webhost()
+        self._install_extensions()
 
 
 setup(

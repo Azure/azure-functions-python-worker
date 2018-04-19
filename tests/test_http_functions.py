@@ -22,8 +22,9 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def test_return_bytes(self):
         r = self.webhost.request('GET', 'return_bytes')
         self.assertEqual(r.status_code, 500)
-        self.assertRegex(
-            r.text, r'.*unsupported type .*http.* for Python type .*bytes.*')
+        # https://github.com/Azure/azure-functions-host/issues/2706
+        # self.assertRegex(
+        #    r.text, r'.*unsupported type .*http.* for Python type .*bytes.*')
 
     def test_return_http(self):
         r = self.webhost.request('GET', 'return_http')
@@ -54,9 +55,10 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def test_no_return_returns(self):
         r = self.webhost.request('GET', 'no_return_returns')
         self.assertEqual(r.status_code, 500)
-        self.assertRegex(r.text,
-                         r'.*function .+no_return_returns.+ without a '
-                         r'\$return binding returned a non-None value.*')
+        # https://github.com/Azure/azure-functions-host/issues/2706
+        # self.assertRegex(r.text,
+        #                  r'.*function .+no_return_returns.+ without a '
+        #                  r'\$return binding returned a non-None value.*')
 
     def test_async_return_str(self):
         r = self.webhost.request('GET', 'async_return_str')
@@ -141,4 +143,5 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def test_unhandled_error(self):
         r = self.webhost.request('GET', 'unhandled_error')
         self.assertEqual(r.status_code, 500)
-        self.assertIn('Exception: ZeroDivisionError', r.text)
+        # https://github.com/Azure/azure-functions-host/issues/2706
+        # self.assertIn('Exception: ZeroDivisionError', r.text)

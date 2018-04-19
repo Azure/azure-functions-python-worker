@@ -8,6 +8,7 @@ from .out import Out
 # Import type implementations and converters
 # to get them registered and available:
 from . import blob  # NoQA
+from . import cosmosdb  # NoQA
 from . import http  # NoQA
 from . import queue  # NoQA
 from . import timer  # NoQA

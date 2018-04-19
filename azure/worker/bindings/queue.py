@@ -94,22 +94,6 @@ class QueueMessageInConverter(meta.InConverter,
                 trigger_metadata, 'PopReceipt', python_type=str)
         )
 
-    @classmethod
-    def _parse_datetime_metadata(
-            cls, trigger_metadata: typing.Mapping[str, protos.TypedData],
-            field: str) -> typing.Optional[datetime.datetime]:
-
-        datetime_str = cls._decode_trigger_metadata_field(
-            trigger_metadata, field, python_type=str)
-
-        if datetime_str is None:
-            return None
-        else:
-            # UTC ISO 8601 assumed
-            dt = datetime.datetime.strptime(
-                datetime_str, '%Y-%m-%dT%H:%M:%S+00:00')
-            return dt.replace(tzinfo=datetime.timezone.utc)
-
 
 class QueueMessageOutConverter(meta.OutConverter, binding='queue'):
 

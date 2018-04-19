@@ -197,3 +197,31 @@ class QueueMessage(abc.ABC):
     @abc.abstractmethod
     def pop_receipt(self) -> typing.Optional[str]:
         pass
+
+
+class Document(abc.ABC):
+    @classmethod
+    @abc.abstractmethod
+    def from_json(cls, json_data: str) -> 'Document':
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def from_dict(cls, dct: dict) -> 'Document':
+        pass
+
+    @abc.abstractmethod
+    def __getitem__(self, key):
+        pass
+
+    @abc.abstractmethod
+    def __setitem__(self, key, value):
+        pass
+
+    @abc.abstractmethod
+    def to_json(self) -> str:
+        pass
+
+
+class DocumentList(abc.ABC):
+    pass

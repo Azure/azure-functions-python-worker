@@ -132,7 +132,7 @@ class webhost(distutils.cmd.Command):
 
 setup(
     name='azure-functions-python',
-    version='0.0.1',
+    version='2.0.0a2.dev0',
     description='Python Support for Azure Functions',
     classifiers=[
         'License :: OSI Approved :: MIT License',
@@ -148,15 +148,15 @@ setup(
     packages=['azure.functions', 'azure.worker', 'azure.worker.protos'],
     provides=['azure.functions'],
     install_requires=[
-        'grpcio',
-        'grpcio-tools',
+        'grpcio~=1.9.1',
+        'grpcio-tools~=1.9.1',
     ],
     extras_require={
         'dev': [
-            'pytest',
-            'requests',
+            'flake8~=3.5.0',
             'mypy',
-            'flake8',
+            'pytest',
+            'requests==2.*',
         ]
     },
     include_package_data=True,

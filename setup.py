@@ -132,7 +132,7 @@ class webhost(distutils.cmd.Command):
 
 setup(
     name='azure-functions-python',
-    version='2.0.0a2.dev0',
+    version='1.0.0a2.dev0',
     description='Python Support for Azure Functions',
     classifiers=[
         'License :: OSI Approved :: MIT License',

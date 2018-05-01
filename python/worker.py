@@ -12,6 +12,8 @@ def parse_args():
     parser.add_argument('--port', type=int)
     parser.add_argument('--workerId', dest='worker_id')
     parser.add_argument('--requestId', dest='request_id')
+    parser.add_argument('--grpcMaxMessageLength', type=int,
+                        dest='grpc_max_msg_len')
     return parser.parse_args()
 
 
@@ -23,7 +25,8 @@ def main():
 
     try:
         azure.worker.start(
-            args.host, args.port, args.worker_id, args.request_id)
+            args.host, args.port, args.worker_id, args.request_id,
+            args.grpc_max_msg_len)
     except Exception:
         print(traceback.format_exc(), flush=True)
         raise

@@ -35,7 +35,7 @@ class Dispatcher(metaclass=DispatcherMeta):
     _GRPC_STOP_RESPONSE = object()
 
     def __init__(self, loop, host, port, worker_id, request_id,
-                 grpc_connect_timeout):
+                 grpc_connect_timeout, grpc_max_msg_len):
         self._loop = loop
         self._host = host
         self._port = port
@@ -56,6 +56,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             max_workers=1)
 
         self._grpc_connect_timeout = grpc_connect_timeout
+        self._grpc_max_msg_len = grpc_max_msg_len
         self._grpc_resp_queue: queue.Queue = queue.Queue()
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread = threading.Thread(
@@ -65,9 +66,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     @classmethod
     async def connect(cls, host, port, worker_id, request_id,
-                      connect_timeout):
+                      connect_timeout, max_msg_len=None):
         loop = asyncio._get_running_loop()
-        disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
+        disp = cls(loop, host, port, worker_id, request_id,
+                   connect_timeout, max_msg_len)
         disp._grpc_thread.start()
         await disp._grpc_connected_fut
         return disp
@@ -319,7 +321,15 @@ class Dispatcher(metaclass=DispatcherMeta):
             _invocation_id_local.v = None
 
     def __poll_grpc(self):
-        channel = grpc.insecure_channel(f'{self._host}:{self._port}')
+        options = []
+        if self._grpc_max_msg_len:
+            options.append(('grpc.max_receive_message_length',
+                            self._grpc_max_msg_len))
+            options.append(('grpc.max_send_message_length',
+                            self._grpc_max_msg_len))
+
+        channel = grpc.insecure_channel(
+            f'{self._host}:{self._port}', options)
 
         try:
             grpc.channel_ready_future(channel).result(

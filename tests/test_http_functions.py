@@ -55,7 +55,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def test_no_return_returns(self):
         r = self.webhost.request('GET', 'no_return_returns')
         self.assertEqual(r.status_code, 500)
-
         # https://github.com/Azure/azure-functions-host/issues/2706
         # self.assertRegex(r.text,
         #                  r'.*function .+no_return_returns.+ without a '

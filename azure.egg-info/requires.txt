@@ -1,8 +1,0 @@
-grpcio
-grpcio-tools
-
-[dev]
-pytest
-requests
-mypy
-flake8

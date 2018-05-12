@@ -3,44 +3,52 @@
 
 This repository will host the Python language worker impelementation for Azure Functions. We'll also be using it to track work items related to Python support. Feel free to leave comments about any of the features/design patterns.
 
-## Disclaimer
-The project is currently in progress. Please **do not use in production** as we expect the feature and design patterns to develop and change over time.
+> :construction: The project is currently **in progress**. Please **do not use in production** as we expect the feature and design patterns to develop and change over time. :construction:
 
-## Overview
-Python support for Functions is based on Python 3.6 and the Functions v2 runtime. Since the v2 runtime is cross-platform, you can develop and test on any platform (Windows, MacOS or Linux). 
+# Overview
 
-On Azure, there are two ways to publish a Python function: 
+Python support for Functions is based on Python 3.6, Functions on Linux and the V2 Runtime.
 
-1. Bring your files (Linux)
+Here is the current status of Python on Functions:
 
-   **Get Started:** 
-   - [Functions Core Tools (CLI)](https://github.com/Azure/azure-functions-python-worker/wiki/Create-Function-(CLI))
-   - VS Code [TBD]
-   
-   **Known issues:**
-   TBD
+| Area | Feature | Status |
+|------|---------|--------|
+| Hosting | Linux - dedicated (app service plan) | Available |
+| Hosting | Linux - consumption (serverless hosting) | In progress |
+| Hosting | Bring your own custom image | Available |
+| Tooling | Functions Core Tools (CLI)| Available |
+| Tooling | Visual Studio Code | In progress |
+| Tooling | Azure Portal Editing | In progress |
+| Language Worker | Triggers, bindings and templates | In progress |
 
-2. Bring your custom image (Docker)
+# Get Started
 
-## Reference
+- [Create and Publish a Python Function (CLI)](https://github.com/Azure/azure-functions-python-worker/wiki/Create-Function-(CLI))
+- [Python Developer Guide](https://pythondeveloperguide.azurewebsites.net/)
+- [Binding API Reference](https://pythondeveloperguide.azurewebsites.net/)
 
-| Item | Link |
-|-----------------------|--------------------|
-|Python Developer Guide | [link](https://pythondeveloperguide.azurewebsites.net/) |
-|Binding API Reference | [link](https://pythondeveloperguide.azurewebsites.net/api.html#azure-functions-reference) |
+# Give Feedback
 
+Issues and feature requests are tracked in a variety of places. To report this feedback, please file an issue to the relevant respository below:
 
-## Contributing
+|Item|Description|Link|
+|----|-----|-----|
+|Runtime|Script Host, Triggers & Bindings, Language Support|[File an Issue](https://github.com/Azure/azure-functions-host/issues)|
+|Core Tools|Command line interface for local development|[File an Issue](https://github.com/Azure/azure-functions-core-tools/issues)|
+|Portal|User Interface or Experience Issue|[File an Issue](https://github.com/azure/azure-functions-ux/issues)|
+|Templates|Code Issues with Creation Template|[File an Issue](https://github.com/Azure/azure-functions-templates/issues)|
 
-| Item | Link |
-|-----------------------|--------------------|
-|Language worker architecture | [link](https://github.com/Azure/azure-functions-python-worker/wiki/Worker-Architecture) |
-|Contriutor setup | [link]() |
-|Adding support for a binding | [link]() |
+# Contribute
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.microsoft.com.
+
+Here are some pointers to get started:
+
+- [Language worker architecture](https://github.com/Azure/azure-functions-python-worker/wiki/Worker-Architecture)
+- [Setting up the development environment](https://github.com/Azure/azure-functions-python-worker/wiki/Contributor-Guide)
+- [Adding support for a new binding](https://github.com/Azure/azure-functions-python-worker/wiki/Adding-support-for-a-new-binding-type)
 
 When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
 a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions

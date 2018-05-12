@@ -9,7 +9,7 @@ This repository will host the Python language worker impelementation for Azure F
 
 Python support for Functions is based on [Python3.6](https://www.python.org/downloads/release/python-360/), [Functions on Linux](https://blogs.msdn.microsoft.com/appserviceteam/2017/11/15/functions-on-linux-preview/) and the [V2 Runtime](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions).
 
-Here is the current status of Python on Functions:
+Here is the current status of Python in Azure Functions:
 
 | Area | Feature | Status |
 |------|---------|--------|
@@ -33,7 +33,9 @@ Issues and feature requests are tracked in a variety of places. To report this f
 
 |Item|Description|Link|
 |----|-----|-----|
-|Runtime|Script Host, Triggers & Bindings, Language Support|[File an Issue](https://github.com/Azure/azure-functions-host/issues)|
+|Python Worker|Language Support, Programming Model, Triggers & Bindings|[File an Issue](https://github.com/Azure/azure-functions-python-worker/issues)|
+|Linux|Base Docker Images|[File an Issue](https://github.com/Azure/azure-functions-docker/issues)|
+|Runtime|Script Host & Language Extensibikity|[File an Issue](https://github.com/Azure/azure-functions-host/issues)|
 |Core Tools|Command line interface for local development|[File an Issue](https://github.com/Azure/azure-functions-core-tools/issues)|
 |Portal|User Interface or Experience Issue|[File an Issue](https://github.com/azure/azure-functions-ux/issues)|
 |Templates|Code Issues with Creation Template|[File an Issue](https://github.com/Azure/azure-functions-templates/issues)|

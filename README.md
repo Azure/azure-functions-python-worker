@@ -1,16 +1,43 @@
 [![Build Status](https://travis-ci.org/Azure/azure-functions-python-worker.svg?branch=dev)](https://travis-ci.org/Azure/azure-functions-python-worker)
 [![Build status](https://ci.appveyor.com/api/projects/status/github/azure/azure-functions-python-worker?svg=true&branch=dev)](https://ci.appveyor.com/project/appsvc/azure-functions-python-worker)
 
-This repository will host the Python language worker impelementation for Azure Functions. We'll also be using it to track work items related to first class Python support. Feel free to leave comments about any of the features/design patterns.
+This repository will host the Python language worker impelementation for Azure Functions. We'll also be using it to track work items related to Python support. Feel free to leave comments about any of the features/design patterns.
 
-# Getting Started
-#### Creating a Python Function : [Developer guide](https://pythondeveloperguide.azurewebsites.net/)
-#### Understanding how things work : [Python language worker](https://github.com/Azure/azure-functions-python-worker/wiki/Worker-Architecture)
+## Disclaimer
+The project is currently in progress. Please **do not use in production** as we expect the feature and design patterns to develop and change over time.
 
-# Disclaimer
-The project is currently in progress. Please expect the feature and design patterns to develop or change over time. If you have any feedback or requests, you can file an issue or add comments.
+## Overview
+Python support for Functions is based on Python 3.6 and the Functions v2 runtime. Since the v2 runtime is cross-platform, you can develop and test on any platform (Windows, MacOS or Linux). 
 
-# Contributing
+On Azure, there are two ways to publish a Python function: 
+
+1. Bring your files (Linux)
+
+   **Get Started:** 
+   - [Functions Core Tools (CLI)](https://github.com/Azure/azure-functions-python-worker/wiki/Create-Function-(CLI))
+   - VS Code [TBD]
+   
+   **Known issues:**
+   
+   TBD
+
+2. Bring your custom image (Docker)
+
+## Reference
+
+| Item | Link |
+|-----------------------|--------------------|
+|Python Developer Guide | [link](https://pythondeveloperguide.azurewebsites.net/) |
+|Binding API Reference | [link](https://pythondeveloperguide.azurewebsites.net/api.html#azure-functions-reference) |
+
+
+## Contributing
+
+| Item | Link |
+|-----------------------|--------------------|
+|Language worker architecture | [link](https://github.com/Azure/azure-functions-python-worker/wiki/Worker-Architecture) |
+|Contriutor setup | [link]() |
+|Adding support for a binding | [link]() |
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us

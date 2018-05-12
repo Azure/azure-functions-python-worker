@@ -11,15 +11,19 @@ Python support for Functions is based on [Python3.6](https://www.python.org/down
 
 Here is the current status of Python in Azure Functions:
 
-| Area | Feature | Status |
-|------|---------|--------|
-| Language Worker | [Triggers and Bindings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-triggers-bindings) | In progress |
-| Tools | [Functions Core Tools (CLI)](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local)| Available |
-| Tools | [Visual Studio Code](https://code.visualstudio.com/tutorials/functions-extension/getting-started) | In progress |
-| Tools | [Azure Portal Editing](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-azure-function) | In progress |
-| Hosting | Linux - [App Service Plan](https://docs.microsoft.com/en-us/azure/azure-functions/functions-scale#app-service-plan) | Available |
-| Hosting | Linux - [Consumption Plan](https://docs.microsoft.com/en-us/azure/azure-functions/functions-scale#consumption-plan) | In progress |
-| Hosting | [Publish a custom image](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-linux-custom-image) | Available |
+What's available?
+
+- Develop using Functions Core Tools (CLI)
+- Pubish your Python functions using a Linux App Service Plan
+- Triggers / Bindings : HTTP/Webhook, Blob, Queue, Timer and Cosmos DB
+- Pubish a custom image to Azure
+
+What's coming?
+
+- Pubish your Python functions using the consumption (serverless) plan
+- Build, test, debug and pubish using Visual Studio Code
+- Triggers / Bindings : Event Grid, Event Hubs, IoT Hub
+- Create and edit functions in the Azure Portal
 
 # Get Started
 

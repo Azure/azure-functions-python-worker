@@ -3,7 +3,7 @@
 
 This repository will host the Python language worker impelementation for Azure Functions. We'll also be using it to track work items related to Python support. Please feel free to leave comments about any of the features and design patterns.
 
-> :construction: The project is currently **in progress**. Please **do not use in production** as we expect developments over time. :construction:
+> :construction: The project is currently **work in progress**. Please **do not use in production** as we expect developments over time. :construction:
 
 # Overview
 
@@ -25,7 +25,7 @@ Here is the current status of Python on Functions:
 
 - [Create and Publish a Python Function (CLI)](https://github.com/Azure/azure-functions-python-worker/wiki/Create-Function-(CLI))
 - [Python Developer Guide](https://pythondeveloperguide.azurewebsites.net/)
-- [Binding API Reference](https://pythondeveloperguide.azurewebsites.net/)
+- [Binding API Reference](https://pythondeveloperguide.azurewebsites.net/api.html#azure-functions-reference)
 
 # Give Feedback
 

@@ -3,7 +3,7 @@
 
 This repository will host the Python language worker impelementation for Azure Functions. We'll also be using it to track work items related to Python support. Please feel free to leave comments about any of the features and design patterns.
 
-> :construction: The project is currently **work in progress**. Please **do not use in production** as we expect improvements over time. :construction:
+> :construction: The project is currently **work in progress**. Please **do not use in production** as we expect developments over time. :construction:
 
 # Overview
 

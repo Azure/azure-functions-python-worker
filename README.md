@@ -14,18 +14,18 @@ Here is the current status of Python on Functions:
 | Area | Feature | Status |
 |------|---------|--------|
 | Language Worker | [Triggers and Bindings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-triggers-bindings) | In progress |
+| Tools | [Functions Core Tools (CLI)](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local)| Available |
+| Tools | [Visual Studio Code](https://code.visualstudio.com/tutorials/functions-extension/getting-started) | In progress |
+| Tools | [Azure Portal Editing](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-azure-function) | In progress |
 | Hosting | Linux - [app service plan](https://docs.microsoft.com/en-us/azure/azure-functions/functions-scale#app-service-plan) | Available |
 | Hosting | Linux - [consumption plan](https://docs.microsoft.com/en-us/azure/azure-functions/functions-scale#consumption-plan) | In progress |
 | Hosting | [Bring your own custom image](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-linux-custom-image) | Available |
-| Tooling | [Functions Core Tools (CLI)](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local)| Available |
-| Tooling | [Visual Studio Code](https://code.visualstudio.com/tutorials/functions-extension/getting-started) | In progress |
-| Tooling | [Azure Portal Editing](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-azure-function) | In progress |
 
 # Get Started
 
-- [Create and Publish a Python Function (CLI)](https://github.com/Azure/azure-functions-python-worker/wiki/Create-Function-(CLI))
-- [Python Developer Guide](https://pythondeveloperguide.azurewebsites.net/)
-- [Binding API Reference](https://pythondeveloperguide.azurewebsites.net/api.html#azure-functions-reference)
+- [Build and publish using the Functions Core Tools](https://github.com/Azure/azure-functions-python-worker/wiki/Create-Function-(CLI))
+- [Python developer guide](https://pythondeveloperguide.azurewebsites.net/)
+- [Binding API reference](https://pythondeveloperguide.azurewebsites.net/api.html#azure-functions-reference)
 
 # Give Feedback
 

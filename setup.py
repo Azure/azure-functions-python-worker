@@ -30,7 +30,7 @@ AZURE_EXTENSIONS = [
 class BuildGRPC:
     """Generate gRPC bindings."""
     def _gen_grpc(self):
-        root = pathlib.Path(__file__).parent
+        root = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 
         proto_root_dir = root / 'azure' / 'worker' / 'protos'
         proto_src_dir = proto_root_dir / '_src' / 'src' / 'proto'
@@ -169,8 +169,13 @@ setup(
         'Development Status :: 3 - Alpha',
     ],
     license='MIT',
-    packages=['azure.functions', 'azure.worker', 'azure.worker.protos'],
+    packages=['azure.functions', 'azure.worker', 'azure.worker.protos',
+              'azure.worker.bindings'],
     provides=['azure.functions'],
+    setup_requires=[
+        'grpcio~=1.9.1',
+        'grpcio-tools~=1.9.1',
+    ],
     install_requires=[
         'grpcio~=1.9.1',
         'grpcio-tools~=1.9.1',

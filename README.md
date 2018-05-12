@@ -18,7 +18,6 @@ On Azure, there are two ways to publish a Python function:
    - VS Code [TBD]
    
    **Known issues:**
-   
    TBD
 
 2. Bring your custom image (Docker)

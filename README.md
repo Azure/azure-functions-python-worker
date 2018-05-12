@@ -3,7 +3,7 @@
 
 This repository will host the Python language worker impelementation for Azure Functions. We'll also be using it to track work items related to Python support. Please feel free to leave comments about any of the features and design patterns.
 
-> :construction: The project is currently **work in progress**. Please **do not use in production** as we expect developments over time. :construction:
+> :construction: The project is currently **work in progress**. Please **do not use in production** as we expect improvements over time. :construction:
 
 # Overview
 
@@ -17,9 +17,9 @@ Here is the current status of Python in Azure Functions:
 | Tools | [Functions Core Tools (CLI)](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local)| Available |
 | Tools | [Visual Studio Code](https://code.visualstudio.com/tutorials/functions-extension/getting-started) | In progress |
 | Tools | [Azure Portal Editing](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-azure-function) | In progress |
-| Hosting | Linux - [app service plan](https://docs.microsoft.com/en-us/azure/azure-functions/functions-scale#app-service-plan) | Available |
-| Hosting | Linux - [consumption plan](https://docs.microsoft.com/en-us/azure/azure-functions/functions-scale#consumption-plan) | In progress |
-| Hosting | [Bring your own custom image](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-linux-custom-image) | Available |
+| Hosting | Linux - [App Service Plan](https://docs.microsoft.com/en-us/azure/azure-functions/functions-scale#app-service-plan) | Available |
+| Hosting | Linux - [Consumption Plan](https://docs.microsoft.com/en-us/azure/azure-functions/functions-scale#consumption-plan) | In progress |
+| Hosting | [Publish a custom image](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-linux-custom-image) | Available |
 
 # Get Started
 
@@ -33,12 +33,12 @@ Issues and feature requests are tracked in a variety of places. To report this f
 
 |Item|Description|Link|
 |----|-----|-----|
-|Python Worker|Language Support, Programming Model, Triggers & Bindings|[File an Issue](https://github.com/Azure/azure-functions-python-worker/issues)|
-|Linux|Base Docker Images|[File an Issue](https://github.com/Azure/azure-functions-docker/issues)|
-|Runtime|Script Host & Language Extensibikity|[File an Issue](https://github.com/Azure/azure-functions-host/issues)|
-|Core Tools|Command line interface for local development|[File an Issue](https://github.com/Azure/azure-functions-core-tools/issues)|
-|Portal|User Interface or Experience Issue|[File an Issue](https://github.com/azure/azure-functions-ux/issues)|
-|Templates|Code Issues with Creation Template|[File an Issue](https://github.com/Azure/azure-functions-templates/issues)|
+| Python Worker | Programming Model, Triggers & Bindings |[File an Issue](https://github.com/Azure/azure-functions-python-worker/issues)|
+| Linux | Base Docker Images |[File an Issue](https://github.com/Azure/azure-functions-docker/issues)|
+| Runtime | Script Host & Language Extensibility |[File an Issue](https://github.com/Azure/azure-functions-host/issues)|
+| Core Tools | Command line interface for local development |[File an Issue](https://github.com/Azure/azure-functions-core-tools/issues)|
+| Portal | User Interface or Experience Issue |[File an Issue](https://github.com/azure/azure-functions-ux/issues)|
+| Templates | Code Issues with Creation Template |[File an Issue](https://github.com/Azure/azure-functions-templates/issues)|
 
 # Contribute
 

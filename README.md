@@ -13,13 +13,13 @@ Here is the current status of Python on Functions:
 
 | Area | Feature | Status |
 |------|---------|--------|
+| Language Worker | [Triggers and Bindings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-triggers-bindings) | In progress |
 | Hosting | Linux - [app service plan](https://docs.microsoft.com/en-us/azure/azure-functions/functions-scale#app-service-plan) | Available |
 | Hosting | Linux - [consumption plan](https://docs.microsoft.com/en-us/azure/azure-functions/functions-scale#consumption-plan) | In progress |
 | Hosting | [Bring your own custom image](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-linux-custom-image) | Available |
 | Tooling | [Functions Core Tools (CLI)](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local)| Available |
 | Tooling | [Visual Studio Code](https://code.visualstudio.com/tutorials/functions-extension/getting-started) | In progress |
 | Tooling | [Azure Portal Editing](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-azure-function) | In progress |
-| Language Worker | [Triggers and Bindings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-triggers-bindings) | In progress |
 
 # Get Started
 

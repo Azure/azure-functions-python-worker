@@ -1,25 +1,25 @@
 [![Build Status](https://travis-ci.org/Azure/azure-functions-python-worker.svg?branch=dev)](https://travis-ci.org/Azure/azure-functions-python-worker)
 [![Build status](https://ci.appveyor.com/api/projects/status/github/azure/azure-functions-python-worker?svg=true&branch=dev)](https://ci.appveyor.com/project/appsvc/azure-functions-python-worker)
 
-This repository will host the Python language worker impelementation for Azure Functions. We'll also be using it to track work items related to Python support. Feel free to leave comments about any of the features/design patterns.
+This repository will host the Python language worker impelementation for Azure Functions. We'll also be using it to track work items related to Python support. Please feel free to leave comments about any of the features and design patterns.
 
-> :construction: The project is currently **in progress**. Please **do not use in production** as we expect the feature and design patterns to develop and change over time. :construction:
+> :construction: The project is currently **in progress**. Please **do not use in production** as we expect developments over time. :construction:
 
 # Overview
 
-Python support for Functions is based on Python 3.6, Functions on Linux and the V2 Runtime.
+Python support for Functions is based on [Python3.6](https://www.python.org/downloads/release/python-360/), [Functions on Linux](https://blogs.msdn.microsoft.com/appserviceteam/2017/11/15/functions-on-linux-preview/) and the [V2 Runtime](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions).
 
 Here is the current status of Python on Functions:
 
 | Area | Feature | Status |
 |------|---------|--------|
-| Hosting | Linux - dedicated (app service plan) | Available |
-| Hosting | Linux - consumption (serverless hosting) | In progress |
-| Hosting | Bring your own custom image | Available |
-| Tooling | Functions Core Tools (CLI)| Available |
-| Tooling | Visual Studio Code | In progress |
-| Tooling | Azure Portal Editing | In progress |
-| Language Worker | Triggers, bindings and templates | In progress |
+| Hosting | Linux - [app service plan](https://docs.microsoft.com/en-us/azure/azure-functions/functions-scale#app-service-plan) | Available |
+| Hosting | Linux - [consumption plan](https://docs.microsoft.com/en-us/azure/azure-functions/functions-scale#consumption-plan) | In progress |
+| Hosting | [Bring your own custom image](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-linux-custom-image) | Available |
+| Tooling | [Functions Core Tools (CLI)](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local)| Available |
+| Tooling | [Visual Studio Code](https://code.visualstudio.com/tutorials/functions-extension/getting-started) | In progress |
+| Tooling | [Azure Portal Editing](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-azure-function) | In progress |
+| Language Worker | [Triggers and Bindings](https://docs.microsoft.com/en-us/azure/azure-functions/functions-triggers-bindings) | In progress |
 
 # Get Started
 

@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/Azure/azure-functions-python-worker.svg?branch=dev)](https://travis-ci.org/Azure/azure-functions-python-worker)
 [![Build status](https://ci.appveyor.com/api/projects/status/github/azure/azure-functions-python-worker?svg=true&branch=dev)](https://ci.appveyor.com/project/appsvc/azure-functions-python-worker)
 
-This repository will host the Python language worker impelementation for Azure Functions. We'll also be using it to track work items related to Python support. Please feel free to leave comments about any of the features and design patterns.
+This repository will host the Python language worker implementation for Azure Functions. We'll also be using it to track work items related to Python support. Please feel free to leave comments about any of the features and design patterns.
 
 > :construction: The project is currently **work in progress**. Please **do not use in production** as we expect developments over time. :construction:
 
@@ -14,14 +14,14 @@ Here is the current status of Python in Azure Functions:
 What's available?
 
 - Develop using Functions Core Tools (CLI)
-- Pubish your Python functions using a Linux App Service Plan
+- Publish your Python functions using a Linux App Service Plan
 - Triggers / Bindings : HTTP/Webhook, Blob, Queue, Timer and Cosmos DB
-- Pubish a custom image to Azure
+- Publish a custom image to Azure
 
 What's coming?
 
-- Pubish your Python functions using the consumption (serverless) plan
-- Build, test, debug and pubish using Visual Studio Code
+- Publish your Python functions using the consumption (serverless) plan
+- Build, test, debug and publish using Visual Studio Code
 - Triggers / Bindings : Event Grid, Event Hubs, IoT Hub
 - Create and edit functions in the Azure Portal
 

@@ -97,7 +97,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         r = self.webhost.request(
             'GET', 'return_request',
             params={'a': 1, 'b': ':%)'},
-            headers={'xxx': 'zzz'})
+            headers={'xxx': 'zzz', 'Max-Forwards': '10'})
 
         self.assertEqual(r.status_code, 200)
 
@@ -106,6 +106,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(req['method'], 'GET')
         self.assertEqual(req['params'], {'a': '1', 'b': ':%)'})
         self.assertEqual(req['headers']['xxx'], 'zzz')
+        self.assertEqual(req['headers']['max-forwards'], '10')
 
         self.assertIn('return_request', req['url'])
 

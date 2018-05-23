@@ -125,7 +125,7 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
             python_type: typing.Union[type, typing.Tuple[type, ...]]) \
             -> typing.Any:
         data = trigger_metadata.get(field)
-        if data is None:
+        if data is None or data.WhichOneof('data') is None:
             return None
         else:
             return cls._decode_typed_data(

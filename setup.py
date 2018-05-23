@@ -23,7 +23,11 @@ AZURE_EXTENSIONS = [
     {
         "id": "Microsoft.Azure.WebJobs.Extensions.CosmosDB",
         "version": "3.0.0-beta7"
-    }
+    },
+    {
+        "id": "Microsoft.Azure.WebJobs.Extensions.EventHubs",
+        "version": "3.0.0-beta5"
+    },
 ]
 
 

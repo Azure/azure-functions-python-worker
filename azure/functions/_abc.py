@@ -200,6 +200,7 @@ class QueueMessage(abc.ABC):
 
 
 class Document(abc.ABC):
+
     @classmethod
     @abc.abstractmethod
     def from_json(cls, json_data: str) -> 'Document':
@@ -225,3 +226,30 @@ class Document(abc.ABC):
 
 class DocumentList(abc.ABC):
     pass
+
+
+class EventHubEvent(abc.ABC):
+
+    @abc.abstractmethod
+    def get_body(self) -> bytes:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def partition_key(self) -> typing.Optional[str]:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def sequence_number(self) -> typing.Optional[int]:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def enqueued_time(self) -> typing.Optional[datetime.datetime]:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def offset(self) -> typing.Optional[str]:
+        pass

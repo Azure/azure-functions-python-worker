@@ -101,9 +101,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         else:
             cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
 
-        cls.webhost = start_webhost(script_dir=script_dir,
-                                    stdout=cls.host_stdout)
-
         extensions = TESTS_ROOT / script_dir / 'bin'
 
         if not extensions.exists():
@@ -114,6 +111,9 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
             cls.linked_extensions = True
         else:
             cls.linked_extensions = False
+
+        cls.webhost = start_webhost(script_dir=script_dir,
+                                    stdout=cls.host_stdout)
 
     @classmethod
     def tearDownClass(cls):
@@ -495,6 +495,10 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         if cosmos:
             extra_env['AzureWebJobsCosmosDBConnectionString'] = cosmos
 
+        eventhub = testconfig['azure'].get('eventhub_key')
+        if eventhub:
+            extra_env['AzureWebJobsEventHubConnectionString'] = eventhub
+
     if port is not None:
         extra_env['ASPNETCORE_URLS'] = f'http://*:{port}'
 
@@ -531,6 +535,8 @@ def start_webhost(*, script_dir=None, stdout=None):
         try:
             r = requests.get(f'{addr}/api/ping')
             if 200 <= r.status_code < 300:
+                # Give the host a bit more time to settle
+                time.sleep(1)
                 break
         except requests.exceptions.ConnectionError:
             pass

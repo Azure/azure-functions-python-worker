@@ -23,7 +23,6 @@ What's coming?
 - Publish your Python functions using the consumption (serverless) plan
 - Build, test, debug and publish using Visual Studio Code
 - Triggers / Bindings : Event Grid, Event Hubs, IoT Hub
-- Create and edit functions in the Azure Portal
 
 # Get Started
 

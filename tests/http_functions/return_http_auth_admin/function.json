@@ -3,21 +3,15 @@
   "disabled": false,
   "bindings": [
     {
+      "authLevel": "admin",
       "type": "httpTrigger",
       "direction": "in",
       "name": "req"
     },
     {
-      "type": "blob",
-      "direction": "in",
-      "name": "file",
-      "connection": "AzureWebJobsStorage",
-      "path": "python-worker-tests/test-str.txt"
-    },
-    {
       "type": "http",
       "direction": "out",
-      "name": "$return",
+      "name": "$return"
     }
   ]
 }

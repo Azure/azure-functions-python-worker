@@ -26,8 +26,15 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # self.assertRegex(
         #    r.text, r'.*unsupported type .*http.* for Python type .*bytes.*')
 
-    def test_return_http(self):
+    def test_return_http_200(self):
         r = self.webhost.request('GET', 'return_http')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '<h1>Hello World™</h1>')
+        self.assertEqual(r.headers['content-type'], 'text/html; charset=utf-8')
+
+    def test_return_http_auth_level_admin(self):
+        r = self.webhost.request('GET', 'return_http_auth_admin',
+                                 params={'code': 'testMasterKey'})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, '<h1>Hello World™</h1>')
         self.assertEqual(r.headers['content-type'], 'text/html; charset=utf-8')

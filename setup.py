@@ -194,5 +194,10 @@ setup(
         'develop': develop,
         'webhost': webhost,
     },
-    test_suite='tests'
+    test_suite='tests',
+    entry_points={
+        'console_scripts': [
+            'azure-functions-python-packapp = azure.worker.tools.packapp:main',
+        ]
+    },
 )

@@ -1,4 +1,4 @@
-from azure.worker import testutils
+from azure.functions_worker import testutils
 
 
 class TestLoader(testutils.WebHostTestCase):

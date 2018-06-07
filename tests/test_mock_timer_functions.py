@@ -1,7 +1,7 @@
 import json
 
-from azure.worker import protos
-from azure.worker import testutils
+from azure.functions_worker import protos
+from azure.functions_worker import testutils
 
 
 class TestTimerFunctions(testutils.AsyncTestCase):

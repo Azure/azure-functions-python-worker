@@ -62,7 +62,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
 
-        self._logger = logging.getLogger('python-azure-worker')
+        self._logger = logging.getLogger('azure.functions_worker')
 
     @classmethod
     async def connect(cls, host, port, worker_id, request_id,

@@ -13,6 +13,7 @@ from . import eventgrid  # NoQA
 from . import eventhub  # NoQA
 from . import http  # NoQA
 from . import queue  # NoQA
+from . import servicebus  # NoQA
 from . import timer  # NoQA
 
 

@@ -547,6 +547,10 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         if eventhub:
             extra_env['AzureWebJobsEventHubConnectionString'] = eventhub
 
+        servicebus = testconfig['azure'].get('servicebus_key')
+        if servicebus:
+            extra_env['AzureWebJobsServiceBusConnectionString'] = servicebus
+
     if port is not None:
         extra_env['ASPNETCORE_URLS'] = f'http://*:{port}'
 

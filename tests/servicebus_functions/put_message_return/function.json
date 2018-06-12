@@ -1,0 +1,19 @@
+{
+  "scriptFile": "__init__.py",
+  "disabled": false,
+
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req"
+    },
+    {
+      "direction": "out",
+      "name": "$return",
+      "queueName": "testqueue-return",
+      "connection": "AzureWebJobsServiceBusConnectionString",
+      "type": "serviceBus"
+    }
+  ]
+}

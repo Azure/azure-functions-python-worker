@@ -146,6 +146,19 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
             return cls._parse_datetime(datetime_str)
 
     @classmethod
+    def _parse_timedelta_metadata(
+            cls, trigger_metadata: typing.Mapping[str, protos.TypedData],
+            field: str) -> typing.Optional[datetime.timedelta]:
+
+        timedelta_str = cls._decode_trigger_metadata_field(
+            trigger_metadata, field, python_type=str)
+
+        if timedelta_str is None:
+            return None
+        else:
+            return cls._parse_timedelta(timedelta_str)
+
+    @classmethod
     def _parse_datetime(
             cls, datetime_str: str) -> datetime.datetime:
         # UTC ISO 8601 assumed
@@ -166,6 +179,11 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
             raise last_error
 
         return dt.replace(tzinfo=datetime.timezone.utc)
+
+    @classmethod
+    def _parse_timedelta(
+            cls, timedelta_str: str) -> datetime.timedelta:
+        raise NotImplementedError
 
 
 class InConverter(_BaseConverter, binding=None):

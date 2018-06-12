@@ -1,0 +1,23 @@
+{
+  "scriptFile": "__init__.py",
+  "disabled": false,
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req"
+    },
+    {
+      "type": "blob",
+      "direction": "in",
+      "name": "file",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/test-servicebus-triggered.txt"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "$return",
+    }
+  ]
+}

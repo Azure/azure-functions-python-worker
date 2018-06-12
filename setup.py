@@ -32,6 +32,10 @@ AZURE_EXTENSIONS = [
         "id": "Microsoft.Azure.WebJobs.Extensions.EventGrid",
         "version": "2.0.0-beta1"
     },
+    {
+        "id": "Microsoft.Azure.WebJobs.ServiceBus",
+        "version": "3.0.0-beta5"
+    },
 ]
 
 
@@ -192,7 +196,7 @@ setup(
     install_requires=[
         'grpcio~=1.14.0',
         'grpcio-tools~=1.14.0',
-        'azure-functions==1.0.0a1',
+        'azure-functions==1.0.0a3',
     ],
     extras_require={
         'dev': [

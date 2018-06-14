@@ -125,7 +125,7 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
             python_type: typing.Union[type, typing.Tuple[type, ...]]) \
             -> typing.Any:
         data = trigger_metadata.get(field)
-        if data is None:
+        if data is None or data.WhichOneof('data') is None:
             return None
         else:
             return cls._decode_typed_data(
@@ -143,10 +143,29 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
         if datetime_str is None:
             return None
         else:
-            # UTC ISO 8601 assumed
-            dt = datetime.datetime.strptime(
-                datetime_str, '%Y-%m-%dT%H:%M:%S+00:00')
-            return dt.replace(tzinfo=datetime.timezone.utc)
+            return cls._parse_datetime(datetime_str)
+
+    @classmethod
+    def _parse_datetime(
+            cls, datetime_str: str) -> datetime.datetime:
+        # UTC ISO 8601 assumed
+        formats = [
+            '%Y-%m-%dT%H:%M:%S+00:00',
+            '%Y-%m-%dT%H:%M:%S.%f+00:00',
+            '%Y-%m-%dT%H:%M:%SZ',
+            '%Y-%m-%dT%H:%M:%S.%fZ',
+        ]
+        dt = None
+        for fmt in formats:
+            try:
+                dt = datetime.datetime.strptime(datetime_str, fmt)
+            except ValueError as e:
+                last_error = e
+
+        if dt is None:
+            raise last_error
+
+        return dt.replace(tzinfo=datetime.timezone.utc)
 
 
 class InConverter(_BaseConverter, binding=None):

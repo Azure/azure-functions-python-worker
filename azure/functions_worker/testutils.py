@@ -41,6 +41,33 @@ FUNCS_PATH = TESTS_ROOT / 'http_functions'
 WORKER_PATH = pathlib.Path(__file__).parent.parent.parent
 WORKER_CONFIG = WORKER_PATH / '.testconfig'
 
+SECRETS_TEMPLATE = """\
+{
+  "masterKey": {
+    "name": "master",
+    "value": "testMasterKey",
+    "encrypted": false
+  },
+  "functionKeys": [
+    {
+      "name": "default",
+      "value": "testFunctionKey",
+      "encrypted": false
+    }
+  ],
+   "systemKeys": [
+    {
+      "name": "eventgridextensionconfig_extension",
+      "value": "testSystemKey",
+      "encrypted": false
+    }
+  ],
+  "hostName": null,
+  "instanceId": "0000000000000000000000001C69C103",
+  "source": "runtime"
+}
+"""
+
 
 class AsyncTestCaseMeta(type(unittest.TestCase)):
 
@@ -101,9 +128,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         else:
             cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
 
-        cls.webhost = start_webhost(script_dir=script_dir,
-                                    stdout=cls.host_stdout)
-
         extensions = TESTS_ROOT / script_dir / 'bin'
 
         if not extensions.exists():
@@ -114,6 +138,9 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
             cls.linked_extensions = True
         else:
             cls.linked_extensions = False
+
+        cls.webhost = start_webhost(script_dir=script_dir,
+                                    stdout=cls.host_stdout)
 
     @classmethod
     def tearDownClass(cls):
@@ -413,7 +440,11 @@ class _WebHostProxy:
 
     def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
-        return request_method(self._addr + '/api/' + funcname, *args, **kwargs)
+        params = dict(kwargs.pop('params', {}))
+        if 'code' not in params:
+            params['code'] = 'testFunctionKey'
+        return request_method(self._addr + '/api/' + funcname,
+                              *args, params=params, **kwargs)
 
     def close(self):
         if self._proc.stdout:
@@ -448,6 +479,12 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
 
     if not dll:
         dll = DEFAULT_WEBHOST_DLL_PATH
+
+        secrets = SECRETS_TEMPLATE
+
+        os.makedirs(dll.parent / 'Secrets', exist_ok=True)
+        with open(dll.parent / 'Secrets' / 'host.json', 'w') as f:
+            f.write(secrets)
 
     if not dll or not pathlib.Path(dll).exists():
         raise RuntimeError('\n'.join([
@@ -495,6 +532,10 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         if cosmos:
             extra_env['AzureWebJobsCosmosDBConnectionString'] = cosmos
 
+        eventhub = testconfig['azure'].get('eventhub_key')
+        if eventhub:
+            extra_env['AzureWebJobsEventHubConnectionString'] = eventhub
+
     if port is not None:
         extra_env['ASPNETCORE_URLS'] = f'http://*:{port}'
 
@@ -529,8 +570,11 @@ def start_webhost(*, script_dir=None, stdout=None):
 
     for n in range(10):
         try:
-            r = requests.get(f'{addr}/api/ping')
+            r = requests.get(f'{addr}/api/ping',
+                             params={'code': 'testFunctionKey'})
             if 200 <= r.status_code < 300:
+                # Give the host a bit more time to settle
+                time.sleep(2)
                 break
         except requests.exceptions.ConnectionError:
             pass
@@ -550,6 +594,17 @@ def _main():
 
     args = parser.parse_args()
 
+    extensions = pathlib.Path(args.scriptroot) / 'bin'
+
+    if not extensions.exists():
+        if extensions.is_symlink():
+            extensions.unlink()
+
+        extensions.symlink_to(EXTENSIONS_PATH, target_is_directory=True)
+        linked_extensions = True
+    else:
+        linked_extensions = False
+
     host = popen_webhost(
         stdout=sys.stdout, stderr=sys.stderr,
         script_root=os.path.abspath(args.scriptroot))
@@ -557,6 +612,8 @@ def _main():
         host.wait()
     finally:
         host.terminate()
+        if linked_extensions:
+            extensions.unlink()
 
 
 if __name__ == '__main__':

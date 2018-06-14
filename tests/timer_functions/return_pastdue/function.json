@@ -3,7 +3,6 @@
   "disabled": false,
   "bindings": [
     {
-      "authLevel": "anonymous",
       "type": "timerTrigger",
       "direction": "in",
       "name": "timer",

@@ -21,10 +21,10 @@ def main():
     args = parse_args()
 
     import azure.functions  # NoQA
-    import azure.worker
+    import azure.functions_worker
 
     try:
-        azure.worker.start(
+        azure.functions_worker.start(
             args.host, args.port, args.worker_id, args.request_id,
             args.grpc_max_msg_len)
     except Exception:

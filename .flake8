@@ -1,5 +1,5 @@
 [flake8]
-ignore = E402,E731
+ignore = W503,E402,E731
 exclude =
     .git, __pycache__, build, dist, .eggs, .github, .local,
-    Samples, azure/worker/protos/, docs/
+    Samples, azure/functions_worker/protos/, docs/

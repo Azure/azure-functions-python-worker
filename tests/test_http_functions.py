@@ -1,4 +1,4 @@
-from azure.worker import testutils
+from azure.functions_worker import testutils
 
 
 class TestHttpFunctions(testutils.WebHostTestCase):
@@ -26,8 +26,15 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # self.assertRegex(
         #    r.text, r'.*unsupported type .*http.* for Python type .*bytes.*')
 
-    def test_return_http(self):
+    def test_return_http_200(self):
         r = self.webhost.request('GET', 'return_http')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '<h1>Hello World™</h1>')
+        self.assertEqual(r.headers['content-type'], 'text/html; charset=utf-8')
+
+    def test_return_http_auth_level_admin(self):
+        r = self.webhost.request('GET', 'return_http_auth_admin',
+                                 params={'code': 'testMasterKey'})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, '<h1>Hello World™</h1>')
         self.assertEqual(r.headers['content-type'], 'text/html; charset=utf-8')
@@ -97,7 +104,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         r = self.webhost.request(
             'GET', 'return_request',
             params={'a': 1, 'b': ':%)'},
-            headers={'xxx': 'zzz'})
+            headers={'xxx': 'zzz', 'Max-Forwards': '10'})
 
         self.assertEqual(r.status_code, 200)
 
@@ -106,6 +113,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(req['method'], 'GET')
         self.assertEqual(req['params'], {'a': '1', 'b': ':%)'})
         self.assertEqual(req['headers']['xxx'], 'zzz')
+        self.assertEqual(req['headers']['max-forwards'], '10')
 
         self.assertIn('return_request', req['url'])
 

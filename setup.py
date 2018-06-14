@@ -23,20 +23,29 @@ AZURE_EXTENSIONS = [
     {
         "id": "Microsoft.Azure.WebJobs.Extensions.CosmosDB",
         "version": "3.0.0-beta7"
-    }
+    },
+    {
+        "id": "Microsoft.Azure.WebJobs.Extensions.EventHubs",
+        "version": "3.0.0-beta5"
+    },
+    {
+        "id": "Microsoft.Azure.WebJobs.Extensions.EventGrid",
+        "version": "2.0.0-beta1"
+    },
 ]
 
 
 class BuildGRPC:
     """Generate gRPC bindings."""
     def _gen_grpc(self):
-        root = pathlib.Path(__file__).parent
+        root = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 
-        proto_root_dir = root / 'azure' / 'worker' / 'protos'
+        proto_root_dir = root / 'azure' / 'functions_worker' / 'protos'
         proto_src_dir = proto_root_dir / '_src' / 'src' / 'proto'
         staging_root_dir = root / 'build' / 'protos'
-        staging_dir = staging_root_dir / 'azure' / 'worker' / 'protos'
-        build_dir = staging_dir / 'azure' / 'worker' / 'protos'
+        staging_dir = (staging_root_dir / 'azure'
+                       / 'functions_worker' / 'protos')
+        build_dir = staging_dir / 'azure' / 'functions_worker' / 'protos'
 
         if os.path.exists(build_dir):
             shutil.rmtree(build_dir)
@@ -45,11 +54,11 @@ class BuildGRPC:
 
         subprocess.run([
             sys.executable, '-m', 'grpc_tools.protoc',
-            '-I', os.sep.join(('azure', 'worker', 'protos')),
+            '-I', os.sep.join(('azure', 'functions_worker', 'protos')),
             '--python_out', str(staging_root_dir),
             '--grpc_python_out', str(staging_root_dir),
-            os.sep.join(('azure', 'worker', 'protos',
-                         'azure', 'worker', 'protos',
+            os.sep.join(('azure', 'functions_worker', 'protos',
+                         'azure', 'functions_worker', 'protos',
                          'FunctionRpc.proto')),
         ], check=True, stdout=sys.stdout, stderr=sys.stderr,
             cwd=staging_root_dir)
@@ -169,8 +178,15 @@ setup(
         'Development Status :: 3 - Alpha',
     ],
     license='MIT',
-    packages=['azure.functions', 'azure.worker', 'azure.worker.protos'],
+    packages=['azure.functions',
+              'azure.functions_worker',
+              'azure.functions_worker.protos',
+              'azure.functions_worker.bindings'],
     provides=['azure.functions'],
+    setup_requires=[
+        'grpcio~=1.9.1',
+        'grpcio-tools~=1.9.1',
+    ],
     install_requires=[
         'grpcio~=1.9.1',
         'grpcio-tools~=1.9.1',

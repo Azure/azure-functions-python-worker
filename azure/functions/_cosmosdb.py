@@ -23,7 +23,7 @@ class Document(_abc.Document, collections.UserDict):
     def from_dict(cls, dct: dict) -> 'Document':
         """Create a Document from a dict object."""
         filtered = {k: v for k, v in dct.items() if k not in _SYSTEM_KEYS}
-        return cls(filtered)  # type: ignore
+        return cls(filtered)
 
     def to_json(self) -> str:
         """Return the JSON representation of the document."""

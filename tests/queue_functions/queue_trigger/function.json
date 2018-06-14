@@ -4,7 +4,6 @@
 
   "bindings": [
     {
-      "authLevel": "anonymous",
       "type": "queueTrigger",
       "direction": "in",
       "name": "msg",

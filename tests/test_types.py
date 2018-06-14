@@ -1,9 +1,9 @@
 import unittest
 
 from azure import functions as azf
-from azure.worker import protos
-from azure.worker.bindings import http as bind_http
-from azure.worker.bindings import meta as bind_meta
+from azure.functions_worker import protos
+from azure.functions_worker.bindings import http as bind_http
+from azure.functions_worker.bindings import meta as bind_meta
 
 
 class TestFunctions(unittest.TestCase):

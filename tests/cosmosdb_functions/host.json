@@ -5,9 +5,10 @@
         "maxOutstandingRequests": 30
     },
     "logger": {
-        "defaultLevel": "Trace",
-        "categoryLevels": {
-            "Worker": "Trace"
+	"fileLoggingMode": "always",
+        "categoryFilter": {
+            "Worker": "Trace",
+	    "defaultLevel": "Trace"
         }
     },
     "queues": {

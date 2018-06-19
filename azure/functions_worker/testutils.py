@@ -518,8 +518,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
     # path objects there on Windows.
     extra_env = {
         'AzureWebJobsScriptRoot': str(script_root),
-        'workers:config:path': str(worker_path),
-        'workers:python:path': str(worker_path / 'python' / 'worker.py'),
+        'languageWorkers:python:workerDirectory': str(worker_path),
         'host:logger:consoleLoggingMode': 'always',
     }
 

@@ -15,8 +15,8 @@ from setuptools.command import develop
 
 
 # TODO: change this to something more stable when available.
-WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/r1d0pxmtkib47bc4'
-               '/artifacts/Functions.Binaries.2.0.11737-alpha.zip')
+WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/0exdyn0sak341kea'
+               '/artifacts/Functions.Binaries.2.0.11886-alpha.no-runtime.zip')
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = [
@@ -182,12 +182,12 @@ setup(
               'azure.functions_worker.protos',
               'azure.functions_worker.bindings'],
     setup_requires=[
-        'grpcio~=1.9.1',
-        'grpcio-tools~=1.9.1',
+        'grpcio~=1.12.1',
+        'grpcio-tools~=1.12.1',
     ],
     install_requires=[
-        'grpcio~=1.9.1',
-        'grpcio-tools~=1.9.1',
+        'grpcio~=1.12.1',
+        'grpcio-tools~=1.12.1',
         'azure-functions==1.0.0a1',
     ],
     extras_require={

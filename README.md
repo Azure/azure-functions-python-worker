@@ -14,15 +14,15 @@ Here is the current status of Python in Azure Functions:
 What's available?
 
 - Develop using Functions Core Tools (CLI)
-- Publish your Python functions using a Linux App Service Plan
-- Triggers / Bindings : HTTP/Webhook, Blob, Queue, Timer and Cosmos DB
+- Publish your Python functions using an App Service Plan on Linux
+- Triggers / Bindings : HTTP/Webhook, Blob, Queue, Timer, Cosmos DB, Event Grid and Event Hubs
 - Publish a custom image to Azure
 
 What's coming?
 
 - Publish your Python functions using the consumption (serverless) plan
 - Build, test, debug and publish using Visual Studio Code
-- Triggers / Bindings : Event Grid, Event Hubs, IoT Hub
+- Triggers / Bindings : Service Bus, IoT Hub
 
 # Get Started
 

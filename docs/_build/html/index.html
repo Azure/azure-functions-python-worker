@@ -1,0 +1,501 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Azure Functions for Python &#8212; Azure Functions for Python 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Azure Functions Usage" href="usage.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <a class="reference external image-reference" href="https://travis-ci.org/Azure/azure-functions-python-worker"><img alt="https://travis-ci.org/Azure/azure-functions-python-worker.svg?branch=master" src="https://travis-ci.org/Azure/azure-functions-python-worker.svg?branch=master" /></a>
+<div class="section" id="azure-functions-for-python">
+<h1>Azure Functions for Python<a class="headerlink" href="#azure-functions-for-python" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>Azure Functions for Python support Python 3.6 or later.</p>
+</div>
+<div class="section" id="programming-model">
+<h2>Programming Model<a class="headerlink" href="#programming-model" title="Permalink to this headline">¶</a></h2>
+<p>An Azure function is implemented as a global Python function <code class="docutils literal notranslate"><span class="pre">main()</span></code> in the
+file called <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>. The name of the Python function can be changed by
+specifying the <code class="docutils literal notranslate"><span class="pre">entryPoint</span></code> attribute in <code class="docutils literal notranslate"><span class="pre">function.json</span></code>, and the name of
+the file can be changed by specifying the <code class="docutils literal notranslate"><span class="pre">scriptFile</span></code> attribute in
+<code class="docutils literal notranslate"><span class="pre">function.json</span></code>.</p>
+<p>Currently, the Azure function and its bindings must be declared in the
+<code class="docutils literal notranslate"><span class="pre">function.json</span></code> file.  Optionally, the function parameters and the
+return type may also be declared as Python type annotations.  The annotations
+must match the types expected by the bindings declared in <code class="docutils literal notranslate"><span class="pre">function.json</span></code>.</p>
+<p>Below is an example of a simple function triggerred by an HTTP request.</p>
+<p><code class="docutils literal notranslate"><span class="pre">function.json</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;scriptFile&quot;</span><span class="p">:</span> <span class="s2">&quot;__init__.py&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nt">&quot;bindings&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;authLevel&quot;</span><span class="p">:</span> <span class="s2">&quot;anonymous&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;httpTrigger&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;req&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;http&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;$return&quot;</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">azure.functions</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">req</span><span class="p">:</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">HttpRequest</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;User&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;Hello, {user}!&#39;</span>
+</pre></div>
+</div>
+<p>The annotations are optional, so the function may also be written as:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">req</span><span class="p">):</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;User&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;Hello, {user}!&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<p>Azure Functions adds a root <a class="reference external" href="https://docs.python.org/3/library/logging.html#module-logging" title="(in Python v3.7)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">logging</span></code></a> handler
+automatically, and any log output produced using the standard logging output
+is captured by the Functions runtime.</p>
+</div>
+<div class="section" id="context">
+<h2>Context<a class="headerlink" href="#context" title="Permalink to this headline">¶</a></h2>
+<p>A function can obtain the invocation context by including the special
+<code class="docutils literal notranslate"><span class="pre">context</span></code> argument in its signature.  The context is passed as a
+<a class="reference internal" href="api.html#azure.functions.Context" title="azure.functions.Context"><code class="xref py py-class docutils literal notranslate"><span class="pre">Context</span></code></a> instance:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">azure.functions</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">req</span><span class="p">:</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">HttpRequest</span><span class="p">,</span>
+         <span class="n">context</span><span class="p">:</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;{context.invocation_id}&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="bindings">
+<h2>Bindings<a class="headerlink" href="#bindings" title="Permalink to this headline">¶</a></h2>
+<p>Azure Functions for Python supports the following binding types:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#azure-bindings-http"><span class="std std-ref">HTTP and webhooks</span></a>: trigger, output;</li>
+<li><a class="reference internal" href="#azure-bindings-blob"><span class="std std-ref">Blob storage</span></a>: trigger, input, output;</li>
+<li><a class="reference internal" href="#azure-bindings-queue"><span class="std std-ref">Queue</span></a>: trigger, output;</li>
+<li><a class="reference internal" href="#azure-bindings-timer"><span class="std std-ref">Timers</span></a>: trigger.</li>
+</ul>
+<div class="section" id="http-and-webhook-bindings">
+<span id="azure-bindings-http"></span><h3>HTTP and webhook bindings<a class="headerlink" href="#http-and-webhook-bindings" title="Permalink to this headline">¶</a></h3>
+<p>The trigger binding is passed as a
+<a class="reference internal" href="api.html#azure.functions.HttpRequest" title="azure.functions.HttpRequest"><code class="xref py py-class docutils literal notranslate"><span class="pre">HttpRequest</span></code></a> object.  Output bindings
+can be returned as a <code class="docutils literal notranslate"><span class="pre">str</span></code> or an
+<a class="reference internal" href="api.html#azure.functions.HttpResponse" title="azure.functions.HttpResponse"><code class="xref py py-class docutils literal notranslate"><span class="pre">HttpResponse</span></code></a> object.</p>
+<div class="section" id="example">
+<h4>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">function.json</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;scriptFile&quot;</span><span class="p">:</span> <span class="s2">&quot;__init__.py&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nt">&quot;bindings&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;authLevel&quot;</span><span class="p">:</span> <span class="s2">&quot;anonymous&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;httpTrigger&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;req&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;http&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;$return&quot;</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">azure.functions</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">req</span><span class="p">:</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">HttpRequest</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;User&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;Hello, {user}!&#39;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="blob-storage-bindings">
+<span id="azure-bindings-blob"></span><h3>Blob storage bindings<a class="headerlink" href="#blob-storage-bindings" title="Permalink to this headline">¶</a></h3>
+<p>The trigger and input bindings are passed as
+<a class="reference internal" href="api.html#azure.functions.InputStream" title="azure.functions.InputStream"><code class="xref py py-class docutils literal notranslate"><span class="pre">InputStream</span></code></a> instances.  Output can
+be a <code class="docutils literal notranslate"><span class="pre">bytes</span></code>, <code class="docutils literal notranslate"><span class="pre">str</span></code> or a <a class="reference external" href="https://docs.python.org/3/glossary.html#term-file-object" title="(in Python v3.7)"><span class="xref std std-term">file-like object</span></a>.</p>
+<div class="section" id="blob-storage-trigger-example">
+<h4>Blob storage trigger example<a class="headerlink" href="#blob-storage-trigger-example" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">function.json</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nt">&quot;bindings&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;blobTrigger&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;connection&quot;</span><span class="p">:</span> <span class="s2">&quot;AzureWebJobsStorage&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;file.txt&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;http&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;$return&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">azure.functions</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="nb">file</span><span class="p">:</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">InputStream</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="k">return</span> <span class="nb">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="blob-storage-output-example">
+<h4>Blob storage output example<a class="headerlink" href="#blob-storage-output-example" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">function.json</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nt">&quot;bindings&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;authLevel&quot;</span><span class="p">:</span> <span class="s2">&quot;anonymous&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;httpTrigger&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;req&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;blob&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;connection&quot;</span><span class="p">:</span> <span class="s2">&quot;AzureWebJobsStorage&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;test-file.txt&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;http&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;$return&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">azure.functions</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">req</span><span class="p">:</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">HttpRequest</span><span class="p">,</span>
+         <span class="nb">file</span><span class="p">:</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">Out</span><span class="p">[</span><span class="nb">bytes</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">HttpResponse</span><span class="p">:</span>
+    <span class="c1"># write the request body into the output blob</span>
+    <span class="nb">file</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">get_body</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">HttpResponse</span><span class="p">(</span>
+        <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;application/json&#39;</span><span class="p">,</span>
+        <span class="n">body</span><span class="o">=</span><span class="s1">&#39;{&quot;status&quot;: &quot;OK&quot;}&#39;</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that in the above example we use the <a class="reference internal" href="api.html#azure.functions.Out" title="azure.functions.Out"><code class="xref py py-class docutils literal notranslate"><span class="pre">Out</span></code></a>
+interface to set the value of the output binding.</p>
+</div>
+</div>
+<div class="section" id="queue-storage-bindings">
+<span id="azure-bindings-queue"></span><h3>Queue storage bindings<a class="headerlink" href="#queue-storage-bindings" title="Permalink to this headline">¶</a></h3>
+<p>Queue storage trigger bindings are passed as
+<a class="reference internal" href="api.html#azure.functions.QueueMessage" title="azure.functions.QueueMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">QueueMessage</span></code></a> instances.  Output
+bindings can be returned as a <code class="docutils literal notranslate"><span class="pre">str</span></code>, <code class="docutils literal notranslate"><span class="pre">bytes</span></code> or a
+<a class="reference internal" href="api.html#azure.functions.QueueMessage" title="azure.functions.QueueMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">QueueMessage</span></code></a> instance.</p>
+<div class="section" id="id1">
+<h4>Example<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">function.json</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;scriptFile&quot;</span><span class="p">:</span> <span class="s2">&quot;__init__.py&quot;</span><span class="p">,</span>
+
+  <span class="nt">&quot;bindings&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;queueTrigger&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;msg&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;queueName&quot;</span><span class="p">:</span> <span class="s2">&quot;inputqueue&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;connection&quot;</span><span class="p">:</span> <span class="s2">&quot;AzureWebJobsStorage&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;blob&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;$return&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;queueName&quot;</span><span class="p">:</span> <span class="s2">&quot;outputqueue&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;connection&quot;</span><span class="p">:</span> <span class="s2">&quot;AzureWebJobsStorage&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">azure.functions</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span>
+        <span class="n">msg</span><span class="p">:</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">QueueMessage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">QueueMessage</span><span class="p">:</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">get_body</span><span class="p">()</span>
+    <span class="c1"># ... process message</span>
+    <span class="c1"># Put a message into the output queue signaling that this message</span>
+    <span class="c1"># was processed.</span>
+    <span class="k">return</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">QueueMessage</span><span class="p">(</span>
+        <span class="n">body</span><span class="o">=</span><span class="n">f</span><span class="s1">&#39;Processed: {msg.id}&#39;</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="timer-bindings">
+<span id="azure-bindings-timer"></span><h3>Timer bindings<a class="headerlink" href="#timer-bindings" title="Permalink to this headline">¶</a></h3>
+<p>Timer trigger bindings are passwd as
+<a class="reference internal" href="api.html#azure.functions.TimerRequest" title="azure.functions.TimerRequest"><code class="xref py py-class docutils literal notranslate"><span class="pre">TimerRequest</span></code></a> instances.</p>
+<div class="section" id="id2">
+<h4>Example<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">function.json</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;scriptFile&quot;</span><span class="p">:</span> <span class="s2">&quot;__init__.py&quot;</span><span class="p">,</span>
+
+  <span class="nt">&quot;bindings&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;timerTrigger&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;timer&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;schedule&quot;</span><span class="p">:</span> <span class="s2">&quot;*/5 * * * * *&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;blob&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;$return&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;queueName&quot;</span><span class="p">:</span> <span class="s2">&quot;outputqueue&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;connection&quot;</span><span class="p">:</span> <span class="s2">&quot;AzureWebJobsStorage&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">azure.functions</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">timer</span><span class="p">:</span> <span class="n">azure</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">TimerRequest</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="c1"># process timer event...</span>
+    <span class="c1"># put the current timestamp into the output queue.</span>
+    <span class="k">return</span> <span class="n">f</span><span class="s1">&#39;{datetime.datetime.now().timestamp()}&#39;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="cosmosdb-bindings">
+<span id="azure-bindings-cosmosdb"></span><h3>CosmosDB Bindings<a class="headerlink" href="#cosmosdb-bindings" title="Permalink to this headline">¶</a></h3>
+<p>The trigger and input CosmosDB bindings are passed as
+<a class="reference internal" href="api.html#azure.functions.DocumentList" title="azure.functions.DocumentList"><code class="xref py py-class docutils literal notranslate"><span class="pre">DocumentList</span></code></a> instances.  Output can
+be a <a class="reference internal" href="api.html#azure.functions.Document" title="azure.functions.Document"><code class="xref py py-class docutils literal notranslate"><span class="pre">Document</span></code></a> instance, a
+<a class="reference internal" href="api.html#azure.functions.DocumentList" title="azure.functions.DocumentList"><code class="xref py py-class docutils literal notranslate"><span class="pre">DocumentList</span></code></a> instance or an iterable
+containing <code class="docutils literal notranslate"><span class="pre">Document</span></code> instances.</p>
+<div class="section" id="cosmosdb-trigger-example">
+<h4>CosmosDB Trigger Example<a class="headerlink" href="#cosmosdb-trigger-example" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">function.json</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nt">&quot;bindings&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;cosmosDBTrigger&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;docs&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;databaseName&quot;</span><span class="p">:</span> <span class="s2">&quot;test&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;collectionName&quot;</span><span class="p">:</span> <span class="s2">&quot;items&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;leaseCollectionName&quot;</span><span class="p">:</span> <span class="s2">&quot;leases&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;http&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;$return&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">azure.functions</span> <span class="kn">as</span> <span class="nn">func</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">docs</span><span class="p">:</span> <span class="n">func</span><span class="o">.</span><span class="n">DocumentList</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="cosmosdb-output-example">
+<h4>CosmosDB Output Example<a class="headerlink" href="#cosmosdb-output-example" title="Permalink to this headline">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">function.json</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;scriptFile&quot;</span><span class="p">:</span> <span class="s2">&quot;__init__.py&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;disabled&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+
+  <span class="nt">&quot;bindings&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;authLevel&quot;</span><span class="p">:</span> <span class="s2">&quot;anonymous&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;httpTrigger&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;req&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;cosmosDB&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;doc&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;databaseName&quot;</span><span class="p">:</span> <span class="s2">&quot;test&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;collectionName&quot;</span><span class="p">:</span> <span class="s2">&quot;items&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;leaseCollectionName&quot;</span><span class="p">:</span> <span class="s2">&quot;leases&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;createIfNotExists&quot;</span><span class="p">:</span> <span class="kc">true</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;direction&quot;</span><span class="p">:</span> <span class="s2">&quot;out&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;$return&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;http&quot;</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">azure.functions</span> <span class="kn">as</span> <span class="nn">func</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">req</span><span class="p">:</span> <span class="n">func</span><span class="o">.</span><span class="n">HttpRequest</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span> <span class="n">func</span><span class="o">.</span><span class="n">Out</span><span class="p">[</span><span class="n">func</span><span class="o">.</span><span class="n">Document</span><span class="p">]):</span>
+    <span class="n">doc</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">Document</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">get_body</span><span class="p">()))</span>
+
+    <span class="k">return</span> <span class="s1">&#39;OK&#39;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="reference">
+<h3>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference internal" href="api.html#azure-functions-reference"><span class="std std-ref">Azure Functions for Python Reference</span></a>.</p>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Azure Functions for Python</a><ul>
+<li><a class="reference internal" href="#requirements">Requirements</a></li>
+<li><a class="reference internal" href="#programming-model">Programming Model</a></li>
+<li><a class="reference internal" href="#logging">Logging</a></li>
+<li><a class="reference internal" href="#context">Context</a></li>
+<li><a class="reference internal" href="#bindings">Bindings</a><ul>
+<li><a class="reference internal" href="#http-and-webhook-bindings">HTTP and webhook bindings</a><ul>
+<li><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#blob-storage-bindings">Blob storage bindings</a><ul>
+<li><a class="reference internal" href="#blob-storage-trigger-example">Blob storage trigger example</a></li>
+<li><a class="reference internal" href="#blob-storage-output-example">Blob storage output example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#queue-storage-bindings">Queue storage bindings</a><ul>
+<li><a class="reference internal" href="#id1">Example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#timer-bindings">Timer bindings</a><ul>
+<li><a class="reference internal" href="#id2">Example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cosmosdb-bindings">CosmosDB Bindings</a><ul>
+<li><a class="reference internal" href="#cosmosdb-trigger-example">CosmosDB Trigger Example</a></li>
+<li><a class="reference internal" href="#cosmosdb-output-example">CosmosDB Output Example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#reference">Reference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="usage.html" title="next chapter">Azure Functions Usage</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Microsoft Corporation.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

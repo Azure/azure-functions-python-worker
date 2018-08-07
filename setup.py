@@ -186,12 +186,12 @@ setup(
               'azure.functions_worker.protos',
               'azure.functions_worker.bindings'],
     setup_requires=[
-        'grpcio~=1.12.1',
-        'grpcio-tools~=1.12.1',
+        'grpcio~=1.14.0',
+        'grpcio-tools~=1.14.0',
     ],
     install_requires=[
-        'grpcio~=1.12.1',
-        'grpcio-tools~=1.12.1',
+        'grpcio~=1.14.0',
+        'grpcio-tools~=1.14.0',
         'azure-functions==1.0.0a1',
     ],
     extras_require={

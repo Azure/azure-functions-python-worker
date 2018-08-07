@@ -51,6 +51,21 @@ class TestMockHost(testutils.AsyncTestCase):
                 r'.*cannot load the wrong_param_dir function'
                 r'.*binding foo is declared to have the "out".*')
 
+    async def test_load_broken__bad_out_annotation(self):
+        async with testutils.start_mockhost(
+                script_root='broken_functions') as host:
+
+            func_id, r = await host.load_function('bad_out_annotation')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*cannot load the bad_out_annotation function'
+                r'.*binding foo has invalid Out annotation.*')
+
     async def test_load_broken__wrong_binding_dir(self):
         async with testutils.start_mockhost(
                 script_root='broken_functions') as host:

@@ -5,6 +5,7 @@ import azure.functions as azf
 
 from . import bindings
 from . import protos
+from . import typing_inspect
 
 
 class ParamTypeInfo(typing.NamedTuple):
@@ -55,6 +56,7 @@ class Registry:
         func_name = metadata.name
         sig = inspect.signature(func)
         params = dict(sig.parameters)
+        annotations = typing.get_type_hints(func)
 
         input_types: typing.Dict[str, ParamTypeInfo] = {}
         output_types: typing.Dict[str, ParamTypeInfo] = {}
@@ -91,15 +93,16 @@ class Registry:
 
         if 'context' in params and 'context' not in bound_params:
             requires_context = True
-            ctx_param = params.pop('context')
-            if ctx_param.annotation is not ctx_param.empty:
-                if (not isinstance(ctx_param.annotation, type) or
-                        not issubclass(ctx_param.annotation, azf.Context)):
+            params.pop('context')
+            if 'context' in annotations:
+                ctx_anno = annotations.get('context')
+                if (not isinstance(ctx_anno, type) or
+                        not issubclass(ctx_anno, azf.Context)):
                     raise FunctionLoadError(
                         func_name,
                         f'the "context" parameter is expected to be of '
                         f'type azure.functions.Context, got '
-                        f'{ctx_param.annotation!r}')
+                        f'{ctx_anno!r}')
 
         if set(params) - set(bound_params):
             raise FunctionLoadError(
@@ -116,16 +119,33 @@ class Registry:
         for param in params.values():
             desc = bound_params[param.name]
 
-            param_has_anno = param.annotation is not param.empty
-            if param_has_anno and not isinstance(param.annotation, type):
+            param_has_anno = param.name in annotations
+            param_anno = annotations.get(param.name)
+
+            is_param_out = (
+                param_has_anno and
+                (typing_inspect.is_generic_type(param_anno) and
+                 typing_inspect.get_origin(param_anno) == azf.Out) or
+                param_anno == azf.Out)
+
+            is_binding_out = desc.direction == protos.BindingInfo.out
+
+            if is_param_out:
+                param_anno_args = typing_inspect.get_args(param_anno)
+                if len(param_anno_args) != 1:
+                    raise FunctionLoadError(
+                        func_name,
+                        f'binding {param.name} has invalid Out annotation '
+                        f'{param_anno!r}')
+                param_py_type = param_anno_args[0]
+            else:
+                param_py_type = param_anno
+
+            if param_has_anno and not isinstance(param_py_type, type):
                 raise FunctionLoadError(
                     func_name,
                     f'binding {param.name} has invalid non-type annotation '
-                    f'{param.annotation!r}')
-
-            is_param_out = (param_has_anno and
-                            issubclass(param.annotation, azf.Out))
-            is_binding_out = desc.direction == protos.BindingInfo.out
+                    f'{param_anno!r}')
 
             if is_binding_out and param_has_anno and not is_param_out:
                 raise FunctionLoadError(
@@ -147,27 +167,18 @@ class Registry:
                     func_name,
                     f'unknown type for {param.name} binding: "{desc.type}"')
 
-            param_py_type = None
             if param_has_anno:
                 if is_param_out:
-                    assert issubclass(param.annotation, azf.Out)
-                    param_py_type = param.annotation.__args__
-                    if param_py_type:
-                        param_py_type = param_py_type[0]
+                    checker = bindings.check_output_type_annotation
                 else:
-                    param_py_type = param.annotation
-                if param_py_type:
-                    if is_param_out:
-                        checker = bindings.check_output_type_annotation
-                    else:
-                        checker = bindings.check_input_type_annotation
+                    checker = bindings.check_input_type_annotation
 
-                    if not checker(param_bind_type, param_py_type):
-                        raise FunctionLoadError(
-                            func_name,
-                            f'type of {param.name} binding in function.json '
-                            f'"{param_bind_type}" does not match its Python '
-                            f'annotation "{param_py_type.__name__}"')
+                if not checker(param_bind_type, param_py_type):
+                    raise FunctionLoadError(
+                        func_name,
+                        f'type of {param.name} binding in function.json '
+                        f'"{param_bind_type}" does not match its Python '
+                        f'annotation "{param_py_type.__name__}"')
 
             param_type_info = ParamTypeInfo(param_bind_type, param_py_type)
             if is_binding_out:
@@ -176,19 +187,20 @@ class Registry:
                 input_types[param.name] = param_type_info
 
         return_pytype = None
-        if (return_binding_name is not None and
-                sig.return_annotation is not sig.empty):
-            return_pytype = sig.return_annotation
+        if return_binding_name is not None and 'return' in annotations:
+            return_anno = annotations.get('return')
+            if (typing_inspect.is_generic_type(return_anno) and
+                    typing_inspect.get_origin(return_anno) == azf.Out):
+                raise FunctionLoadError(
+                    func_name,
+                    f'return annotation should not be azure.functions.Out')
+
+            return_pytype = return_anno
             if not isinstance(return_pytype, type):
                 raise FunctionLoadError(
                     func_name,
                     f'has invalid non-type return '
                     f'annotation {return_pytype!r}')
-
-            if issubclass(return_pytype, azf.Out):
-                raise FunctionLoadError(
-                    func_name,
-                    f'return annotation should not be azure.functions.Out')
 
             if not bindings.check_output_type_annotation(
                     return_binding_name, return_pytype):

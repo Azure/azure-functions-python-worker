@@ -103,3 +103,4 @@ ENV/
 
 .testconfig
 .pytest_cache
+tests/*_functions/bin/

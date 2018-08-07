@@ -1,5 +1,7 @@
 [flake8]
 ignore = W503,E402,E731
 exclude =
-    .git, __pycache__, build, dist, .eggs, .github, .local,
-    Samples, azure/functions_worker/protos/, docs/
+    .git, __pycache__, build, dist, .eggs, .github, .local, docs/,
+    Samples, azure/functions_worker/protos/,
+    azure/functions_worker/typing_inspect.py,
+    tests/test_typing_inspect.py

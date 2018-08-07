@@ -10,7 +10,7 @@
       "databaseName": "test",
       "collectionName": "items",
       "id": "cosmosdb-trigger-test",
-      "leaseCollectionName": "leases-1",
+      "leaseCollectionName": "leases",
       "createLeaseCollectionIfNotExists": true
     },
     {

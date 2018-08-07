@@ -2,7 +2,6 @@
 
 set -e -x
 
-dotnet --version
-python --version
+export PATH="$(pwd)/.dotnet:${PATH}"
 
 python setup.py test

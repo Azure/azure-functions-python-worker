@@ -1,9 +1,13 @@
 dist: trusty
 
+env:
+    - DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_VERSION=2.1.300
+
 branches:
     only:
         - master
         - dev
+        - ci
 
 language: python
 python:
@@ -17,14 +21,16 @@ addons:
 
         packages:
             - libunwind8
-            - dotnet-sdk-2.1.300
             - azure-functions-core-tools
 
 cache:
     pip: true
 
+before_install:
+    - .ci/linux_install.sh
+
 install:
-    - .ci/travis_install.sh
+    - .ci/linux_build.sh
 
 script:
-    - .ci/travis_tests.sh
+    - .ci/linux_tests.sh

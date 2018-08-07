@@ -15,6 +15,7 @@
       "databaseName": "test",
       "collectionName": "items",
       "leaseCollectionName": "leases",
+      "createLeaseCollectionIfNotExists": true,
       "createIfNotExists": true
     },
     {

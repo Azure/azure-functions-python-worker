@@ -148,6 +148,10 @@ class webhost(distutils.cmd.Command):
         if not self.extensions_dir.exists():
             os.makedirs(self.extensions_dir, exist_ok=True)
 
+        if not (self.extensions_dir / 'host.json').exists():
+            with open(self.extensions_dir / 'host.json', 'w') as f:
+                print(r'{}', file=f)
+
         env = os.environ.copy()
         env['TERM'] = 'xterm'  # ncurses 6.1 workaround
 

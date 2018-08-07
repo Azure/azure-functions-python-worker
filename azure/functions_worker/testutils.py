@@ -15,6 +15,8 @@ import logging
 import os
 import queue
 import pathlib
+import platform
+import shutil
 import socket
 import subprocess
 import sys
@@ -40,6 +42,7 @@ EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / 'http_functions'
 WORKER_PATH = pathlib.Path(__file__).parent.parent.parent
 WORKER_CONFIG = WORKER_PATH / '.testconfig'
+ON_WINDOWS = platform.system() == 'Windows'
 
 SECRETS_TEMPLATE = """\
 {
@@ -133,8 +136,14 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         if not extensions.exists():
             if extensions.is_symlink():
                 extensions.unlink()
+            elif extensions.exists():
+                shutil.rmtree(str(extensions))
 
-            extensions.symlink_to(EXTENSIONS_PATH, target_is_directory=True)
+            if ON_WINDOWS:
+                shutil.copytree(EXTENSIONS_PATH, str(extensions))
+            else:
+                extensions.symlink_to(
+                    EXTENSIONS_PATH, target_is_directory=True)
             cls.linked_extensions = True
         else:
             cls.linked_extensions = False
@@ -153,7 +162,10 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         if cls.linked_extensions:
             extensions = TESTS_ROOT / cls.get_script_dir() / 'bin'
-            extensions.unlink()
+            if ON_WINDOWS:
+                shutil.rmtree(extensions)
+            else:
+                extensions.unlink()
 
     def _run_test(self, test, *args, **kwargs):
         if self.host_stdout is None:

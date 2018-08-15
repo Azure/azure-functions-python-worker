@@ -16,7 +16,7 @@ from setuptools.command import develop
 
 # TODO: change this to something more stable when available.
 WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/luhb1vd6ustag1al'
-               '/artifacts/Functions.Binaries.2.0.11985-alpha.zip')
+               '/artifacts/Functions.Binaries.2.0.11985-alpha.no-runtime.zip')
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = [

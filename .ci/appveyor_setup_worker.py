@@ -14,13 +14,12 @@ def main():
     shutil.copyfile(worker_src, worker_dir / 'worker.py')
     with open(worker_dir / 'worker.config.json', 'w') as f:
         json.dump({
-            "Description": {
-                "Language": "python",
-                "Extension": ".py",
-                "DefaultExecutablePath": sys.executable,
-                "DefaultWorkerPath": "worker.py"
-            },
-            "Arguments": []
+            "description": {
+                "language": "python",
+                "extensions": [".py"],
+                "defaultExecutablePath": sys.executable,
+                "defaultWorkerPath": "worker.py"
+            }
         }, f)
 
     print(worker_dir.parent)

@@ -3,7 +3,7 @@
 
 This repository will host the Python language worker implementation for Azure Functions. We'll also be using it to track work items related to Python support. Please feel free to leave comments about any of the features and design patterns.
 
-> :construction: The project is currently **work in progress**. Please **do not use in production** as we expect developments over time. :construction:
+> :construction: The project is currently **work in progress**. Please **do not use in production** as we expect developments over time. To receive important updates, including breaking changes announcements, watch the [Azure App Service announcements](https://github.com/Azure/app-service-announcements/issues) repository. :construction:
 
 # Overview
 
@@ -15,14 +15,14 @@ What's available?
 
 - Develop using Functions Core Tools (CLI)
 - Publish your Python functions using an App Service Plan on Linux
-- Triggers / Bindings : HTTP/Webhook, Blob, Queue, Timer
+- Triggers / Bindings : HTTP/Webhook, Blob, Queue, Timer, Cosmos DB, Event Grid, Event Hubs and Service Bus
 - Publish a custom image to Azure
 
 What's coming?
 
 - Publish your Python functions using the consumption (serverless) plan
 - Build, test, debug and publish using Visual Studio Code
-- Triggers / Bindings : Cosmos DB, Event Grid, Event Hubs, Service Bus and IoT Hub
+- Triggers / Bindings : IoT Hub
 
 # Get Started
 
@@ -32,7 +32,7 @@ What's coming?
 
 # Give Feedback
 
-Issues and feature requests are tracked in a variety of places. To report this feedback, please file an issue to the relevant respository below:
+Issues and feature requests are tracked in a variety of places. To report this feedback, please file an issue to the relevant repository below:
 
 |Item|Description|Link|
 |----|-----|-----|

@@ -21,22 +21,48 @@ WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/k11e6ngq22n1kgfm'
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = [
     {
+        "id": "Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator",
+        "version": "1.0.0"
+    },
+    {
         "id": "Microsoft.Azure.WebJobs.Extensions.CosmosDB",
-        "version": "3.0.0-beta7"
+        "version": "3.0.1-beta1"
     },
     {
         "id": "Microsoft.Azure.WebJobs.Extensions.EventHubs",
-        "version": "3.0.0-beta5"
+        "version": "3.0.0-beta8"
     },
     {
         "id": "Microsoft.Azure.WebJobs.Extensions.EventGrid",
-        "version": "2.0.0-beta1"
+        "version": "2.0.0-beta3"
+    },
+    {
+        "id": "Microsoft.Azure.WebJobs.Extensions.Storage",
+        "version": "3.0.0-beta8"
     },
     {
         "id": "Microsoft.Azure.WebJobs.ServiceBus",
         "version": "3.0.0-beta5"
     },
 ]
+
+
+NUGET_CONFIG = """\
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <add key="nuget.org" value="https://www.nuget.org/api/v2/" />
+    <add key="azure_app_service"
+         value="https://www.myget.org/F/azure-appservice/api/v2" />
+    <add key="azure_app_service_staging"
+         value="https://www.myget.org/F/azure-appservice-staging/api/v2" />
+    <add key="buildTools"
+         value="https://www.myget.org/F/30de4ee06dd54956a82013fa17a3accb/" />
+    <add key="AspNetVNext"
+         value="https://dotnet.myget.org/F/aspnetcore-dev/api/v3/index.json" />
+  </packageSources>
+</configuration>
+"""
 
 
 class BuildGRPC:
@@ -155,6 +181,9 @@ class webhost(distutils.cmd.Command):
         if not (self.extensions_dir / 'host.json').exists():
             with open(self.extensions_dir / 'host.json', 'w') as f:
                 print(r'{}', file=f)
+
+        with open(self.extensions_dir / 'NuGet.config', 'w') as f:
+            print(NUGET_CONFIG, file=f)
 
         env = os.environ.copy()
         env['TERM'] = 'xterm'  # ncurses 6.1 workaround

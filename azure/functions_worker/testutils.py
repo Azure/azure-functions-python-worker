@@ -44,6 +44,29 @@ WORKER_PATH = pathlib.Path(__file__).parent.parent.parent
 WORKER_CONFIG = WORKER_PATH / '.testconfig'
 ON_WINDOWS = platform.system() == 'Windows'
 
+HOST_JSON_TEMPLATE = """\
+{
+    "version": "2.0",
+    "logging": {
+        "logLevel": {
+           "default": "Trace"
+        }
+    },
+    "http": {
+        "routePrefix": "api"
+    },
+    "swagger": {
+        "enabled": true
+    },
+    "eventHub": {
+        "maxBatchSize": 1000,
+        "prefetchCount": 1000,
+        "batchCheckpointFrequency": 1
+    },
+    "functionTimeout": "00:05:00"
+}
+"""
+
 SECRETS_TEMPLATE = """\
 {
   "masterKey": {
@@ -131,25 +154,14 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         else:
             cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
 
-        extensions = TESTS_ROOT / script_dir / 'bin'
+        _setup_func_app(TESTS_ROOT / script_dir)
 
-        if not extensions.exists():
-            if extensions.is_symlink():
-                extensions.unlink()
-            elif extensions.exists():
-                shutil.rmtree(str(extensions))
-
-            if ON_WINDOWS:
-                shutil.copytree(EXTENSIONS_PATH, str(extensions))
-            else:
-                extensions.symlink_to(
-                    EXTENSIONS_PATH, target_is_directory=True)
-            cls.linked_extensions = True
-        else:
-            cls.linked_extensions = False
-
-        cls.webhost = start_webhost(script_dir=script_dir,
-                                    stdout=cls.host_stdout)
+        try:
+            cls.webhost = start_webhost(script_dir=script_dir,
+                                        stdout=cls.host_stdout)
+        except Exception:
+            _teardown_func_app(TESTS_ROOT / script_dir)
+            raise
 
     @classmethod
     def tearDownClass(cls):
@@ -160,12 +172,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
             cls.host_stdout.close()
             cls.host_stdout = None
 
-        if cls.linked_extensions:
-            extensions = TESTS_ROOT / cls.get_script_dir() / 'bin'
-            if ON_WINDOWS:
-                shutil.rmtree(extensions)
-            else:
-                extensions.unlink()
+        script_dir = pathlib.Path(cls.get_script_dir())
+        _teardown_func_app(TESTS_ROOT / script_dir)
 
     def _run_test(self, test, *args, **kwargs):
         if self.host_stdout is None:
@@ -598,9 +606,52 @@ def start_webhost(*, script_dir=None, stdout=None):
         time.sleep(0.5)
     else:
         proc.terminate()
+        try:
+            proc.wait(10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
         raise RuntimeError('could not start the webworker')
 
     return _WebHostProxy(proc, addr)
+
+
+def _remove_path(path):
+    if path.is_symlink():
+        path.unlink()
+    elif path.is_dir():
+        shutil.rmtree(str(path))
+    elif path.exists():
+        path.unlink()
+
+
+def _symlink_dir(src, dst):
+    _remove_path(dst)
+
+    if ON_WINDOWS:
+        shutil.copytree(str(src), str(dst))
+    else:
+        dst.symlink_to(src, target_is_directory=True)
+
+
+def _setup_func_app(app_root):
+    extensions = app_root / 'bin'
+    ping_func = app_root / 'ping'
+    host_json = app_root / 'host.json'
+
+    with open(host_json, 'w') as f:
+        f.write(HOST_JSON_TEMPLATE)
+
+    _symlink_dir(TESTS_ROOT / 'ping', ping_func)
+    _symlink_dir(EXTENSIONS_PATH, extensions)
+
+
+def _teardown_func_app(app_root):
+    extensions = app_root / 'bin'
+    ping_func = app_root / 'ping'
+    host_json = app_root / 'host.json'
+
+    for path in (extensions, ping_func, host_json):
+        _remove_path(path)
 
 
 def _main():
@@ -610,16 +661,8 @@ def _main():
 
     args = parser.parse_args()
 
-    extensions = pathlib.Path(args.scriptroot) / 'bin'
-
-    if not extensions.exists():
-        if extensions.is_symlink():
-            extensions.unlink()
-
-        extensions.symlink_to(EXTENSIONS_PATH, target_is_directory=True)
-        linked_extensions = True
-    else:
-        linked_extensions = False
+    app_root = pathlib.Path(args.scriptroot)
+    _setup_func_app(app_root)
 
     host = popen_webhost(
         stdout=sys.stdout, stderr=sys.stderr,
@@ -628,8 +671,7 @@ def _main():
         host.wait()
     finally:
         host.terminate()
-        if linked_extensions:
-            extensions.unlink()
+        _teardown_func_app()
 
 
 if __name__ == '__main__':

@@ -12,6 +12,11 @@ class TestLoader(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, '__azure__.simple.main')
 
+    def test_loader_custom_entrypoint(self):
+        r = self.webhost.request('GET', 'entrypoint')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '__azure__.entrypoint.main')
+
     def test_loader_subdir(self):
         r = self.webhost.request('GET', 'subdir')
         self.assertEqual(r.status_code, 200)

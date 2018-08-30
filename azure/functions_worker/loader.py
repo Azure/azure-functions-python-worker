@@ -8,6 +8,7 @@ import os
 import os.path
 import pathlib
 import sys
+import typing
 
 
 _AZURE_NAMESPACE = '__azure__'
@@ -32,9 +33,12 @@ def uninstall():
     pass
 
 
-def load_function(name: str, directory: str, script_file: str):
+def load_function(name: str, directory: str, script_file: str,
+                  entry_point: typing.Optional[str]):
     dir_path = pathlib.Path(directory)
     script_path = pathlib.Path(script_file)
+    if not entry_point:
+        entry_point = 'main'
 
     register_function_dir(dir_path.parent)
 
@@ -61,10 +65,10 @@ def load_function(name: str, directory: str, script_file: str):
 
     mod = importlib.import_module(fullmodname)
 
-    func = getattr(mod, 'main', None)
+    func = getattr(mod, entry_point, None)
     if func is None or not callable(func):
         raise RuntimeError(
-            f'cannot load function {name}: no main() function in '
-            f'{rel_script_path!r} file')
+            f'cannot load function {name}: function {entry_point}() is not '
+            f'present in {rel_script_path}')
 
     return func

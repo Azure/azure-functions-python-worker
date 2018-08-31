@@ -13,8 +13,7 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
 
     def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
-        url = (f'{self.webhost._addr}/runtime/webhooks/'
-               f'EventGridExtensionConfig')
+        url = f'{self.webhost._addr}/runtime/webhooks/eventgrid'
         params = dict(kwargs.pop('params', {}))
         params['functionName'] = funcname
         if 'code' not in params:

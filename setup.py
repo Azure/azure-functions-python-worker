@@ -42,7 +42,7 @@ AZURE_EXTENSIONS = [
     },
     {
         "id": "Microsoft.Azure.WebJobs.ServiceBus",
-        "version": "3.0.0-beta5"
+        "version": "3.0.0-beta8"
     },
 ]
 

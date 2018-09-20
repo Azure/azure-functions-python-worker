@@ -40,8 +40,8 @@ DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / \
     'Microsoft.Azure.WebJobs.Script.WebHost.dll'
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / 'http_functions'
-WORKER_PATH = pathlib.Path(__file__).parent.parent.parent
-WORKER_CONFIG = WORKER_PATH / '.testconfig'
+WORKER_PATH = PROJECT_ROOT / 'python'
+WORKER_CONFIG = PROJECT_ROOT / '.testconfig'
 ON_WINDOWS = platform.system() == 'Windows'
 
 HOST_JSON_TEMPLATE = """\

@@ -7,9 +7,9 @@ import tempfile
 
 
 def main():
-    worker_dir = pathlib.Path(tempfile.mkdtemp()) / 'python'
+    worker_dir = pathlib.Path(tempfile.mkdtemp())
     os.makedirs(worker_dir)
-    worker_src = pathlib.Path(__file__).parent.parent / 'python' / 'worker.py'
+    worker_src = pathlib.Path(__file__).parent.parent / 'worker.py'
 
     shutil.copyfile(worker_src, worker_dir / 'worker.py')
     with open(worker_dir / 'worker.config.json', 'w') as f:

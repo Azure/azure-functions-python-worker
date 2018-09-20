@@ -11,6 +11,7 @@
       "collectionName": "items",
       "id": "cosmosdb-trigger-test",
       "leaseCollectionName": "leases",
+      "connectionStringSetting": "AzureWebJobsCosmosDBConnectionString",
       "createLeaseCollectionIfNotExists": true
     },
     {

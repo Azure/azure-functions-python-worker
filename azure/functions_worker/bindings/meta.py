@@ -213,7 +213,7 @@ class OutConverter(_BaseConverter, binding=None):
         pass
 
 
-def is_iterable_type_annotation(annotation: type, pytype: type) -> bool:
+def is_iterable_type_annotation(annotation: object, pytype: object) -> bool:
     is_iterable_anno = (
         typing_inspect.is_generic_type(annotation) and
         issubclass(typing_inspect.get_origin(annotation),

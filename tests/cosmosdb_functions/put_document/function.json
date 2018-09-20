@@ -16,6 +16,7 @@
       "collectionName": "items",
       "leaseCollectionName": "leases",
       "createLeaseCollectionIfNotExists": true,
+      "connectionStringSetting": "AzureWebJobsCosmosDBConnectionString",
       "createIfNotExists": true
     },
     {

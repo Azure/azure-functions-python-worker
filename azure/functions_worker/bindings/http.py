@@ -15,15 +15,17 @@ class HttpRequest(azf_abc.HttpRequest):
     __body_bytes: typing.Optional[bytes]
     __body_str: typing.Optional[str]
 
-    def __init__(self, method: str, url: str,
+    def __init__(self, method: str, url: str, *,
                  headers: typing.Mapping[str, str],
                  params: typing.Mapping[str, str],
+                 route_params: typing.Mapping[str, str],
                  body_type: meta.TypedDataKind,
                  body: typing.Union[str, bytes]) -> None:
         self.__method = method
         self.__url = url
         self.__headers = azf_http.HttpRequestHeaders(headers)
         self.__params = types.MappingProxyType(params)
+        self.__route_params = types.MappingProxyType(route_params)
         self.__body_type = body_type
 
         if isinstance(body, str):
@@ -51,6 +53,10 @@ class HttpRequest(azf_abc.HttpRequest):
     @property
     def params(self):
         return self.__params
+
+    @property
+    def route_params(self):
+        return self.__route_params
 
     def get_body(self) -> bytes:
         if self.__body_bytes is None:
@@ -147,5 +153,6 @@ class HttpRequestConverter(meta.InConverter,
             url=data.http.url,
             headers=data.http.headers,
             params=data.http.query,
+            route_params=data.http.params,
             body_type=body_type,
             body=body)

@@ -14,12 +14,14 @@ class TestFunctions(unittest.TestCase):
             'http://example.com/abc?a=1',
             headers=dict(aaa='zzz', bAb='xYz'),
             params=dict(a='b'),
+            route_params={'route': 'param'},
             body_type=bind_meta.TypedDataKind.bytes,
             body=b'abc')
 
         self.assertEqual(r.method, 'GET')
         self.assertEqual(r.url, 'http://example.com/abc?a=1')
         self.assertEqual(r.params, {'a': 'b'})
+        self.assertEqual(r.route_params, {'route': 'param'})
 
         with self.assertRaises(TypeError):
             r.params['a'] = 'z'
@@ -48,12 +50,14 @@ class TestFunctions(unittest.TestCase):
             'http://example.com/abc?a=1',
             headers={},
             params={},
+            route_params={},
             body_type=bind_meta.TypedDataKind.json,
             body='{"a":1}')
 
         self.assertEqual(r.method, 'POST')
         self.assertEqual(r.url, 'http://example.com/abc?a=1')
         self.assertEqual(r.params, {})
+        self.assertEqual(r.route_params, {})
 
         self.assertEqual(r.get_body(), b'{"a":1}')
         self.assertEqual(r.get_json(), {'a': 1})

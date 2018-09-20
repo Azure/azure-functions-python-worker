@@ -53,3 +53,11 @@ class TestQueueFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'get_queue_blob_message_return')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-message-object-return')
+
+    def test_queue_return_multiple(self):
+        r = self.webhost.request('POST', 'put_queue_return_multiple',
+                                 data='foo')
+        self.assertTrue(200 <= r.status_code < 300)
+
+        # wait for queue_trigger to process the queue item
+        time.sleep(1)

@@ -1,0 +1,14 @@
+{
+  "scriptFile": "main.py",
+  "disabled": false,
+
+  "bindings": [
+    {
+      "type": "queueTrigger",
+      "direction": "in",
+      "name": "msg",
+      "queueName": "testqueue-return-multiple",
+      "connection": "AzureWebJobsStorage",
+    }
+  ]
+}

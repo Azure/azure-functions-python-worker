@@ -15,7 +15,7 @@ What's available?
 
 - Develop using Functions Core Tools (CLI)
 - Publish your Python functions using an App Service Plan on Linux
-- Triggers / Bindings : HTTP/Webhook, Blob, Queue, Timer, Cosmos DB, Event Grid, Event Hubs and Service Bus
+- Triggers / Bindings : HTTP, Blob, Queue, Timer, Cosmos DB, Event Grid, Event Hubs and Service Bus
 - Publish a custom image to Azure
 
 What's coming?
@@ -26,8 +26,8 @@ What's coming?
 
 # Get Started
 
-- [Build and publish using the Functions Core Tools](https://github.com/Azure/azure-functions-python-worker/wiki/Create-Function-(CLI))
-- [Python developer guide](https://pythondeveloperguide.azurewebsites.net/)
+- [Create your first Python function](https://github.com/Azure/azure-functions-python-worker/wiki/Create-your-first-Python-function)
+- [Developer guide](https://github.com/Azure/azure-functions-python-worker/wiki/Developer-Guide)
 - [Binding API reference](https://pythondeveloperguide.azurewebsites.net/api.html#azure-functions-reference)
 
 # Give Feedback

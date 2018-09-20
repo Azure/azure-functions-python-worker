@@ -15,34 +15,34 @@ from setuptools.command import develop
 
 
 # TODO: change this to something more stable when available.
-WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/ykwva3bprej48cfa'
-               '/artifacts/Functions.Binaries.2.0.12050-alpha.no-runtime.zip')
+WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/f5qsvh40oh8ny47c'
+               '/artifacts/Functions.Binaries.2.0.12115.no-runtime.zip')
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = [
     {
         "id": "Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator",
-        "version": "1.0.0"
+        "version": "1.0.1"
     },
     {
         "id": "Microsoft.Azure.WebJobs.Extensions.CosmosDB",
-        "version": "3.0.1-beta1"
+        "version": "3.0.1"
     },
     {
         "id": "Microsoft.Azure.WebJobs.Extensions.EventHubs",
-        "version": "3.0.0-beta8"
+        "version": "3.0.0"
     },
     {
         "id": "Microsoft.Azure.WebJobs.Extensions.EventGrid",
-        "version": "2.0.0-beta3"
+        "version": "2.0.0"
     },
     {
         "id": "Microsoft.Azure.WebJobs.Extensions.Storage",
-        "version": "3.0.0-beta8"
+        "version": "3.0.0"
     },
     {
-        "id": "Microsoft.Azure.WebJobs.ServiceBus",
-        "version": "3.0.0-beta8"
+        "id": "Microsoft.Azure.WebJobs.Extensions.ServiceBus",
+        "version": "3.0.0"
     },
 ]
 

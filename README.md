@@ -7,7 +7,7 @@ This repository will host the Python language worker implementation for Azure Fu
 
 # Overview
 
-Python support for Functions is based on [Python3.6](https://www.python.org/downloads/release/python-360/), [Functions on Linux](https://blogs.msdn.microsoft.com/appserviceteam/2017/11/15/functions-on-linux-preview/) and the [V2 Runtime](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions).
+Python support for Azure Functions is based on Python3.6, serverless hosting on Linux and the Functions 2.0 runtime.
 
 Here is the current status of Python in Azure Functions:
 
@@ -16,10 +16,10 @@ What's available?
 - Develop using the Azure Functions Core Tools (CLI)
 - Triggers / Bindings : HTTP, Blob, Queue, Timer, Cosmos DB, Event Grid, Event Hubs and Service Bus
 - Publish your functions to a [serverless linux app in Azure](https://aka.ms/functions-consumptionlinux-preview)
+- Build, test, debug and publish using Visual Studio Code
 
 What's coming?
 
-- Build, test, debug and publish using Visual Studio Code
 - Triggers / Bindings : IoT Hub
 
 # Get Started
@@ -27,6 +27,7 @@ What's coming?
 - [Create your first Python function](https://github.com/Azure/azure-functions-python-worker/wiki/Create-your-first-Python-function)
 - [Developer guide](https://github.com/Azure/azure-functions-python-worker/wiki/Developer-Guide)
 - [Binding API reference](https://pythondeveloperguide.azurewebsites.net/api.html#azure-functions-reference)
+- [Develop using VS Code](https://github.com/Azure/azure-functions-python-worker/wiki/Develop-using-VS-Code)
 
 # Give Feedback
 

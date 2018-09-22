@@ -18,6 +18,11 @@ environment:
         - PYTHON_VERSION: 3.6
         - PYTHON_VERSION: 3.7
 
+# We must run tests sequentially as most integration tests
+# depend on the functino app state, which would get mangled
+# with multiple test jobs being run in parallel.
+max_jobs: 1
+
 for:
 -
     matrix:

@@ -151,7 +151,8 @@ class Registry:
             else:
                 param_py_type = param_anno
 
-            if param_has_anno and not isinstance(param_py_type, type):
+            if (param_has_anno and not isinstance(param_py_type, type) and
+                    not typing_inspect.is_generic_type(param_py_type)):
                 raise FunctionLoadError(
                     func_name,
                     f'binding {param.name} has invalid non-type annotation '

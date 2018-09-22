@@ -102,8 +102,8 @@ class QueueMessageOutConverter(meta.OutConverter, binding='queue'):
     def check_output_type_annotation(cls, pytype: type) -> bool:
         valid_types = (azf_abc.QueueMessage, str, bytes)
         return (
-            issubclass(pytype, valid_types) or
-            meta.is_iterable_type_annotation(pytype, valid_types)
+            meta.is_iterable_type_annotation(pytype, valid_types) or
+            (isinstance(pytype, type) and issubclass(pytype, valid_types))
         )
 
     @classmethod

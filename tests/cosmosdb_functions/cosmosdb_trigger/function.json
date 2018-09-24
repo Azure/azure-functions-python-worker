@@ -11,6 +11,7 @@
       "collectionName": "items",
       "id": "cosmosdb-trigger-test",
       "leaseCollectionName": "leases",
+      "connectionStringSetting": "AzureWebJobsCosmosDBConnectionString",
       "createLeaseCollectionIfNotExists": true
     },
     {
@@ -19,6 +20,6 @@
       "name": "$return",
       "connection": "AzureWebJobsStorage",
       "path": "python-worker-tests/test-cosmosdb-triggered.txt"
-    },
+    }
   ]
 }

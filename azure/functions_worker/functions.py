@@ -1,4 +1,5 @@
 import inspect
+import operator
 import typing
 
 import azure.functions as azf
@@ -138,10 +139,20 @@ class Registry:
                         f'binding {param.name} has invalid Out annotation '
                         f'{param_anno!r}')
                 param_py_type = param_anno_args[0]
+
+                # typing_inspect.get_args() returns a flat list,
+                # so if the annotation was func.Out[typing.List[foo]],
+                # we need to reconstruct it.
+                if (isinstance(param_py_type, tuple) and
+                        typing_inspect.is_generic_type(param_py_type[0])):
+
+                    param_py_type = operator.getitem(
+                        param_py_type[0], *param_py_type[1:])
             else:
                 param_py_type = param_anno
 
-            if param_has_anno and not isinstance(param_py_type, type):
+            if (param_has_anno and not isinstance(param_py_type, type) and
+                    not typing_inspect.is_generic_type(param_py_type)):
                 raise FunctionLoadError(
                     func_name,
                     f'binding {param.name} has invalid non-type annotation '

@@ -15,28 +15,54 @@ from setuptools.command import develop
 
 
 # TODO: change this to something more stable when available.
-WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/nheu483rq96ssbst'
-               '/artifacts/Functions.Binaries.2.0.12014-alpha.no-runtime.zip')
+WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/f5qsvh40oh8ny47c'
+               '/artifacts/Functions.Binaries.2.0.12115.no-runtime.zip')
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = [
     {
+        "id": "Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator",
+        "version": "1.0.1"
+    },
+    {
         "id": "Microsoft.Azure.WebJobs.Extensions.CosmosDB",
-        "version": "3.0.0-beta7"
+        "version": "3.0.1"
     },
     {
         "id": "Microsoft.Azure.WebJobs.Extensions.EventHubs",
-        "version": "3.0.0-beta5"
+        "version": "3.0.0"
     },
     {
         "id": "Microsoft.Azure.WebJobs.Extensions.EventGrid",
-        "version": "2.0.0-beta1"
+        "version": "2.0.0"
+    },
+    {
+        "id": "Microsoft.Azure.WebJobs.Extensions.Storage",
+        "version": "3.0.0"
     },
     {
         "id": "Microsoft.Azure.WebJobs.ServiceBus",
-        "version": "3.0.0-beta5"
+        "version": "3.0.0-beta8"
     },
 ]
+
+
+NUGET_CONFIG = """\
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <add key="nuget.org" value="https://www.nuget.org/api/v2/" />
+    <add key="azure_app_service"
+         value="https://www.myget.org/F/azure-appservice/api/v2" />
+    <add key="azure_app_service_staging"
+         value="https://www.myget.org/F/azure-appservice-staging/api/v2" />
+    <add key="buildTools"
+         value="https://www.myget.org/F/30de4ee06dd54956a82013fa17a3accb/" />
+    <add key="AspNetVNext"
+         value="https://dotnet.myget.org/F/aspnetcore-dev/api/v3/index.json" />
+  </packageSources>
+</configuration>
+"""
 
 
 class BuildGRPC:
@@ -156,6 +182,9 @@ class webhost(distutils.cmd.Command):
             with open(self.extensions_dir / 'host.json', 'w') as f:
                 print(r'{}', file=f)
 
+        with open(self.extensions_dir / 'NuGet.config', 'w') as f:
+            print(NUGET_CONFIG, file=f)
+
         env = os.environ.copy()
         env['TERM'] = 'xterm'  # ncurses 6.1 workaround
 
@@ -173,7 +202,7 @@ class webhost(distutils.cmd.Command):
 
 setup(
     name='azure-functions-worker',
-    version='1.0.0a4',
+    version='1.0.0a5',
     description='Python Language Worker for Azure Functions Host',
     classifiers=[
         'License :: OSI Approved :: MIT License',
@@ -196,7 +225,7 @@ setup(
     install_requires=[
         'grpcio~=1.14.0',
         'grpcio-tools~=1.14.0',
-        'azure-functions==1.0.0a4',
+        'azure-functions==1.0.0a5',
     ],
     extras_require={
         'dev': [

@@ -1,3 +1,4 @@
+import collections.abc
 import datetime
 import json
 import typing
@@ -99,7 +100,11 @@ class QueueMessageOutConverter(meta.OutConverter, binding='queue'):
 
     @classmethod
     def check_output_type_annotation(cls, pytype: type) -> bool:
-        return issubclass(pytype, (azf_abc.QueueMessage, str, bytes))
+        valid_types = (azf_abc.QueueMessage, str, bytes)
+        return (
+            meta.is_iterable_type_annotation(pytype, valid_types) or
+            (isinstance(pytype, type) and issubclass(pytype, valid_types))
+        )
 
     @classmethod
     def to_proto(cls, obj: typing.Any, *,
@@ -116,6 +121,25 @@ class QueueMessageOutConverter(meta.OutConverter, binding='queue'):
                     'id': obj.id,
                     'body': obj.get_body().decode('utf-8'),
                 })
+            )
+
+        elif isinstance(obj, collections.abc.Iterable):
+            msgs = []
+            for item in obj:
+                if isinstance(item, str):
+                    msgs.append(item)
+                elif isinstance(item, azf_queue.QueueMessage):
+                    msgs.append({
+                        'id': item.id,
+                        'body': item.get_body().decode('utf-8')
+                    })
+                else:
+                    raise NotImplementedError(
+                        'invalid data type in output '
+                        'queue message list: {}'.format(type(item)))
+
+            return protos.TypedData(
+                json=json.dumps(msgs)
             )
 
         raise NotImplementedError

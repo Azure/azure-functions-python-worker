@@ -1,10 +1,12 @@
 import abc
+import collections.abc
 import datetime
 import enum
 import json
 import typing
 
 from .. import protos
+from .. import typing_inspect
 
 
 class TypedDataKind(enum.Enum):
@@ -209,6 +211,28 @@ class OutConverter(_BaseConverter, binding=None):
     def to_proto(cls, obj: typing.Any, *,
                  pytype: typing.Optional[type]) -> protos.TypedData:
         pass
+
+
+def is_iterable_type_annotation(annotation: object, pytype: object) -> bool:
+    is_iterable_anno = (
+        typing_inspect.is_generic_type(annotation) and
+        issubclass(typing_inspect.get_origin(annotation),
+                   collections.abc.Iterable)
+    )
+
+    if not is_iterable_anno:
+        return False
+
+    args = typing_inspect.get_args(annotation)
+    if not args:
+        return False
+
+    if isinstance(pytype, tuple):
+        return any(isinstance(t, type) and issubclass(t, arg)
+                   for t in pytype for arg in args)
+    else:
+        return any(isinstance(pytype, type) and issubclass(pytype, arg)
+                   for arg in args)
 
 
 def is_binding(bind_name: str) -> bool:

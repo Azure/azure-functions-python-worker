@@ -199,7 +199,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             func = loader.load_function(
                 func_request.metadata.name,
                 func_request.metadata.directory,
-                func_request.metadata.script_file)
+                func_request.metadata.script_file,
+                func_request.metadata.entry_point)
 
             self._functions.add_function(
                 function_id, func, func_request.metadata)

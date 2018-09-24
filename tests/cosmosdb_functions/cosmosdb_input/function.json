@@ -16,12 +16,13 @@
       "collectionName": "items",
       "id": "cosmosdb-input-test",
       "leaseCollectionName": "leases",
+      "connectionStringSetting": "AzureWebJobsCosmosDBConnectionString",
       "createLeaseCollectionIfNotExists": true
     },
     {
       "type": "http",
       "direction": "out",
       "name": "$return"
-    },
+    }
   ]
 }

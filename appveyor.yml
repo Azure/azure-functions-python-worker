@@ -12,11 +12,16 @@ environment:
     PIP_NO_WARN_SCRIPT_LOCATION: 0
     PIP_DISABLE_PIP_VERSION_CHECK: 1
     DOTNET_CLI_TELEMETRY_OPTOUT: 1
-    DOTNET_VERSION: 2.1.300
+    DOTNET_VERSION: 2.1.402
 
     matrix:
         - PYTHON_VERSION: 3.6
         - PYTHON_VERSION: 3.7
+
+# We must run tests sequentially as most integration tests
+# depend on the functino app state, which would get mangled
+# with multiple test jobs being run in parallel.
+max_jobs: 1
 
 for:
 -

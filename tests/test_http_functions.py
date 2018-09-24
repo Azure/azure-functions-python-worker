@@ -153,3 +153,9 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 500)
         # https://github.com/Azure/azure-functions-host/issues/2706
         # self.assertIn('Exception: ZeroDivisionError', r.text)
+
+    def test_return_route_params(self):
+        r = self.webhost.request('GET', 'return_route_params/foo/bar')
+        self.assertEqual(r.status_code, 200)
+        resp = r.json()
+        self.assertEqual(resp, {'param1': 'foo', 'param2': 'bar'})

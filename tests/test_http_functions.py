@@ -159,6 +159,17 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # https://github.com/Azure/azure-functions-host/issues/2706
         # self.assertIn('Exception: ZeroDivisionError', r.text)
 
+    def test_unhandled_urllib_error(self):
+        r = self.webhost.request(
+            'GET', 'unhandled_urllib_error',
+            params={'img': 'http://example.com/nonexistent.jpg'})
+        self.assertEqual(r.status_code, 500)
+
+    def test_unhandled_unserializable_error(self):
+        r = self.webhost.request(
+            'GET', 'unhandled_unserializable_error')
+        self.assertEqual(r.status_code, 500)
+
     def test_return_route_params(self):
         r = self.webhost.request('GET', 'return_route_params/foo/bar')
         self.assertEqual(r.status_code, 200)

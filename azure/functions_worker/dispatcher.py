@@ -166,9 +166,18 @@ class Dispatcher(metaclass=DispatcherMeta):
         return self._worker_id
 
     def _serialize_exception(self, exc):
-        return protos.RpcException(
-            message=f'{type(exc).__name__}: {exc.args[0]}',
-            stack_trace=''.join(traceback.format_tb(exc.__traceback__)))
+        try:
+            message = f'{type(exc).__name__}: {exc}'
+        except Exception:
+            message = (f'Unhandled exception in function. '
+                       f'Could not serialize original exception message.')
+
+        try:
+            stack_trace = ''.join(traceback.format_tb(exc.__traceback__))
+        except Exception:
+            stack_trace = ''
+
+        return protos.RpcException(message=message, stack_trace=stack_trace)
 
     async def _dispatch_grpc_request(self, request):
         content_type = request.WhichOneof('content')

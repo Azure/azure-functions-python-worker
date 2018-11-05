@@ -71,10 +71,3 @@ class TestMockHost(testutils.AsyncTestCase):
             _, r = await host.load_function('return_out')
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
-
-            for log in r.logs:
-                if 'unknown StreamingMessage' in log.message:
-                    break
-            else:
-                raise AssertionError('the worker did not log about an '
-                                     '"unknown StreamingMessage"')

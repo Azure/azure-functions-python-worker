@@ -17,6 +17,8 @@ from . import functions
 from . import loader
 from . import protos
 
+from .logging import logger
+
 
 class DispatcherMeta(type):
 
@@ -62,8 +64,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
 
-        self._logger = logging.getLogger('azure.functions_worker')
-
     @classmethod
     async def connect(cls, host, port, worker_id, request_id,
                       connect_timeout, max_msg_len=None):
@@ -72,6 +72,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                    connect_timeout, max_msg_len)
         disp._grpc_thread.start()
         await disp._grpc_connected_fut
+        logger.info('Successfully opened gRPC channel to %s:%s', host, port)
         return disp
 
     async def dispatch_forever(self):
@@ -186,7 +187,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             # Don't crash on unknown messages.  Some of them can be ignored;
             # and if something goes really wrong the host can always just
             # kill the worker's process.
-            self._logger.error(
+            logger.error(
                 f'unknown StreamingMessage content type {content_type}')
             return
 
@@ -194,6 +195,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_resp_queue.put_nowait(resp)
 
     async def _handle__worker_init_request(self, req):
+        logger.info('Received WorkerInitRequest, request ID %s',
+                    self.request_id)
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
@@ -204,6 +207,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         func_request = req.function_load_request
         function_id = func_request.function_id
 
+        logger.info('Received FunctionLoadRequest, request ID: %s, '
+                    'function ID: %s', self.request_id, function_id)
+
         try:
             func = loader.load_function(
                 func_request.metadata.name,
@@ -213,6 +219,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             self._functions.add_function(
                 function_id, func, func_request.metadata)
+
+            logger.info('Successfully processed FunctionLoadRequest, '
+                        'request ID: %s, function ID: %s',
+                        self.request_id, function_id)
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -241,6 +251,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         current_task = asyncio.Task.current_task(self._loop)
         assert isinstance(current_task, ContextEnabledTask)
         current_task.set_azure_invocation_id(invocation_id)
+
+        logger.info('Received FunctionInvocationRequest, request ID: %s, '
+                    'function ID: %s, invocation ID: %s',
+                    self.request_id, function_id, invocation_id)
 
         try:
             fi: functions.FunctionInfo = self._functions.get_function(
@@ -302,6 +316,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name, call_result,
                     pytype=fi.return_type.pytype)
+
+            logger.info('Successfully processed FunctionInvocationRequest, '
+                        'request ID: %s, function ID: %s, invocation ID: %s',
+                        self.request_id, function_id, invocation_id)
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -377,8 +395,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 class AsyncLoggingHandler(logging.Handler):
 
     def emit(self, record):
-        msg = self.format(record)
-        Dispatcher.current._on_logging(record, msg)
+        if record.name != 'azure.functions_worker':
+            # Skip worker system logs
+            msg = self.format(record)
+            Dispatcher.current._on_logging(record, msg)
 
 
 class ContextEnabledTask(asyncio.Task):

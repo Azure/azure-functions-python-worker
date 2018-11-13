@@ -6,7 +6,7 @@ import argparse
 from . import aio_compat
 from . import dispatcher
 from . import logging
-from .logging import logger
+from .logging import error_logger, logger
 
 
 def parse_args():
@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument('--requestId', dest='request_id')
     parser.add_argument('--log-level', type=str, default='INFO',
                         choices=['TRACE', 'INFO', 'WARNING', 'ERROR'],)
-    parser.add_argument('--log-to', type=str, default='stderr',
+    parser.add_argument('--log-to', type=str, default=None,
                         help='log destination: stdout, stderr, '
                              'syslog, or a file path')
     parser.add_argument('--grpcMaxMessageLength', type=int,
@@ -39,7 +39,7 @@ def main():
             args.host, args.port, args.worker_id, args.request_id,
             args.grpc_max_msg_len))
     except Exception:
-        logger.exception('unhandled error in functions worker')
+        error_logger.exception('unhandled error in functions worker')
         raise
 
 

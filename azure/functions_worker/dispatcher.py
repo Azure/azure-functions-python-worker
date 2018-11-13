@@ -17,7 +17,7 @@ from . import functions
 from . import loader
 from . import protos
 
-from .logging import logger
+from .logging import error_logger, logger
 
 
 class DispatcherMeta(type):
@@ -389,13 +389,14 @@ class Dispatcher(metaclass=DispatcherMeta):
             if ex is grpc_req_stream:
                 # Yes, this is how grpc_req_stream iterator exits.
                 return
+            error_logger.exception('unhandled error in gRPC thread')
             raise
 
 
 class AsyncLoggingHandler(logging.Handler):
 
     def emit(self, record):
-        if record.name != 'azure.functions_worker':
+        if not record.name.startswith('azure.functions_worker'):
             # Skip worker system logs
             msg = self.format(record)
             Dispatcher.current._on_logging(record, msg)

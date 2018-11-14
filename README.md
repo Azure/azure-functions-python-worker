@@ -26,7 +26,7 @@ What's coming?
 
 - [Create your first Python function](https://github.com/Azure/azure-functions-python-worker/wiki/Create-your-first-Python-function)
 - [Developer guide](https://github.com/Azure/azure-functions-python-worker/wiki/Developer-Guide)
-- [Binding API reference](https://pythondeveloperguide.azurewebsites.net/api.html#azure-functions-reference)
+- [Binding API reference](https://docs.microsoft.com/en-us/python/api/azure-functions/azure.functions?view=azure-python)
 - [Develop using VS Code](https://github.com/Azure/azure-functions-python-worker/wiki/Develop-using-VS-Code)
 
 # Give Feedback

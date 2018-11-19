@@ -30,6 +30,7 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
                 r = self.webhost.request('GET', 'get_cosmosdb_triggered')
                 self.assertEqual(r.status_code, 200)
                 response = r.json()
+                response.pop('_metadata', None)
 
                 self.assertEqual(
                     response,

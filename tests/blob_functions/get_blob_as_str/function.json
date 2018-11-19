@@ -1,0 +1,24 @@
+{
+  "scriptFile": "main.py",
+  "disabled": false,
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req"
+    },
+    {
+      "type": "blob",
+      "direction": "in",
+      "name": "file",
+      "dataType": "string",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/test-str.txt"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "$return"
+    }
+  ]
+}

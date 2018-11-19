@@ -109,8 +109,12 @@ class ServiceBusMessageInConverter(meta.InConverter,
                                    binding='serviceBusTrigger', trigger=True):
 
     @classmethod
-    def check_input_type_annotation(cls, pytype: type) -> bool:
-        return issubclass(pytype, azf_sbus.ServiceBusMessage)
+    def check_input_type_annotation(
+            cls, pytype: type, datatype: protos.BindingInfo.DataType) -> bool:
+        if datatype is protos.BindingInfo.undefined:
+            return issubclass(pytype, azf_sbus.ServiceBusMessage)
+        else:
+            return False
 
     @classmethod
     def from_proto(cls, data: protos.TypedData, *,

@@ -202,7 +202,8 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
 class InConverter(_BaseConverter, binding=None):
 
     @abc.abstractclassmethod
-    def check_input_type_annotation(cls, pytype: type) -> bool:
+    def check_input_type_annotation(
+            cls, pytype: type, datatype: protos.BindingInfo.DataType) -> bool:
         pass
 
     @abc.abstractclassmethod
@@ -257,7 +258,8 @@ def is_trigger_binding(bind_name: str) -> bool:
         raise ValueError(f'unsupported binding type {bind_name!r}')
 
 
-def check_input_type_annotation(binding: str, pytype: type) -> bool:
+def check_input_type_annotation(binding: str, pytype: type,
+                                datatype: protos.BindingInfo.DataType) -> bool:
     try:
         checker = _ConverterMeta._check_in_typeann[binding]
     except KeyError:
@@ -265,7 +267,7 @@ def check_input_type_annotation(binding: str, pytype: type) -> bool:
             f'{binding!r} input binding does not have '
             f'a corresponding Python type') from None
 
-    return checker(pytype)
+    return checker(pytype, datatype)
 
 
 def check_output_type_annotation(binding: str, pytype: type) -> bool:

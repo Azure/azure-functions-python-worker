@@ -12,8 +12,12 @@ class CosmosDBConverter(meta.InConverter, meta.OutConverter,
                         binding='cosmosDB'):
 
     @classmethod
-    def check_input_type_annotation(cls, pytype: type) -> bool:
-        return issubclass(pytype, cdb.DocumentList)
+    def check_input_type_annotation(
+            cls, pytype: type, datatype: protos.BindingInfo.DataType) -> bool:
+        if datatype is protos.BindingInfo.undefined:
+            return issubclass(pytype, cdb.DocumentList)
+        else:
+            return False
 
     @classmethod
     def check_output_type_annotation(cls, pytype: type) -> bool:

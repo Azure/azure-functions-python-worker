@@ -56,8 +56,12 @@ class QueueMessageInConverter(meta.InConverter,
                               binding='queueTrigger', trigger=True):
 
     @classmethod
-    def check_input_type_annotation(cls, pytype: type) -> bool:
-        return issubclass(pytype, azf_abc.QueueMessage)
+    def check_input_type_annotation(
+            cls, pytype: type, datatype: protos.BindingInfo.DataType) -> bool:
+        if datatype is protos.BindingInfo.undefined:
+            return issubclass(pytype, azf_abc.QueueMessage)
+        else:
+            return False
 
     @classmethod
     def from_proto(cls, data: protos.TypedData, *,

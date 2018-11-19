@@ -180,16 +180,27 @@ class Registry:
 
             if param_has_anno:
                 if is_param_out:
-                    checker = bindings.check_output_type_annotation
+                    checks_out = bindings.check_output_type_annotation(
+                        param_bind_type, param_py_type)
                 else:
-                    checker = bindings.check_input_type_annotation
+                    checks_out = bindings.check_input_type_annotation(
+                        param_bind_type, param_py_type, desc.data_type)
 
-                if not checker(param_bind_type, param_py_type):
-                    raise FunctionLoadError(
-                        func_name,
-                        f'type of {param.name} binding in function.json '
-                        f'"{param_bind_type}" does not match its Python '
-                        f'annotation "{param_py_type.__name__}"')
+                if not checks_out:
+                    if desc.data_type is not protos.BindingInfo.undefined:
+                        raise FunctionLoadError(
+                            func_name,
+                            f'{param.name!r} binding type "{param_bind_type}" '
+                            f'and dataType "{desc.data_type}" in function.json'
+                            f' do not match the corresponding function '
+                            f'parameter\'s Python type '
+                            f'annotation "{param_py_type.__name__}"')
+                    else:
+                        raise FunctionLoadError(
+                            func_name,
+                            f'type of {param.name} binding in function.json '
+                            f'"{param_bind_type}" does not match its Python '
+                            f'annotation "{param_py_type.__name__}"')
 
             param_type_info = ParamTypeInfo(param_bind_type, param_py_type)
             if is_binding_out:

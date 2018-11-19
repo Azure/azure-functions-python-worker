@@ -18,6 +18,10 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data')
 
+        r = self.webhost.request('GET', 'get_blob_as_str')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'test-data')
+
     def test_blob_io_bytes(self):
         r = self.webhost.request('POST', 'put_blob_bytes',
                                  data='test-dată'.encode('utf-8'))
@@ -25,6 +29,10 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.text, 'OK')
 
         r = self.webhost.request('POST', 'get_blob_bytes')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'test-dată')
+
+        r = self.webhost.request('POST', 'get_blob_as_bytes')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-dată')
 

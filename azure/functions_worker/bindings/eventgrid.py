@@ -11,8 +11,12 @@ class EventGridEventInConverter(meta.InConverter,
                                 binding='eventGridTrigger', trigger=True):
 
     @classmethod
-    def check_input_type_annotation(cls, pytype: type) -> bool:
-        return issubclass(pytype, _eventgrid.EventGridEvent)
+    def check_input_type_annotation(
+            cls, pytype: type, datatype: protos.BindingInfo.DataType) -> bool:
+        if datatype is protos.BindingInfo.undefined:
+            return issubclass(pytype, _eventgrid.EventGridEvent)
+        else:
+            return False
 
     @classmethod
     def from_proto(cls, data: protos.TypedData, *,

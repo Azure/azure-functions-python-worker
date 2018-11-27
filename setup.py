@@ -202,7 +202,7 @@ class webhost(distutils.cmd.Command):
 
 setup(
     name='azure-functions-worker',
-    version='1.0.0a6',
+    version='1.0.0b1',
     description='Python Language Worker for Azure Functions Host',
     classifiers=[
         'License :: OSI Approved :: MIT License',
@@ -225,7 +225,7 @@ setup(
     install_requires=[
         'grpcio~=1.14.0',
         'grpcio-tools~=1.14.0',
-        'azure-functions==1.0.0a5',
+        'azure-functions==1.0.0b1',
     ],
     extras_require={
         'dev': [

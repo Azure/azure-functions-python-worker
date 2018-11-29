@@ -15,8 +15,8 @@ from setuptools.command import develop
 
 
 # TODO: change this to something more stable when available.
-WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/onhbleqih3dsapp0'
-               '/artifacts/Functions.Binaries.2.0.12136.no-runtime.zip')
+WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/92sx9m218vqyso8m'
+               '/artifacts/Functions.Binaries.2.0.12218.no-runtime.zip')
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = [
@@ -215,9 +215,11 @@ setup(
         'Development Status :: 3 - Alpha',
     ],
     license='MIT',
-    packages=['azure.functions_worker',
-              'azure.functions_worker.protos',
-              'azure.functions_worker.bindings'],
+    packages=[
+        'azure.functions_worker',
+        'azure.functions_worker.protos',
+        'azure.functions_worker.bindings'
+    ],
     setup_requires=[
         'grpcio~=1.14.0',
         'grpcio-tools~=1.14.0',
@@ -240,6 +242,11 @@ setup(
         'build': build,
         'develop': develop,
         'webhost': webhost,
+    },
+    entry_points={
+        "egg_info.writers": [
+            "worker.config.json = azure.functions_worker.dist:write_worker_cfg"
+        ]
     },
     test_suite='tests'
 )

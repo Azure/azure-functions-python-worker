@@ -1,7 +1,7 @@
 dist: trusty
 
 env:
-    - DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_VERSION=2.1.402
+    - DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_VERSION=2.1.500
 
 branches:
     only:

@@ -15,6 +15,7 @@ import logging
 import os
 import queue
 import pathlib
+import pkg_resources
 import platform
 import shutil
 import socket
@@ -40,7 +41,6 @@ DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / \
     'Microsoft.Azure.WebJobs.Script.WebHost.dll'
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / 'http_functions'
-WORKER_PATH = PROJECT_ROOT / 'python'
 WORKER_CONFIG = PROJECT_ROOT / '.testconfig'
 ON_WINDOWS = platform.system() == 'Windows'
 
@@ -154,9 +154,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         else:
             cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
 
-        _setup_func_app(TESTS_ROOT / script_dir)
-
         try:
+            _setup_func_app(TESTS_ROOT / script_dir)
             cls.webhost = start_webhost(script_dir=script_dir,
                                         stdout=cls.host_stdout)
         except Exception:
@@ -525,14 +524,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             f'       dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
         ]))
 
-    worker_path = os.environ.get('PYAZURE_WORKER_DIR')
-    if not worker_path:
-        worker_path = WORKER_PATH
-    else:
-        worker_path = pathlib.Path(worker_path)
-
-    if not worker_path.exists():
-        raise RuntimeError(f'Worker path {worker_path} does not exist')
+    worker_path = pathlib.Path(script_root / 'workerconfig')
 
     # Casting to strings is necessary because Popen doesn't like
     # path objects there on Windows.
@@ -645,13 +637,24 @@ def _setup_func_app(app_root):
     _symlink_dir(TESTS_ROOT / 'ping', ping_func)
     _symlink_dir(EXTENSIONS_PATH, extensions)
 
+    worker_config_path = app_root / 'workerconfig'
+
+    os.makedirs(worker_config_path)
+    worker_dist = pkg_resources.get_distribution('azure-functions-worker')
+    worker_config = json.loads(worker_dist.get_metadata('worker.config.json'))
+    worker_config['description']['deafultExecutablePath'] = sys.executable
+
+    with open(worker_config_path / 'worker.config.json', 'w') as f:
+        json.dump(worker_config, fp=f)
+
 
 def _teardown_func_app(app_root):
     extensions = app_root / 'bin'
     ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
+    worker_config = app_root / 'workerconfig'
 
-    for path in (extensions, ping_func, host_json):
+    for path in (extensions, ping_func, host_json, worker_config):
         _remove_path(path)
 
 
@@ -663,7 +666,12 @@ def _main():
     args = parser.parse_args()
 
     app_root = pathlib.Path(args.scriptroot)
-    _setup_func_app(app_root)
+
+    try:
+        _setup_func_app(app_root)
+    except Exception:
+        _teardown_func_app(app_root)
+        raise
 
     host = popen_webhost(
         stdout=sys.stdout, stderr=sys.stderr,
@@ -672,7 +680,7 @@ def _main():
         host.wait()
     finally:
         host.terminate()
-        _teardown_func_app()
+        _teardown_func_app(app_root)
 
 
 if __name__ == '__main__':

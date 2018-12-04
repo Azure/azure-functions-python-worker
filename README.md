@@ -13,21 +13,22 @@ Here is the current status of Python in Azure Functions:
 
 What's available?
 
-- Develop using the Azure Functions Core Tools (CLI)
+- Build, test, debug and publish using Azure Functions Core Tools (CLI) or Visual Studio Code
 - Triggers / Bindings : HTTP, Blob, Queue, Timer, Cosmos DB, Event Grid, Event Hubs and Service Bus
-- Publish your functions to a [serverless linux app in Azure](https://aka.ms/functions-consumptionlinux-preview)
-- Build, test, debug and publish using Visual Studio Code
+- Create a Python Function on Linux using a custom docker image
 
 What's coming?
 
-- Triggers / Bindings : IoT Hub
+- Triggers / Bindings : IoT Hub, Signal R
+- Python 3.7 support
 
 # Get Started
 
-- [Create your first Python function](https://github.com/Azure/azure-functions-python-worker/wiki/Create-your-first-Python-function)
-- [Developer guide](https://github.com/Azure/azure-functions-python-worker/wiki/Developer-Guide)
+- [Create your first Python function](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-function-python)
+- [Developer guide](https://docs.microsoft.com/en-us/azure/azure-functions/functions-reference-python)
 - [Binding API reference](https://docs.microsoft.com/en-us/python/api/azure-functions/azure.functions?view=azure-python)
-- [Develop using VS Code](https://github.com/Azure/azure-functions-python-worker/wiki/Develop-using-VS-Code)
+- [Develop using VS Code](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-function-vs-code)
+- [Create a Python Function on Linux using a custom docker image](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-linux-custom-image)
 
 # Give Feedback
 

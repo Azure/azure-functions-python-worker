@@ -15,8 +15,8 @@ from setuptools.command import develop
 
 
 # TODO: change this to something more stable when available.
-WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/onhbleqih3dsapp0'
-               '/artifacts/Functions.Binaries.2.0.12136.no-runtime.zip')
+WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/14gwhthpqh893ej4'
+               '/artifacts/Functions.Binaries.2.0.12228-beta.no-runtime.zip')
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = [
@@ -202,7 +202,7 @@ class webhost(distutils.cmd.Command):
 
 setup(
     name='azure-functions-worker',
-    version='1.0.0b1',
+    version='1.0.0a6',
     description='Python Language Worker for Azure Functions Host',
     classifiers=[
         'License :: OSI Approved :: MIT License',
@@ -225,7 +225,7 @@ setup(
     install_requires=[
         'grpcio~=1.14.0',
         'grpcio-tools~=1.14.0',
-        'azure-functions==1.0.0b1',
+        'azure-functions==1.0.0a5',
     ],
     extras_require={
         'dev': [

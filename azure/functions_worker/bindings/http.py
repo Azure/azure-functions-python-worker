@@ -1,5 +1,4 @@
 import json
-import types
 import typing
 
 from azure.functions import _abc as azf_abc
@@ -9,54 +8,37 @@ from . import meta
 from .. import protos
 
 
-class HttpRequest(azf_abc.HttpRequest):
+class HttpRequest(azf_http.HttpRequest):
     """An HTTP request object."""
 
     __body_bytes: typing.Optional[bytes]
     __body_str: typing.Optional[str]
 
-    def __init__(self, method: str, url: str, *,
+    def __init__(self,
+                 method: str,
+                 url: str, *,
                  headers: typing.Mapping[str, str],
                  params: typing.Mapping[str, str],
                  route_params: typing.Mapping[str, str],
                  body_type: meta.TypedDataKind,
                  body: typing.Union[str, bytes]) -> None:
-        self.__method = method
-        self.__url = url
-        self.__headers = azf_http.HttpRequestHeaders(headers)
-        self.__params = types.MappingProxyType(params)
-        self.__route_params = types.MappingProxyType(route_params)
-        self.__body_type = body_type
-
         if isinstance(body, str):
-            self.__body_bytes = None
-            self.__body_str = body
+            body_bytes = None
+            body_str = body
         elif isinstance(body, bytes):
-            self.__body_bytes = body
-            self.__body_str = None
+            body_bytes = body
+            body_str = None
         else:
             raise TypeError(
                 f'unexpected HTTP request body type: {type(body).__name__}')
 
-    @property
-    def url(self):
-        return self.__url
+        super().__init__(method=method, url=url, headers=headers,
+                         params=params, route_params=route_params,
+                         body=body_bytes)
 
-    @property
-    def method(self):
-        return self.__method.upper()
-
-    @property
-    def headers(self):
-        return self.__headers
-
-    @property
-    def params(self):
-        return self.__params
-
-    @property
-    def route_params(self):
-        return self.__route_params
+        self.__body_type = body_type
+        self.__body_str = body_str
+        self.__body_bytes = body_bytes
 
     def get_body(self) -> bytes:
         if self.__body_bytes is None:

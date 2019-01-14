@@ -225,7 +225,7 @@ setup(
     install_requires=[
         'grpcio~=1.14.0',
         'grpcio-tools~=1.14.0',
-        'azure-functions==1.0.0a5',
+        'azure-functions==1.0.0b3',
     ],
     extras_require={
         'dev': [

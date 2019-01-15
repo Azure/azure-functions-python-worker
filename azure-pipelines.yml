@@ -25,6 +25,11 @@ jobs:
     inputs:
       filename: .ci\win_devops_tools.bat
     displayName: 'Install Core Tools'
+  - task: DotNetCoreInstaller@0
+    inputs:
+      packageType: 'sdk' 
+      version: $(DOTNET_VERSION)
+    displayName: 'Install dotnet'
   - task: BatchScript@1
     inputs:
       filename: .ci\win_devops_build.bat
@@ -59,11 +64,11 @@ jobs:
       disableAutoCwd: true # Execute in current directory
       scriptPath: .ci/linux_devops_tools.sh
     displayName: 'Install Core Tools'
-  - task: ShellScript@2
+  - task: DotNetCoreInstaller@0
     inputs:
-      disableAutoCwd: true 
-      scriptPath: .ci/linux_devops_dotnet.sh
-    displayName: 'Install dotnet'
+      packageType: 'sdk' 
+      version: $(DOTNET_VERSION)
+    displayName: 'Install dotnet' 
   - task: ShellScript@2
     inputs:
       disableAutoCwd: true 

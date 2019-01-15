@@ -1,3 +1,3 @@
 choco install azure-functions-core-tools --pre
-dotnet --info
+dotnet --version
 python --version

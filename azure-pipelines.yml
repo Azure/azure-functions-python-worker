@@ -1,5 +1,6 @@
 trigger:
 - dev
+- master
 
 variables:
     DOTNET_VERSION: '2.1.402'

@@ -1,6 +1,3 @@
-[![Build Status](https://travis-ci.org/Azure/azure-functions-python-worker.svg?branch=master)](https://travis-ci.org/Azure/azure-functions-python-worker)
-[![Build status](https://ci.appveyor.com/api/projects/status/github/azure/azure-functions-python-worker?svg=true&branch=master)](https://ci.appveyor.com/project/appsvc/azure-functions-python-worker)
-
 This repository will host the Python language worker implementation for Azure Functions. We'll also be using it to track work items related to Python support. Please feel free to leave comments about any of the features and design patterns.
 
 > :construction: The project is currently **work in progress**. Please **do not use in production** as we expect developments over time. To receive important updates, including breaking changes announcements, watch the [Azure App Service announcements](https://github.com/Azure/app-service-announcements/issues) repository. :construction:

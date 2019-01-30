@@ -28,7 +28,7 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
             "topic": "test-topic",
             "subject": "test-subject",
             "eventType": "Microsoft.Storage.BlobCreated",
-            "eventTime": "2018-01-01T00:00:00.000000Z",
+            "eventTime": "2018-01-01T00:00:00.000000123Z",
             "id": str(uuid.uuid4()),
             "data": {
                 "api": "PutBlockList",

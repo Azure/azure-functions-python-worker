@@ -84,7 +84,17 @@ jobs:
       LINUXEVENTHUBCONNECTIONSTRING: $(LinuxEventHubConnectionString)
       LINUXSERVICEBUSCONNECTIONSTRING: $(LinuxServiceBusConnectionString)
     displayName: 'Test'
+  
+- job: Nuget
+  pool:
+      vmImage: 'vs2017-win2016'
+  steps:
+  - task: NuGetCommand@2
+    inputs:
+      command: pack
+      packagesToPack: 'pack\worker.nuspec'
 
-
-
-
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+      artifactName: 'Microsoft.Azure.Functions.PythonWorker'

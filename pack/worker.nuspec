@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>Microsoft.Azure.Functions.PythonWorker</id>
+    <version>1.0.0-beta3</version>
+    <authors>Microsoft</authors>
+    <owners>Microsoft</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Microsoft Azure Functions Python Worker</description>
+    <copyright>© .NET Foundation. All rights reserved.</copyright>
+    <contentFiles>
+      <files include="..\azure\**" buildAction="None" copyToOutput="true" flatten="false"/>
+      <files include="..\setup.py" buildAction="None" copyToOutput="true" flatten="false"/>
+      <files include="..\setup.cfg" buildAction="None" copyToOutput="true" flatten="false"/>
+      <files include="..\python\**" buildAction="None" copyToOutput="true" flatten="false"/>
+    </contentFiles>
+  </metadata>
+  <files>
+    <file src="..\azure\**" target="contentFiles/any/any/azure" />
+    <file src="..\python\**" target="contentFiles/any/any" />
+    <file src="..\setup.py" target="contentFiles/any/any" />
+    <file src="..\setup.cfg" target="contentFiles/any/any" />
+  </files>
+</package>

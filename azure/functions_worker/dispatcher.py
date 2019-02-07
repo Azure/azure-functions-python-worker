@@ -295,7 +295,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             output_data = []
             if fi.output_types:
                 for out_name, out_type_info in fi.output_types.items():
-                    val = args[name].get()
+                    val = args[out_name].get()
                     if val is None:
                         # TODO: is the "Out" parameter optional?
                         # Can "None" be marshaled into protos.TypedData?
@@ -308,7 +308,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
                     output_data.append(
                         protos.ParameterBinding(
-                            name=name,
+                            name=out_name,
                             data=rpc_val))
 
             return_value = None

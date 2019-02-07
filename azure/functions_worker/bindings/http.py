@@ -47,10 +47,16 @@ class HttpRequest(azf_http.HttpRequest):
         return self.__body_bytes
 
     def get_json(self) -> typing.Any:
-        if self.__body_type is meta.TypedDataKind.json:
+        if (self.__body_type is meta.TypedDataKind.json
+                or self.__body_type is meta.TypedDataKind.string):
             assert self.__body_str is not None
             return json.loads(self.__body_str)
-        raise ValueError('HTTP request does not have JSON data attached')
+        else:
+            try:
+                return json.loads(self.__body_bytes.decode())
+            except ValueError as e:
+                raise ValueError(
+                    'HTTP request does not contain valid JSON data') from e
 
 
 class HttpResponseConverter(meta.OutConverter, binding='http'):
@@ -105,7 +111,7 @@ class HttpRequestConverter(meta.InConverter,
         if data.WhichOneof('data') != 'http':
             raise NotImplementedError
 
-        body_rpc_val = data.http.body
+        body_rpc_val = data.http.rawBody
         body_rpc_type = body_rpc_val.WhichOneof('data')
 
         if body_rpc_type == 'json':

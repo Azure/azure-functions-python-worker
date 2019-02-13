@@ -10,6 +10,7 @@ Please provide the following:
 - Timestamp:
 - Function App name:
 - Function name(s) (as appropriate):
+- Core Tools version: 
 
 #### Repro steps
 
@@ -58,8 +59,8 @@ Example:
 Provide any related information 
 
 * Links to source
+* Contents of the requirements.txt file
 * Bindings used
-* Dependencies
 
 <!-- Uncomment this if you want to include your source (wrap it in details to make browsing easier)
 <details>

@@ -82,8 +82,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         self._old_task_factory = self._loop.get_task_factory()
 
-        loader.install()
-
         DispatcherMeta.__current_dispatcher__ = self
         try:
             forever = self._loop.create_future()
@@ -209,6 +207,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         logger.info('Received FunctionLoadRequest, request ID: %s, '
                     'function ID: %s', self.request_id, function_id)
+                    
+        loader.install_func_app_package(func_request.metadata.directory)
 
         try:
             func = loader.load_function(

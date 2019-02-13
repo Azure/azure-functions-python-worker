@@ -16,7 +16,7 @@ What's available?
 
 What's coming?
 
-- Triggers / Bindings : IoT Hub, Signal R
+- Triggers / Bindings : Custom binding support
 - Python 3.7 support
 
 # Get Started

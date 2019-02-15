@@ -1,0 +1,35 @@
+parameters:
+  jobName: 'WindowsEnvGen'
+  dependency: 'Tests'
+  vmImage: 'vs2017-win2016'
+  pythonVersion: '3.6'
+  artifactName: 'Windows'
+
+jobs:
+- job: ${{ parameters.jobName }}
+  dependsOn: ${{ parameters.dependency }}
+  pool:
+      vmImage: ${{ parameters.vmImage }}
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: ${{ parameters.pythonVersion }}
+      addToPath: true
+  - task: PowerShell@2
+    inputs: 
+      filePath: 'pack\scripts\win_worker_venv.ps1'
+  - task: CopyFiles@2
+    inputs:
+      contents: |
+        python\*
+        azure\*.py
+        azure\functions_worker\**\*
+      targetFolder: '$(Build.ArtifactStagingDirectory)\worker'  
+  - task: CopyFiles@2
+    inputs:
+      contents: .env\**\*
+      targetFolder: '$(Build.ArtifactStagingDirectory)'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: ${{ parameters.artifactName }}

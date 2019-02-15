@@ -3,6 +3,6 @@
         "language":"python",
         "extensions":[".py"],
         "defaultExecutablePath":"python",
-        "defaultWorkerPath":"run_worker.py"
+        "defaultWorkerPath":"worker.py"
     }
 }

@@ -1,0 +1,36 @@
+parameters:
+  jobName: 'LinuxEnvGen'
+  dependency: 'Tests'
+  vmImage: 'ubuntu-16.04'
+  pythonVersion: '3.6'
+  artifactName: 'Linux'
+  
+jobs:
+- job: ${{ parameters.jobName }}
+  dependsOn: ${{ parameters.dependency }}
+  pool:
+      vmImage: ${{ parameters.vmImage }}
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: ${{ parameters.pythonVersion }}
+      addToPath: true
+  - task: ShellScript@2
+    inputs: 
+      disableAutoCwd: true
+      scriptPath: 'pack/scripts/nix_worker_venv.sh'
+  - task: CopyFiles@2
+    inputs:
+      contents: |
+        python/*
+        azure/*.py
+        azure/functions_worker/**/*
+      targetFolder: '$(Build.ArtifactStagingDirectory)/worker'  
+  - task: CopyFiles@2
+    inputs:
+      contents: .env/**/*
+      targetFolder: '$(Build.ArtifactStagingDirectory)'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: ${{ parameters.artifactName }}

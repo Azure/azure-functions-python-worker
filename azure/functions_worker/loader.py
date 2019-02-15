@@ -10,28 +10,23 @@ import pathlib
 import sys
 import typing
 
+
+_AZURE_NAMESPACE = '__azure__'
+
 _submodule_dirs = []
-
-
-def extract_func_app_namespace(func_dir):
-    func_dir_path = pathlib.Path(func_dir)
-    func_app_dir = os.path.normpath(func_dir_path.parent)
-    func_app_namespace = os.path.basename(func_app_dir)
-    return func_app_namespace
 
 
 def register_function_dir(path: os.PathLike):
     _submodule_dirs.append(os.fspath(path))
 
 
-def install_func_app_package(func_dir):
-    func_app_namespace = extract_func_app_namespace(func_dir)
-    if func_app_namespace not in sys.modules:
-        # Create and register the function app namespace package.
-        ns_spec = importlib.machinery.ModuleSpec(func_app_namespace, None)
+def install():
+    if _AZURE_NAMESPACE not in sys.modules:
+        # Create and register the __azure__ namespace package.
+        ns_spec = importlib.machinery.ModuleSpec(_AZURE_NAMESPACE, None)
         ns_spec.submodule_search_locations = _submodule_dirs
         ns_pkg = importlib.util.module_from_spec(ns_spec)
-        sys.modules[func_app_namespace] = ns_pkg
+        sys.modules[_AZURE_NAMESPACE] = ns_pkg
 
 
 def uninstall():
@@ -46,8 +41,6 @@ def load_function(name: str, directory: str, script_file: str,
         entry_point = 'main'
 
     register_function_dir(dir_path.parent)
-    
-    func_app_namespace = extract_func_app_namespace(dir_path)
 
     try:
         rel_script_path = script_path.relative_to(dir_path.parent)
@@ -63,8 +56,8 @@ def load_function(name: str, directory: str, script_file: str,
         raise RuntimeError(
             f'cannot load function {name}: '
             f'invalid Python filename {script_file}')
-    
-    modname_parts = [func_app_namespace]
+
+    modname_parts = [_AZURE_NAMESPACE]
     modname_parts.extend(rel_script_path.parts[:-1])
     modname_parts.append(modname)
 

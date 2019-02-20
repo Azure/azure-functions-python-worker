@@ -61,3 +61,9 @@ class TestQueueFunctions(testutils.WebHostTestCase):
 
         # wait for queue_trigger to process the queue item
         time.sleep(1)
+
+    def test_queue_return_multiple_outparam(self):
+        r = self.webhost.request('POST', 'put_queue_multiple_out',
+                                 data='foo')
+        self.assertTrue(200 <= r.status_code < 300)
+        self.assertEqual(r.text, 'HTTP response: foo')

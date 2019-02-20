@@ -1,3 +1,5 @@
+import hashlib
+
 from azure.functions_worker import testutils
 
 
@@ -140,6 +142,18 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('return_request', req['url'])
 
         self.assertEqual(req['get_body'], 'key=value')
+
+    def test_post_json_request_is_untouched(self):
+        body = b'{"foo":  "bar", "two":  4}'
+        body_hash = hashlib.sha256(body).hexdigest()
+        r = self.webhost.request(
+            'POST', 'return_request',
+            headers={'Content-Type': 'application/json'},
+            data=body)
+
+        self.assertEqual(r.status_code, 200)
+        req = r.json()
+        self.assertEqual(req['body_hash'], body_hash)
 
     def test_accept_json(self):
         r = self.webhost.request(

@@ -28,7 +28,7 @@ class TestFunctions(unittest.TestCase):
 
         self.assertEqual(r.get_body(), b'abc')
 
-        with self.assertRaisesRegex(ValueError, 'does not have JSON'):
+        with self.assertRaisesRegex(ValueError, 'does not contain valid JSON'):
             r.get_json()
 
         h = r.headers

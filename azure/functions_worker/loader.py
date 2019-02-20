@@ -11,7 +11,7 @@ import sys
 import typing
 
 
-_AZURE_NAMESPACE = '__azure__'
+_AZURE_NAMESPACE = '__app__'
 
 _submodule_dirs = []
 
@@ -22,7 +22,7 @@ def register_function_dir(path: os.PathLike):
 
 def install():
     if _AZURE_NAMESPACE not in sys.modules:
-        # Create and register the __azure__ namespace package.
+        # Create and register the __app__ namespace package.
         ns_spec = importlib.machinery.ModuleSpec(_AZURE_NAMESPACE, None)
         ns_spec.submodule_search_locations = _submodule_dirs
         ns_pkg = importlib.util.module_from_spec(ns_spec)

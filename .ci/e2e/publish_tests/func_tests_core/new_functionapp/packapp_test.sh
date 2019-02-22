@@ -10,6 +10,12 @@ python -m venv env_new_build_native
 source env_new_build_native/bin/activate
 "$3" init . --worker-runtime python
 "$3" new --template httptrigger --name httptriggerTest
+
+# Change auth level to anonymous
+jq '.bindings[].authLevel="anonymous"' httptriggerTest/function.json  > httptriggerTest/replaced.json
+mv httptriggerTest/replaced.json httptriggerTest/function.json
+
+# Publish and verify
 FUNCTIONS_PYTHON_DOCKER_IMAGE=$4 "$3" azure functionapp publish "$2"
 
 if [[ $? -eq 0 ]]

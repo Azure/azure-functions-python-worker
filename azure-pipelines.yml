@@ -91,4 +91,11 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: 'PythonWorkerRunEnvironments' 
+      artifactName: 'PythonWorkerRunEnvironments'
+  - task: NuGetCommand@2
+    inputs:
+      command: push
+      nuGetFeedType: external
+      publishFeedCredentials: 'MyGet (App Service staging feed)'
+      packagesToPush: '$(Build.ArtifactStagingDirectory)\*.nupkg'
+      versioningScheme: 'off'

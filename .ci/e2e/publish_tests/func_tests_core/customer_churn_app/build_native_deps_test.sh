@@ -15,8 +15,19 @@ then
     STATUS_CODE=$(curl --write-out %{http_code} --silent --output /dev/null https://$2.azurewebsites.net/api/predict)
     verify_status_code $1.result
 else
-    echo "Publishing failed"
-    echo -e "${RED}FAILED${RESET}" > $1.result
+    echo -e "${RED}Publishing failed (1/2)${RESET}"
+    # Sometimes due to flakiness with the docker daemon or an azure resource may cause it to fail-
+    # So, we retry, but just once
+    echo "Retrying once....."
+    FUNCTIONS_PYTHON_DOCKER_IMAGE=$4 "$3" azure functionapp publish "$2" --build-native-deps
+    if [[ $? -eq 0 ]]
+    then
+        STATUS_CODE=$(curl --write-out %{http_code} --silent --output /dev/null https://$2.azurewebsites.net/api/predict)
+        verify_status_code $1.result
+    else
+        echo -e "${RED}Publishing failed (2/2)${RESET}"
+        echo -e "${RED}FAILED${RESET}" > $1.result
+    fi
 fi
 
 cd ../..

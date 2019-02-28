@@ -99,3 +99,4 @@ jobs:
       publishFeedCredentials: '$(NugetPublishFeed)'
       packagesToPush: '$(Build.ArtifactStagingDirectory)\*.nupkg'
       versioningScheme: 'off'
+      

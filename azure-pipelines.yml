@@ -93,10 +93,10 @@ jobs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: 'PythonWorkerRunEnvironments'
   - task: NuGetCommand@2
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/dev')
     inputs:
       command: push
       nuGetFeedType: external
-      publishFeedCredentials: '$(NugetPublishFeed)'
+      publishFeedCredentials: '$(NugetStagingFeed)'
       packagesToPush: '$(Build.ArtifactStagingDirectory)\*.nupkg'
       versioningScheme: 'off'

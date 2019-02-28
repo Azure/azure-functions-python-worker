@@ -7,7 +7,7 @@ parameters:
   
 jobs:
 - job: ${{ parameters.jobName }}
-  dependsOn: ${{ parameters.dependency }}
+  # dependsOn: ${{ parameters.dependency }}
   pool:
       vmImage: ${{ parameters.vmImage }}
   steps:

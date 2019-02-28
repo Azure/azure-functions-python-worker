@@ -1,3 +1,5 @@
+name: 1.0.0-beta$(Date:yyyyMMdd)$(Rev:.r)
+
 trigger:
 - dev
 - master
@@ -88,6 +90,8 @@ jobs:
     inputs:
       command: pack
       packagesToPack: 'pack\Microsoft.Azure.Functions.PythonWorkerRunEnvironments.nuspec'
+      versioningScheme: 'byEnvVar'
+      versionEnvVar: BUILD_BUILDNUMBER # Replaces version in nuspec
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -99,4 +103,3 @@ jobs:
       nuGetFeedType: external
       publishFeedCredentials: '$(NugetStagingFeed)'
       packagesToPush: '$(Build.ArtifactStagingDirectory)\*.nupkg'
-      versioningScheme: 'off'

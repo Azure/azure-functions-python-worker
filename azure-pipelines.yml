@@ -87,7 +87,7 @@ jobs:
   - task: NuGetCommand@2
     inputs:
       command: pack
-      packagesToPack: 'pack\worker.nuspec'
+      packagesToPack: 'pack\Microsoft.Azure.Functions.PythonWorkerRunEnvironments.nuspec'
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -96,6 +96,6 @@ jobs:
     inputs:
       command: push
       nuGetFeedType: external
-      publishFeedCredentials: 'MyGet (App Service staging feed)'
+      publishFeedCredentials: '$(NugetPublishFeed)'
       packagesToPush: '$(Build.ArtifactStagingDirectory)\*.nupkg'
       versioningScheme: 'off'

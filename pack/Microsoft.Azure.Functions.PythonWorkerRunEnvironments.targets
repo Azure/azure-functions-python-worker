@@ -1,0 +1,18 @@
+<Project>
+  <Target Name="CopyPythonWorker" BeforeTargets="Build">
+    <CreateItem Include="$(MSBuildThisFileDirectory)\..\">
+      <Output ItemName="MSBuildThisFileDirectoryParentDirectory" TaskParameter="Include"/>
+    </CreateItem>
+
+    <CreateProperty Value="%(MSBuildThisFileDirectoryParentDirectory.Fullpath)">
+        <Output PropertyName="NugetRoot" TaskParameter="Value"/>
+    </CreateProperty>
+
+    <ItemGroup>
+        <SourceFiles Include="$(NugetRoot)tools\**\*.*"/>
+    </ItemGroup>
+
+    <Copy SourceFiles="@(SourceFiles)" 
+          DestinationFiles="@(SourceFiles->'$(PublishDir)\workers\python\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+</Project>

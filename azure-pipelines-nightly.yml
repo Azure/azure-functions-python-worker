@@ -39,6 +39,7 @@ jobs:
       ACR_NAME: $(ACR_NAME)
       ACR_IMAGE_NAME: $(ACR_IMAGE_NAME)
       FUNCTION_APP: $(FUNCTION_APP)
+      FUNC_DEV_URL: $(FUNC_DEV_URL)
   - bash: |
       chmod a+x .ci/e2e/publish_tests/test_runners/setup_test_environment.sh
       sudo .ci/e2e/publish_tests/test_runners/setup_test_environment.sh

@@ -2,6 +2,6 @@
 
 python -m venv .env
 source .env/bin/activate
-
 python -m pip install .
-python setup.py build
+
+python -m pip install . --no-compile --target "$BUILD_SOURCESDIRECTORY/deps"

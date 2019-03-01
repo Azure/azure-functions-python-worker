@@ -18,17 +18,15 @@ jobs:
   - task: ShellScript@2
     inputs: 
       disableAutoCwd: true
-      scriptPath: 'pack/scripts/nix_worker_venv.sh'
+      scriptPath: 'pack/scripts/nix_deps.sh'
   - task: CopyFiles@2
     inputs:
       contents: |
         python/*
-        azure/*.py
-        azure/functions_worker/**/*
-      targetFolder: '$(Build.ArtifactStagingDirectory)/worker'  
+      targetFolder: '$(Build.ArtifactStagingDirectory)'  
   - task: CopyFiles@2
     inputs:
-      contents: .env/**/*
+      contents: deps/**/*
       targetFolder: '$(Build.ArtifactStagingDirectory)'
   - task: PublishBuildArtifacts@1
     inputs:

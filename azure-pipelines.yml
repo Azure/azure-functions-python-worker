@@ -1,3 +1,5 @@
+name: 1.0.0-beta$(Date:yyyyMMdd)$(Rev:.r)
+
 trigger:
 - dev
 - master
@@ -86,8 +88,18 @@ jobs:
   - task: NuGetCommand@2
     inputs:
       command: pack
-      packagesToPack: 'pack\worker.nuspec'
+      packagesToPack: 'pack\Microsoft.Azure.Functions.PythonWorkerRunEnvironments.nuspec'
+      versioningScheme: 'byEnvVar'
+      versionEnvVar: BUILD_BUILDNUMBER # Replaces version in nuspec
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: 'PythonWorkerRunEnvironments' 
+      artifactName: 'PythonWorkerRunEnvironments'
+  - task: NuGetCommand@2
+    # condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/dev'), 
+    #               eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    inputs:
+      command: push
+      nuGetFeedType: internal
+      publishVstsFeed: '$(PythonNugetPublishFeed)'
+      packagesToPush: '$(Build.ArtifactStagingDirectory)\*.nupkg'

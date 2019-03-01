@@ -12,7 +12,7 @@
   },
   "func_setup": {
     "func_dev_dir": "/func-dev-dir",
-    "func_dev_url": "https://functionsclibuilds.blob.core.windows.net/builds/2/latest/Azure.Functions.Cli.linux-x64.zip"
+    "func_dev_url": "${FUNC_DEV_URL}"
   },
   "tests": {
     "working_dir": "/tests-dir",

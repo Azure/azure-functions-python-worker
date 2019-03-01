@@ -8,7 +8,7 @@ FROM mcr.microsoft.com/azure-functions/python:2.0
 COPY . /azure-functions-python-worker
 
 RUN apt-get update && \
-    apt-get install azure-functions-core-tools jq git unzip -y
+    apt-get install azure-functions-core-tools jq git unzip dos2unix -y
 
 # Install docker amd azure CLI
 RUN curl -sSL https://get.docker.com/ | sh && \
@@ -20,9 +20,9 @@ RUN curl -sSL https://get.docker.com/ | sh && \
     apt-get update && \
     apt-get install azure-cli -y
 
-# RUN bash /azure-functions-python-worker/.ci/e2e/publish_tests/test_runners/setup_test_environment.sh
-
 ENV ENVIRONMENT=DOCKER
 ENV EXIT_ON_FAIL=FALSE
+
+RUN find /azure-functions-python-worker/.ci/e2e -type f -print0 | xargs -0 dos2unix
 
 CMD [ "bash", "/azure-functions-python-worker/.ci/e2e/running-environments/Docker/start_tests_docker.sh" ]

@@ -11,6 +11,7 @@ FUNCTIONS_PYTHON_DOCKER_IMAGE=$4 "$3" azure functionapp publish "$2" --build-nat
 
 if [[ $? -eq 0 ]]
 then
+    sleep 5s
     # https://stackoverflow.com/questions/2220301/how-to-evaluate-http-response-codes-from-bash-shell-script
     STATUS_CODE=$(curl --write-out %{http_code} --silent --output /dev/null https://$2.azurewebsites.net/api/predict)
     verify_status_code $1.result
@@ -22,6 +23,7 @@ else
     FUNCTIONS_PYTHON_DOCKER_IMAGE=$4 "$3" azure functionapp publish "$2" --build-native-deps --no-bundler
     if [[ $? -eq 0 ]]
     then
+        sleep 5s
         STATUS_CODE=$(curl --write-out %{http_code} --silent --output /dev/null https://$2.azurewebsites.net/api/predict)
         verify_status_code $1.result
     else

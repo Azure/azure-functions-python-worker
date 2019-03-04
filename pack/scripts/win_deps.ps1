@@ -1,0 +1,7 @@
+py -3.6 -m venv .env
+.env\scripts\activate
+python -m pip install .
+
+$depsPath = Join-Path -Path $env:BUILD_SOURCESDIRECTORY -ChildPath "deps"
+
+python -m pip install . --no-compile --target $depsPath.ToString()

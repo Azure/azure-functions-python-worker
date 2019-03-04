@@ -1,3 +1,5 @@
+name: 1.0.0-beta$(Date:yyyyMMdd)$(Rev:.r)
+
 trigger:
 - dev
 - master
@@ -6,20 +8,20 @@ variables:
     DOTNET_VERSION: '2.1.402'
 
 jobs:
-- job: Linux
+- job: Tests
   pool:
     vmImage: 'ubuntu-16.04'
   strategy:
     matrix:
       Python36:
-        python.version: '3.6'
+        pythonVersion: '3.6'
       Python37:
-        python.version: '3.7'
+        pythonVersion: '3.7'
     maxParallel: 1
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '$(python.version)'
+      versionSpec: '$(pythonVersion)'
       addToPath: true 
   - task: ShellScript@2
     inputs:
@@ -44,8 +46,53 @@ jobs:
       LINUXCOSMOSDBCONNECTIONSTRING: $(LinuxCosmosDBConnectionString)
       LINUXEVENTHUBCONNECTIONSTRING: $(LinuxEventHubConnectionString)
       LINUXSERVICEBUSCONNECTIONSTRING: $(LinuxServiceBusConnectionString)
-    displayName: 'Test'
+    displayName: 'Tests'
+  
+- template: pack/templates/win_env_gen.yml
+  parameters:
+    jobName: 'WindowsEnvGen'
+    dependency: 'Tests'
+    vmImage: 'vs2017-win2016'
+    pythonVersion: '3.6'
+    artifactName: 'Windows'
 
+- template: pack/templates/nix_env_gen.yml
+  parameters:
+    jobName: 'LinuxEnvGen'
+    dependency: 'Tests'
+    vmImage: 'ubuntu-16.04'
+    pythonVersion: '3.6'
+    artifactName: 'Linux'
 
+- template: pack/templates/nix_env_gen.yml
+  parameters:
+    jobName: 'MacEnvGen'
+    dependency: 'Tests'
+    vmImage: 'macOS-10.13'
+    pythonVersion: '3.6'
+    artifactName: 'Mac'
 
-
+- job: PackageEnvironments
+  dependsOn: ['WindowsEnvGen',
+              'LinuxEnvGen',
+              'MacEnvGen'
+             ]
+  pool:
+      vmImage: 'vs2017-win2016'
+  steps: 
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current' 
+      downloadType: 'specific'
+      downloadPath: '$(Build.SourcesDirectory)'
+  - task: NuGetCommand@2
+    inputs:
+      command: pack
+      packagesToPack: 'pack\Microsoft.Azure.Functions.PythonWorkerRunEnvironments.nuspec'
+      versioningScheme: 'byEnvVar'
+      versionEnvVar: BUILD_BUILDNUMBER # Replaces version in nuspec
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: 'PythonWorkerRunEnvironments'
+      

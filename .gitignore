@@ -100,6 +100,8 @@ ENV/
 # mypy
 .mypy_cache/
 
+# nuget
+*.nupkg
 
 .testconfig
 .pytest_cache

@@ -23,7 +23,8 @@ jobs:
     inputs:
       contents: |
         python/*
-      targetFolder: '$(Build.ArtifactStagingDirectory)'  
+      targetFolder: '$(Build.ArtifactStagingDirectory)'
+      flattenFolders: true  
   - task: CopyFiles@2
     inputs:
       contents: deps/**/*

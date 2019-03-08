@@ -1,5 +1,6 @@
 import time
 import requests
+import unittest
 import uuid
 
 from azure.functions_worker import testutils
@@ -23,6 +24,7 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
         return request_method(url, *args, params=params, headers=headers,
                               **kwargs)
 
+    @unittest.skip("fails with 401 with recent host versions")
     def test_eventgrid_trigger(self):
         data = [{
             "topic": "test-topic",

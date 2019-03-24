@@ -326,7 +326,14 @@ class _MockWebHost:
         return func.id, r
 
     async def invoke_function(
-            self, name, input_data: typing.List[protos.ParameterBinding]):
+            self,
+            name,
+            input_data: typing.List[protos.ParameterBinding],
+            metadata: typing.Optional[
+                typing.Mapping[str, protos.TypedData]]=None):
+
+        if metadata is None:
+            metadata = {}
 
         if name not in self._available_functions:
             raise RuntimeError(f'cannot load function {name}')
@@ -339,7 +346,10 @@ class _MockWebHost:
                 invocation_request=protos.InvocationRequest(
                     invocation_id=invocation_id,
                     function_id=func.id,
-                    input_data=input_data)),
+                    input_data=input_data,
+                    trigger_metadata=metadata,
+                )
+            ),
             wait_for='invocation_response')
 
         return invocation_id, r

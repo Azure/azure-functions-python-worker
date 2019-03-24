@@ -4,21 +4,18 @@
 
   "bindings": [
     {
-      "type": "httpTrigger",
-      "direction": "in",
-      "name": "req"
-    },
-    {
-      "type": "eventHub",
+      "type": "eventHubTrigger",
       "name": "event",
-      "direction": "out",
+      "direction": "in",
       "eventHubName": "python-worker-ci",
       "connection": "AzureWebJobsEventHubConnectionString"
     },
     {
+      "type": "blob",
       "direction": "out",
       "name": "$return",
-      "type": "http"
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/test-eventhub-iot-triggered.txt"
     }
   ]
 }

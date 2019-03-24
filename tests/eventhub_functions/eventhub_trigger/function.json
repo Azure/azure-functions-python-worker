@@ -8,7 +8,7 @@
       "name": "event",
       "direction": "in",
       "eventHubName": "python-worker-ci",
-      "connection": "AzureWebJobsEventHubConnectionString",
+      "connection": "AzureWebJobsEventHubConnectionString"
     },
     {
       "type": "blob",
@@ -16,6 +16,6 @@
       "name": "$return",
       "connection": "AzureWebJobsStorage",
       "path": "python-worker-tests/test-eventhub-triggered.txt"
-    },
+    }
   ]
 }

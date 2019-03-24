@@ -84,6 +84,13 @@ class EventHubTriggerConverter(EventHubConverter,
             raise NotImplementedError(
                 f'unsupported event data payload type: {data_type}')
 
+        iothub_metadata = {}
+        for f in trigger_metadata:
+            if f.startswith('iothub-'):
+                v = cls._decode_trigger_metadata_field(
+                    trigger_metadata, f, python_type=str)
+                iothub_metadata[f[len('iothub-'):]] = v
+
         return _eventhub.EventHubEvent(
             body=body,
             enqueued_time=cls._parse_datetime_metadata(
@@ -93,5 +100,6 @@ class EventHubTriggerConverter(EventHubConverter,
             sequence_number=cls._decode_trigger_metadata_field(
                 trigger_metadata, 'SequenceNumber', python_type=int),
             offset=cls._decode_trigger_metadata_field(
-                trigger_metadata, 'Offset', python_type=str)
+                trigger_metadata, 'Offset', python_type=str),
+            iothub_metadata=iothub_metadata
         )

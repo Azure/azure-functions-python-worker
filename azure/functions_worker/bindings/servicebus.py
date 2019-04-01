@@ -131,6 +131,11 @@ class ServiceBusMessageInConverter(meta.InConverter,
         elif data_type == 'json':
             body = data.json.encode('utf-8')
 
+        elif data_type is None:
+            # ServiceBus message with no payload are possible.
+            # See Azure/azure-functions-python-worker#330
+            body = b''
+
         else:
             raise NotImplementedError(
                 f'unsupported queue payload type: {data_type}')

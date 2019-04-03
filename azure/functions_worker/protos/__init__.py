@@ -11,6 +11,8 @@ from .FunctionRpc_pb2 import (  # NoQA
     RpcFunctionMetadata,
     FunctionLoadRequest,
     FunctionLoadResponse,
+    FunctionEnvironmentReloadRequest,
+    FunctionEnvironmentReloadResponse,
     InvocationRequest,
     InvocationResponse,
     WorkerHeartbeat,

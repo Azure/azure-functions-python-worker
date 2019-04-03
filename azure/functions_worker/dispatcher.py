@@ -9,6 +9,7 @@ import logging
 import queue
 import threading
 import traceback
+import os
 
 import grpc
 
@@ -337,6 +338,32 @@ class Dispatcher(metaclass=DispatcherMeta):
                     invocation_id=invocation_id,
                     result=protos.StatusResult(
                         status=protos.StatusResult.Failure,
+                        exception=self._serialize_exception(ex))))
+    
+    async def _handle__function_environment_reload_request(self, req):
+        try:
+            logger.info('Received FunctionEnvironmentReloadRequest, request ID: %s', 
+                        self.request_id)
+
+            func_env_reload_request = req.function_environment_reload_request
+
+            env_vars = func_env_reload_request.environment_variables 
+
+            for var in env_vars:
+                os.environ[var] = env_vars[var]
+
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                function_environment_reload_response=protos.FunctionEnvironmentReloadResponse(
+                    result=protos.StatusResult(
+                        status = protos.StatusResult.Success)))
+        
+        except Exception as ex:
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                function_environment_reload_response=protos.FunctionEnvironmentReloadResponse(
+                    result=protos.StatusResult(
+                        status = protos.StatusResult.Failure,
                         exception=self._serialize_exception(ex))))
 
     def __run_sync_func(self, invocation_id, func, params):

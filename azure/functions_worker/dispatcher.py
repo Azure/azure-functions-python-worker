@@ -351,7 +351,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             for var in env_vars:
                 os.environ[var] = env_vars[var]
-            
+
             success_response = protos.FunctionEnvironmentReloadResponse(
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success))

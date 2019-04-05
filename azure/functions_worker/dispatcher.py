@@ -339,32 +339,36 @@ class Dispatcher(metaclass=DispatcherMeta):
                     result=protos.StatusResult(
                         status=protos.StatusResult.Failure,
                         exception=self._serialize_exception(ex))))
-    
+
     async def _handle__function_environment_reload_request(self, req):
         try:
-            logger.info('Received FunctionEnvironmentReloadRequest, request ID: %s', 
-                        self.request_id)
+            logger.info('Received FunctionEnvironmentReloadRequest, '
+                        'request ID: %s', self.request_id)
 
             func_env_reload_request = req.function_environment_reload_request
 
-            env_vars = func_env_reload_request.environment_variables 
+            env_vars = func_env_reload_request.environment_variables
 
             for var in env_vars:
                 os.environ[var] = env_vars[var]
+            
+            success_response = protos.FunctionEnvironmentReloadResponse(
+                result=protos.StatusResult(
+                    status=protos.StatusResult.Success))
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
-                function_environment_reload_response=protos.FunctionEnvironmentReloadResponse(
-                    result=protos.StatusResult(
-                        status = protos.StatusResult.Success)))
-        
+                function_environment_reload_response=success_response)
+
         except Exception as ex:
+            failure_response = protos.FunctionEnvironmentReloadResponse(
+                result=protos.StatusResult(
+                    status=protos.StatusResult.Failure,
+                    exception=self._serialize_exception(ex)))
+
             return protos.StreamingMessage(
                 request_id=self.request_id,
-                function_environment_reload_response=protos.FunctionEnvironmentReloadResponse(
-                    result=protos.StatusResult(
-                        status = protos.StatusResult.Failure,
-                        exception=self._serialize_exception(ex))))
+                function_environment_reload_response=failure_response)
 
     def __run_sync_func(self, invocation_id, func, params):
         # This helper exists because we need to access the current

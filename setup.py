@@ -44,6 +44,10 @@ AZURE_EXTENSIONS = [
         "id": "Microsoft.Azure.WebJobs.ServiceBus",
         "version": "3.0.0-beta8"
     },
+    {
+        "id": "Microsoft.Azure.WebJobs.Extensions.SignalRService",
+        "version": "1.0.0"
+    },
 ]
 
 

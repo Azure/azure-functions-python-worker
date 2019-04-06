@@ -542,6 +542,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         'host:logger:consoleLoggingMode': 'always',
         'AZURE_FUNCTIONS_ENVIRONMENT': 'development',
         'AzureWebJobsSecretStorageType': 'files',
+        'AzureSignalRConnectionString': 'Endpoint=https://foo.service.signalr.net;AccessKey=/abcdefghijklmnopqrstu/v/wxyz11111111111111=;Version=1.0;',
     }
 
     if testconfig and 'azure' in testconfig:

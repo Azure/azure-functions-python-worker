@@ -19,7 +19,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
 
-        max_retries = 10
+        max_retries = 30
 
         for try_no in range(max_retries):
             # Allow trigger to fire.

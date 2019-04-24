@@ -15,6 +15,7 @@ from . import http  # NoQA
 from . import queue  # NoQA
 from . import servicebus  # NoQA
 from . import timer  # NoQA
+from . import kafka
 
 
 __all__ = (

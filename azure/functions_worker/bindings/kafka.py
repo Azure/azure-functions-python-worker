@@ -11,8 +11,12 @@ class KafkaConverter(meta.InConverter, meta.OutConverter,
                         binding='kafka'):
 
     @classmethod
-    def check_input_type_annotation(cls, pytype: type) -> bool:
-        return issubclass(pytype, _kafka.KafkaEvent)
+    def check_input_type_annotation(
+           cls, pytype: type, datatype: protos.BindingInfo.DataType) -> bool:
+        if datatype is protos.BindingInfo.undefined:
+            return issubclass(pytype, _kafka.KafkaEvent)
+        else:
+            return False
 
     @classmethod
     def check_output_type_annotation(cls, pytype) -> bool:

@@ -173,14 +173,14 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
         ]
         dt = None
 
-        too_fractional = re.match(r'.*\.\d{6}(\d+)Z', datetime_str)
+        too_fractional = re.match(r'.*\.\d{6}(\d+)', datetime_str)
         if too_fractional:
             # The supplied value contains seven digits in the
             # fractional second part, whereas Python expects
             # a maxium of six, so strip it.
             # https://github.com/Azure/azure-functions-python-worker/issues/269
             extra_digits = len(too_fractional.group(1))
-            datetime_str = datetime_str[:-extra_digits - 1] + 'Z'
+            datetime_str = too_fractional.group(0)[:-extra_digits - 1] + 'Z'
 
         for fmt in formats:
             try:

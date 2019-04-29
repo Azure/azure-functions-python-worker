@@ -1,0 +1,11 @@
+{
+  "scriptFile": "main.py",
+
+  "bindings": [
+    {
+      "type": "fooType",
+      "direction": "in",
+      "name": "req"
+    }
+  ]
+}

@@ -415,6 +415,8 @@ class _MockWebHostController:
             self._host.worker_id, self._host.request_id,
             connect_timeout=5.0)
 
+        self._worker.load_bindings()
+
         self._worker_task = loop.create_task(self._worker.dispatch_forever())
 
         done, pending = await asyncio.wait(

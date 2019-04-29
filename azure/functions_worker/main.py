@@ -48,4 +48,6 @@ async def start_async(host, port, worker_id, request_id, grpc_max_msg_len):
         host, port, worker_id, request_id,
         connect_timeout=5.0, max_msg_len=grpc_max_msg_len)
 
+    disp.load_bindings()
+
     await disp.dispatch_forever()

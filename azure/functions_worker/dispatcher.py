@@ -11,6 +11,7 @@ import threading
 import traceback
 
 import grpc
+import pkg_resources
 
 from . import bindings
 from . import functions
@@ -63,6 +64,16 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
+
+    def load_bindings(self):
+        """Load out-of-tree binding implementations."""
+        services = {}
+
+        for ep in pkg_resources.iter_entry_points('azure.functions.bindings'):
+            logger.info('Loading binding plugin from %s', ep.module_name)
+            ep.load()
+
+        return services
 
     @classmethod
     async def connect(cls, host, port, worker_id, request_id,

@@ -15,7 +15,7 @@ YELLOW='\033[1;33m'
 # This may be needed if docker image is restarted
 # Better to simply login again at every invoke
 echo "Ensuring login to Azure ACR"
-az acr login --name ${ACR_NAME} > /dev/null
+az acr login --name ${ACR_NAME} --output none
 
 echo -e "Starting Parallel execution in background"
 

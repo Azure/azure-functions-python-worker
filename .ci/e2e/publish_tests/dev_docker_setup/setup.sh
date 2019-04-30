@@ -28,11 +28,11 @@ SCRIPT_DIR=`realpath $(dirname "${BASH_SOURCE[0]}")`
 
 mkdir -p $3
 cd $3
-az acr login --name $1
+az acr login --name $1 --output none
 git clone https://github.com/Azure/azure-functions-docker
-docker build -f ./azure-functions-docker/host/2.0/stretch/amd64/base.Dockerfile ./azure-functions-docker/host/2.0/stretch/amd64 -t azure-functions-base-dev
+docker build -f ./azure-functions-docker/host/2.0/stretch/amd64/python-deps.Dockerfile ./azure-functions-docker/host/2.0/stretch/amd64 -t azure-functions-python-deps-dev
 # The directory to build from needs to be the amd64, because the Dockerfile copies resources
-docker build --build-arg BASE_IMAGE=azure-functions-base-dev -f ./azure-functions-docker/host/2.0/stretch/amd64/python.Dockerfile -t azure-functions-python-dev ./azure-functions-docker/host/2.0/stretch/amd64
+docker build --build-arg BASE_PYTHON_IMAGE=azure-functions-python-deps-dev -f ./azure-functions-docker/host/2.0/stretch/amd64/python-buildenv.Dockerfile -t azure-functions-python-dev ./azure-functions-docker/host/2.0/stretch/amd64
 docker build --build-arg BASE_IMAGE=azure-functions-python-dev -f ${SCRIPT_DIR}/dev.Dockerfile ${SCRIPT_DIR}/../../../.. -t azure-functions-python-dev-updated
 docker tag azure-functions-python-dev-updated $1.azurecr.io/$2
 docker push $1.azurecr.io/$2

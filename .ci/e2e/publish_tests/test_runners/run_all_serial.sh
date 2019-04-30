@@ -15,7 +15,7 @@ YELLOW='\033[1;33m'
 # This may be needed if docker image is restarted
 # Better to simply login again at every invoke
 echo "Ensuring login to Azure ACR"
-az acr login --name ${ACR_NAME} > /dev/null
+az acr login --name ${ACR_NAME} --output none
 
 echo -e "Starting Serial Execution..."
 echo "This will take a while"
@@ -40,7 +40,7 @@ run_test ${BASE_DIR}/prod_func_prod_docker/new_no_bundler.sh ${TESTS_LOGS}/pfpdn
 run_test ${BASE_DIR}/prod_func_prod_docker/new_packapp.sh ${TESTS_LOGS}/pfpdnpa.log ${TESTS_TIMEOUT} ${WORKING_DIR}/pfpdnpa.result
 
 echo "Ensuring login to Azure ACR (again because login has been flaky)"
-az acr login --name ${ACR_NAME} > /dev/null
+az acr login --name ${ACR_NAME} --output none
 run_test ${BASE_DIR}/prod_func_dev_docker/customer_build_native_deps.sh ${TESTS_LOGS}/pfddcbnd.log ${TESTS_TIMEOUT} ${WORKING_DIR}/pfddcbnd.result
 run_test ${BASE_DIR}/prod_func_dev_docker/customer_no_bundler.sh ${TESTS_LOGS}/pfddcnb.log ${TESTS_TIMEOUT} ${WORKING_DIR}/pfddcnb.result
 run_test ${BASE_DIR}/prod_func_dev_docker/new_build_native_deps.sh ${TESTS_LOGS}/pfddnbnd.log ${TESTS_TIMEOUT} ${WORKING_DIR}/pfddnbnd.result

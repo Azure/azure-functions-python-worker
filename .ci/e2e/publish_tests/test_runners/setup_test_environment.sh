@@ -5,7 +5,7 @@ set -e
 source "$(dirname "${BASH_SOURCE[0]}")/helpers/get_config_variables.sh"
 
 # Login to the Service Principal Azure Account
-az login --service-principal -u ${SP_USER_NAME} -p ${SP_PASSWORD} --tenant ${SP_TENANT}
+az login --service-principal -u ${SP_USER_NAME} -p ${SP_PASSWORD} --tenant ${SP_TENANT} --output none
 
 # Update the ACR Docker Image with the dev branch of Docker image and python worker
 chmod a+x $(dirname "${BASH_SOURCE[0]}")/../dev_docker_setup/setup.sh

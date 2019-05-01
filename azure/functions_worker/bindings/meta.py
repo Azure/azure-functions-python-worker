@@ -167,20 +167,22 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
         # UTC ISO 8601 assumed
         formats = [
             '%Y-%m-%dT%H:%M:%S+00:00',
+            '%Y-%m-%dT%H:%M:%S-00:00',
             '%Y-%m-%dT%H:%M:%S.%f+00:00',
+            '%Y-%m-%dT%H:%M:%S.%f-00:00',
             '%Y-%m-%dT%H:%M:%SZ',
             '%Y-%m-%dT%H:%M:%S.%fZ',
         ]
         dt = None
 
-        too_fractional = re.match(r'.*\.\d{6}(\d+)', datetime_str)
+        too_fractional = re.match(r'(.*\.\d{6})(\d+)(Z|[\+|-]\d{1,2}:\d{1,2})', datetime_str)
         if too_fractional:
             # The supplied value contains seven digits in the
             # fractional second part, whereas Python expects
             # a maxium of six, so strip it.
             # https://github.com/Azure/azure-functions-python-worker/issues/269
-            extra_digits = len(too_fractional.group(1))
-            datetime_str = too_fractional.group(0)[:-extra_digits - 1] + 'Z'
+            extra_digits = len(too_fractional.group(2))
+            datetime_str = too_fractional.group(1)[:-extra_digits] + too_fractional.group(3)
 
         for fmt in formats:
             try:

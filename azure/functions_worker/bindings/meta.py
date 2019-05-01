@@ -167,7 +167,9 @@ class _BaseConverter(metaclass=_ConverterMeta, binding=None):
         # UTC ISO 8601 assumed
         formats = [
             '%Y-%m-%dT%H:%M:%S+00:00',
+            '%Y-%m-%dT%H:%M:%S-00:00',
             '%Y-%m-%dT%H:%M:%S.%f+00:00',
+            '%Y-%m-%dT%H:%M:%S.%f-00:00',
             '%Y-%m-%dT%H:%M:%SZ',
             '%Y-%m-%dT%H:%M:%S.%fZ',
         ]

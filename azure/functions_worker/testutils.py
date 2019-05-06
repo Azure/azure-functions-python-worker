@@ -308,8 +308,22 @@ class _MockWebHost:
         bindings = {}
         for b in func.desc['bindings']:
             direction = getattr(protos.BindingInfo, b['direction'])
+
+            data_type_v = b.get('dataType')
+            if not data_type_v:
+                data_type = protos.BindingInfo.undefined
+            elif data_type_v == 'binary':
+                data_type = protos.BindingInfo.binary
+            elif data_type_v == 'string':
+                data_type = protos.BindingInfo.string
+            elif data_type_v == 'stream':
+                data_type = protos.BindingInfo.stream
+            else:
+                raise RuntimeError(f'invalid dataType: {data_type_v!r}')
+
             bindings[b['name']] = protos.BindingInfo(
                 type=b['type'],
+                data_type=data_type,
                 direction=direction)
 
         r = await self.communicate(

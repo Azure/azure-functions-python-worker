@@ -83,10 +83,20 @@ class Registry:
                 return_binding_name = desc.type
                 assert return_binding_name is not None
 
+                return_is_generic_binding = (
+                    desc.data_type is protos.BindingInfo.binary
+                    or desc.data_type is protos.BindingInfo.string
+                )
+
                 if not bindings.is_binding(return_binding_name):
-                    raise FunctionLoadError(
-                        func_name,
-                        f'unknown type for $return binding: "{desc.type}"')
+                    if return_is_generic_binding:
+                        return_binding_name = 'generic'
+                    else:
+                        raise FunctionLoadError(
+                            func_name,
+                            f'unsupported data type in {name} binding: '
+                            f'"{desc.type}"'
+                        )
 
                 has_return = True
             else:
@@ -173,10 +183,23 @@ class Registry:
                     f'is azure.functions.Out in Python')
 
             param_bind_type = desc.type
+            generic_binding = False
+
             if not bindings.is_binding(param_bind_type):
-                raise FunctionLoadError(
-                    func_name,
-                    f'unknown type for {param.name} binding: "{desc.type}"')
+                generic_binding = (
+                    desc.data_type is protos.BindingInfo.binary
+                    or desc.data_type is protos.BindingInfo.string
+                )
+                if generic_binding:
+                    # Allow bindings marked with `dataType: binary` or
+                    # `dataType: string` to be handled by a generic binding.
+                    param_bind_type = 'generic'
+                else:
+                    raise FunctionLoadError(
+                        func_name,
+                        f'unsupported data type in {param.name} binding: '
+                        f'"{desc.type}"'
+                    )
 
             if param_has_anno:
                 if is_param_out:
@@ -190,7 +213,7 @@ class Registry:
                     if desc.data_type is not protos.BindingInfo.undefined:
                         raise FunctionLoadError(
                             func_name,
-                            f'{param.name!r} binding type "{param_bind_type}" '
+                            f'{param.name!r} binding type "{desc.type}" '
                             f'and dataType "{desc.data_type}" in function.json'
                             f' do not match the corresponding function '
                             f'parameter\'s Python type '
@@ -199,7 +222,7 @@ class Registry:
                         raise FunctionLoadError(
                             func_name,
                             f'type of {param.name} binding in function.json '
-                            f'"{param_bind_type}" does not match its Python '
+                            f'"{desc.type}" does not match its Python '
                             f'annotation "{param_py_type.__name__}"')
 
             param_type_info = ParamTypeInfo(param_bind_type, param_py_type)

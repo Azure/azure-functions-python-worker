@@ -1,0 +1,17 @@
+{
+  "scriptFile": "main.py",
+  "bindings": [
+    {
+      "type": "foobar",
+      "name": "input",
+      "direction": "in",
+      "dataType": "binary"
+    },
+    {
+      "direction": "out",
+      "name": "$return",
+      "type": "foobar",
+      "dataType": "binary"
+    }
+  ]
+}

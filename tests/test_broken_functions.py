@@ -274,7 +274,7 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertRegex(
                 r.response.result.exception.message,
                 r'.*cannot load the unsupported_bind_type function'
-                r'.*unknown type .* "yolo".*')
+                r'.*unsupported data type .* "yolo".*')
 
     async def test_load_broken__unsupported_ret_type(self):
         # Test that we won't load a function with a bind type we don't support.
@@ -290,4 +290,4 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertRegex(
                 r.response.result.exception.message,
                 r'.*cannot load the unsupported_ret_type function'
-                r'.*unknown type .*\$return.* "yolo".*')
+                r'.*unsupported data type .*\$return.* "yolo".*')

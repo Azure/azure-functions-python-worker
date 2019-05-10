@@ -224,6 +224,11 @@ class Registry:
                             f'type of {param.name} binding in function.json '
                             f'"{desc.type}" does not match its Python '
                             f'annotation "{param_py_type.__name__}"')
+            else:
+                if desc.data_type is protos.BindingInfo.string:
+                    param_py_type = str
+                elif desc.data_type is protos.BindingInfo.binary:
+                    param_py_type = bytes
 
             param_type_info = ParamTypeInfo(param_bind_type, param_py_type)
             if is_binding_out:

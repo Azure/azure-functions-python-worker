@@ -1,0 +1,19 @@
+{
+  "scriptFile": "main.py",
+  "disabled": false,
+
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req"
+    },
+    {
+      "direction": "out",
+      "name": "$return",
+      "queueName": "testqueue-untyped-return",
+      "connection": "AzureWebJobsStorage",
+      "type": "queue"
+    }
+  ]
+}

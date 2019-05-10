@@ -1,0 +1,22 @@
+{
+  "scriptFile": "main.py",
+  "disabled": false,
+
+  "bindings": [
+    {
+      "type": "queueTrigger",
+      "direction": "in",
+      "name": "msg",
+      "queueName": "testqueue-untyped-return",
+      "connection": "AzureWebJobsStorage",
+      "dataType": "string"
+    },
+    {
+      "type": "blob",
+      "direction": "out",
+      "name": "$return",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/test-queue-untyped-blob-return.txt"
+    }
+  ]
+}

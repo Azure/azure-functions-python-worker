@@ -1,6 +1,5 @@
 {
   "scriptFile": "main.py",
-  "disabled": false,
   "bindings": [
     {
       "type": "httpTrigger",

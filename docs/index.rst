@@ -34,7 +34,6 @@ Below is an example of a simple function triggerred by an HTTP request.
 
     {
       "scriptFile": "__init__.py",
-      "disabled": false,
       "bindings": [
         {
           "authLevel": "anonymous",
@@ -125,7 +124,6 @@ Example
 
     {
       "scriptFile": "__init__.py",
-      "disabled": false,
       "bindings": [
         {
           "authLevel": "anonymous",
@@ -171,7 +169,6 @@ Blob storage trigger example
 .. code-block:: json
 
     {
-      "disabled": false,
       "bindings": [
         {
           "type": "blobTrigger",
@@ -208,7 +205,6 @@ Blob storage output example
 .. code-block:: json
 
     {
-      "disabled": false,
       "bindings": [
         {
           "authLevel": "anonymous",
@@ -378,7 +374,6 @@ CosmosDB Trigger Example
 .. code-block:: json
 
     {
-      "disabled": false,
       "bindings": [
         {
           "direction": "in",
@@ -417,7 +412,6 @@ CosmosDB Output Example
 
     {
       "scriptFile": "__init__.py",
-      "disabled": false,
 
       "bindings": [
         {

@@ -1,7 +1,6 @@
 {
   "scriptFile": "main.py",
   "entryPoint": "customentry",
-  "disabled": false,
   "bindings": [
     {
       "type": "httpTrigger",

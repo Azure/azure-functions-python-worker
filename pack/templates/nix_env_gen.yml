@@ -27,7 +27,10 @@ jobs:
       flattenFolders: true  
   - task: CopyFiles@2
     inputs:
-      contents: deps/**/*
+      contents: |
+        deps/**/*
+        !deps/grpc_tools/**/*
+        !deps/grpcio_tools*/*
       targetFolder: '$(Build.ArtifactStagingDirectory)'
   - task: PublishBuildArtifacts@1
     inputs:

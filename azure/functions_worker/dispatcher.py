@@ -209,9 +209,14 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__worker_init_request(self, req):
         logger.info('Received WorkerInitRequest, request ID %s',
                     self.request_id)
+
+        capabilities = dict()
+        capabilities["RawHttpBodyBytes"] = "true"
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
+                capabilities=capabilities,
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success)))
 

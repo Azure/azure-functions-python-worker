@@ -131,16 +131,17 @@ class webhost(distutils.cmd.Command):
         self.extensions_dir = None
 
     def finalize_options(self):
-        if self.webhost_url is None:
-            self.webhost_url = WEBHOST_URL
+        self.webhost_url = self.webhost_url or WEBHOST_URL
 
-        if self.webhost_dir is None:
-            self.webhost_dir = \
-                pathlib.Path(__file__).parent / 'build' / 'webhost'
+        self.webhost_dir = (
+            self.webhost_dir
+            or pathlib.Path(__file__).parent / 'build' / 'webhost'
+        )
 
-        if self.extensions_dir is None:
-            self.extensions_dir = \
-                pathlib.Path(__file__).parent / 'build' / 'extensions'
+        self.extensions_dir = (
+            self.extensions_dir
+            or pathlib.Path(__file__).parent / 'build' / 'extensions'
+        )
 
     def _install_webhost(self):
         with tempfile.NamedTemporaryFile() as zipf:
@@ -150,7 +151,7 @@ class webhost(distutils.cmd.Command):
                 urllib.request.urlretrieve(self.webhost_url, zipf.name)
             except Exception as e:
                 print(
-                    f"could not download Azure Functions Web Host binaries "
+                    f"Could not download Azure Functions Web Host binaries "
                     f"from {self.webhost_url}: {e!r}", file=sys.stderr)
                 sys.exit(1)
 

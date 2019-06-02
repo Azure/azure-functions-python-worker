@@ -1,6 +1,5 @@
 import json
 import time
-import unittest
 
 from azure.functions_worker import protos
 from azure.functions_worker import testutils
@@ -12,7 +11,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return 'eventhub_functions'
 
-    @unittest.skip("Seems to be very unstable on CI")
+    # @unittest.skip("Seems to be very unstable on CI")
     def test_eventhub_trigger(self):
         data = str(round(time.time()))
         doc = {'id': data}
@@ -48,7 +47,7 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
 
     async def test_mock_eventhub_trigger_iot(self):
         async with testutils.start_mockhost(
-                script_root='eventhub_functions') as host:
+                script_root='eventhub_mock_functions') as host:
 
             func_id, r = await host.load_function('eventhub_trigger_iot')
 

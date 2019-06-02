@@ -8,8 +8,7 @@
       "direction": "in",
       "name": "msg",
       "queueName": "testqueue-untyped-return",
-      "connection": "AzureWebJobsStorage",
-      "dataType": "string"
+      "connection": "AzureWebJobsStorage"
     },
     {
       "type": "blob",

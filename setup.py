@@ -226,10 +226,10 @@ setup(
     install_requires=[
         'grpcio~=1.20.1',
         'grpcio-tools~=1.20.1',
-        'azure-functions==1.0.0b4',
     ],
     extras_require={
         'dev': [
+            'azure-functions==1.0.0b5',
             'flake8~=3.5.0',
             'mypy',
             'pytest',

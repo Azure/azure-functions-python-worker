@@ -1,7 +1,4 @@
-from azure.functions import _abc as azf_abc
-
-
-class Context(azf_abc.Context):
+class Context:
 
     def __init__(self, func_name: str, func_dir: str,
                  invocation_id: str) -> None:

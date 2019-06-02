@@ -6,7 +6,7 @@
       "type": "eventHubTrigger",
       "name": "event",
       "direction": "in",
-      "eventHubName": "python-worker-ci",
+      "eventHubName": "python-worker-iot-ci",
       "connection": "AzureWebJobsEventHubConnectionString"
     },
     {

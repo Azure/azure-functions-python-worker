@@ -2,8 +2,6 @@ import inspect
 import operator
 import typing
 
-import azure.functions as azf
-
 from . import bindings
 from . import protos
 from . import typing_inspect
@@ -83,21 +81,6 @@ class Registry:
                 return_binding_name = desc.type
                 assert return_binding_name is not None
 
-                return_is_generic_binding = (
-                    desc.data_type is protos.BindingInfo.binary
-                    or desc.data_type is protos.BindingInfo.string
-                )
-
-                if not bindings.is_binding(return_binding_name):
-                    if return_is_generic_binding:
-                        return_binding_name = 'generic'
-                    else:
-                        raise FunctionLoadError(
-                            func_name,
-                            f'unsupported data type in {name} binding: '
-                            f'"{desc.type}"'
-                        )
-
                 has_return = True
             else:
                 bound_params[name] = desc
@@ -107,8 +90,8 @@ class Registry:
             params.pop('context')
             if 'context' in annotations:
                 ctx_anno = annotations.get('context')
-                if (not isinstance(ctx_anno, type) or
-                        not issubclass(ctx_anno, azf.Context)):
+                if (not isinstance(ctx_anno, type)
+                        or ctx_anno.__name__ != 'Context'):
                     raise FunctionLoadError(
                         func_name,
                         f'the "context" parameter is expected to be of '
@@ -133,11 +116,26 @@ class Registry:
             param_has_anno = param.name in annotations
             param_anno = annotations.get(param.name)
 
-            is_param_out = (
-                param_has_anno and
-                (typing_inspect.is_generic_type(param_anno) and
-                 typing_inspect.get_origin(param_anno) == azf.Out) or
-                param_anno == azf.Out)
+            if param_has_anno:
+                if typing_inspect.is_generic_type(param_anno):
+                    param_anno_origin = typing_inspect.get_origin(param_anno)
+                    if param_anno_origin is not None:
+                        is_param_out = (
+                            isinstance(param_anno_origin, type)
+                            and param_anno_origin.__name__ == 'Out'
+                        )
+                    else:
+                        is_param_out = (
+                            isinstance(param_anno, type)
+                            and param_anno.__name__ == 'Out'
+                        )
+                else:
+                    is_param_out = (
+                        isinstance(param_anno, type)
+                        and param_anno.__name__ == 'Out'
+                    )
+            else:
+                is_param_out = False
 
             is_binding_out = desc.direction == protos.BindingInfo.out
 
@@ -182,24 +180,10 @@ class Registry:
                     f'direction in function.json, but its annotation '
                     f'is azure.functions.Out in Python')
 
-            param_bind_type = desc.type
-            generic_binding = False
-
-            if not bindings.is_binding(param_bind_type):
-                generic_binding = (
-                    desc.data_type is protos.BindingInfo.binary
-                    or desc.data_type is protos.BindingInfo.string
-                )
-                if generic_binding:
-                    # Allow bindings marked with `dataType: binary` or
-                    # `dataType: string` to be handled by a generic binding.
-                    param_bind_type = 'generic'
-                else:
-                    raise FunctionLoadError(
-                        func_name,
-                        f'unsupported data type in {param.name} binding: '
-                        f'"{desc.type}"'
-                    )
+            if param_has_anno and param_py_type in (str, bytes):
+                param_bind_type = 'generic'
+            else:
+                param_bind_type = desc.type
 
             if param_has_anno:
                 if is_param_out:
@@ -207,7 +191,7 @@ class Registry:
                         param_bind_type, param_py_type)
                 else:
                     checks_out = bindings.check_input_type_annotation(
-                        param_bind_type, param_py_type, desc.data_type)
+                        param_bind_type, param_py_type)
 
                 if not checks_out:
                     if desc.data_type is not protos.BindingInfo.undefined:
@@ -224,11 +208,6 @@ class Registry:
                             f'type of {param.name} binding in function.json '
                             f'"{desc.type}" does not match its Python '
                             f'annotation "{param_py_type.__name__}"')
-            else:
-                if desc.data_type is protos.BindingInfo.string:
-                    param_py_type = str
-                elif desc.data_type is protos.BindingInfo.binary:
-                    param_py_type = bytes
 
             param_type_info = ParamTypeInfo(param_bind_type, param_py_type)
             if is_binding_out:
@@ -240,7 +219,7 @@ class Registry:
         if return_binding_name is not None and 'return' in annotations:
             return_anno = annotations.get('return')
             if (typing_inspect.is_generic_type(return_anno) and
-                    typing_inspect.get_origin(return_anno) == azf.Out):
+                    typing_inspect.get_origin(return_anno).__name__ == 'Out'):
                 raise FunctionLoadError(
                     func_name,
                     f'return annotation should not be azure.functions.Out')
@@ -251,6 +230,9 @@ class Registry:
                     func_name,
                     f'has invalid non-type return '
                     f'annotation {return_pytype!r}')
+
+            if return_pytype is (str, bytes):
+                return_binding_name = 'generic'
 
             if not bindings.check_output_type_annotation(
                     return_binding_name, return_pytype):

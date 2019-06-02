@@ -1,4 +1,4 @@
-from azure.functions_worker.bindings import meta
+from azure.functions import meta
 
 
 class Binding(meta.InConverter, meta.OutConverter,

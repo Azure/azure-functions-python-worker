@@ -33,11 +33,11 @@ jobs:
   #     packageType: 'sdk' 
   #     version: $(DOTNET_VERSION)
   #   displayName: 'Install dotnet'
-  - task: ShellScript@2
-    inputs:
-      disableAutoCwd: true 
-      scriptPath: .ci/linux_devops_build.sh
-    displayName: 'Build'
+  # - task: ShellScript@2
+  #   inputs:
+  #     disableAutoCwd: true 
+  #     scriptPath: .ci/linux_devops_build.sh
+  #   displayName: 'Build'
   - bash: |
         chmod +x .ci/linux_devops_tests.sh
         .ci/linux_devops_tests.sh

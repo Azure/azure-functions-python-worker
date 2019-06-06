@@ -23,16 +23,16 @@ jobs:
     inputs:
       versionSpec: '$(pythonVersion)'
       addToPath: true 
-  - task: ShellScript@2
-    inputs:
-      disableAutoCwd: true # Execute in current directory
-      scriptPath: .ci/linux_devops_tools.sh
-    displayName: 'Install Core Tools'
-  - task: DotNetCoreInstaller@0
-    inputs:
-      packageType: 'sdk' 
-      version: $(DOTNET_VERSION)
-    displayName: 'Install dotnet'
+  # - task: ShellScript@2
+  #   inputs:
+  #     disableAutoCwd: true # Execute in current directory
+  #     scriptPath: .ci/linux_devops_tools.sh
+  #   displayName: 'Install Core Tools'
+  # - task: DotNetCoreInstaller@0
+  #   inputs:
+  #     packageType: 'sdk' 
+  #     version: $(DOTNET_VERSION)
+  #   displayName: 'Install dotnet'
   - task: ShellScript@2
     inputs:
       disableAutoCwd: true 

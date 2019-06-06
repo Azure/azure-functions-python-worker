@@ -11,8 +11,10 @@ class TestCodeQuality(unittest.TestCase):
     def test_mypy(self):
         print("Entering test")
         try:
+            print("Trying to import mypy")
             import mypy  # NoQA
         except ImportError:
+            print("MyPy is missing")
             raise unittest.SkipTest('mypy module is missing')
 
         try:

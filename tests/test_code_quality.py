@@ -28,6 +28,7 @@ class TestCodeQuality(unittest.TestCase):
         except subprocess.CalledProcessError as ex:
             print("MyPy test failed")
             output = ex.output.decode()
+            print(output)
             raise AssertionError(
                 f'mypy validation failed:\n{output}') from None
 

@@ -22,6 +22,7 @@ class TestCodeQuality(unittest.TestCase):
                 stderr=subprocess.PIPE,
                 cwd=str(ROOT_PATH))
         except subprocess.CalledProcessError as ex:
+            print("MyPy test failed")
             output = ex.output.decode()
             raise AssertionError(
                 f'mypy validation failed:\n{output}') from None

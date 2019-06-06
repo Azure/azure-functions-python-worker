@@ -9,6 +9,7 @@ ROOT_PATH = pathlib.Path(__file__).parent.parent
 
 class TestCodeQuality(unittest.TestCase):
     def test_mypy(self):
+        print("Entering test")
         try:
             import mypy  # NoQA
         except ImportError:

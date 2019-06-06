@@ -5,4 +5,4 @@ export AzureWebJobsStorage=$LINUXSTORAGECONNECTIONSTRING
 export AzureWebJobsCosmosDBConnectionString=$LINUXCOSMOSDBCONNECTIONSTRING
 export AzureWebJobsEventHubConnectionString=$LINUXEVENTHUBCONNECTIONSTRING
 export AzureWebJobsServiceBusConnectionString=$LINUXSERVICEBUSCONNECTIONSTRING
-python setup.py test
+python -m pytest tests/test_code_quality.py

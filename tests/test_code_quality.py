@@ -15,6 +15,7 @@ class TestCodeQuality(unittest.TestCase):
             raise unittest.SkipTest('mypy module is missing')
 
         try:
+            print("Running test")
             subprocess.run(
                 [sys.executable, '-m', 'mypy', '-m', 'azure.functions_worker'],
                 check=True,

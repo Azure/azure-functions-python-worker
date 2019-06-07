@@ -17,20 +17,20 @@ class TestCodeQuality(unittest.TestCase):
             print("MyPy is missing")
             raise unittest.SkipTest('mypy module is missing')
 
-        try:
-            print("Running test")
-            subprocess.run(
-                [sys.executable, '-m', 'mypy', '-m', 'azure.functions_worker'],
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                cwd=str(ROOT_PATH))
-        except subprocess.CalledProcessError as ex:
-            print("MyPy test failed")
-            output = ex.output.decode()
-            print(ex.output)
-            raise AssertionError(
-                f'mypy validation failed:\n{output}') from None
+        # try:
+        print("Running test")
+        subprocess.run(
+            [sys.executable, '-m', 'mypy', '-m', 'azure.functions_worker'],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=str(ROOT_PATH))
+        # except subprocess.CalledProcessError as ex:
+        #     print("MyPy test failed")
+        #     output = ex.output.decode()
+        #     print(ex.output)
+        #     raise AssertionError(
+        #         f'mypy validation failed:\n{output}') from None
 
     # def test_flake8(self):
     #     try:

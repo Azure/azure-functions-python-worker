@@ -27,7 +27,7 @@ class TestCodeQuality(unittest.TestCase):
                 cwd=str(ROOT_PATH))
         except subprocess.CalledProcessError as ex:
             if (sys.version_info[1] == 7 and sys.version_info[2] == 3):
-                unittest.SkipTest("Subprocess start failing for ver 3.7.3")
+                raise unittest.SkipTest("Subprocess start failing for ver 3.7.3")
             print("MyPy test failed")
             output = ex.output.decode()
             print(ex.output)

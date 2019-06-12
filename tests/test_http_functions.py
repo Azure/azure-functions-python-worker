@@ -1,4 +1,5 @@
 import hashlib
+import pathlib
 
 from azure.functions_worker import testutils
 
@@ -189,3 +190,12 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         resp = r.json()
         self.assertEqual(resp, {'param1': 'foo', 'param2': 'bar'})
+
+    def test_raw_body_bytes(self):
+        image_file = pathlib.Path(__file__).parent / 'resources/functions.png'
+        with open(image_file, 'rb') as image:
+            img = image.read()
+            img_len = len(img)
+            r = self.webhost.request('POST', 'raw_body_bytes', data=img)
+        received_body_len = int(r.headers['body-len'])
+        self.assertEqual(received_body_len, img_len)

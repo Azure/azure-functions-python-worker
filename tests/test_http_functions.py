@@ -206,9 +206,9 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
         body = r.content
         try:
-            with open('received_img.png', 'wb') as received_img:
-                received_img.write(body)
             received_img_file = parent_dir / 'received_img.png'
+            with open(received_img_file, 'wb') as received_img:
+                received_img.write(body)
             self.assertTrue(filecmp.cmp(received_img_file, image_file))
         finally:
             if (os.path.exists(received_img_file)):

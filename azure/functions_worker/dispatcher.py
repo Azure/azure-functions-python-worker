@@ -18,6 +18,7 @@ from . import bindings
 from . import functions
 from . import loader
 from . import protos
+from . import constants
 
 from .logging import error_logger, logger
 
@@ -211,7 +212,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self.request_id)
 
         capabilities = dict()
-        capabilities["RawHttpBodyBytes"] = "true"
+        capabilities[constants.RAW_HTTP_BODY_BYTES] = "true"
 
         return protos.StreamingMessage(
             request_id=self.request_id,

@@ -6,4 +6,4 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     body_len = str(len(body))
 
     headers = {'body-len': body_len}
-    return func.HttpResponse("OK", status_code=200, headers=headers)
+    return func.HttpResponse(body=body, status_code=200, headers=headers)

@@ -1,5 +1,7 @@
 import hashlib
 import pathlib
+import filecmp
+import os
 
 from azure.functions_worker import testutils
 
@@ -192,10 +194,22 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(resp, {'param1': 'foo', 'param2': 'bar'})
 
     def test_raw_body_bytes(self):
-        image_file = pathlib.Path(__file__).parent / 'resources/functions.png'
+        parent_dir = pathlib.Path(__file__).parent
+        image_file = parent_dir / 'resources/functions.png'
         with open(image_file, 'rb') as image:
             img = image.read()
             img_len = len(img)
             r = self.webhost.request('POST', 'raw_body_bytes', data=img)
+
         received_body_len = int(r.headers['body-len'])
         self.assertEqual(received_body_len, img_len)
+
+        body = r.content
+        try:
+            with open('received_img.png', 'wb') as received_img:
+                received_img.write(body)
+            received_img_file = parent_dir / 'received_img.png'
+            self.assertTrue(filecmp.cmp(received_img_file, image_file))
+        finally:
+            if (os.path.exists(received_img_file)):
+                os.remove(received_img_file)

@@ -18,6 +18,7 @@ from . import bindings
 from . import functions
 from . import loader
 from . import protos
+from . import constants
 
 from .logging import error_logger, logger
 
@@ -209,9 +210,14 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__worker_init_request(self, req):
         logger.info('Received WorkerInitRequest, request ID %s',
                     self.request_id)
+
+        capabilities = dict()
+        capabilities[constants.RAW_HTTP_BODY_BYTES] = "true"
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
+                capabilities=capabilities,
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success)))
 

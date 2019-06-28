@@ -10,6 +10,7 @@ import queue
 import threading
 import traceback
 import os
+import sys
 
 import grpc
 import pkg_resources
@@ -363,6 +364,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                         'request ID: %s', self.request_id)
 
             func_env_reload_request = req.function_environment_reload_request
+
+            sys.path_importer_cache.clear()
 
             os.environ.clear()
 

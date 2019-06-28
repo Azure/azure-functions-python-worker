@@ -105,3 +105,6 @@ ENV/
 
 .testconfig
 .pytest_cache
+
+# vscode
+.vscode

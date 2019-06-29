@@ -4,11 +4,6 @@
 export PYTHONPATH="test_module_dir:$2"
 SCRIPT_DIR="$(dirname $0)"
 
-if [ "$1" = "fail" ]
-    then
-        python $SCRIPT_DIR/path_import.py 'fail'
-else
-    python $SCRIPT_DIR/path_import.py 'success'
-fi
+python $SCRIPT_DIR/path_import.py $1
 
 unset PYTHONPATH

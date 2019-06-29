@@ -628,6 +628,16 @@ def start_webhost(*, script_dir=None, stdout=None):
     return _WebHostProxy(proc, addr)
 
 
+def create_dummy_dispatcher():
+    dummy_event_loop = asyncio.new_event_loop()
+    disp = dispatcher.Dispatcher(
+        dummy_event_loop, '127.0.0.1', 0,
+        'test_worker_id', 'test_request_id',
+        1.0, 1000)
+    dummy_event_loop.close()
+    return disp
+
+
 def _remove_path(path):
     if path.is_symlink():
         path.unlink()

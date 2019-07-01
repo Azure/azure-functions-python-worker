@@ -37,6 +37,8 @@ class GenericBinding:
             result = data.value
         elif data_type == 'bytes':
             result = data.value
+        elif data_type == 'json':
+            result = data.value
         else:
             raise ValueError(
                 f'unexpected type of data received for the "generic" binding '

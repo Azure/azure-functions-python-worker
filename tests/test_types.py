@@ -1,9 +1,8 @@
 import unittest
 
 from azure import functions as azf
-from azure.functions_worker import protos
-from azure.functions_worker.bindings import http as bind_http
-from azure.functions_worker.bindings import meta as bind_meta
+from azure.functions import http as bind_http
+from azure.functions import meta as bind_meta
 
 
 class TestFunctions(unittest.TestCase):
@@ -15,7 +14,7 @@ class TestFunctions(unittest.TestCase):
             headers=dict(aaa='zzz', bAb='xYz'),
             params=dict(a='b'),
             route_params={'route': 'param'},
-            body_type=bind_meta.TypedDataKind.bytes,
+            body_type='bytes',
             body=b'abc')
 
         self.assertEqual(r.method, 'GET')
@@ -51,7 +50,7 @@ class TestFunctions(unittest.TestCase):
             headers={},
             params={},
             route_params={},
-            body_type=bind_meta.TypedDataKind.json,
+            body_type='json',
             body='{"a":1}')
 
         self.assertEqual(r.method, 'POST')
@@ -96,12 +95,12 @@ class TestTriggerMetadataDecoder(unittest.TestCase):
 
     def test_scalar_typed_data_decoder_ok(self):
         metadata = {
-            'int_as_json': protos.TypedData(json='1'),
-            'int_as_string': protos.TypedData(string='1'),
-            'int_as_int': protos.TypedData(int=1),
-            'string_as_json': protos.TypedData(json='"aaa"'),
-            'string_as_string': protos.TypedData(string='aaa'),
-            'dict_as_json': protos.TypedData(json='{"foo":"bar"}')
+            'int_as_json': bind_meta.Datum(type='json', value='1'),
+            'int_as_string': bind_meta.Datum(type='string', value='1'),
+            'int_as_int': bind_meta.Datum(type='int', value=1),
+            'string_as_json': bind_meta.Datum(type='json', value='"aaa"'),
+            'string_as_string': bind_meta.Datum(type='string', value='aaa'),
+            'dict_as_json': bind_meta.Datum(type='json', value='{"foo":"bar"}')
         }
 
         cases = [
@@ -123,16 +122,19 @@ class TestTriggerMetadataDecoder(unittest.TestCase):
 
     def test_scalar_typed_data_decoder_not_ok(self):
         metadata = {
-            'unsupported_type': protos.TypedData(stream=b'aaa'),
-            'unexpected_json': protos.TypedData(json='[1, 2, 3]'),
-            'unexpected_data': protos.TypedData(json='"foo"'),
+            'unsupported_type':
+                bind_meta.Datum(type='bytes', value=b'aaa'),
+            'unexpected_json':
+                bind_meta.Datum(type='json', value='[1, 2, 3]'),
+            'unexpected_data':
+                bind_meta.Datum(type='json', value='"foo"'),
         }
 
         cases = [
             (
                 'unsupported_type', int, ValueError,
                 "unsupported type of field 'unsupported_type' in "
-                "trigger metadata: stream"
+                "trigger metadata: bytes"
             ),
             (
                 'unexpected_json', int, ValueError,

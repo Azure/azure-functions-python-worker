@@ -1,5 +1,7 @@
 {
   "scriptFile": "main.py",
+  "disabled": false,
+
   "bindings": [
     {
       "type": "httpTrigger",
@@ -7,9 +9,11 @@
       "name": "req"
     },
     {
-      "type": "yolo",
       "direction": "out",
-      "name": "ret"
+      "name": "$return",
+      "queueName": "testqueue-untyped-return",
+      "connection": "AzureWebJobsStorage",
+      "type": "queue"
     }
   ]
 }

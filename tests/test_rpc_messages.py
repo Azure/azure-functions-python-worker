@@ -44,9 +44,8 @@ class TestGRPC(testutils.AsyncTestCase):
 
     def _verify_sys_path_import(self, result, expected_output):
         try:
-            test_dir = os.path.dirname(os.path.realpath(__file__))
             path_import_script = os.path.join(
-                test_dir,
+                testutils.TESTS_ROOT,
                 'path_import',
                 'test_path_import.sh')
 

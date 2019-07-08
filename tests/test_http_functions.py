@@ -1,7 +1,6 @@
 import hashlib
 import pathlib
 import filecmp
-import traceback
 import os
 
 from azure.functions_worker import testutils
@@ -214,11 +213,3 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         finally:
             if (os.path.exists(received_img_file)):
                 os.remove(received_img_file)
-
-    def test_module_not_found_error(self):
-        with self.assertRaises(ModuleNotFoundError) as mnfe:
-            self.webhost.request('GET', 'module_not_found_error')
-
-        exc = mnfe.exception
-        summary = traceback.format_tb(exc.__traceback__)
-        self.assertNotIn('importlib', summary)

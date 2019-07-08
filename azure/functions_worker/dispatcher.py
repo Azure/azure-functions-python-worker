@@ -8,7 +8,6 @@ import concurrent.futures
 import logging
 import queue
 import threading
-import traceback
 import os
 import sys
 
@@ -22,6 +21,7 @@ from . import protos
 from . import constants
 
 from .logging import error_logger, logger
+from .tracing import marshall_exception_trace
 
 
 class DispatcherMeta(type):
@@ -188,7 +188,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                        f'Could not serialize original exception message.')
 
         try:
-            stack_trace = ''.join(traceback.format_tb(exc.__traceback__))
+            stack_trace = marshall_exception_trace(exc)
         except Exception:
             stack_trace = ''
 

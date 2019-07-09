@@ -134,6 +134,10 @@ class TestMockHost(testutils.AsyncTestCase):
 
             self.assertIn('ImportError',
                           r.response.result.exception.message)
+            self.assertNotIn('<frozen importlib._bootstrap>',
+                             r.response.result.exception.message)
+            self.assertNotIn('<frozen importlib._bootstrap_external>',
+                             r.response.result.exception.message)
 
     async def test_load_broken__inout_param(self):
         async with testutils.start_mockhost(

@@ -203,7 +203,7 @@ class webhost(distutils.cmd.Command):
 
 setup(
     name='azure-functions-worker',
-    version='1.0.0b8',
+    version='1.0.0b9',
     description='Python Language Worker for Azure Functions Host',
     classifiers=[
         'License :: OSI Approved :: MIT License',
@@ -213,7 +213,7 @@ setup(
         'Operating System :: POSIX',
         'Operating System :: MacOS :: MacOS X',
         'Environment :: Web Environment',
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
     ],
     license='MIT',
     packages=['azure.functions_worker',

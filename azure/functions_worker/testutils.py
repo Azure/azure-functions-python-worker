@@ -36,6 +36,10 @@ from . import protos
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
 TESTS_ROOT = PROJECT_ROOT / 'tests'
+E2E_TESTS_FOLDER = 'endtoend'
+E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
+UNIT_TESTS_FOLDER = 'unittests'
+UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
 DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / \
     'Microsoft.Azure.WebJobs.Script.WebHost.dll'
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'

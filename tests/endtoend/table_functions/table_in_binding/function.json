@@ -15,7 +15,7 @@
       "type": "table",
       "name": "testEntity",
       "partitionKey": "test",
-      "rowKey": "WillBePopulatedWithGuid",
+      "rowKey": "57a3012c-eae2-458c-9c73-2f51612c6cfa",
       "tableName": "BindingTestTable",
       "connection": "AzureWebJobsStorage"
     },

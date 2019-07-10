@@ -4,7 +4,7 @@ import sys
 import unittest
 
 
-ROOT_PATH = pathlib.Path(__file__).parent.parent
+ROOT_PATH = pathlib.Path(__file__).parent.parent.parent
 
 
 class TestCodeQuality(unittest.TestCase):
@@ -37,6 +37,7 @@ class TestCodeQuality(unittest.TestCase):
 
         config_path = ROOT_PATH / '.flake8'
         if not config_path.exists():
+            print("Skipping")
             raise unittest.SkipTest('could not locate the .flake8 file')
 
         try:

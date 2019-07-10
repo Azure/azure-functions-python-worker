@@ -6,7 +6,7 @@ class TestGenericFunctions(testutils.AsyncTestCase):
 
     async def test_mock_generic_as_str(self):
         async with testutils.start_mockhost(
-                script_root='generic_functions') as host:
+                script_root='unittests/generic_functions') as host:
 
             func_id, r = await host.load_function('foobar_as_str')
 
@@ -33,7 +33,7 @@ class TestGenericFunctions(testutils.AsyncTestCase):
 
     async def test_mock_generic_as_bytes(self):
         async with testutils.start_mockhost(
-                script_root='generic_functions') as host:
+                script_root='unittests/generic_functions') as host:
 
             func_id, r = await host.load_function('foobar_as_bytes')
 

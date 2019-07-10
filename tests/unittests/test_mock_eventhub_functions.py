@@ -8,7 +8,7 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
 
     async def test_mock_eventhub_trigger_iot(self):
         async with testutils.start_mockhost(
-                script_root='eventhub_mock_functions') as host:
+                script_root='unittests/eventhub_mock_functions') as host:
 
             func_id, r = await host.load_function('eventhub_trigger_iot')
 

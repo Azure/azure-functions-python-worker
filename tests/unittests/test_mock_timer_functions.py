@@ -8,7 +8,7 @@ class TestTimerFunctions(testutils.AsyncTestCase):
 
     async def test_mock_timer__return_pastdue(self):
         async with testutils.start_mockhost(
-                script_root='timer_functions') as host:
+                script_root='unittests/timer_functions') as host:
 
             func_id, r = await host.load_function('return_pastdue')
 

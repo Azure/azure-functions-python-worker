@@ -54,7 +54,7 @@ class TestPluginLoader(testutils.AsyncTestCase):
 
         async def _runner():
             async with testutils.start_mockhost(
-                    script_root='test-binding/functions') as host:
+                    script_root='unittests/test-binding/functions') as host:
                 func_id, r = await host.load_function('foo')
 
                 print(r.response.function_id == func_id)

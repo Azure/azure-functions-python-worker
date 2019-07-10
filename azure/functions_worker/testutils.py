@@ -682,7 +682,7 @@ def _setup_func_app(app_root):
     with open(host_json, 'w') as f:
         f.write(HOST_JSON_TEMPLATE)
 
-    _symlink_dir(TESTS_ROOT / 'ping', ping_func)
+    _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
     _symlink_dir(EXTENSIONS_PATH, extensions)
 
 

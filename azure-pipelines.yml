@@ -39,14 +39,18 @@ jobs:
       scriptPath: .ci/linux_devops_build.sh
     displayName: 'Build'
   - bash: |
-        chmod +x .ci/linux_devops_tests.sh
-        .ci/linux_devops_tests.sh
+        chmod +x .ci/linux_devops_unit_tests.sh
+        .ci/linux_devops_unit_tests.sh
+    displayName: 'Unit Tests'
+  - bash: |
+        chmod +x .ci/linux_devops_e2e_tests.sh
+        .ci/linux_devops_e2e_tests.sh
     env:
       LINUXSTORAGECONNECTIONSTRING: $(LinuxStorageConnectionString)
       LINUXCOSMOSDBCONNECTIONSTRING: $(LinuxCosmosDBConnectionString)
       LINUXEVENTHUBCONNECTIONSTRING: $(LinuxEventHubConnectionString)
       LINUXSERVICEBUSCONNECTIONSTRING: $(LinuxServiceBusConnectionString)
-    displayName: 'Tests'
+    displayName: 'E2E Tests'
   
 - template: pack/templates/win_env_gen.yml
   parameters:

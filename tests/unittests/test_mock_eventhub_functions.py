@@ -5,10 +5,11 @@ from azure.functions_worker import testutils
 
 
 class TestEventHubMockFunctions(testutils.AsyncTestCase):
+    mock_funcs_dir = testutils.UNIT_TESTS_FOLDER / 'eventhub_mock_functions'
 
     async def test_mock_eventhub_trigger_iot(self):
         async with testutils.start_mockhost(
-                script_root='unittests/eventhub_mock_functions') as host:
+                script_root=self.mock_funcs_dir) as host:
 
             func_id, r = await host.load_function('eventhub_trigger_iot')
 

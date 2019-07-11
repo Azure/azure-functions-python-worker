@@ -3,10 +3,11 @@ from azure.functions_worker import testutils
 
 
 class TestGenericFunctions(testutils.AsyncTestCase):
+    generic_funcs_dir = testutils.UNIT_TESTS_FOLDER / 'generic_functions'
 
     async def test_mock_generic_as_str(self):
         async with testutils.start_mockhost(
-                script_root='unittests/generic_functions') as host:
+                script_root=self.generic_funcs_dir) as host:
 
             func_id, r = await host.load_function('foobar_as_str')
 
@@ -33,7 +34,7 @@ class TestGenericFunctions(testutils.AsyncTestCase):
 
     async def test_mock_generic_as_bytes(self):
         async with testutils.start_mockhost(
-                script_root='unittests/generic_functions') as host:
+                script_root=self.generic_funcs_dir) as host:
 
             func_id, r = await host.load_function('foobar_as_bytes')
 

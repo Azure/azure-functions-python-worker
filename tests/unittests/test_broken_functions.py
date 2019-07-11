@@ -3,10 +3,11 @@ from azure.functions_worker import testutils
 
 
 class TestMockHost(testutils.AsyncTestCase):
+    broken_funcs_dir = testutils.UNIT_TESTS_FOLDER / 'broken_functions'
 
     async def test_load_broken__missing_py_param(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('missing_py_param')
 
@@ -22,7 +23,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__missing_json_param(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('missing_json_param')
 
@@ -38,7 +39,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__wrong_param_dir(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('wrong_param_dir')
 
@@ -53,7 +54,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__bad_out_annotation(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('bad_out_annotation')
 
@@ -68,7 +69,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__wrong_binding_dir(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('wrong_binding_dir')
 
@@ -84,7 +85,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__invalid_context_param(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('invalid_context_param')
 
@@ -99,7 +100,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__syntax_error(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('syntax_error')
 
@@ -111,7 +112,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__module_not_found_error(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('module_not_found_error')
 
@@ -124,7 +125,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__import_error(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('import_error')
 
@@ -141,7 +142,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__inout_param(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('inout_param')
 
@@ -156,7 +157,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__return_param_in(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('return_param_in')
 
@@ -171,7 +172,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__invalid_return_anno(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('invalid_return_anno')
 
@@ -187,7 +188,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__invalid_return_anno_non_type(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function(
                 'invalid_return_anno_non_type')
@@ -203,7 +204,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__invalid_http_trigger_anno(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('invalid_http_trigger_anno')
 
@@ -219,7 +220,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__invalid_out_anno(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('invalid_out_anno')
 
@@ -235,7 +236,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__invalid_in_anno(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('invalid_in_anno')
 
@@ -251,7 +252,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_load_broken__invalid_in_anno_non_type(self):
         async with testutils.start_mockhost(
-                script_root='unittests/broken_functions') as host:
+                script_root=self.broken_funcs_dir) as host:
 
             func_id, r = await host.load_function('invalid_in_anno_non_type')
 

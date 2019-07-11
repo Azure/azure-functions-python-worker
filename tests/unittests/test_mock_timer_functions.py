@@ -5,10 +5,11 @@ from azure.functions_worker import testutils
 
 
 class TestTimerFunctions(testutils.AsyncTestCase):
+    timer_funcs_dir = testutils.UNIT_TESTS_FOLDER / 'timer_functions'
 
     async def test_mock_timer__return_pastdue(self):
         async with testutils.start_mockhost(
-                script_root='unittests/timer_functions') as host:
+                script_root=self.timer_funcs_dir) as host:
 
             func_id, r = await host.load_function('return_pastdue')
 

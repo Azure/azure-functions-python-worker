@@ -36,10 +36,14 @@ from . import protos
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
 TESTS_ROOT = PROJECT_ROOT / 'tests'
+E2E_TESTS_FOLDER = pathlib.Path('endtoend')
+E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
+UNIT_TESTS_FOLDER = pathlib.Path('unittests')
+UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
 DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / \
     'Microsoft.Azure.WebJobs.Script.WebHost.dll'
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
-FUNCS_PATH = TESTS_ROOT / 'http_functions'
+FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
 WORKER_PATH = PROJECT_ROOT / 'python'
 WORKER_CONFIG = PROJECT_ROOT / '.testconfig'
 ON_WINDOWS = platform.system() == 'Windows'
@@ -467,7 +471,7 @@ class _MockWebHostController:
         self._host = None
 
 
-def start_mockhost(*, script_root='http_functions'):
+def start_mockhost(*, script_root=FUNCS_PATH):
     tests_dir = TESTS_ROOT
     scripts_dir = tests_dir / script_root
     if not scripts_dir.exists() or not scripts_dir.is_dir():
@@ -678,7 +682,7 @@ def _setup_func_app(app_root):
     with open(host_json, 'w') as f:
         f.write(HOST_JSON_TEMPLATE)
 
-    _symlink_dir(TESTS_ROOT / 'ping', ping_func)
+    _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
     _symlink_dir(EXTENSIONS_PATH, extensions)
 
 

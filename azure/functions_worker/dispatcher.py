@@ -377,8 +377,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             importlib.invalidate_caches()
 
-            for module in sys.modules.values():
-                importlib.reload(module)
+            if sys.modules.get('azure'):
+                importlib.reload(sys.modules['azure'])
 
             success_response = protos.FunctionEnvironmentReloadResponse(
                 result=protos.StatusResult(

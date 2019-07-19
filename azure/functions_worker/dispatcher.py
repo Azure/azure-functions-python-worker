@@ -375,10 +375,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             for var in env_vars:
                 os.environ[var] = env_vars[var]
 
-            importlib.invalidate_caches()
-
-            if sys.modules.get('azure'):
-                importlib.reload(sys.modules['azure'])
+            # Reload azure namespace for customer's libraries
+            importlib.reload(sys.modules['azure'])
 
             success_response = protos.FunctionEnvironmentReloadResponse(
                 result=protos.StatusResult(

@@ -69,3 +69,30 @@ class TestGRPC(testutils.AsyncTestCase):
         self._verify_sys_path_import(
             'success',
             'This module was imported!')
+
+    def _verify_azure_namespace_import(self, result, expected_output):
+        try:
+            path_import_script = os.path.join(
+                testutils.UNIT_TESTS_ROOT,
+                'azure_namespace_import',
+                'test_azure_namespace_import.sh')
+
+            subprocess.run(['chmod +x ' + path_import_script], shell=True)
+
+            output = subprocess.check_output(
+                [path_import_script, result],
+                stderr=subprocess.STDOUT)
+            decoded_output = output.decode(sys.stdout.encoding).strip()
+            self.assertTrue(expected_output in decoded_output)
+        finally:
+            self._reset_environ()
+
+    def test_failed_azure_namespace_import(self):
+        self._verify_azure_namespace_import(
+            'false',
+            'module_b fails to import')
+
+    def test_successful_azure_namespace_import(self):
+        self._verify_azure_namespace_import(
+            'true',
+            'module_b is imported')

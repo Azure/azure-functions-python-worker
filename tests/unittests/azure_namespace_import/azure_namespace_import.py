@@ -22,7 +22,9 @@ async def vertify_nested_namespace_import():
     import azure.module_a as mod_a  # noqa: F401
 
     # Mock function specialization, load customer's libraries and functionapps
-    ns_root = os.path.join(testutils.UNIT_TESTS_ROOT, 'azure_namespace_import',
+    ns_root = os.path.join(
+        testutils.UNIT_TESTS_ROOT,
+        'azure_namespace_import',
         'namespace_location_b')
     test_path = os.path.join(ns_root, 'azure', 'namespace_b', 'module_b')
     test_mod_path = os.path.join(test_path, 'test_module.py')

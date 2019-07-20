@@ -22,8 +22,9 @@ async def vertify_nested_namespace_import():
     import azure.module_a as mod_a  # noqa: F401
 
     # Mock function specialization, load customer's libraries and functionapps
-    test_root = sys.argv[2]
-    test_path = os.path.join(test_root, 'azure', 'namespace_b', 'module_b')
+    ns_root = os.path.join(testutils.UNIT_TESTS_ROOT, 'azure_namespace_import',
+        'namespace_location_b')
+    test_path = os.path.join(ns_root, 'azure', 'namespace_b', 'module_b')
     test_mod_path = os.path.join(test_path, 'test_module.py')
 
     os.makedirs(test_path)
@@ -41,7 +42,7 @@ async def vertify_nested_namespace_import():
         print('module_b fails to import')
     finally:
         # Cleanup
-        shutil.rmtree(test_root)
+        shutil.rmtree(ns_root)
 
 
 if __name__ == '__main__':

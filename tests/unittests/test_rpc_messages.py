@@ -80,7 +80,7 @@ class TestGRPC(testutils.AsyncTestCase):
             subprocess.run(['chmod +x ' + path_import_script], shell=True)
 
             output = subprocess.check_output(
-                [path_import_script, result, 'namespace_location_b'],
+                [path_import_script, result],
                 stderr=subprocess.STDOUT)
             decoded_output = output.decode(sys.stdout.encoding).strip()
             self.assertTrue(expected_output in decoded_output)

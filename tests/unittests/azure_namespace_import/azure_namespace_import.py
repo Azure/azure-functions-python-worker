@@ -19,7 +19,7 @@ async def vertify_nested_namespace_import():
     disp = testutils.create_dummy_dispatcher()
 
     # Mock intepreter starts in placeholder mode
-    import azure.module_a as mod_a
+    import azure.module_a as mod_a  # noqa: F401
 
     # Mock function specialization, load customer's libraries and functionapps
     test_root = sys.argv[2]
@@ -33,7 +33,8 @@ async def vertify_nested_namespace_import():
     try:
         # Mock a customer uses test_module
         if sys.argv[1].lower() == 'true':
-            await disp._handle__function_environment_reload_request(request_msg)
+            await disp._handle__function_environment_reload_request(
+                request_msg)
         from azure.namespace_b.module_b import test_module
         print(test_module.MESSAGE)
     except ModuleNotFoundError:

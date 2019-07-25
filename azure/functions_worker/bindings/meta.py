@@ -76,7 +76,7 @@ def to_outgoing_proto(binding: str, obj: typing.Any, *,
     binding = get_binding(binding)
 
     try:
-        datum = binding.encode(obj, expected_type=typing.Any)
+        datum = binding.encode(obj, expected_type=pytype)
     except NotImplementedError:
         # Binding does not support the data.
         raise TypeError(

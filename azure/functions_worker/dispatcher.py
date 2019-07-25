@@ -11,7 +11,6 @@ import threading
 import typing
 import os
 import sys
-import importlib
 
 import grpc
 import pkg_resources
@@ -308,10 +307,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self._sync_call_tp,
                     self.__run_sync_func, invocation_id, fi.func, args)
 
-            if call_result is not None and not fi.has_return:
-                raise RuntimeError(
-                    f'function {fi.name!r} without a $return binding '
-                    f'returned a non-None value')
+            #if call_result is not None and not fi.has_return:
+            #    raise RuntimeError(
+            #        f'function {fi.name!r} without a $return binding '
+            #        f'returned a non-None value')
 
             output_data = []
             if fi.output_types:
@@ -334,9 +333,18 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             # return_value = None
             # if fi.return_type is not None:
-            return_value = bindings.to_outgoing_proto(
-                "durablebinding", call_result,
-                pytype=typing.Any)
+            ret_binding_name = "ret_binding_name"
+            ret_pytype = typing.Any
+            if fi.return_type is not None:
+                ret_pytype = fi.return_type.pytype
+                ret_binding_name = fi.return_type.binding_name
+
+            if call_result is not None:
+                return_value = bindings.to_outgoing_proto(
+                    ret_binding_name, call_result,
+                    pytype=ret_pytype)
+            else:
+                return_value = None
 
             logger.info('Successfully processed FunctionInvocationRequest, '
                         'request ID: %s, function ID: %s, invocation ID: %s',
@@ -375,9 +383,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             for var in env_vars:
                 os.environ[var] = env_vars[var]
-
-            # Reload azure namespace for customer's libraries
-            importlib.reload(sys.modules['azure'])
 
             success_response = protos.FunctionEnvironmentReloadResponse(
                 result=protos.StatusResult(

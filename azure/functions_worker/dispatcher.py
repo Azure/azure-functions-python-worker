@@ -8,6 +8,7 @@ import concurrent.futures
 import logging
 import queue
 import threading
+import typing
 import os
 import sys
 import importlib
@@ -331,11 +332,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                             name=out_name,
                             data=rpc_val))
 
-            return_value = None
-            if fi.return_type is not None:
-                return_value = bindings.to_outgoing_proto(
-                    fi.return_type.binding_name, call_result,
-                    pytype=fi.return_type.pytype)
+            # return_value = None
+            # if fi.return_type is not None:
+            return_value = bindings.to_outgoing_proto(
+                "durablebinding", call_result,
+                pytype=typing.Any)
 
             logger.info('Successfully processed FunctionInvocationRequest, '
                         'request ID: %s, function ID: %s, invocation ID: %s',

@@ -519,24 +519,38 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         testconfig = configparser.ConfigParser()
         testconfig.read(WORKER_CONFIG)
 
-    dll = os.environ.get('PYAZURE_WEBHOST_DLL')
-    if not dll and testconfig and testconfig.has_section('webhost'):
-        dll = testconfig['webhost'].get('dll')
+    hostexe_args = []
 
-    if dll:
-        # Paths from environment might contain trailing or leading whitespace.
-        dll = dll.strip()
+    # If we want to use core-tools
+    coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')
+    if coretools_exe:
+        coretools_exe = coretools_exe.strip()
+        if pathlib.Path(coretools_exe).exists():
+            hostexe_args = [str(coretools_exe)]
 
-    if not dll:
-        dll = DEFAULT_WEBHOST_DLL_PATH
+    # If we need to use Functions host directly
+    if not hostexe_args:
+        dll = os.environ.get('PYAZURE_WEBHOST_DLL')
+        if not dll and testconfig and testconfig.has_section('webhost'):
+            dll = testconfig['webhost'].get('dll')
 
-        secrets = SECRETS_TEMPLATE
+        if dll:
+            # Paths from environment might contain trailing or leading whitespace.
+            dll = dll.strip()
 
-        os.makedirs(dll.parent / 'Secrets', exist_ok=True)
-        with open(dll.parent / 'Secrets' / 'host.json', 'w') as f:
-            f.write(secrets)
+        if not dll:
+            dll = DEFAULT_WEBHOST_DLL_PATH
 
-    if not dll or not pathlib.Path(dll).exists():
+            secrets = SECRETS_TEMPLATE
+
+            os.makedirs(dll.parent / 'Secrets', exist_ok=True)
+            with open(dll.parent / 'Secrets' / 'host.json', 'w') as f:
+                f.write(secrets)
+
+        if dll and pathlib.Path(dll).exists():
+            hostexe_args = ['dotnet', str(dll)]
+
+    if not hostexe_args:
         raise RuntimeError('\n'.join([
             f'Unable to locate Azure Functions Host binary.',
             f'Please do one of the following:',
@@ -553,6 +567,9 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             f'',
             f'       [webhost]',
             f'       dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
+            f' * or download Azure Functions Core Tools binaries and then write',
+            f'   the full path to func.exe into the `CORE_TOOLS_PATH`',
+            f'   envrionment variable.'
         ]))
 
     worker_path = os.environ.get('PYAZURE_WORKER_DIR')
@@ -595,7 +612,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         extra_env['ASPNETCORE_URLS'] = f'http://*:{port}'
 
     return subprocess.Popen(
-        ['dotnet', str(dll)],
+        hostexe_args,
         cwd=script_root,
         env={
             **os.environ,

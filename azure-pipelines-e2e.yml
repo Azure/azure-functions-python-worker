@@ -1,0 +1,58 @@
+name: 1.0.0-beta$(Date:yyyyMMdd)$(Rev:.r)
+
+variables:
+    DOTNET_VERSION: '2.2.300'
+    CORE_TOOLS_EXE_PATH: '$(Build.SourcesDirectory)/Azure.Functions.Core.Tools/func'
+
+jobs:
+- job: Tests
+  pool:
+    vmImage: 'ubuntu-16.04'
+  strategy:
+    matrix:
+      Python36:
+        pythonVersion: '3.6'
+    maxParallel: 1
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(pythonVersion)'
+      addToPath: true 
+  - powershell:
+      .ci/e2e/setup-e2e.ps1
+    displayName: 'Setup custom Core Tools'
+    env:
+      CORE_TOOLS_EXE_PATH: '$(CORE_TOOLS_EXE_PATH)'
+      CORE_TOOLS_URL: $(CORE_TOOLS_URL)
+  - task: ShellScript@2
+    inputs:
+      disableAutoCwd: true # Execute in current directory
+      scriptPath: .ci/linux_devops_tools.sh
+    displayName: 'Install Core Tools production'
+  - task: DotNetCoreInstaller@0
+    inputs:
+      packageType: 'sdk' 
+      version: $(DOTNET_VERSION)
+    displayName: 'Install dotnet' 
+  - bash: |
+        set -e -x
+        python -m pip install -U -e .[dev]
+        python setup.py webhost
+    displayName: 'Build'
+  - bash: |
+        echo ${CORE_TOOLS_EXE_PATH}
+        chmod a+x ${CORE_TOOLS_EXE_PATH}
+        pytest --resultlog=$(Build.ArtifactStagingDirectory)/results tests/endtoend
+    continueOnError: true
+    env:
+      CORE_TOOLS_EXE_PATH: '$(CORE_TOOLS_EXE_PATH)'
+      AzureWebJobsStorage: $(LinuxStorageConnectionString)
+      AzureWebJobsCosmosDBConnectionString: $(LinuxCosmosDBConnectionString)
+      AzureWebJobsEventHubConnectionString: $(LinuxEventHubConnectionString)
+      AzureWebJobsServiceBusConnectionString: $(LinuxServiceBusConnectionString)
+    displayName: 'E2E Tests'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: 'test_result'
+      

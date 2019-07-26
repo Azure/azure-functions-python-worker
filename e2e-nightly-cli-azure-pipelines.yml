@@ -60,7 +60,7 @@ jobs:
       \"http\":{\"routePrefix\":\"api\"},\"swagger\":{\"enabled\":true},\"eventHub\":{\"maxBatchSize\":1000,\"prefetchCount\":1000, \
       \"batchCheckpointFrequency\":1},\"functionTimeout\":\"00:05:00\"}" > $(System.DefaultWorkingDirectory)/alle2etests/host.json
       zip -r $(System.DefaultWorkingDirectory)/e2etestspython.zip $(System.DefaultWorkingDirectory)/alle2etests/*
-     displayName: 'Collecting End To End test directory'
+    displayName: 'Collecting End To End test directory'
   - pwsh: |
       Install-Module Az.Storage -Force -Verbose -Scope CurrentUser
       if (-not (Get-command new-azstoragecontext -ea SilentlyContinue))
@@ -80,14 +80,14 @@ jobs:
       zip -r $(System.DefaultWorkingDirectory)/pythonworker.zip $(Build.Repository.LocalPath)/python/*
     displayName: 'Creating Python worker artifact for storage'
   - pwsh: |
-    $localFilepythonWorker = '$(System.DefaultWorkingDirectory)\pythonworker.zip'
+      $localFilepythonWorker = '$(System.DefaultWorkingDirectory)\pythonworker.zip'
       if (Test-Path $localFilepythonWorker)
       {
         Write-Host "localFilepythonWorker file exists"
       }
       $blobNamepythonWorker = 'pythonworker.zip'
       $Context = New-AzStorageContext -StorageAccountName $(StorageAccountName) -StorageAccountKey $(StorageAccountKey)
-      Set-AzStorageBlobContent -File $localFilepythonWorker -Container $(ContainerName) -Blob $blobNamepythonWorker -Context $Context  -Force -Verbose
+      Set-AzStorageBlobContent -File $localFilepythonWorker -Container $(ContainerName) -Blob $blobNamepythonWorker -Context $Context -Force -Verbose
     displayName: 'Uploading worker information to storage'
   - task: PublishBuildArtifacts@1
     inputs:

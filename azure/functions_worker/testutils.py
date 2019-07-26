@@ -152,6 +152,13 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
     @classmethod
     def setUpClass(cls):
+        if os.environ.get('SKIP_LOCAL_SETUP') == '1':
+            addr = os.environ.get('TEST_FUNCTION_URL')
+            if not addr:
+                raise KeyError('Missing URL for Function App tests')
+            cls.webhost = _WebHostProxy(None, addr)
+            return
+
         script_dir = pathlib.Path(cls.get_script_dir())
         if os.environ.get('PYAZURE_WEBHOST_DEBUG'):
             cls.host_stdout = None

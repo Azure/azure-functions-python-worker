@@ -156,7 +156,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
             addr = os.environ.get('TEST_FUNCTION_URL')
             if not addr:
                 raise KeyError('Missing URL for Function App tests')
-            cls.webhost = _WebHostProxy(None, addr)
+            cls.webhost = _WebHostProxy(_DummyProc(), addr)
+            cls.host_stdout = None
             return
 
         script_dir = pathlib.Path(cls.get_script_dir())
@@ -275,6 +276,20 @@ class _WebHostFunction(typing.NamedTuple):
 class _WorkerResponseMessages(typing.NamedTuple):
     response: object
     logs: list
+
+
+class _DummyProc():
+
+    def __init__(self):
+        self.stdout = open(os.devnull, 'w')
+        self.stderr = open(os.devnull, 'w')
+        pass
+
+    def terminate(*arg):
+        pass
+
+    def wait(*arg):
+        pass
 
 
 class _MockWebHost:

@@ -17,7 +17,7 @@ jobs:
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '$(pythonVersion)'
-      addToPath: true 
+      addToPath: true
   - powershell:
       .ci/e2e/setup-e2e.ps1
     displayName: 'Setup custom Core Tools'
@@ -31,9 +31,9 @@ jobs:
     displayName: 'Install Core Tools production'
   - task: DotNetCoreInstaller@0
     inputs:
-      packageType: 'sdk' 
+      packageType: 'sdk'
       version: $(DOTNET_VERSION)
-    displayName: 'Install dotnet' 
+    displayName: 'Install dotnet'
   - bash: |
         set -e -x
         python -m pip install -U -e .[dev]
@@ -71,7 +71,7 @@ jobs:
       if (Test-Path $localFile)
       {
         Write-Host "File exists"
-      } 
+      }
       $blobName = 'e2etestspython.zip'
       $Context = New-AzStorageContext -StorageAccountName $(StorageAccountName) -StorageAccountKey $(StorageAccountKey)
       Set-AzStorageBlobContent -File $localFile -Container $(ContainerName) -Blob $blobName -Context $Context  -Force -Verbose
@@ -84,7 +84,7 @@ jobs:
       if (Test-Path $localFilepythonWorker)
       {
         Write-Host "localFilepythonWorker file exists"
-      } 
+      }
       $blobNamepythonWorker = 'pythonworker.zip'
       $Context = New-AzStorageContext -StorageAccountName $(StorageAccountName) -StorageAccountKey $(StorageAccountKey)
       Set-AzStorageBlobContent -File $localFilepythonWorker -Container $(ContainerName) -Blob $blobNamepythonWorker -Context $Context  -Force -Verbose
@@ -93,4 +93,3 @@ jobs:
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: 'test_result'
-      

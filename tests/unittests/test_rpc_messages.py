@@ -2,8 +2,8 @@ import os
 import subprocess
 import sys
 
-from azure.functions_worker import protos
-from azure.functions_worker import testutils
+from azure_functions_worker import protos
+from azure_functions_worker import testutils
 
 
 class TestGRPC(testutils.AsyncTestCase):

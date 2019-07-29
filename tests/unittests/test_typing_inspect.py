@@ -2,7 +2,7 @@
 # Author: Ivan Levkivskyi
 # License: MIT
 
-from azure.functions_worker.typing_inspect import (
+from azure_functions_worker.typing_inspect import (
     is_generic_type, is_callable_type, is_tuple_type, is_union_type,
     is_typevar, is_classvar, get_origin, get_parameters, get_last_args, get_args,
     get_generic_type, get_generic_bases, get_last_origin, typed_dict_keys,

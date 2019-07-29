@@ -453,7 +453,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 class AsyncLoggingHandler(logging.Handler):
 
     def emit(self, record):
-        if not record.name.startswith('azure.functions_worker'):
+        if not record.name.startswith('azure_functions_worker'):
             # Skip worker system logs
             msg = self.format(record)
             Dispatcher.current._on_logging(record, msg)

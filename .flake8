@@ -2,6 +2,6 @@
 ignore = W503,E402,E731
 exclude =
     .git, __pycache__, build, dist, .eggs, .github, .local, docs/,
-    Samples, azure/functions_worker/protos/,
-    azure/functions_worker/typing_inspect.py,
+    Samples, azure_functions_worker/protos/,
+    azure_functions_worker/typing_inspect.py,
     tests/unittests/test_typing_inspect.py

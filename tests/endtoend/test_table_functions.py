@@ -2,7 +2,7 @@ import json
 import pathlib
 import time
 
-from azure.functions_worker import testutils
+from azure_functions_worker import testutils
 
 
 class TestTableFunctions(testutils.WebHostTestCase):

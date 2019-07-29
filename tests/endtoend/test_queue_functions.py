@@ -1,6 +1,6 @@
 import time
 
-from azure.functions_worker import testutils
+from azure_functions_worker import testutils
 
 
 class TestQueueFunctions(testutils.WebHostTestCase):

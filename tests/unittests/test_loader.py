@@ -4,7 +4,7 @@ import subprocess
 import sys
 import textwrap
 
-from azure.functions_worker import testutils
+from azure_functions_worker import testutils
 
 
 class TestLoader(testutils.WebHostTestCase):
@@ -49,8 +49,8 @@ class TestPluginLoader(testutils.AsyncTestCase):
         # pkg_resources picks up the newly installed package.
         code = textwrap.dedent('''
         import asyncio
-        from azure.functions_worker import protos
-        from azure.functions_worker import testutils
+        from azure_functions_worker import protos
+        from azure_functions_worker import testutils
 
         async def _runner():
             async with testutils.start_mockhost(

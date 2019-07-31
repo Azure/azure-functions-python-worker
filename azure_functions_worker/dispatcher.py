@@ -366,6 +366,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             func_env_reload_request = req.function_environment_reload_request
 
+            # Import before clearing path cache so that the module
+            # is available in sys.modules for customer use
+            import azure.functions # NoQA
+
             sys.path_importer_cache.clear()
 
             os.environ.clear()

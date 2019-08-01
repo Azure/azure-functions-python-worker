@@ -383,7 +383,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             # Reload azure namespace for customer's libraries
             logger.info('Reloading azure module')
-            importlib.reload(sys.modules['azure'])
+            try:
+                importlib.reload(sys.modules['azure'])
+            except Exception as ex:
+                logger.info('Unable to reload azure: \n{}'.format(ex))
             logger.info('Reloaded azure module')
 
             # Reload azure.functions to give user package precedence

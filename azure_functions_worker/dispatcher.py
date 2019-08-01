@@ -394,7 +394,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 logger.info('Reloaded azure.functions module now at %s',
                             inspect.getfile(sys.modules['azure.functions']))
             except Exception as ex:
-                logger.info('Unable to reload azure.functions. ' 
+                logger.info('Unable to reload azure.functions. '
                             'Using default. Exception:\n{}'.format(ex))
 
             success_response = protos.FunctionEnvironmentReloadResponse(

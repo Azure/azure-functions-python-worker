@@ -382,8 +382,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 os.environ[var] = env_vars[var]
 
             # Reload azure namespace for customer's libraries
-            logger.info('Reloading azure module')
             try:
+                logger.info('Reloading azure module')
                 importlib.reload(sys.modules['azure'])
             except Exception as ex:
                 logger.info('Unable to reload azure: \n{}'.format(ex))

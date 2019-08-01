@@ -71,12 +71,12 @@ class BuildGRPC:
     def _gen_grpc(self):
         root = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 
-        proto_root_dir = root / 'azure' / 'functions_worker' / 'protos'
+        proto_root_dir = root / 'azure_functions_worker' / 'protos'
         proto_src_dir = proto_root_dir / '_src' / 'src' / 'proto'
         staging_root_dir = root / 'build' / 'protos'
-        staging_dir = (staging_root_dir / 'azure'
-                       / 'functions_worker' / 'protos')
-        build_dir = staging_dir / 'azure' / 'functions_worker' / 'protos'
+        staging_dir = (staging_root_dir
+                       / 'azure_functions_worker' / 'protos')
+        build_dir = staging_dir / 'azure_functions_worker' / 'protos'
 
         if os.path.exists(build_dir):
             shutil.rmtree(build_dir)
@@ -85,11 +85,11 @@ class BuildGRPC:
 
         subprocess.run([
             sys.executable, '-m', 'grpc_tools.protoc',
-            '-I', os.sep.join(('azure', 'functions_worker', 'protos')),
+            '-I', os.sep.join(('azure_functions_worker', 'protos')),
             '--python_out', str(staging_root_dir),
             '--grpc_python_out', str(staging_root_dir),
-            os.sep.join(('azure', 'functions_worker', 'protos',
-                         'azure', 'functions_worker', 'protos',
+            os.sep.join(('azure_functions_worker', 'protos',
+                         'azure_functions_worker', 'protos',
                          'FunctionRpc.proto')),
         ], check=True, stdout=sys.stdout, stderr=sys.stderr,
             cwd=staging_root_dir)
@@ -216,9 +216,9 @@ setup(
         'Development Status :: 4 - Beta',
     ],
     license='MIT',
-    packages=['azure.functions_worker',
-              'azure.functions_worker.protos',
-              'azure.functions_worker.bindings'],
+    packages=['azure_functions_worker',
+              'azure_functions_worker.protos',
+              'azure_functions_worker.bindings'],
     setup_requires=[
         'grpcio~=1.20.1',
         'grpcio-tools~=1.20.1',

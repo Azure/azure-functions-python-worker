@@ -34,7 +34,7 @@ from . import dispatcher
 from . import protos
 
 
-PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
+PROJECT_ROOT = pathlib.Path(__file__).parent.parent
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')
 E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER

@@ -3,8 +3,8 @@ import sys
 import shutil
 import asyncio
 
-from azure.functions_worker import protos
-from azure.functions_worker import testutils
+from azure_functions_worker import protos
+from azure_functions_worker import testutils
 
 
 async def vertify_nested_namespace_import():

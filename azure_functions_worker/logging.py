@@ -3,8 +3,8 @@ import logging.handlers
 import sys
 
 
-logger = logging.getLogger('azure.functions_worker')
-error_logger = logging.getLogger('azure.functions_worker_errors')
+logger = logging.getLogger('azure_functions_worker')
+error_logger = logging.getLogger('azure_functions_worker_errors')
 
 
 def setup(log_level, log_destination):

@@ -3,7 +3,7 @@ import pathlib
 import filecmp
 import os
 
-from azure.functions_worker import testutils
+from azure_functions_worker import testutils
 
 
 class TestHttpFunctions(testutils.WebHostTestCase):

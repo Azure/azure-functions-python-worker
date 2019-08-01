@@ -11,6 +11,7 @@ import threading
 import os
 import sys
 import importlib
+import inspect
 
 import grpc
 import pkg_resources
@@ -366,8 +367,9 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             func_env_reload_request = req.function_environment_reload_request
 
-            # Import before clearing path cache so that the module
-            # is available in sys.modules for customer use
+            # Import before clearing path cache so that the default
+            # azure.functions modules is available in sys.modules for
+            # customer use
             import azure.functions # NoQA
 
             sys.path_importer_cache.clear()
@@ -380,7 +382,20 @@ class Dispatcher(metaclass=DispatcherMeta):
                 os.environ[var] = env_vars[var]
 
             # Reload azure namespace for customer's libraries
+            logger.info('Reloading azure module')
             importlib.reload(sys.modules['azure'])
+            logger.info('Reloaded azure module')
+
+            # Reload azure.functions to give user package precedence
+            logger.info('Reloading azure.functions module at %s',
+                        inspect.getfile(sys.modules['azure.functions']))
+            try:
+                importlib.reload(sys.modules['azure.functions'])
+                logger.info('Reloaded azure.functions module now at %s',
+                            inspect.getfile(sys.modules['azure.functions']))
+            except Exception as ex:
+                logger.info('Unable to reload azure.functions. ' 
+                            'Using default. Exception:\n{}'.format(ex))
 
             success_response = protos.FunctionEnvironmentReloadResponse(
                 result=protos.StatusResult(

@@ -1,13 +1,13 @@
 parameters:
   jobName: 'WindowsEnvGen'
-  dependency: 'Tests'
+  # dependency: 'Tests'
   vmImage: 'vs2017-win2016'
   pythonVersion: '3.6'
   artifactName: 'Windows'
 
 jobs:
 - job: ${{ parameters.jobName }}
-  dependsOn: ${{ parameters.dependency }}
+  # dependsOn: ${{ parameters.dependency }}
   pool:
       vmImage: ${{ parameters.vmImage }}
   steps:

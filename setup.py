@@ -232,7 +232,7 @@ setup(
             'azure-functions==1.0.0b5',
             'flake8~=3.5.0',
             'mypy',
-            'pytest',
+            'pytest==5.0.1',
             'requests==2.*',
         ]
     },

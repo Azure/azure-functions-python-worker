@@ -8,54 +8,54 @@ variables:
     DOTNET_VERSION: '2.2.300'
 
 jobs:
-# - job: Tests
-#   pool:
-#     vmImage: 'ubuntu-16.04'
-#   strategy:
-#     matrix:
-#       Python36:
-#         pythonVersion: '3.6'
-#       Python37:
-#         pythonVersion: '3.7'
-#     maxParallel: 1
-#   steps:
-#   - task: UsePythonVersion@0
-#     inputs:
-#       versionSpec: '$(pythonVersion)'
-#       addToPath: true 
-#   - task: ShellScript@2
-#     inputs:
-#       disableAutoCwd: true # Execute in current directory
-#       scriptPath: .ci/linux_devops_tools.sh
-#     displayName: 'Install Core Tools'
-#   - task: DotNetCoreInstaller@0
-#     inputs:
-#       packageType: 'sdk' 
-#       version: $(DOTNET_VERSION)
-#     displayName: 'Install dotnet' 
-#   - task: ShellScript@2
-#     inputs:
-#       disableAutoCwd: true 
-#       scriptPath: .ci/linux_devops_build.sh
-#     displayName: 'Build'
-#   - bash: |
-#         chmod +x .ci/linux_devops_unit_tests.sh
-#         .ci/linux_devops_unit_tests.sh
-#     displayName: 'Unit Tests'
-#   - bash: |
-#         chmod +x .ci/linux_devops_e2e_tests.sh
-#         .ci/linux_devops_e2e_tests.sh
-#     env:
-#       LINUXSTORAGECONNECTIONSTRING: $(LinuxStorageConnectionString)
-#       LINUXCOSMOSDBCONNECTIONSTRING: $(LinuxCosmosDBConnectionString)
-#       LINUXEVENTHUBCONNECTIONSTRING: $(LinuxEventHubConnectionString)
-#       LINUXSERVICEBUSCONNECTIONSTRING: $(LinuxServiceBusConnectionString)
-#     displayName: 'E2E Tests'
+- job: Tests
+  pool:
+    vmImage: 'ubuntu-16.04'
+  strategy:
+    matrix:
+      Python36:
+        pythonVersion: '3.6'
+      Python37:
+        pythonVersion: '3.7'
+    maxParallel: 1
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(pythonVersion)'
+      addToPath: true 
+  - task: ShellScript@2
+    inputs:
+      disableAutoCwd: true # Execute in current directory
+      scriptPath: .ci/linux_devops_tools.sh
+    displayName: 'Install Core Tools'
+  - task: DotNetCoreInstaller@0
+    inputs:
+      packageType: 'sdk' 
+      version: $(DOTNET_VERSION)
+    displayName: 'Install dotnet' 
+  - task: ShellScript@2
+    inputs:
+      disableAutoCwd: true 
+      scriptPath: .ci/linux_devops_build.sh
+    displayName: 'Build'
+  - bash: |
+        chmod +x .ci/linux_devops_unit_tests.sh
+        .ci/linux_devops_unit_tests.sh
+    displayName: 'Unit Tests'
+  - bash: |
+        chmod +x .ci/linux_devops_e2e_tests.sh
+        .ci/linux_devops_e2e_tests.sh
+    env:
+      LINUXSTORAGECONNECTIONSTRING: $(LinuxStorageConnectionString)
+      LINUXCOSMOSDBCONNECTIONSTRING: $(LinuxCosmosDBConnectionString)
+      LINUXEVENTHUBCONNECTIONSTRING: $(LinuxEventHubConnectionString)
+      LINUXSERVICEBUSCONNECTIONSTRING: $(LinuxServiceBusConnectionString)
+    displayName: 'E2E Tests'
   
 - template: pack/templates/win_env_gen.yml
   parameters:
     jobName: 'WindowsEnvGen'
-    # dependency: 'Tests'
+    dependency: 'Tests'
     vmImage: 'vs2017-win2016'
     pythonVersion: '3.6'
     artifactName: 'Windows'
@@ -63,7 +63,7 @@ jobs:
 - template: pack/templates/nix_env_gen.yml
   parameters:
     jobName: 'LinuxEnvGen'
-    # dependency: 'Tests'
+    dependency: 'Tests'
     vmImage: 'ubuntu-16.04'
     pythonVersion: '3.6'
     artifactName: 'Linux'
@@ -71,7 +71,7 @@ jobs:
 - template: pack/templates/nix_env_gen.yml
   parameters:
     jobName: 'MacEnvGen'
-    # dependency: 'Tests'
+    dependency: 'Tests'
     vmImage: 'macOS-10.13'
     pythonVersion: '3.6'
     artifactName: 'Mac'

@@ -1,13 +1,13 @@
 parameters:
   jobName: 'LinuxEnvGen'
-  # dependency: 'Tests'
+  dependency: 'Tests'
   vmImage: 'ubuntu-16.04'
   pythonVersion: '3.6'
   artifactName: 'Linux'
   
 jobs:
 - job: ${{ parameters.jobName }}
-  # dependsOn: ${{ parameters.dependency }}
+  dependsOn: ${{ parameters.dependency }}
   pool:
       vmImage: ${{ parameters.vmImage }}
   steps:

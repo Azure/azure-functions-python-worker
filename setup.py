@@ -8,6 +8,8 @@ import sys
 import tempfile
 import urllib.request
 import zipfile
+import re
+from distutils import dir_util
 from distutils.command import build
 
 from setuptools import setup
@@ -73,36 +75,74 @@ class BuildGRPC:
 
         proto_root_dir = root / 'azure_functions_worker' / 'protos'
         proto_src_dir = proto_root_dir / '_src' / 'src' / 'proto'
-        staging_root_dir = root / 'build' / 'protos'
+        build_dir = root / 'build'
+        staging_root_dir = build_dir / 'protos'
         staging_dir = (staging_root_dir
                        / 'azure_functions_worker' / 'protos')
-        build_dir = staging_dir / 'azure_functions_worker' / 'protos'
+        built_protos_dir = build_dir / 'built_protos'
 
-        if os.path.exists(build_dir):
-            shutil.rmtree(build_dir)
+        if os.path.exists(staging_root_dir):
+            shutil.rmtree(staging_root_dir)
 
-        shutil.copytree(proto_src_dir, build_dir)
+        if os.path.exists(built_protos_dir):
+            shutil.rmtree(built_protos_dir)
 
-        subprocess.run([
-            sys.executable, '-m', 'grpc_tools.protoc',
-            '-I', os.sep.join(('azure_functions_worker', 'protos')),
-            '--python_out', str(staging_root_dir),
-            '--grpc_python_out', str(staging_root_dir),
-            os.sep.join(('azure_functions_worker', 'protos',
-                         'azure_functions_worker', 'protos',
-                         'FunctionRpc.proto')),
-        ], check=True, stdout=sys.stdout, stderr=sys.stderr,
-            cwd=staging_root_dir)
+        shutil.copytree(proto_src_dir, staging_dir)
 
-        compiled = glob.glob(str(staging_dir / '*.py'))
+        os.makedirs(built_protos_dir)
 
-        if not compiled:
+        protos = [
+            os.sep.join(('shared', 'NullableTypes.proto')),
+            os.sep.join(('identity', 'ClaimsIdentityRpc.proto')),
+            'FunctionRpc.proto'
+        ]
+
+        for proto in protos:
+            subprocess.run([
+                sys.executable, '-m', 'grpc_tools.protoc',
+                '-I', os.sep.join(('azure_functions_worker', 'protos')),
+                '--python_out', str(built_protos_dir),
+                '--grpc_python_out', str(built_protos_dir),
+                os.sep.join(('azure_functions_worker', 'protos', proto)),
+            ], check=True, stdout=sys.stdout, stderr=sys.stderr,
+                cwd=staging_root_dir)
+
+        compiled_files = glob.glob(
+            str(built_protos_dir / '**' / '*.py'),
+            recursive=True)
+
+        if not compiled_files:
             print('grpc_tools.protoc produced no Python files',
                   file=sys.stderr)
             sys.exit(1)
 
-        for f in compiled:
-            shutil.copy(f, proto_root_dir)
+        # Needed to support absolute imports in files. See
+        # https://github.com/protocolbuffers/protobuf/issues/1491
+        self.make_absolute_imports(compiled_files)
+
+        dir_util.copy_tree(built_protos_dir, str(proto_root_dir))
+
+    def make_absolute_imports(self, compiled_files):
+        for compiled in compiled_files:
+            with open(compiled, 'r+') as f:
+                content = f.read()
+                f.seek(0)
+                # Convert lines of the form:
+                # import xxx_pb2 as xxx__pb2 to
+                # from azure_functions_worker.protos import xxx_pb2 as..
+                p1 = re.sub(
+                    r'\nimport (.*?_pb2)',
+                    r'\nfrom azure_functions_worker.protos import \g<1>',
+                    content)
+                # Convert lines of the form:
+                # from identity import xxx_pb2 as.. to
+                # from azure_functions_worker.protos.identity import xxx_pb2..
+                p2 = re.sub(
+                    r'from ([a-z]*) (import.*_pb2)',
+                    r'from azure_functions_worker.protos.\g<1> \g<2>',
+                    p1)
+                f.write(p2)
+                f.truncate()
 
 
 class build(build.build, BuildGRPC):

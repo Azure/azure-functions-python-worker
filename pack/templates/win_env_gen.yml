@@ -21,7 +21,7 @@ jobs:
   - task: CopyFiles@2
     inputs:
       contents: |
-        azure\__init__.py
+        pack\utils\__init__.py
       targetFolder: '$(Build.ArtifactStagingDirectory)\deps\azure'
       flattenFolders: true
   - task: CopyFiles@2

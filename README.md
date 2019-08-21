@@ -1,4 +1,4 @@
-<img src="Functions.Fox.Python.png" width = "320" alt="Functions Fox Header Image">
+<img src="./docs/Functions.Fox.Python.png" width = "320" alt="Functions Fox Header Image">
 
 |Branch|Status|
 |---|---|

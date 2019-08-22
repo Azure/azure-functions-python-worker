@@ -4,7 +4,7 @@ import json
 import azure.functions as func
 
 
-def main(events: typing.List[func.EventHubEvent]):
+def main(events):
     table_entries = []
     for event in events:
         json_entry = event.get_body()

@@ -1,3 +1,5 @@
+<img src="Functions.Fox.Python.png" width = "320" alt="Functions Fox Header Image">
+
 |Branch|Status|
 |---|---|
 |master|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_apis/build/status/Azure%20Functions%20Python-CI?branchName=master)](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_build/latest?definitionId=3&branchName=master)|

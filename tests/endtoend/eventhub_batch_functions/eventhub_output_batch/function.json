@@ -1,0 +1,18 @@
+{
+  "scriptFile": "__init__.py",
+
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req"
+    },
+    {
+      "type": "eventHub",
+      "name": "$return",
+      "direction": "out",
+      "eventHubName": "python-worker-ci-eventhub-batch",
+      "connection": "AzureWebJobsEventHubConnectionString"
+    }
+  ]
+}

@@ -2,5 +2,5 @@
 
 set -e -x
       
-python -m pip install -U -e .[dev]
+python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U -e .[dev]
 python setup.py webhost

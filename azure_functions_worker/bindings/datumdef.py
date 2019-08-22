@@ -49,6 +49,12 @@ class Datum:
             val = td.bytes
         elif tt == 'json':
             val = td.json
+        elif tt == 'collection_bytes':
+            val = td.collection_bytes
+        elif tt == 'collection_string':
+            val = td.collection_string
+        elif tt == 'collection_sint64':
+            val = td.collection_sint64
         elif tt is None:
             return None
         else:

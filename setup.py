@@ -77,24 +77,44 @@ class BuildGRPC:
         staging_dir = (staging_root_dir
                        / 'azure_functions_worker' / 'protos')
         build_dir = staging_dir / 'azure_functions_worker' / 'protos'
+        built_protos_dir = root / 'build' / 'built_protos'
+        built_proto_files_dir = (built_protos_dir
+                                 / 'azure_functions_worker' / 'protos')
 
         if os.path.exists(build_dir):
             shutil.rmtree(build_dir)
 
-        shutil.copytree(proto_src_dir, build_dir)
+        if os.path.exists(built_protos_dir):
+            shutil.rmtree(built_protos_dir)
 
+        proto_files = glob.glob(str(proto_src_dir / '**' / '*.proto'),
+                                recursive=True)
+
+        os.makedirs(build_dir)
+        for proto_file in proto_files:
+            shutil.copy(proto_file, build_dir)
+
+        protos = [os.path.basename(proto_file) for proto_file in proto_files]
+
+        full_protos = []
+        for proto in protos:
+            full_proto = os.sep.join(
+                ('azure_functions_worker', 'protos',
+                 'azure_functions_worker', 'protos', proto)
+            )
+            full_protos.append(full_proto)
+
+        os.makedirs(built_protos_dir)
         subprocess.run([
             sys.executable, '-m', 'grpc_tools.protoc',
             '-I', os.sep.join(('azure_functions_worker', 'protos')),
-            '--python_out', str(staging_root_dir),
-            '--grpc_python_out', str(staging_root_dir),
-            os.sep.join(('azure_functions_worker', 'protos',
-                         'azure_functions_worker', 'protos',
-                         'FunctionRpc.proto')),
+            '--python_out', str(built_protos_dir),
+            '--grpc_python_out', str(built_protos_dir),
+            *full_protos
         ], check=True, stdout=sys.stdout, stderr=sys.stderr,
             cwd=staging_root_dir)
 
-        compiled = glob.glob(str(staging_dir / '*.py'))
+        compiled = glob.glob(str(built_proto_files_dir / '*.py'))
 
         if not compiled:
             print('grpc_tools.protoc produced no Python files',

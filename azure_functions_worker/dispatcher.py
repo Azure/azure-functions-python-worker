@@ -381,13 +381,15 @@ class Dispatcher(metaclass=DispatcherMeta):
             for var in env_vars:
                 os.environ[var] = env_vars[var]
 
-            # Reload azure namespace for customer's libraries
-            try:
-                logger.info('Reloading azure module')
-                importlib.reload(sys.modules['azure'])
-            except Exception as ex:
-                logger.info('Unable to reload azure: \n{}'.format(ex))
-            logger.info('Reloaded azure module')
+            # Reload package namespaces for customer's libraries
+            packages_to_reload = ['azure', 'google']
+            for p in packages_to_reload:
+                try:
+                    logger.info(f'Reloading {p} module')
+                    importlib.reload(sys.modules[p])
+                except Exception as ex:
+                    logger.info('Unable to reload {}: \n{}'.format(p, ex))
+                logger.info(f'Reloaded {p} module')
 
             # Reload azure.functions to give user package precedence
             logger.info('Reloading azure.functions module at %s',

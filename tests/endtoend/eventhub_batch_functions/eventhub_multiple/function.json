@@ -4,17 +4,19 @@
   "bindings": [
     {
       "type": "eventHubTrigger",
-      "name": "event",
+      "name": "events",
       "direction": "in",
-      "eventHubName": "python-worker-eventhub-ci-linux",
+      "cardinality": "many",
+      "dataType": "string",
+      "eventHubName": "python-worker-ci-eventhub-batch",
       "connection": "AzureWebJobsEventHubConnectionString"
     },
     {
-      "type": "blob",
       "direction": "out",
+      "type": "table",
       "name": "$return",
-      "connection": "AzureWebJobsStorage",
-      "path": "python-worker-tests/test-eventhub-triggered.txt"
+      "tableName": "EventHubBatchTest",
+      "connection": "AzureWebJobsStorage"
     }
   ]
 }

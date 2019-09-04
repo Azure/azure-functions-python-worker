@@ -1,4 +1,4 @@
-<img src="./docs/Functions.Fox.Python.png" width = "320" alt="Functions Fox Header Image">
+<img src="./docs/Azure.Functions.svg" width = "180" alt="Functions Header Image">
 
 |Branch|Status|
 |---|---|

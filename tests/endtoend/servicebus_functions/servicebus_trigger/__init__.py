@@ -8,6 +8,7 @@ def main(msg: azf.ServiceBusMessage) -> str:
         'message_id': msg.message_id,
         'body': msg.get_body().decode('utf-8'),
         'content_type': msg.content_type,
+        'delivery_count': msg.delivery_count,
         'expiration_time': msg.expiration_time,
         'label': msg.label,
         'partition_key': msg.partition_key,

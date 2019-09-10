@@ -267,6 +267,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
+        correlation_id = invoc_request.correlation_id
 
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
@@ -296,7 +297,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             if fi.requires_context:
                 args['context'] = bindings.Context(
-                    fi.name, fi.directory, invocation_id)
+                    fi.name, fi.directory, invocation_id, correlation_id)
 
             if fi.output_types:
                 for name in fi.output_types:

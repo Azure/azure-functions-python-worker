@@ -267,7 +267,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
-        correlation_id = invoc_request.correlation_id
+        traceContext = bindings.TraceContext(invoc_request.trace_context.Traceparent, invoc_request.trace_context.Tracestate, invoc_request.trace_context.Attributes)
+
 
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
@@ -297,7 +298,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             if fi.requires_context:
                 args['context'] = bindings.Context(
-                    fi.name, fi.directory, invocation_id, correlation_id)
+                    fi.name, fi.directory, invocation_id, traceContext)
 
             if fi.output_types:
                 for name in fi.output_types:

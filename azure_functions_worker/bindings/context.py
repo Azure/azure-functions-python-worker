@@ -1,11 +1,13 @@
+from . import TraceContext
+
 class Context:
 
     def __init__(self, func_name: str, func_dir: str,
-                 invocation_id: str, correlation_id: str) -> None:
+                 invocation_id: str, trace_context: TraceContext) -> None:
         self.__func_name = func_name
         self.__func_dir = func_dir
         self.__invocation_id = invocation_id
-        self.__correlation_id = correlation_id
+        self.__trace_context = trace_context
 
     @property
     def invocation_id(self) -> str:
@@ -20,5 +22,5 @@ class Context:
         return self.__func_dir
 
     @property
-    def correlation_id(self) -> str:
-        return self.__correlation_id
+    def traceContext(self) -> TraceContext:
+        return self.__trace_context

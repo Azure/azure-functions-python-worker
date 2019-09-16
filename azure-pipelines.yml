@@ -1,4 +1,4 @@
-name: 1.0.0-beta$(Date:yyyyMMdd)$(Rev:.r)
+name: 1.0.$(Date:yyyyMMdd)$(Rev:.r)
 
 trigger:
 - dev

@@ -52,39 +52,39 @@ jobs:
 #       LINUXSERVICEBUSCONNECTIONSTRING: $(LinuxServiceBusConnectionString)
 #     displayName: 'E2E Tests'
 
-- job: BuildWorkers
-  # dependsOn: 'Tests'
-  strategy:
-    matrix:
-      Python36:
-        pythonVersion: '3.6'
-      Python37:
-        pythonVersion: '3.7'
-    maxParallel: 1
-  steps:
-  - template: pack/templates/win_env_gen.yml
-    parameters:
-      jobName: 'WindowsEnvGen'
-      dependency: 'Tests'
-      vmImage: 'vs2017-win2016'
-      pythonVersion: '$(pythonVersion)'
-      artifactName: 'Windows'
+  - job: BuildWorkers
+    # dependsOn: 'Tests'
+    strategy:
+      matrix:
+        Python36:
+          pythonVersion: '3.6'
+        Python37:
+          pythonVersion: '3.7'
+      maxParallel: 1
+    steps:
+    - template: pack/templates/win_env_gen.yml
+      parameters:
+        jobName: 'WindowsEnvGen'
+        dependency: 'Tests'
+        vmImage: 'vs2017-win2016'
+        pythonVersion: '$(pythonVersion)'
+        artifactName: 'Windows'
 
-  - template: pack/templates/nix_env_gen.yml
-    parameters:
-      jobName: 'LinuxEnvGen'
-      dependency: 'Tests'
-      vmImage: 'ubuntu-16.04'
-      pythonVersion: '$(pythonVersion)'
-      artifactName: 'Linux'
+    - template: pack/templates/nix_env_gen.yml
+      parameters:
+        jobName: 'LinuxEnvGen'
+        dependency: 'Tests'
+        vmImage: 'ubuntu-16.04'
+        pythonVersion: '$(pythonVersion)'
+        artifactName: 'Linux'
 
-  - template: pack/templates/nix_env_gen.yml
-    parameters:
-      jobName: 'MacEnvGen'
-      dependency: 'Tests'
-      vmImage: 'macOS-10.13'
-      pythonVersion: '$(pythonVersion)'
-      artifactName: 'Mac'
+    - template: pack/templates/nix_env_gen.yml
+      parameters:
+        jobName: 'MacEnvGen'
+        dependency: 'Tests'
+        vmImage: 'macOS-10.13'
+        pythonVersion: '$(pythonVersion)'
+        artifactName: 'Mac'
 
 # - job: PackageWorkers
 #   dependsOn: ['WindowsEnvGen',

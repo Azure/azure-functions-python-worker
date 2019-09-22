@@ -33,7 +33,7 @@ class Datum:
                     k: Datum(v, 'string') for k, v in http.headers.items()
                 },
                 body=(
-                    Datum.from_typed_data(http.rawBody)
+                    Datum.from_typed_data(http.body)
                     or Datum(type='bytes', value=b'')
                 ),
                 params={

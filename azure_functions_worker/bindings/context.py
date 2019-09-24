@@ -1,5 +1,6 @@
 from . import TraceContext
 
+
 class Context:
 
     def __init__(self, func_name: str, func_dir: str,

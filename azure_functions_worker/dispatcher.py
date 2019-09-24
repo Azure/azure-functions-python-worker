@@ -267,9 +267,11 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
-        traceContext = bindings.TraceContext(invoc_request.trace_context.trace_parent, invoc_request.trace_context.trace_state, invoc_request.trace_context.attributes)
-
-
+        traceContext = bindings.TraceContext(   invoc_request.
+                                                trace_context.trace_parent, 
+                                                invoc_request.trace_context.trace_state, 
+                                                invoc_request.trace_context.attributes)
+                                                
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
         current_task = asyncio.Task.current_task(self._loop)

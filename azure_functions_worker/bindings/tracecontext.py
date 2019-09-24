@@ -1,7 +1,7 @@
 class TraceContext:
 
-    def __init__(self, trace_parent: str, 
-                trace_state: str, attributes: dict) -> None:
+    def __init__(self, trace_parent: str,
+                 trace_state: str, attributes: dict) -> None:
         self.__trace_parent = trace_parent
         self.__trace_state = trace_state
         self.__attributes = attributes

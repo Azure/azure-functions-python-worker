@@ -5,7 +5,7 @@ trigger:
 - master
 
 variables:
-    DOTNET_VERSION: '2.2.401'
+    DOTNET_VERSION: '2.2.402'
 
 jobs:
 - job: Tests

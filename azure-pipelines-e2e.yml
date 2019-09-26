@@ -1,7 +1,7 @@
 name: 1.0.0-beta$(Date:yyyyMMdd)$(Rev:.r)
 
 variables:
-    DOTNET_VERSION: '2.2.300'
+    DOTNET_VERSION: '2.2.402'
     CORE_TOOLS_EXE_PATH: '$(Build.SourcesDirectory)/Azure.Functions.Core.Tools/func'
 
 jobs:

@@ -1,4 +1,4 @@
-name: 1.0.$(Date:yyyyMMdd)$(Rev:.r)
+name: 1.0.$(Date:yyyyMMdd)$(Rev:r)
 
 trigger:
 - dev
@@ -52,34 +52,72 @@ jobs:
       LINUXSERVICEBUSCONNECTIONSTRING: $(LinuxServiceBusConnectionString)
     displayName: 'E2E Tests'
 
-- template: pack/templates/win_env_gen.yml
-  parameters:
-    jobName: 'WindowsEnvGen'
-    dependency: 'Tests'
+- job: Build_WINDOWS_X64
+  dependsOn: 'Tests'
+  pool: 
     vmImage: 'vs2017-win2016'
-    pythonVersion: '3.6'
-    artifactName: 'Windows'
-
-- template: pack/templates/nix_env_gen.yml
-  parameters:
-    jobName: 'LinuxEnvGen'
-    dependency: 'Tests'
+  strategy:
+    matrix:
+      Python36:
+        pythonVersion: '3.6'
+      Python37:
+        pythonVersion: '3.7'
+  steps:
+  - template: pack/templates/win_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      architecture: 'x64'
+      artifactName: '$(pythonVersion)_WINDOWS_X64'
+- job: Build_WINDOWS_X86
+  dependsOn: 'Tests'
+  pool: 
+    vmImage: 'vs2017-win2016'
+  strategy:
+    matrix:
+      Python37:
+        pythonVersion: '3.7'
+  steps:
+  - template: pack/templates/win_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      architecture: 'x86'
+      artifactName: '$(pythonVersion)_WINDOWS_x86'
+- job: Build_LINUX_X64
+  dependsOn: 'Tests'
+  pool: 
     vmImage: 'ubuntu-16.04'
-    pythonVersion: '3.6'
-    artifactName: 'Linux'
-
-- template: pack/templates/nix_env_gen.yml
-  parameters:
-    jobName: 'MacEnvGen'
-    dependency: 'Tests'
+  strategy:
+    matrix:
+      Python36:
+        pythonVersion: '3.6'
+      Python37:
+        pythonVersion: '3.7'
+  steps:
+  - template: pack/templates/nix_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(pythonVersion)_LINUX_X64'
+- job: Build_OSX_X64
+  dependsOn: 'Tests'
+  pool: 
     vmImage: 'macOS-10.13'
-    pythonVersion: '3.6'
-    artifactName: 'Mac'
+  strategy:
+    matrix:
+      Python36:
+        pythonVersion: '3.6'
+      Python37:
+        pythonVersion: '3.7'
+  steps:
+  - template: pack/templates/nix_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(pythonVersion)_OSX_X64'
 
-- job: PackageEnvironments
-  dependsOn: ['WindowsEnvGen',
-              'LinuxEnvGen',
-              'MacEnvGen'
+- job: PackageWorkers
+  dependsOn: ['Build_WINDOWS_X64',
+              'Build_WINDOWS_X86',
+              'Build_LINUX_X64',
+              'Build_OSX_X64'
              ]
   pool:
       vmImage: 'vs2017-win2016'
@@ -92,10 +130,11 @@ jobs:
   - task: NuGetCommand@2
     inputs:
       command: pack
-      packagesToPack: 'pack\Microsoft.Azure.Functions.PythonWorkerRunEnvironments.nuspec'
+      packagesToPack: 'pack\Microsoft.Azure.Functions.PythonWorker.nuspec'
       versioningScheme: 'byEnvVar'
       versionEnvVar: BUILD_BUILDNUMBER # Replaces version in nuspec
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: 'PythonWorkerRunEnvironments'
+      artifactName: 'PythonWorker'
+      

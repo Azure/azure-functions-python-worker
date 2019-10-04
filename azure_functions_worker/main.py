@@ -30,6 +30,11 @@ def parse_args():
     return parser.parse_args()
 
 
+def is_azure_environment():
+    return (constants.AZURE_CONTAINER_NAME in os.environ or
+            constants.AZURE_WEBSITE_INSTANCE_ID in os.environ)
+
+
 def setup_user_pkg_paths():
     minor_version = sys.version_info[1]
 
@@ -40,9 +45,9 @@ def setup_user_pkg_paths():
     if minor_version == 6:
         sys.path.insert(1, os.path.join(venv_pkgs_path, constants.PKGS_36))
         sys.path.insert(1, os.path.join(pkgs_path, constants.PKGS_36))
+        sys.path.insert(1, os.path.join(pkgs_path, constants.PKGS))
     elif minor_version == 7:
-        sys.path.insert(1, os.path.join(venv_pkgs_path, constants.PKGS_37))
-        sys.path.insert(1, os.path.join(pkgs_path, constants.PKGS_37))
+        sys.path.insert(1, os.path.join(pkgs_path, constants.PKGS))
     else:
         raise RuntimeError(f'Unsupported Python version: 3.{minor_version}')
 
@@ -50,8 +55,10 @@ def setup_user_pkg_paths():
 
 
 def main():
+    if is_azure_environment():
+        setup_user_pkg_paths()
+
     args = parse_args()
-    setup_user_pkg_paths()
     logging.setup(log_level=args.log_level, log_destination=args.log_to)
 
     logger.info('Starting Azure Functions Python Worker.')

@@ -213,3 +213,51 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         finally:
             if (os.path.exists(received_img_file)):
                 os.remove(received_img_file)
+
+    def test_image_png_content_type(self):
+        parent_dir = pathlib.Path(__file__).parent
+        image_file = parent_dir / 'resources/functions.png'
+        with open(image_file, 'rb') as image:
+            img = image.read()
+            img_len = len(img)
+            r = self.webhost.request(
+                'POST', 'raw_body_bytes',
+                headers={'Content-Type': 'image/png'},
+                data=img)
+
+        received_body_len = int(r.headers['body-len'])
+        self.assertEqual(received_body_len, img_len)
+
+        body = r.content
+        try:
+            received_img_file = parent_dir / 'received_img.png'
+            with open(received_img_file, 'wb') as received_img:
+                received_img.write(body)
+            self.assertTrue(filecmp.cmp(received_img_file, image_file))
+        finally:
+            if (os.path.exists(received_img_file)):
+                os.remove(received_img_file)
+
+    def test_application_octet_stream_content_type(self):
+        parent_dir = pathlib.Path(__file__).parent
+        image_file = parent_dir / 'resources/functions.png'
+        with open(image_file, 'rb') as image:
+            img = image.read()
+            img_len = len(img)
+            r = self.webhost.request(
+                'POST', 'raw_body_bytes',
+                headers={'Content-Type': 'application/octet-stream'},
+                data=img)
+
+        received_body_len = int(r.headers['body-len'])
+        self.assertEqual(received_body_len, img_len)
+
+        body = r.content
+        try:
+            received_img_file = parent_dir / 'received_img.png'
+            with open(received_img_file, 'wb') as received_img:
+                received_img.write(body)
+            self.assertTrue(filecmp.cmp(received_img_file, image_file))
+        finally:
+            if (os.path.exists(received_img_file)):
+                os.remove(received_img_file)

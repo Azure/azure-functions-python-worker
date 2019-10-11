@@ -5,7 +5,7 @@ trigger:
 - master
 
 variables:
-    DOTNET_VERSION: '2.2.401'
+    DOTNET_VERSION: '2.2.402'
 
 jobs:
 - job: Tests
@@ -22,7 +22,7 @@ jobs:
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '$(pythonVersion)'
-      addToPath: true 
+      addToPath: true
   - task: ShellScript@2
     inputs:
       disableAutoCwd: true # Execute in current directory
@@ -30,12 +30,12 @@ jobs:
     displayName: 'Install Core Tools'
   - task: DotNetCoreInstaller@0
     inputs:
-      packageType: 'sdk' 
+      packageType: 'sdk'
       version: $(DOTNET_VERSION)
-    displayName: 'Install dotnet' 
+    displayName: 'Install dotnet'
   - task: ShellScript@2
     inputs:
-      disableAutoCwd: true 
+      disableAutoCwd: true
       scriptPath: .ci/linux_devops_build.sh
     displayName: 'Build'
   - bash: |
@@ -51,7 +51,7 @@ jobs:
       LINUXEVENTHUBCONNECTIONSTRING: $(LinuxEventHubConnectionString)
       LINUXSERVICEBUSCONNECTIONSTRING: $(LinuxServiceBusConnectionString)
     displayName: 'E2E Tests'
-  
+
 - template: pack/templates/win_env_gen.yml
   parameters:
     jobName: 'WindowsEnvGen'
@@ -83,10 +83,10 @@ jobs:
              ]
   pool:
       vmImage: 'vs2017-win2016'
-  steps: 
+  steps:
   - task: DownloadBuildArtifacts@0
     inputs:
-      buildType: 'current' 
+      buildType: 'current'
       downloadType: 'specific'
       downloadPath: '$(Build.SourcesDirectory)'
   - task: NuGetCommand@2
@@ -99,4 +99,3 @@ jobs:
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: 'PythonWorkerRunEnvironments'
-      

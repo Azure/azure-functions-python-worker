@@ -217,6 +217,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         capabilities = dict()
         capabilities[constants.RAW_HTTP_BODY_BYTES] = "true"
         capabilities[constants.TYPED_DATA_COLLECTION] = "true"
+        capabilities[constants.RPC_HTTP_BODY_ONLY] = "true"
+        capabilities[constants.RPC_HTTP_TRIGGER_METADATA_REMOVED] = "true"
 
         return protos.StreamingMessage(
             request_id=self.request_id,

@@ -1,7 +1,6 @@
 import os
 import sys
-import platform
-import subprocess
+
 from pathlib import Path
 
 # User packages
@@ -42,25 +41,21 @@ def determine_user_pkg_paths():
 
 
 if __name__ == '__main__':
-    user_pkg_paths = []
+    # worker.py lives in the same directory as azure_functions_worker
+    func_worker_dir = str(Path(__file__).absolute().parent)
+    env = os.environ
+
     if is_azure_environment():
         user_pkg_paths = determine_user_pkg_paths()
 
-    env = os.environ
-    # worker.py lives in the same directory as azure_functions_worker
-    func_worker_dir = str(Path(__file__).absolute().parent)
-
-    if platform.system() == 'Windows':
-        joined_pkg_paths = ";".join(user_pkg_paths)
-        env['PYTHONPATH'] = f'{joined_pkg_paths};{func_worker_dir}'
-        # execve doesn't work in Windows: https://bugs.python.org/issue19124
-        subprocess.run([sys.executable,
-                       '-m', 'azure_functions_worker'] + sys.argv[1:],
-                       env=env)
-    else:
-        joined_pkg_paths = ":".join(user_pkg_paths)
+        joined_pkg_paths = os.pathsep.join(user_pkg_paths)
         env['PYTHONPATH'] = f'{joined_pkg_paths}:{func_worker_dir}'
         os.execve(sys.executable,
                   [sys.executable, '-m', 'azure_functions_worker']
                   + sys.argv[1:],
                   env)
+    else:
+        sys.path.insert(1, func_worker_dir)
+        from azure_functions_worker import main
+
+        main.main()

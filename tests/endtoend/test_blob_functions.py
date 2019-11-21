@@ -89,7 +89,3 @@ class TestBlobFunctions(testutils.WebHostTestCase):
             except AssertionError:
                 if try_no == max_retries - 1:
                     raise
-
-    @testutils.retryable_test(3, 5)
-    def test_expected_failure(self):
-        self.assertEqual(1, 0)

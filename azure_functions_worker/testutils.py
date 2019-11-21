@@ -684,18 +684,16 @@ def retryable_test(
 ):
     def decorate(func):
         def call(*args, **kwargs):
-            result = None
             retries = number_of_retries
             while True:
                 try:
-                    result = func(*args, **kwargs)
+                    return func(*args, **kwargs)
                 except expected_exception as e:
                     retries -= 1
                     if retries <= 0:
                         raise e
 
                 time.sleep(interval_sec)
-            return result
         return call
     return decorate
 

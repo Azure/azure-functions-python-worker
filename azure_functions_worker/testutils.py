@@ -677,6 +677,29 @@ def create_dummy_dispatcher():
     return disp
 
 
+def retryable_test(
+    number_of_retries: int,
+    interval_sec: int,
+    expected_exception: type = Exception
+):
+    def decorate(func):
+        def call(*args, **kwargs):
+            result = None
+            retries = number_of_retries
+            while True:
+                try:
+                    result = func(*args, **kwargs)
+                except expected_exception as e:
+                    retries -= 1
+                    if retries <= 0:
+                        raise e
+
+                time.sleep(interval_sec)
+            return result
+        return call
+    return decorate
+
+
 def _remove_path(path):
     if path.is_symlink():
         path.unlink()

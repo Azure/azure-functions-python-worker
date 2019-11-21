@@ -10,6 +10,7 @@ class TestServiceBusFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'servicebus_functions'
 
+    @testutils.retryable_test(3, 5)
     def test_servicebus_basic(self):
         data = str(round(time.time()))
         r = self.webhost.request('POST', 'put_message',

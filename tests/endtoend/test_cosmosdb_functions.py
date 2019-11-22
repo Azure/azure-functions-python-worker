@@ -10,6 +10,7 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'cosmosdb_functions'
 
+    @testutils.retryable_test(3, 5)
     def test_cosmosdb_trigger(self):
         time.sleep(5)
         data = str(round(time.time()))
@@ -42,6 +43,7 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
             else:
                 break
 
+    @testutils.retryable_test(3, 5)
     def test_cosmosdb_input(self):
         time.sleep(5)
         data = str(round(time.time()))

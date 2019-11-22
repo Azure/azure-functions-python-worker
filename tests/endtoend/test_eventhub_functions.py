@@ -11,6 +11,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_functions'
 
     # @unittest.skip("Seems to be very unstable on CI")
+    @testutils.retryable_test(3, 5)
     def test_eventhub_trigger(self):
         data = str(round(time.time()))
         doc = {'id': data}

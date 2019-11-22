@@ -11,6 +11,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_batch_functions'
 
+    @testutils.retryable_test(3, 5)
     def test_eventhub_multiple(self):
         NUM_EVENTS = 3
         all_row_keys_seen = dict([(str(i), True) for i in range(NUM_EVENTS)])

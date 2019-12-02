@@ -17,6 +17,8 @@ jobs:
         pythonVersion: '3.6'
       Python37:
         pythonVersion: '3.7'
+      Python38:
+        pythonVersion: '3.8'
     maxParallel: 1
   steps:
   - task: UsePythonVersion@0
@@ -54,7 +56,7 @@ jobs:
 
 - job: Build_WINDOWS_X64
   dependsOn: 'Tests'
-  pool: 
+  pool:
     vmImage: 'vs2017-win2016'
   strategy:
     matrix:
@@ -62,6 +64,8 @@ jobs:
         pythonVersion: '3.6'
       Python37:
         pythonVersion: '3.7'
+      Python38:
+        pythonVersion: '3.8'
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
@@ -70,12 +74,14 @@ jobs:
       artifactName: '$(pythonVersion)_WINDOWS_X64'
 - job: Build_WINDOWS_X86
   dependsOn: 'Tests'
-  pool: 
+  pool:
     vmImage: 'vs2017-win2016'
   strategy:
     matrix:
       Python37:
         pythonVersion: '3.7'
+      Python38:
+        pythonVersion: '3.8'
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
@@ -84,7 +90,7 @@ jobs:
       artifactName: '$(pythonVersion)_WINDOWS_x86'
 - job: Build_LINUX_X64
   dependsOn: 'Tests'
-  pool: 
+  pool:
     vmImage: 'ubuntu-16.04'
   strategy:
     matrix:
@@ -92,6 +98,8 @@ jobs:
         pythonVersion: '3.6'
       Python37:
         pythonVersion: '3.7'
+      Python38:
+        pythonVersion: '3.8'
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:
@@ -99,7 +107,7 @@ jobs:
       artifactName: '$(pythonVersion)_LINUX_X64'
 - job: Build_OSX_X64
   dependsOn: 'Tests'
-  pool: 
+  pool:
     vmImage: 'macOS-10.13'
   strategy:
     matrix:
@@ -107,6 +115,8 @@ jobs:
         pythonVersion: '3.6'
       Python37:
         pythonVersion: '3.7'
+      Python38:
+        pythonVersion: '3.8'
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:
@@ -137,4 +147,3 @@ jobs:
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: 'PythonWorker'
-      

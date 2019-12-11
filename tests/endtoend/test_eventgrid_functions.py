@@ -76,7 +76,7 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
                         'event_type': data[0]['eventType'],
                     }
                 )
-            except AssertionError as e:
+            except AssertionError:
                 if try_no == max_retries - 1:
                     raise
             else:

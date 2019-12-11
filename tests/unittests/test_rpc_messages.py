@@ -14,25 +14,25 @@ class TestGRPC(testutils.AsyncTestCase):
             os.environ[key] = value
 
     async def _verify_environment_reloaded(self, test_env):
-            request = protos.FunctionEnvironmentReloadRequest(
-                environment_variables=test_env)
+        request = protos.FunctionEnvironmentReloadRequest(
+            environment_variables=test_env)
 
-            request_msg = protos.StreamingMessage(
-                request_id='0',
-                function_environment_reload_request=request)
+        request_msg = protos.StreamingMessage(
+            request_id='0',
+            function_environment_reload_request=request)
 
-            disp = testutils.create_dummy_dispatcher()
+        disp = testutils.create_dummy_dispatcher()
 
-            try:
-                r = await disp._handle__function_environment_reload_request(
-                    request_msg)
+        try:
+            r = await disp._handle__function_environment_reload_request(
+                request_msg)
 
-                environ_dict = os.environ.copy()
-                self.assertDictEqual(environ_dict, test_env)
-                status = r.function_environment_reload_response.result.status
-                self.assertEqual(status, protos.StatusResult.Success)
-            finally:
-                self._reset_environ()
+            environ_dict = os.environ.copy()
+            self.assertDictEqual(environ_dict, test_env)
+            status = r.function_environment_reload_response.result.status
+            self.assertEqual(status, protos.StatusResult.Success)
+        finally:
+            self._reset_environ()
 
     async def test_multiple_env_vars_load(self):
         test_env = {'TEST_KEY': 'foo', 'HELLO': 'world'}

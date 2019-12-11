@@ -23,7 +23,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self._set_table_partition_key(partition_key)
 
         # wait for host to restart after change
-        time.sleep(1)
+        time.sleep(5)
 
         docs = []
         for i in range(NUM_EVENTS):
@@ -34,35 +34,25 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
                                  data=json.dumps(docs))
         self.assertEqual(r.status_code, 200)
 
-        max_retries = 30
-
         row_keys = [str(i) for i in range(NUM_EVENTS)]
         seen = [False] * NUM_EVENTS
         row_keys_seen = dict(zip(row_keys, seen))
-        for try_no in range(max_retries):
-            # Allow trigger to fire.
-            time.sleep(2)
 
-            try:
-                r = self.webhost.request('GET',
-                                         'get_eventhub_batch_triggered')
-                self.assertEqual(r.status_code, 200)
-                entries = r.json()
-                for entry in entries:
-                    self.assertEqual(entry['PartitionKey'], partition_key)
-                    row_key = entry['RowKey']
-                    row_keys_seen[row_key] = True
+        # Allow trigger to fire.
+        time.sleep(5)
 
-                self.assertDictEqual(all_row_keys_seen, row_keys_seen)
+        try:
+            r = self.webhost.request('GET', 'get_eventhub_batch_triggered')
+            self.assertEqual(r.status_code, 200)
+            entries = r.json()
+            for entry in entries:
+                self.assertEqual(entry['PartitionKey'], partition_key)
+                row_key = entry['RowKey']
+                row_keys_seen[row_key] = True
 
-            except AssertionError as e:
-                if try_no == max_retries - 1:
-                    self._cleanup(old_partition_key)
-                    raise
-            else:
-                break
-
-        self._cleanup(old_partition_key)
+            self.assertDictEqual(all_row_keys_seen, row_keys_seen)
+        finally:
+            self._cleanup(old_partition_key)
 
     def _cleanup(self, old_partition_key):
         self._set_table_partition_key(old_partition_key)

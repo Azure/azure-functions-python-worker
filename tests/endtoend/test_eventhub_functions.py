@@ -20,24 +20,12 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
 
-        max_retries = 30
+        # Allow trigger to fire.
+        time.sleep(5)
 
-        for try_no in range(max_retries):
-            # Allow trigger to fire.
-            time.sleep(2)
+        # Check that the trigger has fired.
+        r = self.webhost.request('GET', 'get_eventhub_triggered')
+        self.assertEqual(r.status_code, 200)
+        response = r.json()
 
-            try:
-                # Check that the trigger has fired.
-                r = self.webhost.request('GET', 'get_eventhub_triggered')
-                self.assertEqual(r.status_code, 200)
-                response = r.json()
-
-                self.assertEqual(
-                    response,
-                    doc
-                )
-            except AssertionError as e:
-                if try_no == max_retries - 1:
-                    raise
-            else:
-                break
+        self.assertEqual(response, doc)

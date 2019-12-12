@@ -75,7 +75,19 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
 
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
-            self.assertEqual(r.response.return_value.string, 'OK')
+            self.assertEqual(r.response.return_value.string, 'OK_ONE')
+
+    async def test_mock_eventhub_cardinality_one_bad_annotation(self):
+        async with testutils.start_mockhost(
+                script_root=self.mock_funcs_dir) as host:
+
+            # This suppose to fail since the event should not be int
+            func_id, r = await host.load_function(
+                'eventhub_cardinality_one_bad_anno'
+            )
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
 
     async def test_mock_eventhub_cardinality_many(self):
         async with testutils.start_mockhost(
@@ -103,4 +115,16 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
 
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
-            self.assertEqual(r.response.return_value.string, 'OK')
+            self.assertEqual(r.response.return_value.string, 'OK_MANY')
+
+    async def test_mock_eventhub_cardinality_many_bad_annotation(self):
+        async with testutils.start_mockhost(
+                script_root=self.mock_funcs_dir) as host:
+
+            # This suppose to fail since the event should not be List[str]
+            func_id, r = await host.load_function(
+                'eventhub_cardinality_many_bad_anno'
+            )
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)

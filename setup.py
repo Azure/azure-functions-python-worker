@@ -15,9 +15,9 @@ from setuptools.command import develop
 
 
 # TODO: change this to something more stable when available.
-WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/j7r6pk8p7mqxyuuw'
+WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/1fqp92o5h2gks7xe'
                '/artifacts'
-               '/Functions.Binaries.2.0.12701.no-runtime.zip')
+               '/Functions.Binaries.2.0.12888.no-runtime.zip')
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = [
@@ -223,7 +223,7 @@ class webhost(distutils.cmd.Command):
 
 setup(
     name='azure-functions-worker',
-    version='1.0.1',
+    version='1.0.2',
     description='Python Language Worker for Azure Functions Host',
     classifiers=[
         'License :: OSI Approved :: MIT License',
@@ -249,7 +249,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'azure-functions==1.0.5',
+            'azure-functions==1.0.7',
             'flake8~=3.7.9',
             'mypy',
             'pytest',

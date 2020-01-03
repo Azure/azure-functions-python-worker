@@ -239,6 +239,10 @@ setup(
     packages=['azure_functions_worker',
               'azure_functions_worker.protos',
               'azure_functions_worker.bindings'],
+    install_requires=[
+        'grpcio==1.26.0',
+        'grpcio-tools==1.26.0',
+    ],
     extras_require={
         'dev': [
             'azure-functions==1.0.7',

@@ -123,7 +123,7 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(pythonVersion)_OSX_X64'
 
-- job: PackageV2Workers
+- job: PackageWorkers
   dependsOn: ['Build_WINDOWS_X64',
               'Build_WINDOWS_X86',
               'Build_LINUX_X64',

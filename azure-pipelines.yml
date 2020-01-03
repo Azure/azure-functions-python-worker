@@ -134,11 +134,11 @@ jobs:
   strategy:
     matrix:
       V2PythonWorker:
-        workerVersion: 1.0.$(Date:yyyyMMdd)$(Rev:r)
-        nuspecPath: pack\Microsoft.Azure.Functions.V2.PythonWorker.nuspec
+        pythonWorkerVersion: '1.0.$(Date:yyyyMMdd)$(Rev:r)'
+        nuspecPath: 'pack\Microsoft.Azure.Functions.V2.PythonWorker.nuspec'
       V3PythonWorker:
-        workerVersion: 1.1.$(Date:yyyyMMdd)$(Rev:r)
-        nuspecPath: pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec
+        pythonWorkerVersion: '1.1.$(Date:yyyyMMdd)$(Rev:r)'
+        nuspecPath: 'pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec'
   steps:
   - task: DownloadBuildArtifacts@0
     inputs:
@@ -150,7 +150,7 @@ jobs:
       command: pack
       packagesToPack: '$(nuspecPath)'
       versioningScheme: 'byEnvVar'
-      versionEnvVar: $(workerVersion) # Replaces version in nuspec
+      versionEnvVar: pythonWorkerVersion # Replaces version in nuspec
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'

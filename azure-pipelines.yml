@@ -142,7 +142,7 @@ jobs:
   steps:
   - bash: |
       MAJOR=$(echo $BUILD_BUILDNUMBER | cut -d '.' -f1)
-      MINOR=$minorVersion
+      MINOR=$(minorVersion)
       PATCH=$(echo $BUILD_BUILDNUMBER | cut -d '.' -f3)
       echo "##vso[task.setvariable variable=worker_version]$MAJOR.$MINOR.$PATCH"
       echo "Packaging Python Worker Version $MAJOR.$MINOR.$PATCH"

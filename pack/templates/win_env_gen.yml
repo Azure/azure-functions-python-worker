@@ -9,7 +9,7 @@ steps:
     architecture: ${{ parameters.architecture }}
     addToPath: true
 - task: PowerShell@2
-  inputs: 
+  inputs:
     filePath: 'pack\scripts\win_deps.ps1'
 - task: CopyFiles@2
   inputs:
@@ -22,7 +22,7 @@ steps:
     contents: |
       python\prod\worker.py
     targetFolder: '$(Build.ArtifactStagingDirectory)'
-    flattenFolders: true  
+    flattenFolders: true
 - task: CopyFiles@2
   inputs:
     sourceFolder: '$(Build.SourcesDirectory)\deps'

@@ -14,12 +14,12 @@
   </Target>
 
   <Target Name="CopyOnPublish" DependsOnTargets="Initialize" AfterTargets="Publish">
-        <Copy SourceFiles="@(SourceFiles)" 
+        <Copy SourceFiles="@(SourceFiles)"
             DestinationFiles="@(SourceFiles->'$(PublishDir)\workers\python\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
 
   <Target Name="CopyOnBuild" DependsOnTargets="Initialize" AfterTargets="Build">
-        <Copy SourceFiles="@(SourceFiles)" 
+        <Copy SourceFiles="@(SourceFiles)"
             DestinationFiles="@(SourceFiles->'$(OutDir)\workers\python\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
 </Project>

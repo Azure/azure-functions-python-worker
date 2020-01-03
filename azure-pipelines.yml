@@ -123,7 +123,7 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(pythonVersion)_OSX_X64'
 
-- job: PackageWorkers
+- job: PackageV2Workers
   dependsOn: ['Build_WINDOWS_X64',
               'Build_WINDOWS_X86',
               'Build_LINUX_X64',
@@ -131,6 +131,14 @@ jobs:
              ]
   pool:
       vmImage: 'vs2017-win2016'
+  strategy:
+    matrix:
+      V2PythonWorker:
+        workerVersion: 1.0.$(Date:yyyyMMdd)$(Rev:r)
+        nuspecPath: pack\Microsoft.Azure.Functions.V2.PythonWorker.nuspec
+      V3PythonWorker:
+        workerVersion: 1.1.$(Date:yyyyMMdd)$(Rev:r)
+        nuspecPath: pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec
   steps:
   - task: DownloadBuildArtifacts@0
     inputs:
@@ -140,9 +148,9 @@ jobs:
   - task: NuGetCommand@2
     inputs:
       command: pack
-      packagesToPack: 'pack\Microsoft.Azure.Functions.PythonWorker.nuspec'
+      packagesToPack: '$(nuspecPath)'
       versioningScheme: 'byEnvVar'
-      versionEnvVar: BUILD_BUILDNUMBER # Replaces version in nuspec
+      versionEnvVar: $(workerVersion) # Replaces version in nuspec
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'

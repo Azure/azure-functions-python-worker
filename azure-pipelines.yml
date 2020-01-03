@@ -1,4 +1,4 @@
-name: 1.0.$(Date:yyyyMMdd)$(Rev:r)
+name: 1.x.$(Date:yyyyMMdd)$(Rev:r)
 
 trigger:
 - dev
@@ -134,12 +134,19 @@ jobs:
   strategy:
     matrix:
       V2PythonWorker:
-        pythonWorkerVersion: '1.0.$(Date:yyyyMMdd)$(Rev:r)'
+        minorVersion: '0'
         nuspecPath: 'pack\Microsoft.Azure.Functions.V2.PythonWorker.nuspec'
       V3PythonWorker:
-        pythonWorkerVersion: '1.1.$(Date:yyyyMMdd)$(Rev:r)'
+        minorVersion: '1'
         nuspecPath: 'pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec'
   steps:
+  - bash: |
+      MAJOR=$(echo $BUILD_BUILDNUMBER | cut -d '.' -f1)
+      MINOR=$minorVersion
+      PATCH=$(echo $BUILD_BUILDNUMBER | cut -d '.' -f3)
+      echo "##vso[task.setvariable variable=worker_version]$MAJOR.$MINOR.$PATCH"
+      echo "Packaging Python Worker Version $MAJOR.$MINOR.$PATCH"
+    displayName: "Generate Worker Version"
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'
@@ -150,7 +157,7 @@ jobs:
       command: pack
       packagesToPack: '$(nuspecPath)'
       versioningScheme: 'byEnvVar'
-      versionEnvVar: pythonWorkerVersion # Replaces version in nuspec
+      versionEnvVar: WORKER_VERSION # Replaces version in nuspec
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'

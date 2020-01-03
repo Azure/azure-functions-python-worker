@@ -1,3 +1,5 @@
 # Please list runtime dependencies in setup.py 'install_requires' and
 # 'extras_require'.
+grpcio==1.26.0
+grpcio-tools==1.26.0
 .

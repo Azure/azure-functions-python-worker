@@ -151,16 +151,16 @@ class Registry:
                 # typing_inspect.get_args() returns a flat list,
                 # so if the annotation was func.Out[typing.List[foo]],
                 # we need to reconstruct it.
-                if (isinstance(param_py_type, tuple) and
-                        typing_inspect.is_generic_type(param_py_type[0])):
+                if (isinstance(param_py_type, tuple)
+                   and typing_inspect.is_generic_type(param_py_type[0])):
 
                     param_py_type = operator.getitem(
                         param_py_type[0], *param_py_type[1:])
             else:
                 param_py_type = param_anno
 
-            if (param_has_anno and not isinstance(param_py_type, type) and
-                    not typing_inspect.is_generic_type(param_py_type)):
+            if (param_has_anno and not isinstance(param_py_type, type)
+               and not typing_inspect.is_generic_type(param_py_type)):
                 raise FunctionLoadError(
                     func_name,
                     f'binding {param.name} has invalid non-type annotation '
@@ -218,8 +218,8 @@ class Registry:
         return_pytype = None
         if return_binding_name is not None and 'return' in annotations:
             return_anno = annotations.get('return')
-            if (typing_inspect.is_generic_type(return_anno) and
-                    typing_inspect.get_origin(return_anno).__name__ == 'Out'):
+            if (typing_inspect.is_generic_type(return_anno)
+               and typing_inspect.get_origin(return_anno).__name__ == 'Out'):
                 raise FunctionLoadError(
                     func_name,
                     f'return annotation should not be azure.functions.Out')

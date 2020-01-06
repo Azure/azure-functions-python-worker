@@ -4,4 +4,5 @@ exclude =
     .git, __pycache__, build, dist, .eggs, .github, .local, docs/,
     Samples, azure_functions_worker/protos/,
     azure_functions_worker/typing_inspect.py,
-    tests/unittests/test_typing_inspect.py
+    tests/unittests/test_typing_inspect.py,
+    .venv*, .env*, .vscode

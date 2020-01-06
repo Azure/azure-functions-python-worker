@@ -103,8 +103,8 @@ class AsyncTestCaseMeta(type(unittest.TestCase)):
 
     def __new__(mcls, name, bases, ns):
         for attrname, attr in ns.items():
-            if (attrname.startswith('test_') and
-                    inspect.iscoroutinefunction(attr)):
+            if (attrname.startswith('test_')
+               and inspect.iscoroutinefunction(attr)):
                 ns[attrname] = mcls._sync_wrap(attr)
 
         return super().__new__(mcls, name, bases, ns)
@@ -348,7 +348,7 @@ class _MockWebHost:
             name,
             input_data: typing.List[protos.ParameterBinding],
             metadata: typing.Optional[
-                typing.Mapping[str, protos.TypedData]]=None):
+                typing.Mapping[str, protos.TypedData]] = None):
 
         if metadata is None:
             metadata = {}

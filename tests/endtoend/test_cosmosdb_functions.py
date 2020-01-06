@@ -37,7 +37,7 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
                     response,
                     doc
                 )
-            except AssertionError as e:
+            except AssertionError:
                 if try_no == max_retries - 1:
                     raise
             else:
@@ -69,7 +69,7 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
                     response,
                     doc
                 )
-            except AssertionError as e:
+            except AssertionError:
                 if try_no == max_retries - 1:
                     raise
             else:

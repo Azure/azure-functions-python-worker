@@ -16,8 +16,8 @@ AZURE_CONTAINER_NAME = "CONTAINER_NAME"
 
 
 def is_azure_environment():
-    return (AZURE_CONTAINER_NAME in os.environ or
-            AZURE_WEBSITE_INSTANCE_ID in os.environ)
+    return (AZURE_CONTAINER_NAME in os.environ
+            or AZURE_WEBSITE_INSTANCE_ID in os.environ)
 
 
 def determine_user_pkg_paths():

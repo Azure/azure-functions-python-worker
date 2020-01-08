@@ -81,11 +81,8 @@ class BuildGRPC:
                        / 'azure_functions_worker' / 'protos')
         built_protos_dir = build_dir / 'built_protos'
 
-        if os.path.exists(staging_root_dir):
+        if os.path.exists(build_dir):
             shutil.rmtree(build_dir)
-
-        if os.path.exists(built_protos_dir):
-            shutil.rmtree(built_protos_dir)
 
         shutil.copytree(proto_src_dir, staging_dir)
 

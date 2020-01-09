@@ -32,7 +32,7 @@ def determine_user_pkg_paths():
         user_pkg_paths.append(os.path.join(venv_pkgs_path, PKGS_36))
         user_pkg_paths.append(os.path.join(pkgs_path, PKGS_36))
         user_pkg_paths.append(os.path.join(pkgs_path, PKGS))
-    elif minor_version == 7:
+    elif minor_version in (7, 8):
         user_pkg_paths.append(os.path.join(pkgs_path, PKGS))
     else:
         raise RuntimeError(f'Unsupported Python version: 3.{minor_version}')

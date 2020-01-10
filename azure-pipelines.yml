@@ -62,19 +62,19 @@ jobs:
     matrix:
       Python36V2:
         pythonVersion: '3.6'
-        hostVersion: '2'
+        workerPath: 'python/prodV2/worker.py'
       Python37V2:
         pythonVersion: '3.7'
-        hostVersion: '2'
+        workerPath: 'python/prodV2/worker.py'
       Python36V3:
         pythonVersion: '3.6'
-        hostVersion: '3'
+        workerPath: 'python/prodV3/worker.py'
       Python37V3:
         pythonVersion: '3.7'
-        hostVersion: '3'
+        workerPath: 'python/prodV3/worker.py'
       Python38V3:
         pythonVersion: '3.8'
-        hostVersion: '3'
+        workerPath: 'python/prodV3/worker.py'
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
@@ -89,13 +89,13 @@ jobs:
     matrix:
       Python37V2:
         pythonVersion: '3.7'
-        hostVersion: '2'
+        workerPath: 'python/prodV2/worker.py'
       Python37V3:
         pythonVersion: '3.7'
-        hostVersion: '3'
+        workerPath: 'python/prodV3/worker.py'
       Python38V3:
         pythonVersion: '3.8'
-        hostVersion: '3'
+        workerPath: 'python/prodV3/worker.py'
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
@@ -110,19 +110,19 @@ jobs:
     matrix:
       Python36V2:
         pythonVersion: '3.6'
-        hostVersion: '2'
+        workerPath: 'python/prodV2/worker.py'
       Python37V2:
         pythonVersion: '3.7'
-        hostVersion: '2'
+        workerPath: 'python/prodV2/worker.py'
       Python36V3:
         pythonVersion: '3.6'
-        hostVersion: '3'
+        workerPath: 'python/prodV3/worker.py'
       Python37V3:
         pythonVersion: '3.7'
-        hostVersion: '3'
+        workerPath: 'python/prodV3/worker.py'
       Python38V3:
         pythonVersion: '3.8'
-        hostVersion: '3'
+        workerPath: 'python/prodV3/worker.py'
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:
@@ -136,19 +136,19 @@ jobs:
     matrix:
       Python36V2:
         pythonVersion: '3.6'
-        hostVersion: '2'
+        workerPath: 'python/prodV2/worker.py'
       Python37V2:
         pythonVersion: '3.7'
-        hostVersion: '2'
+        workerPath: 'python/prodV2/worker.py'
       Python36V3:
         pythonVersion: '3.6'
-        hostVersion: '3'
+        workerPath: 'python/prodV3/worker.py'
       Python37V3:
         pythonVersion: '3.7'
-        hostVersion: '3'
+        workerPath: 'python/prodV3/worker.py'
       Python38V3:
         pythonVersion: '3.8'
-        hostVersion: '3'
+        workerPath: 'python/prodV3/worker.py'
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:

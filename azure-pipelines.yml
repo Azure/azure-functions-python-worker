@@ -79,6 +79,7 @@ jobs:
   - template: pack/templates/win_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
       architecture: 'x64'
       artifactName: '$(pythonVersion)_WINDOWS_X64'
 - job: Build_WINDOWS_X86
@@ -100,6 +101,7 @@ jobs:
   - template: pack/templates/win_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
       architecture: 'x86'
       artifactName: '$(pythonVersion)_WINDOWS_x86'
 - job: Build_LINUX_X64
@@ -127,6 +129,7 @@ jobs:
   - template: pack/templates/nix_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_LINUX_X64'
 - job: Build_OSX_X64
   dependsOn: 'Tests'
@@ -153,6 +156,7 @@ jobs:
   - template: pack/templates/nix_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_OSX_X64'
 
 - job: PackageWorkers

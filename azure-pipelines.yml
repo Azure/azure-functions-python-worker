@@ -60,16 +60,26 @@ jobs:
     vmImage: 'vs2017-win2016'
   strategy:
     matrix:
-      Python36:
+      Python36V2:
         pythonVersion: '3.6'
-      Python37:
+        workerPath: 'python/prodV2/worker.py'
+      Python37V2:
         pythonVersion: '3.7'
-      Python38:
+        workerPath: 'python/prodV2/worker.py'
+      Python36V3:
+        pythonVersion: '3.6'
+        workerPath: 'python/prodV3/worker.py'
+      Python37V3:
+        pythonVersion: '3.7'
+        workerPath: 'python/prodV3/worker.py'
+      Python38V3:
         pythonVersion: '3.8'
+        workerPath: 'python/prodV3/worker.py'
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
       architecture: 'x64'
       artifactName: '$(pythonVersion)_WINDOWS_X64'
 - job: Build_WINDOWS_X86
@@ -78,14 +88,20 @@ jobs:
     vmImage: 'vs2017-win2016'
   strategy:
     matrix:
-      Python37:
+      Python37V2:
         pythonVersion: '3.7'
-      Python38:
+        workerPath: 'python/prodV2/worker.py'
+      Python37V3:
+        pythonVersion: '3.7'
+        workerPath: 'python/prodV3/worker.py'
+      Python38V3:
         pythonVersion: '3.8'
+        workerPath: 'python/prodV3/worker.py'
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
       architecture: 'x86'
       artifactName: '$(pythonVersion)_WINDOWS_x86'
 - job: Build_LINUX_X64
@@ -94,16 +110,26 @@ jobs:
     vmImage: 'ubuntu-16.04'
   strategy:
     matrix:
-      Python36:
+      Python36V2:
         pythonVersion: '3.6'
-      Python37:
+        workerPath: 'python/prodV2/worker.py'
+      Python37V2:
         pythonVersion: '3.7'
-      Python38:
+        workerPath: 'python/prodV2/worker.py'
+      Python36V3:
+        pythonVersion: '3.6'
+        workerPath: 'python/prodV3/worker.py'
+      Python37V3:
+        pythonVersion: '3.7'
+        workerPath: 'python/prodV3/worker.py'
+      Python38V3:
         pythonVersion: '3.8'
+        workerPath: 'python/prodV3/worker.py'
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_LINUX_X64'
 - job: Build_OSX_X64
   dependsOn: 'Tests'
@@ -111,16 +137,26 @@ jobs:
     vmImage: 'macOS-10.13'
   strategy:
     matrix:
-      Python36:
+      Python36V2:
         pythonVersion: '3.6'
-      Python37:
+        workerPath: 'python/prodV2/worker.py'
+      Python37V2:
         pythonVersion: '3.7'
-      Python38:
+        workerPath: 'python/prodV2/worker.py'
+      Python36V3:
+        pythonVersion: '3.6'
+        workerPath: 'python/prodV3/worker.py'
+      Python37V3:
+        pythonVersion: '3.7'
+        workerPath: 'python/prodV3/worker.py'
+      Python38V3:
         pythonVersion: '3.8'
+        workerPath: 'python/prodV3/worker.py'
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_OSX_X64'
 
 - job: PackageWorkers

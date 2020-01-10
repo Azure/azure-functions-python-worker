@@ -255,6 +255,8 @@ setup(
     license='MIT',
     packages=['azure_functions_worker',
               'azure_functions_worker.protos',
+              'azure_functions_worker.protos.identity',
+              'azure_functions_worker.protos.shared',
               'azure_functions_worker.bindings'],
     install_requires=[
         'grpcio==1.26.0',

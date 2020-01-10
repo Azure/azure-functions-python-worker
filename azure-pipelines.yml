@@ -60,12 +60,21 @@ jobs:
     vmImage: 'vs2017-win2016'
   strategy:
     matrix:
-      Python36:
+      Python36V2:
         pythonVersion: '3.6'
-      Python37:
+        hostVersion: '2'
+      Python37V2:
         pythonVersion: '3.7'
-      Python38:
+        hostVersion: '2'
+      Python36V3:
+        pythonVersion: '3.6'
+        hostVersion: '3'
+      Python37V3:
+        pythonVersion: '3.7'
+        hostVersion: '3'
+      Python38V3:
         pythonVersion: '3.8'
+        hostVersion: '3'
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
@@ -78,10 +87,15 @@ jobs:
     vmImage: 'vs2017-win2016'
   strategy:
     matrix:
-      Python37:
+      Python37V2:
         pythonVersion: '3.7'
-      Python38:
+        hostVersion: '2'
+      Python37V3:
+        pythonVersion: '3.7'
+        hostVersion: '3'
+      Python38V3:
         pythonVersion: '3.8'
+        hostVersion: '3'
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
@@ -94,12 +108,21 @@ jobs:
     vmImage: 'ubuntu-16.04'
   strategy:
     matrix:
-      Python36:
+      Python36V2:
         pythonVersion: '3.6'
-      Python37:
+        hostVersion: '2'
+      Python37V2:
         pythonVersion: '3.7'
-      Python38:
+        hostVersion: '2'
+      Python36V3:
+        pythonVersion: '3.6'
+        hostVersion: '3'
+      Python37V3:
+        pythonVersion: '3.7'
+        hostVersion: '3'
+      Python38V3:
         pythonVersion: '3.8'
+        hostVersion: '3'
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:
@@ -111,12 +134,21 @@ jobs:
     vmImage: 'macOS-10.13'
   strategy:
     matrix:
-      Python36:
+      Python36V2:
         pythonVersion: '3.6'
-      Python37:
+        hostVersion: '2'
+      Python37V2:
         pythonVersion: '3.7'
-      Python38:
+        hostVersion: '2'
+      Python36V3:
+        pythonVersion: '3.6'
+        hostVersion: '3'
+      Python37V3:
+        pythonVersion: '3.7'
+        hostVersion: '3'
+      Python38V3:
         pythonVersion: '3.8'
+        hostVersion: '3'
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:

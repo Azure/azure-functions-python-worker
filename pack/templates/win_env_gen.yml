@@ -1,6 +1,7 @@
 parameters:
   pythonVersion: ''
   artifactName: ''
+  hostVersion: ''
 
 steps:
 - task: UsePythonVersion@0
@@ -20,7 +21,7 @@ steps:
 - task: CopyFiles@2
   inputs:
     contents: |
-      python\prod\worker.py
+      'python\prodV${{ parameters.hostVersion }}\worker.py'
     targetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
 - task: CopyFiles@2

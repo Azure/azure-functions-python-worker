@@ -1,6 +1,7 @@
 parameters:
   pythonVersion: ''
   artifactName: ''
+  hostVersion: ''
 
 steps:
 - task: UsePythonVersion@0
@@ -8,7 +9,7 @@ steps:
     versionSpec: ${{ parameters.pythonVersion }}
     addToPath: true
 - task: ShellScript@2
-  inputs: 
+  inputs:
     disableAutoCwd: true
     scriptPath: 'pack/scripts/nix_deps.sh'
 - task: CopyFiles@2
@@ -20,9 +21,9 @@ steps:
 - task: CopyFiles@2
   inputs:
     contents: |
-      python/prod/worker.py
+      'python/prodV${{ parameters.hostVersion }}/worker.py'
     targetFolder: '$(Build.ArtifactStagingDirectory)'
-    flattenFolders: true  
+    flattenFolders: true
 - task: CopyFiles@2
   inputs:
     sourceFolder: '$(Build.SourcesDirectory)/deps'

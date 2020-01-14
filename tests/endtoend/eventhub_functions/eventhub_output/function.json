@@ -11,7 +11,7 @@
       "type": "eventHub",
       "name": "event",
       "direction": "out",
-      "eventHubName": "python-worker-ci",
+      "eventHubName": "python-worker-ci-eventhub-one",
       "connection": "AzureWebJobsEventHubConnectionString"
     },
     {

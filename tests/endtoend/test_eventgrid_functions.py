@@ -24,6 +24,7 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
         return request_method(url, *args, params=params, headers=headers,
                               **kwargs)
 
+    @testutils.retryable_test(3, 5)
     @unittest.skip("fails with 401 with recent host versions")
     def test_eventgrid_trigger(self):
         data = [{
@@ -75,7 +76,7 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
                         'event_type': data[0]['eventType'],
                     }
                 )
-            except AssertionError as e:
+            except AssertionError:
                 if try_no == max_retries - 1:
                     raise
             else:

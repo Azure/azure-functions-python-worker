@@ -11,6 +11,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_functions'
 
     # @unittest.skip("Seems to be very unstable on CI")
+    @testutils.retryable_test(3, 5)
     def test_eventhub_trigger(self):
         data = str(round(time.time()))
         doc = {'id': data}
@@ -19,24 +20,12 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
 
-        max_retries = 30
+        # Allow trigger to fire.
+        time.sleep(5)
 
-        for try_no in range(max_retries):
-            # Allow trigger to fire.
-            time.sleep(2)
+        # Check that the trigger has fired.
+        r = self.webhost.request('GET', 'get_eventhub_triggered')
+        self.assertEqual(r.status_code, 200)
+        response = r.json()
 
-            try:
-                # Check that the trigger has fired.
-                r = self.webhost.request('GET', 'get_eventhub_triggered')
-                self.assertEqual(r.status_code, 200)
-                response = r.json()
-
-                self.assertEqual(
-                    response,
-                    doc
-                )
-            except AssertionError as e:
-                if try_no == max_retries - 1:
-                    raise
-            else:
-                break
+        self.assertEqual(response, doc)

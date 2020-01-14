@@ -1,0 +1,21 @@
+{
+    "scriptFile": "__init__.py",
+
+    "bindings": [
+      {
+        "type": "eventHubTrigger",
+        "name": "event",
+        "direction": "in",
+        "eventHubName": "python-worker-iot-ci",
+        "connection": "AzureWebJobsEventHubConnectionString",
+        "cardinality": "one"
+      },
+      {
+        "type": "blob",
+        "direction": "out",
+        "name": "$return",
+        "connection": "AzureWebJobsStorage",
+        "path": "python-worker-tests/test-eventhub-iot-triggered.txt"
+      }
+    ]
+  }

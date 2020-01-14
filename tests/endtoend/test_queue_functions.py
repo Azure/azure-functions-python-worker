@@ -9,6 +9,7 @@ class TestQueueFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'queue_functions'
 
+    @testutils.retryable_test(3, 5)
     def test_queue_basic(self):
         r = self.webhost.request('POST', 'put_queue',
                                  data='test-message')
@@ -30,6 +31,7 @@ class TestQueueFunctions(testutils.WebHostTestCase):
                      'time_next_visible', 'pop_receipt', 'dequeue_count'}:
             self.assertIsNotNone(msg.get(attr))
 
+    @testutils.retryable_test(3, 5)
     def test_queue_return(self):
         r = self.webhost.request('POST', 'put_queue_return',
                                  data='test-message-return')
@@ -42,6 +44,7 @@ class TestQueueFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-message-return')
 
+    @testutils.retryable_test(3, 5)
     def test_queue_message_object_return(self):
         r = self.webhost.request('POST', 'put_queue_message_return',
                                  data='test-message-object-return')
@@ -54,6 +57,7 @@ class TestQueueFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-message-object-return')
 
+    @testutils.retryable_test(3, 5)
     def test_queue_untyped_return(self):
         r = self.webhost.request('POST', 'put_queue_untyped_return',
                                  data='test-untyped-return')
@@ -66,6 +70,7 @@ class TestQueueFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-untyped-return')
 
+    @testutils.retryable_test(3, 5)
     def test_queue_return_multiple(self):
         r = self.webhost.request('POST', 'put_queue_return_multiple',
                                  data='foo')
@@ -74,6 +79,7 @@ class TestQueueFunctions(testutils.WebHostTestCase):
         # wait for queue_trigger to process the queue item
         time.sleep(1)
 
+    @testutils.retryable_test(3, 5)
     def test_queue_return_multiple_outparam(self):
         r = self.webhost.request('POST', 'put_queue_multiple_out',
                                  data='foo')

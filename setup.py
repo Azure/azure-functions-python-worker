@@ -8,6 +8,8 @@ import sys
 import tempfile
 import urllib.request
 import zipfile
+import re
+from distutils import dir_util
 from distutils.command import build
 
 from setuptools import setup
@@ -15,9 +17,9 @@ from setuptools.command import develop
 
 
 # TODO: change this to something more stable when available.
-WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/j7r6pk8p7mqxyuuw'
+WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/1fqp92o5h2gks7xe'
                '/artifacts'
-               '/Functions.Binaries.2.0.12701.no-runtime.zip')
+               '/Functions.Binaries.2.0.12888.no-runtime.zip')
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = [
@@ -73,56 +75,71 @@ class BuildGRPC:
 
         proto_root_dir = root / 'azure_functions_worker' / 'protos'
         proto_src_dir = proto_root_dir / '_src' / 'src' / 'proto'
-        staging_root_dir = root / 'build' / 'protos'
+        build_dir = root / 'build'
+        staging_root_dir = build_dir / 'protos'
         staging_dir = (staging_root_dir
                        / 'azure_functions_worker' / 'protos')
-        build_dir = staging_dir / 'azure_functions_worker' / 'protos'
-        built_protos_dir = root / 'build' / 'built_protos'
-        built_proto_files_dir = (built_protos_dir
-                                 / 'azure_functions_worker' / 'protos')
+        built_protos_dir = build_dir / 'built_protos'
 
         if os.path.exists(build_dir):
             shutil.rmtree(build_dir)
 
-        if os.path.exists(built_protos_dir):
-            shutil.rmtree(built_protos_dir)
-
-        proto_files = glob.glob(str(proto_src_dir / '**' / '*.proto'),
-                                recursive=True)
-
-        os.makedirs(build_dir)
-        for proto_file in proto_files:
-            shutil.copy(proto_file, build_dir)
-
-        protos = [os.path.basename(proto_file) for proto_file in proto_files]
-
-        full_protos = []
-        for proto in protos:
-            full_proto = os.sep.join(
-                ('azure_functions_worker', 'protos',
-                 'azure_functions_worker', 'protos', proto)
-            )
-            full_protos.append(full_proto)
+        shutil.copytree(proto_src_dir, staging_dir)
 
         os.makedirs(built_protos_dir)
-        subprocess.run([
-            sys.executable, '-m', 'grpc_tools.protoc',
-            '-I', os.sep.join(('azure_functions_worker', 'protos')),
-            '--python_out', str(built_protos_dir),
-            '--grpc_python_out', str(built_protos_dir),
-            *full_protos
-        ], check=True, stdout=sys.stdout, stderr=sys.stderr,
-            cwd=staging_root_dir)
 
-        compiled = glob.glob(str(built_proto_files_dir / '*.py'))
+        protos = [
+            os.sep.join(('shared', 'NullableTypes.proto')),
+            os.sep.join(('identity', 'ClaimsIdentityRpc.proto')),
+            'FunctionRpc.proto'
+        ]
 
-        if not compiled:
+        for proto in protos:
+            subprocess.run([
+                sys.executable, '-m', 'grpc_tools.protoc',
+                '-I', os.sep.join(('azure_functions_worker', 'protos')),
+                '--python_out', str(built_protos_dir),
+                '--grpc_python_out', str(built_protos_dir),
+                os.sep.join(('azure_functions_worker', 'protos', proto)),
+            ], check=True, stdout=sys.stdout, stderr=sys.stderr,
+                cwd=staging_root_dir)
+
+        compiled_files = glob.glob(
+            str(built_protos_dir / '**' / '*.py'),
+            recursive=True)
+
+        if not compiled_files:
             print('grpc_tools.protoc produced no Python files',
                   file=sys.stderr)
             sys.exit(1)
 
-        for f in compiled:
-            shutil.copy(f, proto_root_dir)
+        # Needed to support absolute imports in files. See
+        # https://github.com/protocolbuffers/protobuf/issues/1491
+        self.make_absolute_imports(compiled_files)
+
+        dir_util.copy_tree(built_protos_dir, str(proto_root_dir))
+
+    def make_absolute_imports(self, compiled_files):
+        for compiled in compiled_files:
+            with open(compiled, 'r+') as f:
+                content = f.read()
+                f.seek(0)
+                # Convert lines of the form:
+                # import xxx_pb2 as xxx__pb2 to
+                # from azure_functions_worker.protos import xxx_pb2 as..
+                p1 = re.sub(
+                    r'\nimport (.*?_pb2)',
+                    r'\nfrom azure_functions_worker.protos import \g<1>',
+                    content)
+                # Convert lines of the form:
+                # from identity import xxx_pb2 as.. to
+                # from azure_functions_worker.protos.identity import xxx_pb2..
+                p2 = re.sub(
+                    r'from ([a-z]*) (import.*_pb2)',
+                    r'from azure_functions_worker.protos.\g<1> \g<2>',
+                    p1)
+                f.write(p2)
+                f.truncate()
 
 
 class build(build.build, BuildGRPC):
@@ -223,7 +240,7 @@ class webhost(distutils.cmd.Command):
 
 setup(
     name='azure-functions-worker',
-    version='1.0.0',
+    version='1.0.2',
     description='Python Language Worker for Azure Functions Host',
     classifiers=[
         'License :: OSI Approved :: MIT License',
@@ -238,19 +255,17 @@ setup(
     license='MIT',
     packages=['azure_functions_worker',
               'azure_functions_worker.protos',
+              'azure_functions_worker.protos.identity',
+              'azure_functions_worker.protos.shared',
               'azure_functions_worker.bindings'],
-    setup_requires=[
-        'grpcio~=1.20.1',
-        'grpcio-tools~=1.20.1',
-    ],
     install_requires=[
-        'grpcio~=1.20.1',
-        'grpcio-tools~=1.20.1',
+        'grpcio==1.26.0',
+        'grpcio-tools==1.26.0',
     ],
     extras_require={
         'dev': [
-            'azure-functions==1.0.3',
-            'flake8~=3.5.0',
+            'azure-functions==1.0.7',
+            'flake8~=3.7.9',
             'mypy',
             'pytest',
             'requests==2.*',

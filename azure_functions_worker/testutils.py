@@ -44,7 +44,7 @@ DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / \
     'Microsoft.Azure.WebJobs.Script.WebHost.dll'
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
-WORKER_PATH = PROJECT_ROOT / 'python'
+WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
 WORKER_CONFIG = PROJECT_ROOT / '.testconfig'
 ON_WINDOWS = platform.system() == 'Windows'
 
@@ -103,8 +103,8 @@ class AsyncTestCaseMeta(type(unittest.TestCase)):
 
     def __new__(mcls, name, bases, ns):
         for attrname, attr in ns.items():
-            if (attrname.startswith('test_') and
-                    inspect.iscoroutinefunction(attr)):
+            if (attrname.startswith('test_')
+               and inspect.iscoroutinefunction(attr)):
                 ns[attrname] = mcls._sync_wrap(attr)
 
         return super().__new__(mcls, name, bases, ns)
@@ -348,7 +348,7 @@ class _MockWebHost:
             name,
             input_data: typing.List[protos.ParameterBinding],
             metadata: typing.Optional[
-                typing.Mapping[str, protos.TypedData]]=None):
+                typing.Mapping[str, protos.TypedData]] = None):
 
         if metadata is None:
             metadata = {}
@@ -675,6 +675,27 @@ def create_dummy_dispatcher():
         1.0, 1000)
     dummy_event_loop.close()
     return disp
+
+
+def retryable_test(
+    number_of_retries: int,
+    interval_sec: int,
+    expected_exception: type = Exception
+):
+    def decorate(func):
+        def call(*args, **kwargs):
+            retries = number_of_retries
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except expected_exception as e:
+                    retries -= 1
+                    if retries <= 0:
+                        raise e
+
+                time.sleep(interval_sec)
+        return call
+    return decorate
 
 
 def _remove_path(path):

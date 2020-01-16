@@ -106,7 +106,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('ctx_invocation_id', data)
         self.assertIn('ctx_trace_context_Tracestate', data)
         self.assertIn('ctx_trace_context_Traceparent', data)
-        self.assertEqual('ctx_trace_context_Attributes_Present', 'true')
 
     def test_remapped_context(self):
         r = self.webhost.request('GET', 'remapped_context')

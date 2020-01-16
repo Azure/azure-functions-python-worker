@@ -104,7 +104,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(data['ctx_func_name'], 'return_context')
         self.assertIn('return_context', data['ctx_func_dir'])
         self.assertIn('ctx_invocation_id', data)
-        self.assertIn('ctx_trace_context', data)
         self.assertIn('ctx_trace_context_Tracestate', data)
         self.assertIn('ctx_trace_context_Traceparent', data)
         self.assertIn('ctx_trace_context_Attributes', data)

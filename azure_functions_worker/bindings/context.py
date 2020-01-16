@@ -23,5 +23,5 @@ class Context:
         return self.__func_dir
 
     @property
-    def traceContext(self) -> TraceContext:
+    def trace_context(self) -> TraceContext:
         return self.__trace_context

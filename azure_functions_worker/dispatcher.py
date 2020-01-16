@@ -269,7 +269,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
-        traceContext = bindings.TraceContext(
+        trace_context = bindings.TraceContext(
             invoc_request.trace_context.trace_parent,
             invoc_request.trace_context.trace_state,
             invoc_request.trace_context.attributes)
@@ -301,7 +301,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             if fi.requires_context:
                 args['context'] = bindings.Context(
-                    fi.name, fi.directory, invocation_id, traceContext)
+                    fi.name, fi.directory, invocation_id, trace_context)
 
             if fi.output_types:
                 for name in fi.output_types:

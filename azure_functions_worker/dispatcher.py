@@ -269,7 +269,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
-
+        trace_context = bindings.TraceContext(
+            invoc_request.trace_context.trace_parent,
+            invoc_request.trace_context.trace_state,
+            invoc_request.trace_context.attributes)
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
         current_task = asyncio.Task.current_task(self._loop)
@@ -298,7 +301,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             if fi.requires_context:
                 args['context'] = bindings.Context(
-                    fi.name, fi.directory, invocation_id)
+                    fi.name, fi.directory, invocation_id, trace_context)
 
             if fi.output_types:
                 for name in fi.output_types:

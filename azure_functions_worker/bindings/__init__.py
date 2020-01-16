@@ -1,3 +1,4 @@
+from .tracecontext import TraceContext
 from .context import Context
 from .meta import check_input_type_annotation
 from .meta import check_output_type_annotation
@@ -10,5 +11,5 @@ __all__ = (
     'Out', 'Context',
     'is_trigger_binding',
     'check_input_type_annotation', 'check_output_type_annotation',
-    'from_incoming_proto', 'to_outgoing_proto',
+    'from_incoming_proto', 'to_outgoing_proto', 'TraceContext',
 )

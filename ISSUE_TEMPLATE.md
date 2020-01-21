@@ -1,5 +1,5 @@
 
-<!-- 
+<!--
 Please describe your issue or feature request below.
 -->
 
@@ -10,14 +10,14 @@ Please provide the following:
 - Timestamp:
 - Function App name:
 - Function name(s) (as appropriate):
-- Core Tools version: 
+- Core Tools version:
 
 #### Repro steps
 
 Provide the steps required to reproduce the problem:
 
 <!--
-Example: 
+Example:
 
 1. Step A
 2. Step B
@@ -54,12 +54,24 @@ Example:
 - Turn off the circuit breaker for the lights.
 -->
 
-#### Related information 
+#### Contents of the requirements.txt file:
 
-Provide any related information 
+Provide the requirements.txt file to help us find out module related issues.
+
+<!--
+Example:
+
+```
+azure-functions
+azure-storage-blob==12.1.0
+```
+-->
+
+#### Related information
+
+Provide any related information
 
 * Links to source
-* Contents of the requirements.txt file
 * Bindings used
 
 <!-- Uncomment this if you want to include your source (wrap it in details to make browsing easier)

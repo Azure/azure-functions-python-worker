@@ -512,8 +512,10 @@ def get_current_invocation_id():
     if loop is not None:
         current_task = asyncio.Task.current_task(loop)
         if current_task is not None:
-            return getattr(
+            task_invocation_id = getattr(
                 current_task, ContextEnabledTask._AZURE_INVOCATION_ID, None)
+            if task_invocation_id is not None:
+                return task_invocation_id
 
     return getattr(_invocation_id_local, 'v', None)
 

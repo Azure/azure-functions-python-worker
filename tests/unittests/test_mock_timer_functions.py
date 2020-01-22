@@ -38,3 +38,28 @@ class TestTimerFunctions(testutils.AsyncTestCase):
 
             await call_and_check(True)
             await call_and_check(False)
+
+    async def test_mock_timer__user_event_loop(self):
+        async with testutils.start_mockhost(
+                script_root=self.timer_funcs_dir) as host:
+
+            func_id, r = await host.load_function('user_event_loop')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            async def call_and_check():
+                _, r = await host.invoke_function(
+                    'user_event_loop', [
+                        protos.ParameterBinding(
+                            name='timer',
+                            data=protos.TypedData(
+                                json=json.dumps({
+                                    'IsPastDue': False
+                                })))
+                    ])
+                self.assertEqual(r.response.result.status,
+                                 protos.StatusResult.Success)
+
+            await call_and_check()

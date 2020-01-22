@@ -263,3 +263,8 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         finally:
             if (os.path.exists(received_img_file)):
                 os.remove(received_img_file)
+
+    def test_user_event_loop_error(self):
+        # User event loop is not supported in HTTP trigger
+        r = self.webhost.request('GET', 'user_event_loop_error/')
+        self.assertEqual(r.status_code, 500)

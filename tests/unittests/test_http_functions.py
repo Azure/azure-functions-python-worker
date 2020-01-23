@@ -89,11 +89,18 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-async')
 
+    def check_log_async_logging(self, host_out: typing.List[str]):
+        self.assertIn('hello info', host_out)
+        self.assertIn('and another error', host_out)
+
     def test_sync_logging(self):
         # Test that logging doesn't *break* things.
         r = self.webhost.request('GET', 'sync_logging')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-sync')
+
+    def check_log_sync_logging(self, host_out: typing.List[str]):
+        self.assertIn('a gracefully handled error')
 
     def test_return_context(self):
         r = self.webhost.request('GET', 'return_context')
@@ -272,4 +279,4 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.text, 'OK-user-event-loop')
 
     def check_log_user_event_loop_error(self, host_out: typing.List[str]):
-        self.assertIn("try_log", host_out)
+        self.assertIn('try_log', host_out)

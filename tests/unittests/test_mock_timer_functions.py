@@ -43,7 +43,7 @@ class TestTimerFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.timer_funcs_dir) as host:
 
-            func_id, r = await host.load_function('user_event_loop')
+            func_id, r = await host.load_function('user_event_loop_timer')
 
             self.assertEqual(r.response.function_id, func_id)
             self.assertEqual(r.response.result.status,
@@ -51,7 +51,7 @@ class TestTimerFunctions(testutils.AsyncTestCase):
 
             async def call_and_check():
                 _, r = await host.invoke_function(
-                    'user_event_loop', [
+                    'user_event_loop_timer', [
                         protos.ParameterBinding(
                             name='timer',
                             data=protos.TypedData(

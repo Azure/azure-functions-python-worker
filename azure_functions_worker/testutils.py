@@ -744,7 +744,8 @@ def _setup_func_app(app_root):
         f.write(HOST_JSON_TEMPLATE)
 
     _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
-    _symlink_dir(EXTENSIONS_PATH, extensions)
+    if EXTENSIONS_PATH.exists():
+        _symlink_dir(EXTENSIONS_PATH, extensions)
 
 
 def _teardown_func_app(app_root):

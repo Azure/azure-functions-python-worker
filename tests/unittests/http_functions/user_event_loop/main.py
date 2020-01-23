@@ -18,3 +18,4 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     # This line should throws an asyncio RuntimeError exception
     loop.run_until_complete(try_log())
     loop.close()
+    return 'OK-user-event-loop'

@@ -1,6 +1,7 @@
 import hashlib
 import pathlib
 import filecmp
+import typing
 import os
 
 from azure_functions_worker import testutils
@@ -266,5 +267,9 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
     def test_user_event_loop_error(self):
         # User event loop is not supported in HTTP trigger
-        r = self.webhost.request('GET', 'user_event_loop_error/')
-        self.assertEqual(r.status_code, 500)
+        r = self.webhost.request('GET', 'user_event_loop/')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-user-event-loop')
+
+    def check_log_user_event_loop_error(self, host_out: typing.List[str]):
+        self.assertIn("try_log", host_out)

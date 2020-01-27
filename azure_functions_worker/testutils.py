@@ -126,10 +126,25 @@ class WebHostTestCaseMeta(type(unittest.TestCase)):
     def __new__(mcls, name, bases, dct):
         for attrname, attr in dct.items():
             if attrname.startswith('test_') and callable(attr):
+                test_case_name = attrname.lstrip('test_')
+                test_case = attr
 
-                @functools.wraps(attr)
-                def wrapper(self, *args, __meth__=attr, **kwargs):
-                    return self._run_test(__meth__, *args, **kwargs)
+                check_log_case_name = f'check_log_{test_case_name}'
+                check_log_case = dct.get(check_log_case_name)
+
+                @functools.wraps(test_case)
+                def wrapper(self, *args, __meth__=test_case,
+                            __check_log__=check_log_case, **kwargs):
+                    if __check_log__ is not None and callable(__check_log__):
+                        # Check logging output for unit test scenarios
+                        result = self._run_test(__meth__, *args, **kwargs)
+                        output_lines = self.host_out.splitlines()
+                        host_out = list(map(lambda s: s.strip(), output_lines))
+                        self._run_test(__check_log__, host_out=host_out)
+                        return result
+                    else:
+                        # Check normal unit test
+                        return self._run_test(__meth__, *args, **kwargs)
 
                 dct[attrname] = wrapper
 
@@ -188,16 +203,20 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
             self.host_stdout.read()
             last_pos = self.host_stdout.tell()
 
+            test_exception = None
             try:
                 test(self, *args, **kwargs)
-            except Exception:
-                try:
-                    self.host_stdout.seek(last_pos)
-                    host_out = self.host_stdout.read()
-                    self.host_stdout_logger.error(
-                        f'Captured WebHost stdout:\n{host_out}')
-                finally:
-                    raise
+            except Exception as e:
+                test_exception = e
+
+            try:
+                self.host_stdout.seek(last_pos)
+                self.host_out = self.host_stdout.read()
+                self.host_stdout_logger.error(
+                    f'Captured WebHost stdout:\n{self.host_out}')
+            finally:
+                if test_exception is not None:
+                    raise test_exception
 
 
 class _MockWebHostServicer(protos.FunctionRpcServicer):
@@ -725,7 +744,8 @@ def _setup_func_app(app_root):
         f.write(HOST_JSON_TEMPLATE)
 
     _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
-    _symlink_dir(EXTENSIONS_PATH, extensions)
+    if EXTENSIONS_PATH.exists():
+        _symlink_dir(EXTENSIONS_PATH, extensions)
 
 
 def _teardown_func_app(app_root):

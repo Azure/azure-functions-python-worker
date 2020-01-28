@@ -1,6 +1,8 @@
 import os
 import subprocess
 import sys
+import typing
+import tempfile
 
 from azure_functions_worker import protos
 from azure_functions_worker import testutils
@@ -8,14 +10,20 @@ from azure_functions_worker import testutils
 
 class TestGRPC(testutils.AsyncTestCase):
     pre_test_env = os.environ.copy()
+    pre_test_cwd = os.getcwd()
 
     def _reset_environ(self):
         for key, value in self.pre_test_env.items():
             os.environ[key] = value
+        os.chdir(self.pre_test_cwd)
 
-    async def _verify_environment_reloaded(self, test_env):
+    async def _verify_environment_reloaded(
+            self,
+            test_env: typing.Dict[str, str] = {},
+            test_cwd: str = os.getcwd()):
         request = protos.FunctionEnvironmentReloadRequest(
-            environment_variables=test_env)
+            environment_variables=test_env,
+            function_app_directory=test_cwd)
 
         request_msg = protos.StreamingMessage(
             request_id='0',
@@ -29,6 +37,7 @@ class TestGRPC(testutils.AsyncTestCase):
 
             environ_dict = os.environ.copy()
             self.assertDictEqual(environ_dict, test_env)
+            self.assertEqual(os.getcwd(), test_cwd)
             status = r.function_environment_reload_response.result.status
             self.assertEqual(status, protos.StatusResult.Success)
         finally:
@@ -36,11 +45,20 @@ class TestGRPC(testutils.AsyncTestCase):
 
     async def test_multiple_env_vars_load(self):
         test_env = {'TEST_KEY': 'foo', 'HELLO': 'world'}
-        await self._verify_environment_reloaded(test_env)
+        await self._verify_environment_reloaded(test_env=test_env)
 
     async def test_empty_env_vars_load(self):
         test_env = {}
-        await self._verify_environment_reloaded(test_env)
+        await self._verify_environment_reloaded(test_env=test_env)
+
+    async def test_changing_current_working_directory(self):
+        test_cwd = tempfile.gettempdir()
+        await self._verify_environment_reloaded(test_cwd=test_cwd)
+
+    async def test_reload_env_message(self):
+        test_env = {'TEST_KEY': 'foo', 'HELLO': 'world'}
+        test_cwd = tempfile.gettempdir()
+        await self._verify_environment_reloaded(test_env, test_cwd)
 
     def _verify_sys_path_import(self, result, expected_output):
         try:

@@ -411,7 +411,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             # Change function app directory
             if getattr(func_env_reload_request, 'function_app_directory'):
-                self._change_cwd(func_env_reload_request.function_app_directory)
+                self._change_cwd(
+                    func_env_reload_request.function_app_directory)
 
             success_response = protos.FunctionEnvironmentReloadResponse(
                 result=protos.StatusResult(

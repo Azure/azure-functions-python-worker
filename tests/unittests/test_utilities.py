@@ -5,22 +5,31 @@ import typing
 from azure_functions_worker.utils import common, wrappers
 
 
+TEST_FEATURE_FLAG = "APP_SETTING_FEATURE_FLAG"
+FEATURE_DEFAULT = 42
+
+
 class MockFeature:
-    @wrappers.enable_feature_by("APP_SETTING_FEATURE_FLAG")
+    @wrappers.enable_feature_by(TEST_FEATURE_FLAG)
     def mock_feature_enabled(self, output: typing.List[str]) -> str:
         result = 'mock_feature_enabled'
         output.append(result)
         return result
 
-    @wrappers.disable_feature_by("APP_SETTING_FEATURE_FLAG")
+    @wrappers.disable_feature_by(TEST_FEATURE_FLAG)
     def mock_feature_disabled(self, output: typing.List[str]) -> str:
         result = 'mock_feature_disabled'
         output.append(result)
         return result
 
+    @wrappers.enable_feature_by(TEST_FEATURE_FLAG, FEATURE_DEFAULT)
+    def mock_feature_default(self, output: typing.List[str]) -> str:
+        result = 'mock_feature_default'
+        output.append(result)
+        return result
+
 
 class TestUtilities(unittest.TestCase):
-    test_feature_flag = "APP_SETTING_FEATURE_FLAG"
 
     def setUp(self):
         self._pre_env = dict(os.environ)
@@ -54,20 +63,20 @@ class TestUtilities(unittest.TestCase):
         self.assertFalse(common.is_false_like('secret'))
 
     def test_is_envvar_true(self):
-        os.environ[self.test_feature_flag] = 'true'
-        self.assertTrue(common.is_envvar_true(self.test_feature_flag))
+        os.environ[TEST_FEATURE_FLAG] = 'true'
+        self.assertTrue(common.is_envvar_true(TEST_FEATURE_FLAG))
 
     def test_is_envvar_false(self):
-        os.environ[self.test_feature_flag] = 'false'
-        self.assertTrue(common.is_envvar_false(self.test_feature_flag))
+        os.environ[TEST_FEATURE_FLAG] = 'false'
+        self.assertTrue(common.is_envvar_false(TEST_FEATURE_FLAG))
 
     def test_is_envvar_not_true_on_unset(self):
         self._unset_feature_flag()
-        self.assertFalse(common.is_envvar_true(self.test_feature_flag))
+        self.assertFalse(common.is_envvar_true(TEST_FEATURE_FLAG))
 
     def test_is_envvar_not_false_on_unset(self):
         self._unset_feature_flag()
-        self.assertFalse(common.is_envvar_false(self.test_feature_flag))
+        self.assertFalse(common.is_envvar_false(TEST_FEATURE_FLAG))
 
     def test_disable_feature_with_no_feature_flag(self):
         mock_feature = MockFeature()
@@ -77,7 +86,8 @@ class TestUtilities(unittest.TestCase):
         self.assertListEqual(output, [])
 
     def test_enable_feature_with_feature_flag(self):
-        os.environ[self.test_feature_flag] = '1'
+        feature_flag = TEST_FEATURE_FLAG
+        os.environ[feature_flag] = '1'
         mock_feature = MockFeature()
         output = []
         result = mock_feature.mock_feature_enabled(output)
@@ -92,16 +102,41 @@ class TestUtilities(unittest.TestCase):
         self.assertListEqual(output, ['mock_feature_disabled'])
 
     def test_disable_feature_with_rollback_flag(self):
-        self.rollback_flag = self.test_feature_flag
-        os.environ[self.rollback_flag] = '1'
+        rollback_flag = TEST_FEATURE_FLAG
+        os.environ[rollback_flag] = '1'
         mock_feature = MockFeature()
         output = []
         result = mock_feature.mock_feature_disabled(output)
         self.assertIsNone(result)
         self.assertListEqual(output, [])
 
+    def test_enable_feature_with_rollback_flag_is_false(self):
+        rollback_flag = TEST_FEATURE_FLAG
+        os.environ[rollback_flag] = 'false'
+        mock_feature = MockFeature()
+        output = []
+        result = mock_feature.mock_feature_disabled(output)
+        self.assertEqual(result, 'mock_feature_disabled')
+        self.assertListEqual(output, ['mock_feature_disabled'])
+
+    def test_fail_to_enable_feature_return_default_value(self):
+        mock_feature = MockFeature()
+        output = []
+        result = mock_feature.mock_feature_default(output)
+        self.assertEqual(result, FEATURE_DEFAULT)
+        self.assertListEqual(output, [])
+
+    def test_disable_feature_with_false_flag_return_default_value(self):
+        feature_flag = TEST_FEATURE_FLAG
+        os.environ[feature_flag] = 'false'
+        mock_feature = MockFeature()
+        output = []
+        result = mock_feature.mock_feature_default(output)
+        self.assertEqual(result, FEATURE_DEFAULT)
+        self.assertListEqual(output, [])
+
     def _unset_feature_flag(self):
         try:
-            os.environ.pop(self.test_feature_flag)
+            os.environ.pop(TEST_FEATURE_FLAG)
         except KeyError:
             pass

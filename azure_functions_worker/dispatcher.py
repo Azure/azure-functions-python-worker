@@ -24,6 +24,7 @@ from . import constants
 
 from .logging import error_logger, logger
 from .tracing import marshall_exception_trace
+from .utils.wrappers import disable_feature_by
 
 
 class DispatcherMeta(type):
@@ -410,8 +411,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             # Change function app directory
             if getattr(func_env_reload_request, 'function_app_directory'):
-                self._change_current_working_directory(
-                    func_env_reload_request.function_app_directory)
+                self._change_cwd(func_env_reload_request.function_app_directory)
 
             success_response = protos.FunctionEnvironmentReloadResponse(
                 result=protos.StatusResult(
@@ -431,14 +431,13 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
 
-    def _change_current_working_directory(self, new_working_directory: str):
-        if os.path.exists(new_working_directory):
-            os.chdir(new_working_directory)
-            logger.info('Changing current working directory to %s',
-                        new_working_directory)
+    @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
+    def _change_cwd(self, new_cwd: str):
+        if os.path.exists(new_cwd):
+            os.chdir(new_cwd)
+            logger.info('Changing current working directory to %s', new_cwd)
         else:
-            logger.warn('Working directory %s is not found when reload',
-                        new_working_directory)
+            logger.warn('Directory %s is not found when reloading', new_cwd)
 
     def __run_sync_func(self, invocation_id, func, params):
         # This helper exists because we need to access the current

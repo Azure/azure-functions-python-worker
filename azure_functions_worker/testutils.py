@@ -67,7 +67,11 @@ HOST_JSON_TEMPLATE = """\
         "prefetchCount": 1000,
         "batchCheckpointFrequency": 1
     },
-    "functionTimeout": "00:05:00"
+    "functionTimeout": "00:05:00",
+    "extensionBundle": {
+        "id": "Microsoft.Azure.Functions.ExtensionBundle",
+        "version": "[1.*, 2.0.0)"
+    }
 }
 """
 

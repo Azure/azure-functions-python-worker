@@ -50,33 +50,13 @@ class TestUtilities(unittest.TestCase):
         self.assertFalse(common.is_true_like(''))
         self.assertFalse(common.is_true_like('secret'))
 
-    def test_is_false_like_accepted(self):
-        self.assertTrue(common.is_false_like('0'))
-        self.assertTrue(common.is_false_like('false'))
-        self.assertTrue(common.is_false_like('F'))
-        self.assertTrue(common.is_false_like('NO'))
-        self.assertTrue(common.is_false_like('n'))
-
-    def test_is_false_like_rejected(self):
-        self.assertFalse(common.is_false_like(None))
-        self.assertFalse(common.is_false_like(''))
-        self.assertFalse(common.is_false_like('secret'))
-
     def test_is_envvar_true(self):
         os.environ[TEST_FEATURE_FLAG] = 'true'
         self.assertTrue(common.is_envvar_true(TEST_FEATURE_FLAG))
 
-    def test_is_envvar_false(self):
-        os.environ[TEST_FEATURE_FLAG] = 'false'
-        self.assertTrue(common.is_envvar_false(TEST_FEATURE_FLAG))
-
     def test_is_envvar_not_true_on_unset(self):
         self._unset_feature_flag()
         self.assertFalse(common.is_envvar_true(TEST_FEATURE_FLAG))
-
-    def test_is_envvar_not_false_on_unset(self):
-        self._unset_feature_flag()
-        self.assertFalse(common.is_envvar_false(TEST_FEATURE_FLAG))
 
     def test_disable_feature_with_no_feature_flag(self):
         mock_feature = MockFeature()

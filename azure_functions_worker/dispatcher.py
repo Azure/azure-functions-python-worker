@@ -410,7 +410,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                             'Using default. Exception:\n{}'.format(ex))
 
             # Change function app directory
-            if getattr(func_env_reload_request, 'function_app_directory'):
+            if getattr(func_env_reload_request,
+                       'function_app_directory', None):
                 self._change_cwd(
                     func_env_reload_request.function_app_directory)
 

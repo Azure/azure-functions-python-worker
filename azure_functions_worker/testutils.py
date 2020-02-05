@@ -25,6 +25,7 @@ import time
 import typing
 import unittest
 import uuid
+import re
 
 import grpc
 import requests
@@ -67,11 +68,7 @@ HOST_JSON_TEMPLATE = """\
         "prefetchCount": 1000,
         "batchCheckpointFrequency": 1
     },
-    "functionTimeout": "00:05:00",
-    "extensionBundle": {
-        "id": "Microsoft.Azure.Functions.ExtensionBundle",
-        "version": "[1.*, 2.0.0)"
-    }
+    "functionTimeout": "00:05:00"
 }
 """
 
@@ -139,12 +136,21 @@ class WebHostTestCaseMeta(type(unittest.TestCase)):
                 @functools.wraps(test_case)
                 def wrapper(self, *args, __meth__=test_case,
                             __check_log__=check_log_case, **kwargs):
+
                     if __check_log__ is not None and callable(__check_log__):
                         # Check logging output for unit test scenarios
                         result = self._run_test(__meth__, *args, **kwargs)
-                        output_lines = self.host_out.splitlines()
-                        host_out = list(map(lambda s: s.strip(), output_lines))
-                        self._run_test(__check_log__, host_out=host_out)
+
+                        # Trim off host output timestamps
+                        host_output = getattr(self, 'host_out', '')
+                        output_lines = host_output.splitlines()
+                        ts_re = r"^\[\d+\/\d+\/\d+ \d+\:\d+\:\d+ (A|P)M\]"
+                        output = list(map(
+                            lambda s: re.sub(ts_re, '', s).strip(),
+                            output_lines))
+
+                        # Execute check_log_ test cases
+                        self._run_test(__check_log__, host_out=output)
                         return result
                     else:
                         # Check normal unit test
@@ -162,7 +168,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     this test case class logs WebHost stdout/stderr in case
     a unit test fails.
     """
-
     host_stdout_logger = logging.getLogger('webhosttests')
 
     @classmethod
@@ -178,7 +183,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
             cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
 
         _setup_func_app(TESTS_ROOT / script_dir)
-
         try:
             cls.webhost = start_webhost(script_dir=script_dir,
                                         stdout=cls.host_stdout)
@@ -615,7 +619,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         'languageWorkers:python:workerDirectory': str(worker_path),
         'host:logger:consoleLoggingMode': 'always',
         'AZURE_FUNCTIONS_ENVIRONMENT': 'development',
-        'AzureWebJobsSecretStorageType': 'files',
+        'AzureWebJobsSecretStorageType': 'files'
     }
 
     if testconfig and 'azure' in testconfig:
@@ -666,7 +670,6 @@ def start_webhost(*, script_dir=None, stdout=None):
                          script_root=script_root, port=port)
 
     addr = f'http://127.0.0.1:{port}'
-
     for n in range(10):
         try:
             r = requests.get(f'{addr}/api/ping',
@@ -748,8 +751,7 @@ def _setup_func_app(app_root):
         f.write(HOST_JSON_TEMPLATE)
 
     _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
-    if EXTENSIONS_PATH.exists():
-        _symlink_dir(EXTENSIONS_PATH, extensions)
+    _symlink_dir(EXTENSIONS_PATH, extensions)
 
 
 def _teardown_func_app(app_root):

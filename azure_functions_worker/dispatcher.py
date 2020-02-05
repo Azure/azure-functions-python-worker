@@ -24,6 +24,7 @@ from . import constants
 
 from .logging import error_logger, logger
 from .tracing import marshall_exception_trace
+from .utils.wrappers import disable_feature_by
 
 
 class DispatcherMeta(type):
@@ -408,6 +409,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                 logger.info('Unable to reload azure.functions. '
                             'Using default. Exception:\n{}'.format(ex))
 
+            # Change function app directory
+            if getattr(func_env_reload_request,
+                       'function_app_directory', None):
+                self._change_cwd(
+                    func_env_reload_request.function_app_directory)
+
             success_response = protos.FunctionEnvironmentReloadResponse(
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success))
@@ -425,6 +432,14 @@ class Dispatcher(metaclass=DispatcherMeta):
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
+
+    @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
+    def _change_cwd(self, new_cwd: str):
+        if os.path.exists(new_cwd):
+            os.chdir(new_cwd)
+            logger.info('Changing current working directory to %s', new_cwd)
+        else:
+            logger.warn('Directory %s is not found when reloading', new_cwd)
 
     def __run_sync_func(self, invocation_id, func, params):
         # This helper exists because we need to access the current

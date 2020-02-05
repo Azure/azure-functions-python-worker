@@ -33,6 +33,16 @@ class TestLoader(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, '__app__.relimport.relative')
 
+    def test_loader_submodule(self):
+        r = self.webhost.request('GET', 'submodule')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '__app__.submodule.sub_module.module')
+
+    def test_loader_parentmodule(self):
+        r = self.webhost.request('GET', 'parentmodule')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '__app__.parentmodule.module')
+
 
 class TestPluginLoader(testutils.AsyncTestCase):
 

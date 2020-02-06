@@ -1,7 +1,6 @@
 #!/bin/bash
 
-sudo add-apt-repository -y \
-'deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-xenial-prod xenial main' \
+wget -q https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb \
+&& sudo dpkg -i packages-microsoft-prod.deb \
 && sudo apt-get update \
-&& sudo apt-get install -y \
-azure-functions-core-tools
+&& sudo apt-get install -y azure-functions-core-tools

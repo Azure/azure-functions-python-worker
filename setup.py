@@ -22,32 +22,41 @@ WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/1fqp92o5h2gks7xe'
                '/Functions.Binaries.2.0.12888.no-runtime.zip')
 
 # Extensions necessary for non-core bindings.
-AZURE_EXTENSIONS = [
-    {
-        "id": "Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator",
-        "version": "1.0.1"
-    },
-    {
-        "id": "Microsoft.Azure.WebJobs.Extensions.CosmosDB",
-        "version": "3.0.1"
-    },
-    {
-        "id": "Microsoft.Azure.WebJobs.Extensions.EventHubs",
-        "version": "3.0.0"
-    },
-    {
-        "id": "Microsoft.Azure.WebJobs.Extensions.EventGrid",
-        "version": "2.0.0"
-    },
-    {
-        "id": "Microsoft.Azure.WebJobs.Extensions.Storage",
-        "version": "3.0.0"
-    },
-    {
-        "id": "Microsoft.Azure.WebJobs.ServiceBus",
-        "version": "3.0.0-beta8"
-    },
-]
+AZURE_EXTENSIONS = """\
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <WarningsAsErrors></WarningsAsErrors>
+    <DefaultItemExcludes>**</DefaultItemExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference
+        Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
+        Version="1.0.1"
+    />
+    <PackageReference
+        Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
+        Version="3.0.1"
+    />
+    <PackageReference
+        Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
+        Version="3.0.0"
+    />
+    <PackageReference
+        Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
+        Version="2.0.0"
+    />
+    <PackageReference
+        Include="Microsoft.Azure.WebJobs.Extensions.Storage"
+        Version="3.0.0"
+    />
+    <PackageReference
+        Include="Microsoft.Azure.WebJobs.ServiceBus"
+        Version="3.0.0-beta8"
+    />
+  </ItemGroup>
+</Project>
+"""
 
 
 NUGET_CONFIG = """\
@@ -218,20 +227,25 @@ class webhost(distutils.cmd.Command):
 
         if not (self.extensions_dir / 'host.json').exists():
             with open(self.extensions_dir / 'host.json', 'w') as f:
-                print(r'{}', file=f)
+                print('{}', file=f)
+
+        if not (self.extensions_dir / 'extensions.csproj').exists():
+            with open(self.extensions_dir / 'extensions.csproj', 'w') as f:
+                print(AZURE_EXTENSIONS, file=f)
 
         with open(self.extensions_dir / 'NuGet.config', 'w') as f:
             print(NUGET_CONFIG, file=f)
 
         env = os.environ.copy()
         env['TERM'] = 'xterm'  # ncurses 6.1 workaround
-
-        for ext in AZURE_EXTENSIONS:
-            subprocess.run([
-                'func', 'extensions', 'install', '--package', ext['id'],
-                '--version', ext['version']],
-                check=True, cwd=str(self.extensions_dir),
+        try:
+            subprocess.run(
+                args=['dotnet', 'build', '-o', 'bin'], check=True,
+                cwd=str(self.extensions_dir),
                 stdout=sys.stdout, stderr=sys.stderr, env=env)
+        except Exception:
+            print(f"dotnet core SDK is required")
+            sys.exit(1)
 
     def run(self):
         self._install_webhost()

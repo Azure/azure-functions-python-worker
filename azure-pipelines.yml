@@ -5,7 +5,7 @@ trigger:
 - master
 
 variables:
-    DOTNET_VERSION: '2.2.402'
+    DOTNET_VERSION: '2.2.x'
 
 jobs:
 - job: Tests
@@ -25,12 +25,7 @@ jobs:
     inputs:
       versionSpec: '$(pythonVersion)'
       addToPath: true
-  - task: ShellScript@2
-    inputs:
-      disableAutoCwd: true # Execute in current directory
-      scriptPath: .ci/linux_devops_tools.sh
-    displayName: 'Install Core Tools'
-  - task: DotNetCoreInstaller@0
+  - task: UseDotNet@2
     inputs:
       packageType: 'sdk'
       version: $(DOTNET_VERSION)

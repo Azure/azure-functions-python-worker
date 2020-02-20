@@ -31,21 +31,22 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
                         ),
                     ],
                     metadata={
-                        'iothub-device-id': protos.TypedData(
-                            string='mock-iothub-device-id'
-                        ),
-                        'iothub-auth-data': protos.TypedData(
-                            string='mock-iothub-auth-data'
-                        )
+                        'SystemProperties': protos.TypedData(json=json.dumps({
+                            'iothub-device-id': 'mock-iothub-device-id',
+                            'iothub-auth-data': 'mock-iothub-auth-data',
+                            'EnqueuedTimeUtc': '2020-02-18T21:28:42.5888539Z'
+                        }))
                     }
                 )
 
                 self.assertEqual(r.response.result.status,
                                  protos.StatusResult.Success)
-                self.assertIn(
-                    'mock-iothub-device-id',
-                    r.response.return_value.string
-                )
+
+                res_json_string = r.response.return_value.string
+                self.assertIn('device-id', res_json_string)
+                self.assertIn('mock-iothub-device-id', res_json_string)
+                self.assertIn('auth-data', res_json_string)
+                self.assertIn('mock-iothub-auth-data', res_json_string)
 
             await call_and_check()
 
@@ -70,7 +71,13 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
                         ),
                     ),
                 ],
-                metadata={}
+                metadata={
+                    'SystemProperties': protos.TypedData(json=json.dumps({
+                        'iothub-device-id': 'mock-iothub-device-id',
+                        'iothub-auth-data': 'mock-iothub-auth-data',
+                        'EnqueuedTimeUtc': '2020-02-18T21:28:42.5888539Z'
+                    }))
+                }
             )
 
             self.assertEqual(r.response.result.status,
@@ -104,13 +111,21 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
                     protos.ParameterBinding(
                         name='events',
                         data=protos.TypedData(
-                            json=json.dumps({
+                            json=json.dumps([{
                                 'id': 'cardinality_many'
-                            })
+                            }])
                         ),
                     ),
                 ],
-                metadata={}
+                metadata={
+                    'SystemPropertiesArray': protos.TypedData(json=json.dumps([
+                        {
+                            'iothub-device-id': 'mock-iothub-device-id',
+                            'iothub-auth-data': 'mock-iothub-auth-data',
+                            'EnqueuedTimeUtc': '2020-02-18T21:28:42.5888539Z'
+                        }
+                    ]))
+                }
             )
 
             self.assertEqual(r.response.result.status,

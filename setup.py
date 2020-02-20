@@ -254,7 +254,7 @@ class webhost(distutils.cmd.Command):
 
 setup(
     name='azure-functions-worker',
-    version='1.0.3',
+    version='1.0.4',
     description='Python Language Worker for Azure Functions Host',
     classifiers=[
         'License :: OSI Approved :: MIT License',
@@ -278,7 +278,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'azure-functions==1.0.8',
+            'azure-functions==1.1.0',
             'flake8~=3.7.9',
             'mypy',
             'pytest',

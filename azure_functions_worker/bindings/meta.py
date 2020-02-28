@@ -12,8 +12,13 @@ def get_binding_registry():
 
     if func is not None:
         return func.get_binding_registry()
-    else:
+
+    try:
+        import azure.functions as func
+        return func.get_binding_registry()
+    except ImportError:
         return None
+    return None
 
 
 def get_binding(bind_name: str) -> object:

@@ -9,10 +9,12 @@ from . import generic
 
 def get_binding_registry():
     func = sys.modules.get('azure.functions')
-    if func is not None:
-        return func.get_binding_registry()
-    else:
-        return None
+
+    # If fails to acquire customer's BYO azure-functions, load the builtin
+    if func is None:
+        import azure.functions as func
+
+    return func.get_binding_registry()
 
 
 def get_binding(bind_name: str) -> object:
@@ -20,7 +22,6 @@ def get_binding(bind_name: str) -> object:
     registry = get_binding_registry()
     if registry is not None:
         binding = registry.get(bind_name)
-
     if binding is None:
         binding = generic.GenericBinding
 
@@ -32,14 +33,22 @@ def is_trigger_binding(bind_name: str) -> bool:
     return binding.has_trigger_support()
 
 
-def check_input_type_annotation(binding: str, pytype: type) -> bool:
-    binding = get_binding(binding)
+def check_input_type_annotation(bind_name: str, pytype: type) -> bool:
+    binding = get_binding(bind_name)
     return binding.check_input_type_annotation(pytype)
 
 
-def check_output_type_annotation(binding: str, pytype: type) -> bool:
-    binding = get_binding(binding)
+def check_output_type_annotation(bind_name: str, pytype: type) -> bool:
+    binding = get_binding(bind_name)
     return binding.check_output_type_annotation(pytype)
+
+
+def has_implicit_output(bind_name: str) -> bool:
+    binding = get_binding(bind_name)
+
+    # If the binding does not have metaclass of meta.InConverter
+    # The implicit_output does not exist
+    return getattr(binding, 'has_implicit_output', lambda: False)()
 
 
 def from_incoming_proto(

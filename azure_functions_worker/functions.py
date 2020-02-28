@@ -82,6 +82,13 @@ class Registry:
                 assert return_binding_name is not None
 
                 has_return = True
+            elif bindings.has_implicit_output(desc.type):
+                # If the binding specify implicit output binding
+                # (e.g. orchestrationTrigger, activityTrigger)
+                # we should enable output even if $return is not specified
+                has_return = True
+                return_binding_name = f'{desc.type}_ret'
+                bound_params[name] = desc
             else:
                 bound_params[name] = desc
 
@@ -180,7 +187,8 @@ class Registry:
                     f'direction in function.json, but its annotation '
                     f'is azure.functions.Out in Python')
 
-            if param_has_anno and param_py_type in (str, bytes):
+            if param_has_anno and param_py_type in (str, bytes) and (
+                    not bindings.has_implicit_output(desc.type)):
                 param_bind_type = 'generic'
             else:
                 param_bind_type = desc.type

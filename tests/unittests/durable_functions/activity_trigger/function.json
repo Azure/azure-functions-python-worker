@@ -1,0 +1,10 @@
+{
+    "scriptFile": "main.py",
+    "bindings": [
+      {
+        "type": "activityTrigger",
+        "name": "input",
+        "direction": "in"
+      }
+    ]
+  }

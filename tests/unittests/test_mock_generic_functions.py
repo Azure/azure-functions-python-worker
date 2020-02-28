@@ -142,10 +142,23 @@ class TestGenericFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.generic_funcs_dir) as host:
 
-            # It should fail here, since the generic binding requires datatype
-            # to be defined in function.json
             func_id, r = await host.load_function('foobar_with_no_datatype')
 
             self.assertEqual(r.response.function_id, func_id)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+
+            _, r = await host.invoke_function(
+                'foobar_with_no_datatype', [
+                    protos.ParameterBinding(
+                        name='input',
+                        data=protos.TypedData(
+                            bytes=b'\x00\x01'
+                        )
+                    )
+                ]
+            )
+            # It should fail here, since the generic binding requires datatype
+            # to be defined in function.json
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)

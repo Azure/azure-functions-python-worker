@@ -10,15 +10,11 @@ from . import generic
 def get_binding_registry():
     func = sys.modules.get('azure.functions')
 
-    if func is not None:
-        return func.get_binding_registry()
-
-    try:
+    # If fails to acquire customer's BYO azure-functions, load the builtin
+    if func is None:
         import azure.functions as func
-        return func.get_binding_registry()
-    except ImportError:
-        return None
-    return None
+
+    return func.get_binding_registry()
 
 
 def get_binding(bind_name: str) -> object:

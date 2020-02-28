@@ -32,6 +32,33 @@ class TestDurableFunctions(testutils.AsyncTestCase):
                 protos.TypedData(string='test')
             )
 
+    async def test_mock_activity_trigger_no_anno(self):
+        async with testutils.start_mockhost(
+                script_root=self.durable_functions_dir) as host:
+
+            func_id, r = await host.load_function('activity_trigger_no_anno')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            _, r = await host.invoke_function(
+                'activity_trigger_no_anno', [
+                    protos.ParameterBinding(
+                        name='input',
+                        data=protos.TypedData(
+                            bytes=b'\x34\x93\x04\x70'
+                        )
+                    )
+                ]
+            )
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+            self.assertEqual(
+                r.response.return_value,
+                protos.TypedData(bytes=b'\x34\x93\x04\x70')
+            )
+
     async def test_mock_orchestration_trigger(self):
         async with testutils.start_mockhost(
                 script_root=self.durable_functions_dir) as host:

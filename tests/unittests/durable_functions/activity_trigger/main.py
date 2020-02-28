@@ -1,2 +1,2 @@
-def main(input: str):
+def main(input: str) -> str:
     return input

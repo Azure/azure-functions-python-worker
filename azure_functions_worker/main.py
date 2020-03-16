@@ -22,6 +22,8 @@ def parse_args():
     parser.add_argument('--log-to', type=str, default=None,
                         help='log destination: stdout, stderr, '
                              'syslog, or a file path')
+    parser.add_argument('--grpcMaxMessageLength', type=int,
+                        dest='grpc_max_msg_len')
     return parser.parse_args()
 
 

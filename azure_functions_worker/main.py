@@ -46,7 +46,8 @@ def main():
 async def start_async(host, port, worker_id, request_id):
     disp = await dispatcher.Dispatcher.connect(
         host, port, worker_id, request_id,
-        connect_timeout=5.0, max_msg_len=sys.maxsize)
+        connect_timeout=5.0)
+
 
     disp.load_bindings()
 

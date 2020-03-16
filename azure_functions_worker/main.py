@@ -2,6 +2,7 @@
 
 
 import argparse
+import sys
 
 from . import aio_compat
 from . import dispatcher
@@ -21,8 +22,6 @@ def parse_args():
     parser.add_argument('--log-to', type=str, default=None,
                         help='log destination: stdout, stderr, '
                              'syslog, or a file path')
-    parser.add_argument('--grpcMaxMessageLength', type=int,
-                        dest='grpc_max_msg_len')
     return parser.parse_args()
 
 
@@ -36,17 +35,16 @@ def main():
 
     try:
         return aio_compat.run(start_async(
-            args.host, args.port, args.worker_id, args.request_id,
-            args.grpc_max_msg_len))
+            args.host, args.port, args.worker_id, args.request_id))
     except Exception:
         error_logger.exception('unhandled error in functions worker')
         raise
 
 
-async def start_async(host, port, worker_id, request_id, grpc_max_msg_len):
+async def start_async(host, port, worker_id, request_id):
     disp = await dispatcher.Dispatcher.connect(
         host, port, worker_id, request_id,
-        connect_timeout=5.0, max_msg_len=grpc_max_msg_len)
+        connect_timeout=5.0, max_msg_len=sys.maxsize)
 
     disp.load_bindings()
 

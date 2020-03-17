@@ -36,17 +36,16 @@ def main():
 
     try:
         return aio_compat.run(start_async(
-            args.host, args.port, args.worker_id, args.request_id,
-            args.grpc_max_msg_len))
+            args.host, args.port, args.worker_id, args.request_id))
     except Exception:
         error_logger.exception('unhandled error in functions worker')
         raise
 
 
-async def start_async(host, port, worker_id, request_id, grpc_max_msg_len):
+async def start_async(host, port, worker_id, request_id):
     disp = await dispatcher.Dispatcher.connect(
         host, port, worker_id, request_id,
-        connect_timeout=5.0, max_msg_len=grpc_max_msg_len)
+        connect_timeout=5.0)
 
     disp.load_bindings()
 

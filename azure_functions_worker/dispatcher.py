@@ -44,7 +44,7 @@ class Dispatcher(metaclass=DispatcherMeta):
     _GRPC_STOP_RESPONSE = object()
 
     def __init__(self, loop, host, port, worker_id, request_id,
-                 grpc_connect_timeout, grpc_max_msg_len):
+                 grpc_connect_timeout, grpc_max_msg_len=-1):
         self._loop = loop
         self._host = host
         self._port = port
@@ -65,6 +65,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             max_workers=1)
 
         self._grpc_connect_timeout = grpc_connect_timeout
+        # This is set to -1 by default to remove the limitation on msg size
         self._grpc_max_msg_len = grpc_max_msg_len
         self._grpc_resp_queue: queue.Queue = queue.Queue()
         self._grpc_connected_fut = loop.create_future()

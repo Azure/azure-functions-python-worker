@@ -33,6 +33,8 @@ import requests
 from . import aio_compat
 from . import dispatcher
 from . import protos
+from .utils.common import is_envvar_true
+from .constants import PYAZURE_WEBHOST_DEBUG
 
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
@@ -137,7 +139,10 @@ class WebHostTestCaseMeta(type(unittest.TestCase)):
                 def wrapper(self, *args, __meth__=test_case,
                             __check_log__=check_log_case, **kwargs):
 
-                    if __check_log__ is not None and callable(__check_log__):
+                    if (__check_log__ is not None
+                            and callable(__check_log__)
+                            and not is_envvar_true(PYAZURE_WEBHOST_DEBUG)):
+
                         # Check logging output for unit test scenarios
                         result = self._run_test(__meth__, *args, **kwargs)
 
@@ -177,7 +182,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     @classmethod
     def setUpClass(cls):
         script_dir = pathlib.Path(cls.get_script_dir())
-        if os.environ.get('PYAZURE_WEBHOST_DEBUG'):
+        if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             cls.host_stdout = None
         else:
             cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
@@ -660,7 +665,7 @@ def start_webhost(*, script_dir=None, stdout=None):
         script_root = FUNCS_PATH
 
     if stdout is None:
-        if os.environ.get('PYAZURE_WEBHOST_DEBUG'):
+        if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             stdout = sys.stdout
         else:
             stdout = subprocess.DEVNULL

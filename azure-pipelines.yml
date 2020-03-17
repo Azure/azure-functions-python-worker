@@ -5,12 +5,12 @@ trigger:
 - master
 
 variables:
-    DOTNET_VERSION: '2.2.x'
+    DOTNET_VERSION: '2.2.207'
 
 jobs:
 - job: Tests
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
       Python36:
@@ -52,7 +52,7 @@ jobs:
 - job: Build_WINDOWS_X64
   dependsOn: 'Tests'
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
   strategy:
     matrix:
       Python36V2:
@@ -80,7 +80,7 @@ jobs:
 - job: Build_WINDOWS_X86
   dependsOn: 'Tests'
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
   strategy:
     matrix:
       Python37V2:
@@ -102,7 +102,7 @@ jobs:
 - job: Build_LINUX_X64
   dependsOn: 'Tests'
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
       Python36V2:
@@ -129,7 +129,7 @@ jobs:
 - job: Build_OSX_X64
   dependsOn: 'Tests'
   pool:
-    vmImage: 'macOS-10.13'
+    vmImage: 'macOS-10.15'
   strategy:
     matrix:
       Python36V2:
@@ -161,7 +161,7 @@ jobs:
               'Build_OSX_X64'
              ]
   pool:
-      vmImage: 'vs2017-win2016'
+      vmImage: 'windows-2019'
   strategy:
     matrix:
       V2PythonWorker:

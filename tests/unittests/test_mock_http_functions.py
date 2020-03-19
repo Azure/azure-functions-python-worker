@@ -20,9 +20,10 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
 
-            self.assertEqual(len(r.logs), 1)
+            user_logs = [l for l in r.logs if l.category == 'my function']
+            self.assertEqual(len(user_logs), 1)
 
-            log = r.logs[0]
+            log = user_logs[0]
             self.assertEqual(log.invocation_id, invoke_id)
             self.assertTrue(log.message.startswith(
                 'a gracefully handled error'))
@@ -45,15 +46,18 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
 
-            self.assertEqual(len(r.logs), 2)
+            user_logs = [l for l in r.logs if l.category == 'my function']
+            self.assertEqual(len(user_logs), 2)
 
-            self.assertEqual(r.logs[0].invocation_id, invoke_id)
-            self.assertEqual(r.logs[0].message, 'hello info')
-            self.assertEqual(r.logs[0].level, protos.RpcLog.Information)
+            first_msg = user_logs[0]
+            self.assertEqual(first_msg.invocation_id, invoke_id)
+            self.assertEqual(first_msg.message, 'hello info')
+            self.assertEqual(first_msg.level, protos.RpcLog.Information)
 
-            self.assertEqual(r.logs[1].invocation_id, invoke_id)
-            self.assertTrue(r.logs[1].message.startswith('and another error'))
-            self.assertEqual(r.logs[1].level, protos.RpcLog.Error)
+            second_msg = user_logs[1]
+            self.assertEqual(second_msg.invocation_id, invoke_id)
+            self.assertTrue(second_msg.message.startswith('and another error'))
+            self.assertEqual(second_msg.level, protos.RpcLog.Error)
 
             self.assertEqual(r.response.return_value.string, 'OK-async')
 

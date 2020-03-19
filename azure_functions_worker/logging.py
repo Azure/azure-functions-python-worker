@@ -62,3 +62,7 @@ def enable_console_logging():
 
     if error_logger and error_handler:
         error_logger.addHandler(error_handler)
+
+
+def is_system_log_category(ctg: str):
+    return ctg in ('azure_functions_worker', 'azure_functions_worker_errors')

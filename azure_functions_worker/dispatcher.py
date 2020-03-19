@@ -22,7 +22,7 @@ from . import loader
 from . import protos
 from . import constants
 
-from .logging import error_logger, logger
+from .logging import error_logger, logger, is_system_log_category
 from .logging import enable_console_logging, disable_console_logging
 from .tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
@@ -164,10 +164,16 @@ class Dispatcher(metaclass=DispatcherMeta):
         else:
             log_level = getattr(protos.RpcLog, 'None')
 
+        if is_system_log_category(record.name):
+            log_category = protos.RpcLog.RpcLogCategory.System
+        else:
+            log_category = protos.RpcLog.RpcLogCategory.User
+
         log = dict(
             level=log_level,
             message=formatted_msg,
-            category=record.name
+            category=record.name,
+            log_category=log_category
         )
 
         invocation_id = get_current_invocation_id()
@@ -324,7 +330,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                             self.request_id, function_id, invocation_id)
                 call_result = await fi.func(**args)
             else:
-                logger.warn('Function is sync, request ID: %s,'
+                logger.info('Function is sync, request ID: %s,'
                             'function ID: %s, invocation ID: %s',
                             self.request_id, function_id, invocation_id)
                 call_result = await self._loop.run_in_executor(

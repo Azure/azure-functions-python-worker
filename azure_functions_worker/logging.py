@@ -65,4 +65,9 @@ def enable_console_logging():
 
 
 def is_system_log_category(ctg: str):
-    return ctg in ('azure_functions_worker', 'azure_functions_worker_errors')
+    return any(
+        [ctg.lower().startswith(c) for c in (
+            'azure_functions_worker',
+            'azure_functions_worker_errors'
+        )]
+    )

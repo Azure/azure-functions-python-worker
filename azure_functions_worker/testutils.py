@@ -129,16 +129,13 @@ class WebHostTestCaseMeta(type(unittest.TestCase)):
     def __new__(mcls, name, bases, dct):
         for attrname, attr in dct.items():
             if attrname.startswith('test_') and callable(attr):
-                test_case_name = attrname.lstrip('test_')
                 test_case = attr
-
-                check_log_case_name = f'check_log_{test_case_name}'
-                check_log_case = dct.get(check_log_case_name)
+                check_log_name = attrname.replace('test_', 'check_log_', 1)
+                check_log_case = dct.get(check_log_name)
 
                 @functools.wraps(test_case)
                 def wrapper(self, *args, __meth__=test_case,
                             __check_log__=check_log_case, **kwargs):
-
                     if (__check_log__ is not None
                             and callable(__check_log__)
                             and not is_envvar_true(PYAZURE_WEBHOST_DEBUG)):

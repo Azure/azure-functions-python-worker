@@ -6,6 +6,9 @@ import sys
 logger = logging.getLogger('azure_functions_worker')
 error_logger = logging.getLogger('azure_functions_worker_errors')
 
+handler = None
+error_handler = None
+
 
 def setup(log_level, log_destination):
     if log_level == 'TRACE':
@@ -13,9 +16,6 @@ def setup(log_level, log_destination):
 
     formatter = logging.Formatter(
         'LanguageWorkerConsoleLog %(levelname)s: %(message)s')
-
-    error_handler = None
-    handler = None
 
     if log_destination is None:
         # With no explicit log destination we do split logging,
@@ -46,3 +46,19 @@ def setup(log_level, log_destination):
 
     error_logger.addHandler(error_handler)
     error_logger.setLevel(getattr(logging, log_level))
+
+
+def disable_console_logging():
+    if logger and handler:
+        logger.removeHandler(handler)
+
+    if error_logger and error_handler:
+        error_logger.removeHandler(error_handler)
+
+
+def enable_console_logging():
+    if logger and handler:
+        logger.addHandler(handler)
+
+    if error_logger and error_handler:
+        error_logger.addHandler(error_handler)

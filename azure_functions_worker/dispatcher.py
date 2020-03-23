@@ -22,7 +22,8 @@ from . import loader
 from . import protos
 from . import constants
 
-from .logging import error_logger, logger
+from .logging import error_logger, logger, is_system_log_category
+from .logging import enable_console_logging, disable_console_logging
 from .tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
 
@@ -115,13 +116,21 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._loop.set_task_factory(
                 lambda loop, coro: ContextEnabledTask(coro, loop=loop))
 
+            # Attach gRPC logging to the root logger
             logging_handler = AsyncLoggingHandler()
             root_logger = logging.getLogger()
             root_logger.setLevel(logging.INFO)
             root_logger.addHandler(logging_handler)
+
+            # Since gRPC channel is established, should use it for logging
+            disable_console_logging()
+            logger.info('Detach console logging. Switch to gRPC logging')
+
             try:
                 await forever
             finally:
+                # Reenable console logging when there's an exception
+                enable_console_logging()
                 root_logger.removeHandler(logging_handler)
         finally:
             DispatcherMeta.__current_dispatcher__ = None
@@ -155,10 +164,16 @@ class Dispatcher(metaclass=DispatcherMeta):
         else:
             log_level = getattr(protos.RpcLog, 'None')
 
+        if is_system_log_category(record.name):
+            log_category = protos.RpcLog.RpcLogCategory.System
+        else:
+            log_category = protos.RpcLog.RpcLogCategory.User
+
         log = dict(
             level=log_level,
             message=formatted_msg,
             category=record.name,
+            log_category=log_category
         )
 
         invocation_id = get_current_invocation_id()
@@ -310,12 +325,17 @@ class Dispatcher(metaclass=DispatcherMeta):
                     args[name] = bindings.Out()
 
             if fi.is_async:
+                logger.info('Function is async, request ID: %s,'
+                            'function ID: %s, invocation ID: %s',
+                            self.request_id, function_id, invocation_id)
                 call_result = await fi.func(**args)
             else:
+                logger.info('Function is sync, request ID: %s,'
+                            'function ID: %s, invocation ID: %s',
+                            self.request_id, function_id, invocation_id)
                 call_result = await self._loop.run_in_executor(
                     self._sync_call_tp,
                     self.__run_sync_func, invocation_id, fi.func, args)
-
             if call_result is not None and not fi.has_return:
                 raise RuntimeError(
                     f'function {fi.name!r} without a $return binding '
@@ -499,10 +519,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 class AsyncLoggingHandler(logging.Handler):
 
     def emit(self, record):
-        if not record.name.startswith('azure_functions_worker'):
-            # Skip worker system logs
-            msg = self.format(record)
-            Dispatcher.current._on_logging(record, msg)
+        # Since we disable console log after gRPC channel is initiated
+        # We should redirect all the messages into dispatcher
+        msg = self.format(record)
+        Dispatcher.current._on_logging(record, msg)
 
 
 class ContextEnabledTask(asyncio.Task):

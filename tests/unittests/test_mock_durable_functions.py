@@ -87,8 +87,6 @@ class TestDurableFunctions(testutils.AsyncTestCase):
             )
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
-
-            # The activity_trigger_no_anno will reverse "name" value from input
             self.assertEqual(
                 r.response.return_value,
                 protos.TypedData(json='{"bird": "enarC"}')
@@ -119,8 +117,6 @@ class TestDurableFunctions(testutils.AsyncTestCase):
             )
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
-
-            # The activity_trigger_no_anno will reverse "name" value from input
             self.assertEqual(
                 r.response.return_value,
                 protos.TypedData(json='-11.0')

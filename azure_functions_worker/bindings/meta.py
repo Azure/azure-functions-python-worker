@@ -5,7 +5,6 @@ from .. import protos
 
 from . import datumdef
 from . import generic
-from . import implicit_out
 
 
 def get_binding_registry():
@@ -23,8 +22,6 @@ def get_binding(bind_name: str) -> object:
     registry = get_binding_registry()
     if registry is not None:
         binding = registry.get(bind_name)
-    if binding is None and bind_name == "implicit_out":
-        binding = implicit_out.ImplicitOutBinding
     if binding is None:
         binding = generic.GenericBinding
 

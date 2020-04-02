@@ -79,15 +79,16 @@ class Registry:
                         func_name,
                         f'"$return" binding must have direction set to "out"')
 
+                has_explicit_return = True
                 return_binding_name = desc.type
                 assert return_binding_name is not None
 
-                has_explicit_return = True
             elif bindings.has_implicit_output(desc.type):
                 # If the binding specify implicit output binding
                 # (e.g. orchestrationTrigger, activityTrigger)
                 # we should enable output even if $return is not specified
                 has_implicit_return = True
+                return_binding_name = desc.type
                 bound_params[name] = desc
             else:
                 bound_params[name] = desc
@@ -253,10 +254,8 @@ class Registry:
             return_pytype = annotations.get('return')
 
         return_type = None
-        if has_explicit_return:
+        if has_explicit_return or has_implicit_return:
             return_type = ParamTypeInfo(return_binding_name, return_pytype)
-        if has_implicit_return:
-            return_type = ParamTypeInfo('implicit_out', return_pytype)
 
         self._functions[function_id] = FunctionInfo(
             func=func,

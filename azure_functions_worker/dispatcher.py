@@ -362,7 +362,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             return_value = None
             if fi.return_type is not None:
-                print(f"FI.RETURN_TYPE.BINDING_NAME = {fi.return_type.binding_name}")
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name, call_result,
                     pytype=fi.return_type.pytype)

@@ -63,7 +63,8 @@ class Registry:
         return_pytype: typing.Optional[type] = None
 
         requires_context = False
-        has_return = False
+        has_explicit_return = False
+        has_implicit_return = False
 
         bound_params = {}
         for name, desc in metadata.bindings.items():
@@ -81,13 +82,12 @@ class Registry:
                 return_binding_name = desc.type
                 assert return_binding_name is not None
 
-                has_return = True
+                has_explicit_return = True
             elif bindings.has_implicit_output(desc.type):
                 # If the binding specify implicit output binding
                 # (e.g. orchestrationTrigger, activityTrigger)
                 # we should enable output even if $return is not specified
-                has_return = True
-                return_binding_name = f'{desc.type}_ret'
+                has_implicit_return = True
                 bound_params[name] = desc
             else:
                 bound_params[name] = desc
@@ -224,7 +224,7 @@ class Registry:
                 input_types[param.name] = param_type_info
 
         return_pytype = None
-        if return_binding_name is not None and 'return' in annotations:
+        if has_explicit_return and 'return' in annotations:
             return_anno = annotations.get('return')
             if (typing_inspect.is_generic_type(return_anno)
                and typing_inspect.get_origin(return_anno).__name__ == 'Out'):
@@ -249,9 +249,14 @@ class Registry:
                     f'Python return annotation "{return_pytype.__name__}" '
                     f'does not match binding type "{return_binding_name}"')
 
+        if has_implicit_return and 'return' in annotations:
+            return_pytype = annotations.get('return')
+
         return_type = None
-        if return_binding_name is not None:
+        if has_explicit_return:
             return_type = ParamTypeInfo(return_binding_name, return_pytype)
+        if has_implicit_return:
+            return_type = ParamTypeInfo('implicit_out', return_pytype)
 
         self._functions[function_id] = FunctionInfo(
             func=func,
@@ -259,7 +264,7 @@ class Registry:
             directory=metadata.directory,
             requires_context=requires_context,
             is_async=inspect.iscoroutinefunction(func),
-            has_return=has_return,
+            has_return=has_explicit_return or has_implicit_return,
             input_types=input_types,
             output_types=output_types,
             return_type=return_type)

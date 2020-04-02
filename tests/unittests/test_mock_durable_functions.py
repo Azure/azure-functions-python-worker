@@ -17,10 +17,12 @@ class TestDurableFunctions(testutils.AsyncTestCase):
 
             _, r = await host.invoke_function(
                 'activity_trigger', [
+                    # According to Durable Python
+                    # Activity Trigger's input must be json serializable
                     protos.ParameterBinding(
                         name='input',
                         data=protos.TypedData(
-                            string='test'
+                            string='test single_word'
                         )
                     )
                 ]
@@ -29,7 +31,7 @@ class TestDurableFunctions(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
             self.assertEqual(
                 r.response.return_value,
-                protos.TypedData(string='test')
+                protos.TypedData(json='"test single_word"')
             )
 
     async def test_mock_activity_trigger_no_anno(self):
@@ -44,10 +46,12 @@ class TestDurableFunctions(testutils.AsyncTestCase):
 
             _, r = await host.invoke_function(
                 'activity_trigger_no_anno', [
+                    # According to Durable Python
+                    # Activity Trigger's input must be json serializable
                     protos.ParameterBinding(
                         name='input',
                         data=protos.TypedData(
-                            bytes=b'\x34\x93\x04\x70'
+                            string='test multiple words'
                         )
                     )
                 ]
@@ -56,7 +60,70 @@ class TestDurableFunctions(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
             self.assertEqual(
                 r.response.return_value,
-                protos.TypedData(bytes=b'\x34\x93\x04\x70')
+                protos.TypedData(json='"test multiple words"')
+            )
+
+    async def test_mock_activity_trigger_dict(self):
+        async with testutils.start_mockhost(
+                script_root=self.durable_functions_dir) as host:
+
+            func_id, r = await host.load_function('activity_trigger_dict')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            _, r = await host.invoke_function(
+                'activity_trigger_dict', [
+                    # According to Durable Python
+                    # Activity Trigger's input must be json serializable
+                    protos.ParameterBinding(
+                        name='input',
+                        data=protos.TypedData(
+                            json='{"bird": "Crane"}'
+                        )
+                    )
+                ]
+            )
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            # The activity_trigger_no_anno will reverse "name" value from input
+            self.assertEqual(
+                r.response.return_value,
+                protos.TypedData(json='{"bird": "enarC"}')
+            )
+
+    async def test_mock_activity_trigger_int_to_float(self):
+        async with testutils.start_mockhost(
+                script_root=self.durable_functions_dir) as host:
+
+            func_id, r = await host.load_function(
+                'activity_trigger_int_to_float')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            _, r = await host.invoke_function(
+                'activity_trigger_int_to_float', [
+                    # According to Durable Python
+                    # Activity Trigger's input must be json serializable
+                    protos.ParameterBinding(
+                        name='input',
+                        data=protos.TypedData(
+                            json=str(int(10))
+                        )
+                    )
+                ]
+            )
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            # The activity_trigger_no_anno will reverse "name" value from input
+            self.assertEqual(
+                r.response.return_value,
+                protos.TypedData(json='-11.0')
             )
 
     async def test_mock_orchestration_trigger(self):
@@ -83,5 +150,5 @@ class TestDurableFunctions(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
             self.assertEqual(
                 r.response.return_value,
-                protos.TypedData(string='Durable functions coming soon :)')
+                protos.TypedData(json='Durable functions coming soon :)')
             )

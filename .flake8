@@ -5,4 +5,4 @@ exclude =
     Samples, azure_functions_worker/protos/,
     azure_functions_worker/typing_inspect.py,
     tests/unittests/test_typing_inspect.py,
-    .venv*, .env*, .vscode
+    .venv*, .env*, .vscode, venv

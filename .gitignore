@@ -86,6 +86,7 @@ celerybeat-schedule
 .venv*
 venv/
 ENV/
+py3env/
 
 # Spyder project settings
 .spyderproject
@@ -108,3 +109,13 @@ ENV/
 
 # vscode
 .vscode
+
+# dotenv
+.env
+
+# mac osx specific files
+.DS_Store
+
+# PyCharm
+.idea/
+.idea_modules/

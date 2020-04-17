@@ -90,12 +90,9 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.text, 'OK-async')
 
     def check_log_async_logging(self, host_out: typing.List[str]):
+        # Host out only contains user logs
         self.assertIn('hello info', host_out)
         self.assertIn('and another error', host_out)
-
-        # We should see "Function is async"
-        is_async = any([ho.startswith("Function is async") for ho in host_out])
-        self.assertTrue(is_async)
 
     def test_sync_logging(self):
         # Test that logging doesn't *break* things.
@@ -104,11 +101,8 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.text, 'OK-sync')
 
     def check_log_sync_logging(self, host_out: typing.List[str]):
+        # Host out only contains user logs
         self.assertIn('a gracefully handled error', host_out)
-
-        # We should see a warning "Function is sync"
-        is_sync = any([ho.startswith("Function is sync") for ho in host_out])
-        self.assertTrue(is_sync)
 
     def test_return_context(self):
         r = self.webhost.request('GET', 'return_context')

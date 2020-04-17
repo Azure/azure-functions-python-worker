@@ -80,7 +80,11 @@ class TestPluginLoader(testutils.AsyncTestCase):
 
             stdout, stderr = await proc.communicate()
 
-            self.assertEqual(stdout.strip().split(b'\n'), [b'True', b'True'])
+            # Trimming off carriage return charater when testing on Windows
+            stdout_lines = [
+                l.replace(b'\r', b'') for l in stdout.strip().split(b'\n')
+            ]
+            self.assertEqual(stdout_lines, [b'True', b'True'])
 
         finally:
             subprocess.run([

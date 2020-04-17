@@ -3,6 +3,7 @@ import subprocess
 import sys
 import typing
 import tempfile
+import unittest
 
 from azure_functions_worker import protos
 from azure_functions_worker import testutils
@@ -78,11 +79,15 @@ class TestGRPC(testutils.AsyncTestCase):
         finally:
             self._reset_environ()
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Linux .sh script only works on Linux')
     def test_failed_sys_path_import(self):
         self._verify_sys_path_import(
             'fail',
             "No module named 'test_module'")
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Linux .sh script only works on Linux')
     def test_successful_sys_path_import(self):
         self._verify_sys_path_import(
             'success',
@@ -105,11 +110,15 @@ class TestGRPC(testutils.AsyncTestCase):
         finally:
             self._reset_environ()
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Linux .sh script only works on Linux')
     def test_failed_azure_namespace_import(self):
         self._verify_azure_namespace_import(
             'false',
             'module_b fails to import')
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Linux .sh script only works on Linux')
     def test_successful_azure_namespace_import(self):
         self._verify_azure_namespace_import(
             'true',

@@ -1,4 +1,4 @@
-# Contributing to Linux Guest Agent
+# Contributing to Azure Functions Python Worker
 First, thank you for contributing to Azure Functions Python Worker repository!
 
 ## Basics
@@ -6,7 +6,7 @@ If you would like to become an active contributor to this project, please follow
 
 ## Table of Contents
 [Before starting](#before-starting)
-- [Github basics](#github-basics)
+- [GitHub basics](#github-basics)
 - [Code of Conduct](#code-of-conduct)
 
 [Making Changes](#making-changes)
@@ -18,15 +18,15 @@ If you would like to become an active contributor to this project, please follow
 
 ## Before starting
 
-### Github basics
+### GitHub basics
 
 #### GitHub workflow
 
-If you don't have experience with Git and Github, some of the terminology and process can be confusing. [Here's a guide to understanding Github](https://guides.github.com/introduction/flow/).
+If you don't have experience with Git and GitHub, some of the terminology and process can be confusing. [Here's a guide to understanding GitHub](https://guides.github.com/introduction/flow/).
 
-#### Forking the Azure/Guest-Configuration-Extension repository
+#### Forking the Azure/Azure-Functions-Python-Worker repository
 
-Unless you are working with multiple contributors on the same file, we ask that you fork the repository and submit your Pull Request from there. [Here's a guide to forks in Github](https://guides.github.com/activities/forking/).
+If you don't have contributor [`Azure/Azure-Functions-Python-Worker`](https://github.com/Azure/azure-functions-python-worker/) repository, we ask that you fork the repository and submit your Pull Request from there. We block PRs from forks to go through E2E tests, however, we will cherry-picked PRs once they pass unit tests to validate the E2E tests. [Here's a guide to forks in GitHub](https://guides.github.com/activities/forking/).
 
 ### Code of Conduct
 
@@ -53,7 +53,7 @@ A pull request template will automatically be included as a part of your PR. Ple
 
 If you are thinking about making a large change, **break up the change into small, logical, testable chunks, and organize your pull requests accordingly**.
 
-Often when a pull request is created with a large number of files changed and/or a large number of lines of code added and/or removed, GitHub will have a difficult time opening up the changes on their site. This forces the Azure Guest-Configuration-Extension team to use separate software to do a code review on the pull request.
+Often when a pull request is created with a large number of files changed and/or a large number of lines of code added and/or removed, GitHub will have a difficult time opening up the changes on their site. This forces the Azure Azure-Functions-Python-Worker team to use separate software to do a code review on the pull request.
 
 If you find yourself creating a pull request and are unable to see all the changes on GitHub, we recommend **splitting the pull request into multiple pull requests that are able to be reviewed on GitHub**.
 
@@ -75,4 +75,4 @@ The following guidelines must be followed in **EVERY** pull request that is open
 The following guidelines must be followed in **EVERY** pull request that is opened.
 
 - Pull request includes test coverage for the included changes
-- Changes would not be merged untill all the CI scenarios pass.
+- Changes would not be merged until all the CI scenarios pass.

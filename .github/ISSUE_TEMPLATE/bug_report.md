@@ -1,20 +1,24 @@
+---
+name: Bug report
+about: Create a report to help us improve
+title: "[BUG] Bug Title"
+---
 
 <!--
 Please describe your issue or feature request below.
 -->
 
-#### Investigative information
+### Investigative information
+###### Please provide the following:
 
-Please provide the following:
 
 - Timestamp:
 - Function App name:
 - Function name(s) (as appropriate):
 - Core Tools version:
 
-#### Repro steps
-
-Provide the steps required to reproduce the problem:
+### Repro steps
+###### Provide the steps required to reproduce the problem:
 
 <!--
 Example:
@@ -24,9 +28,8 @@ Example:
 
 -->
 
-#### Expected behavior
-
-Provide a description of the expected behavior.
+### Expected behavior
+###### Provide a description of the expected behavior.
 
 <!--
 Example:
@@ -34,9 +37,8 @@ Example:
  - After I perform step B, the lights in the house should turn off.
 -->
 
-#### Actual behavior
-
-Provide a description of the actual behavior observed.
+### Actual behavior
+###### Provide a description of the actual behavior observed.
 
 <!--
 Example:
@@ -44,9 +46,8 @@ Example:
 - Step B actually causes my cat to meow for some reason.
 -->
 
-#### Known workarounds
-
-Provide a description of any known workarounds.
+### Known workarounds
+###### Provide a description of any known workarounds.
 
 <!--
 Example:
@@ -54,9 +55,8 @@ Example:
 - Turn off the circuit breaker for the lights.
 -->
 
-#### Contents of the requirements.txt file:
-
-Provide the requirements.txt file to help us find out module related issues.
+### Contents of the requirements.txt file:
+###### Provide the requirements.txt file to help us find out module related issues.
 
 <!--
 Example:
@@ -67,9 +67,8 @@ azure-storage-blob==12.1.0
 ```
 -->
 
-#### Related information
-
-Provide any related information
+### Related information
+###### Provide any related information
 
 * Links to source
 * Bindings used

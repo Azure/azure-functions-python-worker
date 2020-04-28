@@ -5,6 +5,7 @@ title: "[BUG] Bug Title"
 ---
 
 <!--
+Before creating a new issue, please check if the issue already exists in the [open issues panel](https://github.com/Azure/azure-functions-python-worker/issues?q=is%3Aissue+is%3Aopen) and please check the [Troubleshooting Guides](https://github.com/Azure/azure-functions-python-worker/wiki#troubleshooting-guides) in our wiki.
 Please describe your issue or feature request below.
 -->
 

@@ -3,6 +3,7 @@ name: 1.x.$(Date:yyyyMMdd)$(Rev:r)
 trigger:
 - dev
 - master
+- release/*
 
 variables:
     DOTNET_VERSION: '2.2.207'
@@ -59,6 +60,7 @@ jobs:
 
 - job: Build_WINDOWS_X64
   dependsOn: 'Tests'
+  condition: startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')
   pool:
     vmImage: 'windows-2019'
   strategy:
@@ -87,6 +89,7 @@ jobs:
       artifactName: '$(pythonVersion)_WINDOWS_X64'
 - job: Build_WINDOWS_X86
   dependsOn: 'Tests'
+  condition: startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')
   pool:
     vmImage: 'windows-2019'
   strategy:
@@ -109,6 +112,7 @@ jobs:
       artifactName: '$(pythonVersion)_WINDOWS_x86'
 - job: Build_LINUX_X64
   dependsOn: 'Tests'
+  condition: startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')
   pool:
     vmImage: 'ubuntu-18.04'
   strategy:
@@ -136,6 +140,7 @@ jobs:
       artifactName: '$(pythonVersion)_LINUX_X64'
 - job: Build_OSX_X64
   dependsOn: 'Tests'
+  condition: startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')
   pool:
     vmImage: 'macOS-10.15'
   strategy:
@@ -163,29 +168,26 @@ jobs:
       artifactName: '$(pythonVersion)_OSX_X64'
 
 - job: PackageWorkers
-  dependsOn: ['Build_WINDOWS_X64',
-              'Build_WINDOWS_X86',
-              'Build_LINUX_X64',
-              'Build_OSX_X64'
-             ]
+  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64']
+  condition: startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')
   pool:
-      vmImage: 'windows-2019'
-  strategy:
-    matrix:
-      V2PythonWorker:
-        minorVersion: '0'
-        nuspecPath: 'pack\Microsoft.Azure.Functions.V2.PythonWorker.nuspec'
-      V3PythonWorker:
-        minorVersion: '1'
-        nuspecPath: 'pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec'
+      vmImage: 'vs2017-win2016'
   steps:
   - bash: |
-      MAJOR=$(echo $BUILD_BUILDNUMBER | cut -d '.' -f1)
-      MINOR=$(minorVersion)
-      PATCH=$(echo $BUILD_BUILDNUMBER | cut -d '.' -f3)
-      echo "##vso[task.setvariable variable=worker_version]$MAJOR.$MINOR.$PATCH"
-      echo "Packaging Python Worker Version $MAJOR.$MINOR.$PATCH"
-    displayName: "Generate Worker Version"
+      echo "Releasing from $BUILD_SOURCEBRANCHNAME"
+
+      if [[ $BUILD_SOURCEBRANCHNAME = 2\.* ]]
+      then
+        NUSPEC="pack\Microsoft.Azure.Functions.V2.PythonWorker.nuspec"
+      elif [[ $BUILD_SOURCEBRANCHNAME = 3\.* ]]
+        NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
+      else
+        echo "No Matching Release Tag For $BUILD_SOURCEBRANCHNAME"
+      fi
+
+      echo "##vso[task.setvariable variable=worker_version]$BUILD_SOURCEBRANCHNAME"
+      echo "##vso[task.setvariable variable=nuspec_path]$NUSPEC"
+    displayName: "Generate Worker NuGet Package for Release $BUILD_SOURCEBRANCHNAME"
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'
@@ -194,9 +196,9 @@ jobs:
   - task: NuGetCommand@2
     inputs:
       command: pack
-      packagesToPack: '$(nuspecPath)'
+      packagesToPack: "$NUSPEC_PATH"
       versioningScheme: 'byEnvVar'
-      versionEnvVar: WORKER_VERSION # Replaces version in nuspec
+      versionEnvVar: WORKER_VERSION
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'

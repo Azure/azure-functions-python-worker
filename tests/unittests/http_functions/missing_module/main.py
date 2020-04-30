@@ -1,7 +1,7 @@
 import logging
 
 import azure.functions
-import does_not_exist
+import does_not_exist  # Noqa
 
 
 logger = logging.getLogger('my function')

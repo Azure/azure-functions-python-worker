@@ -24,7 +24,7 @@ from . import constants
 
 from .logging import error_logger, logger, is_system_log_category
 from .logging import enable_console_logging, disable_console_logging
-from .tracing import marshall_exception_trace
+from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
 
 

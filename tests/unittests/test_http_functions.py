@@ -282,3 +282,13 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
     def check_log_user_event_loop_error(self, host_out: typing.List[str]):
         self.assertIn('try_log', host_out)
+
+    def test_import_module_troubleshooting_url(self):
+        r = self.webhost.request('GET', 'missing_module/')
+        self.assertEqual(r.status_code, 500)
+
+    def check_log_import_module_troubleshooting_url(self, host_out):
+        self.assertIn("Exception: ModuleNotFoundError: "
+                      "No module named 'does_not_exist'. "
+                      "Troubleshooting Guide: "
+                      "https://aka.ms/functions-modulenotfound", host_out)

@@ -30,7 +30,7 @@ import re
 import grpc
 import requests
 
-from . import aio_compat
+from azure_functions_worker._thirdparty import aio_compat
 from . import dispatcher
 from . import protos
 from .utils.common import is_envvar_true

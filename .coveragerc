@@ -49,3 +49,4 @@ omit =
     # Removing the imported libraries that might show up in this.
     */azure/functions/*
     */azure/*
+    */azure_functions_worker/_thirdparty/*

@@ -52,10 +52,18 @@ class TestGRPC(testutils.AsyncTestCase):
         test_env = {}
         await self._verify_environment_reloaded(test_env=test_env)
 
+    @unittest.skipIf(sys.platform == 'darwin',
+                     'MacOS creates the processes specific var folder in '
+                     '/private filesystem and not in /var like in linux '
+                     'systems.')
     async def test_changing_current_working_directory(self):
         test_cwd = tempfile.gettempdir()
         await self._verify_environment_reloaded(test_cwd=test_cwd)
 
+    @unittest.skipIf(sys.platform == 'darwin',
+                     'MacOS creates the processes specific var folder in '
+                     '/private filesystem and not in /var like in linux '
+                     'systems.')
     async def test_reload_env_message(self):
         test_env = {'TEST_KEY': 'foo', 'HELLO': 'world'}
         test_cwd = tempfile.gettempdir()
@@ -95,6 +103,7 @@ class TestGRPC(testutils.AsyncTestCase):
 
     def _verify_azure_namespace_import(self, result, expected_output):
         try:
+            print(os.getcwd())
             path_import_script = os.path.join(
                 testutils.UNIT_TESTS_ROOT,
                 'azure_namespace_import',

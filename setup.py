@@ -271,7 +271,8 @@ setup(
               'azure_functions_worker.protos.identity',
               'azure_functions_worker.protos.shared',
               'azure_functions_worker.bindings',
-              'azure_functions_worker.utils'],
+              'azure_functions_worker.utils',
+              'azure_functions_worker._thirdparty'],
     install_requires=[
         'grpcio~=1.26.0',
         'grpcio-tools~=1.26.0',

@@ -29,6 +29,26 @@ class MockFeature:
         return result
 
 
+class MockMethod:
+    @wrappers.attach_message_to_exception(ImportError, 'success')
+    def mock_load_function_success(self):
+        return True
+
+    @wrappers.attach_message_to_exception(ImportError, 'module_not_found')
+    def mock_load_function_module_not_found(self):
+        raise ModuleNotFoundError('MODULE_NOT_FOUND')
+
+    @wrappers.attach_message_to_exception(ImportError, 'import_error')
+    def mock_load_function_import_error(self):
+        # ImportError is a subclass of ModuleNotFoundError
+        raise ImportError('IMPORT_ERROR')
+
+    @wrappers.attach_message_to_exception(ImportError, 'value_error')
+    def mock_load_function_value_error(self):
+        # ValueError is not a subclass of ImportError
+        raise ValueError('VALUE_ERROR')
+
+
 class TestUtilities(unittest.TestCase):
 
     def setUp(self):
@@ -114,6 +134,32 @@ class TestUtilities(unittest.TestCase):
         result = mock_feature.mock_feature_default(output)
         self.assertEqual(result, FEATURE_DEFAULT)
         self.assertListEqual(output, [])
+
+    def test_exception_message_should_not_be_extended_on_success(self):
+        mock_method = MockMethod()
+        result = mock_method.mock_load_function_success()
+        self.assertTrue(result)
+
+    def test_exception_message_should_be_extended_on_subexception(self):
+        mock_method = MockMethod()
+        with self.assertRaises(Exception) as e:
+            mock_method.mock_load_function_module_not_found()
+            self.assertIn('module_not_found', e.msg)
+            self.assertEqual(type(e), ModuleNotFoundError)
+
+    def test_exception_message_should_be_extended_on_exact_exception(self):
+        mock_method = MockMethod()
+        with self.assertRaises(Exception) as e:
+            mock_method.mock_load_function_module_not_found()
+            self.assertIn('import_error', e.msg)
+            self.assertEqual(type(e), ImportError)
+
+    def test_exception_message_should_not_be_extended_on_other_exception(self):
+        mock_method = MockMethod()
+        with self.assertRaises(Exception) as e:
+            mock_method.mock_load_function_value_error()
+            self.assertNotIn('import_error', e.msg)
+            self.assertEqual(type(e), ValueError)
 
     def _unset_feature_flag(self):
         try:

@@ -2,6 +2,17 @@ from typing import List
 import traceback
 
 
+def extend_exception_message(exc: Exception, msg: str) -> Exception:
+    # Reconstruct exception message
+    # From: ImportModule: no module name
+    #   To: ImportModule: no module name. msg
+    old_tb = exc.__traceback__
+    old_msg = getattr(exc, 'msg', None) or str(exc) or ''
+    new_msg = (old_msg.rstrip('.') + '. ' + msg).rstrip()
+    new_excpt = type(exc)(new_msg).with_traceback(old_tb)
+    return new_excpt
+
+
 def marshall_exception_trace(exc: Exception) -> str:
     stack_summary: traceback.StackSummary = traceback.extract_tb(
         exc.__traceback__)

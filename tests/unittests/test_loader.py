@@ -43,6 +43,16 @@ class TestLoader(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, '__app__.parentmodule.module')
 
+    def test_loader_brokenimplicit(self):
+        r = self.webhost.request('GET', 'brokenimplicit')
+        self.assertEqual(r.status_code, 500)
+
+    def check_log_loader_brokenimplicit(self, host_out):
+        self.assertIn("Exception: ModuleNotFoundError: "
+                      "No module named 'simple'. "
+                      "Troubleshooting Guide: "
+                      "https://aka.ms/functions-modulenotfound", host_out)
+
 
 class TestPluginLoader(testutils.AsyncTestCase):
 

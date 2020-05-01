@@ -10,6 +10,9 @@ import pathlib
 import sys
 import typing
 
+from .constants import MODULE_NOT_FOUND_TS_URL
+from .utils.wrappers import attach_message_to_exception
+
 
 _AZURE_NAMESPACE = '__app__'
 
@@ -33,6 +36,10 @@ def uninstall():
     pass
 
 
+@attach_message_to_exception(
+    expt_type=ImportError,
+    message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
+)
 def load_function(name: str, directory: str, script_file: str,
                   entry_point: typing.Optional[str]):
     dir_path = pathlib.Path(directory)

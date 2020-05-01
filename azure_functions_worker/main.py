@@ -3,7 +3,7 @@
 
 import argparse
 
-from . import aio_compat
+from ._thirdparty import aio_compat
 from . import dispatcher
 from . import logging
 from .logging import error_logger, logger

@@ -48,6 +48,14 @@ jobs:
       LINUXEVENTHUBCONNECTIONSTRING: $(LinuxEventHubConnectionString)
       LINUXSERVICEBUSCONNECTIONSTRING: $(LinuxServiceBusConnectionString)
     displayName: 'E2E Tests'
+  - bash: |
+      chmod +x .ci/linux_devops_code_coverage_generate.sh
+      .ci/linux_devops_code_coverage_generate.sh
+    displayName: 'Generate Code Coverage XML file'
+  - task: PublishCodeCoverageResults@1
+    inputs:
+        codeCoverageTool: cobertura
+        summaryFileLocation: coverage.xml
 
 - job: Build_WINDOWS_X64
   dependsOn: 'Tests'

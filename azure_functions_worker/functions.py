@@ -4,7 +4,7 @@ import typing
 
 from . import bindings
 from . import protos
-from . import typing_inspect
+from ._thirdparty import typing_inspect
 
 
 class ParamTypeInfo(typing.NamedTuple):

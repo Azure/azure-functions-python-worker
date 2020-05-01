@@ -283,6 +283,7 @@ setup(
             'mypy',
             'pytest',
             'requests==2.*',
+            'coverage'
         ]
     },
     include_package_data=True,

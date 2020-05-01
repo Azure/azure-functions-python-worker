@@ -5,4 +5,5 @@ export AzureWebJobsStorage=$LINUXSTORAGECONNECTIONSTRING
 export AzureWebJobsCosmosDBConnectionString=$LINUXCOSMOSDBCONNECTIONSTRING
 export AzureWebJobsEventHubConnectionString=$LINUXEVENTHUBCONNECTIONSTRING
 export AzureWebJobsServiceBusConnectionString=$LINUXSERVICEBUSCONNECTIONSTRING
-pytest tests/endtoend
+
+coverage run -p --branch -m pytest tests/endtoend

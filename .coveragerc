@@ -1,0 +1,51 @@
+[run]
+parallel=True
+
+[report]
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+    def __repr__
+
+    # Don't complain about missing debug-only code:
+    if self\.debug
+
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplementedError
+
+    # Don't complain if non-runnable code isn't run:
+    if 0:
+    if False:
+    if __name__ == .__main__.:
+
+    # Not counting some extra lines which don't need to be counted.
+    print
+    def setUp
+    def suite
+
+ignore_errors = True
+
+omit =
+    */build/*
+    */doc/*
+    */examples/*
+    */postprocessing/*
+    */test/*
+    */setup.py
+    setup.py
+    */site-packages/*
+    */venv/*
+    */docs/*
+    */pack/*
+    */python/*
+    */build/*
+    */.venv/*
+    */.env*/*
+    */.vscode/*
+    */tests/*
+
+    # Removing the imported libraries that might show up in this.
+    */azure/functions/*
+    */azure/*

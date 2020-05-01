@@ -1,4 +1,4 @@
 #!/bin/bash
 
 set -e -x
-pytest tests/unittests
+coverage run -p --branch -m pytest tests/unittests

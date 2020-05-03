@@ -251,10 +251,16 @@ class webhost(distutils.cmd.Command):
         self._install_extensions()
 
 
+with open("README.md") as readme:
+    long_description = readme.read()
+
+
 setup(
     name='azure-functions-worker',
-    version='1.1.0',
+    version='1.1.1',
     description='Python Language Worker for Azure Functions Host',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Intended Audience :: Developers',
@@ -279,7 +285,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'azure-functions==1.2.0',
+            'azure-functions==1.2.1',
             'flake8~=3.7.9',
             'mypy',
             'pytest',

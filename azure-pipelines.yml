@@ -180,6 +180,7 @@ jobs:
       then
         NUSPEC="pack\Microsoft.Azure.Functions.V2.PythonWorker.nuspec"
       elif [[ $BUILD_SOURCEBRANCHNAME = 3\.* ]]
+      then
         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
       else
         echo "No Matching Release Tag For $BUILD_SOURCEBRANCHNAME"
@@ -196,7 +197,7 @@ jobs:
   - task: NuGetCommand@2
     inputs:
       command: pack
-      packagesToPack: "$NUSPEC_PATH"
+      packagesToPack: '$(nuspec_path)'
       versioningScheme: 'byEnvVar'
       versionEnvVar: WORKER_VERSION
   - task: PublishBuildArtifacts@1

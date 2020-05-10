@@ -16,11 +16,22 @@ jobs:
     matrix:
       Python36:
         pythonVersion: '3.6'
+        linuxStorage: $(LinuxStorageConnectionString36)
+        linuxCosmosDB: $(LinuxCosmosDBConnectionString36)
+        linuxEventHub: $(LinuxEventHubConnectionString36)
+        linuxServiceBus: $(LinuxServiceBusConnectionString36)
       Python37:
         pythonVersion: '3.7'
+        linuxStorage: $(LinuxStorageConnectionString37)
+        linuxCosmosDB: $(LinuxCosmosDBConnectionString37)
+        linuxEventHub: $(LinuxEventHubConnectionString37)
+        linuxServiceBus: $(LinuxServiceBusConnectionString37)
       Python38:
         pythonVersion: '3.8'
-    maxParallel: 1
+        linuxStorage: $(LinuxStorageConnectionString38)
+        linuxCosmosDB: $(LinuxCosmosDBConnectionString38)
+        linuxEventHub: $(LinuxEventHubConnectionString38)
+        linuxServiceBus: $(LinuxServiceBusConnectionString38)
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -44,10 +55,10 @@ jobs:
         chmod +x .ci/linux_devops_e2e_tests.sh
         .ci/linux_devops_e2e_tests.sh
     env:
-      LINUXSTORAGECONNECTIONSTRING: $(LinuxStorageConnectionString)
-      LINUXCOSMOSDBCONNECTIONSTRING: $(LinuxCosmosDBConnectionString)
-      LINUXEVENTHUBCONNECTIONSTRING: $(LinuxEventHubConnectionString)
-      LINUXSERVICEBUSCONNECTIONSTRING: $(LinuxServiceBusConnectionString)
+      LINUXSTORAGECONNECTIONSTRING: $(linuxStorage)
+      LINUXCOSMOSDBCONNECTIONSTRING: $(linuxCosmosDB)
+      LINUXEVENTHUBCONNECTIONSTRING: $(linuxEventHub)
+      LINUXSERVICEBUSCONNECTIONSTRING: $(linuxServiceBus)
     displayName: 'E2E Tests'
   - bash: |
       chmod +x .ci/linux_devops_code_coverage_generate.sh

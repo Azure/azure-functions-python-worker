@@ -7,20 +7,28 @@
 
 # Overview
 
-Python support for Azure Functions is based on Python3.6, serverless hosting on Linux and the Functions 2.0 runtime.
+Python support for Azure Functions is based on Python 3.6, Python 3.7, and Python 3.8, serverless hosting on Linux and the Functions 2.0 and 3.0 runtime.
 
 Here is the current status of Python in Azure Functions:
+
+What are the supported Python versions?
+
+|Azure Functions Runtime|Python 3.6|Python 3.7|Python 3.8|
+|-----------------------|----------|----------|----------|
+|Azure Functions 2.0|✔|✔| |
+|Azure Functions 3.0|✔|✔|✔|
 
 What's available?
 
 - Build, test, debug and publish using Azure Functions Core Tools (CLI) or Visual Studio Code
+- Deploy Python Function project onto consumption, dedicated, or elastic premium plan.
+- Deploy Python Function project in a custom docker image onto dedicated, or elastic premium plan.
 - Triggers / Bindings : HTTP, Blob, Queue, Timer, Cosmos DB, Event Grid, Event Hubs and Service Bus
-- Create a Python Function on Linux using a custom docker image
 - Triggers / Bindings : Custom binding support
 
 What's coming?
 
-- Python 3.7 support
+- [Durable Functions For Python](https://github.com/Azure/azure-functions-durable-python)
 
 # Get Started
 
@@ -39,7 +47,8 @@ Issues and feature requests are tracked in a variety of places. To report this f
 | Python Worker | Programming Model, Triggers & Bindings |[File an Issue](https://github.com/Azure/azure-functions-python-worker/issues)|
 | Linux | Base Docker Images |[File an Issue](https://github.com/Azure/azure-functions-docker/issues)|
 | Runtime | Script Host & Language Extensibility |[File an Issue](https://github.com/Azure/azure-functions-host/issues)|
-| Core Tools | Command line interface for local development |[File an Issue](https://github.com/Azure/azure-functions-core-tools/issues)|
+| VSCode | VSCode Extension for Azure Functions |[File an Issue](https://github.com/microsoft/vscode-azurefunctions/issues)
+| Core Tools | Command Line Interface for Local Development |[File an Issue](https://github.com/Azure/azure-functions-core-tools/issues)|
 | Portal | User Interface or Experience Issue |[File an Issue](https://github.com/azure/azure-functions-ux/issues)|
 | Templates | Code Issues with Creation Template |[File an Issue](https://github.com/Azure/azure-functions-templates/issues)|
 
@@ -54,6 +63,7 @@ Here are some pointers to get started:
 - [Language worker architecture](https://github.com/Azure/azure-functions-python-worker/wiki/Worker-Architecture)
 - [Setting up the development environment](https://github.com/Azure/azure-functions-python-worker/wiki/Contributor-Guide)
 - [Adding support for a new binding](https://github.com/Azure/azure-functions-python-worker/wiki/Adding-support-for-a-new-binding-type)
+- [Release instructions](https://github.com/Azure/azure-functions-python-worker/wiki/Release-Instructions)
 
 When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
 a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions

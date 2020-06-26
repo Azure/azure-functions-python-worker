@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 # Capabilities
 RAW_HTTP_BODY_BYTES = "RawHttpBodyBytes"
 TYPED_DATA_COLLECTION = "TypedDataCollection"

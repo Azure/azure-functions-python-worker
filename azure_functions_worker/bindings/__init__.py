@@ -1,7 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License.
 from .tracecontext import TraceContext
 from .context import Context
 from .meta import check_input_type_annotation

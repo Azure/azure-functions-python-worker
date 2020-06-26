@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 class TraceContext:
 
     def __init__(self, trace_parent: str,

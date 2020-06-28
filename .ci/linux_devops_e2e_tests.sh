@@ -6,4 +6,4 @@ export AzureWebJobsCosmosDBConnectionString=$LINUXCOSMOSDBCONNECTIONSTRING
 export AzureWebJobsEventHubConnectionString=$LINUXEVENTHUBCONNECTIONSTRING
 export AzureWebJobsServiceBusConnectionString=$LINUXSERVICEBUSCONNECTIONSTRING
 
-coverage run -p --branch -m pytest tests/endtoend
+pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-append tests/endtoend

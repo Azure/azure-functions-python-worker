@@ -8,6 +8,17 @@ trigger:
 variables:
     DOTNET_VERSION: '2.2.207'
 
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily midnight build
+  branches:
+    include:
+      - dev
+      - master
+      - release/*
+    exclude:
+    - releases/ancient/*
+
 jobs:
 - job: Tests
   pool:

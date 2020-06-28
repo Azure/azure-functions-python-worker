@@ -2,4 +2,4 @@
 
 set -e -x
 
-rm coverage.xml
+#rm coverage.xml

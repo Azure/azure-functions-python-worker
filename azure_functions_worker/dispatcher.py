@@ -46,14 +46,16 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     _GRPC_STOP_RESPONSE = object()
 
-    def __init__(self, loop, host, port, worker_id, request_id,
-                 grpc_connect_timeout, grpc_max_msg_len=-1):
+    def __init__(self, loop, host, port: int, worker_id: str, request_id: str,
+                 grpc_connect_timeout: float, grpc_max_msg_len: int = -1):
         self._loop = loop
         self._host = host
         self._port = port
         self._request_id = request_id
         self._worker_id = worker_id
         self._functions = functions.Registry()
+
+        self._old_task_factory = None
 
         # A thread-pool for synchronous function calls.  We limit
         # the number of threads to 1 so that one Python worker can
@@ -75,7 +77,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
 
-    def load_bindings(self):
+    @staticmethod
+    def load_bindings():
         """Load out-of-tree binding implementations."""
         services = {}
 
@@ -88,9 +91,8 @@ class Dispatcher(metaclass=DispatcherMeta):
     @classmethod
     async def connect(cls, host, port, worker_id, request_id,
                       connect_timeout):
-        loop = asyncio._get_running_loop()
-        disp = cls(loop, host, port, worker_id, request_id,
-                   connect_timeout)
+        loop = asyncio.events.get_event_loop()
+        disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
         disp._grpc_thread.start()
         await disp._grpc_connected_fut
         logger.info('Successfully opened gRPC channel to %s:%s', host, port)
@@ -98,8 +100,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def dispatch_forever(self):
         if DispatcherMeta.__current_dispatcher__ is not None:
-            raise RuntimeError(
-                'there can be only one running dispatcher per process')
+            raise RuntimeError('there can be only one running dispatcher per '
+                               'process')
 
         self._old_task_factory = self._loop.get_task_factory()
 
@@ -131,7 +133,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             try:
                 await forever
             finally:
-                # Reenable console logging when there's an exception
+                # Re-enable console logging when there's an exception
                 enable_console_logging()
                 root_logger.removeHandler(logging_handler)
         finally:
@@ -152,7 +154,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._sync_call_tp.shutdown()
             self._sync_call_tp = None
 
-    def _on_logging(self, record: logging.LogRecord, formatted_msg: str):
+    def on_logging(self, record: logging.LogRecord, formatted_msg: str):
         if record.levelno >= logging.CRITICAL:
             log_level = protos.RpcLog.Critical
         elif record.levelno >= logging.ERROR:
@@ -201,7 +203,9 @@ class Dispatcher(metaclass=DispatcherMeta):
     def worker_id(self):
         return self._worker_id
 
-    def _serialize_exception(self, exc):
+    # noinspection PyBroadException
+    @staticmethod
+    def _serialize_exception(exc: Exception):
         try:
             message = f'{type(exc).__name__}: {exc}'
         except Exception:
@@ -222,8 +226,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             # Don't crash on unknown messages.  Some of them can be ignored;
             # and if something goes really wrong the host can always just
             # kill the worker's process.
-            logger.error(
-                f'unknown StreamingMessage content type {content_type}')
+            logger.error(f'unknown StreamingMessage content type '
+                         f'{content_type}')
             return
 
         resp = await request_handler(request)
@@ -524,7 +528,7 @@ class AsyncLoggingHandler(logging.Handler):
         # Since we disable console log after gRPC channel is initiated
         # We should redirect all the messages into dispatcher
         msg = self.format(record)
-        Dispatcher.current._on_logging(record, msg)
+        Dispatcher.current.on_logging(record, msg)
 
 
 class ContextEnabledTask(asyncio.Task):

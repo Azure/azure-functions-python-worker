@@ -1,4 +1,4 @@
 #!/bin/bash
 
 set -e -x
-coverage run -p --branch -m pytest tests/unittests
+pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests

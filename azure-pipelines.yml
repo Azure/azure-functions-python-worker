@@ -8,6 +8,17 @@ trigger:
 variables:
     DOTNET_VERSION: '2.2.207'
 
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily midnight build
+  branches:
+    include:
+      - dev
+      - master
+      - release/*
+    exclude:
+    - releases/ancient/*
+
 jobs:
 - job: Tests
   pool:
@@ -60,10 +71,6 @@ jobs:
       LINUXEVENTHUBCONNECTIONSTRING: $(linuxEventHub)
       LINUXSERVICEBUSCONNECTIONSTRING: $(linuxServiceBus)
     displayName: 'E2E Tests'
-  - bash: |
-      chmod +x .ci/linux_devops_code_coverage_generate.sh
-      .ci/linux_devops_code_coverage_generate.sh
-    displayName: 'Generate Code Coverage XML file'
   - task: PublishCodeCoverageResults@1
     inputs:
         codeCoverageTool: cobertura

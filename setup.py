@@ -290,7 +290,12 @@ setup(
             'mypy',
             'pytest',
             'requests==2.*',
-            'coverage'
+            'coverage',
+            'pytest-sugar',
+            'pytest-cov',
+            'pytest-xdist',
+            'pytest-randomly',
+            'pytest-instafail'
         ]
     },
     include_package_data=True,

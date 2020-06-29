@@ -50,7 +50,7 @@ def setup(log_level, log_destination):
     error_logger.setLevel(getattr(logging, log_level))
 
 
-def disable_console_logging():
+def disable_console_logging() -> None:
     if logger and handler:
         logger.removeHandler(handler)
 
@@ -58,7 +58,7 @@ def disable_console_logging():
         error_logger.removeHandler(error_handler)
 
 
-def enable_console_logging():
+def enable_console_logging() -> None:
     if logger and handler:
         logger.addHandler(handler)
 
@@ -66,7 +66,7 @@ def enable_console_logging():
         error_logger.addHandler(error_handler)
 
 
-def is_system_log_category(ctg: str):
+def is_system_log_category(ctg: str) -> bool:
     return any(
         [ctg.lower().startswith(c) for c in (
             'azure_functions_worker',

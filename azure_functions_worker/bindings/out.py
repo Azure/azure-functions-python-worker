@@ -4,11 +4,11 @@
 
 class Out:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.__value = None
 
     def set(self, val):
         self.__value = val
 
-    def get(self):
+    def get(self) -> str:
         return self.__value

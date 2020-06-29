@@ -1,7 +1,7 @@
 """Backport of asyncio.run() function from Python 3.7.
 
 Source: https://github.com/python/cpython/blob/
-            bd093355a6aaf2f4ca3ed153e195da57870a55eb/Lib/asyncio/runners.py
+        bd093355a6aaf2f4ca3ed153e195da57870a55eb/Lib/asyncio/runners.py
 """
 
 
@@ -13,7 +13,7 @@ def get_running_loop():
 
     This function is thread-specific.
     """
-    loop = asyncio._get_running_loop()
+    loop = asyncio.events.get_running_loop()
     if loop is None:
         raise RuntimeError('no running event loop')
     return loop

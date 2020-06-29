@@ -28,6 +28,9 @@ from .logging import error_logger, logger, is_system_log_category
 from .logging import enable_console_logging, disable_console_logging
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
+from asyncio.unix_events import _UnixSelectorEventLoop
+from logging import LogRecord
+from typing import Any, Dict, Optional
 
 
 class DispatcherMeta(type):
@@ -35,7 +38,7 @@ class DispatcherMeta(type):
     __current_dispatcher__ = None
 
     @property
-    def current(mcls):
+    def current(mcls) -> Dispatcher:
         disp = mcls.__current_dispatcher__
         if disp is None:
             raise RuntimeError('no currently running Dispatcher is found')
@@ -46,8 +49,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     _GRPC_STOP_RESPONSE = object()
 
-    def __init__(self, loop, host, port: int, worker_id: str, request_id: str,
-                 grpc_connect_timeout: float, grpc_max_msg_len: int = -1):
+    def __init__(self, loop: _UnixSelectorEventLoop, host: str, port: int, worker_id: str, request_id: str,
+                 grpc_connect_timeout: float, grpc_max_msg_len: int = -1) -> None:
         self._loop = loop
         self._host = host
         self._port = port
@@ -78,7 +81,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             name='grpc-thread', target=self.__poll_grpc)
 
     @staticmethod
-    def load_bindings():
+    def load_bindings() -> Dict[Any, Any]:
         """Load out-of-tree binding implementations."""
         services = {}
 
@@ -89,8 +92,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         return services
 
     @classmethod
-    async def connect(cls, host, port, worker_id, request_id,
-                      connect_timeout):
+    async def connect(cls, host: str, port: int, worker_id: str, request_id: str,
+                      connect_timeout: float) -> Dispatcher:
         loop = asyncio.events.get_event_loop()
         disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
         disp._grpc_thread.start()
@@ -144,7 +147,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._loop.set_task_factory(self._old_task_factory)
             self.stop()
 
-    def stop(self):
+    def stop(self) -> None:
         if self._grpc_thread is not None:
             self._grpc_resp_queue.put_nowait(self._GRPC_STOP_RESPONSE)
             self._grpc_thread.join()
@@ -154,7 +157,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._sync_call_tp.shutdown()
             self._sync_call_tp = None
 
-    def on_logging(self, record: logging.LogRecord, formatted_msg: str):
+    def on_logging(self, record: logging.LogRecord, formatted_msg: str) -> None:
         if record.levelno >= logging.CRITICAL:
             log_level = protos.RpcLog.Critical
         elif record.levelno >= logging.ERROR:
@@ -196,11 +199,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                 rpc_log=protos.RpcLog(**log)))
 
     @property
-    def request_id(self):
+    def request_id(self) -> str:
         return self._request_id
 
     @property
-    def worker_id(self):
+    def worker_id(self) -> str:
         return self._worker_id
 
     # noinspection PyBroadException
@@ -524,7 +527,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
 class AsyncLoggingHandler(logging.Handler):
 
-    def emit(self, record):
+    def emit(self, record: LogRecord) -> None:
         # Since we disable console log after gRPC channel is initiated
         # We should redirect all the messages into dispatcher
         msg = self.format(record)
@@ -545,12 +548,12 @@ class ContextEnabledTask(asyncio.Task):
             if invocation_id is not None:
                 self.set_azure_invocation_id(invocation_id)
 
-    def set_azure_invocation_id(self, invocation_id):
+    def set_azure_invocation_id(self, invocation_id: str) -> None:
         setattr(self, self._AZURE_INVOCATION_ID, invocation_id)
 
 
-def get_current_invocation_id():
-    loop = asyncio._get_running_loop()
+def get_current_invocation_id() -> Optional[str]:
+    loop = asyncio.events.get_running_loop()
     if loop is not None:
         current_task = asyncio.Task.current_task(loop)
         if current_task is not None:

@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 from typing import List
 import traceback
+from traceback import StackSummary
 
 
 def extend_exception_message(exc: Exception, msg: str) -> Exception:

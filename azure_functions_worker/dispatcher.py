@@ -49,8 +49,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     _GRPC_STOP_RESPONSE = object()
 
-    def __init__(self, loop: _UnixSelectorEventLoop, host: str, port: int, worker_id: str, request_id: str,
-                 grpc_connect_timeout: float, grpc_max_msg_len: int = -1) -> None:
+    def __init__(self, loop: _UnixSelectorEventLoop, host: str, port: int,
+                 worker_id: str, request_id: str,
+                 grpc_connect_timeout: float,
+                 grpc_max_msg_len: int = -1) -> None:
         self._loop = loop
         self._host = host
         self._port = port
@@ -92,8 +94,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         return services
 
     @classmethod
-    async def connect(cls, host: str, port: int, worker_id: str, request_id: str,
-                      connect_timeout: float):
+    async def connect(cls, host: str, port: int, worker_id: str,
+                      request_id: str, connect_timeout: float):
         loop = asyncio.events.get_event_loop()
         disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
         disp._grpc_thread.start()

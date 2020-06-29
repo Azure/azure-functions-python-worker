@@ -458,17 +458,18 @@ class _MockWebHostController:
 
         await self._host.start()
 
-        self._worker = await dispatcher.Dispatcher.connect('127.0.0.1',
-                       self._host._port, self._host.worker_id,
-                       self._host.request_id, connect_timeout=5.0)
+        self._worker = await dispatcher. \
+            Dispatcher.connect('127.0.0.1', self._host._port,
+                               self._host.worker_id,
+                               self._host.request_id, connect_timeout=5.0)
 
         self._worker.load_bindings()
 
         self._worker_task = loop.create_task(self._worker.dispatch_forever())
 
-        done, pending = await asyncio.wait([self._host._connected_fut,
-                                            self._worker_task],
-                                            return_when=asyncio.FIRST_COMPLETED)
+        done, pending = await asyncio. \
+            wait([self._host._connected_fut, self._worker_task],
+                 return_when=asyncio.FIRST_COMPLETED)
 
         try:
             if self._worker_task in done:

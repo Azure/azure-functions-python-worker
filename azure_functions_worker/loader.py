@@ -14,7 +14,7 @@ import typing
 
 from .constants import MODULE_NOT_FOUND_TS_URL
 from .utils.wrappers import attach_message_to_exception
-from os import PathLike
+from os import PathLike, fspath
 
 
 _AZURE_NAMESPACE = '__app__'
@@ -22,8 +22,8 @@ _AZURE_NAMESPACE = '__app__'
 _submodule_dirs = []
 
 
-def register_function_dir(path: os.PathLike) -> None:
-    _submodule_dirs.append(os.fspath(path))
+def register_function_dir(path: PathLike) -> None:
+    _submodule_dirs.append(fspath(path))
 
 
 def install() -> None:

@@ -3,7 +3,6 @@
 import typing
 
 from . import datumdef
-from azure_functions_worker.bindings.datumdef import Datum
 from typing import Any, Optional
 
 
@@ -22,7 +21,8 @@ class GenericBinding:
         return issubclass(pytype, (str, bytes, bytearray))
 
     @classmethod
-    def encode(cls, obj: typing.Any, *, expected_type: typing.Optional[type]) -> datumdef.Datum:
+    def encode(cls, obj: Any, *,
+               expected_type: Optional[type]) -> datumdef.Datum:
         if isinstance(obj, str):
             return datumdef.Datum(type='string', value=obj)
 

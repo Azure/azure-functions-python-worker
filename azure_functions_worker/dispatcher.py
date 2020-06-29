@@ -553,7 +553,7 @@ class ContextEnabledTask(asyncio.Task):
 
 
 def get_current_invocation_id() -> Optional[str]:
-    loop = asyncio.events.get_running_loop()
+    loop = asyncio._get_running_loop()
     if loop is not None:
         current_task = asyncio.Task.current_task(loop)
         if current_task is not None:

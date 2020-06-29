@@ -453,7 +453,7 @@ class _MockWebHostController:
         self._worker = None
 
     async def __aenter__(self):
-        loop = aio_compat.get_running_loop()
+        loop = asyncio._get_running_loop()
         self._host = _MockWebHost(loop, self._scripts_dir)
 
         await self._host.start()
@@ -468,7 +468,7 @@ class _MockWebHostController:
 
         done, pending = await asyncio.wait([self._host._connected_fut,
                                             self._worker_task],
-                                           return_when=asyncio.FIRST_COMPLETED)
+                                            return_when=asyncio.FIRST_COMPLETED)
 
         try:
             if self._worker_task in done:

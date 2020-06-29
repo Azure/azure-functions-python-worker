@@ -38,7 +38,7 @@ class DispatcherMeta(type):
     __current_dispatcher__ = None
 
     @property
-    def current(mcls) -> Dispatcher:
+    def current(mcls):
         disp = mcls.__current_dispatcher__
         if disp is None:
             raise RuntimeError('no currently running Dispatcher is found')
@@ -93,7 +93,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     @classmethod
     async def connect(cls, host: str, port: int, worker_id: str, request_id: str,
-                      connect_timeout: float) -> Dispatcher:
+                      connect_timeout: float):
         loop = asyncio.events.get_event_loop()
         disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
         disp._grpc_thread.start()

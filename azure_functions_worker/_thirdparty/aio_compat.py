@@ -13,7 +13,7 @@ def get_running_loop():
 
     This function is thread-specific.
     """
-    loop = asyncio.events.get_running_loop()
+    loop = asyncio._get_running_loop()
     if loop is None:
         raise RuntimeError('no running event loop')
     return loop

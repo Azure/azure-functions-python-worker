@@ -49,6 +49,4 @@ async def start_async(host, port, worker_id, request_id):
         host, port, worker_id, request_id,
         connect_timeout=5.0)
 
-    disp.load_bindings()
-
     await disp.dispatch_forever()

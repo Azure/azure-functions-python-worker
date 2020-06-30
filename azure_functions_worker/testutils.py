@@ -15,9 +15,10 @@ import inspect
 import json
 import logging
 import os
-import queue
 import pathlib
 import platform
+import queue
+import re
 import shutil
 import socket
 import subprocess
@@ -27,7 +28,6 @@ import time
 import typing
 import unittest
 import uuid
-import re
 
 import grpc
 import requests
@@ -35,9 +35,8 @@ import requests
 from azure_functions_worker._thirdparty import aio_compat
 from . import dispatcher
 from . import protos
-from .utils.common import is_envvar_true
 from .constants import PYAZURE_WEBHOST_DEBUG
-
+from .utils.common import is_envvar_true
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
 TESTS_ROOT = PROJECT_ROOT / 'tests'
@@ -410,10 +409,10 @@ class _MockWebHost:
         self._in_queue.put_nowait((message, wait_for))
         return await self._out_aqueue.get()
 
-    async def _start(self):
+    async def start(self):
         self._server.start()
 
-    async def _close(self):
+    async def close(self):
         self._in_queue.put_nowait((_MockWebHostServicer._STOP, None))
         self._server.stop(1)
 
@@ -457,20 +456,18 @@ class _MockWebHostController:
         loop = aio_compat.get_running_loop()
         self._host = _MockWebHost(loop, self._scripts_dir)
 
-        await self._host._start()
+        await self._host.start()
 
-        self._worker = await dispatcher.Dispatcher.connect(
-            '127.0.0.1', self._host._port,
-            self._host.worker_id, self._host.request_id,
-            connect_timeout=5.0)
-
-        self._worker.load_bindings()
+        self._worker = await dispatcher. \
+            Dispatcher.connect('127.0.0.1', self._host._port,
+                               self._host.worker_id,
+                               self._host.request_id, connect_timeout=5.0)
 
         self._worker_task = loop.create_task(self._worker.dispatch_forever())
 
-        done, pending = await asyncio.wait(
-            [self._host._connected_fut, self._worker_task],
-            return_when=asyncio.FIRST_COMPLETED)
+        done, pending = await asyncio. \
+            wait([self._host._connected_fut, self._worker_task],
+                 return_when=asyncio.FIRST_COMPLETED)
 
         try:
             if self._worker_task in done:
@@ -480,7 +477,7 @@ class _MockWebHostController:
                 raise RuntimeError('could not start a worker thread')
         except Exception:
             try:
-                self._host._close()
+                await self._host.close()
                 self._worker.stop()
             finally:
                 raise
@@ -498,7 +495,7 @@ class _MockWebHostController:
         self._worker_task = None
         self._worker = None
 
-        await self._host._close()
+        await self._host.close()
         self._host = None
 
 

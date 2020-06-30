@@ -16,7 +16,6 @@ import importlib
 import inspect
 
 import grpc
-import pkg_resources
 
 from . import bindings
 from . import functions
@@ -28,6 +27,9 @@ from .logging import error_logger, logger, is_system_log_category
 from .logging import enable_console_logging, disable_console_logging
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
+from asyncio.unix_events import _UnixSelectorEventLoop
+from logging import LogRecord
+from typing import Optional
 
 
 class DispatcherMeta(type):
@@ -46,8 +48,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     _GRPC_STOP_RESPONSE = object()
 
-    def __init__(self, loop, host, port: int, worker_id: str, request_id: str,
-                 grpc_connect_timeout: float, grpc_max_msg_len: int = -1):
+    def __init__(self, loop: _UnixSelectorEventLoop, host: str, port: int,
+                 worker_id: str, request_id: str,
+                 grpc_connect_timeout: float,
+                 grpc_max_msg_len: int = -1) -> None:
         self._loop = loop
         self._host = host
         self._port = port
@@ -77,20 +81,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
 
-    @staticmethod
-    def load_bindings():
-        """Load out-of-tree binding implementations."""
-        services = {}
-
-        for ep in pkg_resources.iter_entry_points('azure.functions.bindings'):
-            logger.info('Loading binding plugin from %s', ep.module_name)
-            ep.load()
-
-        return services
-
     @classmethod
-    async def connect(cls, host, port, worker_id, request_id,
-                      connect_timeout):
+    async def connect(cls, host: str, port: int, worker_id: str,
+                      request_id: str, connect_timeout: float):
         loop = asyncio.events.get_event_loop()
         disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
         disp._grpc_thread.start()
@@ -144,7 +137,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._loop.set_task_factory(self._old_task_factory)
             self.stop()
 
-    def stop(self):
+    def stop(self) -> None:
         if self._grpc_thread is not None:
             self._grpc_resp_queue.put_nowait(self._GRPC_STOP_RESPONSE)
             self._grpc_thread.join()
@@ -154,7 +147,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._sync_call_tp.shutdown()
             self._sync_call_tp = None
 
-    def on_logging(self, record: logging.LogRecord, formatted_msg: str):
+    def on_logging(self, record: logging.LogRecord, formatted_msg: str) -> None:
         if record.levelno >= logging.CRITICAL:
             log_level = protos.RpcLog.Critical
         elif record.levelno >= logging.ERROR:
@@ -196,11 +189,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                 rpc_log=protos.RpcLog(**log)))
 
     @property
-    def request_id(self):
+    def request_id(self) -> str:
         return self._request_id
 
     @property
-    def worker_id(self):
+    def worker_id(self) -> str:
         return self._worker_id
 
     # noinspection PyBroadException
@@ -524,7 +517,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
 class AsyncLoggingHandler(logging.Handler):
 
-    def emit(self, record):
+    def emit(self, record: LogRecord) -> None:
         # Since we disable console log after gRPC channel is initiated
         # We should redirect all the messages into dispatcher
         msg = self.format(record)
@@ -533,7 +526,7 @@ class AsyncLoggingHandler(logging.Handler):
 
 class ContextEnabledTask(asyncio.Task):
 
-    _AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
+    AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
 
     def __init__(self, coro, loop):
         super().__init__(coro, loop=loop)
@@ -541,21 +534,22 @@ class ContextEnabledTask(asyncio.Task):
         current_task = asyncio.Task.current_task(loop)
         if current_task is not None:
             invocation_id = getattr(
-                current_task, self._AZURE_INVOCATION_ID, None)
+                current_task, self.AZURE_INVOCATION_ID, None)
             if invocation_id is not None:
                 self.set_azure_invocation_id(invocation_id)
 
-    def set_azure_invocation_id(self, invocation_id):
-        setattr(self, self._AZURE_INVOCATION_ID, invocation_id)
+    def set_azure_invocation_id(self, invocation_id: str) -> None:
+        setattr(self, self.AZURE_INVOCATION_ID, invocation_id)
 
 
-def get_current_invocation_id():
+def get_current_invocation_id() -> Optional[str]:
     loop = asyncio._get_running_loop()
     if loop is not None:
         current_task = asyncio.Task.current_task(loop)
         if current_task is not None:
-            task_invocation_id = getattr(
-                current_task, ContextEnabledTask._AZURE_INVOCATION_ID, None)
+            task_invocation_id = getattr(current_task,
+                                         ContextEnabledTask.AZURE_INVOCATION_ID,
+                                         None)
             if task_invocation_id is not None:
                 return task_invocation_id
 

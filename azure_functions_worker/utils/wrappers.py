@@ -2,9 +2,10 @@
 # Licensed under the MIT License.
 from .common import is_envvar_true
 from .tracing import extend_exception_message
+from typing import Callable, Optional
 
 
-def enable_feature_by(flag: str, default=None):
+def enable_feature_by(flag: str, default: Optional[int] = None) -> Callable:
     def decorate(func):
         def call(*args, **kwargs):
             if is_envvar_true(flag):
@@ -14,7 +15,7 @@ def enable_feature_by(flag: str, default=None):
     return decorate
 
 
-def disable_feature_by(flag: str, default=None):
+def disable_feature_by(flag: str, default: None = None) -> Callable:
     def decorate(func):
         def call(*args, **kwargs):
             if not is_envvar_true(flag):
@@ -24,7 +25,7 @@ def disable_feature_by(flag: str, default=None):
     return decorate
 
 
-def attach_message_to_exception(expt_type: Exception, message: str):
+def attach_message_to_exception(expt_type: Exception, message: str) -> Callable:
     def decorate(func):
         def call(*args, **kwargs):
             try:

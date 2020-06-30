@@ -453,7 +453,7 @@ class _MockWebHostController:
         self._worker = None
 
     async def __aenter__(self):
-        loop = asyncio._get_running_loop()
+        loop = aio_compat.get_running_loop()
         self._host = _MockWebHost(loop, self._scripts_dir)
 
         await self._host.start()
@@ -462,8 +462,6 @@ class _MockWebHostController:
             Dispatcher.connect('127.0.0.1', self._host._port,
                                self._host.worker_id,
                                self._host.request_id, connect_timeout=5.0)
-
-        self._worker.load_bindings()
 
         self._worker_task = loop.create_task(self._worker.dispatch_forever())
 

@@ -82,17 +82,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
 
-    @staticmethod
-    def load_bindings() -> Dict[Any, Any]:
-        """Load out-of-tree binding implementations."""
-        services = {}
-
-        for ep in pkg_resources.iter_entry_points('azure.functions.bindings'):
-            logger.info('Loading binding plugin from %s', ep.module_name)
-            ep.load()
-
-        return services
-
     @classmethod
     async def connect(cls, host: str, port: int, worker_id: str,
                       request_id: str, connect_timeout: float):
@@ -538,7 +527,7 @@ class AsyncLoggingHandler(logging.Handler):
 
 class ContextEnabledTask(asyncio.Task):
 
-    _AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
+    AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
 
     def __init__(self, coro, loop):
         super().__init__(coro, loop=loop)
@@ -546,12 +535,12 @@ class ContextEnabledTask(asyncio.Task):
         current_task = asyncio.Task.current_task(loop)
         if current_task is not None:
             invocation_id = getattr(
-                current_task, self._AZURE_INVOCATION_ID, None)
+                current_task, self.AZURE_INVOCATION_ID, None)
             if invocation_id is not None:
                 self.set_azure_invocation_id(invocation_id)
 
     def set_azure_invocation_id(self, invocation_id: str) -> None:
-        setattr(self, self._AZURE_INVOCATION_ID, invocation_id)
+        setattr(self, self.AZURE_INVOCATION_ID, invocation_id)
 
 
 def get_current_invocation_id() -> Optional[str]:
@@ -559,8 +548,9 @@ def get_current_invocation_id() -> Optional[str]:
     if loop is not None:
         current_task = asyncio.Task.current_task(loop)
         if current_task is not None:
-            task_invocation_id = getattr(
-                current_task, ContextEnabledTask._AZURE_INVOCATION_ID, None)
+            task_invocation_id = getattr(current_task,
+                                         ContextEnabledTask.AZURE_INVOCATION_ID,
+                                         None)
             if task_invocation_id is not None:
                 return task_invocation_id
 

@@ -9,8 +9,8 @@ variables:
     DOTNET_VERSION: '2.2.207'
 
 schedules:
-- cron: "0 0 * * *"
-  displayName: Daily midnight build
+- cron: "0 8 * * 1,2,3,4"
+  displayName: Monday to Thursday 1 AM build
   branches:
     include:
       - dev

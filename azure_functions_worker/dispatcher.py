@@ -16,7 +16,6 @@ import importlib
 import inspect
 
 import grpc
-import pkg_resources
 
 from . import bindings
 from . import functions
@@ -30,7 +29,7 @@ from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
 from asyncio.unix_events import _UnixSelectorEventLoop
 from logging import LogRecord
-from typing import Any, Dict, Optional
+from typing import Optional
 
 
 class DispatcherMeta(type):

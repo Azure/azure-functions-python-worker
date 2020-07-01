@@ -285,7 +285,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'azure-functions==1.2.1',
+            'azure-functions',
             'flake8~=3.7.9',
             'mypy',
             'pytest',

@@ -326,6 +326,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('parallelly_log_info at root logger', host_out)
         self.assertIn('parallelly_log_warning at root logger', host_out)
         self.assertIn('parallelly_log_error at root logger', host_out)
+        self.assertIn('parallelly_log_exception at root logger', host_out)
         self.assertIn('parallelly_log_custom at custom_logger', host_out)
         self.assertIn('callsoon_log', host_out)
 

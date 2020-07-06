@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import sys
 import logging
 import asyncio
 
@@ -32,18 +33,23 @@ async def parallelly_log_error():
     logging.error('parallelly_log_error at root logger')
 
 
-async def parallelly_log_custom():
+async def parallelly_log_exception():
     await asyncio.sleep(0.5)
+    try:
+        raise Exception('custom exception')
+    except Exception:
+        logging.exception('parallelly_log_exception at root logger',
+                          exc_info=sys.exc_info())
+
+
+async def parallelly_log_custom():
+    await asyncio.sleep(0.6)
     logger.info('parallelly_log_custom at custom_logger')
 
 
 async def parallelly_log_system():
-    await asyncio.sleep(0.6)
+    await asyncio.sleep(0.7)
     disguised_logger.info('parallelly_log_system at disguised_logger')
-
-
-def callsoon_log():
-    logging.info('callsoon_log')
 
 
 async def main(req: func.HttpRequest) -> func.HttpResponse:
@@ -54,6 +60,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     task_info: asyncio.Task = loop.create_task(parallelly_log_info())
     task_warning: asyncio.Task = loop.create_task(parallelly_log_warning())
     task_error: asyncio.Task = loop.create_task(parallelly_log_error())
+    task_exception: asyncio.Task = loop.create_task(parallelly_log_exception())
     task_custom: asyncio.Task = loop.create_task(parallelly_log_custom())
     task_disguise: asyncio.Task = loop.create_task(parallelly_log_system())
 
@@ -63,7 +70,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
 
     # WaitAll
     await asyncio.wait([task_print, task_info, task_warning, task_error,
-                        task_custom, task_disguise, future])
+                        task_exception, task_custom, task_disguise, future])
 
     # Log asyncio low-level future result
     logging.info(future.result())

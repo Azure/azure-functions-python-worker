@@ -23,6 +23,7 @@ from . import loader
 from . import protos
 from . import constants
 
+from .constants import CONSOLE_LOG_PREFIX
 from .logging import error_logger, logger, is_system_log_category
 from .logging import enable_console_logging, disable_console_logging
 from .utils.tracing import marshall_exception_trace
@@ -129,13 +130,13 @@ class Dispatcher(metaclass=DispatcherMeta):
             try:
                 await forever
             finally:
-                logger.info('Detaching gRPC logging due to exception.')
+                logger.warn('Detaching gRPC logging due to exception.')
                 logging_handler.flush()
                 root_logger.removeHandler(logging_handler)
 
                 # Reenable console logging when there's an exception
                 enable_console_logging()
-                logger.info('Switched to console logging due to exception.')
+                logger.warn('Switched to console logging due to exception.')
         finally:
             DispatcherMeta.__current_dispatcher__ = None
 
@@ -170,7 +171,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         if is_system_log_category(record.name):
             log_category = protos.RpcLog.RpcLogCategory.System
-        else:  # import logging; logging.info will yield 'root' in record.name
+        else:  # customers using logging will yield 'root' in record.name
             log_category = protos.RpcLog.RpcLogCategory.User
 
         log = dict(
@@ -538,11 +539,13 @@ class AsyncLoggingHandler(logging.Handler):
         msg = self.format(record)
         try:
             Dispatcher.current.on_logging(record, msg)
-        except RuntimeError:
+        except RuntimeError as runtime_error:
             # This will cause 'Dispatcher not found' failure.
             # Logging such of an issue will cause infinite loop of gRPC logging
-            # To mitigate, we should suppress the 2nd level error logging here.
-            pass
+            # To mitigate, we should suppress the 2nd level error logging here
+            # and use print function to report exception instead.
+            print(f'{CONSOLE_LOG_PREFIX} ERROR: {str(runtime_error)}',
+                  file=sys.stderr, flush=True)
 
 
 class ContextEnabledTask(asyncio.Task):

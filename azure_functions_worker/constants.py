@@ -1,5 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+
+# Prefixes
+CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
+
 # Capabilities
 RAW_HTTP_BODY_BYTES = "RawHttpBodyBytes"
 TYPED_DATA_COLLECTION = "TypedDataCollection"

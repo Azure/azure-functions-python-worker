@@ -23,11 +23,12 @@ from . import loader
 from . import protos
 from . import constants
 
+from .constants import CONSOLE_LOG_PREFIX
 from .logging import error_logger, logger, is_system_log_category
 from .logging import enable_console_logging, disable_console_logging
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
-from asyncio.unix_events import _UnixSelectorEventLoop
+from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import Optional
 
@@ -48,7 +49,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     _GRPC_STOP_RESPONSE = object()
 
-    def __init__(self, loop: _UnixSelectorEventLoop, host: str, port: int,
+    def __init__(self, loop: BaseEventLoop, host: str, port: int,
                  worker_id: str, request_id: str,
                  grpc_connect_timeout: float,
                  grpc_max_msg_len: int = -1) -> None:
@@ -113,22 +114,29 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._loop.set_task_factory(
                 lambda loop, coro: ContextEnabledTask(coro, loop=loop))
 
-            # Attach gRPC logging to the root logger
+            # Detach console logging before enabling GRPC channel logging
+            logger.info('Detaching console logging.')
+            disable_console_logging()
+
+            # Attach gRPC logging to the root logger. Since gRPC channel is
+            # established, should use it for system and user logs
             logging_handler = AsyncLoggingHandler()
             root_logger = logging.getLogger()
             root_logger.setLevel(logging.INFO)
             root_logger.addHandler(logging_handler)
-
-            # Since gRPC channel is established, should use it for logging
-            disable_console_logging()
-            logger.info('Detach console logging. Switch to gRPC logging')
+            logger.info('Switched to gRPC logging.')
+            logging_handler.flush()
 
             try:
                 await forever
             finally:
-                # Re-enable console logging when there's an exception
-                enable_console_logging()
+                logger.warn('Detaching gRPC logging due to exception.')
+                logging_handler.flush()
                 root_logger.removeHandler(logging_handler)
+
+                # Reenable console logging when there's an exception
+                enable_console_logging()
+                logger.warn('Switched to console logging due to exception.')
         finally:
             DispatcherMeta.__current_dispatcher__ = None
 
@@ -163,7 +171,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         if is_system_log_category(record.name):
             log_category = protos.RpcLog.RpcLogCategory.System
-        else:
+        else:  # customers using logging will yield 'root' in record.name
             log_category = protos.RpcLog.RpcLogCategory.User
 
         log = dict(
@@ -365,6 +373,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     fi.return_type.binding_name, call_result,
                     pytype=fi.return_type.pytype)
 
+            # Actively flush customer print() function to console
+            sys.stdout.flush()
+
             logger.info('Successfully processed FunctionInvocationRequest, '
                         'request ID: %s, function ID: %s, invocation ID: %s',
                         self.request_id, function_id, invocation_id)
@@ -518,10 +529,23 @@ class Dispatcher(metaclass=DispatcherMeta):
 class AsyncLoggingHandler(logging.Handler):
 
     def emit(self, record: LogRecord) -> None:
-        # Since we disable console log after gRPC channel is initiated
-        # We should redirect all the messages into dispatcher
+        # Since we disable console log after gRPC channel is initiated,
+        # we should redirect all the messages into dispatcher.
+
+        # When dispatcher receives an exception, it should switch back
+        # to console logging. However, it is possible that
+        # __current_dispatcher__ is set to None as there are still messages
+        # buffered in this handler, not calling the emit yet.
         msg = self.format(record)
-        Dispatcher.current.on_logging(record, msg)
+        try:
+            Dispatcher.current.on_logging(record, msg)
+        except RuntimeError as runtime_error:
+            # This will cause 'Dispatcher not found' failure.
+            # Logging such of an issue will cause infinite loop of gRPC logging
+            # To mitigate, we should suppress the 2nd level error logging here
+            # and use print function to report exception instead.
+            print(f'{CONSOLE_LOG_PREFIX} ERROR: {str(runtime_error)}',
+                  file=sys.stderr, flush=True)
 
 
 class ContextEnabledTask(asyncio.Task):

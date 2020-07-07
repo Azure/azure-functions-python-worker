@@ -190,6 +190,11 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # https://github.com/Azure/azure-functions-host/issues/2706
         # self.assertIn('Exception: ZeroDivisionError', r.text)
 
+    def check_log_unhandled_error(self,
+                                  host_out: typing.List[str]):
+        self.assertIn('Exception: ZeroDivisionError: division by zero',
+                      host_out)
+
     def test_unhandled_urllib_error(self):
         r = self.webhost.request(
             'GET', 'unhandled_urllib_error',
@@ -289,8 +294,64 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'missing_module/')
         self.assertEqual(r.status_code, 500)
 
-    def check_log_import_module_troubleshooting_url(self, host_out):
+    def check_log_import_module_troubleshooting_url(self,
+                                                    host_out: typing.List[str]):
         self.assertIn("Exception: ModuleNotFoundError: "
                       "No module named 'does_not_exist'. "
                       "Troubleshooting Guide: "
                       "https://aka.ms/functions-modulenotfound", host_out)
+
+    def test_print_logging_no_flush(self):
+        r = self.webhost.request('GET', 'print_logging?message=Secret42')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-print-logging')
+
+    def check_log_print_logging_no_flush(self, host_out: typing.List[str]):
+        self.assertIn('Secret42', host_out)
+
+    def test_print_logging_with_flush(self):
+        r = self.webhost.request('GET',
+                                 'print_logging?flush=true&message=Secret42')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-print-logging')
+
+    def check_log_print_logging_with_flush(self, host_out: typing.List[str]):
+        self.assertIn('Secret42', host_out)
+
+    def test_print_to_console_stdout(self):
+        r = self.webhost.request('GET',
+                                 'print_logging?console=true&message=Secret42')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-print-logging')
+
+    def check_log_print_to_console_stdout(self, host_out: typing.List[str]):
+        # System logs stdout should not exist in host_out
+        self.assertNotIn('Secret42', host_out)
+
+    def test_print_to_console_stderr(self):
+        r = self.webhost.request('GET', 'print_logging?console=true'
+                                 '&message=Secret42&is_stderr=true')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-print-logging')
+
+    def check_log_print_to_console_stderr(self, host_out: typing.List[str],):
+        # System logs stderr should not exist in host_out
+        self.assertNotIn('Secret42', host_out)
+
+    def test_hijack_current_event_loop(self):
+        r = self.webhost.request('GET', 'hijack_current_event_loop/')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-hijack-current-event-loop')
+
+    def check_log_hijack_current_event_loop(self, host_out: typing.List[str]):
+        # User logs should exist in host_out
+        self.assertIn('parallelly_print', host_out)
+        self.assertIn('parallelly_log_info at root logger', host_out)
+        self.assertIn('parallelly_log_warning at root logger', host_out)
+        self.assertIn('parallelly_log_error at root logger', host_out)
+        self.assertIn('parallelly_log_exception at root logger', host_out)
+        self.assertIn('parallelly_log_custom at custom_logger', host_out)
+        self.assertIn('callsoon_log', host_out)
+
+        # System logs should not exist in host_out
+        self.assertNotIn('parallelly_log_system at disguised_logger', host_out)

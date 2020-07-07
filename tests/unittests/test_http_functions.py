@@ -91,8 +91,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-async')
 
-    def check_log_async_logging(self,
-                                host_out: typing.List[str]):
+    def check_log_async_logging(self, host_out: typing.List[str]):
         # Host out only contains user logs
         self.assertIn('hello info', host_out)
         self.assertIn('and another error', host_out)
@@ -103,8 +102,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-sync')
 
-    def check_log_sync_logging(self,
-                               host_out: typing.List[str]):
+    def check_log_sync_logging(self, host_out: typing.List[str]):
         # Host out only contains user logs
         self.assertIn('a gracefully handled error', host_out)
 

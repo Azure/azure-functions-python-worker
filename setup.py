@@ -257,7 +257,7 @@ with open("README.md") as readme:
 
 setup(
     name='azure-functions-worker',
-    version='1.1.1',
+    version='1.1.3',
     description='Python Language Worker for Azure Functions Host',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -285,12 +285,17 @@ setup(
     ],
     extras_require={
         'dev': [
-            'azure-functions==1.2.1',
+            'azure-functions==1.3.0',
             'flake8~=3.7.9',
             'mypy',
             'pytest',
             'requests==2.*',
-            'coverage'
+            'coverage',
+            'pytest-sugar',
+            'pytest-cov',
+            'pytest-xdist',
+            'pytest-randomly',
+            'pytest-instafail'
         ]
     },
     include_package_data=True,

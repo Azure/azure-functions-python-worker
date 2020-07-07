@@ -1,6 +1,9 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 import typing
 
 from . import datumdef
+from typing import Any, Optional
 
 
 class GenericBinding:
@@ -18,8 +21,8 @@ class GenericBinding:
         return issubclass(pytype, (str, bytes, bytearray))
 
     @classmethod
-    def encode(cls, obj: typing.Any, *,
-               expected_type: typing.Optional[type]) -> datumdef.Datum:
+    def encode(cls, obj: Any, *,
+               expected_type: Optional[type]) -> datumdef.Datum:
         if isinstance(obj, str):
             return datumdef.Datum(type='string', value=obj)
 

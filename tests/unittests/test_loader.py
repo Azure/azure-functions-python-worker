@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 import asyncio
 import pathlib
 import subprocess
@@ -92,7 +94,7 @@ class TestPluginLoader(testutils.AsyncTestCase):
 
             # Trimming off carriage return charater when testing on Windows
             stdout_lines = [
-                l.replace(b'\r', b'') for l in stdout.strip().split(b'\n')
+                line.replace(b'\r', b'') for line in stdout.strip().split(b'\n')
             ]
             self.assertEqual(stdout_lines, [b'True', b'True'])
 

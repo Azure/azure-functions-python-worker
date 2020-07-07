@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 import inspect
 import operator
 import typing
@@ -30,7 +32,7 @@ class FunctionInfo(typing.NamedTuple):
 
 class FunctionLoadError(RuntimeError):
 
-    def __init__(self, function_name, msg):
+    def __init__(self, function_name: str, msg: str) -> None:
         super().__init__(
             f'cannot load the {function_name} function: {msg}')
 
@@ -39,10 +41,10 @@ class Registry:
 
     _functions: typing.MutableMapping[str, FunctionInfo]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._functions = {}
 
-    def get_function(self, function_id: str):
+    def get_function(self, function_id: str) -> FunctionInfo:
         try:
             return self._functions[function_id]
         except KeyError:

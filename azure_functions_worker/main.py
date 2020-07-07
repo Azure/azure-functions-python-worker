@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 """Main entrypoint."""
 
 
@@ -46,7 +48,5 @@ async def start_async(host, port, worker_id, request_id):
     disp = await dispatcher.Dispatcher.connect(
         host, port, worker_id, request_id,
         connect_timeout=5.0)
-
-    disp.load_bindings()
 
     await disp.dispatch_forever()

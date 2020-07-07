@@ -1,21 +1,33 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+from typing import Optional
 import logging
 import logging.handlers
 import sys
 
+from .constants import CONSOLE_LOG_PREFIX
 
-logger = logging.getLogger('azure_functions_worker')
-error_logger = logging.getLogger('azure_functions_worker_errors')
 
-handler = None
-error_handler = None
+logger: logging.Logger = logging.getLogger('azure_functions_worker')
+error_logger: logging.Logger = (
+    logging.getLogger('azure_functions_worker_errors'))
+
+handler: Optional[logging.Handler] = None
+error_handler: Optional[logging.Handler] = None
 
 
 def setup(log_level, log_destination):
+    # Since handler and error_handler are moved to the global scope,
+    # before assigning to these handlers, we should define 'global' keyword
+    global handler
+    global error_handler
+
     if log_level == 'TRACE':
         log_level = 'DEBUG'
 
-    formatter = logging.Formatter(
-        'LanguageWorkerConsoleLog %(levelname)s: %(message)s')
+    formatter = logging.Formatter(f'{CONSOLE_LOG_PREFIX}'
+                                  ' %(levelname)s: %(message)s')
 
     if log_destination is None:
         # With no explicit log destination we do split logging,
@@ -48,26 +60,20 @@ def setup(log_level, log_destination):
     error_logger.setLevel(getattr(logging, log_level))
 
 
-def disable_console_logging():
+def disable_console_logging() -> None:
+    # We should only remove the sys.stdout stream, as error_logger is used for
+    # unexpected critical error logs handling.
     if logger and handler:
+        handler.flush()
         logger.removeHandler(handler)
 
-    if error_logger and error_handler:
-        error_logger.removeHandler(error_handler)
 
-
-def enable_console_logging():
+def enable_console_logging() -> None:
     if logger and handler:
         logger.addHandler(handler)
 
-    if error_logger and error_handler:
-        error_logger.addHandler(error_handler)
 
-
-def is_system_log_category(ctg: str):
-    return any(
-        [ctg.lower().startswith(c) for c in (
-            'azure_functions_worker',
-            'azure_functions_worker_errors'
-        )]
-    )
+def is_system_log_category(ctg: str) -> bool:
+    # Category starts with 'azure_functions_worker' or
+    # 'azure_functions_worker_errors' will be treated as system logs
+    return ctg.lower().startswith('azure_functions_worker')

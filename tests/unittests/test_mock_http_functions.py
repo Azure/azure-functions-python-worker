@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 from azure_functions_worker import protos
 from azure_functions_worker import testutils
 
@@ -20,7 +22,8 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
 
-            user_logs = [l for l in r.logs if l.category == 'my function']
+            user_logs = [line for line in r.logs
+                         if line.category == 'my function']
             self.assertEqual(len(user_logs), 1)
 
             log = user_logs[0]
@@ -46,7 +49,8 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
 
-            user_logs = [l for l in r.logs if l.category == 'my function']
+            user_logs = [line for line in r.logs if
+                         line.category == 'my function']
             self.assertEqual(len(user_logs), 2)
 
             first_msg = user_logs[0]

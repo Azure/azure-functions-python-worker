@@ -91,7 +91,8 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
             event_index = int(event['body']) - int(random_number)
             self.assertTrue(0 <= event_index < count)
 
-            enqueued_time = datetime.fromisoformat(event['enqueued_time'])
+            enqueued_time = datetime.strptime(event['enqueued_time'],
+                                              '%Y-%m-%dT%H:%M:%S.%fZ')
             self.assertIsNotNone(enqueued_time)
             self.assertIsNone(event['partition_key'])  # only 1 partition
             self.assertGreaterEqual(event['sequence_number'], 0)

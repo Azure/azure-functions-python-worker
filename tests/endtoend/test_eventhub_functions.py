@@ -59,7 +59,8 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
         # EventhubEvent property check
         # Reenable these lines after enqueued_time property is fixed
-        # enqueued_time = datetime.fromisoformat(event['enqueued_time'])
+        # enqueued_time = datetime.strptime(event['enqueued_time'],
+        #                                   '%Y-%m-%dT%H:%M:%S.%fZ')
         # self.assertIsNotNone(enqueued_time)
         self.assertIsNone(event['partition_key'])  # There's only 1 partition
         self.assertGreaterEqual(event['sequence_number'], 0)

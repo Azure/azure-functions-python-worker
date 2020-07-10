@@ -5,10 +5,11 @@ import os
 import json
 
 import azure.functions as func
-from azure.eventhub import EventHubProducerClient, EventData
+from azure.eventhub import EventData
+from azure.eventhub.aio import EventHubProducerClient
 
 
-def main(req: func.HttpRequest):
+async def main(req: func.HttpRequest):
 
     # Parse event metadata from http request
     json_string = req.get_body().decode('utf-8')
@@ -20,11 +21,13 @@ def main(req: func.HttpRequest):
         eventhub_name='python-worker-ci-eventhub-one-metadata')
 
     # Generate new event based on http request with full metadata
-    event_data_batch = client.create_batch()
+    event_data_batch = await client.create_batch()
     event_data_batch.add(EventData(event_dict.get('body')))
 
     # Send out event into event hub
-    with client:
-        client.send_batch(event_data_batch)
+    try:
+        await client.send_batch(event_data_batch)
+    finally:
+        await client.close()
 
     return f'OK'

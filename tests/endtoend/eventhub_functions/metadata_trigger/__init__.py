@@ -6,7 +6,7 @@ import json
 import azure.functions as func
 
 
-def main(event: func.EventHubEvent) -> bytes:
+async def main(event: func.EventHubEvent) -> bytes:
     event_dict: typing.Mapping[str, typing.Any] = {
         'body': event.get_body().decode('utf-8'),
         # Uncomment this when the EnqueuedTimeUtc is fixed in azure-functions

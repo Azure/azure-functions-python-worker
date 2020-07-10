@@ -286,6 +286,7 @@ setup(
     extras_require={
         'dev': [
             'azure-functions==1.3.0',
+            'azure-eventhub==5.1.0',
             'flake8~=3.7.9',
             'mypy',
             'pytest',

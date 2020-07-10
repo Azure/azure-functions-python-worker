@@ -3,7 +3,6 @@
 
 import os
 import json
-from datetime import datetime
 
 import azure.functions as func
 from azure.eventhub import EventHubProducerClient, EventData

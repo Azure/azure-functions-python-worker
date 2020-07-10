@@ -4,6 +4,7 @@ import json
 import time
 import pathlib
 from datetime import datetime
+from dateutil import parser, tz
 
 from azure_functions_worker import testutils
 
@@ -60,7 +61,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     @testutils.retryable_test(3, 5)
     def test_eventhub_multiple_with_metadata(self):
         # Send a eventhub event with a random_number in the body
-        start_time = datetime.utcnow()
+        start_time = datetime.now(tz=tz.UTC)
         count = 10
         random_number = str(round(time.time()) % 1000)
         req_body = {
@@ -71,7 +72,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
                                  data=json.dumps(req_body))
         self.assertEqual(r.status_code, 200)
         self.assertIn('OK', r.text)
-        end_time = datetime.utcnow()
+        end_time = datetime.now(tz=tz.UTC)
 
         # Allow trigger to fire.
         time.sleep(5)
@@ -87,13 +88,10 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
         # EventhubEvent property check
         # Reenable these lines after enqueued_time property is fixed
-        for event in events:
-            event_index = int(event['body']) - int(random_number)
-            self.assertTrue(0 <= event_index < count)
-
-            enqueued_time = datetime.strptime(event['enqueued_time'],
-                                              '%Y-%m-%dT%H:%M:%S.%fZ')
-            self.assertIsNotNone(enqueued_time)
+        for event_index in range(len(events)):
+            event = events[event_index]
+            enqueued_time = parser.isoparse(event['enqueued_time'])
+            self.assertTrue(start_time < enqueued_time < end_time)
             self.assertIsNone(event['partition_key'])  # only 1 partition
             self.assertGreaterEqual(event['sequence_number'], 0)
             self.assertIsNotNone(event['offset'])
@@ -103,8 +101,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
             metadata = event['metadata']
             sys_props_array = metadata['SystemPropertiesArray']
             sys_props = sys_props_array[event_index]
-            enqueued_time = datetime.strptime(sys_props['EnqueuedTimeUtc'],
-                                              '%Y-%m-%dT%H:%M:%S.%fZ')
+            enqueued_time = parser.isoparse(sys_props['EnqueuedTimeUtc'])
 
             # Check event trigger time and other system properties
             self.assertTrue(start_time < enqueued_time < end_time)

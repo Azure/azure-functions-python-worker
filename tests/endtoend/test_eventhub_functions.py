@@ -3,6 +3,7 @@
 import json
 import time
 from datetime import datetime
+from dateutil import parser, tz
 
 from azure_functions_worker import testutils
 
@@ -35,7 +36,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     @testutils.retryable_test(3, 5)
     def test_eventhub_trigger_with_metadata(self):
         # Send a eventhub event with a random_number in the body
-        start_time = datetime.utcnow()
+        start_time = datetime.now(tz=tz.UTC)
         random_number = str(round(time.time()) % 1000)
         req_body = {
             'body': random_number
@@ -44,7 +45,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
                                  data=json.dumps(req_body))
         self.assertEqual(r.status_code, 200)
         self.assertIn('OK', r.text)
-        end_time = datetime.utcnow()
+        end_time = datetime.now(tz=tz.UTC)
 
         # Allow trigger to fire.
         time.sleep(5)
@@ -59,8 +60,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
         # EventhubEvent property check
         # Reenable these lines after enqueued_time property is fixed
-        # enqueued_time = datetime.strptime(event['enqueued_time'],
-        #                                   '%Y-%m-%dT%H:%M:%S.%fZ')
+        # enqueued_time = parser.isoparse(event['enqueued_time'])
         # self.assertIsNotNone(enqueued_time)
         self.assertIsNone(event['partition_key'])  # There's only 1 partition
         self.assertGreaterEqual(event['sequence_number'], 0)
@@ -70,8 +70,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertIsNotNone(event['metadata'])
         metadata = event['metadata']
         sys_props = metadata['SystemProperties']
-        enqueued_time = datetime.strptime(metadata['EnqueuedTimeUtc'],
-                                          '%Y-%m-%dT%H:%M:%S.%fZ')
+        enqueued_time = parser.isoparse(metadata['EnqueuedTimeUtc'])
         self.assertTrue(start_time < enqueued_time < end_time)
         self.assertIsNone(sys_props['PartitionKey'])
         self.assertGreaterEqual(sys_props['SequenceNumber'], 0)

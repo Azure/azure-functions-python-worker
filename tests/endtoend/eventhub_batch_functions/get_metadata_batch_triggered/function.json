@@ -11,7 +11,7 @@
       "direction": "in",
       "name": "file",
       "connection": "AzureWebJobsStorage",
-      "path": "python-worker-tests/test-metadata-triggered.txt"
+      "path": "python-worker-tests/test-metadata-batch-triggered.txt"
     },
     {
       "type": "http",

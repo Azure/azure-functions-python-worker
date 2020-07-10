@@ -58,9 +58,9 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertEqual(event['body'], random_number)
 
         # EventhubEvent property check
-        # Reenable these lines after enqueue_time property is fixed
-        # enqueue_time = datetime.fromisoformat(event['enqueue_time'])
-        # self.assertTrue(start_time < enqueue_time < end_time)
+        # Reenable these lines after enqueued_time property is fixed
+        # enqueued_time = datetime.fromisoformat(event['enqueued_time'])
+        # self.assertIsNotNone(enqueued_time)
         self.assertIsNone(event['partition_key'])  # There's only 1 partition
         self.assertGreaterEqual(event['sequence_number'], 0)
         self.assertIsNotNone(event['offset'])
@@ -69,9 +69,9 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertIsNotNone(event['metadata'])
         metadata = event['metadata']
         sys_props = metadata['SystemProperties']
-        enqueue_time = datetime.strptime(metadata['EnqueuedTimeUtc'],
-                                         '%Y-%m-%dT%H:%M:%S.%fZ')
-        self.assertTrue(start_time < enqueue_time < end_time)
+        enqueued_time = datetime.strptime(metadata['EnqueuedTimeUtc'],
+                                          '%Y-%m-%dT%H:%M:%S.%fZ')
+        self.assertTrue(start_time < enqueued_time < end_time)
         self.assertIsNone(sys_props['PartitionKey'])
         self.assertGreaterEqual(sys_props['SequenceNumber'], 0)
         self.assertIsNotNone(sys_props['Offset'])

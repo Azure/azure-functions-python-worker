@@ -9,6 +9,8 @@ from azure.eventhub import EventData
 from azure.eventhub.aio import EventHubProducerClient
 
 
+# An HttpTrigger to generating EventHub event from azure-eventhub SDK.
+# Events generated from azure-eventhub contain the full metadata.
 async def main(req: func.HttpRequest):
 
     # Parse event metadata from http request

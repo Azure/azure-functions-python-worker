@@ -6,6 +6,8 @@ import json
 import azure.functions as func
 
 
+# This is an actual EventHub trigger. It picks a few of EventHub properties
+# and converts them into a storage blob
 async def main(event: func.EventHubEvent) -> bytes:
     event_dict: typing.Mapping[str, typing.Any] = {
         'body': event.get_body().decode('utf-8'),

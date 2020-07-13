@@ -8,8 +8,10 @@ import azure.functions as func
 from azure.eventhub import EventHubProducerClient, EventData
 
 
+# An HttpTrigger to generating EventHub event from azure-eventhub SDK.
+# Events generated from azure-eventhub contain the full metadata.
 def main(req: func.HttpRequest):
-    # Get event count
+    # Get event count from http request query parameter
     count = int(req.params.get('count', '1'))
 
     # Parse event metadata from http request

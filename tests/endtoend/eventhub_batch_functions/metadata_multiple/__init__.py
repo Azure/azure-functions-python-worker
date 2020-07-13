@@ -6,6 +6,8 @@ import json
 import azure.functions as func
 
 
+# This is an actual EventHub trigger which handles Eventhub events in batches.
+# It serializes multiple event data into a json and store it into a blob.
 def main(events: typing.List[func.EventHubEvent]) -> bytes:
     event_list = []
     for event in events:

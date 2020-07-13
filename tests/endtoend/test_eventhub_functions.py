@@ -8,6 +8,10 @@ from dateutil import parser, tz
 from azure_functions_worker import testutils
 
 
+# This is EventHub (cardinality: one) E2E. Each testcase consists of 3 part:
+# 1. An eventhub_output HTTP trigger for generating EventHub event
+# 2. An actual eventhub_trigger EventHub trigger for converting event into blob
+# 3. A get_eventhub_triggered HTTP trigger for retrieving event info from blob
 class TestEventHubFunctions(testutils.WebHostTestCase):
 
     @classmethod
@@ -16,45 +20,57 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
     @testutils.retryable_test(3, 5)
     def test_eventhub_trigger(self):
+        # Generate a unique event body for the EventHub event
         data = str(round(time.time()))
         doc = {'id': data}
+
+        # Invoke eventhub_output HttpTrigger to generate an Eventhub Event.
         r = self.webhost.request('POST', 'eventhub_output',
                                  data=json.dumps(doc))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
 
-        # Allow trigger to fire.
+        # Once the event get generated, allow function host to pool from
+        # EventHub and wait for eventhub_trigger to execute,
+        # converting the event metadata into a blob.
         time.sleep(5)
 
-        # Check that the trigger has fired.
+        # Call get_eventhub_triggered to retrieve event metadata from blob.
         r = self.webhost.request('GET', 'get_eventhub_triggered')
         self.assertEqual(r.status_code, 200)
         response = r.json()
 
+        # Check if the event body matches the initial data
         self.assertEqual(response, doc)
 
     @testutils.retryable_test(3, 5)
     def test_eventhub_trigger_with_metadata(self):
-        # Send a eventhub event with a random_number in the body
+        # Generate a unique event body for EventHub event
+        # Record the start_time and end_time for checking event enqueue time
         start_time = datetime.now(tz=tz.UTC)
         random_number = str(round(time.time()) % 1000)
         req_body = {
             'body': random_number
         }
+
+        # Invoke metadata_output HttpTrigger to generate an EventHub event
+        # from azure-eventhub SDK
         r = self.webhost.request('POST', 'metadata_output',
                                  data=json.dumps(req_body))
         self.assertEqual(r.status_code, 200)
         self.assertIn('OK', r.text)
         end_time = datetime.now(tz=tz.UTC)
 
-        # Allow trigger to fire.
+        # Once the event get generated, allow function host to pool from
+        # EventHub and wait for eventhub_trigger to execute,
+        # converting the event metadata into a blob.
         time.sleep(5)
 
-        # Check that the trigger has fired.
+        # Call get_metadata_triggered to retrieve event metadata from blob
         r = self.webhost.request('GET', 'get_metadata_triggered')
         self.assertEqual(r.status_code, 200)
 
-        # Check metadata
+        # Check if the event body matches the unique random_number
         event = r.json()
         self.assertEqual(event['body'], random_number)
 
@@ -66,7 +82,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertGreaterEqual(event['sequence_number'], 0)
         self.assertIsNotNone(event['offset'])
 
-        # Metadata check essential properties
+        # Check if the event contains proper metadata fields
         self.assertIsNotNone(event['metadata'])
         metadata = event['metadata']
         sys_props = metadata['SystemProperties']

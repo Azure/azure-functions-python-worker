@@ -557,9 +557,6 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             hostexe_args = [str(coretools_exe), 'host', 'start']
             if port is not None:
                 hostexe_args.extend(['--port', str(port)])
-    else:
-        raise RuntimeError(f'Worker path {coretools_exe} does not exist, or '
-                           f'CORE_TOOLS_EXE_PATH envrironment varible not set')
 
     # If we need to use Functions host directly
     if not hostexe_args:

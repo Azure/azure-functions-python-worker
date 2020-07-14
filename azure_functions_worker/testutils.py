@@ -557,6 +557,9 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             hostexe_args = [str(coretools_exe), 'host', 'start']
             if port is not None:
                 hostexe_args.extend(['--port', str(port)])
+    else:
+        raise RuntimeError(f'Worker path {coretools_exe} does not exist, or '
+                           f'CORE_TOOLS_EXE_PATH envrironment varible not set')
 
     # If we need to use Functions host directly
     if not hostexe_args:
@@ -639,6 +642,15 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         servicebus = testconfig['azure'].get('servicebus_key')
         if servicebus:
             extra_env['AzureWebJobsServiceBusConnectionString'] = servicebus
+
+        eventgrid_topic_uri = testconfig['azure'].get('eventgrid_topic_uri')
+        if eventgrid_topic_uri:
+            extra_env['AzureWebJobsEventGridTopicUri'] = eventgrid_topic_uri
+
+        eventgrid_topic_key = testconfig['azure'].get('eventgrid_topic_key')
+        if eventgrid_topic_key:
+            extra_env['AzureWebJobsEventGridConnectionKey'] = \
+                eventgrid_topic_key
 
     if port is not None:
         extra_env['ASPNETCORE_URLS'] = f'http://*:{port}'

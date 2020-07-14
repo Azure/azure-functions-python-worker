@@ -170,9 +170,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             log_level = getattr(protos.RpcLog, 'None')
 
         if is_system_log_category(record.name):
-            log_category = protos.RpcLog.RpcLogCategory.System
+            log_category = protos.RpcLog.RpcLogCategory.Value('System')
         else:  # customers using logging will yield 'root' in record.name
-            log_category = protos.RpcLog.RpcLogCategory.User
+            log_category = protos.RpcLog.RpcLogCategory.Value('User')
 
         log = dict(
             level=log_level,

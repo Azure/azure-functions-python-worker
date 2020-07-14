@@ -257,7 +257,7 @@ with open("README.md") as readme:
 
 setup(
     name='azure-functions-worker',
-    version='1.1.3',
+    version='1.1.4',
     description='Python Language Worker for Azure Functions Host',
     long_description=long_description,
     long_description_content_type='text/markdown',

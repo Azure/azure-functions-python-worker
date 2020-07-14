@@ -9,11 +9,14 @@ from dateutil import parser, tz
 from azure_functions_worker import testutils
 
 
-# This is EventHub (cardinality: many) E2E. Each testcase consists of 3 part:
-# 1. An eventhub_output_batch HTTP trigger for generating EventHub event
-# 2. An eventhub_multiple EventHub trigger for converting event into blob
-# 3. A get_eventhub_batch_triggered HTTP trigger for getting the event body
 class TestEventHubFunctions(testutils.WebHostTestCase):
+    '''Test EventHub Trigger and Output Bindings (cardinality: many).
+
+    Each testcase consists of 3 part:
+    1. An eventhub_output_batch HTTP trigger for generating EventHub event
+    2. An eventhub_multiple EventHub trigger for converting event into blob
+    3. A get_eventhub_batch_triggered HTTP trigger for the event body
+    '''
 
     @classmethod
     def get_script_dir(cls):

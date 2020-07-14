@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import time
+import unittest
 import uuid
 
 import requests
@@ -27,6 +28,11 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
                               **kwargs)
 
     @testutils.retryable_test(3, 5)
+    @unittest.skip("Run locally. Running on Azure fails with 401/403 as the"
+                   "host does not pick up the SecretKey from the"
+                   "azure_functions_worker.testutils.py.SECRETS_TEMPLATE and"
+                   "because of which we cannot test eventGrid webhook"
+                   "invocation correctly.")
     def test_eventgrid_trigger(self):
         """test event_grid trigger
 

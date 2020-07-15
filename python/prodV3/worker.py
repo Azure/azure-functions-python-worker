@@ -13,11 +13,19 @@ PKGS = "lib/site-packages"
 # Azure environment variables
 AZURE_WEBSITE_INSTANCE_ID = "WEBSITE_INSTANCE_ID"
 AZURE_CONTAINER_NAME = "CONTAINER_NAME"
+AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
 
 
 def is_azure_environment():
     return (AZURE_CONTAINER_NAME in os.environ
             or AZURE_WEBSITE_INSTANCE_ID in os.environ)
+
+
+def add_script_root_to_sys_path():
+    '''Append function project root to module finding sys.path'''
+    functions_script_root = os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT)
+    if functions_script_root is not None:
+        sys.path.append(functions_script_root)
 
 
 def determine_user_pkg_paths():
@@ -56,6 +64,7 @@ if __name__ == '__main__':
                   env)
     else:
         sys.path.insert(1, func_worker_dir)
+        add_script_root_to_sys_path()
         from azure_functions_worker import main
 
         main.main()

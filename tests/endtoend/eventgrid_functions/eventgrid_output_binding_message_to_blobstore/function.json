@@ -1,18 +1,19 @@
 {
   "scriptFile": "__init__.py",
-
   "bindings": [
     {
-      "type": "eventGridTrigger",
+      "name": "msg",
+      "type": "queueTrigger",
       "direction": "in",
-      "name": "event"
+      "queueName": "test-event-grid-storage-queue",
+      "connection": "AzureWebJobsStorage"
     },
     {
       "type": "blob",
       "direction": "out",
       "name": "$return",
       "connection": "AzureWebJobsStorage",
-      "path": "python-worker-tests/test-eventgrid-triggered.txt"
+      "path": "python-worker-tests/test-eventgrid-output-binding.txt"
     }
   ]
 }

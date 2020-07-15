@@ -119,3 +119,6 @@ py3env/
 # PyCharm
 .idea/
 .idea_modules/
+
+# Profiling info
+prof/

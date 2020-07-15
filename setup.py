@@ -195,9 +195,8 @@ class webhost(distutils.cmd.Command):
                 print('Downloading Azure Functions Web Host...')
                 urllib.request.urlretrieve(self.webhost_url, zipf.name)
             except Exception as e:
-                print(
-                    f"could not download Azure Functions Web Host binaries "
-                    f"from {self.webhost_url}: {e!r}", file=sys.stderr)
+                print(f"could not download Azure Functions Web Host binaries "
+                      f"from {self.webhost_url}: {e!r}", file=sys.stderr)
                 sys.exit(1)
 
             if not self.webhost_dir.exists():

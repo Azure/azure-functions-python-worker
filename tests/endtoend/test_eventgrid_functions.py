@@ -83,14 +83,9 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
                 # Check that the trigger has fired.
                 r = self.webhost.request('GET', 'get_eventgrid_triggered')
                 self.assertEqual(r.status_code, 200)
-                response = r.json()
 
-                self.assertEqual(
-                    response, {'id': data[0]['id'], 'data': data[0]['data'],
-                               'topic': data[0]['topic'],
-                               'subject': data[0]['subject'],
-                               'event_type': data[0]['eventType']}
-                )
+                response = r.json()
+                self.assertLessEqual(response.items(), data[0].items())
             except AssertionError:
                 if try_no == max_retries - 1:
                     raise
@@ -121,11 +116,11 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
         """
 
         test_uuid = uuid.uuid4().__str__()
-
-        data = "{" + "'test_uuid': '{0}'".format(test_uuid) + "}"
         expected_response = "Sent event with subject: {}, id: {}, data: {}, " \
                             "event_type: {} to EventGrid!".format(
-                                "test-subject", "test-id", data, "test-event-1")
+                                "test-subject", "test-id",
+                                f"{{'test_uuid': '{test_uuid}'}}",
+                                "test-event-1")
         expected_final_data = {
             'id': 'test-id', 'subject': 'test-subject', 'dataVersion': '1.0',
             'eventType': 'test-event-1',
@@ -151,14 +146,10 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
                 self.assertEqual(r.status_code, 200)
                 response = r.json()
 
-                self.assertEqual(response['data'], expected_final_data['data'])
-                self.assertEqual(response['id'], expected_final_data['id'])
-                self.assertEqual(response['eventType'],
-                                 expected_final_data['eventType'])
-                self.assertEqual(response['subject'],
-                                 expected_final_data['subject'])
-                self.assertEqual(response['dataVersion'],
-                                 expected_final_data['dataVersion'])
+                # list of fields to check are limited as other fields contain
+                # datetime or other uncertain values
+                for f in ['data', 'id', 'eventType', 'subject', 'dataVersion']:
+                    self.assertEqual(response[f], expected_final_data[f])
 
             except AssertionError:
                 if try_no == max_retries - 1:

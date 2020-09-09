@@ -135,8 +135,8 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         datetime_iso = datetime.utcnow().isoformat()
         data = datetime_iso * 1024 * 1024  # 26 MB
 
-        r = self.webhost.request('POST', 'put_blob_trigger',
-                                 data=data.encode('utf-8'))
+        r = self.webhost.request('POST', 'put_blob_trigger', data=data.
+                                 encode('utf-8'))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
 

@@ -399,6 +399,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         exception=self._serialize_exception(ex))))
 
     async def _handle__function_environment_reload_request(self, req):
+        '''Only runs on Linux Consumption placeholder specialization.'''
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
                         'request ID: %s', self.request_id)
@@ -410,12 +411,16 @@ class Dispatcher(metaclass=DispatcherMeta):
             # customer use
             import azure.functions # NoQA
 
+            # Append function project root to module finding sys.path
+            if func_env_reload_request.function_app_directory:
+                sys.path.append(func_env_reload_request.function_app_directory)
+
+            # Clear sys.path import cache, reload all module from new sys.path
             sys.path_importer_cache.clear()
 
+            # Reload environment variables
             os.environ.clear()
-
             env_vars = func_env_reload_request.environment_variables
-
             for var in env_vars:
                 os.environ[var] = env_vars[var]
 

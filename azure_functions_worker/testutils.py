@@ -44,13 +44,14 @@ E2E_TESTS_FOLDER = pathlib.Path('endtoend')
 E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
 UNIT_TESTS_FOLDER = pathlib.Path('unittests')
 UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
-DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / \
-    'Microsoft.Azure.WebJobs.Script.WebHost.dll'
+WEBHOST_DLL = "Microsoft.Azure.WebJobs.Script.WebHost.dll"
+DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / WEBHOST_DLL
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
 WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
 WORKER_CONFIG = PROJECT_ROOT / '.testconfig'
 ON_WINDOWS = platform.system() == 'Windows'
+LOCALHOST = "127.0.0.1"
 
 HOST_JSON_TEMPLATE = """\
 {
@@ -317,7 +318,7 @@ class _MockWebHost:
         self._server = grpc.server(self._threadpool)
         self._servicer = _MockWebHostServicer(self)
         protos.add_FunctionRpcServicer_to_server(self._servicer, self._server)
-        self._port = self._server.add_insecure_port('127.0.0.1:0')
+        self._port = self._server.add_insecure_port(f'{LOCALHOST}:0')
 
         self._worker_id = self.make_id()
         self._request_id = self.make_id()
@@ -459,7 +460,7 @@ class _MockWebHostController:
         await self._host.start()
 
         self._worker = await dispatcher. \
-            Dispatcher.connect('127.0.0.1', self._host._port,
+            Dispatcher.connect(LOCALHOST, self._host._port,
                                self._host.worker_id,
                                self._host.request_id, connect_timeout=5.0)
 
@@ -469,6 +470,7 @@ class _MockWebHostController:
             wait([self._host._connected_fut, self._worker_task],
                  return_when=asyncio.FIRST_COMPLETED)
 
+        # noinspection PyBroadException
         try:
             if self._worker_task in done:
                 self._worker_task.result()
@@ -502,7 +504,7 @@ class _MockWebHostController:
 def start_mockhost(*, script_root=FUNCS_PATH):
     tests_dir = TESTS_ROOT
     scripts_dir = tests_dir / script_root
-    if not scripts_dir.exists() or not scripts_dir.is_dir():
+    if not (scripts_dir.exists() and scripts_dir.is_dir()):
         raise RuntimeError(
             f'invalid script_root argument: '
             f'{scripts_dir} directory does not exist')
@@ -536,7 +538,7 @@ class _WebHostProxy:
 
 def _find_open_port():
     with socket.socket() as s:
-        s.bind(('127.0.0.1', 0))
+        s.bind((LOCALHOST, 0))
         s.listen(1)
         return s.getsockname()[1]
 
@@ -572,10 +574,10 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         if not dll:
             dll = DEFAULT_WEBHOST_DLL_PATH
 
-            secrets = SECRETS_TEMPLATE
-
             os.makedirs(dll.parent / 'Secrets', exist_ok=True)
             with open(dll.parent / 'Secrets' / 'host.json', 'w') as f:
+                secrets = SECRETS_TEMPLATE
+
                 f.write(secrets)
 
         if dll and pathlib.Path(dll).exists():
@@ -605,11 +607,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         ]))
 
     worker_path = os.environ.get('PYAZURE_WORKER_DIR')
-    if not worker_path:
-        worker_path = WORKER_PATH
-    else:
-        worker_path = pathlib.Path(worker_path)
-
+    worker_path = WORKER_PATH if not worker_path else pathlib.Path(worker_path)
     if not worker_path.exists():
         raise RuntimeError(f'Worker path {worker_path} does not exist')
 
@@ -640,6 +638,15 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         if servicebus:
             extra_env['AzureWebJobsServiceBusConnectionString'] = servicebus
 
+        eventgrid_topic_uri = testconfig['azure'].get('eventgrid_topic_uri')
+        if eventgrid_topic_uri:
+            extra_env['AzureWebJobsEventGridTopicUri'] = eventgrid_topic_uri
+
+        eventgrid_topic_key = testconfig['azure'].get('eventgrid_topic_key')
+        if eventgrid_topic_key:
+            extra_env['AzureWebJobsEventGridConnectionKey'] = \
+                eventgrid_topic_key
+
     if port is not None:
         extra_env['ASPNETCORE_URLS'] = f'http://*:{port}'
 
@@ -655,11 +662,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
 
 
 def start_webhost(*, script_dir=None, stdout=None):
-    if script_dir:
-        script_root = TESTS_ROOT / script_dir
-    else:
-        script_root = FUNCS_PATH
-
+    script_root = TESTS_ROOT / script_dir if script_dir else FUNCS_PATH
     if stdout is None:
         if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             stdout = sys.stdout
@@ -670,8 +673,8 @@ def start_webhost(*, script_dir=None, stdout=None):
     proc = popen_webhost(stdout=stdout, stderr=subprocess.STDOUT,
                          script_root=script_root, port=port)
 
-    addr = f'http://127.0.0.1:{port}'
-    for n in range(10):
+    addr = f'http://{LOCALHOST}:{port}'
+    for _ in range(10):
         try:
             r = requests.get(f'{addr}/api/ping',
                              params={'code': 'testFunctionKey'})
@@ -682,11 +685,11 @@ def start_webhost(*, script_dir=None, stdout=None):
         except requests.exceptions.ConnectionError:
             pass
 
-        time.sleep(0.5)
+        time.sleep(1)
     else:
         proc.terminate()
         try:
-            proc.wait(10)
+            proc.wait(20)
         except subprocess.TimeoutExpired:
             proc.kill()
         raise RuntimeError('could not start the webworker')
@@ -697,7 +700,7 @@ def start_webhost(*, script_dir=None, stdout=None):
 def create_dummy_dispatcher():
     dummy_event_loop = asyncio.new_event_loop()
     disp = dispatcher.Dispatcher(
-        dummy_event_loop, '127.0.0.1', 0,
+        dummy_event_loop, LOCALHOST, 0,
         'test_worker_id', 'test_request_id',
         1.0, 1000)
     dummy_event_loop.close()

@@ -17,8 +17,10 @@ from setuptools.command import develop
 
 
 # TODO: change this to something more stable when available.
-WEBHOST_URL = ('https://ci.appveyor.com/api/buildjobs/19gqd7drpxhkedea'
-               '/artifacts/Functions.Binaries.2.0.13036.no-runtime.zip')
+WEBHOST_URL = (
+    'https://github.com/Azure/azure-functions-host/releases/download/'
+    '/v2.0.14361/Functions.Binaries.2.0.14361.no-runtime.zip'
+)
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = """\
@@ -195,9 +197,8 @@ class webhost(distutils.cmd.Command):
                 print('Downloading Azure Functions Web Host...')
                 urllib.request.urlretrieve(self.webhost_url, zipf.name)
             except Exception as e:
-                print(
-                    f"could not download Azure Functions Web Host binaries "
-                    f"from {self.webhost_url}: {e!r}", file=sys.stderr)
+                print(f"could not download Azure Functions Web Host binaries "
+                      f"from {self.webhost_url}: {e!r}", file=sys.stderr)
                 sys.exit(1)
 
             if not self.webhost_dir.exists():
@@ -257,7 +258,7 @@ with open("README.md") as readme:
 
 setup(
     name='azure-functions-worker',
-    version='1.1.4',
+    version='1.1.5',
     description='Python Language Worker for Azure Functions Host',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -285,7 +286,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'azure-functions==1.3.0',
+            'azure-functions==1.3.1',
             'azure-eventhub~=5.1.0',
             'python-dateutil~=2.8.1',
             'flake8~=3.7.9',

@@ -23,9 +23,10 @@ from . import loader
 from . import protos
 from . import constants
 
-from .constants import CONSOLE_LOG_PREFIX
+from .constants import CONSOLE_LOG_PREFIX, PYTHON_THREADPOOL_THREAD_COUNT
 from .logging import error_logger, logger, is_system_log_category
 from .logging import enable_console_logging, disable_console_logging
+from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
 from asyncio import BaseEventLoop
@@ -62,17 +63,11 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         self._old_task_factory = None
 
-        # A thread-pool for synchronous function calls.  We limit
-        # the number of threads to 1 so that one Python worker can
-        # only run one synchronous function in parallel.  This is
-        # because synchronous code in Python is rarely designed with
-        # concurrency in mind, so we don't want to allow users to
-        # have races in their synchronous functions.  Moreover,
-        # because of the GIL in CPython, it rarely makes sense to
-        # use threads (unless the code is IO bound, but we have
-        # async support for that.)
+        # We allow the customer to change synchronous thread pool count by
+        # PYTHON_THREADPOOL_THREAD_COUNT app setting. The default value is 1.
+        thread_count = get_app_setting(PYTHON_THREADPOOL_THREAD_COUNT, '1')
         self._sync_call_tp = concurrent.futures.ThreadPoolExecutor(
-            max_workers=1)
+            max_workers=int(thread_count))
 
         self._grpc_connect_timeout = grpc_connect_timeout
         # This is set to -1 by default to remove the limitation on msg size

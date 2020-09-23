@@ -7,6 +7,7 @@ import typing
 from azure_functions_worker.utils import common, wrappers
 
 
+TEST_APP_SETTING_NAME = "TEST_APP_SETTING_NAME"
 TEST_FEATURE_FLAG = "APP_SETTING_FEATURE_FLAG"
 FEATURE_DEFAULT = 42
 
@@ -162,6 +163,30 @@ class TestUtilities(unittest.TestCase):
             mock_method.mock_load_function_value_error()
             self.assertNotIn('import_error', e.msg)
             self.assertEqual(type(e), ValueError)
+
+    def test_application_setting_not_set_should_return_none(self):
+        app_setting = common.get_app_setting(TEST_APP_SETTING_NAME)
+        self.assertIsNone(app_setting)
+
+    def test_application_setting_should_return_value(self):
+        # Set application setting by os.setenv
+        os.environ.update({ TEST_APP_SETTING_NAME: '42' })
+
+        # Try using utility to acquire application setting
+        app_setting = common.get_app_setting(TEST_APP_SETTING_NAME)
+        self.assertEqual(app_setting, '42')
+
+    def test_application_setting_not_set_should_return_default_value(self):
+        app_setting = common.get_app_setting(TEST_APP_SETTING_NAME, 'default')
+        self.assertEqual(app_setting, 'default')
+
+    def test_application_setting_should_ignore_default_value(self):
+        # Set application setting by os.setenv
+        os.environ.update({ TEST_APP_SETTING_NAME: '42' })
+
+        # Try using utility to acquire application setting
+        app_setting = common.get_app_setting(TEST_APP_SETTING_NAME, 'default')
+        self.assertEqual(app_setting, '42')
 
     def _unset_feature_flag(self):
         try:

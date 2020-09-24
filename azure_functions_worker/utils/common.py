@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from typing import Optional
+from typing import Optional, Callable
 import os
 
 
@@ -18,16 +18,25 @@ def is_envvar_true(env_key: str) -> bool:
     return is_true_like(os.environ[env_key])
 
 
-def get_app_setting(setting: str,
-                    default_value: Optional[str] = None) -> Optional[str]:
+def get_app_setting(
+    setting: str,
+    default_value: Optional[str] = None,
+    validator: Optional[Callable[[str], bool]] = None
+) -> Optional[str]:
     """Returns the application setting from environment variable.
 
     Parameters
     ----------
     setting: str
         The name of the application setting (e.g. FUNCTIONS_RUNTIME_VERSION)
+
     default_value: Optional[str]
-        The expected return value when the application setting is not found.
+        The expected return value when the application setting is not found,
+        or the app setting does not pass the validator.
+
+    validator: Optional[Callable[[str], bool]]
+        A function accepts the app setting value and should return True when
+        the app setting value is acceptable.
 
     Returns
     -------
@@ -36,7 +45,17 @@ def get_app_setting(setting: str,
     """
     app_setting_value = os.getenv(setting)
 
+    # If an app setting is not configured, we return the default value
     if app_setting_value is None:
         return default_value
 
-    return app_setting_value
+    # If there's no validator, we should return the app setting value directly
+    if validator is None:
+        return app_setting_value
+
+    # If the app setting is set with a validator,
+    # On True, should return the app setting value
+    # On False, should return the app setting value
+    if validator(app_setting_value):
+        return app_setting_value
+    return default_value

@@ -65,8 +65,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         # We allow the customer to change synchronous thread pool count by
         # PYTHON_THREADPOOL_THREAD_COUNT app setting. The default value is 1.
-        self._sync_tp_max_workers: int = int(get_app_setting(
-            PYTHON_THREADPOOL_THREAD_COUNT, '1'))
+        self._sync_tp_max_workers: int = self._get_sync_tp_max_workers()
         self._sync_call_tp: concurrent.futures.Executor = (
             concurrent.futures.ThreadPoolExecutor(
                 max_workers=self._sync_tp_max_workers))
@@ -86,9 +85,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
         disp._grpc_thread.start()
         await disp._grpc_connected_fut
-        logger.info('Successfully opened gRPC channel to %s:%s', host, port)
-        logger.info('Python worker sync threadpool max workers: %s',
-                    disp._sync_tp_max_workers)
+        logger.info('Successfully opened gRPC channel to %s:%s '
+                    'with sync threadpool max workers set to %s',
+                    host, port, disp._sync_tp_max_workers)
         return disp
 
     async def dispatch_forever(self):
@@ -475,6 +474,27 @@ class Dispatcher(metaclass=DispatcherMeta):
             logger.info('Changing current working directory to %s', new_cwd)
         else:
             logger.warning('Directory %s is not found when reloading', new_cwd)
+
+    def _get_sync_tp_max_workers(self):
+        def tp_max_workers_validator(value: str):
+            try:
+                int_value = int(value)
+            except ValueError:
+                logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be an '
+                               'integer')
+                return False
+
+            if not 1 <= int_value <= 32:
+                logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
+                               'to a value between 1 and 32')
+                return False
+
+            return True
+
+        return int(get_app_setting(
+            setting=PYTHON_THREADPOOL_THREAD_COUNT,
+            default_value='1',
+            validator=tp_max_workers_validator))
 
     def __run_sync_func(self, invocation_id, func, params):
         # This helper exists because we need to access the current

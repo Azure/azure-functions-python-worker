@@ -23,7 +23,13 @@ from . import loader
 from . import protos
 from . import constants
 
-from .constants import CONSOLE_LOG_PREFIX, PYTHON_THREADPOOL_THREAD_COUNT
+from .constants import (
+    CONSOLE_LOG_PREFIX,
+    PYTHON_THREADPOOL_THREAD_COUNT,
+    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX
+)
 from .logging import error_logger, logger, is_system_log_category
 from .logging import enable_console_logging, disable_console_logging
 from .utils.common import get_app_setting
@@ -475,8 +481,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         else:
             logger.warning('Directory %s is not found when reloading', new_cwd)
 
-    def _get_sync_tp_max_workers(self):
-        def tp_max_workers_validator(value: str):
+    def _get_sync_tp_max_workers(self) -> int:
+        def tp_max_workers_validator(value: str) -> bool:
             try:
                 int_value = int(value)
             except ValueError:
@@ -484,7 +490,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                                'integer')
                 return False
 
-            if not 1 <= int_value <= 32:
+            if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN or (
+               int_value > PYTHON_THREADPOOL_THREAD_COUNT_MAX):
                 logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
                                'to a value between 1 and 32')
                 return False
@@ -493,7 +500,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         return int(get_app_setting(
             setting=PYTHON_THREADPOOL_THREAD_COUNT,
-            default_value='1',
+            default_value=f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}',
             validator=tp_max_workers_validator))
 
     def __run_sync_func(self, invocation_id, func, params):

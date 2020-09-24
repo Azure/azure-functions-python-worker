@@ -55,7 +55,7 @@ def get_app_setting(
 
     # If the app setting is set with a validator,
     # On True, should return the app setting value
-    # On False, should return the app setting value
+    # On False, should return the default value
     if validator(app_setting_value):
         return app_setting_value
     return default_value

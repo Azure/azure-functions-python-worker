@@ -170,7 +170,7 @@ class TestUtilities(unittest.TestCase):
 
     def test_application_setting_should_return_value(self):
         # Set application setting by os.setenv
-        os.environ.update({ TEST_APP_SETTING_NAME: '42' })
+        os.environ.update({TEST_APP_SETTING_NAME: '42'})
 
         # Try using utility to acquire application setting
         app_setting = common.get_app_setting(TEST_APP_SETTING_NAME)
@@ -182,7 +182,7 @@ class TestUtilities(unittest.TestCase):
 
     def test_application_setting_should_ignore_default_value(self):
         # Set application setting by os.setenv
-        os.environ.update({ TEST_APP_SETTING_NAME: '42' })
+        os.environ.update({TEST_APP_SETTING_NAME: '42'})
 
         # Try using utility to acquire application setting
         app_setting = common.get_app_setting(TEST_APP_SETTING_NAME, 'default')

@@ -65,16 +65,18 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         # We allow the customer to change synchronous thread pool count by
         # PYTHON_THREADPOOL_THREAD_COUNT app setting. The default value is 1.
-        thread_count = get_app_setting(PYTHON_THREADPOOL_THREAD_COUNT, '1')
-        self._sync_call_tp = concurrent.futures.ThreadPoolExecutor(
-            max_workers=int(thread_count))
+        self._sync_tp_max_workers: int = int(get_app_setting(
+            PYTHON_THREADPOOL_THREAD_COUNT, '1'))
+        self._sync_call_tp: concurrent.futures.Executor = (
+            concurrent.futures.ThreadPoolExecutor(
+                max_workers=self._sync_tp_max_workers))
 
-        self._grpc_connect_timeout = grpc_connect_timeout
+        self._grpc_connect_timeout: float = grpc_connect_timeout
         # This is set to -1 by default to remove the limitation on msg size
-        self._grpc_max_msg_len = grpc_max_msg_len
+        self._grpc_max_msg_len: int = grpc_max_msg_len
         self._grpc_resp_queue: queue.Queue = queue.Queue()
         self._grpc_connected_fut = loop.create_future()
-        self._grpc_thread = threading.Thread(
+        self._grpc_thread: threading.Thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
 
     @classmethod
@@ -85,6 +87,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         disp._grpc_thread.start()
         await disp._grpc_connected_fut
         logger.info('Successfully opened gRPC channel to %s:%s', host, port)
+        logger.info('Python worker sync threadpool max workers: %s',
+                    disp._sync_tp_max_workers)
         return disp
 
     async def dispatch_forever(self):
@@ -125,13 +129,13 @@ class Dispatcher(metaclass=DispatcherMeta):
             try:
                 await forever
             finally:
-                logger.warn('Detaching gRPC logging due to exception.')
+                logger.warning('Detaching gRPC logging due to exception.')
                 logging_handler.flush()
                 root_logger.removeHandler(logging_handler)
 
                 # Reenable console logging when there's an exception
                 enable_console_logging()
-                logger.warn('Switched to console logging due to exception.')
+                logger.warning('Switched to console logging due to exception.')
         finally:
             DispatcherMeta.__current_dispatcher__ = None
 
@@ -205,8 +209,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             message = f'{type(exc).__name__}: {exc}'
         except Exception:
-            message = (f'Unhandled exception in function. '
-                       f'Could not serialize original exception message.')
+            message = ('Unhandled exception in function. '
+                       'Could not serialize original exception message.')
 
         try:
             stack_trace = marshall_exception_trace(exc)
@@ -470,7 +474,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             os.chdir(new_cwd)
             logger.info('Changing current working directory to %s', new_cwd)
         else:
-            logger.warn('Directory %s is not found when reloading', new_cwd)
+            logger.warning('Directory %s is not found when reloading', new_cwd)
 
     def __run_sync_func(self, invocation_id, func, params):
         # This helper exists because we need to access the current

@@ -5,21 +5,28 @@
 
 import argparse
 
-from ._thirdparty import aio_compat
 from . import dispatcher
 from . import logging
+from ._thirdparty import aio_compat
 from .logging import error_logger, logger
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Python Azure Functions Worker')
-    parser.add_argument('--host')
-    parser.add_argument('--port', type=int)
-    parser.add_argument('--workerId', dest='worker_id')
-    parser.add_argument('--requestId', dest='request_id')
+    parser.add_argument('--host',
+                        help="host address")
+    parser.add_argument('--port', type=int,
+                        help='id for the requests')
+    parser.add_argument('--workerId', dest='worker_id',
+                        help='id for the worker')
+    parser.add_argument('--requestId', dest='request_id',
+                        help='log destination: stdout, stderr, '
+                             'syslog, or a file path')
     parser.add_argument('--log-level', type=str, default='INFO',
-                        choices=['TRACE', 'INFO', 'WARNING', 'ERROR'],)
+                        choices=['TRACE', 'INFO', 'WARNING', 'ERROR'],
+                        help="log level: 'TRACE', 'INFO', 'WARNING', "
+                             "or 'ERROR'")
     parser.add_argument('--log-to', type=str, default=None,
                         help='log destination: stdout, stderr, '
                              'syslog, or a file path')
@@ -45,8 +52,9 @@ def main():
 
 
 async def start_async(host, port, worker_id, request_id):
-    disp = await dispatcher.Dispatcher.connect(
-        host, port, worker_id, request_id,
-        connect_timeout=5.0)
+    disp = await dispatcher.Dispatcher.connect(host=host, port=port,
+                                               worker_id=worker_id,
+                                               request_id=request_id,
+                                               connect_timeout=5.0)
 
     await disp.dispatch_forever()

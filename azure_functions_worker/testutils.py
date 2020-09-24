@@ -148,7 +148,7 @@ class WebHostTestCaseMeta(type(unittest.TestCase)):
                         # Trim off host output timestamps
                         host_output = getattr(self, 'host_out', '')
                         output_lines = host_output.splitlines()
-                        ts_re = r"^\[\d+\/\d+\/\d+ \d+\:\d+\:\d+ (A|P)M\]"
+                        ts_re = r"^\[\d+\/\d+\/\d+ \d+\:\d+\:\d+.*(A|P)*M*\]"
                         output = list(map(
                             lambda s: re.sub(ts_re, '', s).strip(),
                             output_lines))
@@ -171,6 +171,11 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     In addition to automatically starting up a WebHost instance,
     this test case class logs WebHost stdout/stderr in case
     a unit test fails.
+
+    You can write two sets of test - test_* and check_log_* tests.
+
+    test_ABC - Unittest
+    check_log_ABC - Check logs generated during the execution of test_ABC.
     """
     host_stdout_logger = logging.getLogger('webhosttests')
 

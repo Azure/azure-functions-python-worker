@@ -7,6 +7,7 @@ import typing
 from azure_functions_worker.utils import common, wrappers
 
 
+TEST_APP_SETTING_NAME = "TEST_APP_SETTING_NAME"
 TEST_FEATURE_FLAG = "APP_SETTING_FEATURE_FLAG"
 FEATURE_DEFAULT = 42
 
@@ -162,6 +163,76 @@ class TestUtilities(unittest.TestCase):
             mock_method.mock_load_function_value_error()
             self.assertNotIn('import_error', e.msg)
             self.assertEqual(type(e), ValueError)
+
+    def test_app_settings_not_set_should_return_none(self):
+        app_setting = common.get_app_setting(TEST_APP_SETTING_NAME)
+        self.assertIsNone(app_setting)
+
+    def test_app_settings_should_return_value(self):
+        # Set application setting by os.setenv
+        os.environ.update({TEST_APP_SETTING_NAME: '42'})
+
+        # Try using utility to acquire application setting
+        app_setting = common.get_app_setting(TEST_APP_SETTING_NAME)
+        self.assertEqual(app_setting, '42')
+
+    def test_app_settings_not_set_should_return_default_value(self):
+        app_setting = common.get_app_setting(TEST_APP_SETTING_NAME, 'default')
+        self.assertEqual(app_setting, 'default')
+
+    def test_app_settings_should_ignore_default_value(self):
+        # Set application setting by os.setenv
+        os.environ.update({TEST_APP_SETTING_NAME: '42'})
+
+        # Try using utility to acquire application setting
+        app_setting = common.get_app_setting(TEST_APP_SETTING_NAME, 'default')
+        self.assertEqual(app_setting, '42')
+
+    def test_app_settings_should_not_trigger_validator_when_not_set(self):
+        def raise_excpt(value: str):
+            raise Exception('Should not raise on app setting not found')
+
+        common.get_app_setting(TEST_APP_SETTING_NAME, validator=raise_excpt)
+
+    def test_app_settings_return_default_value_when_validation_fail(self):
+        def parse_int_no_raise(value: str):
+            try:
+                int(value)
+                return True
+            except ValueError:
+                return False
+
+        # Set application setting to an invalid value
+        os.environ.update({TEST_APP_SETTING_NAME: 'invalid'})
+
+        app_setting = common.get_app_setting(
+            TEST_APP_SETTING_NAME,
+            default_value='1',
+            validator=parse_int_no_raise
+        )
+
+        # Because 'invalid' is not an interger, falls back to default value
+        self.assertEqual(app_setting, '1')
+
+    def test_app_settings_return_setting_value_when_validation_succeed(self):
+        def parse_int_no_raise(value: str):
+            try:
+                int(value)
+                return True
+            except ValueError:
+                return False
+
+        # Set application setting to an invalid value
+        os.environ.update({TEST_APP_SETTING_NAME: '42'})
+
+        app_setting = common.get_app_setting(
+            TEST_APP_SETTING_NAME,
+            default_value='1',
+            validator=parse_int_no_raise
+        )
+
+        # Because 'invalid' is not an interger, falls back to default value
+        self.assertEqual(app_setting, '42')
 
     def _unset_feature_flag(self):
         try:

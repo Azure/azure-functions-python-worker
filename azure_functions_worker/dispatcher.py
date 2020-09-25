@@ -23,9 +23,16 @@ from . import loader
 from . import protos
 from . import constants
 
-from .constants import CONSOLE_LOG_PREFIX
+from .constants import (
+    CONSOLE_LOG_PREFIX,
+    PYTHON_THREADPOOL_THREAD_COUNT,
+    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX
+)
 from .logging import error_logger, logger, is_system_log_category
 from .logging import enable_console_logging, disable_console_logging
+from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
 from asyncio import BaseEventLoop
@@ -62,24 +69,19 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         self._old_task_factory = None
 
-        # A thread-pool for synchronous function calls.  We limit
-        # the number of threads to 1 so that one Python worker can
-        # only run one synchronous function in parallel.  This is
-        # because synchronous code in Python is rarely designed with
-        # concurrency in mind, so we don't want to allow users to
-        # have races in their synchronous functions.  Moreover,
-        # because of the GIL in CPython, it rarely makes sense to
-        # use threads (unless the code is IO bound, but we have
-        # async support for that.)
-        self._sync_call_tp = concurrent.futures.ThreadPoolExecutor(
-            max_workers=1)
+        # We allow the customer to change synchronous thread pool count by
+        # PYTHON_THREADPOOL_THREAD_COUNT app setting. The default value is 1.
+        self._sync_tp_max_workers: int = self._get_sync_tp_max_workers()
+        self._sync_call_tp: concurrent.futures.Executor = (
+            concurrent.futures.ThreadPoolExecutor(
+                max_workers=self._sync_tp_max_workers))
 
-        self._grpc_connect_timeout = grpc_connect_timeout
+        self._grpc_connect_timeout: float = grpc_connect_timeout
         # This is set to -1 by default to remove the limitation on msg size
-        self._grpc_max_msg_len = grpc_max_msg_len
+        self._grpc_max_msg_len: int = grpc_max_msg_len
         self._grpc_resp_queue: queue.Queue = queue.Queue()
         self._grpc_connected_fut = loop.create_future()
-        self._grpc_thread = threading.Thread(
+        self._grpc_thread: threading.Thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
 
     @classmethod
@@ -89,7 +91,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
         disp._grpc_thread.start()
         await disp._grpc_connected_fut
-        logger.info('Successfully opened gRPC channel to %s:%s', host, port)
+        logger.info('Successfully opened gRPC channel to %s:%s '
+                    'with sync threadpool max workers set to %s',
+                    host, port, disp._sync_tp_max_workers)
         return disp
 
     async def dispatch_forever(self):
@@ -130,13 +134,13 @@ class Dispatcher(metaclass=DispatcherMeta):
             try:
                 await forever
             finally:
-                logger.warn('Detaching gRPC logging due to exception.')
+                logger.warning('Detaching gRPC logging due to exception.')
                 logging_handler.flush()
                 root_logger.removeHandler(logging_handler)
 
                 # Reenable console logging when there's an exception
                 enable_console_logging()
-                logger.warn('Switched to console logging due to exception.')
+                logger.warning('Switched to console logging due to exception.')
         finally:
             DispatcherMeta.__current_dispatcher__ = None
 
@@ -210,8 +214,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             message = f'{type(exc).__name__}: {exc}'
         except Exception:
-            message = (f'Unhandled exception in function. '
-                       f'Could not serialize original exception message.')
+            message = ('Unhandled exception in function. '
+                       'Could not serialize original exception message.')
 
         try:
             stack_trace = marshall_exception_trace(exc)
@@ -475,7 +479,29 @@ class Dispatcher(metaclass=DispatcherMeta):
             os.chdir(new_cwd)
             logger.info('Changing current working directory to %s', new_cwd)
         else:
-            logger.warn('Directory %s is not found when reloading', new_cwd)
+            logger.warning('Directory %s is not found when reloading', new_cwd)
+
+    def _get_sync_tp_max_workers(self) -> int:
+        def tp_max_workers_validator(value: str) -> bool:
+            try:
+                int_value = int(value)
+            except ValueError:
+                logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be an '
+                               'integer')
+                return False
+
+            if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN or (
+               int_value > PYTHON_THREADPOOL_THREAD_COUNT_MAX):
+                logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
+                               'to a value between 1 and 32')
+                return False
+
+            return True
+
+        return int(get_app_setting(
+            setting=PYTHON_THREADPOOL_THREAD_COUNT,
+            default_value=f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}',
+            validator=tp_max_workers_validator))
 
     def __run_sync_func(self, invocation_id, func, params):
         # This helper exists because we need to access the current

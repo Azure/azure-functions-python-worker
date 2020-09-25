@@ -733,7 +733,7 @@ def retryable_test(
     return decorate
 
 
-def _remove_path(path):
+def remove_path(path):
     if path.is_symlink():
         path.unlink()
     elif path.is_dir():
@@ -743,7 +743,7 @@ def _remove_path(path):
 
 
 def _symlink_dir(src, dst):
-    _remove_path(dst)
+    remove_path(dst)
 
     if ON_WINDOWS:
         shutil.copytree(str(src), str(dst))
@@ -770,7 +770,7 @@ def _teardown_func_app(app_root):
     host_json = app_root / 'host.json'
 
     for path in (extensions, ping_func, host_json):
-        _remove_path(path)
+        remove_path(path)
 
 
 def _main():

@@ -1,15 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import hashlib
-import pathlib
-import filecmp
+
 import typing
-import os
 
 from azure_functions_worker import testutils
-from azure_functions_worker.testutils import TESTS_ROOT, _remove_path
+from azure_functions_worker.testutils import TESTS_ROOT, remove_path
 
-HOST_JSON_TEMPLATE = """\
+HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
 {
     "version": "2.0",
     "logging": {
@@ -29,14 +26,14 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
         host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
 
         with open(host_json, 'w+') as f:
-            f.write(HOST_JSON_TEMPLATE)
+            f.write(HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO)
 
         super(TestLogFilteringFunctions, cls).setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
-        _remove_path(host_json)
+        remove_path(host_json)
 
         super(TestLogFilteringFunctions, cls).tearDownClass()
 

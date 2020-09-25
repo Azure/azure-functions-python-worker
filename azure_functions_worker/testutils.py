@@ -756,8 +756,9 @@ def _setup_func_app(app_root):
     ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
 
-    with open(host_json, 'w') as f:
-        f.write(HOST_JSON_TEMPLATE)
+    if not os.path.isfile(host_json):
+        with open(host_json, 'w') as f:
+            f.write(HOST_JSON_TEMPLATE)
 
     _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
     _symlink_dir(EXTENSIONS_PATH, extensions)

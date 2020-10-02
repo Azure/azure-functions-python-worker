@@ -7,37 +7,35 @@ Implements loading and execution of Python workers.
 
 import asyncio
 import concurrent.futures
-import logging
-import queue
-import threading
-import os
-import sys
 import importlib
 import inspect
+import logging
+import os
+import queue
+import sys
+import threading
+from asyncio import BaseEventLoop
+from logging import LogRecord
+from typing import Optional
 
 import grpc
 
 from . import bindings
+from . import constants
 from . import functions
 from . import loader
 from . import protos
-from . import constants
-
-from .constants import (
-    CONSOLE_LOG_PREFIX,
-    PYTHON_THREADPOOL_THREAD_COUNT,
-    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-    PYTHON_THREADPOOL_THREAD_COUNT_MAX
-)
-from .logging import error_logger, logger, is_system_log_category
-from .logging import enable_console_logging, disable_console_logging
+from .constants import (CONSOLE_LOG_PREFIX, PYTHON_THREADPOOL_THREAD_COUNT,
+                        PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+                        PYTHON_THREADPOOL_THREAD_COUNT_MAX,
+                        PYTHON_THREADPOOL_THREAD_COUNT_MIN)
+from .logging import disable_console_logging, enable_console_logging
+from .logging import error_logger, is_system_log_category, logger
 from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
-from asyncio import BaseEventLoop
-from logging import LogRecord
-from typing import Optional
+
+_TRUE = "true"
 
 
 class DispatcherMeta(type):
@@ -242,11 +240,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Received WorkerInitRequest, request ID %s',
                     self.request_id)
 
-        capabilities = dict()
-        capabilities[constants.RAW_HTTP_BODY_BYTES] = "true"
-        capabilities[constants.TYPED_DATA_COLLECTION] = "true"
-        capabilities[constants.RPC_HTTP_BODY_ONLY] = "true"
-        capabilities[constants.RPC_HTTP_TRIGGER_METADATA_REMOVED] = "true"
+        capabilities = {
+            constants.RAW_HTTP_BODY_BYTES: _TRUE,
+            constants.TYPED_DATA_COLLECTION: _TRUE,
+            constants.RPC_HTTP_BODY_ONLY: _TRUE,
+            constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
+        }
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -259,9 +258,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         func_request = req.function_load_request
         function_id = func_request.function_id
 
-        logger.info('Received FunctionLoadRequest, request ID: %s, '
-                    'function ID: %s', self.request_id, function_id)
-
+        logger.info(f'Received FunctionLoadRequest, '
+                    f'request ID: {self.request_id}, '
+                    f'function ID: {function_id}')
         try:
             func = loader.load_function(
                 func_request.metadata.name,
@@ -273,8 +272,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 function_id, func, func_request.metadata)
 
             logger.info('Successfully processed FunctionLoadRequest, '
-                        'request ID: %s, function ID: %s',
-                        self.request_id, function_id)
+                        f'request ID: {self.request_id}, '
+                        f'function ID: {function_id}')
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -307,14 +306,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         assert isinstance(current_task, ContextEnabledTask)
         current_task.set_azure_invocation_id(invocation_id)
 
-        logger.info('Received FunctionInvocationRequest, request ID: %s, '
-                    'function ID: %s, invocation ID: %s',
-                    self.request_id, function_id, invocation_id)
-
         try:
             fi: functions.FunctionInfo = self._functions.get_function(
                 function_id)
 
+            logger.info(f'Received FunctionInvocationRequest, '
+                        f'request ID: {self.request_id}, '
+                        f'function ID: {function_id}, '
+                        f'invocation ID: {invocation_id}, '
+                        f'function type: {"async" if fi.is_async else "sync"}')
             args = {}
             for pb in invoc_request.input_data:
                 pb_type_info = fi.input_types[pb.name]
@@ -336,21 +336,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                     args[name] = bindings.Out()
 
             if fi.is_async:
-                logger.info('Function is async, request ID: %s,'
-                            'function ID: %s, invocation ID: %s',
-                            self.request_id, function_id, invocation_id)
                 call_result = await fi.func(**args)
             else:
-                logger.info('Function is sync, request ID: %s,'
-                            'function ID: %s, invocation ID: %s',
-                            self.request_id, function_id, invocation_id)
                 call_result = await self._loop.run_in_executor(
                     self._sync_call_tp,
                     self.__run_sync_func, invocation_id, fi.func, args)
             if call_result is not None and not fi.has_return:
-                raise RuntimeError(
-                    f'function {fi.name!r} without a $return binding '
-                    f'returned a non-None value')
+                raise RuntimeError(f'function {fi.name!r} without a $return '
+                                   'binding returned a non-None value')
 
             output_data = []
             if fi.output_types:
@@ -380,10 +373,6 @@ class Dispatcher(metaclass=DispatcherMeta):
             # Actively flush customer print() function to console
             sys.stdout.flush()
 
-            logger.info('Successfully processed FunctionInvocationRequest, '
-                        'request ID: %s, function ID: %s, invocation ID: %s',
-                        self.request_id, function_id, invocation_id)
-
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 invocation_response=protos.InvocationResponse(
@@ -403,7 +392,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                         exception=self._serialize_exception(ex))))
 
     async def _handle__function_environment_reload_request(self, req):
-        '''Only runs on Linux Consumption placeholder specialization.'''
+        """Only runs on Linux Consumption placeholder specialization.
+        """
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
                         'request ID: %s', self.request_id)

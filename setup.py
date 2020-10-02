@@ -16,9 +16,10 @@ from setuptools import setup
 from setuptools.command import develop
 
 
-# TODO: change this to something more stable when available.
+# TODO: Change this to something more stable when available.
+# TODO: Change this to use 3.x
 WEBHOST_URL = (
-    'https://github.com/Azure/azure-functions-host/releases/download/'
+    'https://github.com/Azure/azure-functions-host/releases/download'
     '/v2.0.14361/Functions.Binaries.2.0.14361.no-runtime.zip'
 )
 
@@ -258,7 +259,7 @@ with open("README.md") as readme:
 
 setup(
     name='azure-functions-worker',
-    version='1.1.5',
+    version='1.1.6',
     description='Python Language Worker for Azure Functions Host',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -286,7 +287,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'azure-functions==1.3.1',
+            'azure-functions==1.4.0',
             'azure-eventhub~=5.1.0',
             'python-dateutil~=2.8.1',
             'flake8~=3.7.9',

@@ -148,7 +148,7 @@ class WebHostTestCaseMeta(type(unittest.TestCase)):
                         # Trim off host output timestamps
                         host_output = getattr(self, 'host_out', '')
                         output_lines = host_output.splitlines()
-                        ts_re = r"^\[\d+\/\d+\/\d+ \d+\:\d+\:\d+ (A|P)M\]"
+                        ts_re = r"^\[\d+\/\d+\/\d+ \d+\:\d+\:\d+.*(A|P)*M*\]"
                         output = list(map(
                             lambda s: re.sub(ts_re, '', s).strip(),
                             output_lines))
@@ -171,6 +171,11 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     In addition to automatically starting up a WebHost instance,
     this test case class logs WebHost stdout/stderr in case
     a unit test fails.
+
+    You can write two sets of test - test_* and check_log_* tests.
+
+    test_ABC - Unittest
+    check_log_ABC - Check logs generated during the execution of test_ABC.
     """
     host_stdout_logger = logging.getLogger('webhosttests')
 
@@ -728,7 +733,7 @@ def retryable_test(
     return decorate
 
 
-def _remove_path(path):
+def remove_path(path):
     if path.is_symlink():
         path.unlink()
     elif path.is_dir():
@@ -738,7 +743,7 @@ def _remove_path(path):
 
 
 def _symlink_dir(src, dst):
-    _remove_path(dst)
+    remove_path(dst)
 
     if ON_WINDOWS:
         shutil.copytree(str(src), str(dst))
@@ -751,8 +756,9 @@ def _setup_func_app(app_root):
     ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
 
-    with open(host_json, 'w') as f:
-        f.write(HOST_JSON_TEMPLATE)
+    if not os.path.isfile(host_json):
+        with open(host_json, 'w') as f:
+            f.write(HOST_JSON_TEMPLATE)
 
     _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
     _symlink_dir(EXTENSIONS_PATH, extensions)
@@ -764,7 +770,7 @@ def _teardown_func_app(app_root):
     host_json = app_root / 'host.json'
 
     for path in (extensions, ping_func, host_json):
-        _remove_path(path)
+        remove_path(path)
 
 
 def _main():

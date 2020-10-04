@@ -6,6 +6,8 @@ import filecmp
 import typing
 import os
 
+import pytest
+
 from azure_functions_worker import testutils
 
 
@@ -323,6 +325,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
                       "Troubleshooting Guide: "
                       "https://aka.ms/functions-modulenotfound", host_out)
 
+    @pytest.mark.flaky(reruns=3)
     def test_print_logging_no_flush(self):
         r = self.webhost.request('GET', 'print_logging?message=Secret42')
         self.assertEqual(r.status_code, 200)
@@ -331,6 +334,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def check_log_print_logging_no_flush(self, host_out: typing.List[str]):
         self.assertIn('Secret42', host_out)
 
+    @pytest.mark.flaky(reruns=3)
     def test_print_logging_with_flush(self):
         r = self.webhost.request('GET',
                                  'print_logging?flush=true&message=Secret42')
@@ -346,6 +350,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-print-logging')
 
+    @pytest.mark.flaky(reruns=3)
     def check_log_print_to_console_stdout(self, host_out: typing.List[str]):
         # System logs stdout should not exist in host_out
         self.assertNotIn('Secret42', host_out)

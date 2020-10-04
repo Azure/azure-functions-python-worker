@@ -9,13 +9,13 @@ from azure_functions_worker import testutils
 
 
 class TestEventHubFunctions(testutils.WebHostTestCase):
-    '''Test EventHub Trigger and Output Bindings (cardinality: one).
+    """Test EventHub Trigger and Output Bindings (cardinality: one).
 
     Each testcase consists of 3 part:
     1. An eventhub_output HTTP trigger for generating EventHub event
     2. An actual eventhub_trigger EventHub trigger for storing event into blob
     3. A get_eventhub_triggered HTTP trigger for retrieving event info blob
-    '''
+    """
 
     @classmethod
     def get_script_dir(cls):

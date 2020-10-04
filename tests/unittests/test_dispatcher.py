@@ -18,38 +18,32 @@ class TestDispatcher(testutils.AsyncTestCase):
         os.environ.update(self._pre_env)
 
     async def test_dispatcher_sync_threadpool_default_worker(self):
-        '''Test if the sync threadpool has maximum worker count set to 1
+        """Test if the sync threadpool has maximum worker count set to 1
         by default
-        '''
+        """
         ctrl = testutils.start_mockhost(script_root=self.dispatcher_funcs_dir)
 
         async with ctrl as host:
             await self._check_if_function_is_ok(host)
-
-            # Ensure the dispatcher sync threadpool count is set to 1
             self.assertEqual(ctrl._worker._sync_tp_max_workers, 1)
 
     async def test_dispatcher_sync_threadpool_set_worker(self):
-        '''Test if the sync threadpool maximum worker can be set
-        '''
+        """Test if the sync threadpool maximum worker can be set
+        """
         # Configure thread pool max worker
         os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
         ctrl = testutils.start_mockhost(script_root=self.dispatcher_funcs_dir)
 
         async with ctrl as host:
             await self._check_if_function_is_ok(host)
-
-            # Ensure the dispatcher sync threadpool count is set to 1
             self.assertEqual(ctrl._worker._sync_tp_max_workers, 5)
 
     @patch('azure_functions_worker.dispatcher.logger')
-    async def test_dispatcher_sync_threadpool_invalid_worker_count(
-        self,
-        mock_logger
-    ):
-        '''Test when sync threadpool maximum worker is set to an invalid value,
+    async def test_dispatcher_sync_threadpool_invalid_worker_count(self,
+                                                                   mock_logger):
+        """Test when sync threadpool maximum worker is set to an invalid value,
         the host should fallback to default value 1
-        '''
+        """
         # Configure thread pool max worker to an invalid value
         os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: 'invalid'})
         ctrl = testutils.start_mockhost(script_root=self.dispatcher_funcs_dir)
@@ -64,10 +58,8 @@ class TestDispatcher(testutils.AsyncTestCase):
             f'{PYTHON_THREADPOOL_THREAD_COUNT} must be an integer')
 
     @patch('azure_functions_worker.dispatcher.logger')
-    async def test_dispatcher_sync_threadpool_below_min_setting(
-        self,
-        mock_logger
-    ):
+    async def test_dispatcher_sync_threadpool_below_min_setting(self,
+                                                                mock_logger):
         # Configure thread pool max worker to an invalid value
         os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '0'})
         ctrl = testutils.start_mockhost(script_root=self.dispatcher_funcs_dir)

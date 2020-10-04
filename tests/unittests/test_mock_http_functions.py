@@ -24,7 +24,8 @@ class TestMockHost(testutils.AsyncTestCase):
 
             user_logs = [line for line in r.logs
                          if line.category == 'my function']
-            self.assertEqual(len(user_logs), 1)
+            # 2 log statements added (critical and error) in sync_logging
+            self.assertEqual(len(user_logs), 2)
 
             log = user_logs[0]
             self.assertEqual(log.invocation_id, invoke_id)

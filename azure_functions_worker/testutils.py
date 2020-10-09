@@ -677,6 +677,7 @@ def start_webhost(*, script_dir=None, stdout=None):
     port = _find_open_port()
     proc = popen_webhost(stdout=stdout, stderr=subprocess.STDOUT,
                          script_root=script_root, port=port)
+    time.sleep(3)  # Giving host some time to start fully.
 
     addr = f'http://{LOCALHOST}:{port}'
     for _ in range(10):
@@ -690,7 +691,8 @@ def start_webhost(*, script_dir=None, stdout=None):
         except requests.exceptions.ConnectionError:
             pass
 
-        time.sleep(1)
+        time.sleep(2)
+
     else:
         proc.terminate()
         try:

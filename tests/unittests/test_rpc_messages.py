@@ -3,8 +3,8 @@
 import os
 import subprocess
 import sys
-import typing
 import tempfile
+import typing
 import unittest
 
 from azure_functions_worker import protos
@@ -72,12 +72,9 @@ class TestGRPC(testutils.AsyncTestCase):
         await self._verify_environment_reloaded(test_env, test_cwd)
 
     def _verify_sys_path_import(self, result, expected_output):
+        path_import_script = os.path.join(testutils.UNIT_TESTS_ROOT,
+                                          'path_import', 'test_path_import.sh')
         try:
-            path_import_script = os.path.join(
-                testutils.UNIT_TESTS_ROOT,
-                'path_import',
-                'test_path_import.sh')
-
             subprocess.run(['chmod +x ' + path_import_script], shell=True)
 
             exported_path = ":".join(sys.path)
@@ -87,6 +84,7 @@ class TestGRPC(testutils.AsyncTestCase):
             decoded_output = output.decode(sys.stdout.encoding).strip()
             self.assertTrue(expected_output in decoded_output)
         finally:
+            subprocess.run(['chmod -x ' + path_import_script], shell=True)
             self._reset_environ()
 
     @unittest.skipIf(sys.platform == 'win32',
@@ -104,13 +102,11 @@ class TestGRPC(testutils.AsyncTestCase):
             'This module was imported!')
 
     def _verify_azure_namespace_import(self, result, expected_output):
+        print(os.getcwd())
+        path_import_script = os.path.join(testutils.UNIT_TESTS_ROOT,
+                                          'azure_namespace_import',
+                                          'test_azure_namespace_import.sh')
         try:
-            print(os.getcwd())
-            path_import_script = os.path.join(
-                testutils.UNIT_TESTS_ROOT,
-                'azure_namespace_import',
-                'test_azure_namespace_import.sh')
-
             subprocess.run(['chmod +x ' + path_import_script], shell=True)
 
             output = subprocess.check_output(
@@ -119,6 +115,7 @@ class TestGRPC(testutils.AsyncTestCase):
             decoded_output = output.decode(sys.stdout.encoding).strip()
             self.assertTrue(expected_output in decoded_output)
         finally:
+            subprocess.run(['chmod -x ' + path_import_script], shell=True)
             self._reset_environ()
 
     @unittest.skipIf(sys.platform == 'win32',

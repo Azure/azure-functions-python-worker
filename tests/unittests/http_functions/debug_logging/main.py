@@ -6,6 +6,7 @@ import azure.functions
 
 
 def main(req: azure.functions.HttpRequest):
+    logging.critical('logging critical', exc_info=True)
     logging.info('logging info', exc_info=True)
     logging.warning('logging warning', exc_info=True)
     logging.debug('logging debug', exc_info=True)

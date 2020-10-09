@@ -10,4 +10,4 @@ exclude = .git, __pycache__, build, dist, .eggs, .github, .local, docs/,
           azure_functions_worker/_thirdparty/typing_inspect.py,
           tests/unittests/test_typing_inspect.py, .venv*, .env*, .vscode, venv*
 
-max-line-length = 80
+max-line-length = 85

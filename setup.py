@@ -19,8 +19,8 @@ from setuptools.command import develop
 # TODO: Change this to something more stable when available.
 # TODO: Change this to use 3.x
 WEBHOST_URL = (
-    'https://github.com/Azure/azure-functions-host/releases/download'
-    '/v2.0.14361/Functions.Binaries.2.0.14361.no-runtime.zip'
+    "https://github.com/Azure/azure-functions-host/releases/download"
+    "/v2.0.14494/Functions.Binaries.2.0.14494.no-runtime.zip"
 )
 
 # Extensions necessary for non-core bindings.
@@ -81,16 +81,16 @@ NUGET_CONFIG = """\
 
 class BuildGRPC:
     """Generate gRPC bindings."""
+
     def _gen_grpc(self):
         root = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 
-        proto_root_dir = root / 'azure_functions_worker' / 'protos'
-        proto_src_dir = proto_root_dir / '_src' / 'src' / 'proto'
-        build_dir = root / 'build'
-        staging_root_dir = build_dir / 'protos'
-        staging_dir = (staging_root_dir
-                       / 'azure_functions_worker' / 'protos')
-        built_protos_dir = build_dir / 'built_protos'
+        proto_root_dir = root / "azure_functions_worker" / "protos"
+        proto_src_dir = proto_root_dir / "_src" / "src" / "proto"
+        build_dir = root / "build"
+        staging_root_dir = build_dir / "protos"
+        staging_dir = staging_root_dir / "azure_functions_worker" / "protos"
+        built_protos_dir = build_dir / "built_protos"
 
         if os.path.exists(build_dir):
             shutil.rmtree(build_dir)
@@ -100,28 +100,37 @@ class BuildGRPC:
         os.makedirs(built_protos_dir)
 
         protos = [
-            os.sep.join(('shared', 'NullableTypes.proto')),
-            os.sep.join(('identity', 'ClaimsIdentityRpc.proto')),
-            'FunctionRpc.proto'
+            os.sep.join(("shared", "NullableTypes.proto")),
+            os.sep.join(("identity", "ClaimsIdentityRpc.proto")),
+            "FunctionRpc.proto",
         ]
 
         for proto in protos:
-            subprocess.run([
-                sys.executable, '-m', 'grpc_tools.protoc',
-                '-I', os.sep.join(('azure_functions_worker', 'protos')),
-                '--python_out', str(built_protos_dir),
-                '--grpc_python_out', str(built_protos_dir),
-                os.sep.join(('azure_functions_worker', 'protos', proto)),
-            ], check=True, stdout=sys.stdout, stderr=sys.stderr,
-                cwd=staging_root_dir)
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "grpc_tools.protoc",
+                    "-I",
+                    os.sep.join(("azure_functions_worker", "protos")),
+                    "--python_out",
+                    str(built_protos_dir),
+                    "--grpc_python_out",
+                    str(built_protos_dir),
+                    os.sep.join(("azure_functions_worker", "protos", proto)),
+                ],
+                check=True,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+                cwd=staging_root_dir,
+            )
 
         compiled_files = glob.glob(
-            str(built_protos_dir / '**' / '*.py'),
-            recursive=True)
+            str(built_protos_dir / "**" / "*.py"), recursive=True
+        )
 
         if not compiled_files:
-            print('grpc_tools.protoc produced no Python files',
-                  file=sys.stderr)
+            print("grpc_tools.protoc produced no Python files", file=sys.stderr)
             sys.exit(1)
 
         # Needed to support absolute imports in files. See
@@ -132,46 +141,50 @@ class BuildGRPC:
 
     def make_absolute_imports(self, compiled_files):
         for compiled in compiled_files:
-            with open(compiled, 'r+') as f:
+            with open(compiled, "r+") as f:
                 content = f.read()
                 f.seek(0)
                 # Convert lines of the form:
                 # import xxx_pb2 as xxx__pb2 to
                 # from azure_functions_worker.protos import xxx_pb2 as..
                 p1 = re.sub(
-                    r'\nimport (.*?_pb2)',
-                    r'\nfrom azure_functions_worker.protos import \g<1>',
-                    content)
+                    r"\nimport (.*?_pb2)",
+                    r"\nfrom azure_functions_worker.protos import \g<1>",
+                    content,
+                )
                 # Convert lines of the form:
                 # from identity import xxx_pb2 as.. to
                 # from azure_functions_worker.protos.identity import xxx_pb2..
                 p2 = re.sub(
-                    r'from ([a-z]*) (import.*_pb2)',
-                    r'from azure_functions_worker.protos.\g<1> \g<2>',
-                    p1)
+                    r"from ([a-z]*) (import.*_pb2)",
+                    r"from azure_functions_worker.protos.\g<1> \g<2>",
+                    p1,
+                )
                 f.write(p2)
                 f.truncate()
 
 
-class build(build.build, BuildGRPC):
+class build_extend(build.build, BuildGRPC):
     def run(self, *args, **kwargs):
         self._gen_grpc()
         super().run(*args, **kwargs)
 
 
-class develop(develop.develop, BuildGRPC):
+class develop_extend(develop.develop, BuildGRPC):
     def run(self, *args, **kwargs):
         self._gen_grpc()
         super().run(*args, **kwargs)
 
 
 class webhost(distutils.cmd.Command):
-    description = 'Download and setup Azure Functions Web Host.'
+    description = "Download and setup Azure Functions Web Host."
     user_options = [
-        ('webhost-url', None,
-            'A custom URL to download Azure Web Host from.'),
-        ('webhost-dir', None,
-            'A path to the directory where Azure Web Host will be installed.'),
+        ("webhost-url", None, "A custom URL to download Azure Web Host from."),
+        (
+            "webhost-dir",
+            None,
+            "A path to the directory where Azure Web Host will be installed.",
+        ),
     ]
 
     def initialize_options(self):
@@ -184,29 +197,32 @@ class webhost(distutils.cmd.Command):
             self.webhost_url = WEBHOST_URL
 
         if self.webhost_dir is None:
-            self.webhost_dir = \
-                pathlib.Path(__file__).parent / 'build' / 'webhost'
+            self.webhost_dir = pathlib.Path(__file__).parent / "build" / "webhost"
 
         if self.extensions_dir is None:
-            self.extensions_dir = \
-                pathlib.Path(__file__).parent / 'build' / 'extensions'
+            self.extensions_dir = (
+                pathlib.Path(__file__).parent / "build" / "extensions"
+            )
 
     def _install_webhost(self):
         with tempfile.NamedTemporaryFile() as zipf:
             zipf.close()
             try:
-                print('Downloading Azure Functions Web Host...')
+                print("Downloading Azure Functions Web Host...")
                 urllib.request.urlretrieve(self.webhost_url, zipf.name)
             except Exception as e:
-                print(f"could not download Azure Functions Web Host binaries "
-                      f"from {self.webhost_url}: {e!r}", file=sys.stderr)
+                print(
+                    f"could not download Azure Functions Web Host binaries "
+                    f"from {self.webhost_url}: {e!r}",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
 
             if not self.webhost_dir.exists():
                 os.makedirs(self.webhost_dir, exist_ok=True)
 
             with zipfile.ZipFile(zipf.name) as archive:
-                print('Extracting Azure Functions Web Host binaries...')
+                print("Extracting Azure Functions Web Host binaries...")
 
                 # We cannot simply use extractall(), as the archive
                 # contains Windows-style path names, which are not
@@ -214,38 +230,44 @@ class webhost(distutils.cmd.Command):
                 # extractall() will produce a flat directory with
                 # backslashes in file names.
                 for archive_name in archive.namelist():
-                    destination = \
-                        self.webhost_dir / archive_name.replace('\\', os.sep)
+                    destination = (
+                        self.webhost_dir / archive_name.replace("\\", os.sep)
+                    )
                     if not destination.parent.exists():
                         os.makedirs(destination.parent, exist_ok=True)
-                    with archive.open(archive_name) as src, \
-                            open(destination, 'wb') as dst:
+                    with archive.open(archive_name) as src, open(
+                        destination, "wb"
+                    ) as dst:
                         dst.write(src.read())
 
     def _install_extensions(self):
         if not self.extensions_dir.exists():
             os.makedirs(self.extensions_dir, exist_ok=True)
 
-        if not (self.extensions_dir / 'host.json').exists():
-            with open(self.extensions_dir / 'host.json', 'w') as f:
-                print('{}', file=f)
+        if not (self.extensions_dir / "host.json").exists():
+            with open(self.extensions_dir / "host.json", "w") as f:
+                print("{}", file=f)
 
-        if not (self.extensions_dir / 'extensions.csproj').exists():
-            with open(self.extensions_dir / 'extensions.csproj', 'w') as f:
+        if not (self.extensions_dir / "extensions.csproj").exists():
+            with open(self.extensions_dir / "extensions.csproj", "w") as f:
                 print(AZURE_EXTENSIONS, file=f)
 
-        with open(self.extensions_dir / 'NuGet.config', 'w') as f:
+        with open(self.extensions_dir / "NuGet.config", "w") as f:
             print(NUGET_CONFIG, file=f)
 
         env = os.environ.copy()
-        env['TERM'] = 'xterm'  # ncurses 6.1 workaround
+        env["TERM"] = "xterm"  # ncurses 6.1 workaround
         try:
             subprocess.run(
-                args=['dotnet', 'build', '-o', 'bin'], check=True,
+                args=["dotnet", "build", "-o", "bin"],
+                check=True,
                 cwd=str(self.extensions_dir),
-                stdout=sys.stdout, stderr=sys.stderr, env=env)
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+                env=env,
+            )
         except Exception:
-            print(f"dotnet core SDK is required")
+            print("dotnet core SDK is required")
             sys.exit(1)
 
     def run(self):
@@ -258,56 +280,58 @@ with open("README.md") as readme:
 
 
 setup(
-    name='azure-functions-worker',
-    version='1.1.6',
-    description='Python Language Worker for Azure Functions Host',
+    name="azure-functions-worker",
+    version="1.1.6",
+    author="Microsoft",
+    author_email="azurefunctions@microsoft.com",
+    keywords="azure azurefunctions python",
+    url="http://packages.python.org/an_example_pypi_project",
+    description="Python Language Worker for Azure Functions Host",
     long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     classifiers=[
-        'License :: OSI Approved :: MIT License',
-        'Intended Audience :: Developers',
-        'Programming Language :: Python :: 3',
-        'Operating System :: Microsoft :: Windows',
-        'Operating System :: POSIX',
-        'Operating System :: MacOS :: MacOS X',
-        'Environment :: Web Environment',
-        'Development Status :: 5 - Production/Stable',
+        "License :: OSI Approved :: MIT License",
+        "Intended Audience :: Developers",
+        "Programming Language :: Python :: 3",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX",
+        "Operating System :: MacOS :: MacOS X",
+        "Environment :: Web Environment",
+        "Development Status :: 5 - Production/Stable",
     ],
-    license='MIT',
-    packages=['azure_functions_worker',
-              'azure_functions_worker.protos',
-              'azure_functions_worker.protos.identity',
-              'azure_functions_worker.protos.shared',
-              'azure_functions_worker.bindings',
-              'azure_functions_worker.utils',
-              'azure_functions_worker._thirdparty'],
-    install_requires=[
-        'grpcio~=1.32.0',
-        'grpcio-tools~=1.32.0',
+    license="MIT",
+    packages=[
+        "azure_functions_worker",
+        "azure_functions_worker.protos",
+        "azure_functions_worker.protos.identity",
+        "azure_functions_worker.protos.shared",
+        "azure_functions_worker.bindings",
+        "azure_functions_worker.utils",
+        "azure_functions_worker._thirdparty",
     ],
+    install_requires=["grpcio~=1.32.0", "grpcio-tools~=1.32.0"],
     extras_require={
-        'dev': [
-            'azure-functions==1.4.0',
-            'azure-eventhub~=5.1.0',
-            'python-dateutil~=2.8.1',
-            'flake8~=3.7.9',
-            'mypy',
-            'pytest',
-            'requests==2.*',
-            'coverage',
-            'pytest-sugar',
-            'pytest-cov',
-            'pytest-xdist',
-            'pytest-randomly',
-            'pytest-instafail',
-            'pytest-rerunfailures'
+        "dev": [
+            "azure-functions==1.4.0",
+            "azure-eventhub~=5.1.0",
+            "python-dateutil~=2.8.1",
+            "flake8~=3.7.9",
+            "mypy",
+            "pytest",
+            "requests==2.*",
+            "coverage",
+            "pytest-sugar",
+            "pytest-cov",
+            "pytest-randomly",
+            "pytest-instafail",
+            "pytest-rerunfailures",
         ]
     },
     include_package_data=True,
     cmdclass={
-        'build': build,
-        'develop': develop,
-        'webhost': webhost,
-    },
-    test_suite='tests'
+        "build": build_extend,
+        "develop": develop_extend,
+        "webhost": webhost,
+    },  # noqa: E231
+    test_suite="tests",
 )

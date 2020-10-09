@@ -29,6 +29,8 @@ from .constants import (CONSOLE_LOG_PREFIX, PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN)
+from .extensions import (get_before_invocation_request_callbacks,
+                         get_after_invocation_request_callbacks)
 from .logging import disable_console_logging, enable_console_logging
 from .logging import error_logger, is_system_log_category, logger
 from .utils.common import get_app_setting
@@ -327,9 +329,17 @@ class Dispatcher(metaclass=DispatcherMeta):
                     trigger_metadata=trigger_metadata,
                     pytype=pb_type_info.pytype)
 
+            context = bindings.Context(fi.name, fi.directory, invocation_id, trace_context)
+
+            # Execute before invocation callbacks
+            for callback in get_before_invocation_request_callbacks():
+                try:
+                    callback(context)
+                except Exception as ex:
+                    logger.warning("Before invocation request callback failed with: %s.", ex)
+            
             if fi.requires_context:
-                args['context'] = bindings.Context(
-                    fi.name, fi.directory, invocation_id, trace_context)
+                args['context'] = context
 
             if fi.output_types:
                 for name in fi.output_types:
@@ -369,6 +379,13 @@ class Dispatcher(metaclass=DispatcherMeta):
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name, call_result,
                     pytype=fi.return_type.pytype)
+
+            # Execute after invocation callbacks
+            for callback in get_after_invocation_request_callbacks():
+                try:
+                    callback(context)
+                except Exception as ex:
+                    logger.warning("After invocation request callback failed with: %s.", ex)
 
             # Actively flush customer print() function to console
             sys.stdout.flush()

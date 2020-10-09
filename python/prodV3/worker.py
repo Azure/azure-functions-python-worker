@@ -17,20 +17,20 @@ AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
 
 
 def is_azure_environment():
-    '''Check if the function app is running on the cloud'''
+    """Check if the function app is running on the cloud"""
     return (AZURE_CONTAINER_NAME in os.environ
             or AZURE_WEBSITE_INSTANCE_ID in os.environ)
 
 
 def add_script_root_to_sys_path():
-    '''Append function project root to module finding sys.path'''
+    """Append function project root to module finding sys.path"""
     functions_script_root = os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT)
     if functions_script_root is not None:
         sys.path.append(functions_script_root)
 
 
 def determine_user_pkg_paths():
-    '''This finds the user packages when function apps are running on the cloud
+    """This finds the user packages when function apps are running on the cloud
 
     For Python 3.6 app, the third-party packages can live in any of the paths:
         /home/site/wwwroot/.python_packages/lib/site-packages
@@ -39,7 +39,7 @@ def determine_user_pkg_paths():
 
     For Python 3.7 and Python 3.8, we only accept:
         /home/site/wwwroot/.python_packages/lib/site-packages
-    '''
+    """
     minor_version = sys.version_info[1]
 
     home = Path.home()
@@ -51,7 +51,7 @@ def determine_user_pkg_paths():
         user_pkg_paths.append(os.path.join(venv_pkgs_path, PKGS_36))
         user_pkg_paths.append(os.path.join(pkgs_path, PKGS_36))
         user_pkg_paths.append(os.path.join(pkgs_path, PKGS))
-    elif minor_version in (7, 8):
+    elif minor_version in (7, 8, 9):
         user_pkg_paths.append(os.path.join(pkgs_path, PKGS))
     else:
         raise RuntimeError(f'Unsupported Python version: 3.{minor_version}')

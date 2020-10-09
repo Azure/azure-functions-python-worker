@@ -282,8 +282,8 @@ setup(
               'azure_functions_worker.utils',
               'azure_functions_worker._thirdparty'],
     install_requires=[
-        'grpcio~=1.26.0',
-        'grpcio-tools~=1.26.0',
+        'grpcio~=1.32.0',
+        'grpcio-tools~=1.32.0',
     ],
     extras_require={
         'dev': [
@@ -299,7 +299,8 @@ setup(
             'pytest-cov',
             'pytest-xdist',
             'pytest-randomly',
-            'pytest-instafail'
+            'pytest-instafail',
+            'pytest-rerunfailures'
         ]
     },
     include_package_data=True,

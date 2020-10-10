@@ -202,7 +202,7 @@ class webhost(distutils.cmd.Command):
         if self.extensions_dir is None:
             self.extensions_dir = (
                 pathlib.Path(__file__).parent / "build" / "extensions"
-            )
+            )  # noqa E501
 
     def _install_webhost(self):
         with tempfile.NamedTemporaryFile() as zipf:
@@ -230,9 +230,9 @@ class webhost(distutils.cmd.Command):
                 # extractall() will produce a flat directory with
                 # backslashes in file names.
                 for archive_name in archive.namelist():
-                    destination = (
-                        self.webhost_dir / archive_name.replace("\\", os.sep)
-                    )
+                    destination = self.webhost_dir / archive_name.replace(
+                        "\\", os.sep
+                    )  # noqa E501
                     if not destination.parent.exists():
                         os.makedirs(destination.parent, exist_ok=True)
                     with archive.open(archive_name) as src, open(
@@ -309,7 +309,7 @@ setup(
         "azure_functions_worker.utils",
         "azure_functions_worker._thirdparty",
     ],
-    install_requires=["grpcio~=1.32.0", "grpcio-tools~=1.32.0"],
+    install_requires=["grpcio~=1.26.0", "grpcio-tools~=1.26.0"],
     extras_require={
         "dev": [
             "azure-functions==1.4.0",
@@ -318,6 +318,7 @@ setup(
             "flake8~=3.7.9",
             "mypy",
             "pytest",
+            "black",
             "requests==2.*",
             "coverage",
             "pytest-sugar",

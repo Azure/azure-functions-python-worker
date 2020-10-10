@@ -1,0 +1,33 @@
+[tool.black]
+line-length = 80
+target-version = ['py36', 'py37', 'py38']
+include = '\.pyi?$'
+exclude = '''
+
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | __pycache__
+    | .github
+    | .local
+    | docs
+    | Samples
+    | azure_functions_worker/protos/
+    | .venv*
+    | .env*
+    | .vscode
+    | venv*
+  )/
+  | azure_functions_worker/_thirdparty/typing_inspect.py
+  | tests/unittests/test_typing_inspect.py
+)
+'''

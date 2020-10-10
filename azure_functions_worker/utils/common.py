@@ -8,7 +8,7 @@ def is_true_like(setting: str) -> bool:
     if setting is None:
         return False
 
-    return setting.lower().strip() in ['1', 'true', 't', 'yes', 'y']
+    return setting.lower().strip() in ["1", "true", "t", "yes", "y"]
 
 
 def is_envvar_true(env_key: str) -> bool:
@@ -21,7 +21,7 @@ def is_envvar_true(env_key: str) -> bool:
 def get_app_setting(
     setting: str,
     default_value: Optional[str] = None,
-    validator: Optional[Callable[[str], bool]] = None
+    validator: Optional[Callable[[str], bool]] = None,
 ) -> Optional[str]:
     """Returns the application setting from environment variable.
 

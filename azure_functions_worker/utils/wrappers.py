@@ -11,7 +11,9 @@ def enable_feature_by(flag: str, default: Optional[int] = None) -> Callable:
             if is_envvar_true(flag):
                 return func(*args, **kwargs)
             return default
+
         return call
+
     return decorate
 
 
@@ -21,7 +23,9 @@ def disable_feature_by(flag: str, default: None = None) -> Callable:
             if not is_envvar_true(flag):
                 return func(*args, **kwargs)
             return default
+
         return call
+
     return decorate
 
 
@@ -32,5 +36,7 @@ def attach_message_to_exception(expt_type: Exception, message: str) -> Callable:
                 return func(*args, **kwargs)
             except expt_type as e:
                 raise extend_exception_message(e, message)
+
         return call
+
     return decorate

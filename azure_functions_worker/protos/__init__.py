@@ -1,7 +1,8 @@
 from .FunctionRpc_pb2_grpc import (  # NoQA
     FunctionRpcStub,
     FunctionRpcServicer,
-    add_FunctionRpcServicer_to_server)
+    add_FunctionRpcServicer_to_server,
+)
 
 from .FunctionRpc_pb2 import (  # NoQA
     StreamingMessage,
@@ -22,4 +23,5 @@ from .FunctionRpc_pb2 import (  # NoQA
     ParameterBinding,
     TypedData,
     RpcHttp,
-    RpcLog)
+    RpcLog,
+)

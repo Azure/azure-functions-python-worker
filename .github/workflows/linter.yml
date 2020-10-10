@@ -48,5 +48,6 @@ jobs:
         uses: github/super-linter@v3
         env:
           VALIDATE_PYTHON_FLAKE8: true
+          PYTHON_FLAKE8_CONFIG_FILE: .flake8
           DEFAULT_BRANCH: dev
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

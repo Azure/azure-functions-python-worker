@@ -39,18 +39,18 @@ from .constants import PYAZURE_WEBHOST_DEBUG
 from .utils.common import is_envvar_true
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
-TESTS_ROOT = PROJECT_ROOT / 'tests'
-E2E_TESTS_FOLDER = pathlib.Path('endtoend')
+TESTS_ROOT = PROJECT_ROOT / "tests"
+E2E_TESTS_FOLDER = pathlib.Path("endtoend")
 E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
-UNIT_TESTS_FOLDER = pathlib.Path('unittests')
+UNIT_TESTS_FOLDER = pathlib.Path("unittests")
 UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
 WEBHOST_DLL = "Microsoft.Azure.WebJobs.Script.WebHost.dll"
-DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / WEBHOST_DLL
-EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
-FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
-WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
-WORKER_CONFIG = PROJECT_ROOT / '.testconfig'
-ON_WINDOWS = platform.system() == 'Windows'
+DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / "build" / "webhost" / WEBHOST_DLL
+EXTENSIONS_PATH = PROJECT_ROOT / "build" / "extensions" / "bin"
+FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / "http_functions"
+WORKER_PATH = PROJECT_ROOT / "python" / "test"
+WORKER_CONFIG = PROJECT_ROOT / ".testconfig"
+ON_WINDOWS = platform.system() == "Windows"
 LOCALHOST = "127.0.0.1"
 
 HOST_JSON_TEMPLATE = """\
@@ -105,11 +105,11 @@ SECRETS_TEMPLATE = """\
 
 
 class AsyncTestCaseMeta(type(unittest.TestCase)):
-
     def __new__(mcls, name, bases, ns):
         for attrname, attr in ns.items():
-            if (attrname.startswith('test_')
-               and inspect.iscoroutinefunction(attr)):
+            if attrname.startswith("test_") and inspect.iscoroutinefunction(
+                attr
+            ):
                 ns[attrname] = mcls._sync_wrap(attr)
 
         return super().__new__(mcls, name, bases, ns)
@@ -119,6 +119,7 @@ class AsyncTestCaseMeta(type(unittest.TestCase)):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             return aio_compat.run(func(*args, **kwargs))
+
         return wrapper
 
 
@@ -127,31 +128,40 @@ class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
 
 
 class WebHostTestCaseMeta(type(unittest.TestCase)):
-
     def __new__(mcls, name, bases, dct):
         for attrname, attr in dct.items():
-            if attrname.startswith('test_') and callable(attr):
+            if attrname.startswith("test_") and callable(attr):
                 test_case = attr
-                check_log_name = attrname.replace('test_', 'check_log_', 1)
+                check_log_name = attrname.replace("test_", "check_log_", 1)
                 check_log_case = dct.get(check_log_name)
 
                 @functools.wraps(test_case)
-                def wrapper(self, *args, __meth__=test_case,
-                            __check_log__=check_log_case, **kwargs):
-                    if (__check_log__ is not None
-                            and callable(__check_log__)
-                            and not is_envvar_true(PYAZURE_WEBHOST_DEBUG)):
+                def wrapper(
+                    self,
+                    *args,
+                    __meth__=test_case,
+                    __check_log__=check_log_case,
+                    **kwargs,
+                ):
+                    if (
+                        __check_log__ is not None
+                        and callable(__check_log__)
+                        and not is_envvar_true(PYAZURE_WEBHOST_DEBUG)
+                    ):
 
                         # Check logging output for unit test scenarios
                         result = self._run_test(__meth__, *args, **kwargs)
 
                         # Trim off host output timestamps
-                        host_output = getattr(self, 'host_out', '')
+                        host_output = getattr(self, "host_out", "")
                         output_lines = host_output.splitlines()
                         ts_re = r"^\[\d+\/\d+\/\d+ \d+\:\d+\:\d+.*(A|P)*M*\]"
-                        output = list(map(
-                            lambda s: re.sub(ts_re, '', s).strip(),
-                            output_lines))
+                        output = list(
+                            map(
+                                lambda s: re.sub(ts_re, "", s).strip(),
+                                output_lines,
+                            )
+                        )
 
                         # Execute check_log_ test cases
                         self._run_test(__check_log__, host_out=output)
@@ -177,7 +187,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     test_ABC - Unittest
     check_log_ABC - Check logs generated during the execution of test_ABC.
     """
-    host_stdout_logger = logging.getLogger('webhosttests')
+
+    host_stdout_logger = logging.getLogger("webhosttests")
 
     @classmethod
     def get_script_dir(cls):
@@ -189,12 +200,13 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             cls.host_stdout = None
         else:
-            cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
+            cls.host_stdout = tempfile.NamedTemporaryFile("w+t")
 
         _setup_func_app(TESTS_ROOT / script_dir)
         try:
-            cls.webhost = start_webhost(script_dir=script_dir,
-                                        stdout=cls.host_stdout)
+            cls.webhost = start_webhost(
+                script_dir=script_dir, stdout=cls.host_stdout
+            )
         except Exception:
             _teardown_func_app(TESTS_ROOT / script_dir)
             raise
@@ -230,7 +242,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 self.host_stdout.seek(last_pos)
                 self.host_out = self.host_stdout.read()
                 self.host_stdout_logger.error(
-                    f'Captured WebHost stdout:\n{self.host_out}')
+                    f"Captured WebHost stdout:\n{self.host_out}"
+                )
             finally:
                 if test_exception is not None:
                     raise test_exception
@@ -245,22 +258,25 @@ class _MockWebHostServicer(protos.FunctionRpcServicer):
 
     def EventStream(self, client_response_iterator, context):
         client_response = next(client_response_iterator)
-        rtype = client_response.WhichOneof('content')
+        rtype = client_response.WhichOneof("content")
         try:
-            if rtype != 'start_stream':
+            if rtype != "start_stream":
                 raise AssertionError(
-                    f'unexpected {rtype!r} initial message from the worker')
+                    f"unexpected {rtype!r} initial message from the worker"
+                )
 
             if client_response.start_stream.worker_id != self._host.worker_id:
-                raise AssertionError(f'worker_id mismatch')
+                raise AssertionError(f"worker_id mismatch")
 
         except Exception as ex:
             self._host._loop.call_soon_threadsafe(
-                self._host._connected_fut.set_exception, ex)
+                self._host._connected_fut.set_exception, ex
+            )
             return
         else:
             self._host._loop.call_soon_threadsafe(
-                self._host._connected_fut.set_result, True)
+                self._host._connected_fut.set_result, True
+            )
 
         while True:
             message, wait_for = self._host._in_queue.get()
@@ -276,22 +292,24 @@ class _MockWebHostServicer(protos.FunctionRpcServicer):
             logs = []
 
             for client_response in client_response_iterator:
-                rtype = client_response.WhichOneof('content')
+                rtype = client_response.WhichOneof("content")
                 unpacked = getattr(client_response, rtype)
 
                 if rtype == wait_for:
                     response = unpacked
                     break
-                elif rtype == 'rpc_log':
+                elif rtype == "rpc_log":
                     logs.append(unpacked)
                 else:
                     raise RuntimeError(
-                        f'unexpected response from worker: '
-                        f'expected to receive {wait_for!r}, got {rtype!r}')
+                        f"unexpected response from worker: "
+                        f"expected to receive {wait_for!r}, got {rtype!r}"
+                    )
 
             self._host._loop.call_soon_threadsafe(
                 self._host._out_aqueue.put_nowait,
-                _WorkerResponseMessages(response, logs))
+                _WorkerResponseMessages(response, logs),
+            )
 
 
 class _WebHostFunction(typing.NamedTuple):
@@ -307,7 +325,6 @@ class _WorkerResponseMessages(typing.NamedTuple):
 
 
 class _MockWebHost:
-
     def __init__(self, loop, scripts_dir):
         self._loop = loop
         self._scripts_dir = scripts_dir
@@ -318,12 +335,11 @@ class _MockWebHost:
         self._connected_fut = loop.create_future()
         self._in_queue = queue.Queue()
         self._out_aqueue = asyncio.Queue(loop=self._loop)
-        self._threadpool = concurrent.futures.ThreadPoolExecutor(
-            max_workers=1)
+        self._threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._server = grpc.server(self._threadpool)
         self._servicer = _MockWebHostServicer(self)
         protos.add_FunctionRpcServicer_to_server(self._servicer, self._server)
-        self._port = self._server.add_insecure_port(f'{LOCALHOST}:0')
+        self._port = self._server.add_insecure_port(f"{LOCALHOST}:0")
 
         self._worker_id = self.make_id()
         self._request_id = self.make_id()
@@ -341,30 +357,29 @@ class _MockWebHost:
 
     async def load_function(self, name):
         if name not in self._available_functions:
-            raise RuntimeError(f'cannot load function {name}')
+            raise RuntimeError(f"cannot load function {name}")
 
         func = self._available_functions[name]
 
         bindings = {}
-        for b in func.desc['bindings']:
-            direction = getattr(protos.BindingInfo, b['direction'])
+        for b in func.desc["bindings"]:
+            direction = getattr(protos.BindingInfo, b["direction"])
 
-            data_type_v = b.get('dataType')
+            data_type_v = b.get("dataType")
             if not data_type_v:
                 data_type = protos.BindingInfo.undefined
-            elif data_type_v == 'binary':
+            elif data_type_v == "binary":
                 data_type = protos.BindingInfo.binary
-            elif data_type_v == 'string':
+            elif data_type_v == "string":
                 data_type = protos.BindingInfo.string
-            elif data_type_v == 'stream':
+            elif data_type_v == "stream":
                 data_type = protos.BindingInfo.stream
             else:
-                raise RuntimeError(f'invalid dataType: {data_type_v!r}')
+                raise RuntimeError(f"invalid dataType: {data_type_v!r}")
 
-            bindings[b['name']] = protos.BindingInfo(
-                type=b['type'],
-                data_type=data_type,
-                direction=direction)
+            bindings[b["name"]] = protos.BindingInfo(
+                type=b["type"], data_type=data_type, direction=direction
+            )
 
         r = await self.communicate(
             protos.StreamingMessage(
@@ -374,23 +389,27 @@ class _MockWebHost:
                         name=func.name,
                         directory=os.path.dirname(func.script),
                         script_file=func.script,
-                        bindings=bindings))),
-            wait_for='function_load_response')
+                        bindings=bindings,
+                    ),
+                )
+            ),
+            wait_for="function_load_response",
+        )
 
         return func.id, r
 
     async def invoke_function(
-            self,
-            name,
-            input_data: typing.List[protos.ParameterBinding],
-            metadata: typing.Optional[
-                typing.Mapping[str, protos.TypedData]] = None):
+        self,
+        name,
+        input_data: typing.List[protos.ParameterBinding],
+        metadata: typing.Optional[typing.Mapping[str, protos.TypedData]] = None,
+    ):
 
         if metadata is None:
             metadata = {}
 
         if name not in self._available_functions:
-            raise RuntimeError(f'cannot load function {name}')
+            raise RuntimeError(f"cannot load function {name}")
 
         func = self._available_functions[name]
         invocation_id = self.make_id()
@@ -404,7 +423,8 @@ class _MockWebHost:
                     trigger_metadata=metadata,
                 )
             ),
-            wait_for='invocation_response')
+            wait_for="invocation_response",
+        )
 
         return invocation_id, r
 
@@ -427,32 +447,33 @@ class _MockWebHost:
             if not fd.is_dir():
                 continue
 
-            fjson_fn = fd / 'function.json'
+            fjson_fn = fd / "function.json"
             if not fjson_fn.exists():
                 continue
 
             try:
-                with open(fjson_fn, 'rt') as f:
+                with open(fjson_fn, "rt") as f:
                     fjson = json.loads(f.read())
 
-                fscript = fjson['scriptFile']
+                fscript = fjson["scriptFile"]
                 fscript_fn = fd / fscript
                 if not fscript_fn.exists():
-                    raise RuntimeError(f'{fscript_fn} path does not exist')
+                    raise RuntimeError(f"{fscript_fn} path does not exist")
 
             except Exception as ex:
-                raise RuntimeError(
-                    f'could not load function {fd.name}') from ex
+                raise RuntimeError(f"could not load function {fd.name}") from ex
 
             fn = _WebHostFunction(
-                name=fd.name, desc=fjson, script=str(fscript_fn),
-                id=self.make_id())
+                name=fd.name,
+                desc=fjson,
+                script=str(fscript_fn),
+                id=self.make_id(),
+            )
 
             self._available_functions[fn.name] = fn
 
 
 class _MockWebHostController:
-
     def __init__(self, scripts_dir):
         self._host = None
         self._scripts_dir = scripts_dir
@@ -464,16 +485,20 @@ class _MockWebHostController:
 
         await self._host.start()
 
-        self._worker = await dispatcher. \
-            Dispatcher.connect(LOCALHOST, self._host._port,
-                               self._host.worker_id,
-                               self._host.request_id, connect_timeout=5.0)
+        self._worker = await dispatcher.Dispatcher.connect(
+            LOCALHOST,
+            self._host._port,
+            self._host.worker_id,
+            self._host.request_id,
+            connect_timeout=5.0,
+        )
 
         self._worker_task = loop.create_task(self._worker.dispatch_forever())
 
-        done, pending = await asyncio. \
-            wait([self._host._connected_fut, self._worker_task],
-                 return_when=asyncio.FIRST_COMPLETED)
+        done, pending = await asyncio.wait(
+            [self._host._connected_fut, self._worker_task],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
 
         # noinspection PyBroadException
         try:
@@ -481,7 +506,7 @@ class _MockWebHostController:
                 self._worker_task.result()
 
             if self._host._connected_fut not in done:
-                raise RuntimeError('could not start a worker thread')
+                raise RuntimeError("could not start a worker thread")
         except Exception:
             try:
                 await self._host.close()
@@ -511,25 +536,26 @@ def start_mockhost(*, script_root=FUNCS_PATH):
     scripts_dir = tests_dir / script_root
     if not (scripts_dir.exists() and scripts_dir.is_dir()):
         raise RuntimeError(
-            f'invalid script_root argument: '
-            f'{scripts_dir} directory does not exist')
+            "invalid script_root argument: "
+            f"{scripts_dir} directory does not exist"
+        )
 
     return _MockWebHostController(scripts_dir)
 
 
 class _WebHostProxy:
-
     def __init__(self, proc, addr):
         self._proc = proc
         self._addr = addr
 
     def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
-        params = dict(kwargs.pop('params', {}))
-        if 'code' not in params:
-            params['code'] = 'testFunctionKey'
-        return request_method(self._addr + '/api/' + funcname,
-                              *args, params=params, **kwargs)
+        params = dict(kwargs.pop("params", {}))
+        if "code" not in params:
+            params["code"] = "testFunctionKey"
+        return request_method(
+            self._addr + "/api/" + funcname, *args, params=params, **kwargs
+        )
 
     def close(self):
         if self._proc.stdout:
@@ -557,19 +583,19 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
     hostexe_args = []
 
     # If we want to use core-tools
-    coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')
+    coretools_exe = os.environ.get("CORE_TOOLS_EXE_PATH")
     if coretools_exe:
         coretools_exe = coretools_exe.strip()
         if pathlib.Path(coretools_exe).exists():
-            hostexe_args = [str(coretools_exe), 'host', 'start']
+            hostexe_args = [str(coretools_exe), "host", "start"]
             if port is not None:
-                hostexe_args.extend(['--port', str(port)])
+                hostexe_args.extend(["--port", str(port)])
 
     # If we need to use Functions host directly
     if not hostexe_args:
-        dll = os.environ.get('PYAZURE_WEBHOST_DLL')
-        if not dll and testconfig and testconfig.has_section('webhost'):
-            dll = testconfig['webhost'].get('dll')
+        dll = os.environ.get("PYAZURE_WEBHOST_DLL")
+        if not dll and testconfig and testconfig.has_section("webhost"):
+            dll = testconfig["webhost"].get("dll")
 
         if dll:
             # Paths from environment might contain trailing
@@ -579,81 +605,86 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         if not dll:
             dll = DEFAULT_WEBHOST_DLL_PATH
 
-            os.makedirs(dll.parent / 'Secrets', exist_ok=True)
-            with open(dll.parent / 'Secrets' / 'host.json', 'w') as f:
+            os.makedirs(dll.parent / "Secrets", exist_ok=True)
+            with open(dll.parent / "Secrets" / "host.json", "w") as f:
                 secrets = SECRETS_TEMPLATE
 
                 f.write(secrets)
 
         if dll and pathlib.Path(dll).exists():
-            hostexe_args = ['dotnet', str(dll)]
+            hostexe_args = ["dotnet", str(dll)]
 
     if not hostexe_args:
-        raise RuntimeError('\n'.join([
-            f'Unable to locate Azure Functions Host binary.',
-            f'Please do one of the following:',
-            f' * run the following command from the root folder of',
-            f'   the project:',
-            f'',
-            f'       $ {sys.executable} setup.py webhost',
-            f'',
-            f' * or download or build the Azure Functions Host and'
-            f'   then write the full path to WebHost.dll'
-            f'   into the `PYAZURE_WEBHOST_DLL` environment variable.',
-            f'   Alternatively, you can create the',
-            f'   {WORKER_CONFIG.name} file in the root folder',
-            f'   of the project with the following structure:',
-            f'',
-            f'      [webhost]',
-            f'      dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
-            f' * or download Azure Functions Core Tools binaries and',
-            f'   then write the full path to func.exe into the ',
-            f'   `CORE_TOOLS_PATH` envrionment variable.'
-        ]))
+        raise RuntimeError(
+            "\n".join(
+                [
+                    "Unable to locate Azure Functions Host binary.",
+                    "Please do one of the following:",
+                    " * run the following command from the root folder of",
+                    "   the project:",
+                    "",
+                    f"       $ {sys.executable} setup.py webhost",
+                    "",
+                    " * or download or build the Azure Functions Host and"
+                    "   then write the full path to WebHost.dll"
+                    "   into the `PYAZURE_WEBHOST_DLL` environment variable.",
+                    "   Alternatively, you can create the",
+                    "   {WORKER_CONFIG.name} file in the root folder",
+                    "   of the project with the following structure:",
+                    "",
+                    "  [webhost]",
+                    "  dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll",
+                    " * or download Azure Functions Core Tools binaries and",
+                    "   then write the full path to func.exe into the ",
+                    "   `CORE_TOOLS_PATH` envrionment variable.",
+                ]
+            )
+        )
 
-    worker_path = os.environ.get('PYAZURE_WORKER_DIR')
+    worker_path = os.environ.get("PYAZURE_WORKER_DIR")
     worker_path = WORKER_PATH if not worker_path else pathlib.Path(worker_path)
     if not worker_path.exists():
-        raise RuntimeError(f'Worker path {worker_path} does not exist')
+        raise RuntimeError(f"Worker path {worker_path} does not exist")
 
     # Casting to strings is necessary because Popen doesn't like
     # path objects there on Windows.
     extra_env = {
-        'AzureWebJobsScriptRoot': str(script_root),
-        'languageWorkers:python:workerDirectory': str(worker_path),
-        'host:logger:consoleLoggingMode': 'always',
-        'AZURE_FUNCTIONS_ENVIRONMENT': 'development',
-        'AzureWebJobsSecretStorageType': 'files'
+        "AzureWebJobsScriptRoot": str(script_root),
+        "languageWorkers:python:workerDirectory": str(worker_path),
+        "host:logger:consoleLoggingMode": "always",
+        "AZURE_FUNCTIONS_ENVIRONMENT": "development",
+        "AzureWebJobsSecretStorageType": "files",
     }
 
-    if testconfig and 'azure' in testconfig:
-        st = testconfig['azure'].get('storage_key')
+    if testconfig and "azure" in testconfig:
+        st = testconfig["azure"].get("storage_key")
         if st:
-            extra_env['AzureWebJobsStorage'] = st
+            extra_env["AzureWebJobsStorage"] = st
 
-        cosmos = testconfig['azure'].get('cosmosdb_key')
+        cosmos = testconfig["azure"].get("cosmosdb_key")
         if cosmos:
-            extra_env['AzureWebJobsCosmosDBConnectionString'] = cosmos
+            extra_env["AzureWebJobsCosmosDBConnectionString"] = cosmos
 
-        eventhub = testconfig['azure'].get('eventhub_key')
+        eventhub = testconfig["azure"].get("eventhub_key")
         if eventhub:
-            extra_env['AzureWebJobsEventHubConnectionString'] = eventhub
+            extra_env["AzureWebJobsEventHubConnectionString"] = eventhub
 
-        servicebus = testconfig['azure'].get('servicebus_key')
+        servicebus = testconfig["azure"].get("servicebus_key")
         if servicebus:
-            extra_env['AzureWebJobsServiceBusConnectionString'] = servicebus
+            extra_env["AzureWebJobsServiceBusConnectionString"] = servicebus
 
-        eventgrid_topic_uri = testconfig['azure'].get('eventgrid_topic_uri')
+        eventgrid_topic_uri = testconfig["azure"].get("eventgrid_topic_uri")
         if eventgrid_topic_uri:
-            extra_env['AzureWebJobsEventGridTopicUri'] = eventgrid_topic_uri
+            extra_env["AzureWebJobsEventGridTopicUri"] = eventgrid_topic_uri
 
-        eventgrid_topic_key = testconfig['azure'].get('eventgrid_topic_key')
+        eventgrid_topic_key = testconfig["azure"].get("eventgrid_topic_key")
         if eventgrid_topic_key:
-            extra_env['AzureWebJobsEventGridConnectionKey'] = \
-                eventgrid_topic_key
+            extra_env[
+                "AzureWebJobsEventGridConnectionKey"
+            ] = eventgrid_topic_key
 
     if port is not None:
-        extra_env['ASPNETCORE_URLS'] = f'http://*:{port}'
+        extra_env["ASPNETCORE_URLS"] = f"http://*:{port}"
 
     return subprocess.Popen(
         hostexe_args,
@@ -663,7 +694,8 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             **extra_env,
         },
         stdout=stdout,
-        stderr=stderr)
+        stderr=stderr,
+    )
 
 
 def start_webhost(*, script_dir=None, stdout=None):
@@ -675,15 +707,20 @@ def start_webhost(*, script_dir=None, stdout=None):
             stdout = subprocess.DEVNULL
 
     port = _find_open_port()
-    proc = popen_webhost(stdout=stdout, stderr=subprocess.STDOUT,
-                         script_root=script_root, port=port)
+    proc = popen_webhost(
+        stdout=stdout,
+        stderr=subprocess.STDOUT,
+        script_root=script_root,
+        port=port,
+    )
     time.sleep(3)  # Giving host some time to start fully.
 
-    addr = f'http://{LOCALHOST}:{port}'
+    addr = f"http://{LOCALHOST}:{port}"
     for _ in range(10):
         try:
-            r = requests.get(f'{addr}/api/ping',
-                             params={'code': 'testFunctionKey'})
+            r = requests.get(
+                f"{addr}/api/ping", params={"code": "testFunctionKey"}
+            )
             if 200 <= r.status_code < 300:
                 # Give the host a bit more time to settle
                 time.sleep(2)
@@ -699,7 +736,7 @@ def start_webhost(*, script_dir=None, stdout=None):
             proc.wait(20)
         except subprocess.TimeoutExpired:
             proc.kill()
-        raise RuntimeError('could not start the webworker')
+        raise RuntimeError("could not start the webworker")
 
     return _WebHostProxy(proc, addr)
 
@@ -707,9 +744,14 @@ def start_webhost(*, script_dir=None, stdout=None):
 def create_dummy_dispatcher():
     dummy_event_loop = asyncio.new_event_loop()
     disp = dispatcher.Dispatcher(
-        dummy_event_loop, LOCALHOST, 0,
-        'test_worker_id', 'test_request_id',
-        1.0, 1000)
+        dummy_event_loop,
+        LOCALHOST,
+        0,
+        "test_worker_id",
+        "test_request_id",
+        1.0,
+        1000,
+    )
     dummy_event_loop.close()
     return disp
 
@@ -717,7 +759,7 @@ def create_dummy_dispatcher():
 def retryable_test(
     number_of_retries: int,
     interval_sec: int,
-    expected_exception: type = Exception
+    expected_exception: type = Exception,
 ):
     def decorate(func):
         def call(*args, **kwargs):
@@ -731,7 +773,9 @@ def retryable_test(
                         raise e
 
                 time.sleep(interval_sec)
+
         return call
+
     return decorate
 
 
@@ -754,31 +798,30 @@ def _symlink_dir(src, dst):
 
 
 def _setup_func_app(app_root):
-    extensions = app_root / 'bin'
-    ping_func = app_root / 'ping'
-    host_json = app_root / 'host.json'
+    extensions = app_root / "bin"
+    ping_func = app_root / "ping"
+    host_json = app_root / "host.json"
 
     if not os.path.isfile(host_json):
-        with open(host_json, 'w') as f:
+        with open(host_json, "w") as f:
             f.write(HOST_JSON_TEMPLATE)
 
-    _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
+    _symlink_dir(TESTS_ROOT / "common" / "ping", ping_func)
     _symlink_dir(EXTENSIONS_PATH, extensions)
 
 
 def _teardown_func_app(app_root):
-    extensions = app_root / 'bin'
-    ping_func = app_root / 'ping'
-    host_json = app_root / 'host.json'
+    extensions = app_root / "bin"
+    ping_func = app_root / "ping"
+    host_json = app_root / "host.json"
 
     for path in (extensions, ping_func, host_json):
         remove_path(path)
 
 
 def _main():
-    parser = argparse.ArgumentParser(description='Run a Python worker.')
-    parser.add_argument('scriptroot',
-                        help='directory with functions to load')
+    parser = argparse.ArgumentParser(description="Run a Python worker.")
+    parser.add_argument("scriptroot", help="directory with functions to load")
 
     args = parser.parse_args()
 
@@ -786,8 +829,10 @@ def _main():
     _setup_func_app(app_root)
 
     host = popen_webhost(
-        stdout=sys.stdout, stderr=sys.stderr,
-        script_root=os.path.abspath(args.scriptroot))
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+        script_root=os.path.abspath(args.scriptroot),
+    )
     try:
         host.wait()
     finally:
@@ -795,5 +840,5 @@ def _main():
         _teardown_func_app()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     _main()

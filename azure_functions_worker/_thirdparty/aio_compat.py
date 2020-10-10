@@ -15,7 +15,7 @@ def get_running_loop():
     """
     loop = asyncio._get_running_loop()
     if loop is None:
-        raise RuntimeError('no running event loop')
+        raise RuntimeError("no running event loop")
     return loop
 
 
@@ -37,7 +37,8 @@ def run(main, *, debug=False):
     """
     if asyncio._get_running_loop() is not None:
         raise RuntimeError(
-            "asyncio.run() cannot be called from a running event loop")
+            "asyncio.run() cannot be called from a running event loop"
+        )
 
     if not asyncio.iscoroutine(main):
         raise ValueError("a coroutine was expected, got {!r}".format(main))
@@ -57,8 +58,9 @@ def run(main, *, debug=False):
 
 
 def _cancel_all_tasks(loop):
-    to_cancel = [task for task in asyncio.Task.all_tasks(loop)
-                 if not task.done()]
+    to_cancel = [
+        task for task in asyncio.Task.all_tasks(loop) if not task.done()
+    ]
     if not to_cancel:
         return
 
@@ -66,17 +68,21 @@ def _cancel_all_tasks(loop):
         task.cancel()
 
     loop.run_until_complete(
-        asyncio.gather(*to_cancel, loop=loop, return_exceptions=True))
+        asyncio.gather(*to_cancel, loop=loop, return_exceptions=True)
+    )
 
     for task in to_cancel:
         if task.cancelled():
             continue
         if task.exception() is not None:
-            loop.call_exception_handler({
-                'message': 'unhandled exception during asyncio.run() shutdown',
-                'exception': task.exception(),
-                'task': task,
-            })
+            loop.call_exception_handler(
+                {
+                    "message": "unhandled exception during"
+                               "asyncio.run() shutdown",
+                    "exception": task.exception(),
+                    "task": task,
+                }
+            )
 
 
 try:

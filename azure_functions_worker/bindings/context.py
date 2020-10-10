@@ -4,9 +4,13 @@ from . import TraceContext
 
 
 class Context:
-
-    def __init__(self, func_name: str, func_dir: str,
-                 invocation_id: str, trace_context: TraceContext) -> None:
+    def __init__(
+        self,
+        func_name: str,
+        func_dir: str,
+        invocation_id: str,
+        trace_context: TraceContext,
+    ) -> None:
         self.__func_name = func_name
         self.__func_dir = func_dir
         self.__invocation_id = invocation_id

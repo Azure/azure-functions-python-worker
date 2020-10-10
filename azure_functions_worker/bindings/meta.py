@@ -10,7 +10,7 @@ from . import generic
 
 
 def get_binding_registry():
-    func = sys.modules.get('azure.functions')
+    func = sys.modules.get("azure.functions")
 
     # If fails to acquire customer's BYO azure-functions, load the builtin
     if func is None:
@@ -50,15 +50,16 @@ def has_implicit_output(bind_name: str) -> bool:
 
     # If the binding does not have metaclass of meta.InConverter
     # The implicit_output does not exist
-    return getattr(binding, 'has_implicit_output', lambda: False)()
+    return getattr(binding, "has_implicit_output", lambda: False)()
 
 
 def from_incoming_proto(
-        binding: str,
-        val: protos.TypedData, *,
-        pytype: typing.Optional[type],
-        trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]])\
-        -> typing.Any:
+    binding: str,
+    val: protos.TypedData,
+    *,
+    pytype: typing.Optional[type],
+    trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]],
+) -> typing.Any:
 
     binding = get_binding(binding)
     datum = datumdef.Datum.from_typed_data(val)
@@ -74,16 +75,18 @@ def from_incoming_proto(
         return binding.decode(datum, trigger_metadata=metadata)
     except NotImplementedError:
         # Binding does not support the data.
-        dt = val.WhichOneof('data')
+        dt = val.WhichOneof("data")
 
         raise TypeError(
-            f'unable to decode incoming TypedData: '
-            f'unsupported combination of TypedData field {dt!r} '
-            f'and expected binding type {binding}')
+            f"unable to decode incoming TypedData: "
+            f"unsupported combination of TypedData field {dt!r} "
+            f"and expected binding type {binding}"
+        )
 
 
-def to_outgoing_proto(binding: str, obj: typing.Any, *,
-                      pytype: typing.Optional[type]) -> protos.TypedData:
+def to_outgoing_proto(
+    binding: str, obj: typing.Any, *, pytype: typing.Optional[type]
+) -> protos.TypedData:
     binding = get_binding(binding)
 
     try:
@@ -91,8 +94,9 @@ def to_outgoing_proto(binding: str, obj: typing.Any, *,
     except NotImplementedError:
         # Binding does not support the data.
         raise TypeError(
-            f'unable to encode outgoing TypedData: '
+            f"unable to encode outgoing TypedData: "
             f'unsupported type "{binding}" for '
-            f'Python type "{type(obj).__name__}"')
+            f'Python type "{type(obj).__name__}"'
+        )
 
     return datumdef.datum_as_proto(datum)

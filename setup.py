@@ -197,7 +197,7 @@ class webhost(distutils.cmd.Command):
             self.webhost_url = WEBHOST_URL
 
         if self.webhost_dir is None:
-            self.webhost_dir = pathlib.Path(__file__).parent / "build" / "webhost"
+            self.webhost_dir = pathlib.Path(__file__).parent / "build" / "webhost" # NoQA E501
 
         if self.extensions_dir is None:
             self.extensions_dir = (
@@ -212,7 +212,7 @@ class webhost(distutils.cmd.Command):
                 urllib.request.urlretrieve(self.webhost_url, zipf.name)
             except Exception as e:
                 print(
-                    f"could not download Azure Functions Web Host binaries "
+                    "could not download Azure Functions Web Host binaries "
                     f"from {self.webhost_url}: {e!r}",
                     file=sys.stderr,
                 )

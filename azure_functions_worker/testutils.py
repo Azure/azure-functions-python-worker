@@ -252,7 +252,7 @@ class _MockWebHostServicer(protos.FunctionRpcServicer):
                     f'unexpected {rtype!r} initial message from the worker')
 
             if client_response.start_stream.worker_id != self._host.worker_id:
-                raise AssertionError(f'worker_id mismatch')
+                raise AssertionError('worker_id mismatch')
 
         except Exception as ex:
             self._host._loop.call_soon_threadsafe(
@@ -590,25 +590,25 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
 
     if not hostexe_args:
         raise RuntimeError('\n'.join([
-            f'Unable to locate Azure Functions Host binary.',
-            f'Please do one of the following:',
-            f' * run the following command from the root folder of',
-            f'   the project:',
-            f'',
+            'Unable to locate Azure Functions Host binary.',
+            'Please do one of the following:',
+            ' * run the following command from the root folder of',
+            '   the project:',
+            '',
             f'       $ {sys.executable} setup.py webhost',
-            f'',
-            f' * or download or build the Azure Functions Host and'
-            f'   then write the full path to WebHost.dll'
-            f'   into the `PYAZURE_WEBHOST_DLL` environment variable.',
-            f'   Alternatively, you can create the',
+            '',
+            ' * or download or build the Azure Functions Host and'
+            '   then write the full path to WebHost.dll'
+            '   into the `PYAZURE_WEBHOST_DLL` environment variable.',
+            '   Alternatively, you can create the',
             f'   {WORKER_CONFIG.name} file in the root folder',
-            f'   of the project with the following structure:',
-            f'',
-            f'      [webhost]',
-            f'      dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
-            f' * or download Azure Functions Core Tools binaries and',
-            f'   then write the full path to func.exe into the ',
-            f'   `CORE_TOOLS_PATH` envrionment variable.'
+            '   of the project with the following structure:',
+            '',
+            '      [webhost]',
+            '      dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
+            ' * or download Azure Functions Core Tools binaries and',
+            '   then write the full path to func.exe into the ',
+            '   `CORE_TOOLS_PATH` envrionment variable.'
         ]))
 
     worker_path = os.environ.get('PYAZURE_WORKER_DIR')

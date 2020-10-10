@@ -1,4 +1,4 @@
-# Imported from https://github.com/ilevkivskyi/typing_inspect/blob/168fa6f7c5c55f720ce6282727211cf4cf6368f6/typing_inspect.py
+# Imported from https://github.com/ilevkivskyi/typing_inspect/blob/168fa6f7c5c55f720ce6282727211cf4cf6368f6/typing_inspect.py  # NoQA E501
 # Author: Ivan Levkivskyi
 # License: MIT
 
@@ -16,7 +16,6 @@ NEW_TYPING = sys.version_info[:3] >= (3, 7, 0)  # PEP 560
 if NEW_TYPING:
     import collections.abc
 
-
 if NEW_TYPING:
     from typing import (
         Generic, Callable, Union, TypeVar, ClassVar, Tuple, _GenericAlias
@@ -26,6 +25,10 @@ else:
         Callable, CallableMeta, Union, _Union, TupleMeta, TypeVar,
         _ClassVar, GenericMeta,
     )
+
+NEW_39_TYPING = sys.version_info[:3] >= (3, 9, 0)  # PEP 560
+if NEW_39_TYPING:
+    from typing import _SpecialGenericAlias
 
 
 # from mypy_extensions import _TypedDictMeta
@@ -51,7 +54,6 @@ def is_generic_type(tp):
         is_generic_type(Union[int, T]) == False
         is_generic_type(ClassVar[List[int]]) == False
         is_generic_type(Callable[..., T]) == False
-
         is_generic_type(Generic) == True
         is_generic_type(Generic[T]) == True
         is_generic_type(Iterable[int]) == True
@@ -59,10 +61,15 @@ def is_generic_type(tp):
         is_generic_type(MutableMapping[T, List[int]]) == True
         is_generic_type(Sequence[Union[str, bytes]]) == True
     """
+    if NEW_39_TYPING:
+        return (isinstance(tp, type) and issubclass(tp, Generic)
+                or isinstance(tp, _SpecialGenericAlias)
+                and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable))  # NoQA E501
     if NEW_TYPING:
-        return (isinstance(tp, type) and issubclass(tp, Generic) or
-                isinstance(tp, _GenericAlias) and
-                tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable))
+        return (isinstance(tp, type)
+                and issubclass(tp, Generic)
+                or isinstance(tp, _GenericAlias)
+                and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable))  # NoQA E501
     return (isinstance(tp, GenericMeta) and not
             isinstance(tp, (CallableMeta, TupleMeta)))
 
@@ -84,7 +91,7 @@ def is_callable_type(tp):
     For more general tests use callable(), for more precise test
     (excluding subclasses) use::
 
-        get_origin(tp) is collections.abc.Callable  # Callable prior to Python 3.7
+        get_origin(tp) is collections.abc.Callable  # Callable prior to Python 3.7  # NoQA E501
     """
     if NEW_TYPING:
         return (tp is Callable or isinstance(tp, _GenericAlias) and
@@ -224,9 +231,8 @@ def get_parameters(tp):
         get_parameters(Mapping[T, Tuple[S_co, T]]) == (T, S_co)
     """
     if NEW_TYPING:
-        if (isinstance(tp, _GenericAlias) or
-            isinstance(tp, type) and issubclass(tp, Generic) and
-            tp is not Generic):
+        if (isinstance(tp, _GenericAlias) or isinstance(tp, type) and
+            issubclass(tp, Generic) and tp is not Generic):   # NoQA E129
             return tp.__parameters__
         return ()
     if (
@@ -305,7 +311,7 @@ def get_args(tp, evaluate=None):
             raise ValueError('evaluate can only be True in Python 3.7')
         if isinstance(tp, _GenericAlias):
             res = tp.__args__
-            if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:
+            if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:    # NoQA E501
                 res = (list(res[:-1]), res[-1])
             return res
         return ()
@@ -356,8 +362,8 @@ def get_generic_bases(tp):
 
 
 def typed_dict_keys(td):
-    """If td is a TypedDict class, return a dictionary mapping the typed keys to types.
-    Otherwise, return None. Examples::
+    """If td is a TypedDict class, return a dictionary mapping the typed keys
+    to types. Otherwise, return None. Examples::
 
         class TD(TypedDict):
             x: int
@@ -370,6 +376,6 @@ def typed_dict_keys(td):
         typed_dict_keys(dict) == None
         typed_dict_keys(Other) == None
     """
-    if isinstance(td, _TypedDictMeta):
+    if isinstance(td, _TypedDictMeta):  # NoQA F821
         return td.__annotations__.copy()
     return None

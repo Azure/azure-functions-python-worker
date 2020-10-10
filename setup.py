@@ -19,8 +19,8 @@ from setuptools.command import develop
 # TODO: Change this to something more stable when available.
 # TODO: Change this to use 3.x
 WEBHOST_URL = (
-    'https://github.com/Azure/azure-functions-host/releases/download'
-    '/v2.0.14361/Functions.Binaries.2.0.14361.no-runtime.zip'
+    "https://github.com/Azure/azure-functions-host/releases/download"
+    "/v2.0.14494/Functions.Binaries.2.0.14494.no-runtime.zip"
 )
 
 # Extensions necessary for non-core bindings.
@@ -261,6 +261,10 @@ setup(
     name='azure-functions-worker',
     version='1.1.6',
     description='Python Language Worker for Azure Functions Host',
+    author="Microsoft Corp.",
+    author_email="azurefunctions@microsoft.com",
+    keywords="azure azurefunctions python",
+    url="http://packages.python.org/an_example_pypi_project",
     long_description=long_description,
     long_description_content_type='text/markdown',
     classifiers=[

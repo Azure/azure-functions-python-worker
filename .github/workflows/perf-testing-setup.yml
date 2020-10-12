@@ -6,7 +6,7 @@ on:
     branches: [ dev ]
 
 env:
-  PERF_TESTS_LINK: "raw.githubusercontent.com/Azure/azure-functions-python-worker/vameru/perf-testing-containers/.ci/perf_tests/k6scripts"
+  PERF_TESTS_LINK: "https://raw.githubusercontent.com/Azure/azure-functions-python-worker/dev/.ci/perf_tests/k6scripts/"
   PYTHON_VERSION: "3.8"
   PORT: 8000
 

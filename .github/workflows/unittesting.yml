@@ -36,3 +36,10 @@ jobs:
     - name: Test with pytest
       run: |
         pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
+    - name: Codecov
+      uses: codecov/codecov-action@v1.0.13
+      with:
+        file: ./coverage.xml # optional
+        flags: unittests # optional
+        name: codecov # optional
+        fail_ci_if_error: false # optional (default = false)

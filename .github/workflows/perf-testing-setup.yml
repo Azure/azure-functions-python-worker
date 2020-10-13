@@ -16,43 +16,41 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test_to_run: [ SyncHttpTriggerHelloWorld, SyncHttpTriggerWithSyncRequests, AsyncHttpTriggerWithAsyncRequest, SyncHttpTriggerCPUIntensive ]
+        test_to_run: [ SyncHttpTriggerHelloWorld,
+                       SyncHttpTriggerWithSyncRequests,
+                       AsyncHttpTriggerWithAsyncRequest,
+                       SyncHttpTriggerCPUIntensive ]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ env.PYTHON_VERSION }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-
     - name: Set up Dotnet 3.1.x
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '3.1.x'
-
     - name: Setup k6 for through[ut testing
       run: |
         cd $GITHUB_WORKSPACE
         curl https://github.com/loadimpact/k6/releases/download/v0.28.0/k6-v0.28.0-linux64.tar.gz -L | tar xvz --strip-components 1
         chmod 755 ./k6
         ./k6 version
-
     - name: Install dependencies and the worker
       run: |
         python -m pip install -q --upgrade pip
         python -m pip install -q --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U -e .[dev]
         python -m pip install -q --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
+        python setup.py build
         python setup.py webhost
-
     - name: Build and Run the Docker image
       run: |
         docker build --build-arg PYTHON_VERSION=${{ env.PYTHON_VERSION }} --file .ci/perf_tests/dockerfiles/perf_tests.Dockerfile --tag perfimage:latest .
         docker run -d --env FUNCTIONS_WORKER_RUNTIME_VERSION=${{ env.PYTHON_VERSION }} -p ${PORT}:80 -v $GITHUB_WORKSPACE/azure_functions_worker:/azure-functions-host/workers/python/${{ env.PYTHON_VERSION }}/LINUX/X64/azure_functions_worker perfimage:latest
         sleep 10  # host needs some time to start.
-
     - name: Validate if the functions are now running
       run: |
         curl --get http://localhost:${PORT}/api/${{ matrix.test_to_run }}
-
     - name: Run Throughput tests
       run: |
         chmod 755 .ci/perf_tests/run-perftests.sh

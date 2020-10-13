@@ -5,6 +5,8 @@
 |master|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_apis/build/status/Azure%20Functions%20Python-CI?branchName=master)](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_build/latest?definitionId=3&branchName=master)|![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/azfunc/Azure%20Functions%20Python/3/master)|[![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/master/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)
 |dev|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_apis/build/status/Azure%20Functions%20Python-CI?branchName=dev)](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_build/latest?definitionId=3&branchName=dev)|![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/azfunc/Azure%20Functions%20Python/3/dev)|[![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/dev/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)
 
+![CI Unit tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20Unit%20tests/badge.svg?branch=dev)
+
 # Overview
 
 Python support for Azure Functions is based on Python 3.6, Python 3.7, and Python 3.8, serverless hosting on Linux and the Functions 2.0 and 3.0 runtime.

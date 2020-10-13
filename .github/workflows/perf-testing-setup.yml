@@ -13,7 +13,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, python-worker, azure-functions]
     strategy:
       fail-fast: false
       matrix:

@@ -677,22 +677,23 @@ def start_webhost(*, script_dir=None, stdout=None):
     port = _find_open_port()
     proc = popen_webhost(stdout=stdout, stderr=subprocess.STDOUT,
                          script_root=script_root, port=port)
-    time.sleep(3)  # Giving host some time to start fully.
+    time.sleep(10)  # Giving host some time to start fully.
 
     addr = f'http://{LOCALHOST}:{port}'
     for _ in range(10):
         try:
             r = requests.get(f'{addr}/api/ping',
                              params={'code': 'testFunctionKey'})
+            # Give the host a bit more time to settle
+            time.sleep(2)
+
             if 200 <= r.status_code < 300:
                 # Give the host a bit more time to settle
                 time.sleep(2)
                 break
         except requests.exceptions.ConnectionError:
             pass
-
         time.sleep(2)
-
     else:
         proc.terminate()
         try:

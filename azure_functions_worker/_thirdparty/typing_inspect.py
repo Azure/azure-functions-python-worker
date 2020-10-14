@@ -63,8 +63,8 @@ def is_generic_type(tp):
     """
     if NEW_39_TYPING:
         return (isinstance(tp, type) and issubclass(tp, Generic)
-                or isinstance(tp, _SpecialGenericAlias)
-                and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable))  # NoQA E501
+                or ((isinstance(tp, _GenericAlias) or isinstance(tp, _SpecialGenericAlias))  # NoQA E501
+                and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable)))  # NoQA E501
     if NEW_TYPING:
         return (isinstance(tp, type)
                 and issubclass(tp, Generic)

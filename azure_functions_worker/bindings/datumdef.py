@@ -4,6 +4,7 @@
 from typing import Any
 import json
 from .. import protos
+from .shared_memory_manager import SharedMemoryManager
 
 
 class Datum:
@@ -83,6 +84,9 @@ class Datum:
             val = td.collection_string
         elif tt == 'collection_sint64':
             val = td.collection_sint64
+        elif tt == 'shared_memory_data':
+            shared_memory_manager = SharedMemoryManager()
+            val, tt = shared_memory_manager.get(td.shared_memory_data)
         elif tt is None:
             return None
         else:

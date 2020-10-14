@@ -22,4 +22,5 @@ from .FunctionRpc_pb2 import (  # NoQA
     ParameterBinding,
     TypedData,
     RpcHttp,
-    RpcLog)
+    RpcLog,
+    SharedMemoryData)

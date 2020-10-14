@@ -65,10 +65,6 @@ jobs:
       scriptPath: .ci/linux_devops_build.sh
     displayName: 'Build'
   - bash: |
-        chmod +x .ci/linux_devops_unit_tests.sh
-        .ci/linux_devops_unit_tests.sh
-    displayName: 'Unit Tests'
-  - bash: |
         chmod +x .ci/linux_devops_e2e_tests.sh
         .ci/linux_devops_e2e_tests.sh
     env:

@@ -1,9 +1,11 @@
 <img src="./docs/Azure.Functions.svg" width = "180" alt="Functions Header Image">
 
-|Branch|Status|Coverage|
-|---|---|---|
-|master|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_apis/build/status/Azure%20Functions%20Python-CI?branchName=master)](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_build/latest?definitionId=3&branchName=master)|![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/azfunc/Azure%20Functions%20Python/3/master)
-|dev|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_apis/build/status/Azure%20Functions%20Python-CI?branchName=dev)](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_build/latest?definitionId=3&branchName=dev)|![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/azfunc/Azure%20Functions%20Python/3/dev)
+|Branch|Status|Coverage|CodeCov|
+|---|---|---|---|
+|master|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_apis/build/status/Azure%20Functions%20Python-CI?branchName=master)](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_build/latest?definitionId=3&branchName=master)|![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/azfunc/Azure%20Functions%20Python/3/master)|[![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/master/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)
+|dev|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_apis/build/status/Azure%20Functions%20Python-CI?branchName=dev)](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_build/latest?definitionId=3&branchName=dev)|![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/azfunc/Azure%20Functions%20Python/3/dev)|[![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/dev/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)
+
+![CI Unit tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20Unit%20tests/badge.svg?branch=dev)
 
 # Overview
 

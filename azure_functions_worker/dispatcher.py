@@ -346,7 +346,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     callback(context)
                 except Exception as ex:
                     logger.warning(
-                        "Before invocation request callback failed with: %s.", ex)
+                        "Before invocation callback failed with: %s.", ex)
 
             if fi.requires_context:
                 args['context'] = context
@@ -396,7 +396,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     callback(context)
                 except Exception as ex:
                     logger.warning(
-                        "After invocation request callback failed with: %s.", ex)
+                        "After invocation callback failed with: %s.", ex)
 
             # Actively flush customer print() function to console
             sys.stdout.flush()

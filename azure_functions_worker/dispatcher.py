@@ -337,15 +337,17 @@ class Dispatcher(metaclass=DispatcherMeta):
                     trigger_metadata=trigger_metadata,
                     pytype=pb_type_info.pytype)
 
-            context = bindings.Context(fi.name, fi.directory, invocation_id, trace_context)
+            context = bindings.Context(
+                fi.name, fi.directory, invocation_id, trace_context)
 
             # Execute before invocation callbacks
             for callback in get_before_invocation_request_callbacks():
                 try:
                     callback(context)
                 except Exception as ex:
-                    logger.warning("Before invocation request callback failed with: %s.", ex)
-            
+                    logger.warning(
+                        "Before invocation request callback failed with: %s.", ex)
+
             if fi.requires_context:
                 args['context'] = context
 
@@ -393,7 +395,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 try:
                     callback(context)
                 except Exception as ex:
-                    logger.warning("After invocation request callback failed with: %s.", ex)
+                    logger.warning(
+                        "After invocation request callback failed with: %s.", ex)
 
             # Actively flush customer print() function to console
             sys.stdout.flush()

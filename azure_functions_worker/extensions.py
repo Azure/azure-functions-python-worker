@@ -3,9 +3,11 @@
 
 _EXTENSIONS_CONTEXT = dict()
 
+
 def register_before_invocation_request(callback):
     if _EXTENSIONS_CONTEXT.get("BEFORE_INVOCATION_REQUEST_CALLBACKS"):
-        _EXTENSIONS_CONTEXT.get("BEFORE_INVOCATION_REQUEST_CALLBACKS").append(callback)
+        _EXTENSIONS_CONTEXT.get(
+            "BEFORE_INVOCATION_REQUEST_CALLBACKS").append(callback)
     else:
         _EXTENSIONS_CONTEXT["BEFORE_INVOCATION_REQUEST_CALLBACKS"] = [callback]
     _EXTENSIONS_CONTEXT["BEFORE_INVOCATION_REQUEST_CALLBACKS"] = [callback]
@@ -13,7 +15,8 @@ def register_before_invocation_request(callback):
 
 def register_after_invocation_request(callback):
     if _EXTENSIONS_CONTEXT.get("AFTER_INVOCATION_REQUEST_CALLBACKS"):
-        _EXTENSIONS_CONTEXT.get("AFTER_INVOCATION_REQUEST_CALLBACKS").append(callback)
+        _EXTENSIONS_CONTEXT.get(
+            "AFTER_INVOCATION_REQUEST_CALLBACKS").append(callback)
     else:
         _EXTENSIONS_CONTEXT["AFTER_INVOCATION_REQUEST_CALLBACKS"] = [callback]
 

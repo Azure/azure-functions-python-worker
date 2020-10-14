@@ -10,7 +10,6 @@ def register_before_invocation_request(callback):
             "BEFORE_INVOCATION_REQUEST_CALLBACKS").append(callback)
     else:
         _EXTENSIONS_CONTEXT["BEFORE_INVOCATION_REQUEST_CALLBACKS"] = [callback]
-    _EXTENSIONS_CONTEXT["BEFORE_INVOCATION_REQUEST_CALLBACKS"] = [callback]
 
 
 def register_after_invocation_request(callback):

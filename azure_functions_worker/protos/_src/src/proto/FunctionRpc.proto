@@ -330,6 +330,7 @@ message TypedData {
     CollectionString collection_string = 9;
     CollectionDouble collection_double = 10;
     CollectionSInt64 collection_sint64 = 11;
+    SharedMemoryData shared_memory_data = 12;
   }
 }
 

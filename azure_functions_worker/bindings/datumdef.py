@@ -87,8 +87,17 @@ class Datum:
         elif tt == 'collection_sint64':
             val = td.collection_sint64
         elif tt == 'shared_memory_data':
-            shared_memory_manager = SharedMemoryManager()
-            val, tt = shared_memory_manager.get(td.shared_memory_data)
+            shmem_mgr = SharedMemoryManager()
+            shmem_data = td.shared_memory_data
+            mmap_name = shmem_data.memory_mapped_file_name
+            offset = shmem_data.offset
+            count = shmem_data.count
+            ret = shmem_mgr.get(mmap_name, offset, count)
+            if ret is None:
+                return None
+            else:
+                val = ret
+                tt = shmem_data.type
         elif tt is None:
             return None
         else:
@@ -152,7 +161,23 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
     if datum.type == 'string':
         return protos.TypedData(string=datum.value)
     elif datum.type == 'bytes':
-        return protos.TypedData(bytes=datum.value)
+        if SharedMemoryManager.is_enabled():
+            shmem_mgr = SharedMemoryManager()
+            value = datum.value
+            mmap_name = shmem_mgr.put(value)
+            if mmap_name is not None:
+                shmem_data = protos.SharedMemoryData(
+                    memory_mapped_file_name=mmap_name,
+                    offset=0,
+                    count=len(value),
+                    type='bytes')
+                return protos.TypedData(shared_memory_data=shmem_data)
+            else:
+                raise Exception(
+                    'cannot write datum value into Shared Memory'
+                )
+        else:
+            return protos.TypedData(bytes=datum.value)
     elif datum.type == 'json':
         return protos.TypedData(json=datum.value)
     elif datum.type == 'http':

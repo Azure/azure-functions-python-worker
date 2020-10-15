@@ -11,6 +11,7 @@ from ..mmap_handler.file_reader import FileReader
 from ..mmap_handler.file_accessor_factory import FileAccessorFactory
 
 
+
 class SharedMemoryManager:
     """
     Performs all operations related to reading/writing data from/to shared memory.
@@ -97,7 +98,6 @@ class SharedMemoryManager:
             self.allocated_mem_maps[map_name] = mem_map
         return map_name
 
-<<<<<<< HEAD
     def free_mem_map(self, map_name: str):
         """
         Frees the memory map and any backing resources (e.g. file in the case of Linux) associated
@@ -115,31 +115,3 @@ class SharedMemoryManager:
             # TODO Log Error
             return False
         return True
-=======
-    @staticmethod
-    def is_enabled():
-        """
-        Whether supported types should be transferred between Functions host
-        and the worker using Shared Memory.
-        """
-        return True
-
-    def get(self, mmap_name: str, offset: int, count: int) -> (bytes):
-        """
-        Reads data from the given Memory Mapped File with the provided name,
-        starting at the provided offset and reading a total of count bytes.
-        Returns a tuple containing the binary data read from Shared Memory
-        if successful, None otherwise.
-        """
-        logger.info('Reading from Shared Memory: %s', mmap_name)
-        return 'foo'.encode('utf-8')
-
-    def put(self, data: bytes) -> (str):
-        """
-        Writes the given data into Shared Memory.
-        Returns the name of the Memory Mapped File into which the data was
-        written if succesful, None otherwise.
-        """
-        mmap_name = str(uuid.uuid4())
-        return mmap_name
->>>>>>> Writing output from worker to Shared Memory

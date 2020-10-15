@@ -4,6 +4,7 @@
 import uuid
 from ..logging import logger
 
+
 class SharedMemoryManager:
     """
     Performs all operations related to reading/writing data from/to Shared

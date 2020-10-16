@@ -7,6 +7,7 @@ from .. import protos
 
 from . import datumdef
 from . import generic
+from .shared_memory_manager import SharedMemoryManager
 
 
 def get_binding_registry():
@@ -57,14 +58,14 @@ def from_incoming_proto(
         binding: str,
         val: protos.TypedData, *,
         pytype: typing.Optional[type],
-        trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]])\
-        -> typing.Any:
+        trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]],
+        shmem_mgr: SharedMemoryManager) -> typing.Any:
 
     binding = get_binding(binding)
-    datum = datumdef.Datum.from_typed_data(val)
+    datum = datumdef.Datum.from_typed_data(val, shmem_mgr)
     if trigger_metadata:
         metadata = {
-            k: datumdef.Datum.from_typed_data(v)
+            k: datumdef.Datum.from_typed_data(v, shmem_mgr)
             for k, v in trigger_metadata.items()
         }
     else:
@@ -83,7 +84,9 @@ def from_incoming_proto(
 
 
 def to_outgoing_proto(binding: str, obj: typing.Any, *,
-                      pytype: typing.Optional[type]) -> protos.TypedData:
+                      pytype: typing.Optional[type],
+                      shmem_mgr: SharedMemoryManager,
+                      invocation_id: str) -> protos.TypedData:
     binding = get_binding(binding)
 
     try:
@@ -95,4 +98,4 @@ def to_outgoing_proto(binding: str, obj: typing.Any, *,
             f'unsupported type "{binding}" for '
             f'Python type "{type(obj).__name__}"')
 
-    return datumdef.datum_as_proto(datum)
+    return datumdef.datum_as_proto(datum, shmem_mgr, invocation_id)

@@ -51,7 +51,7 @@ class Datum:
         return '<Datum {} {}>'.format(self.type, val_repr)
 
     @classmethod
-    def from_typed_data(cls, td: protos.TypedData):
+    def from_typed_data(cls, td: protos.TypedData, shmem_mgr: SharedMemoryManager):
         tt = td.WhichOneof('data')
         if tt == 'http':
             http = td.http
@@ -62,7 +62,7 @@ class Datum:
                     k: Datum(v, 'string') for k, v in http.headers.items()
                 },
                 body=(
-                    Datum.from_typed_data(http.body)
+                    Datum.from_typed_data(http.body, shmem_mgr)
                     or Datum(type='bytes', value=b'')
                 ),
                 params={
@@ -85,7 +85,6 @@ class Datum:
         elif tt == 'collection_sint64':
             val = td.collection_sint64
         elif tt == 'shared_memory_data':
-            shmem_mgr = SharedMemoryManager()
             shmem_data = td.shared_memory_data
             mmap_name = shmem_data.memory_mapped_file_name
             offset = shmem_data.offset
@@ -106,14 +105,14 @@ class Datum:
         return cls(val, tt)
 
 
-def datum_as_proto(datum: Datum) -> protos.TypedData:
+def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager,
+                   invocation_id: str) -> protos.TypedData:
     if datum.type == 'string':
         return protos.TypedData(string=datum.value)
     elif datum.type == 'bytes':
         if SharedMemoryManager.is_enabled():
-            shmem_mgr = SharedMemoryManager()
             value = datum.value
-            mmap_name = shmem_mgr.put(value)
+            mmap_name = shmem_mgr.put(value, invocation_id)
             if mmap_name is not None:
                 shmem_data = protos.SharedMemoryData(
                     memory_mapped_file_name=mmap_name,
@@ -137,7 +136,8 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
                 for k, v in datum.value['headers'].items()
             },
             enable_content_negotiation=False,
-            body=datum_as_proto(datum.value['body']),
+            body=datum_as_proto(datum.value['body'], shmem_mgr,
+                                invocation_id),
         ))
     else:
         raise NotImplementedError(

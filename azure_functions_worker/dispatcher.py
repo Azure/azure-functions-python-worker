@@ -401,7 +401,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             if fi.return_type is not None:
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name, call_result,
-                    pytype=fi.return_type.pytype)
+                    pytype=fi.return_type.pytype,
+                    shmem_mgr=self._shmem_mgr, invocation_id=invocation_id)
 
             # Actively flush customer print() function to console
             sys.stdout.flush()

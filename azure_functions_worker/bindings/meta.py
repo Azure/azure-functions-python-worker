@@ -63,7 +63,7 @@ def from_incoming_proto(
     binding = get_binding(binding)
     if trigger_metadata:
         metadata = {
-            k: datumdef.Datum.from_typed_data(v)
+            k: datumdef.Datum.from_typed_data(v, shmem_mgr)
             for k, v in trigger_metadata.items()
         }
     else:
@@ -92,11 +92,18 @@ def from_incoming_proto(
             f'and expected binding type {binding}')
 
 
+<<<<<<< HEAD
 def get_datum(binding: str, obj: typing.Any,
               pytype: typing.Optional[type]) -> datumdef.Datum:
     """
     Convert an object to a datum with the specified type.
     """
+=======
+def to_outgoing_proto(binding: str, obj: typing.Any, *,
+                      pytype: typing.Optional[type],
+                      shmem_mgr: SharedMemoryManager,
+                      invocation_id: str) -> protos.TypedData:
+>>>>>>> Free shared memory resources after use
     binding = get_binding(binding)
     try:
         datum = binding.encode(obj, expected_type=pytype)
@@ -108,6 +115,7 @@ def get_datum(binding: str, obj: typing.Any,
             f'Python type "{type(obj).__name__}"')
     return datum
 
+<<<<<<< HEAD
 
 def to_outgoing_proto(binding: str, obj: typing.Any, *,
                       pytype: typing.Optional[type]) -> protos.TypedData:
@@ -142,3 +150,6 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
                             name=out_name,
                             data=rpc_val)
     return parameter_binding
+=======
+    return datumdef.datum_as_proto(datum, shmem_mgr, invocation_id)
+>>>>>>> Free shared memory resources after use

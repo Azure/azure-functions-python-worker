@@ -3,6 +3,9 @@
 
 import uuid
 from ..logging import logger
+from ..mmap_handler.file_writer import FileWriter
+from ..mmap_handler.file_reader import FileReader
+from ..mmap_handler.file_accessor import FileAccessor
 
 
 class SharedMemoryManager:
@@ -11,7 +14,7 @@ class SharedMemoryManager:
     Memory.
     """
     def __init__(self):
-        pass
+        self.allocated_mmaps = {} # type dict[string, [(mmap_name, mmap)]
 
     @staticmethod
     def is_enabled():
@@ -29,13 +32,33 @@ class SharedMemoryManager:
         if successful, None otherwise.
         """
         logger.info('Reading from Shared Memory: %s', mmap_name)
-        return 'foo'.encode('utf-8')
+        data = FileReader.read_content_as_bytes(mmap_name, offset)
+        return data
 
-    def put(self, data: bytes) -> (str):
+    def put(self, data: bytes, invocation_id: str) -> (str):
         """
         Writes the given data into Shared Memory.
         Returns the name of the Memory Mapped File into which the data was
         written if succesful, None otherwise.
         """
         mmap_name = str(uuid.uuid4())
+        logger.info('Writing to Shared Memory: %s', mmap_name)
+        mmap = FileWriter.create_with_content_bytes(mmap_name, data)
+
+        if invocation_id not in self.allocated_mmaps:
+            self.allocated_mmaps[invocation_id] = []
+        self.allocated_mmaps[invocation_id].append((mmap_name, mmap))
+
         return mmap_name
+
+    def free(self, invocation_id: str):
+        """
+        Free up the resources allocated for the given invocation_id.
+        This includes closing and deleting mmaps that were produced as outputs
+        during the given invocation_id.
+        """
+        if invocation_id in self.allocated_mmaps:
+            for mmap_name, mmap in self.allocated_mmaps[invocation_id]:
+                FileAccessor.delete_mmap(mmap_name)
+                mmap.close()
+            del self.allocated_mmaps[invocation_id]

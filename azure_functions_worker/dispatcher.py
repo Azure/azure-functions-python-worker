@@ -34,6 +34,7 @@ from .logging import error_logger, is_system_log_category, logger
 from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
+from .bindings.shared_memory_manager import SharedMemoryManager
 
 _TRUE = "true"
 
@@ -72,6 +73,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._request_id = request_id
         self._worker_id = worker_id
         self._functions = functions.Registry()
+        self._shmem_mgr = SharedMemoryManager()
 
         self._old_task_factory = None
 
@@ -333,7 +335,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 args[pb.name] = bindings.from_incoming_proto(
                     pb_type_info.binding_name, pb.data,
                     trigger_metadata=trigger_metadata,
-                    pytype=pb_type_info.pytype)
+                    pytype=pb_type_info.pytype,
+                    shmem_mgr=self._shmem_mgr)
 
             if fi.requires_context:
                 args['context'] = bindings.Context(
@@ -364,7 +367,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
                     rpc_val = bindings.to_outgoing_proto(
                         out_type_info.binding_name, val,
-                        pytype=out_type_info.pytype)
+                        pytype=out_type_info.pytype,
+                        shmem_mgr=self._shmem_mgr, invocation_id=invocation_id)
                     assert rpc_val is not None
 
                     output_data.append(
@@ -376,7 +380,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             if fi.return_type is not None:
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name, call_result,
-                    pytype=fi.return_type.pytype)
+                    pytype=fi.return_type.pytype,
+                    shmem_mgr=self._shmem_mgr, invocation_id=invocation_id)
 
             # Actively flush customer print() function to console
             sys.stdout.flush()
@@ -470,6 +475,37 @@ class Dispatcher(metaclass=DispatcherMeta):
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
+
+    async def _handle__close_shared_memory_resources_request(self, req):
+        """
+        Frees any mmaps that were produced as output for a given invocation.
+        This is called after the Functions Host is done reading the output from the worker and
+        wants the worker to free up those resources.
+        TODO gochaudh: Rename CloseSharedMemory* to FreeSharedMemory* and also this method name.
+        """
+        try:
+            close_request = req.close_shared_memory_resources_request
+
+            invocation_id_to_free = close_request.invocation_id
+            self._shmem_mgr.free(invocation_id_to_free)
+
+            success_response = protos.CloseSharedMemoryResourcesResponse(
+                result=protos.StatusResult(
+                    status=protos.StatusResult.Success))
+
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                close_shared_memory_resources_response=success_response)
+
+        except Exception as ex:
+            failure_response = protos.CloseSharedMemoryResourcesResponse(
+                result=protos.StatusResult(
+                    status=protos.StatusResult.Failure,
+                    exception=self._serialize_exception(ex)))
+
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                close_shared_memory_resources_response=failure_response)
 
     @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):

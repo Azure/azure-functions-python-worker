@@ -21,9 +21,9 @@ NEW_TYPING = sys.version_info[:3] >= (3, 7, 0)  # PEP 560
 class IsUtilityTestCase(TestCase):
     def sample_test(self, fun, samples, nonsamples):
         for s in samples:
-            self.assertTrue(fun(s))
+            self.assertTrue(fun(s), f"{s} type expected in {samples}")
         for s in nonsamples:
-            self.assertFalse(fun(s))
+            self.assertFalse(fun(s), f"{s} type expected in {nonsamples}")
 
     def test_generic(self):
         T = TypeVar('T')

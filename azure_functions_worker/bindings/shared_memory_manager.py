@@ -59,6 +59,5 @@ class SharedMemoryManager:
         """
         if invocation_id in self.allocated_mmaps:
             for mmap_name, mmap in self.allocated_mmaps[invocation_id]:
-                FileAccessor.delete_mmap(mmap_name)
-                mmap.close()
+                FileAccessor.delete_mmap(mmap_name, mmap)
             del self.allocated_mmaps[invocation_id]

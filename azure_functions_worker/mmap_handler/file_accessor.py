@@ -8,8 +8,6 @@ import struct
 import hashlib
 import urllib.parse
 from .memorymappedfile_constants import MemoryMappedFileConstants as consts
-from .memorymappedfile_controlflags import MemoryMappedFileControlFlags as flags
-from .memorymappedfile_controlflags import MemoryMappedFileControlFlagsUtils as flags_utils
 
 """
 TODO
@@ -118,79 +116,13 @@ class FileAccessor:
         return mem_map
 
     @staticmethod
-    def release_mmap(map_name):
-        """Release the memory map.
-        We should not change the data as it is actually cached in C#.
-        """
-        try:
-            map_content = FileAccessor.open_mmap(map_name, consts.CONTENT_HEADER_TOTAL_BYTES,
-                                                 mmap.ACCESS_WRITE)
-        except FileNotFoundError:
-            # TODO Log Debug
-            return
-        if map_content is None:
-            return
-        try:
-            # Only change the control flag
-            release_bytes = bytes([flags.READY_TO_DISPOSE.value])
-            map_content.write(release_bytes)
-        except ValueError as value_error:
-            print("Cannot release memory map '%s': %s" % (map_name, value_error))
-        finally:
-            map_content.close()
-
-    @staticmethod
-    def delete_mmap(map_name):
+    def delete_mmap(map_name, mmap):
         """Delete a memory map.
         """
-        FileAccessor.release_mmap(map_name)
         if os.name == 'posix':
             try:
                 file = FileAccessor._open_mmap_file_linux(map_name)
                 os.remove(file.name)
             except FileNotFoundError:
                 pass # Nothing to do if the file is not there anyway
-
-    @staticmethod
-    def _get_control_flag(map_name):
-        """Check if the control flag is readable.
-        """
-        try:
-            mem_map = FileAccessor.open_mmap(
-                map_name, consts.CONTROL_FLAG_NUM_BYTES, mmap.ACCESS_READ)
-        except FileNotFoundError:
-            # TODO Log Error
-            return None
-        if mem_map is None:
-            # TODO Log Error
-            return None
-        try:
-            header_bytes = mem_map.read(consts.CONTENT_HEADER_TOTAL_BYTES)
-            control_flag = header_bytes[0]
-            return control_flag
-        except ValueError as value_error:
-            print("Cannot get control flag for memory map '%s': %s" % (map_name, value_error))
-            return 0
-        finally:
-            mem_map.close()
-
-    @staticmethod
-    def is_mmap_available(map_name):
-        control_flag = FileAccessor._get_control_flag(map_name)
-        if control_flag is None:
-            return False
-        return flags_utils.is_available(control_flag)
-
-    @staticmethod
-    def is_mmap_readable(map_name):
-        control_flag = FileAccessor._get_control_flag(map_name)
-        if control_flag is None:
-            return False
-        return flags_utils.is_readable(control_flag)
-
-    @staticmethod
-    def is_mmap_disposable(map_name):
-        control_flag = FileAccessor._get_control_flag(map_name)
-        if control_flag is None:
-            return False
-        return flags_utils.is_disposable(control_flag)
+        mmap.close()

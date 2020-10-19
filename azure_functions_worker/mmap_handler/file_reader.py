@@ -6,7 +6,11 @@ import os
 import struct
 from typing import Optional
 from .memorymappedfile_constants import MemoryMappedFileConstants as consts
+<<<<<<< HEAD
 from .file_accessor_factory import FileAccessorFactory
+=======
+from .file_accessor import FileAccessor
+>>>>>>> Removed control flag from mmap header
 
 
 class FileReader:

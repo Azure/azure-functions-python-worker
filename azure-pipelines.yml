@@ -1,23 +1,10 @@
 name: $(Date:yyyyMMdd).$(Rev:r)
 
 trigger:
-- dev
-- master
 - release/*
 
 variables:
     DOTNET_VERSION: '2.2.207'
-
-schedules:
-- cron: "0 8 * * 1,2,3,4"
-  displayName: Monday to Thursday 1 AM build
-  branches:
-    include:
-      - dev
-      - master
-      - release/*
-    exclude:
-    - releases/ancient/*
 
 jobs:
 - job: Tests
@@ -27,28 +14,10 @@ jobs:
     matrix:
       Python36:
         pythonVersion: '3.6'
-        linuxStorage: $(LinuxStorageConnectionString36)
-        linuxCosmosDB: $(LinuxCosmosDBConnectionString36)
-        linuxEventHub: $(LinuxEventHubConnectionString36)
-        linuxServiceBus: $(LinuxServiceBusConnectionString36)
-        linuxEventGridTopicUri: $(LinuxEventGridTopicUriString36)
-        linuxEventGridConnectionKey: $(LinuxEventGridConnectionKeyString36)
       Python37:
         pythonVersion: '3.7'
-        linuxStorage: $(LinuxStorageConnectionString37)
-        linuxCosmosDB: $(LinuxCosmosDBConnectionString37)
-        linuxEventHub: $(LinuxEventHubConnectionString37)
-        linuxServiceBus: $(LinuxServiceBusConnectionString37)
-        linuxEventGridTopicUri: $(LinuxEventGridTopicUriString37)
-        linuxEventGridConnectionKey: $(LinuxEventGridConnectionKeyString37)
       Python38:
         pythonVersion: '3.8'
-        linuxStorage: $(LinuxStorageConnectionString38)
-        linuxCosmosDB: $(LinuxCosmosDBConnectionString38)
-        linuxEventHub: $(LinuxEventHubConnectionString38)
-        linuxServiceBus: $(LinuxServiceBusConnectionString38)
-        linuxEventGridTopicUri: $(LinuxEventGridTopicUriString38)
-        linuxEventGridConnectionKey: $(LinuxEventGridConnectionKeyString38)
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -64,21 +33,6 @@ jobs:
       disableAutoCwd: true
       scriptPath: .ci/linux_devops_build.sh
     displayName: 'Build'
-  - bash: |
-        chmod +x .ci/linux_devops_e2e_tests.sh
-        .ci/linux_devops_e2e_tests.sh
-    env:
-      LINUXSTORAGECONNECTIONSTRING: $(linuxStorage)
-      LINUXCOSMOSDBCONNECTIONSTRING: $(linuxCosmosDB)
-      LINUXEVENTHUBCONNECTIONSTRING: $(linuxEventHub)
-      LINUXSERVICEBUSCONNECTIONSTRING: $(linuxServiceBus)
-      LINUXEVENTGRIDTOPICURI: $(linuxEventGridTopicUri)
-      LINUXEVENTGRIDTOPICCONNECTIONKEY: $(linuxEventGridConnectionKey)
-    displayName: 'E2E Tests'
-  - task: PublishCodeCoverageResults@1
-    inputs:
-        codeCoverageTool: cobertura
-        summaryFileLocation: coverage.xml
 
 - job: Build_WINDOWS_X64
   dependsOn: 'Tests'

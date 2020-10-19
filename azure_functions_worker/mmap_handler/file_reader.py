@@ -4,7 +4,6 @@ import mmap
 import os
 import struct
 from .memorymappedfile_constants import MemoryMappedFileConstants as consts
-from .memorymappedfile_controlflags import MemoryMappedFileControlFlagsUtils as flags_utils
 from .file_accessor import FileAccessor
 
 
@@ -31,11 +30,7 @@ class FileReader:
             return -1
         try:
             header_bytes = map_content_length.read(consts.CONTENT_HEADER_TOTAL_BYTES)
-            control_flag = header_bytes[0]
-            if not flags_utils.is_readable(control_flag):
-                # TODO test for these cases
-                return -1
-            content_length = FileReader._bytes_to_long(header_bytes[1:])
+            content_length = FileReader._bytes_to_long(header_bytes)
             return content_length
         except ValueError as value_error:
             print("Cannot get content length for memory map '%s': %s" % (map_name, value_error))

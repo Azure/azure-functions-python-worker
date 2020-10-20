@@ -6,9 +6,9 @@ name: CI E2E tests
 on:
   workflow_dispatch:
   push:
-    branches: [ release/* ]
+    branches: [ dev, master, main, release/* ]
   pull_request:
-    branches: [ dev, master, main ]
+    branches: [ dev, master, main, release/* ]
   schedule:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string

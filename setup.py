@@ -259,7 +259,7 @@ with open("README.md") as readme:
 
 setup(
     name='azure-functions-worker',
-    version='1.1.6',
+    version='1.1.7',
     description='Python Language Worker for Azure Functions Host',
     author="Microsoft Corp.",
     author_email="azurefunctions@microsoft.com",
@@ -295,7 +295,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'azure-functions==1.4.0',
+            'azure-functions==1.5.0',
             'azure-eventhub~=5.1.0',
             'python-dateutil~=2.8.1',
             'flake8~=3.7.9',

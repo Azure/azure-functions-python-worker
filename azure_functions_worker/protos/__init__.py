@@ -23,6 +23,6 @@ from .FunctionRpc_pb2 import (  # NoQA
     TypedData,
     RpcHttp,
     RpcLog,
-    SharedMemoryData,
+    RpcSharedMemoryInfo,
     CloseSharedMemoryResourcesRequest,
     CloseSharedMemoryResourcesResponse)

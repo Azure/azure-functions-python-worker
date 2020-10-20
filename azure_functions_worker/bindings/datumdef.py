@@ -84,17 +84,17 @@ class Datum:
             val = td.collection_string
         elif tt == 'collection_sint64':
             val = td.collection_sint64
-        elif tt == 'shared_memory_data':
-            shmem_data = td.shared_memory_data
-            mmap_name = shmem_data.memory_mapped_file_name
-            offset = shmem_data.offset
-            count = shmem_data.count
+        elif tt == 'rpc_shared_memory_info':
+            shmem_info = td.rpc_shared_memory_info
+            mmap_name = shmem_info.name
+            offset = shmem_info.offset
+            count = shmem_info.count
             ret = shmem_mgr.get(mmap_name, offset, count)
             if ret is None:
                 return None
             else:
                 val = ret
-                tt = shmem_data.type
+                tt = shmem_info.type
         elif tt is None:
             return None
         else:
@@ -114,12 +114,12 @@ def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager,
             value = datum.value
             mmap_name = shmem_mgr.put(value, invocation_id)
             if mmap_name is not None:
-                shmem_data = protos.SharedMemoryData(
-                    memory_mapped_file_name=mmap_name,
+                shmem_info = protos.RpcSharedMemoryInfo(
+                    name=mmap_name,
                     offset=0,
                     count=len(value),
                     type='bytes')
-                return protos.TypedData(shared_memory_data=shmem_data)
+                return protos.TypedData(rpc_shared_memory_info=shmem_info)
             else:
                 raise Exception(
                     'cannot write datum value into Shared Memory'

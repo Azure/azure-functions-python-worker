@@ -35,6 +35,7 @@ jobs:
         dotnet-version: ${{ matrix.dotnet-version }}
     - name: Install dependencies and the worker
       run: |
+        set -x
         python -m venv .env
         source .env/bin/activate
         python -m pip install .
@@ -42,6 +43,7 @@ jobs:
       shell: bash
     - name: Derive artifact folder for ${{ matrix.python-version }}_${{ matrix.os }}_${{ matrix.python-architecture }}
       run: |
+        set -e -x
         echo "Derive artifact folder for ${{ matrix.python-version }}_${{ matrix.os }}_${{ matrix.python-architecture }}"
 
         PYTHON_VERSION="${{ matrix.python-version }}"

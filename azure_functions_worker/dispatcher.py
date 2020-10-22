@@ -263,6 +263,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.TYPED_DATA_COLLECTION: _TRUE,
             constants.RPC_HTTP_BODY_ONLY: _TRUE,
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
+            constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
         # Can detech worker packages
@@ -356,8 +357,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     trigger_metadata = invoc_request.trigger_metadata
                 else:
                     trigger_metadata = None
+
                 args[pb.name] = bindings.from_incoming_proto(
-                    pb_type_info.binding_name, pb.data,
+                    pb_type_info.binding_name, pb,
                     trigger_metadata=trigger_metadata,
                     pytype=pb_type_info.pytype,
                     shmem_mgr=self._shmem_mgr)
@@ -389,16 +391,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                         # Can "None" be marshaled into protos.TypedData?
                         continue
 
-                    rpc_val = bindings.to_outgoing_proto(
+                    param_binding = bindings.to_outgoing_param_binding(
                         out_type_info.binding_name, val,
                         pytype=out_type_info.pytype,
-                        shmem_mgr=self._shmem_mgr, invocation_id=invocation_id)
-                    assert rpc_val is not None
-
-                    output_data.append(
-                        protos.ParameterBinding(
-                            name=out_name,
-                            data=rpc_val))
+                        out_name=out_name, shmem_mgr=self._shmem_mgr,
+                        invocation_id=invocation_id)
+                    output_data.append(param_binding)
 
             return_value = None
             if fi.return_type is not None:

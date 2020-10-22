@@ -56,20 +56,32 @@ def has_implicit_output(bind_name: str) -> bool:
 
 def from_incoming_proto(
         binding: str,
-        val: protos.TypedData, *,
+        pb: protos.ParameterBinding, *,
         pytype: typing.Optional[type],
         trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]],
         shmem_mgr: SharedMemoryManager) -> typing.Any:
+    # TODO gochaudh:
+    # Ideally, we should use WhichOneOf (if back compat issue is not there)
+    # Otherwise, a None check is not applicable as even if rpc_shared_memory is
+    # not set, its not None
+    datum = None
+    if pb.rpc_shared_memory.name is not '':
+        # Data was sent over shared memory, attempt to read
+        datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory, shmem_mgr)
+        # TODO gochaudh: check trigger_metadata (try with blob triggered func)
 
     binding = get_binding(binding)
-    datum = datumdef.Datum.from_typed_data(val, shmem_mgr)
     if trigger_metadata:
         metadata = {
-            k: datumdef.Datum.from_typed_data(v, shmem_mgr)
+            k: datumdef.Datum.from_typed_data(v)
             for k, v in trigger_metadata.items()
         }
     else:
         metadata = {}
+
+    if datum is None:
+        val = pb.data
+        datum = datumdef.Datum.from_typed_data(val)
 
     try:
         return binding.decode(datum, trigger_metadata=metadata)
@@ -83,10 +95,8 @@ def from_incoming_proto(
             f'and expected binding type {binding}')
 
 
-def to_outgoing_proto(binding: str, obj: typing.Any, *,
-                      pytype: typing.Optional[type],
-                      shmem_mgr: SharedMemoryManager,
-                      invocation_id: str) -> protos.TypedData:
+def get_datum(binding: str, obj: typing.Any,
+              pytype: typing.Optional[type]):
     binding = get_binding(binding)
 
     try:
@@ -97,5 +107,54 @@ def to_outgoing_proto(binding: str, obj: typing.Any, *,
             f'unable to encode outgoing TypedData: '
             f'unsupported type "{binding}" for '
             f'Python type "{type(obj).__name__}"')
+    return datum
 
+
+def to_outgoing_proto(binding: str, obj: typing.Any, *,
+                      pytype: typing.Optional[type],
+                      shmem_mgr: SharedMemoryManager,
+                      invocation_id: str) -> protos.TypedData:
+    datum = get_datum(binding, obj, pytype)
     return datumdef.datum_as_proto(datum, shmem_mgr, invocation_id)
+
+
+def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
+                      pytype: typing.Optional[type],
+                      out_name: str,
+                      shmem_mgr: SharedMemoryManager,
+                      invocation_id: str) -> protos.ParameterBinding:
+    datum = get_datum(binding, obj, pytype)
+    # TODO gochaudh: IMPORTANT: Right now we set the AppSetting to disable this
+    # However that takes impact only for data coming from host -> worker
+    # Is there a way to check the AppSetting here so that this does not respond back
+    # with shared memory?
+    param_binding = None
+    if shmem_mgr.is_enabled() and shmem_mgr.is_supported(datum):
+        if datum.type == 'bytes':
+            value = datum.value
+            map_name = shmem_mgr.put_bytes(value, invocation_id)
+            if map_name is not None:
+                shmem = protos.RpcSharedMemory(
+                    name=map_name,
+                    offset=0,
+                    count=len(value),
+                    type=protos.RpcSharedMemoryDataType.bytes)
+                param_binding = protos.ParameterBinding(
+                                    name=out_name,
+                                    rpc_shared_memory=shmem)
+            else:
+                raise Exception(
+                    'cannot write datum value into shared memory'
+                )
+        else:
+            raise Exception(
+                'unsupported datum type for shared memory'
+            )
+
+    if param_binding is None:
+        rpc_val = datumdef.datum_as_proto(datum, shmem_mgr, invocation_id)
+        param_binding = protos.ParameterBinding(
+                            name=out_name,
+                            data=rpc_val)
+
+    return param_binding

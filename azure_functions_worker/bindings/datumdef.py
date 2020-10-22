@@ -51,7 +51,7 @@ class Datum:
         return '<Datum {} {}>'.format(self.type, val_repr)
 
     @classmethod
-    def from_typed_data(cls, td: protos.TypedData, shmem_mgr: SharedMemoryManager):
+    def from_typed_data(cls, td: protos.TypedData):
         tt = td.WhichOneof('data')
         if tt == 'http':
             http = td.http
@@ -62,7 +62,7 @@ class Datum:
                     k: Datum(v, 'string') for k, v in http.headers.items()
                 },
                 body=(
-                    Datum.from_typed_data(http.body, shmem_mgr)
+                    Datum.from_typed_data(http.body)
                     or Datum(type='bytes', value=b'')
                 ),
                 params={
@@ -84,17 +84,6 @@ class Datum:
             val = td.collection_string
         elif tt == 'collection_sint64':
             val = td.collection_sint64
-        elif tt == 'rpc_shared_memory_info':
-            shmem_info = td.rpc_shared_memory_info
-            mmap_name = shmem_info.name
-            offset = shmem_info.offset
-            count = shmem_info.count
-            ret = shmem_mgr.get(mmap_name, offset, count)
-            if ret is None:
-                return None
-            else:
-                val = ret
-                tt = shmem_info.type
         elif tt is None:
             return None
         else:
@@ -104,28 +93,24 @@ class Datum:
 
         return cls(val, tt)
 
+    @classmethod
+    def from_rpc_shared_memory(cls, shmem: protos.RpcSharedMemory, shmem_mgr: SharedMemoryManager):
+        mmap_name = shmem.name
+        offset = shmem.offset
+        count = shmem.count
+        data_type = shmem.type
+        val = shmem_mgr.get_bytes(mmap_name, offset, count)
+        if val is not None:
+            if data_type == protos.RpcSharedMemoryDataType.bytes:
+                return cls(val, 'bytes')
+        return None
 
 def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager,
                    invocation_id: str) -> protos.TypedData:
     if datum.type == 'string':
         return protos.TypedData(string=datum.value)
     elif datum.type == 'bytes':
-        if SharedMemoryManager.is_enabled():
-            value = datum.value
-            mmap_name = shmem_mgr.put(value, invocation_id)
-            if mmap_name is not None:
-                shmem_info = protos.RpcSharedMemoryInfo(
-                    name=mmap_name,
-                    offset=0,
-                    count=len(value),
-                    type='bytes')
-                return protos.TypedData(rpc_shared_memory_info=shmem_info)
-            else:
-                raise Exception(
-                    'cannot write datum value into Shared Memory'
-                )
-        else:
-            return protos.TypedData(bytes=datum.value)
+        return protos.TypedData(bytes=datum.value)
     elif datum.type == 'json':
         return protos.TypedData(json=datum.value)
     elif datum.type == 'http':

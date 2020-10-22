@@ -18,8 +18,9 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ 'ubuntu-latest', 'windows-latest' ]
+        os: [ 'ubuntu-18.04', 'windows-2019', 'macos-10.15' ]
         python-version: [ '3.6', '3.7', '3.8', '3.9' ]
+        python-architecture: [ 'x86', 'x64' ]
         dotnet-version: [ '2.2.207' ]
     steps:
     - uses: actions/checkout@v2
@@ -27,19 +28,50 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+        architecture: ${{ matrix.python-architecture }}
     - name: Setup DotNet ${{ matrix.dotnet-version }}
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: ${{ matrix.dotnet-version }}
     - name: Install dependencies and the worker
       run: |
-        python -m pip install -q --upgrade pip
-        python -m pip install -q --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U -e .[dev]
-        python -m pip install -q --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
-        python setup.py build
-        python setup.py webhost
+        python -m venv .env
+        source .env/bin/activate
+        python -m pip install .
+        python -m pip install . azure-functions --no-compile --target "./deps"
+      shell: bash
+    - name: Derive artifact folder for ${{ matrix.python-version }}_${{ matrix.os }}_${{ matrix.python-architecture }}
+      run: |
+        echo "Derive artifact folder for ${{ matrix.python-version }}_${{ matrix.os }}_${{ matrix.python-architecture }}"
+
+        PYTHON_VERSION="${{ matrix.python-version }}"
+
+        if [[ "${{ matrix.os}}" = windows* ]]; then
+          OS_NAME="WINDOWS"
+        elif [[ "${{ matrix.os }}" = ubuntu* ]]; then
+          OS_NAME="LINUX"
+        elif [[ "${{ matrix.os }}" = macos* ]]; then
+          OS_NAME="OSX"
+        else
+          OS_NAME="Unknown"
+
+        PYTHON_ARCHITECTURE="${{ matrix.python-architecture }}"
+        UPPER_ARCHITECTURE=${PYTHON_ARCHITECTURE^^}
+
+        ARTIFACT_FOLDER_NAME="$PYTHON_VERSION_$OS_NAME_$UPPER_ARCHITECTURE"
+        echo "artifact folder $ARTIFACT_FOLDER_NAME"
+        echo "::set-env name=ARTIFACT_FOLDER_NAME::$ARTIFACT_FOLDER_NAME"
+      shell: bash
+    - name: Generating necessary files
+      run: |
+        echo "Generating necessary files for ${{ env.ARTIFACT_FOLDER_NAME }}"
+        cp "./pack/utils/__init__.py" "./${{ env.ARTIFACT_FOLDER_NAME }}/azure"
+        cp "./python/prodV2/*" "./${{ env.ARTIFACT_FOLDER_NAME }}"
+        cp -r "./deps/*" "./${{ env.ARTIFACT_FOLDER_NAME }}"
+        rm -rf "./${{ env.ARTIFACT_FOLDER_NAME }}/grpc_tools*"
+        rm -rf "./${{ env.ARTIFACT_FOLDER_NAME }}/grpcio_tools*"
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
-        name: python-worker-${{ matrix.os }}-${{ matrix.python-version }}
-        path: ${{ github.workspace }}
+        name: ${{ env.ARTIFACT_FOLDER_NAME }}.zip
+        path: ${{ env.ARTIFACT_FOLDER_NAME }}

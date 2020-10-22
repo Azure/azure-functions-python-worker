@@ -11,9 +11,10 @@ on:
     branches: [ dev, master, main, release/* ]
 
 jobs:
+  # Build Python Worker into the worker directory
   build-python-worker:
     name: "Build Python Worker"
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
       matrix:
@@ -37,3 +38,8 @@ jobs:
         python -m pip install -q --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
         python setup.py build
         python setup.py webhost
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: python-worker-${{ matrix.os }}-${{ matrix.python-version }}
+        path: ${{ github.workspace }}

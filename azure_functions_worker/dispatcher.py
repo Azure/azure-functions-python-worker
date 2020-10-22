@@ -370,8 +370,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     param_binding = bindings.to_outgoing_param_binding(
                         out_type_info.binding_name, val,
                         pytype=out_type_info.pytype,
-                        out_name=out_name, shmem_mgr=self._shmem_mgr,
-                        invocation_id=invocation_id)
+                        out_name=out_name, shmem_mgr=self._shmem_mgr)
                     output_data.append(param_binding)
 
             return_value = None
@@ -379,7 +378,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name, call_result,
                     pytype=fi.return_type.pytype,
-                    shmem_mgr=self._shmem_mgr, invocation_id=invocation_id)
+                    shmem_mgr=self._shmem_mgr)
 
             # Actively flush customer print() function to console
             sys.stdout.flush()
@@ -484,8 +483,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             close_request = req.close_shared_memory_resources_request
 
-            invocation_id_to_free = close_request.invocation_id
-            self._shmem_mgr.free(invocation_id_to_free)
+            map_names = close_request.map_names
+            for map_name in map_names:
+                self._shmem_mgr.free_map(map_name)
 
             success_response = protos.CloseSharedMemoryResourcesResponse(
                 result=protos.StatusResult(

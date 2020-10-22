@@ -105,8 +105,7 @@ class Datum:
                 return cls(val, 'bytes')
         return None
 
-def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager,
-                   invocation_id: str) -> protos.TypedData:
+def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager) -> protos.TypedData:
     if datum.type == 'string':
         return protos.TypedData(string=datum.value)
     elif datum.type == 'bytes':
@@ -121,8 +120,7 @@ def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager,
                 for k, v in datum.value['headers'].items()
             },
             enable_content_negotiation=False,
-            body=datum_as_proto(datum.value['body'], shmem_mgr,
-                                invocation_id),
+            body=datum_as_proto(datum.value['body'], shmem_mgr),
         ))
     else:
         raise NotImplementedError(

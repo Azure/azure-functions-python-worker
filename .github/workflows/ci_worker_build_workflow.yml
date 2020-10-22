@@ -52,15 +52,16 @@ jobs:
           OS_NAME="LINUX"
         elif [[ "${{ matrix.os }}" = macos* ]]; then
           OS_NAME="OSX"
-        else;
+        else
           OS_NAME="Unknown"
+        fi
 
         PYTHON_ARCHITECTURE="${{ matrix.python-architecture }}"
         UPPER_ARCHITECTURE=${PYTHON_ARCHITECTURE^^}
 
         ARTIFACT_FOLDER_NAME="$PYTHON_VERSION_$OS_NAME_$UPPER_ARCHITECTURE"
         echo "artifact folder $ARTIFACT_FOLDER_NAME"
-        echo "::set-env name=ARTIFACT_FOLDER_NAME::$ARTIFACT_FOLDER_NAME"
+        echo "ARTIFACT_FOLDER_NAME=$ARTIFACT_FOLDER_NAME" >> $GITHUB_ENV
       shell: bash
     - name: Generating necessary files
       run: |

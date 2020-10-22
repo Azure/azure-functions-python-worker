@@ -46,7 +46,7 @@ jobs:
 
         PYTHON_VERSION="${{ matrix.python-version }}"
 
-        if [[ "${{ matrix.os}}" = windows* ]]; then
+        if [[ "${{ matrix.os }}" = windows* ]]; then
           OS_NAME="WINDOWS"
         elif [[ "${{ matrix.os }}" = ubuntu* ]]; then
           OS_NAME="LINUX"

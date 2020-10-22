@@ -112,17 +112,15 @@ def get_datum(binding: str, obj: typing.Any,
 
 def to_outgoing_proto(binding: str, obj: typing.Any, *,
                       pytype: typing.Optional[type],
-                      shmem_mgr: SharedMemoryManager,
-                      invocation_id: str) -> protos.TypedData:
+                      shmem_mgr: SharedMemoryManager) -> protos.TypedData:
     datum = get_datum(binding, obj, pytype)
-    return datumdef.datum_as_proto(datum, shmem_mgr, invocation_id)
+    return datumdef.datum_as_proto(datum, shmem_mgr)
 
 
 def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
                       pytype: typing.Optional[type],
                       out_name: str,
-                      shmem_mgr: SharedMemoryManager,
-                      invocation_id: str) -> protos.ParameterBinding:
+                      shmem_mgr: SharedMemoryManager) -> protos.ParameterBinding:
     datum = get_datum(binding, obj, pytype)
     # TODO gochaudh: IMPORTANT: Right now we set the AppSetting to disable this
     # However that takes impact only for data coming from host -> worker
@@ -132,7 +130,7 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
     if shmem_mgr.is_enabled() and shmem_mgr.is_supported(datum):
         if datum.type == 'bytes':
             value = datum.value
-            map_name = shmem_mgr.put_bytes(value, invocation_id)
+            map_name = shmem_mgr.put_bytes(value)
             if map_name is not None:
                 shmem = protos.RpcSharedMemory(
                     name=map_name,
@@ -152,7 +150,7 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
             )
 
     if param_binding is None:
-        rpc_val = datumdef.datum_as_proto(datum, shmem_mgr, invocation_id)
+        rpc_val = datumdef.datum_as_proto(datum, shmem_mgr)
         param_binding = protos.ParameterBinding(
                             name=out_name,
                             data=rpc_val)

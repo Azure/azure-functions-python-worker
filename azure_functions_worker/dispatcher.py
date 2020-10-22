@@ -402,7 +402,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name, call_result,
                     pytype=fi.return_type.pytype,
-                    shmem_mgr=self._shmem_mgr, invocation_id=invocation_id)
+                    shmem_mgr=self._shmem_mgr)
 
             # Actively flush customer print() function to console
             sys.stdout.flush()

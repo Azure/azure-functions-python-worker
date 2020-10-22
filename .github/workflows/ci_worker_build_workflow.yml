@@ -52,7 +52,7 @@ jobs:
           OS_NAME="LINUX"
         elif [[ "${{ matrix.os }}" = macos* ]]; then
           OS_NAME="OSX"
-        else
+        else;
           OS_NAME="Unknown"
 
         PYTHON_ARCHITECTURE="${{ matrix.python-architecture }}"

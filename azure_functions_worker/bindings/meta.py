@@ -111,10 +111,9 @@ def get_datum(binding: str, obj: typing.Any,
 
 
 def to_outgoing_proto(binding: str, obj: typing.Any, *,
-                      pytype: typing.Optional[type],
-                      shmem_mgr: SharedMemoryManager) -> protos.TypedData:
+                      pytype: typing.Optional[type]) -> protos.TypedData:
     datum = get_datum(binding, obj, pytype)
-    return datumdef.datum_as_proto(datum, shmem_mgr)
+    return datumdef.datum_as_proto(datum)
 
 
 def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
@@ -137,6 +136,22 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
                     offset=0,
                     count=len(value),
                     type=protos.RpcSharedMemoryDataType.bytes)
+                param_binding = protos.ParameterBinding(
+                                    name=out_name,
+                                    rpc_shared_memory=shmem)
+            else:
+                raise Exception(
+                    'cannot write datum value into shared memory'
+                )
+        elif datum.type == 'string':
+            value = datum.value
+            map_name = shmem_mgr.put_string(value)
+            if map_name is not None:
+                shmem = protos.RpcSharedMemory(
+                    name=map_name,
+                    offset=0,
+                    count=len(value),
+                    type=protos.RpcSharedMemoryDataType.string)
                 param_binding = protos.ParameterBinding(
                                     name=out_name,
                                     rpc_shared_memory=shmem)

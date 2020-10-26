@@ -32,6 +32,8 @@ class SharedMemoryManager:
             # TODO gochaudh: Check for min size config
             # Is there a common place to put configs shared b/w host and worker?
             return True
+        elif datum.type == 'string':
+            return True
         else:
             return False
 
@@ -42,19 +44,40 @@ class SharedMemoryManager:
         Returns a tuple containing the binary data read from shared memory
         if successful, None otherwise.
         """
-        logger.info('Reading from shared memory: %s', map_name)
+        logger.info('Reading bytes from shared memory: %s', map_name)
         data = FileReader.read_content_as_bytes(map_name, offset)
+        return data
+
+    def get_string(self, map_name: str, offset: int, count: int) -> str:
+        logger.info('Reading string from shared memory: %s', map_name)
+        data = FileReader.read_content_as_string(map_name, offset)
         return data
 
     def put_bytes(self, data: bytes) -> str:
         """
-        Writes the given data into shared memory.
+        Writes the given bytes into shared memory.
         Returns the name of the Memory Mapped File into which the data was
         written if succesful, None otherwise.
         """
         map_name = str(uuid.uuid4())
-        logger.info('Writing to shared memory: %s', map_name)
+        logger.info('Writing bytes to shared memory: %s', map_name)
         mmap = FileWriter.create_with_content_bytes(map_name, data)
+
+        # Hold a reference to the mmap to prevent it from closing before the
+        # host has read it.
+        self.allocated_mmaps[map_name] = mmap
+
+        return map_name
+
+    def put_string(self, data: str) -> str:
+        """
+        Writes the given string into shared memory.
+        Returns the name of the Memory Mapped File into which the data was
+        written if succesful, None otherwise.
+        """
+        map_name = str(uuid.uuid4())
+        logger.info('Writing string to shared memory: %s', map_name)
+        mmap = FileWriter.create_with_content_string(map_name, data)
 
         # Hold a reference to the mmap to prevent it from closing before the
         # host has read it.

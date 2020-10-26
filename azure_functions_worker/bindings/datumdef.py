@@ -161,7 +161,7 @@ def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager,
                 for k, v in datum.value['headers'].items()
             },
             enable_content_negotiation=False,
-            body=datum_as_proto(datum.value['body'], shmem_mgr),
+            body=datum_as_proto(datum.value['body']),
         ))
     raise NotImplementedError(
         'unexpected Datum type: {!r}'.format(datum.type)

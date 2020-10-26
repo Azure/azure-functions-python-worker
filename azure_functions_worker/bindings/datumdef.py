@@ -99,13 +99,17 @@ class Datum:
         offset = shmem.offset
         count = shmem.count
         data_type = shmem.type
-        val = shmem_mgr.get_bytes(mmap_name, offset, count)
-        if val is not None:
-            if data_type == protos.RpcSharedMemoryDataType.bytes:
+        if data_type == protos.RpcSharedMemoryDataType.bytes:
+            val = shmem_mgr.get_bytes(mmap_name, offset, count)
+            if val is not None:
                 return cls(val, 'bytes')
+        elif data_type == protos.RpcSharedMemoryDataType.string:
+            val = shmem_mgr.get_string(mmap_name, offset, count)
+            if val is not None:
+                return cls(val, 'string')
         return None
 
-def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager) -> protos.TypedData:
+def datum_as_proto(datum: Datum) -> protos.TypedData:
     if datum.type == 'string':
         return protos.TypedData(string=datum.value)
     elif datum.type == 'bytes':
@@ -120,7 +124,7 @@ def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager) -> protos.Typed
                 for k, v in datum.value['headers'].items()
             },
             enable_content_negotiation=False,
-            body=datum_as_proto(datum.value['body'], shmem_mgr),
+            body=datum_as_proto(datum.value['body']),
         ))
     else:
         raise NotImplementedError(

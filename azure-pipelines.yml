@@ -38,7 +38,6 @@ jobs:
 
 - job: Build_WINDOWS_X64
   dependsOn: 'Tests'
-  condition: startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')
   pool:
     vmImage: 'windows-2019'
   strategy:
@@ -70,7 +69,6 @@ jobs:
       artifactName: '$(pythonVersion)_WINDOWS_X64'
 - job: Build_WINDOWS_X86
   dependsOn: 'Tests'
-  condition: startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')
   pool:
     vmImage: 'windows-2019'
   strategy:
@@ -96,7 +94,6 @@ jobs:
       artifactName: '$(pythonVersion)_WINDOWS_x86'
 - job: Build_LINUX_X64
   dependsOn: 'Tests'
-  condition: startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')
   pool:
     vmImage: 'ubuntu-18.04'
   strategy:
@@ -127,7 +124,6 @@ jobs:
       artifactName: '$(pythonVersion)_LINUX_X64'
 - job: Build_OSX_X64
   dependsOn: 'Tests'
-  condition: startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')
   pool:
     vmImage: 'macOS-10.15'
   strategy:

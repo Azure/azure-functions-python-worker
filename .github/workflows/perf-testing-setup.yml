@@ -27,7 +27,7 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '2.2.207'
-    - name: Setup k6 for through[ut testing
+    - name: Setup k6 for throughput testing
       run: |
         cd $GITHUB_WORKSPACE
         curl https://github.com/loadimpact/k6/releases/download/v0.28.0/k6-v0.28.0-linux64.tar.gz -L | tar xvz --strip-components 1

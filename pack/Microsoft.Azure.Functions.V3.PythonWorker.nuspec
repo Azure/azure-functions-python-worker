@@ -22,6 +22,10 @@
     <file src="..\3.8_WINDOWS_X86\**" target="tools\3.8\WINDOWS\X86" />
     <file src="..\3.8_LINUX_X64\**" target="tools\3.8\LINUX\X64" />
     <file src="..\3.8_OSX_X64\**" target="tools\3.8\OSX\X64" />
+    <file src="..\3.9_WINDOWS_X64\**" target="tools\3.9\WINDOWS\X64" />
+    <file src="..\3.9_WINDOWS_X86\**" target="tools\3.9\WINDOWS\X86" />
+    <file src="..\3.9_LINUX_X64\**" target="tools\3.9\LINUX\X64" />
+    <file src="..\3.9_OSX_X64\**" target="tools\3.9\OSX\X64" />
     <file src="..\python\prodV3\worker.config.json" target="tools" />
     <file src="Microsoft.Azure.Functions.PythonWorker.targets" target="build" />
   </files>

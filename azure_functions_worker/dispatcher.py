@@ -77,9 +77,11 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         # We allow the customer to change synchronous thread pool count by
         # PYTHON_THREADPOOL_THREAD_COUNT app setting. The default value is 1.
-        self._sync_tp_max_workers: int = self._get_sync_tp_max_workers()
+        self._sync_tp_max_workers: int = PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT
         self._sync_call_tp: Optional[concurrent.futures.Executor] = None
-        self._create_or_update_sync_call_tp(self._sync_tp_max_workers)
+
+        sync_tp_max_worker: int = self._get_sync_tp_max_workers()
+        self._create_or_update_sync_call_tp(sync_tp_max_worker)
 
         self._grpc_connect_timeout: float = grpc_connect_timeout
         # This is set to -1 by default to remove the limitation on msg size
@@ -518,8 +520,12 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     def _create_or_update_sync_call_tp(self, max_worker: int):
         """Update the self._sync_call_tp executor with the proper max_worker.
+        Side effects:
+            - Update self._sync_tp_max_workers to max_worker
+            - Update self._sync_call_tp to have max_worker number of threads
         """
         self._stop_sync_call_tp()
+        self._sync_tp_max_workers = max_worker
         self._sync_call_tp = concurrent.futures.ThreadPoolExecutor(
             max_workers=max_worker
         )

@@ -16,7 +16,7 @@ import sys
 import threading
 from asyncio import BaseEventLoop
 from logging import LogRecord
-from typing import Optional
+from typing import Optional, List
 
 import grpc
 
@@ -97,9 +97,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
         disp._grpc_thread.start()
         await disp._grpc_connected_fut
-        logger.info('Successfully opened gRPC channel to %s:%s '
-                    'with sync threadpool max workers set to %s',
-                    host, port, disp._sync_tp_max_workers)
+        logger.info('Successfully opened gRPC channel to %s:%s ', host, port)
         return disp
 
     async def dispatch_forever(self):
@@ -318,11 +316,19 @@ class Dispatcher(metaclass=DispatcherMeta):
             fi: functions.FunctionInfo = self._functions.get_function(
                 function_id)
 
-            logger.info(f'Received FunctionInvocationRequest, '
-                        f'request ID: {self.request_id}, '
-                        f'function ID: {function_id}, '
-                        f'invocation ID: {invocation_id}, '
-                        f'function type: {"async" if fi.is_async else "sync"}')
+            function_invocation_logs: List[str] = [
+                f'Received FunctionInvocationRequest',
+                f'request ID: {self.request_id}',
+                f'function ID: {function_id}',
+                f'invocation ID: {invocation_id}',
+                f'function type: {"async" if fi.is_async else "sync"}'
+            ]
+            if not fi.is_async:
+                function_invocation_logs.append(
+                    f'sync threadpool max workers: {self._sync_tp_max_workers}'
+                )
+            logger.info(', '.join(function_invocation_logs))
+
             args = {}
             for pb in invoc_request.input_data:
                 pb_type_info = fi.input_types[pb.name]

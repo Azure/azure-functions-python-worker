@@ -57,9 +57,6 @@ jobs:
       Python38V3:
         pythonVersion: '3.8'
         workerPath: 'python/prodV3/worker.py'
-      Python39V3:
-        pythonVersion: '3.9'
-        workerPath: 'python/prodV3/worker.py'
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
@@ -81,9 +78,6 @@ jobs:
         workerPath: 'python/prodV3/worker.py'
       Python38V3:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV3/worker.py'
-      Python39V3:
-        pythonVersion: '3.9'
         workerPath: 'python/prodV3/worker.py'
   steps:
   - template: pack/templates/win_env_gen.yml

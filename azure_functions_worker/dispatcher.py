@@ -316,7 +316,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 function_id)
 
             function_invocation_logs: List[str] = [
-                f'Received FunctionInvocationRequest',
+                'Received FunctionInvocationRequest',
                 f'request ID: {self.request_id}',
                 f'function ID: {function_id}',
                 f'invocation ID: {invocation_id}',

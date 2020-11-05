@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+from typing import Tuple
 import os
 from unittest.mock import patch
 from azure_functions_worker import protos
@@ -228,7 +229,122 @@ class TestDispatcher(testutils.AsyncTestCase):
                     f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set to a value '
                     'between 1 and 32')
 
-    async def _check_if_function_is_ok(self, host):
+    async def test_sync_invocation_request_log(self):
+        ctrl = testutils.start_mockhost(script_root=self.dispatcher_funcs_dir)
+
+        with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+            async with ctrl as host:
+                request_id: str = ctrl._worker._request_id
+                func_id, invoke_id = await self._check_if_function_is_ok(host)
+
+                mock_logger.info.assert_any_call(
+                    'Received FunctionInvocationRequest, '
+                    f'request ID: {request_id}, '
+                    f'function ID: {func_id}, '
+                    f'invocation ID: {invoke_id}, '
+                    'function type: sync, '
+                    'sync threadpool max workers: 1'
+                )
+
+    async def test_async_invocation_request_log(self):
+        ctrl = testutils.start_mockhost(script_root=self.dispatcher_funcs_dir)
+
+        with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+            async with ctrl as host:
+                request_id: str = ctrl._worker._request_id
+                func_id, invoke_id = (
+                    await self._check_if_async_function_is_ok(host)
+                )
+
+                mock_logger.info.assert_any_call(
+                    'Received FunctionInvocationRequest, '
+                    f'request ID: {request_id}, '
+                    f'function ID: {func_id}, '
+                    f'invocation ID: {invoke_id}, '
+                    'function type: async'
+                )
+
+    async def test_sync_invocation_request_log_threads(self):
+        ctrl = testutils.start_mockhost(script_root=self.dispatcher_funcs_dir)
+        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
+
+        with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+            async with ctrl as host:
+                request_id: str = ctrl._worker._request_id
+                func_id, invoke_id = await self._check_if_function_is_ok(host)
+
+                mock_logger.info.assert_any_call(
+                    'Received FunctionInvocationRequest, '
+                    f'request ID: {request_id}, '
+                    f'function ID: {func_id}, '
+                    f'invocation ID: {invoke_id}, '
+                    'function type: sync, '
+                    'sync threadpool max workers: 5'
+                )
+
+    async def test_async_invocation_request_log_threads(self):
+        ctrl = testutils.start_mockhost(script_root=self.dispatcher_funcs_dir)
+        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
+
+        with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+            async with ctrl as host:
+                request_id: str = ctrl._worker._request_id
+                func_id, invoke_id = (
+                    await self._check_if_async_function_is_ok(host)
+                )
+
+                mock_logger.info.assert_any_call(
+                    'Received FunctionInvocationRequest, '
+                    f'request ID: {request_id}, '
+                    f'function ID: {func_id}, '
+                    f'invocation ID: {invoke_id}, '
+                    'function type: async'
+                )
+
+    async def test_sync_invocation_request_log_in_placeholder_threads(self):
+        ctrl = testutils.start_mockhost(script_root=self.dispatcher_funcs_dir)
+
+        with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+            async with ctrl as host:
+                await host.reload_environment(environment={
+                    PYTHON_THREADPOOL_THREAD_COUNT: '5'
+                })
+
+                request_id: str = ctrl._worker._request_id
+                func_id, invoke_id = await self._check_if_function_is_ok(host)
+
+                mock_logger.info.assert_any_call(
+                    'Received FunctionInvocationRequest, '
+                    f'request ID: {request_id}, '
+                    f'function ID: {func_id}, '
+                    f'invocation ID: {invoke_id}, '
+                    'function type: sync, '
+                    'sync threadpool max workers: 5'
+                )
+
+    async def test_async_invocation_request_log_in_placeholder_threads(self):
+        ctrl = testutils.start_mockhost(script_root=self.dispatcher_funcs_dir)
+
+        with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+            async with ctrl as host:
+                await host.reload_environment(environment={
+                    PYTHON_THREADPOOL_THREAD_COUNT: '5'
+                })
+
+                request_id: str = ctrl._worker._request_id
+                func_id, invoke_id = (
+                    await self._check_if_async_function_is_ok(host)
+                )
+
+                mock_logger.info.assert_any_call(
+                    'Received FunctionInvocationRequest, '
+                    f'request ID: {request_id}, '
+                    f'function ID: {func_id}, '
+                    f'invocation ID: {invoke_id}, '
+                    'function type: async'
+                )
+
+    async def _check_if_function_is_ok(self, host) -> Tuple[str, str]:
         # Ensure the function can be properly loaded
         func_id, load_r = await host.load_function('show_context')
         self.assertEqual(load_r.response.function_id, func_id)
@@ -250,3 +366,30 @@ class TestDispatcher(testutils.AsyncTestCase):
         self.assertIsNotNone(invoke_id)
         self.assertEqual(call_r.response.result.status,
                          protos.StatusResult.Success)
+
+        return (func_id, invoke_id)
+
+    async def _check_if_async_function_is_ok(self, host) -> Tuple[str, str]:
+        # Ensure the function can be properly loaded
+        func_id, load_r = await host.load_function('show_context_async')
+        self.assertEqual(load_r.response.function_id, func_id)
+        self.assertEqual(load_r.response.result.status,
+                         protos.StatusResult.Success)
+
+        # Ensure the function can be properly invoked
+        invoke_id, call_r = await host.invoke_function(
+            'show_context_async', [
+                protos.ParameterBinding(
+                    name='req',
+                    data=protos.TypedData(
+                        http=protos.RpcHttp(
+                            method='GET'
+                        )
+                    )
+                )
+            ])
+        self.assertIsNotNone(invoke_id)
+        self.assertEqual(call_r.response.result.status,
+                         protos.StatusResult.Success)
+
+        return (func_id, invoke_id)

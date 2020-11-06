@@ -408,6 +408,28 @@ class _MockWebHost:
 
         return invocation_id, r
 
+    async def reload_environment(
+        self,
+        environment: typing.Dict[str, str],
+        function_project_path: str = '/home/site/wwwroot'
+    ) -> protos.FunctionEnvironmentReloadResponse:
+
+        request_content = protos.FunctionEnvironmentReloadRequest(
+            function_app_directory=function_project_path,
+            environment_variables={
+                k.encode(): v.encode() for k, v in environment.items()
+            }
+        )
+
+        r = await self.communicate(
+            protos.StreamingMessage(
+                function_environment_reload_request=request_content
+            ),
+            wait_for='function_environment_reload_response'
+        )
+
+        return r
+
     async def send(self, message):
         self._in_queue.put_nowait((message, None))
 
@@ -453,12 +475,12 @@ class _MockWebHost:
 
 class _MockWebHostController:
 
-    def __init__(self, scripts_dir):
-        self._host = None
-        self._scripts_dir = scripts_dir
-        self._worker = None
+    def __init__(self, scripts_dir: pathlib.PurePath):
+        self._host: typing.Optional[_MockWebHost] = None
+        self._scripts_dir: pathlib.PurePath = scripts_dir
+        self._worker: typing.Optional[dispatcher.Dispatcher] = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> _MockWebHost:
         loop = aio_compat.get_running_loop()
         self._host = _MockWebHost(loop, self._scripts_dir)
 

@@ -16,7 +16,7 @@ import sys
 import threading
 from asyncio import BaseEventLoop
 from logging import LogRecord
-from typing import Optional
+from typing import Optional, List
 
 import grpc
 
@@ -79,8 +79,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         # PYTHON_THREADPOOL_THREAD_COUNT app setting. The default value is 1.
         self._sync_tp_max_workers: int = self._get_sync_tp_max_workers()
         self._sync_call_tp: concurrent.futures.Executor = (
-            concurrent.futures.ThreadPoolExecutor(
-                max_workers=self._sync_tp_max_workers))
+            self._create_sync_call_tp(self._sync_tp_max_workers)
+        )
 
         self._grpc_connect_timeout: float = grpc_connect_timeout
         # This is set to -1 by default to remove the limitation on msg size
@@ -97,9 +97,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
         disp._grpc_thread.start()
         await disp._grpc_connected_fut
-        logger.info('Successfully opened gRPC channel to %s:%s '
-                    'with sync threadpool max workers set to %s',
-                    host, port, disp._sync_tp_max_workers)
+        logger.info('Successfully opened gRPC channel to %s:%s ', host, port)
         return disp
 
     async def dispatch_forever(self):
@@ -161,9 +159,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._grpc_thread.join()
             self._grpc_thread = None
 
-        if self._sync_call_tp is not None:
-            self._sync_call_tp.shutdown()
-            self._sync_call_tp = None
+        self._stop_sync_call_tp()
 
     def on_logging(self, record: logging.LogRecord, formatted_msg: str) -> None:
         if record.levelno >= logging.CRITICAL:
@@ -318,11 +314,19 @@ class Dispatcher(metaclass=DispatcherMeta):
             fi: functions.FunctionInfo = self._functions.get_function(
                 function_id)
 
-            logger.info(f'Received FunctionInvocationRequest, '
-                        f'request ID: {self.request_id}, '
-                        f'function ID: {function_id}, '
-                        f'invocation ID: {invocation_id}, '
-                        f'function type: {"async" if fi.is_async else "sync"}')
+            function_invocation_logs: List[str] = [
+                'Received FunctionInvocationRequest',
+                f'request ID: {self.request_id}',
+                f'function ID: {function_id}',
+                f'invocation ID: {invocation_id}',
+                f'function type: {"async" if fi.is_async else "sync"}'
+            ]
+            if not fi.is_async:
+                function_invocation_logs.append(
+                    f'sync threadpool max workers: {self._sync_tp_max_workers}'
+                )
+            logger.info(', '.join(function_invocation_logs))
+
             args = {}
             for pb in invoc_request.input_data:
                 pb_type_info = fi.input_types[pb.name]
@@ -426,6 +430,13 @@ class Dispatcher(metaclass=DispatcherMeta):
             for var in env_vars:
                 os.environ[var] = env_vars[var]
 
+            # Apply PYTHON_THREADPOOL_THREAD_COUNT
+            self._stop_sync_call_tp()
+            self._sync_tp_max_workers = self._get_sync_tp_max_workers()
+            self._sync_call_tp = (
+                self._create_sync_call_tp(self._sync_tp_max_workers)
+            )
+
             # Reload package namespaces for customer's libraries
             packages_to_reload = ['azure', 'google']
             for p in packages_to_reload:
@@ -479,6 +490,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         else:
             logger.warning('Directory %s is not found when reloading', new_cwd)
 
+    def _stop_sync_call_tp(self):
+        """Deallocate the current synchronous thread pool and assign
+        self._sync_call_tp to None. If the thread pool does not exist,
+        this will be a no op.
+        """
+        if getattr(self, '_sync_call_tp', None):
+            self._sync_call_tp.shutdown()
+            self._sync_call_tp = None
+
     def _get_sync_tp_max_workers(self) -> int:
         def tp_max_workers_validator(value: str) -> bool:
             try:
@@ -500,6 +520,17 @@ class Dispatcher(metaclass=DispatcherMeta):
             setting=PYTHON_THREADPOOL_THREAD_COUNT,
             default_value=f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}',
             validator=tp_max_workers_validator))
+
+    def _create_sync_call_tp(
+            self, max_worker: int) -> concurrent.futures.Executor:
+        """Create a thread pool executor with max_worker. This is a wrapper
+        over ThreadPoolExecutor constructor. Consider calling this method after
+        _stop_sync_call_tp() to ensure only 1 synchronous thread pool is
+        running.
+        """
+        return concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_worker
+        )
 
     def __run_sync_func(self, invocation_id, func, params):
         # This helper exists because we need to access the current

@@ -493,7 +493,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         """Deallocate the current synchronous thread pool. If the thread pool
         does not exist, this will be a no op.
         """
-        if self._sync_call_tp is not None:
+        if getattr(self, '_sync_call_tp', None):
             self._sync_call_tp.shutdown()
             self._sync_call_tp = None
 

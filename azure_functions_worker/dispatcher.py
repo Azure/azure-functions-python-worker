@@ -431,6 +431,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 os.environ[var] = env_vars[var]
 
             # Apply PYTHON_THREADPOOL_THREAD_COUNT
+            self._stop_sync_call_tp()
             self._sync_tp_max_workers = self._get_sync_tp_max_workers()
             self._sync_call_tp = (
                 self._create_sync_call_tp(self._sync_tp_max_workers)
@@ -490,8 +491,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             logger.warning('Directory %s is not found when reloading', new_cwd)
 
     def _stop_sync_call_tp(self):
-        """Deallocate the current synchronous thread pool. If the thread pool
-        does not exist, this will be a no op.
+        """Deallocate the current synchronous thread pool and assign
+        self._sync_call_tp to None. If the thread pool does not exist,
+        this will be a no op.
         """
         if getattr(self, '_sync_call_tp', None):
             self._sync_call_tp.shutdown()
@@ -521,9 +523,11 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     def _create_sync_call_tp(
             self, max_worker: int) -> concurrent.futures.Executor:
-        """Update the self._sync_call_tp executor with the proper max_worker.
+        """Create a thread pool executor with max_worker. This is a wrapper
+        over ThreadPoolExecutor constructor. Consider calling this method after
+        _stop_sync_call_tp() to ensure only 1 synchronous thread pool is
+        running.
         """
-        self._stop_sync_call_tp()
         return concurrent.futures.ThreadPoolExecutor(
             max_workers=max_worker
         )

@@ -9,6 +9,7 @@ logger = logging.getLogger('my function')
 
 
 def main(req: azure.functions.HttpRequest):
+    logging.critical('logging critical', exc_info=True)
     logger.info('logging info', exc_info=True)
     logger.warning('logging warning', exc_info=True)
     logger.debug('logging debug', exc_info=True)

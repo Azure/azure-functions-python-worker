@@ -252,7 +252,7 @@ class _MockWebHostServicer(protos.FunctionRpcServicer):
                     f'unexpected {rtype!r} initial message from the worker')
 
             if client_response.start_stream.worker_id != self._host.worker_id:
-                raise AssertionError(f'worker_id mismatch')
+                raise AssertionError('worker_id mismatch')
 
         except Exception as ex:
             self._host._loop.call_soon_threadsafe(
@@ -408,6 +408,28 @@ class _MockWebHost:
 
         return invocation_id, r
 
+    async def reload_environment(
+        self,
+        environment: typing.Dict[str, str],
+        function_project_path: str = '/home/site/wwwroot'
+    ) -> protos.FunctionEnvironmentReloadResponse:
+
+        request_content = protos.FunctionEnvironmentReloadRequest(
+            function_app_directory=function_project_path,
+            environment_variables={
+                k.encode(): v.encode() for k, v in environment.items()
+            }
+        )
+
+        r = await self.communicate(
+            protos.StreamingMessage(
+                function_environment_reload_request=request_content
+            ),
+            wait_for='function_environment_reload_response'
+        )
+
+        return r
+
     async def send(self, message):
         self._in_queue.put_nowait((message, None))
 
@@ -453,12 +475,12 @@ class _MockWebHost:
 
 class _MockWebHostController:
 
-    def __init__(self, scripts_dir):
-        self._host = None
-        self._scripts_dir = scripts_dir
-        self._worker = None
+    def __init__(self, scripts_dir: pathlib.PurePath):
+        self._host: typing.Optional[_MockWebHost] = None
+        self._scripts_dir: pathlib.PurePath = scripts_dir
+        self._worker: typing.Optional[dispatcher.Dispatcher] = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> _MockWebHost:
         loop = aio_compat.get_running_loop()
         self._host = _MockWebHost(loop, self._scripts_dir)
 
@@ -590,25 +612,25 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
 
     if not hostexe_args:
         raise RuntimeError('\n'.join([
-            f'Unable to locate Azure Functions Host binary.',
-            f'Please do one of the following:',
-            f' * run the following command from the root folder of',
-            f'   the project:',
-            f'',
+            'Unable to locate Azure Functions Host binary.',
+            'Please do one of the following:',
+            ' * run the following command from the root folder of',
+            '   the project:',
+            '',
             f'       $ {sys.executable} setup.py webhost',
-            f'',
-            f' * or download or build the Azure Functions Host and'
-            f'   then write the full path to WebHost.dll'
-            f'   into the `PYAZURE_WEBHOST_DLL` environment variable.',
-            f'   Alternatively, you can create the',
+            '',
+            ' * or download or build the Azure Functions Host and'
+            '   then write the full path to WebHost.dll'
+            '   into the `PYAZURE_WEBHOST_DLL` environment variable.',
+            '   Alternatively, you can create the',
             f'   {WORKER_CONFIG.name} file in the root folder',
-            f'   of the project with the following structure:',
-            f'',
-            f'      [webhost]',
-            f'      dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
-            f' * or download Azure Functions Core Tools binaries and',
-            f'   then write the full path to func.exe into the ',
-            f'   `CORE_TOOLS_PATH` envrionment variable.'
+            '   of the project with the following structure:',
+            '',
+            '      [webhost]',
+            '      dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
+            ' * or download Azure Functions Core Tools binaries and',
+            '   then write the full path to func.exe into the ',
+            '   `CORE_TOOLS_PATH` envrionment variable.'
         ]))
 
     worker_path = os.environ.get('PYAZURE_WORKER_DIR')
@@ -677,20 +699,23 @@ def start_webhost(*, script_dir=None, stdout=None):
     port = _find_open_port()
     proc = popen_webhost(stdout=stdout, stderr=subprocess.STDOUT,
                          script_root=script_root, port=port)
+    time.sleep(10)  # Giving host some time to start fully.
 
     addr = f'http://{LOCALHOST}:{port}'
     for _ in range(10):
         try:
             r = requests.get(f'{addr}/api/ping',
                              params={'code': 'testFunctionKey'})
+            # Give the host a bit more time to settle
+            time.sleep(2)
+
             if 200 <= r.status_code < 300:
                 # Give the host a bit more time to settle
                 time.sleep(2)
                 break
         except requests.exceptions.ConnectionError:
             pass
-
-        time.sleep(1)
+        time.sleep(2)
     else:
         proc.terminate()
         try:

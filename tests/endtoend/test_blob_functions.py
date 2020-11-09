@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import time
-from datetime import datetime
 
 from azure_functions_worker import testutils
 
@@ -28,8 +27,7 @@ class TestBlobFunctions(testutils.WebHostTestCase):
 
     @testutils.retryable_test(3, 5)
     def test_blob_io_large_str(self):
-        datetime_iso = datetime.utcnow().isoformat()
-        large_string = datetime_iso * 1024 * 1024  # 26 MB
+        large_string = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 
         r = self.webhost.request('POST', 'put_blob_str', data=large_string)
         self.assertEqual(r.status_code, 200)
@@ -60,8 +58,7 @@ class TestBlobFunctions(testutils.WebHostTestCase):
 
     @testutils.retryable_test(3, 5)
     def test_blob_io_large_bytes(self):
-        datetime_iso = datetime.utcnow().isoformat()
-        large_string = datetime_iso * 1024 * 1024  # 26 MB
+        large_string = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 
         r = self.webhost.request('POST', 'put_blob_bytes',
                                  data=large_string.encode('utf-8'))
@@ -97,8 +94,7 @@ class TestBlobFunctions(testutils.WebHostTestCase):
 
     @testutils.retryable_test(3, 5)
     def test_blob_trigger(self):
-        datetime_iso = datetime.utcnow().isoformat()
-        data = datetime_iso
+        data = "DummyData"
 
         r = self.webhost.request('POST', 'put_blob_trigger',
                                  data=data.encode('utf-8'))
@@ -132,11 +128,10 @@ class TestBlobFunctions(testutils.WebHostTestCase):
 
     @testutils.retryable_test(3, 5)
     def test_blob_trigger_with_large_content(self):
-        datetime_iso = datetime.utcnow().isoformat()
-        data = datetime_iso * 1024 * 1024  # 26 MB
+        data = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 
-        r = self.webhost.request('POST', 'put_blob_trigger', data=data.
-                                 encode('utf-8'))
+        r = self.webhost.request('POST', 'put_blob_trigger',
+                                 data=data.encode('utf-8'))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
 

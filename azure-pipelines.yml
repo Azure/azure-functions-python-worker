@@ -1,7 +1,8 @@
 name: $(Date:yyyyMMdd).$(Rev:r)
 
 trigger:
-- release/*
+- release/2.*
+- release/3.*
 
 variables:
     DOTNET_VERSION: '2.2.207'

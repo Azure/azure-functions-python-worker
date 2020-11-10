@@ -148,7 +148,7 @@ class WebHostTestCaseMeta(type(unittest.TestCase)):
                         # Trim off host output timestamps
                         host_output = getattr(self, 'host_out', '')
                         output_lines = host_output.splitlines()
-                        ts_re = r"^\[\d+\/\d+\/\d+ \d+\:\d+\:\d+.*(A|P)*M*\]"
+                        ts_re = r"^\[\d+(\/|-)\d+(\/|-)\d+T*\d+\:\d+\:\d+.*(A|P)*M*\]"
                         output = list(map(
                             lambda s: re.sub(ts_re, '', s).strip(),
                             output_lines))

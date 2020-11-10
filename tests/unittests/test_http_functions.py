@@ -5,6 +5,7 @@ import pathlib
 import filecmp
 import typing
 import os
+import unittest
 
 import pytest
 
@@ -98,22 +99,34 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('hello info', host_out)
         self.assertIn('and another error', host_out)
 
+    @unittest.skip("Reverting the debug logs PR as host currently cannot handle"
+                   "apps with lot of debug statements. Reverting PR: "
+                   "azure-functions-python-worker/pull/745")
     def test_debug_logging(self):
         r = self.webhost.request('GET', 'debug_logging')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-debug')
 
+    @unittest.skip("Reverting the debug logs PR as host currently cannot handle"
+                   "apps with lot of debug statements. Reverting PR: "
+                   "azure-functions-python-worker/pull/745")
     def check_log_debug_logging(self, host_out: typing.List[str]):
         self.assertIn('logging info', host_out)
         self.assertIn('logging warning', host_out)
         self.assertIn('logging debug', host_out)
         self.assertIn('logging error', host_out)
 
+    @unittest.skip("Reverting the debug logs PR as host currently cannot handle"
+                   "apps with lot of debug statements. Reverting PR: "
+                   "azure-functions-python-worker/pull/745")
     def test_debug_with_user_logging(self):
         r = self.webhost.request('GET', 'debug_user_logging')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-user-debug')
 
+    @unittest.skip("Reverting the debug logs PR as host currently cannot handle"
+                   "apps with lot of debug statements. Reverting PR: "
+                   "azure-functions-python-worker/pull/745")
     def check_log_debug_with_user_logging(self, host_out: typing.List[str]):
         self.assertIn('logging info', host_out)
         self.assertIn('logging warning', host_out)

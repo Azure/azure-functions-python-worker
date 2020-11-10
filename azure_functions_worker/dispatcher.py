@@ -130,6 +130,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             # established, should use it for system and user logs
             logging_handler = AsyncLoggingHandler()
             root_logger = logging.getLogger()
+
+            # Don't change this unless you read #780 and #745
             root_logger.setLevel(logging.INFO)
             root_logger.addHandler(logging_handler)
             logger.info('Switched to gRPC logging.')

@@ -60,16 +60,6 @@ def from_incoming_proto(
         pytype: typing.Optional[type],
         trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]],
         shmem_mgr: SharedMemoryManager) -> typing.Any:
-    # TODO gochaudh:
-    # Ideally, we should use WhichOneOf (if back compat issue is not there)
-    # Otherwise, a None check is not applicable as even if rpc_shared_memory is
-    # not set, its not None
-    datum = None
-    if pb.rpc_shared_memory.name is not '':
-        # Data was sent over shared memory, attempt to read
-        datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory, shmem_mgr)
-        # TODO gochaudh: check trigger_metadata (try with blob triggered func)
-
     binding = get_binding(binding)
     if trigger_metadata:
         metadata = {
@@ -79,9 +69,16 @@ def from_incoming_proto(
     else:
         metadata = {}
 
-    if datum is None:
+    pb_type = pb.WhichOneof('binding')
+    if pb_type == 'rpc_shared_memory':
+        # Data was sent over shared memory, attempt to read
+        datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory, shmem_mgr)
+        # TODO gochaudh: check trigger_metadata (try with blob triggered func)
+    elif pb_type == 'data':
         val = pb.data
         datum = datumdef.Datum.from_typed_data(val)
+    else:
+        raise TypeError(f'Unknown ParameterBindingType: {pb_type}')
 
     try:
         return binding.decode(datum, trigger_metadata=metadata)

@@ -385,14 +385,12 @@ message ParameterBinding {
   // Name for the binding
   string name = 1;
 
-  // Note: Either *data* or *rpc_shared_memory* field will be populated
-
   oneof binding {
-  // Data for the binding
-  TypedData data = 2;
+    // Data for the binding
+    TypedData data = 2;
 
-  // Metadata about the shared memory region to read data from
-  RpcSharedMemory rpc_shared_memory = 3;
+    // Metadata about the shared memory region to read data from
+    RpcSharedMemory rpc_shared_memory = 3;
   }
 }
 

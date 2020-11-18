@@ -259,12 +259,12 @@ with open("README.md") as readme:
 
 setup(
     name='azure-functions-worker',
-    version='1.1.7',
+    version='1.1.8',
     description='Python Language Worker for Azure Functions Host',
     author="Microsoft Corp.",
     author_email="azurefunctions@microsoft.com",
     keywords="azure azurefunctions python",
-    url="http://packages.python.org/an_example_pypi_project",
+    url="https://github.com/Azure/azure-functions-python-worker",
     long_description=long_description,
     long_description_content_type='text/markdown',
     classifiers=[

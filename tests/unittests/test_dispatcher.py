@@ -307,9 +307,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
     async def _check_if_function_is_ok(self, host) -> Tuple[str, str]:
         # Ensure the function can be properly loaded
         func_id, load_r = await host.load_function('show_context')
-        print("%%%%%%%%%%%")
-        print(load_r)
-        print("%%%%%%%%%%%")
         self.assertEqual(load_r.response.function_id, func_id)
         self.assertEqual(load_r.response.result.status,
                          protos.StatusResult.Success)
@@ -367,20 +364,27 @@ class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):
         self.mock_version_info.start()
 
     def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self._pre_env)
         self.mock_version_info.stop()
-        super(TestThreadPoolSettingsPython38, self).tearDown()
 
 
 class TestThreadPoolSettingsPython39(TestThreadPoolSettingsPython37):
     def setUp(self):
         super(TestThreadPoolSettingsPython39, self).setUp()
-        self._default_workers: Optional[
-            int] = min(32, (os.cpu_count() or 1) + 4)
+
+        # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
+        self._default_workers: Optional[int] = 6
+        self.mock_os_cpu = patch(
+                'azure_functions_worker.dispatcher.os.cpu_count', 2)
+
         self.mock_version_info = patch(
             'azure_functions_worker.dispatcher.sys.version_info',
             SysVersionInfo(3, 9, 0, 'final', 0))
         self.mock_version_info.start()
 
     def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self._pre_env)
+        self.mock_os_cpu.stop()
         self.mock_version_info.stop()
-        super(TestThreadPoolSettingsPython39, self).tearDown()

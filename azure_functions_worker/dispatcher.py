@@ -16,7 +16,7 @@ import sys
 import threading
 from asyncio import BaseEventLoop
 from logging import LogRecord
-from typing import Optional, List
+from typing import List, Optional
 
 import grpc
 
@@ -75,11 +75,13 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         self._old_task_factory = None
 
-        # We allow the customer to change synchronous thread pool count by
-        # PYTHON_THREADPOOL_THREAD_COUNT app setting. The default value is 1.
-        self._sync_tp_max_workers: int = self._get_sync_tp_max_workers()
+        # We allow the customer to change synchronous thread pool max worker
+        # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
+        #   For 3.[6|7|8] The default value is 1.
+        #   For 3.9, we don't set this value by default but we honor incoming
+        #     the app setting.
         self._sync_call_tp: concurrent.futures.Executor = (
-            self._create_sync_call_tp(self._sync_tp_max_workers)
+            self._create_sync_call_tp(self._get_sync_tp_max_workers())
         )
 
         self._grpc_connect_timeout: float = grpc_connect_timeout
@@ -89,6 +91,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread: threading.Thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
+
+    def get_sync_tp_workers_set(self):
+        """We don't know the exact value of the threadcount set for the Python
+         3.9 scenarios (as we'll start passing only None by default), and we
+         need to get that information.
+
+         Ref: concurrent.futures.thread.ThreadPoolExecutor.__init__._max_workers
+        """
+        return self._sync_call_tp._max_workers
 
     @classmethod
     async def connect(cls, host: str, port: int, worker_id: str,
@@ -325,7 +336,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             ]
             if not fi.is_async:
                 function_invocation_logs.append(
-                    f'sync threadpool max workers: {self._sync_tp_max_workers}'
+                    f'sync threadpool max workers: '
+                    f'{self.get_sync_tp_workers_set()}'
                 )
             logger.info(', '.join(function_invocation_logs))
 
@@ -434,9 +446,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             # Apply PYTHON_THREADPOOL_THREAD_COUNT
             self._stop_sync_call_tp()
-            self._sync_tp_max_workers = self._get_sync_tp_max_workers()
             self._sync_call_tp = (
-                self._create_sync_call_tp(self._sync_tp_max_workers)
+                self._create_sync_call_tp(self._get_sync_tp_max_workers())
             )
 
             # Reload package namespaces for customer's libraries
@@ -501,7 +512,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._sync_call_tp.shutdown()
             self._sync_call_tp = None
 
-    def _get_sync_tp_max_workers(self) -> int:
+    @staticmethod
+    def _get_sync_tp_max_workers() -> Optional[int]:
         def tp_max_workers_validator(value: str) -> bool:
             try:
                 int_value = int(value)
@@ -511,20 +523,27 @@ class Dispatcher(metaclass=DispatcherMeta):
                 return False
 
             if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN or (
-               int_value > PYTHON_THREADPOOL_THREAD_COUNT_MAX):
+                    int_value > PYTHON_THREADPOOL_THREAD_COUNT_MAX):
                 logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
-                               'to a value between 1 and 32')
+                               'to a value between 1 and 32. '
+                               'Reverting to default value for max_workers')
                 return False
 
             return True
 
-        return int(get_app_setting(
-            setting=PYTHON_THREADPOOL_THREAD_COUNT,
-            default_value=f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}',
-            validator=tp_max_workers_validator))
+        # Starting Python 3.9, worker won't be putting a limit on the
+        # max_workers count in the created threadpool.
+        default_value = None if sys.version_info.minor == 9 \
+            else f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}'
+        max_workers = get_app_setting(setting=PYTHON_THREADPOOL_THREAD_COUNT,
+                                      default_value=default_value,
+                                      validator=tp_max_workers_validator)
+
+        # We can box the app setting as int for earlier python versions.
+        return int(max_workers) if max_workers else None
 
     def _create_sync_call_tp(
-            self, max_worker: int) -> concurrent.futures.Executor:
+            self, max_worker: Optional[int]) -> concurrent.futures.Executor:
         """Create a thread pool executor with max_worker. This is a wrapper
         over ThreadPoolExecutor constructor. Consider calling this method after
         _stop_sync_call_tp() to ensure only 1 synchronous thread pool is

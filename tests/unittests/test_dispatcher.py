@@ -2,6 +2,8 @@
 # Licensed under the MIT License.
 import collections as col
 import os
+import sys
+import unittest
 from typing import Optional, Tuple
 from unittest.mock import patch
 
@@ -369,13 +371,17 @@ class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):
         self.mock_version_info.stop()
 
 
+@unittest.skipIf(sys.version_info.minor != 9,
+                 "Run the tests only for Python 3.9. In other platforms, "
+                 "as the default passed is None, the cpu_count determines the "
+                 "number of max_workers and we cannot mock the os.cpu_count() "
+                 "in the concurrent.futures.ThreadPoolExecutor")
 class TestThreadPoolSettingsPython39(TestThreadPoolSettingsPython37):
     def setUp(self):
         super(TestThreadPoolSettingsPython39, self).setUp()
 
         self.mock_os_cpu = patch(
-            'azure_functions_worker.dispatcher.os.cpu_count',
-            return_value=2)
+            'os.cpu_count', return_value=2)
         self.mock_os_cpu.start()
         # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
         self._default_workers: Optional[int] = 6

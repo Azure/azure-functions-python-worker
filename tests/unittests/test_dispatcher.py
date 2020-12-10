@@ -93,9 +93,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._default_workers)
             mock_logger.warning.assert_any_call(
-                    f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set to a value '
-                    'between 1 and 32. '
-                    'Reverting to default value for max_workers')
+                f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set to a value '
+                'between 1 and 32. Reverting to default value for max_workers')
 
     async def test_dispatcher_sync_threadpool_exceed_max_setting(self):
         """Test if the sync threadpool will pick up default value when the
@@ -297,7 +296,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     'function type: async'
                 )
 
-    async def _assert_workers_threadpool(self, ctrl, host, expected_worker_count):
+    async def _assert_workers_threadpool(self, ctrl, host,
+                                         expected_worker_count):
         self.assertIsNotNone(ctrl._worker._sync_call_tp)
         self.assertEqual(ctrl._worker.get_sync_tp_workers_set(),
                          expected_worker_count)
@@ -373,10 +373,12 @@ class TestThreadPoolSettingsPython39(TestThreadPoolSettingsPython37):
     def setUp(self):
         super(TestThreadPoolSettingsPython39, self).setUp()
 
+        self.mock_os_cpu = patch(
+            'azure_functions_worker.dispatcher.os.cpu_count',
+            return_value=2)
+        self.mock_os_cpu.start()
         # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
         self._default_workers: Optional[int] = 6
-        self.mock_os_cpu = patch(
-                'azure_functions_worker.dispatcher.os.cpu_count', 2)
 
         self.mock_version_info = patch(
             'azure_functions_worker.dispatcher.sys.version_info',

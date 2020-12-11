@@ -29,6 +29,7 @@ import typing
 import unittest
 import uuid
 
+import asynctest as asynctest
 import grpc
 import requests
 
@@ -122,7 +123,7 @@ class AsyncTestCaseMeta(type(unittest.TestCase)):
         return wrapper
 
 
-class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
+class AsyncTestCase(asynctest.TestCase, metaclass=AsyncTestCaseMeta):
     pass
 
 
@@ -319,13 +320,12 @@ class _MockWebHost:
         self._connected_fut = loop.create_future()
         self._in_queue = queue.Queue()
         self._out_aqueue = asyncio.Queue(loop=self._loop)
-        self._threadpool = concurrent.futures.ThreadPoolExecutor(
-            max_workers=1)
+        self._threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._server = grpc.server(self._threadpool)
         self._servicer = _MockWebHostServicer(self)
+
         protos.add_FunctionRpcServicer_to_server(self._servicer, self._server)
         self._port = self._server.add_insecure_port(f'{LOCALHOST}:0')
-
         self._worker_id = self.make_id()
         self._request_id = self.make_id()
 
@@ -487,10 +487,10 @@ class _MockWebHostController:
 
         await self._host.start()
 
-        self._worker = await dispatcher. \
+        self._worker = await dispatcher.\
             Dispatcher.connect(LOCALHOST, self._host._port,
-                               self._host.worker_id,
-                               self._host.request_id, connect_timeout=5.0)
+                               self._host.worker_id, self._host.request_id,
+                               connect_timeout=5.0)
 
         self._worker_task = loop.create_task(self._worker.dispatch_forever())
 

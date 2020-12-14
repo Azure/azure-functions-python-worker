@@ -1,26 +1,34 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from .common import is_envvar_true
+from .common import is_envvar_true, is_envvar_false
 from .tracing import extend_exception_message
-from typing import Callable, Optional
+from typing import Callable, Any
 
 
-def enable_feature_by(flag: str, default: Optional[int] = None) -> Callable:
+def enable_feature_by(flag: str,
+                      default: Any = None,
+                      flag_default: bool = False) -> Callable:
     def decorate(func):
         def call(*args, **kwargs):
             if is_envvar_true(flag):
+                return func(*args, **kwargs)
+            if flag_default and not is_envvar_false(flag):
                 return func(*args, **kwargs)
             return default
         return call
     return decorate
 
 
-def disable_feature_by(flag: str, default: None = None) -> Callable:
+def disable_feature_by(flag: str,
+                       default: Any = None,
+                       flag_default: bool = False) -> Callable:
     def decorate(func):
         def call(*args, **kwargs):
-            if not is_envvar_true(flag):
-                return func(*args, **kwargs)
-            return default
+            if is_envvar_true(flag):
+                return default
+            if flag_default and not is_envvar_false(flag):
+                return default
+            return func(*args, **kwargs)
         return call
     return decorate
 

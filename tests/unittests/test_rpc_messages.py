@@ -127,6 +127,12 @@ class TestGRPC(testutils.AsyncTestCase):
 
     @unittest.skipIf(sys.platform == 'win32',
                      'Linux .sh script only works on Linux')
+    @unittest.skipIf(
+        sys.version_info.major == 3 and sys.version_info.minor == 9,
+        'In Python 3.9, isolate worker dependencies is turned on by default.'
+        ' Reloading all customer dependencies on specialization is a must.'
+        ' This partially reloading namespace feature is no longer needed.'
+    )
     def test_successful_azure_namespace_import(self):
         self._verify_azure_namespace_import(
             'true',

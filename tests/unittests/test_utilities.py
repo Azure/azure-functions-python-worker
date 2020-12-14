@@ -19,9 +19,21 @@ class MockFeature:
         output.append(result)
         return result
 
+    @wrappers.enable_feature_by(TEST_FEATURE_FLAG, flag_default=True)
+    def mock_enabled_default_true(self, output: typing.List[str]) -> str:
+        result = 'mock_enabled_default_true'
+        output.append(result)
+        return result
+
     @wrappers.disable_feature_by(TEST_FEATURE_FLAG)
     def mock_feature_disabled(self, output: typing.List[str]) -> str:
         result = 'mock_feature_disabled'
+        output.append(result)
+        return result
+
+    @wrappers.disable_feature_by(TEST_FEATURE_FLAG, flag_default=True)
+    def mock_disabled_default_true(self, output: typing.List[str]) -> str:
+        result = 'mock_disabled_default_true'
         output.append(result)
         return result
 
@@ -73,6 +85,18 @@ class TestUtilities(unittest.TestCase):
         self.assertFalse(common.is_true_like(''))
         self.assertFalse(common.is_true_like('secret'))
 
+    def test_is_false_like_accepted(self):
+        self.assertTrue(common.is_false_like('0'))
+        self.assertTrue(common.is_false_like('false'))
+        self.assertTrue(common.is_false_like('F'))
+        self.assertTrue(common.is_false_like('NO'))
+        self.assertTrue(common.is_false_like('n'))
+
+    def test_is_false_like_rejected(self):
+        self.assertFalse(common.is_false_like(None))
+        self.assertFalse(common.is_false_like(''))
+        self.assertFalse(common.is_false_like('secret'))
+
     def test_is_envvar_true(self):
         os.environ[TEST_FEATURE_FLAG] = 'true'
         self.assertTrue(common.is_envvar_true(TEST_FEATURE_FLAG))
@@ -81,10 +105,25 @@ class TestUtilities(unittest.TestCase):
         self._unset_feature_flag()
         self.assertFalse(common.is_envvar_true(TEST_FEATURE_FLAG))
 
+    def test_is_envvar_false(self):
+        os.environ[TEST_FEATURE_FLAG] = 'false'
+        self.assertTrue(common.is_envvar_false(TEST_FEATURE_FLAG))
+
+    def test_is_envvar_not_false_on_unset(self):
+        self._unset_feature_flag()
+        self.assertFalse(common.is_envvar_true(TEST_FEATURE_FLAG))
+
     def test_disable_feature_with_no_feature_flag(self):
         mock_feature = MockFeature()
         output = []
         result = mock_feature.mock_feature_enabled(output)
+        self.assertIsNone(result)
+        self.assertListEqual(output, [])
+
+    def test_disable_feature_with_default_value(self):
+        mock_feature = MockFeature()
+        output = []
+        result = mock_feature.mock_disabled_default_true(output)
         self.assertIsNone(result)
         self.assertListEqual(output, [])
 
@@ -97,12 +136,28 @@ class TestUtilities(unittest.TestCase):
         self.assertEqual(result, 'mock_feature_enabled')
         self.assertListEqual(output, ['mock_feature_enabled'])
 
+    def test_enable_feature_with_default_value(self):
+        mock_feature = MockFeature()
+        output = []
+        result = mock_feature.mock_enabled_default_true(output)
+        self.assertEqual(result, 'mock_enabled_default_true')
+        self.assertListEqual(output, ['mock_enabled_default_true'])
+
     def test_enable_feature_with_no_rollback_flag(self):
         mock_feature = MockFeature()
         output = []
         result = mock_feature.mock_feature_disabled(output)
         self.assertEqual(result, 'mock_feature_disabled')
         self.assertListEqual(output, ['mock_feature_disabled'])
+
+    def test_ignore_disable_default_value_when_set_explicitly(self):
+        feature_flag = TEST_FEATURE_FLAG
+        os.environ[feature_flag] = '0'
+        mock_feature = MockFeature()
+        output = []
+        result = mock_feature.mock_disabled_default_true(output)
+        self.assertEqual(result, 'mock_disabled_default_true')
+        self.assertListEqual(output, ['mock_disabled_default_true'])
 
     def test_disable_feature_with_rollback_flag(self):
         rollback_flag = TEST_FEATURE_FLAG
@@ -121,6 +176,15 @@ class TestUtilities(unittest.TestCase):
         result = mock_feature.mock_feature_disabled(output)
         self.assertEqual(result, 'mock_feature_disabled')
         self.assertListEqual(output, ['mock_feature_disabled'])
+
+    def test_ignore_enable_default_value_when_set_explicitly(self):
+        feature_flag = TEST_FEATURE_FLAG
+        os.environ[feature_flag] = '0'
+        mock_feature = MockFeature()
+        output = []
+        result = mock_feature.mock_enabled_default_true(output)
+        self.assertIsNone(result)
+        self.assertListEqual(output, [])
 
     def test_fail_to_enable_feature_return_default_value(self):
         mock_feature = MockFeature()

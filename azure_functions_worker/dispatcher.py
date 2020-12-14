@@ -7,8 +7,6 @@ Implements loading and execution of Python workers.
 
 import asyncio
 import concurrent.futures
-import importlib
-import inspect
 import logging
 import os
 import queue
@@ -33,6 +31,7 @@ from .logging import disable_console_logging, enable_console_logging
 from .logging import error_logger, is_system_log_category, logger
 from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
+from .utils.dependency import DependencyManager
 from .utils.wrappers import disable_feature_by
 
 _TRUE = "true"
@@ -264,6 +263,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
         }
 
+        # Can detech worker packages
+        DependencyManager.use_customer_dependencies()
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
@@ -450,26 +452,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                 self._create_sync_call_tp(self._get_sync_tp_max_workers())
             )
 
-            # Reload package namespaces for customer's libraries
-            packages_to_reload = ['azure', 'google']
-            for p in packages_to_reload:
-                try:
-                    logger.info(f'Reloading {p} module')
-                    importlib.reload(sys.modules[p])
-                except Exception as ex:
-                    logger.info('Unable to reload {}: \n{}'.format(p, ex))
-                logger.info(f'Reloaded {p} module')
-
-            # Reload azure.functions to give user package precedence
-            logger.info('Reloading azure.functions module at %s',
-                        inspect.getfile(sys.modules['azure.functions']))
-            try:
-                importlib.reload(sys.modules['azure.functions'])
-                logger.info('Reloaded azure.functions module now at %s',
-                            inspect.getfile(sys.modules['azure.functions']))
-            except Exception as ex:
-                logger.info('Unable to reload azure.functions. '
-                            'Using default. Exception:\n{}'.format(ex))
+            # Reload azure google namespaces
+            DependencyManager.reload_azure_google_namespace(
+                func_env_reload_request.function_app_directory
+            )
 
             # Change function app directory
             if getattr(func_env_reload_request,

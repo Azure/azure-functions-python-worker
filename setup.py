@@ -308,8 +308,7 @@ setup(
             'pytest-xdist',
             'pytest-randomly',
             'pytest-instafail',
-            'pytest-rerunfailures',
-            'asynctest'
+            'pytest-rerunfailures'
         ]
     },
     include_package_data=True,

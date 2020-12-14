@@ -40,7 +40,9 @@ jobs:
         python setup.py webhost
     - name: Test with pytest
       run: |
-        pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
+        CI_RUN=1 pytest --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests --ignore=tests/unittests/test_utilities.py
+        # Need to test test_utilities.py separately since it involve a lot of environment variable, import cache, module cache change.
+        CI_RUN=1 pytest --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests/test_utilities.py
     - name: Codecov
       uses: codecov/codecov-action@v1.0.13
       with:

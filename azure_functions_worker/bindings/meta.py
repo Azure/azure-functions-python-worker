@@ -69,7 +69,7 @@ def from_incoming_proto(
     else:
         metadata = {}
 
-    pb_type = pb.WhichOneof('binding')
+    pb_type = pb.WhichOneof('rpc_data')
     if pb_type == 'rpc_shared_memory':
         # Data was sent over shared memory, attempt to read
         datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory, shmem_mgr)
@@ -132,7 +132,7 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
                     name=map_name,
                     offset=0,
                     count=len(value),
-                    type=protos.RpcSharedMemoryDataType.bytes)
+                    type=protos.RpcDataType.bytes)
                 param_binding = protos.ParameterBinding(
                                     name=out_name,
                                     rpc_shared_memory=shmem)
@@ -148,7 +148,7 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
                     name=map_name,
                     offset=0,
                     count=len(value),
-                    type=protos.RpcSharedMemoryDataType.string)
+                    type=protos.RpcDataType.string)
                 param_binding = protos.ParameterBinding(
                                     name=out_name,
                                     rpc_shared_memory=shmem)

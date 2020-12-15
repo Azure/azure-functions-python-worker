@@ -24,6 +24,6 @@ from .FunctionRpc_pb2 import (  # NoQA
     RpcHttp,
     RpcLog,
     RpcSharedMemory,
-    RpcSharedMemoryDataType,
+    RpcDataType,
     CloseSharedMemoryResourcesRequest,
     CloseSharedMemoryResourcesResponse)

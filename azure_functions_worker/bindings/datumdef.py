@@ -99,11 +99,11 @@ class Datum:
         offset = shmem.offset
         count = shmem.count
         data_type = shmem.type
-        if data_type == protos.RpcSharedMemoryDataType.bytes:
+        if data_type == protos.RpcDataType.bytes:
             val = shmem_mgr.get_bytes(mmap_name, offset, count)
             if val is not None:
                 return cls(val, 'bytes')
-        elif data_type == protos.RpcSharedMemoryDataType.string:
+        elif data_type == protos.RpcDataType.string:
             val = shmem_mgr.get_string(mmap_name, offset, count)
             if val is not None:
                 return cls(val, 'string')

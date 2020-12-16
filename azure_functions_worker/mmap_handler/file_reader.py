@@ -32,7 +32,7 @@ class FileReader:
         Returns the content length as a non-negative integer if successful, None otherwise.
         """
         try:
-            map_content_length = self.file_accessor.open_mmap(
+            map_content_length = self.file_accessor.open_mem_map(
                 map_name, consts.CONTENT_HEADER_TOTAL_BYTES, mmap.ACCESS_READ)
         except FileNotFoundError:
             return None
@@ -48,9 +48,11 @@ class FileReader:
         finally:
             map_content_length.close()
 
-    def read_content_as_bytes(self, map_name: str, content_offset: int = 0) -> Optional[bytes]:
+    def read_content_as_bytes(self, map_name: str, content_offset: int = 0, bytes_to_read: int = 0) -> Optional[bytes]:
         """
         Read content from the memory map with the given name and starting at the given offset.
+        content_offset = 0 means read from the beginning of the content.
+        bytes_to_read = 0 means read the entire content.
         Returns the content as bytes if successful, None otherwise.
         """
         content_length = self._get_content_length(map_name)
@@ -58,13 +60,18 @@ class FileReader:
             return None
         map_length = content_length + consts.CONTENT_HEADER_TOTAL_BYTES
         try:
-            map_content = self.file_accessor.open_mmap(map_name, map_length, mmap.ACCESS_READ)
+            map_content = self.file_accessor.open_mem_map(map_name, map_length, mmap.ACCESS_READ)
             if map_content is not None:
                 try:
                     map_content.seek(consts.CONTENT_HEADER_TOTAL_BYTES)
                     if content_offset > 0:
                         map_content.seek(content_offset, os.SEEK_CUR)
-                    content = map_content.read()
+                    if bytes_to_read > 0:
+                        # Read up to the specified number of bytes to read
+                        content = map_content.read(bytes_to_read)
+                    else:
+                        # Read the entire content
+                        content = map_content.read()
                     return content
                 except ValueError as value_error:
                     print("Cannot get content for memory map '%s': %s" % (map_name, value_error))
@@ -76,12 +83,12 @@ class FileReader:
         # If we cannot get the content return None
         return None
 
-    def read_content_as_string(self, map_name: str, content_offset: int = 0) -> Optional[str]:
+    def read_content_as_string(self, map_name: str, content_offset: int = 0, bytes_to_read: int = 0) -> Optional[str]:
         """
         Read content from the memory map with the given name and starting at the given offset.
         Returns the content as a string if successful, None otherwise.
         """
-        content_bytes = self.read_content_as_bytes(map_name, content_offset)
+        content_bytes = self.read_content_as_bytes(map_name, content_offset, bytes_to_read)
         if content_bytes is None:
             return None
         content_str = content_bytes.decode('utf-8')

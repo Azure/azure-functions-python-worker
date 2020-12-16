@@ -1,9 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+from __future__ import annotations
 import uuid
+from typing import Dict
 from typing import Optional
-from . import datumdef
 from ..logging import logger
 from ..mmap_handler.file_writer import FileWriter
 from ..mmap_handler.file_reader import FileReader
@@ -23,8 +24,8 @@ class SharedMemoryManager:
         # functions host).
         # Having a mapping of the name and the memory map is then later used to close a given
         # memory map by its name, after it has been used.
-        # Type: dict[map_name, mmap]
-        self.allocated_mmaps = {}
+        # key: map_name, val: mmap.mmap
+        self.allocated_mem_maps: Dict[str, mmap.mmap] = {}
         self.file_accessor = FileAccessorFactory.create_file_accessor()
         self.file_reader = FileReader()
         self.file_writer = FileWriter()
@@ -36,7 +37,7 @@ class SharedMemoryManager:
         """
         return True
 
-    def is_supported(self, datum: datumdef.Datum) -> bool:
+    def is_supported(self, datum: Datum) -> bool:
         """
         Whether the given Datum object can be transferred to the functions host using shared
         memory.
@@ -58,7 +59,7 @@ class SharedMemoryManager:
         Returns the data read from shared memory as bytes if successful, None otherwise.
         """
         logger.info('Reading bytes from shared memory: %s', map_name)
-        data = self.file_reader.read_content_as_bytes(map_name, offset)
+        data = self.file_reader.read_content_as_bytes(map_name, offset, count)
         return data
 
     def get_string(self, map_name: str, offset: int, count: int) -> Optional[str]:
@@ -68,7 +69,7 @@ class SharedMemoryManager:
         Returns the data read from shared memory as a string if successful, None otherwise.
         """
         logger.info('Reading string from shared memory: %s', map_name)
-        data = self.file_reader.read_content_as_string(map_name, offset)
+        data = self.file_reader.read_content_as_string(map_name, offset, count)
         return data
 
     def put_bytes(self, data: bytes) -> Optional[str]:
@@ -79,9 +80,9 @@ class SharedMemoryManager:
         """
         map_name = str(uuid.uuid4())
         logger.info('Writing bytes to shared memory: %s', map_name)
-        mmap = self.file_writer.create_with_content_bytes(map_name, data)
-        if mmap is not None:
-            self.allocated_mmaps[map_name] = mmap
+        mem_map = self.file_writer.create_with_content_bytes(map_name, data)
+        if mem_map is not None:
+            self.allocated_mem_maps[map_name] = mem_map
         return map_name
 
     def put_string(self, data: str) -> Optional[str]:
@@ -92,18 +93,25 @@ class SharedMemoryManager:
         """
         map_name = str(uuid.uuid4())
         logger.info('Writing string to shared memory: %s', map_name)
-        mmap = self.file_writer.create_with_content_string(map_name, data)
-        if mmap is not None:
-            self.allocated_mmaps[map_name] = mmap
+        mem_map = self.file_writer.create_with_content_string(map_name, data)
+        if mem_map is not None:
+            self.allocated_mem_maps[map_name] = mem_map
         return map_name
 
-    def free_map(self, map_name: str):
+    def free_mem_map(self, map_name: str):
         """
         Frees the memory map and any backing resources (e.g. file in the case of Linux) associated
         with it.
         If there is no memory map with the given name being tracked, then no action is performed.
+        Returns True if the memory map was freed successfully, False otherwise.
         """
-        if map_name in self.allocated_mmaps:
-            mmap = self.allocated_mmaps[map_name]
-            self.file_accessor.delete_mmap(map_name, mmap)
-            del self.allocated_mmaps[map_name]
+        if map_name not in self.allocated_mem_maps:
+            # TODO Log Error
+            return False
+        mem_map = self.allocated_mem_maps[map_name]
+        success = self.file_accessor.delete_mem_map(map_name, mem_map)
+        del self.allocated_mem_maps[map_name]
+        if not success:
+            # TODO Log Error
+            return False
+        return True

@@ -6,7 +6,6 @@ from typing import Any
 from typing import Optional
 import json
 from .. import protos
-from .shared_memory_manager import SharedMemoryManager
 
 
 class Datum:

@@ -16,7 +16,7 @@ class FileAccessor(metaclass=abc.ABCMeta):
         2) FileAccessorLinux
     """
     @abc.abstractmethod
-    def open_mmap(self, map_name: str, map_size: int , access: int) -> Optional[mmap.mmap]:
+    def open_mem_map(self, map_name: str, map_size: int , access: int) -> Optional[mmap.mmap]:
         """
         Opens an existing memory map.
         Returns the mmap if successful, None otherwise.
@@ -24,7 +24,7 @@ class FileAccessor(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def create_mmap(self, map_name: str, map_size: int):
+    def create_mem_map(self, map_name: str, map_size: int) -> Optional[mmap.mmap]:
         """
         Creates a new memory map.
         Returns the mmap if successful, None otherwise.
@@ -32,10 +32,11 @@ class FileAccessor(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def delete_mmap(self, map_name: str, mem_map: mmap.mmap):
+    def delete_mem_map(self, map_name: str, mem_map: mmap.mmap) -> bool:
         """
         Deletes the memory map and any backing resources associated with it.
         If there is no memory map with the given name, then no action is performed.
+        Returns True if the memory map was successfully deleted, False otherwise.
         """
         raise NotImplementedError
 

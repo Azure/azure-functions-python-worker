@@ -11,7 +11,7 @@ class FileAccessorWindows(FileAccessor):
     For accessing memory maps.
     This implements the FileAccessor interface for Windows.
     """
-    def open_mmap(self, map_name: str, map_size: int , access: int) -> Optional[mmap.mmap]:
+    def open_mem_map(self, map_name: str, map_size: int , access: int) -> Optional[mmap.mmap]:
         try:
             mmap_ret = mmap.mmap(-1, map_size, map_name, access=access)
             mmap_ret.seek(0)
@@ -21,12 +21,13 @@ class FileAccessorWindows(FileAccessor):
             print(e)
             return None
 
-    def create_mmap(self, map_name: str, map_size: int) -> Optional[mmap.mmap]:
+    def create_mem_map(self, map_name: str, map_size: int) -> Optional[mmap.mmap]:
         # Windows also creates the mmap when trying to open it, if it does not already exist.
-        mem_map = self.open_mmap(map_name, map_size, mmap.ACCESS_WRITE)
+        mem_map = self.open_mem_map(map_name, map_size, mmap.ACCESS_WRITE)
         if not self._verify_new_map_created(map_name, mem_map):
             raise Exception("Memory map '%s' already exists" % (map_name))
         return mem_map
 
-    def delete_mmap(self, map_name: str, mmap):
+    def delete_mem_map(self, map_name: str, mmap) -> bool:
         mmap.close()
+        return True

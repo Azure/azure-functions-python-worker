@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 from typing import Any
+from typing import Optional
 import json
 from .. import protos
 from .shared_memory_manager import SharedMemoryManager
@@ -94,7 +95,11 @@ class Datum:
         return cls(val, tt)
 
     @classmethod
-    def from_rpc_shared_memory(cls, shmem: protos.RpcSharedMemory, shmem_mgr: SharedMemoryManager):
+    def from_rpc_shared_memory(cls, shmem: protos.RpcSharedMemory, shmem_mgr: SharedMemoryManager) -> Optional[Datum]:
+        """
+        Reads the specified shared memory region and converts the read data into a datum object of
+        the corresponding type.
+        """
         mmap_name = shmem.name
         offset = shmem.offset
         count = shmem.count
@@ -108,6 +113,46 @@ class Datum:
             if val is not None:
                 return cls(val, 'string')
         return None
+
+    def to_rpc_shared_memory(self, shmem_mgr: SharedMemoryManager) -> protos.RpcSharedMemory:
+        """
+        Writes the given value to shared memory and returns the corresponding RpcSharedMemory
+        object which can be sent back to the functions host over RPC.
+        """
+        if self.type == 'bytes':
+            value = self.value
+            map_name = shmem_mgr.put_bytes(value)
+            if map_name is not None:
+                shmem = protos.RpcSharedMemory(
+                    name=map_name,
+                    offset=0,
+                    count=len(value),
+                    type=protos.RpcDataType.bytes)
+                return shmem
+            else:
+                raise Exception(
+                    f'cannot write datum value (type: {self.type}) into '
+                    f'shared memory (name: {map_name})'
+                )
+        elif self.type == 'string':
+            value = self.value
+            map_name = shmem_mgr.put_string(value)
+            if map_name is not None:
+                shmem = protos.RpcSharedMemory(
+                    name=map_name,
+                    offset=0,
+                    count=len(value),
+                    type=protos.RpcDataType.string)
+                return shmem
+            else:
+                raise Exception(
+                    f'cannot write datum value (type: {self.type}) into '
+                    f'shared memory (name: {map_name})'
+                )
+        else:
+            raise NotImplementedError(
+                f'unsupported datum type ({self.type}) for shared memory'
+            )
 
 def datum_as_proto(datum: Datum) -> protos.TypedData:
     if datum.type == 'string':

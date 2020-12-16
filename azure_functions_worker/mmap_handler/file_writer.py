@@ -11,11 +11,19 @@ from .memorymappedfile_constants import MemoryMappedFileConstants as consts
 
 class FileWriter:
     """
+    For writing data into memory maps in shared memory.
+    Follows a particular format for writing data (i.e. particular header before appending the
+    content).
+    For reading data as written by the FileWriter, use the FileReader class.
     """
     def __init__(self):
         self.file_accessor = FileAccessorFactory.create_file_accessor()
 
     def create_with_content_bytes(self, map_name: str, content: bytes) -> Optional[mmap.mmap]:
+        """
+        Create a new memory map with the given name and content (as bytes).
+        Returns the newly created memory map if successful, None otherwise.
+        """
         if content is None:
             return None
         content_size = len(content)
@@ -28,6 +36,10 @@ class FileWriter:
         return mem_map
 
     def create_with_content_string(self, map_name: str, content: str) -> Optional[mmap.mmap]:
+        """
+        Create a new memory map with the given name and content (as a string).
+        Returns the newly created memory map if successful, None otherwise.
+        """
         if content is None:
             return None
         content_bytes = content.encode('utf-8')

@@ -14,10 +14,10 @@ class FileAccessorLinux(FileAccessor):
     For accessing memory maps.
     This implements the FileAccessor interface for Linux.
     """
-    def open_mmap(self, map_name: str, map_size: int , access: int) -> Optional[mmap.mmap]:
+    def open_mem_map(self, map_name: str, map_size: int , access: int) -> Optional[mmap.mmap]:
         try:
-            file = self._open_mmap_file(map_name, access)
-            mem_map = mmap.mmap(file.fileno(), map_size, access=access)
+            fd = self._open_mem_map_file(map_name)
+            mem_map = mmap.mmap(fd.fileno(), map_size, access=access)
             mem_map.seek(0)
             return mem_map
         except Exception as e:
@@ -25,23 +25,24 @@ class FileAccessorLinux(FileAccessor):
             print(e)
             return None
 
-    def create_mmap(self, map_name: str, map_size: int) -> Optional[mmap.mmap]:
-        file = self._create_mmap_file(map_name, map_size)
-        mem_map = mmap.mmap(file, map_size, mmap.MAP_SHARED, mmap.PROT_WRITE)
+    def create_mem_map(self, map_name: str, map_size: int) -> Optional[mmap.mmap]:
+        fd = self._create_mem_map_file(map_name, map_size)
+        mem_map = mmap.mmap(fd, map_size, mmap.MAP_SHARED, mmap.PROT_WRITE)
         if not self._verify_new_map_created(map_name, mem_map):
             raise Exception("Memory map '%s' already exists" % (map_name))
         return mem_map
 
-    def delete_mmap(self, map_name: str, mem_map: mmap.mmap) -> Optional[mmap.mmap]:
+    def delete_mem_map(self, map_name: str, mem_map: mmap.mmap) -> bool:
         try:
-            file = self._open_mmap_file(map_name)
-            os.remove(file.name)
+            fd = self._open_mem_map_file(map_name)
+            os.remove(fd.name)
         except FileNotFoundError:
             # TODO log debug
-            pass # Nothing to do if the file is not there anyway
+            return False
         mem_map.close()
+        return True
 
-    def _open_mmap_file(self, map_name: str):
+    def _open_mem_map_file(self, map_name: str):
         """
         Get the file descriptor of an existing memory map.
         """
@@ -49,14 +50,14 @@ class FileAccessorLinux(FileAccessor):
         for mmap_temp_dir in consts.TEMP_DIRS:
             filename = "%s/%s/%s" % (mmap_temp_dir, consts.TEMP_DIR_SUFFIX, escaped_map_name)
             try:
-                file = open(filename, "r+b")
-                return file
+                fd = open(filename, "r+b")
+                return fd
             except FileNotFoundError:
                 # TODO log debug
                 pass
         raise FileNotFoundError("File for '%s' does not exist" % (map_name))
 
-    def _create_mmap_dir(self):
+    def _create_mem_map_dir(self):
         """
         Create a directory to create memory maps.
         """
@@ -71,7 +72,7 @@ class FileAccessorLinux(FileAccessor):
             except Exception as ex:
                 print("Cannot create dir '%s': %s" % (dirname, str(ex)))
 
-    def _create_mmap_file(self, map_name: str, map_size: int):
+    def _create_mem_map_file(self, map_name: str, map_size: int):
         """
         Get the file descriptor for a new memory map.
         """
@@ -89,18 +90,18 @@ class FileAccessorLinux(FileAccessor):
                 dir_exists = True
         # Check if any of the parent directories exists
         if not dir_exists:
-            self._create_mmap_dir()
+            self._create_mem_map_dir()
         # Create the file
         for mmap_temp_dir in consts.TEMP_DIRS:
             filename = "%s/%s/%s" % (mmap_temp_dir, consts.TEMP_DIR_SUFFIX, escaped_map_name)
             try:
-                file = os.open(filename, os.O_CREAT | os.O_TRUNC | os.O_RDWR)
+                fd = os.open(filename, os.O_CREAT | os.O_TRUNC | os.O_RDWR)
                 # Write 0s to allocate
-                bytes_written = os.write(file, b'\x00' * map_size)
+                bytes_written = os.write(fd, b'\x00' * map_size)
                 if bytes_written != map_size:
                     print("Cannot write 0s into new memory map file '%s': %d != %d" %
                         (filename, bytes_written, map_size))
-                return file
+                return fd
             except Exception as ex:
                 print("Cannot create memory map file '%s': %s" % (filename, ex))
         raise Exception("Cannot create memory map file for '%s'" % (map_name))

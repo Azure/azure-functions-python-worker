@@ -492,30 +492,24 @@ class Dispatcher(metaclass=DispatcherMeta):
         This is called after the functions host is done reading the output from the worker and
         wants the worker to free up those resources.
         """
+        close_request = req.close_shared_memory_resources_request
+        map_names = close_request.map_names
+        # Assign default value of False to all result values.
+        # If we are successfully able to close a memory map, its result will be set to True.
+        results = {map_name: False for map_name in map_names}
+
         try:
-            close_request = req.close_shared_memory_resources_request
-
-            map_names = close_request.map_names
             for map_name in map_names:
-                self._shmem_mgr.free_map(map_name)
-
-            success_response = protos.CloseSharedMemoryResourcesResponse(
-                result=protos.StatusResult(
-                    status=protos.StatusResult.Success))
-
-            return protos.StreamingMessage(
-                request_id=self.request_id,
-                close_shared_memory_resources_response=success_response)
-
+                success = self._shmem_mgr.free_mem_map(map_name)
+                results[map_name] = success
         except Exception as ex:
-            failure_response = protos.CloseSharedMemoryResourcesResponse(
-                result=protos.StatusResult(
-                    status=protos.StatusResult.Failure,
-                    exception=self._serialize_exception(ex)))
-
+            # TODO log exception
+            print(str(ex))
+        finally:
+            response = protos.CloseSharedMemoryResourcesResponse(close_map_results=results)
             return protos.StreamingMessage(
                 request_id=self.request_id,
-                close_shared_memory_resources_response=failure_response)
+                close_shared_memory_resources_response=response)
 
     @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):

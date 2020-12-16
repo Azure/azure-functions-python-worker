@@ -126,7 +126,7 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
     parameter_binding = None
     # If shared memory is enabled, try to transfer to host over shared memory
     if shmem_mgr.is_enabled() and shmem_mgr.is_supported(datum):
-        shared_mem_value = datum.to_rpc_shared_memory(shmem_mgr)
+        shared_mem_value = datumdef.Datum.to_rpc_shared_memory(datum, shmem_mgr)
     if shared_mem_value is not None:
         # Check if data was transferred over shared memory.
         # If it was, then use the rpc_shared_memory field in the response message. 

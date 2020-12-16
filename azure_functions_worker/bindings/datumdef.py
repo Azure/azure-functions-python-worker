@@ -1,11 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+from __future__ import annotations
 from typing import Any
 from typing import Optional
 import json
 from .. import protos
-from .shared_memory_manager import SharedMemoryManager
 
 
 class Datum:
@@ -114,13 +114,14 @@ class Datum:
                 return cls(val, 'string')
         return None
 
-    def to_rpc_shared_memory(self, shmem_mgr: SharedMemoryManager) -> protos.RpcSharedMemory:
+    @classmethod
+    def to_rpc_shared_memory(cls, datum: Datum, shmem_mgr: SharedMemoryManager) -> protos.RpcSharedMemory:
         """
         Writes the given value to shared memory and returns the corresponding RpcSharedMemory
         object which can be sent back to the functions host over RPC.
         """
-        if self.type == 'bytes':
-            value = self.value
+        if datum.type == 'bytes':
+            value = datum.value
             map_name = shmem_mgr.put_bytes(value)
             if map_name is not None:
                 shmem = protos.RpcSharedMemory(
@@ -131,11 +132,11 @@ class Datum:
                 return shmem
             else:
                 raise Exception(
-                    f'cannot write datum value (type: {self.type}) into '
+                    f'cannot write datum value (type: {datum.type}) into '
                     f'shared memory (name: {map_name})'
                 )
-        elif self.type == 'string':
-            value = self.value
+        elif datum.type == 'string':
+            value = datum.value
             map_name = shmem_mgr.put_string(value)
             if map_name is not None:
                 shmem = protos.RpcSharedMemory(
@@ -146,12 +147,12 @@ class Datum:
                 return shmem
             else:
                 raise Exception(
-                    f'cannot write datum value (type: {self.type}) into '
+                    f'cannot write datum value (type: {datum.type}) into '
                     f'shared memory (name: {map_name})'
                 )
         else:
             raise NotImplementedError(
-                f'unsupported datum type ({self.type}) for shared memory'
+                f'unsupported datum type ({datum.type}) for shared memory'
             )
 
 def datum_as_proto(datum: Datum) -> protos.TypedData:

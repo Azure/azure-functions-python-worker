@@ -3,37 +3,39 @@
 
 import abc
 import mmap
+from typing import Optional
 
 
 class FileAccessor(metaclass=abc.ABCMeta):
     """
-    TODO write docstring.
+    For accessing memory maps.
+    This is an interface that must be implemented by sub-classes to provide platform-specific
+    support for accessing memory maps.
+    Currently the following two sub-classes are implemented:
+        1) FileAccessorWindows
+        2) FileAccessorLinux
     """
-    @classmethod
-    def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'open_mmap') and 
-                callable(subclass.load_data_source) and 
-                hasattr(subclass, 'create_mmap') and 
-                callable(subclass.extract_text) or 
-                hasattr(subclass, 'delete_mmap') and 
-                callable(subclass.extract_text) or 
-                NotImplemented)
-
     @abc.abstractmethod
-    def open_mmap(self, map_name: str, map_size: int , access: int = mmap.ACCESS_READ):
-        """Open an existing memory map.
+    def open_mmap(self, map_name: str, map_size: int , access: int) -> Optional[mmap.mmap]:
+        """
+        Opens an existing memory map.
+        Returns the mmap if successful, None otherwise.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
     def create_mmap(self, map_name: str, map_size: int):
-        """Create a new memory map.
+        """
+        Creates a new memory map.
+        Returns the mmap if successful, None otherwise.
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def delete_mmap(self, map_name: str, mmap):
-        """Delete a memory map.
+    def delete_mmap(self, map_name: str, mem_map: mmap.mmap):
+        """
+        Deletes the memory map and any backing resources associated with it.
+        If there is no memory map with the given name, then no action is performed.
         """
         raise NotImplementedError
 

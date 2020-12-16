@@ -4,49 +4,57 @@
 import mmap
 import os
 import struct
+from typing import Optional
 from .memorymappedfile_constants import MemoryMappedFileConstants as consts
 from .file_accessor_factory import FileAccessorFactory
 
 
 class FileReader:
     """
+    For reading data from memory maps in shared memory.
+    Assumes a particular format when reading data (i.e. particular header before the content).
+    For writing data that could be read by the FileReader, use FileWriter.
     """
     def __init__(self):
         self.file_accessor = FileAccessorFactory.create_file_accessor()
 
-    def _bytes_to_long(self, input_bytes):
-        """Decode a set of bytes representing a long.
-        This uses the format that C# uses.
+    def _bytes_to_long(self, input_bytes) -> int:
+        """
+        Decode a set of bytes representing a long.
+        This uses the format that the functions host (i.e. C#) uses.
         """
         return struct.unpack("<q", input_bytes)[0]
 
-    def _get_content_length(self, map_name):
-        """Read the first header from a shared memory.
-        These bytes contains the length of the rest of the shared memory.
-        TODO throw exceptions in case of failures as opposed to special values like -1.
+    def _get_content_length(self, map_name) -> Optional[int]:
+        """
+        Read the header of the memory map to determine the length of content contained in that
+        memory map.
+        Returns the content length as a non-negative integer if successful, None otherwise.
         """
         try:
             map_content_length = self.file_accessor.open_mmap(
                 map_name, consts.CONTENT_HEADER_TOTAL_BYTES, mmap.ACCESS_READ)
         except FileNotFoundError:
-            return -1
+            return None
         if map_content_length is None:
-            return -1
+            return None
         try:
             header_bytes = map_content_length.read(consts.CONTENT_HEADER_TOTAL_BYTES)
             content_length = self._bytes_to_long(header_bytes)
             return content_length
         except ValueError as value_error:
             print("Cannot get content length for memory map '%s': %s" % (map_name, value_error))
-            return 0
+            return None
         finally:
             map_content_length.close()
 
-    def read_content_as_bytes(self, map_name: str, content_offset: int = 0):
-        """Read content from a memory mapped file as bytes.
+    def read_content_as_bytes(self, map_name: str, content_offset: int = 0) -> Optional[bytes]:
+        """
+        Read content from the memory map with the given name and starting at the given offset.
+        Returns the content as bytes if successful, None otherwise.
         """
         content_length = self._get_content_length(map_name)
-        if content_length < 0:
+        if content_length is None:
             return None
         map_length = content_length + consts.CONTENT_HEADER_TOTAL_BYTES
         try:
@@ -68,8 +76,10 @@ class FileReader:
         # If we cannot get the content return None
         return None
 
-    def read_content_as_string(self, map_name: str, content_offset: int = 0):
-        """Read content from a memory mapped file as a string.
+    def read_content_as_string(self, map_name: str, content_offset: int = 0) -> Optional[str]:
+        """
+        Read content from the memory map with the given name and starting at the given offset.
+        Returns the content as a string if successful, None otherwise.
         """
         content_bytes = self.read_content_as_bytes(map_name, content_offset)
         if content_bytes is None:

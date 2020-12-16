@@ -474,10 +474,9 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def _handle__close_shared_memory_resources_request(self, req):
         """
-        Frees any mmaps that were produced as output for a given invocation.
-        This is called after the Functions Host is done reading the output from the worker and
+        Frees any memory maps that were produced as output for a given invocation.
+        This is called after the functions host is done reading the output from the worker and
         wants the worker to free up those resources.
-        TODO gochaudh: Rename CloseSharedMemory* to FreeSharedMemory* and also this method name.
         """
         try:
             close_request = req.close_shared_memory_resources_request

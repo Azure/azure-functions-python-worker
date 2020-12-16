@@ -93,7 +93,7 @@ def from_incoming_proto(
 
 
 def get_datum(binding: str, obj: typing.Any,
-              pytype: typing.Optional[type]):
+              pytype: typing.Optional[type]) -> datumdef.Datum:
     binding = get_binding(binding)
 
     try:
@@ -122,49 +122,21 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
     # However that takes impact only for data coming from host -> worker
     # Is there a way to check the AppSetting here so that this does not respond back
     # with shared memory?
-    param_binding = None
+    shared_mem_value = None
+    parameter_binding = None
+    # If shared memory is enabled, try to transfer to host over shared memory
     if shmem_mgr.is_enabled() and shmem_mgr.is_supported(datum):
-        if datum.type == 'bytes':
-            value = datum.value
-            map_name = shmem_mgr.put_bytes(value)
-            if map_name is not None:
-                shmem = protos.RpcSharedMemory(
-                    name=map_name,
-                    offset=0,
-                    count=len(value),
-                    type=protos.RpcDataType.bytes)
-                param_binding = protos.ParameterBinding(
-                                    name=out_name,
-                                    rpc_shared_memory=shmem)
-            else:
-                raise Exception(
-                    'cannot write datum value into shared memory'
-                )
-        elif datum.type == 'string':
-            value = datum.value
-            map_name = shmem_mgr.put_string(value)
-            if map_name is not None:
-                shmem = protos.RpcSharedMemory(
-                    name=map_name,
-                    offset=0,
-                    count=len(value),
-                    type=protos.RpcDataType.string)
-                param_binding = protos.ParameterBinding(
-                                    name=out_name,
-                                    rpc_shared_memory=shmem)
-            else:
-                raise Exception(
-                    'cannot write datum value into shared memory'
-                )
-        else:
-            raise Exception(
-                'unsupported datum type for shared memory'
-            )
-
-    if param_binding is None:
-        rpc_val = datumdef.datum_as_proto(datum, shmem_mgr)
-        param_binding = protos.ParameterBinding(
+        shared_mem_value = datum.to_rpc_shared_memory(shmem_mgr)
+    if shared_mem_value is not None:
+        # Check if data was transferred over shared memory.
+        # If it was, then use the rpc_shared_memory field in the response message. 
+        parameter_binding = protos.ParameterBinding(
+                            name=out_name,
+                            rpc_shared_memory=shared_mem_value)
+    else:
+        # If data was not trasnferred over shared memory, send it as part of the response message
+        rpc_val = datumdef.datum_as_proto(datum)
+        parameter_binding = protos.ParameterBinding(
                             name=out_name,
                             data=rpc_val)
-
-    return param_binding
+    return parameter_binding

@@ -130,11 +130,6 @@ class Datum:
                     count=len(value),
                     type=protos.RpcDataType.bytes)
                 return shmem
-            else:
-                raise Exception(
-                    f'cannot write datum value (type: {datum.type}) into '
-                    f'shared memory (name: {map_name})'
-                )
         elif datum.type == 'string':
             value = datum.value
             map_name = shmem_mgr.put_string(value)
@@ -145,15 +140,9 @@ class Datum:
                     count=len(value),
                     type=protos.RpcDataType.string)
                 return shmem
-            else:
-                raise Exception(
-                    f'cannot write datum value (type: {datum.type}) into '
-                    f'shared memory (name: {map_name})'
-                )
-        else:
-            raise NotImplementedError(
-                f'unsupported datum type ({datum.type}) for shared memory'
-            )
+        raise NotImplementedError(
+            f'unsupported datum type ({datum.type}) for shared memory'
+        )
 
 def datum_as_proto(datum: Datum) -> protos.TypedData:
     if datum.type == 'string':
@@ -172,7 +161,6 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
             enable_content_negotiation=False,
             body=datum_as_proto(datum.value['body']),
         ))
-    else:
-        raise NotImplementedError(
-            'unexpected Datum type: {!r}'.format(datum.type)
-        )
+    raise NotImplementedError(
+        'unexpected Datum type: {!r}'.format(datum.type)
+    )

@@ -94,8 +94,10 @@ def from_incoming_proto(
 
 def get_datum(binding: str, obj: typing.Any,
               pytype: typing.Optional[type]) -> datumdef.Datum:
+    """
+    Convert an object to a datum with the specified type.
+    """
     binding = get_binding(binding)
-
     try:
         datum = binding.encode(obj, expected_type=pytype)
     except NotImplementedError:

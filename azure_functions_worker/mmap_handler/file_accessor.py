@@ -4,6 +4,7 @@
 import abc
 import mmap
 from typing import Optional
+from .memorymappedfile_constants import MemoryMappedFileConstants as consts
 
 
 class FileAccessor(metaclass=abc.ABCMeta):
@@ -47,7 +48,7 @@ class FileAccessor(metaclass=abc.ABCMeta):
         mem_map.seek(0)
         byte_read = mem_map.read(1)
         is_new_mmap = False
-        if byte_read != b'\x00':
+        if byte_read != consts.ZERO_BYTE:
             is_new_mmap = False
         else:
             is_new_mmap = True

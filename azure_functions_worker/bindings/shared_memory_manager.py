@@ -49,8 +49,7 @@ class SharedMemoryManager:
             return True
         elif datum.type == 'string':
             return True
-        else:
-            return False
+        return False
 
     def get_bytes(self, map_name: str, offset: int, count: int) -> Optional[bytes]:
         """

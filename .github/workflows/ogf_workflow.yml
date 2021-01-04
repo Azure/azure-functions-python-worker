@@ -5,7 +5,6 @@ name: Python Overwatch Workflow
 
 on:
   workflow_dispatch:
-  push:
   schedule:
     # Runs every 10th minute past the 0, 5, 10, 15 and 20th hour
     # * is a special character in YAML so you have to quote this string
@@ -332,29 +331,29 @@ jobs:
 
           process_results
 
-      - name: Upload Logs and Records
-        env:
-          SKU: ${{ matrix.sku }}
-          REGION: ${{ matrix.region }}
-        run: |
-          upload_blob() {
-            # args badge_filename blob_name
-            if [ -z $1 ]; then
-              echo "blob_filename ($1) isn't passed"
-            else
-              az storage blob upload --no-progress \
-              --account-name $BADGES_STORAGE_ACCOUNT_NAME \
-              --account-key $storage_account_key \
-              --container-name $BADGES_STORAGE_CONTAINER_NAME \
-              --file $1 --content-cache-control "no-cache" \
-              --name $2
-            fi
-          }
+      # - name: Upload Logs and Records
+      #   env:
+      #     SKU: ${{ matrix.sku }}
+      #     REGION: ${{ matrix.region }}
+      #   run: |
+      #     upload_blob() {
+      #       # args badge_filename blob_name
+      #       if [ -z $1 ]; then
+      #         echo "blob_filename ($1) isn't passed"
+      #       else
+      #         az storage blob upload --no-progress \
+      #         --account-name $BADGES_STORAGE_ACCOUNT_NAME \
+      #         --account-key $storage_account_key \
+      #         --container-name $BADGES_STORAGE_CONTAINER_NAME \
+      #         --file $1 --content-cache-control "no-cache" \
+      #         --name $2
+      #       fi
+      #     }
           
-          archivename=$(date +"Run_${{ github.run_number }}-$SKU-$REGION-%Y%m%d-%H%M").tar.gz
-          cd $GITHUB_WORKSPACE/$RunOutputFolder
-          tar -czvf $GITHUB_WORKSPACE/$archivename .
-          upload_blob $GITHUB_WORKSPACE/$archivename $archivename
+      #     archivename=$(date +"Run_${{ github.run_number }}-$SKU-$REGION-%Y%m%d-%H%M").tar.gz
+      #     cd $GITHUB_WORKSPACE/$RunOutputFolder
+      #     tar -czvf $GITHUB_WORKSPACE/$archivename .
+      #     upload_blob $GITHUB_WORKSPACE/$archivename $archivename
           
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.1

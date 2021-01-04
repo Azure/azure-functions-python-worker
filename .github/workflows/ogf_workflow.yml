@@ -147,18 +147,9 @@ jobs:
         run: |
           az webapp config appsettings set --name $FUNCTION_APP_NAME \
             --resource-group $RESOURCE_GROUP_NAME \
-            --settings ENABLE_ORYX_BUILD=true $THREAD_COUNT=4
+            --settings ENABLE_ORYX_BUILD=true $THREAD_COUNT=4 SCM_DO_BUILD_DURING_DEPLOYMENT=1
 
           sleep 15 # Sprinkle some joy aka Wait!!
-          
-          # az functionapp stop --name $FUNCTION_APP_NAME --resource-group $RESOURCE_GROUP_NAME  1>/dev/null             
-          # az functionapp start --name $FUNCTION_APP_NAME --resource-group $RESOURCE_GROUP_NAME
-
-          # state_is_running=$(az functionapp show --name $FUNCTION_APP_NAME --resource-group $RESOURCE_GROUP_NAME | grep state | grep Running)
-          # if [ -z "$state_is_running" ]; then
-          #   echo "Function app isn't ready yet. Wait 20 seconds"
-          #   sleep 20
-          # fi
 
           # Hope the deployment went through and with the logs show up.
           cd $GITHUB_WORKSPACE
@@ -330,30 +321,6 @@ jobs:
           }
 
           process_results
-
-      # - name: Upload Logs and Records
-      #   env:
-      #     SKU: ${{ matrix.sku }}
-      #     REGION: ${{ matrix.region }}
-      #   run: |
-      #     upload_blob() {
-      #       # args badge_filename blob_name
-      #       if [ -z $1 ]; then
-      #         echo "blob_filename ($1) isn't passed"
-      #       else
-      #         az storage blob upload --no-progress \
-      #         --account-name $BADGES_STORAGE_ACCOUNT_NAME \
-      #         --account-key $storage_account_key \
-      #         --container-name $BADGES_STORAGE_CONTAINER_NAME \
-      #         --file $1 --content-cache-control "no-cache" \
-      #         --name $2
-      #       fi
-      #     }
-          
-      #     archivename=$(date +"Run_${{ github.run_number }}-$SKU-$REGION-%Y%m%d-%H%M").tar.gz
-      #     cd $GITHUB_WORKSPACE/$RunOutputFolder
-      #     tar -czvf $GITHUB_WORKSPACE/$archivename .
-      #     upload_blob $GITHUB_WORKSPACE/$archivename $archivename
           
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.1

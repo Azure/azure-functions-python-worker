@@ -23,8 +23,15 @@ PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39 = (
 
 
 class DependencyManager:
-    """The dependency manager can be used to managed the current python package
-    environment. Azure Functions has three different set of sys.path ordering,
+    """The dependency manager controls the Python packages source, preventing
+    worker packages interfer customer's code.
+
+    It has two mode, in worker mode, the Python packages are loaded from worker
+    path, (e.g. workers/python/<python_version>/<os>/<arch>). In customer mode,
+    the packages are loaded from customer's .python_packages/ folder or from
+    their virtual environment.
+
+    Azure Functions has three different set of sys.path ordering,
 
     Linux Consumption sys.path: [
         "/tmp/functions\\standby\\wwwroot", # Placeholder folder
@@ -131,9 +138,7 @@ class DependencyManager:
             use_new = is_true_like(use_new_env)
 
         if use_new:
-            cls.reload_azure_google_namespace_from_customer_deps(
-                cx_working_dir
-            )
+            cls.reload_all_namespaces_from_customer_deps(cx_working_dir)
         else:
             cls.reload_azure_google_namespace_from_worker_deps()
 
@@ -171,8 +176,7 @@ class DependencyManager:
                         'Using default. Exception:\n{}'.format(ex))
 
     @classmethod
-    def reload_azure_google_namespace_from_customer_deps(cls,
-                                                         cx_working_dir: str):
+    def reload_all_namespaces_from_customer_deps(cls, cx_working_dir: str):
         """This is a new implementation of reloading azure and google
         namespace from customer's .python_packages folder. Only intended to be
         used in Linux Consumption scenario.
@@ -209,10 +213,7 @@ class DependencyManager:
                 sys.path.insert(0, path)
             else:
                 sys.path.append(path)
-
-            if path in sys.path_importer_cache:
-                sys.path_importer_cache.pop(path)
-            cls._remove_module_cache(path)
+            cls._clear_path_importer_cache_and_modules(path)
 
     @classmethod
     def _remove_from_sys_path(cls, path: str):
@@ -222,14 +223,31 @@ class DependencyManager:
         Parameters
         ----------
         path: str
-            The path attempts to be removed from sys.path.
+            The path to be removed from sys.path.
             If the path is an empty string, no action will be taken.
         """
         if path and path in sys.path:
             # Remove all occurances
             sys.path = list(filter(lambda p: p != path, sys.path))
-            if path in sys.path_importer_cache:
-                sys.path_importer_cache.pop(path)
+            cls._clear_path_importer_cache_and_modules(path)
+
+    @classmethod
+    def _clear_path_importer_cache_and_modules(cls, path: str):
+        """Removes path from sys.path_importer_cache and clear related
+        sys.modules cache. No action if the path is empty or no entries
+        in sys.path_importer_cache or sys.modules.
+
+        Parameters
+        ----------
+        path: str
+            The path to be removed from sys.path_importer_cache. All related
+            modules will be cleared out from sys.modules cache.
+            If the path is an empty string, no action will be taken.
+        """
+        if path in sys.path_importer_cache:
+            sys.path_importer_cache.pop(path)
+
+        if path:
             cls._remove_module_cache(path)
 
     @staticmethod

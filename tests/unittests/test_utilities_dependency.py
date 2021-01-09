@@ -291,6 +291,77 @@ class TestDependencyManager(unittest.TestCase):
         DependencyManager._remove_from_sys_path(self._customer_deps_path)
         self.assertNotIn('common_module', sys.modules)
 
+    def test_clear_path_importer_cache_and_modules(self):
+        # Ensure sys.path_importer_cache and sys.modules cache is cleared
+        sys.path.insert(0, self._customer_deps_path)
+        import common_module  # NoQA
+        self.assertIn('common_module', sys.modules)
+
+        # Clear out cache
+        DependencyManager._clear_path_importer_cache_and_modules(
+            self._customer_deps_path
+        )
+
+        # Ensure cache is cleared
+        self.assertNotIn('common_module', sys.modules)
+
+    def test_clear_path_importer_cache_and_modules_reimport(self):
+        # First import common_module from _customer_deps_path
+        sys.path.insert(0, self._customer_deps_path)
+        import common_module  # NoQA
+        self.assertIn('common_module', sys.modules)
+        self.assertEqual(
+            common_module.package_location,
+            os.path.join(self._customer_deps_path, 'common_module')
+        )
+
+        # Clean up cache
+        DependencyManager._clear_path_importer_cache_and_modules(
+            self._customer_deps_path
+        )
+        self.assertNotIn('common_module', sys.modules)
+
+        # Clean up namespace
+        del common_module
+
+        # Try import common_module from _worker_deps_path
+        sys.path.insert(0, self._worker_deps_path)
+
+        # Ensure new import is from _worker_deps_path
+        import common_module  # NoQA
+        self.assertIn('common_module', sys.modules)
+        self.assertEqual(
+            common_module.package_location,
+            os.path.join(self._worker_deps_path, 'common_module')
+        )
+
+    def test_clear_path_importer_cache_and_modules_retain_namespace(self):
+        # First import common_module from _customer_deps_path as customer_mod
+        sys.path.insert(0, self._customer_deps_path)
+        import common_module as customer_mod  # NoQA
+        self.assertIn('common_module', sys.modules)
+        self.assertEqual(
+            customer_mod.package_location,
+            os.path.join(self._customer_deps_path, 'common_module')
+        )
+
+        # Clean up cache
+        DependencyManager._clear_path_importer_cache_and_modules(
+            self._customer_deps_path
+        )
+        self.assertNotIn('common_module', sys.modules)
+
+        # Try import common_module from _worker_deps_path as worker_mod
+        sys.path.insert(0, self._worker_deps_path)
+
+        # Ensure new import is from _worker_deps_path
+        import common_module as worker_mod # NoQA
+        self.assertIn('common_module', sys.modules)
+        self.assertEqual(
+            worker_mod.package_location,
+            os.path.join(self._worker_deps_path, 'common_module')
+        )
+
     def test_use_worker_dependencies(self):
         # Setup app settings
         os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'

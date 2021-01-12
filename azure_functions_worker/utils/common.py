@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 from typing import Optional, Callable
 import os
+import sys
 
 
 def is_true_like(setting: str) -> bool:
@@ -30,6 +31,11 @@ def is_envvar_false(env_key: str) -> bool:
         return False
 
     return is_false_like(os.environ[env_key])
+
+
+def is_python_version(version: str) -> bool:
+    current_version = f'{sys.version_info.major}.{sys.version_info.minor}'
+    return current_version == version
 
 
 def get_app_setting(

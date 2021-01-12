@@ -10,16 +10,11 @@ from ..logging import logger
 from ..constants import (
     AZURE_WEBJOBS_SCRIPT_ROOT,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
+    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT,
+    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39
 )
+from ..utils.common import is_python_version
 from ..utils.wrappers import enable_feature_by
-
-
-# Enable this feature in Python 39 by default
-PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39 = (
-    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
-    or (sys.version_info.major == 3 and sys.version_info.minor == 9)
-)
 
 
 class DependencyManager:
@@ -74,7 +69,11 @@ class DependencyManager:
     @classmethod
     @enable_feature_by(
         flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-        flag_default=PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39
+        flag_default=(
+            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39 if
+            is_python_version('3.9') else
+            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
+        )
     )
     def use_worker_dependencies(cls):
         """Switch the sys.path and ensure the worker imports are loaded from
@@ -96,7 +95,11 @@ class DependencyManager:
     @classmethod
     @enable_feature_by(
         flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-        flag_default=PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39
+        flag_default=(
+            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39 if
+            is_python_version('3.9') else
+            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
+        )
     )
     def use_customer_dependencies(cls):
         """Switch the sys.path and ensure the customer's code import are loaded
@@ -133,7 +136,11 @@ class DependencyManager:
         """
         use_new_env = os.getenv(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
         if use_new_env is None:
-            use_new = PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39
+            use_new = (
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39 if
+                is_python_version('3.9') else
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
+            )
         else:
             use_new = is_true_like(use_new_env)
 

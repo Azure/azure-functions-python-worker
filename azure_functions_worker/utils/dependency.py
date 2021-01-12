@@ -251,7 +251,7 @@ class DependencyManager:
             modules will be cleared out from sys.modules cache.
             If the path is an empty string, no action will be taken.
         """
-        if path in sys.path_importer_cache:
+        if path and path in sys.path_importer_cache:
             sys.path_importer_cache.pop(path)
 
         if path:

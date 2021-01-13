@@ -18,6 +18,9 @@ on:
         description: 'Process results and update badges or not'
         required: true
         default: 'true'
+      cleanup:
+        description: 'To cleanup the test resource groups'
+        default: 'true'
   schedule:
     # Runs every 3 hours.
     # * is a special character in YAML so you have to quote this string
@@ -33,6 +36,8 @@ env:
   FAIL_COLOR: "red"
   PARTIAL_PASS_COLOR: "yellow"
   BADGE_FOLDER_NAME: "badges"
+  DEFAULT_DEPLOYMENT_LANGUAGE: "python"
+  DEFAULT_DEPLOYMENT_LANGUAGE_VERSION: "3.8"
   LANGUAGE: ${{ github.event.inputs.language }}
   LANGUAGE_VERSION: ${{ github.event.inputs.language_version }}
   OS: "Linux"
@@ -118,9 +123,9 @@ jobs:
           inlineScript: |
             az functionapp create --consumption-plan-location ${{ matrix.region }} \
               --name $FUNCTION_APP_NAME --os-type $OS \
-              --functions-version 3 --runtime $LANGUAGE \
+              --functions-version 3 --runtime ${{ env.LANGUAGE || env.DEFAULT_DEPLOYMENT_LANGUAGE }} \
               --resource-group $RESOURCE_GROUP_NAME \
-              --runtime-version $LANGUAGE_VERSION \
+              --runtime-version ${{ env.LANGUAGE_VERSION || env.DEFAULT_DEPLOYMENT_LANGUAGE_VERSION }} \
               --storage-account $STORAGE_ACCOUNT_NAME \
               --tags "created on= $(date)" "Use=OGFTest"
             sleep 5 # Adding some breathing space for Storage Account creation.
@@ -135,8 +140,8 @@ jobs:
           sleep 2
 
           az functionapp create --resource-group $RESOURCE_GROUP_NAME --plan $FUNCTION_APP_PLAN_NAME \
-            --name $FUNCTION_APP_NAME --functions-version 3 --runtime $LANGUAGE \
-            --runtime-version $LANGUAGE_VERSION --storage-account $STORAGE_ACCOUNT_NAME \
+            --name $FUNCTION_APP_NAME --functions-version 3 --runtime ${{ env.LANGUAGE || env.DEFAULT_DEPLOYMENT_LANGUAGE }} \
+            --runtime-version ${{ env.LANGUAGE_VERSION || env.DEFAULT_DEPLOYMENT_LANGUAGE_VERSION }} --storage-account $STORAGE_ACCOUNT_NAME \
             --tags "created on= $(date)" "Use=OGFTest"
           sleep 2
 
@@ -150,8 +155,8 @@ jobs:
           sleep 3
 
           az functionapp create --resource-group $RESOURCE_GROUP_NAME --plan $FUNCTION_APP_PLAN_NAME \
-            --name $FUNCTION_APP_NAME --functions-version 3 --runtime $LANGUAGE \
-            --runtime-version $LANGUAGE_VERSION --storage-account $STORAGE_ACCOUNT_NAME \
+            --name $FUNCTION_APP_NAME --functions-version 3 --runtime ${{ env.LANGUAGE || env.DEFAULT_DEPLOYMENT_LANGUAGE }} \
+            --runtime-version ${{ env.LANGUAGE_VERSION || env.DEFAULT_DEPLOYMENT_LANGUAGE_VERSION }} --storage-account $STORAGE_ACCOUNT_NAME \
             --tags "created on= $(date)" "Use=OGFTest"
           sleep 3
 
@@ -168,13 +173,13 @@ jobs:
           cd $GITHUB_WORKSPACE
           git clone https://github.com/vrdmr/AzFunctionsPythonPerformance.git
           cd AzFunctionsPythonPerformance
-          func init --worker-runtime $LANGUAGE
+          func init --worker-runtime ${{ env.LANGUAGE || env.DEFAULT_DEPLOYMENT_LANGUAGE }}
 
           try=1
           is_it_deployed=1
           while [ $is_it_deployed -eq 1 ]; do
 
-          func azure functionapp publish $FUNCTION_APP_NAME --$LANGUAGE
+          func azure functionapp publish $FUNCTION_APP_NAME --${{ env.LANGUAGE || env.DEFAULT_DEPLOYMENT_LANGUAGE }}
           if [ $? == 0 ]; then
               is_it_deployed=0
           else
@@ -190,7 +195,7 @@ jobs:
           done
           
           # Sometimes the code isn't deployed correctly. Attempt deploying again.
-          func azure functionapp publish $FUNCTION_APP_NAME --$LANGUAGE
+          func azure functionapp publish $FUNCTION_APP_NAME --${{ env.LANGUAGE || env.DEFAULT_DEPLOYMENT_LANGUAGE }}
           o=$(func azure functionapp list-functions $FUNCTION_APP_NAME | grep Invoke || true)
           echo $o
           
@@ -226,7 +231,7 @@ jobs:
           done     
      
       - name: Process test results
-        if: ${{ github.event.inputs.process_results == 'true' }}
+        if: ${{ github.event.inputs.process_results == '' || github.event.inputs.process_results == 'true' }}
         env:
           SKU: ${{ matrix.sku }}
           REGION: ${{ matrix.region }}
@@ -282,7 +287,9 @@ jobs:
 
             for functionsummaryfile in $(ls -p | grep -v /); do
               local badge_id="$functionsummaryfile"
-              local blob_name="$SKU$UNDER$REGION$UNDER$functionsummaryfile$UNDER$LANGUAGE$UNDER$LANGUAGE_VERSION"
+              local LANG=${{ env.LANGUAGE || env.DEFAULT_DEPLOYMENT_LANGUAGE }}
+              local LANG_VER=${{ env.LANGUAGE_VERSION || env.DEFAULT_DEPLOYMENT_LANGUAGE_VERSION }}
+              local blob_name="$SKU$UNDER$REGION$UNDER$functionsummaryfile$UNDER$LANG$UNDER$LANG_VER"
                               
               if [ "$(node -e "const fs = require('fs'); const data = fs.readFileSync('$functionsummaryfile'); const summary = JSON.parse(data); console.log(summary.root_group.checks['status is 200'].fails)")" -eq "0" ]; then
                   echo "$functionsummaryfile ran successfully | Generating a new badge https://img.shields.io/badge/$badge_id-$HOST_VERSION-$PASS_COLOR.svg and will save to $BADGE_FOLDER_NAME/$functionsummaryfile.svg"

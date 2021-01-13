@@ -5,10 +5,23 @@ name: Python Overwatch Workflow
 
 on:
   workflow_dispatch:
+    inputs:
+      language:
+        description: 'Runtime Language'
+        required: true
+        default: 'python'
+      language_version:
+        description: 'Runtime Language'
+        required: true
+        default: '3.8'
+      process_results:
+        description: 'Process results and update badges or not'
+        required: true
+        default: "true"
   schedule:
-    # Runs every 10th minute past the 0, 5, 10, 15 and 20th hour
+    # Runs every 3 hours.
     # * is a special character in YAML so you have to quote this string
-    - cron: "10 0/5 * * *"
+    - cron: "10 0/3 * * *"
 
 env:
   PROCESS_COUNT: "FUNCTIONS_WORKER_PROCESS_COUNT"
@@ -20,8 +33,8 @@ env:
   FAIL_COLOR: "red"
   PARTIAL_PASS_COLOR: "yellow"
   BADGE_FOLDER_NAME: "badges"
-  LANGUAGE: "python"
-  LANGUAGE_VERSION: "3.8"
+  LANGUAGE: ${{ github.event.inputs.language }}
+  LANGUAGE_VERSION: ${{ github.event.inputs.language_version }}
   OS: "Linux"
   RunOutputFolder: "k6runs"
   K6_TEST_SCRIPT: "https://raw.githubusercontent.com/vrdmr/AzFunctionsPythonPerformance/master/k6-configuration/generic-test-script.js"
@@ -51,13 +64,12 @@ jobs:
       # Make sure they are the same.
       fail-fast: false
       matrix:
-        region: [westus2, northcentralus, westeurope, eastus, southeastasia, uksouth, westus, southcentralus, northeurope, japaneast]
+        region: [centraluseuap, westcentralus, westus2, northcentralus, westeurope, eastus, southeastasia, uksouth, westus, southcentralus, northeurope, japaneast]
         sku: [cons, ep1, p1v2]
-    # EP1 not available in West India
-    # https://docs.microsoft.com/en-us/azure/azure-functions/functions-premium-plan#region-max-scale-out
-    #   exclude:
-    #   - region: westindia
-    #     sku: ep1
+        # https://docs.microsoft.com/en-us/azure/azure-functions/functions-premium-plan#region-max-scale-out
+        exclude:
+        - region: westcentralus
+          sku: cons
     # V. IMPORTANT: Copy this strategy section to the dependent cleanup job as well,
     # if you are making changes. Make sure they are the same.
     steps:         
@@ -89,6 +101,7 @@ jobs:
         with:
           azcliversion: 2.16.0
           inlineScript: |
+            echo "GITHUB_WORKSPACE: " $GITHUB_WORKSPACE
             az group create --location ${{ matrix.region }} --name $RESOURCE_GROUP_NAME \
               --tags "created on= $(date)" "Use=OGFTest" > /dev/null
             sleep 3 # once the RG is created
@@ -213,6 +226,7 @@ jobs:
           done     
      
       - name: Process test results
+        if: ${{ github.event.inputs.process_results == true }}
         env:
           SKU: ${{ matrix.sku }}
           REGION: ${{ matrix.region }}
@@ -321,6 +335,12 @@ jobs:
           }
 
           process_results
+          cd $GITHUB_WORKSPACE/$RunOutputFolder
+          archivename=$(date +"Run_${{ github.run_number }}-$SKU-$REGION-%Y%m%d-%H%M").tar.gz
+          
+          tar -czvf $GITHUB_WORKSPACE/$archivename .
+          echo $GITHUB_WORKSPACE
+          ls -la $GITHUB_WORKSPACE
           
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.1
@@ -328,7 +348,8 @@ jobs:
           # Artifact name
           name: RawTestRunArchive
           # A file, directory or wildcard pattern that describes what to upload
-          path: ${{ github.workspace }}/*.tar.gz
+          path: |
+            $GITHUB_WORKSPACE/*.tar.gz
           # The desired behavior if no files are found using the provided path.
           if-no-files-found: warn
           # Duration after which artifact will expire in days. 0 means using default retention.
@@ -342,8 +363,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        region: [westus2, northcentralus, westeurope, eastus, southeastasia, uksouth, westus, southcentralus, northeurope, japaneast]
+        region: [centraluseuap, westcentralus, westus2, northcentralus, westeurope, eastus, southeastasia, uksouth, westus, southcentralus, northeurope, japaneast]
         sku: [cons, ep1, p1v2]
+        # https://docs.microsoft.com/en-us/azure/azure-functions/functions-premium-plan#region-max-scale-out
+        exclude:
+        - region: westcentralus
+          sku: cons
     if: always()
     needs: test
     steps:
@@ -352,11 +377,8 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Cleaning up the resource group
-        uses: Azure/cli@1.0.4
-        with:
-          azcliversion: 2.16.0
-          inlineScript: |
-            cleanup() {
-              az group delete --name $RESOURCE_GROUP_NAME --yes
-            }
-            cleanup
+        run: |
+          cleanup() {
+            az group delete --name $RESOURCE_GROUP_NAME --yes
+          }
+          cleanup

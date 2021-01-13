@@ -29,7 +29,6 @@ import typing
 import unittest
 import uuid
 
-import asynctest as asynctest
 import grpc
 import requests
 
@@ -123,7 +122,7 @@ class AsyncTestCaseMeta(type(unittest.TestCase)):
         return wrapper
 
 
-class AsyncTestCase(asynctest.TestCase, metaclass=AsyncTestCaseMeta):
+class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
     pass
 
 

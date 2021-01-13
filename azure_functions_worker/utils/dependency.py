@@ -200,7 +200,8 @@ class DependencyManager:
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.cx_deps_path, True)
         cls._add_to_sys_path(working_directory, False)
-        logger.info('Reloaded azure google namespace from customer deps')
+        logger.info('Reloaded azure google namespaces from '
+                    'customer dependencies')
 
     @classmethod
     def _add_to_sys_path(cls, path: str, add_to_first: bool):

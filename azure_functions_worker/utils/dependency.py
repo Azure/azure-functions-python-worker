@@ -220,6 +220,9 @@ class DependencyManager:
                 sys.path.insert(0, path)
             else:
                 sys.path.append(path)
+
+            # Only clear path importer and sys.modules cache if path is not
+            # defined in sys.path
             cls._clear_path_importer_cache_and_modules(path)
 
     @classmethod
@@ -234,9 +237,12 @@ class DependencyManager:
             If the path is an empty string, no action will be taken.
         """
         if path and path in sys.path:
-            # Remove all occurances
+            # Remove all occurances in sys.path
             sys.path = list(filter(lambda p: p != path, sys.path))
-            cls._clear_path_importer_cache_and_modules(path)
+
+        # In case if any part of worker initialization do sys.path.pop()
+        # Always do a cache clear in path importer and sys.modules
+        cls._clear_path_importer_cache_and_modules(path)
 
     @classmethod
     def _clear_path_importer_cache_and_modules(cls, path: str):

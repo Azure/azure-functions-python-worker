@@ -722,7 +722,8 @@ def start_webhost(*, script_dir=None, stdout=None):
             proc.wait(20)
         except subprocess.TimeoutExpired:
             proc.kill()
-        raise RuntimeError('could not start the webworker')
+        raise RuntimeError('could not start the webworker in time. Please'
+                           f' check the log file for details: {stdout.name} ')
 
     return _WebHostProxy(proc, addr)
 

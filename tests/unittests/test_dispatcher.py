@@ -197,12 +197,15 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
                 request_id: str = self._ctrl._worker._request_id
-                func_id, invoke_id = await self._check_if_function_is_ok(host)
+                func_id, invoke_id, func_name = (
+                    await self._check_if_function_is_ok(host)
+                )
 
                 mock_logger.info.assert_any_call(
                     'Received FunctionInvocationRequest, '
                     f'request ID: {request_id}, '
                     f'function ID: {func_id}, '
+                    f'function name: {func_name}, '
                     f'invocation ID: {invoke_id}, '
                     'function type: sync, '
                     f'sync threadpool max workers: {self._default_workers}'
@@ -212,7 +215,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
                 request_id: str = self._ctrl._worker._request_id
-                func_id, invoke_id = (
+                func_id, invoke_id, func_name = (
                     await self._check_if_async_function_is_ok(host)
                 )
 
@@ -220,6 +223,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     'Received FunctionInvocationRequest, '
                     f'request ID: {request_id}, '
                     f'function ID: {func_id}, '
+                    f'function name: {func_name}, '
                     f'invocation ID: {invoke_id}, '
                     'function type: async'
                 )
@@ -230,12 +234,15 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
                 request_id: str = self._ctrl._worker._request_id
-                func_id, invoke_id = await self._check_if_function_is_ok(host)
+                func_id, invoke_id, func_name = (
+                    await self._check_if_function_is_ok(host)
+                )
 
                 mock_logger.info.assert_any_call(
                     'Received FunctionInvocationRequest, '
                     f'request ID: {request_id}, '
                     f'function ID: {func_id}, '
+                    f'function name: {func_name}, '
                     f'invocation ID: {invoke_id}, '
                     'function type: sync, '
                     'sync threadpool max workers: 5'
@@ -247,7 +254,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
                 request_id: str = self._ctrl._worker._request_id
-                func_id, invoke_id = (
+                func_id, invoke_id, func_name = (
                     await self._check_if_async_function_is_ok(host)
                 )
 
@@ -255,6 +262,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     'Received FunctionInvocationRequest, '
                     f'request ID: {request_id}, '
                     f'function ID: {func_id}, '
+                    f'function name: {func_name}, '
                     f'invocation ID: {invoke_id}, '
                     'function type: async'
                 )
@@ -267,12 +275,15 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 })
 
                 request_id: str = self._ctrl._worker._request_id
-                func_id, invoke_id = await self._check_if_function_is_ok(host)
+                func_id, invoke_id, func_name = (
+                    await self._check_if_function_is_ok(host)
+                )
 
                 mock_logger.info.assert_any_call(
                     'Received FunctionInvocationRequest, '
                     f'request ID: {request_id}, '
                     f'function ID: {func_id}, '
+                    f'function name: {func_name}, '
                     f'invocation ID: {invoke_id}, '
                     'function type: sync, '
                     'sync threadpool max workers: 5'
@@ -286,7 +297,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 })
 
                 request_id: str = self._ctrl._worker._request_id
-                func_id, invoke_id = (
+                func_id, invoke_id, func_name = (
                     await self._check_if_async_function_is_ok(host)
                 )
 
@@ -294,6 +305,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     'Received FunctionInvocationRequest, '
                     f'request ID: {request_id}, '
                     f'function ID: {func_id}, '
+                    f'function name: {func_name}, '
                     f'invocation ID: {invoke_id}, '
                     'function type: async'
                 )
@@ -308,7 +320,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
     async def _check_if_function_is_ok(self, host) -> Tuple[str, str]:
         # Ensure the function can be properly loaded
-        func_id, load_r = await host.load_function('show_context')
+        function_name = "show_context"
+        func_id, load_r = await host.load_function(function_name)
         self.assertEqual(load_r.response.function_id, func_id)
         self.assertEqual(load_r.response.result.status,
                          protos.StatusResult.Success)
@@ -329,10 +342,11 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         self.assertEqual(call_r.response.result.status,
                          protos.StatusResult.Success)
 
-        return func_id, invoke_id
+        return func_id, invoke_id, function_name
 
     async def _check_if_async_function_is_ok(self, host) -> Tuple[str, str]:
         # Ensure the function can be properly loaded
+        function_name = "show_context_async"
         func_id, load_r = await host.load_function('show_context_async')
         self.assertEqual(load_r.response.function_id, func_id)
         self.assertEqual(load_r.response.result.status,
@@ -354,7 +368,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         self.assertEqual(call_r.response.result.status,
                          protos.StatusResult.Success)
 
-        return func_id, invoke_id
+        return func_id, invoke_id, function_name
 
 
 class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):

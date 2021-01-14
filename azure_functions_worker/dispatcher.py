@@ -333,6 +333,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 'Received FunctionInvocationRequest',
                 f'request ID: {self.request_id}',
                 f'function ID: {function_id}',
+                f'function name: {fi.name}',
                 f'invocation ID: {invocation_id}',
                 f'function type: {"async" if fi.is_async else "sync"}'
             ]

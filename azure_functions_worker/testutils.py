@@ -45,7 +45,8 @@ E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
 UNIT_TESTS_FOLDER = pathlib.Path('unittests')
 UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
 WEBHOST_DLL = "Microsoft.Azure.WebJobs.Script.WebHost.dll"
-DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / WEBHOST_DLL
+DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / \
+                           'bin' / WEBHOST_DLL
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
 WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
@@ -645,7 +646,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         'languageWorkers:python:workerDirectory': str(worker_path),
         'host:logger:consoleLoggingMode': 'always',
         'AZURE_FUNCTIONS_ENVIRONMENT': 'development',
-        'AzureWebJobsSecretStorageType': 'files'
+        'AzureWebJobsSecretStorageType': 'files',
     }
 
     if testconfig and 'azure' in testconfig:
@@ -702,9 +703,10 @@ def start_webhost(*, script_dir=None, stdout=None):
     time.sleep(10)  # Giving host some time to start fully.
 
     addr = f'http://{LOCALHOST}:{port}'
+    health_check_endpoint = f'{addr}/api/ping'
     for _ in range(10):
         try:
-            r = requests.get(f'{addr}/api/ping',
+            r = requests.get(health_check_endpoint,
                              params={'code': 'testFunctionKey'})
             # Give the host a bit more time to settle
             time.sleep(2)
@@ -713,6 +715,8 @@ def start_webhost(*, script_dir=None, stdout=None):
                 # Give the host a bit more time to settle
                 time.sleep(2)
                 break
+            else:
+                print(f'Failed to ping {health_check_endpoint}', flush=True)
         except requests.exceptions.ConnectionError:
             pass
         time.sleep(2)

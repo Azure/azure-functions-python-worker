@@ -45,8 +45,9 @@ E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
 UNIT_TESTS_FOLDER = pathlib.Path('unittests')
 UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
 WEBHOST_DLL = "Microsoft.Azure.WebJobs.Script.WebHost.dll"
-DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / \
-                           'bin' / WEBHOST_DLL
+DEFAULT_WEBHOST_DLL_PATH = (
+    PROJECT_ROOT / 'build' / 'webhost' / 'bin' / WEBHOST_DLL
+)
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
 WORKER_PATH = PROJECT_ROOT / 'python' / 'test'

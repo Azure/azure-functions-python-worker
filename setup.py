@@ -266,6 +266,16 @@ class webhost(distutils.cmd.Command):
 
         print(f'Functions Host is extracted into {dest}')
 
+    def _chmod_protobuf_generation_script(self, webhost_dir: pathlib.Path):
+        # This script is needed to set to executable in order to build the
+        # WebJobs.Script.Grpc project in Linux and MacOS
+        script_path = (
+            webhost_dir / 'src' / 'WebJobs.Script.Grpc' / 'generate_protos.sh'
+        )
+        if sys.platform != 'win32' and os.path.exists(script_path):
+            print('Change generate_protos.sh script permission')
+            os.chmod(script_path, 0o555)
+
     def _compile_webhost(self, webhost_dir: pathlib.Path):
         print(f'Compiling Functions Host from {webhost_dir}')
 
@@ -316,6 +326,7 @@ class webhost(distutils.cmd.Command):
         self._extract_webhost_zip(version=self.webhost_version,
                                   src_zip=zip_path,
                                   dest=self.webhost_dir)
+        self._chmod_protobuf_generation_script(self.webhost_dir)
         self._compile_webhost(self.webhost_dir)
 
         # Prepare extensions

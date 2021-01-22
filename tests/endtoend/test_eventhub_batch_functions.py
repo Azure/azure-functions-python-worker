@@ -125,11 +125,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
             self.assertGreaterEqual(sys_props['SequenceNumber'], 0)
             self.assertIsNotNone(sys_props['Offset'])
 
-            # Metadata check eventhub trigger name
-            # V3 Functions Host no longer pass 'sys' property to python sdk
-            # self.assertEqual(metadata['sys']['MethodName'],
-            #                  'metadata_trigger')
-
     def _cleanup(self, old_partition_key):
         self._set_table_partition_key(old_partition_key)
 

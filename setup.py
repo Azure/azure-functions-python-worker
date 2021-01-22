@@ -287,7 +287,8 @@ class webhost(distutils.cmd.Command):
                 stdout=sys.stdout, stderr=sys.stderr)
         except Exception:
             print(f"Failed to compile webhost in {webhost_dir}. "
-                  ".NET Core SDK is required to build the solution",
+                  ".NET Core SDK is required to build the solution. "
+                  "Please visit https://aka.ms/dotnet-download",
                   file=sys.stderr)
             sys.exit(1)
 
@@ -316,7 +317,8 @@ class webhost(distutils.cmd.Command):
                 cwd=str(self.extensions_dir),
                 stdout=sys.stdout, stderr=sys.stderr, env=env)
         except Exception:
-            print(f"dotnet core SDK is required to build extensions")
+            print(".NET Core SDK is required to build the extensions. "
+                  "Please visit https://aka.ms/dotnet-download")
             sys.exit(1)
 
     def run(self):

@@ -94,7 +94,3 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertIsNone(sys_props['PartitionKey'])
         self.assertGreaterEqual(sys_props['SequenceNumber'], 0)
         self.assertIsNotNone(sys_props['Offset'])
-
-        # Metadata check eventhub trigger name
-        # V3 Functions Host no longer pass 'sys' property to python sdk
-        # self.assertEqual(metadata['sys']['MethodName'], 'metadata_trigger')

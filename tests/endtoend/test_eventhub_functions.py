@@ -96,4 +96,5 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertIsNotNone(sys_props['Offset'])
 
         # Metadata check eventhub trigger name
-        self.assertEqual(metadata['sys']['MethodName'], 'metadata_trigger')
+        # V3 Functions Host no longer pass 'sys' property to python sdk
+        # self.assertEqual(metadata['sys']['MethodName'], 'metadata_trigger')

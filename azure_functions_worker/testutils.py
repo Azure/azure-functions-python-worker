@@ -646,7 +646,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         'languageWorkers:python:workerDirectory': str(worker_path),
         'host:logger:consoleLoggingMode': 'always',
         'AZURE_FUNCTIONS_ENVIRONMENT': 'development',
-        'AzureWebJobsSecretStorageType': 'files',
+        'AzureWebJobsSecretStorageType': 'files'
     }
 
     if testconfig and 'azure' in testconfig:

@@ -125,10 +125,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
             self.assertGreaterEqual(sys_props['SequenceNumber'], 0)
             self.assertIsNotNone(sys_props['Offset'])
 
-            # Metadata check eventhub trigger name
-            self.assertEqual(metadata['sys']['MethodName'],
-                             'metadata_multiple')
-
     def _cleanup(self, old_partition_key):
         self._set_table_partition_key(old_partition_key)
 

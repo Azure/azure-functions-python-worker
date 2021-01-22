@@ -5,7 +5,7 @@ trigger:
 - release/3.*
 
 variables:
-    DOTNET_VERSION: '2.2.207'
+    DOTNET_VERSION: '3.1.405'
 
 jobs:
 - job: Tests

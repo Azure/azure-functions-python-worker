@@ -89,6 +89,37 @@ class TestLoader(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'module_not_found')
         self.assertEqual(r.status_code, 500)
 
+    def test_loader_init_should_only_invoke_outside_main_once(self):
+        """Check if the code in __init__.py outside of main() function
+        is only executed once
+        """
+        r = self.webhost.request('GET', 'outside_main_code_in_init')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'executed count = 1')
+
+    def test_loader_main_should_only_invoke_outside_main_once(self):
+        """Check if the code in main.py outside of main() function
+        is only executed once
+        """
+        r = self.webhost.request('GET', 'outside_main_code_in_main')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'executed count = 1')
+
+    def test_loader_outside_main_package_should_be_loaded_from_init(self):
+        """Check if the package can still be loaded from __init__ module
+        """
+        r = self.webhost.request('GET', 'load_outside_main?from=init')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK')
+
+    def test_loader_outside_main_package_should_be_loaded_from_package(self):
+        """Check if the package can still be loaded from package
+        """
+        r = self.webhost.request('GET',
+                                 'load_outside_main?from=package')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK')
+
     def check_log_loader_module_not_found(self, host_out):
         self.assertIn("Exception: ModuleNotFoundError: "
                       "No module named 'notfound'. "

@@ -377,7 +377,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'azure-functions==1.5.0',
+            'azure-functions==1.6.0',
             'azure-eventhub~=5.1.0',
             'python-dateutil~=2.8.1',
             'flake8~=3.7.9',

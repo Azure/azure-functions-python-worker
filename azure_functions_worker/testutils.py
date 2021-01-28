@@ -45,7 +45,9 @@ E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
 UNIT_TESTS_FOLDER = pathlib.Path('unittests')
 UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
 WEBHOST_DLL = "Microsoft.Azure.WebJobs.Script.WebHost.dll"
-DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / 'build' / 'webhost' / WEBHOST_DLL
+DEFAULT_WEBHOST_DLL_PATH = (
+    PROJECT_ROOT / 'build' / 'webhost' / 'bin' / WEBHOST_DLL
+)
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
 WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
@@ -148,10 +150,11 @@ class WebHostTestCaseMeta(type(unittest.TestCase)):
                         # Trim off host output timestamps
                         host_output = getattr(self, 'host_out', '')
                         output_lines = host_output.splitlines()
-                        ts_re = r"^\[\d+\/\d+\/\d+ \d+\:\d+\:\d+.*(A|P)*M*\]"
-                        output = list(map(
-                            lambda s: re.sub(ts_re, '', s).strip(),
-                            output_lines))
+                        ts_re = r"^\[\d+(\/|-)\d+(\/|-)\d+T*\d+\:\d+\:\d+.*(" \
+                                r"A|P)*M*\]"
+                        output = list(map(lambda s:
+                                          re.sub(ts_re, '', s).strip(),
+                                          output_lines))
 
                         # Execute check_log_ test cases
                         self._run_test(__check_log__, host_out=output)
@@ -318,13 +321,12 @@ class _MockWebHost:
         self._connected_fut = loop.create_future()
         self._in_queue = queue.Queue()
         self._out_aqueue = asyncio.Queue(loop=self._loop)
-        self._threadpool = concurrent.futures.ThreadPoolExecutor(
-            max_workers=1)
+        self._threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._server = grpc.server(self._threadpool)
         self._servicer = _MockWebHostServicer(self)
+
         protos.add_FunctionRpcServicer_to_server(self._servicer, self._server)
         self._port = self._server.add_insecure_port(f'{LOCALHOST}:0')
-
         self._worker_id = self.make_id()
         self._request_id = self.make_id()
 
@@ -408,6 +410,28 @@ class _MockWebHost:
 
         return invocation_id, r
 
+    async def reload_environment(
+        self,
+        environment: typing.Dict[str, str],
+        function_project_path: str = '/home/site/wwwroot'
+    ) -> protos.FunctionEnvironmentReloadResponse:
+
+        request_content = protos.FunctionEnvironmentReloadRequest(
+            function_app_directory=function_project_path,
+            environment_variables={
+                k.encode(): v.encode() for k, v in environment.items()
+            }
+        )
+
+        r = await self.communicate(
+            protos.StreamingMessage(
+                function_environment_reload_request=request_content
+            ),
+            wait_for='function_environment_reload_response'
+        )
+
+        return r
+
     async def send(self, message):
         self._in_queue.put_nowait((message, None))
 
@@ -453,21 +477,21 @@ class _MockWebHost:
 
 class _MockWebHostController:
 
-    def __init__(self, scripts_dir):
-        self._host = None
-        self._scripts_dir = scripts_dir
-        self._worker = None
+    def __init__(self, scripts_dir: pathlib.PurePath):
+        self._host: typing.Optional[_MockWebHost] = None
+        self._scripts_dir: pathlib.PurePath = scripts_dir
+        self._worker: typing.Optional[dispatcher.Dispatcher] = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> _MockWebHost:
         loop = aio_compat.get_running_loop()
         self._host = _MockWebHost(loop, self._scripts_dir)
 
         await self._host.start()
 
-        self._worker = await dispatcher. \
+        self._worker = await dispatcher.\
             Dispatcher.connect(LOCALHOST, self._host._port,
-                               self._host.worker_id,
-                               self._host.request_id, connect_timeout=5.0)
+                               self._host.worker_id, self._host.request_id,
+                               connect_timeout=5.0)
 
         self._worker_task = loop.create_task(self._worker.dispatch_forever())
 
@@ -680,9 +704,10 @@ def start_webhost(*, script_dir=None, stdout=None):
     time.sleep(10)  # Giving host some time to start fully.
 
     addr = f'http://{LOCALHOST}:{port}'
+    health_check_endpoint = f'{addr}/api/ping'
     for _ in range(10):
         try:
-            r = requests.get(f'{addr}/api/ping',
+            r = requests.get(health_check_endpoint,
                              params={'code': 'testFunctionKey'})
             # Give the host a bit more time to settle
             time.sleep(2)
@@ -691,6 +716,8 @@ def start_webhost(*, script_dir=None, stdout=None):
                 # Give the host a bit more time to settle
                 time.sleep(2)
                 break
+            else:
+                print(f'Failed to ping {health_check_endpoint}', flush=True)
         except requests.exceptions.ConnectionError:
             pass
         time.sleep(2)
@@ -700,7 +727,8 @@ def start_webhost(*, script_dir=None, stdout=None):
             proc.wait(20)
         except subprocess.TimeoutExpired:
             proc.kill()
-        raise RuntimeError('could not start the webworker')
+        raise RuntimeError('could not start the webworker in time. Please'
+                           f' check the log file for details: {stdout.name} ')
 
     return _WebHostProxy(proc, addr)
 

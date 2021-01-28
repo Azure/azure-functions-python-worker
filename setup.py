@@ -5,6 +5,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import json
 import tempfile
 import urllib.request
 import zipfile
@@ -15,26 +16,23 @@ from distutils.command import build
 from setuptools import setup
 from setuptools.command import develop
 
-
-# TODO: Change this to something more stable when available.
-# TODO: Change this to use 3.x
-WEBHOST_URL = (
-    "https://github.com/Azure/azure-functions-host/releases/download"
-    "/v2.0.14494/Functions.Binaries.2.0.14494.no-runtime.zip"
-)
+# The GitHub repository of the Azure Functions Host
+WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
+WEBHOST_TAG_PREFIX = "v3."
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = """\
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <AzureFunctionsVersion>v3</AzureFunctionsVersion>
     <WarningsAsErrors></WarningsAsErrors>
     <DefaultItemExcludes>**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference
-        Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
-        Version="1.1.7"
+        Include="Microsoft.NET.Sdk.Functions"
+        Version="3.0.3"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
@@ -168,20 +166,20 @@ class develop(develop.develop, BuildGRPC):
 class webhost(distutils.cmd.Command):
     description = 'Download and setup Azure Functions Web Host.'
     user_options = [
-        ('webhost-url', None,
-            'A custom URL to download Azure Web Host from.'),
+        ('webhost-version', None,
+            'A Functions Host version to be downloaded (e.g. 3.0.15278).'),
         ('webhost-dir', None,
             'A path to the directory where Azure Web Host will be installed.'),
     ]
 
     def initialize_options(self):
-        self.webhost_url = None
+        self.webhost_version = None
         self.webhost_dir = None
         self.extensions_dir = None
 
     def finalize_options(self):
-        if self.webhost_url is None:
-            self.webhost_url = WEBHOST_URL
+        if self.webhost_version is None:
+            self.webhost_version = self._get_webhost_version()
 
         if self.webhost_dir is None:
             self.webhost_dir = \
@@ -191,36 +189,110 @@ class webhost(distutils.cmd.Command):
             self.extensions_dir = \
                 pathlib.Path(__file__).parent / 'build' / 'extensions'
 
-    def _install_webhost(self):
-        with tempfile.NamedTemporaryFile() as zipf:
+    def _get_webhost_version(self) -> str:
+        # Return the latest matched version (e.g. 3.0.15278)
+        github_api_url = f'{WEBHOST_GITHUB_API}/tags?page=1&per_page=10'
+        print(f'Checking latest webhost version from {github_api_url}')
+        github_response = urllib.request.urlopen(github_api_url)
+        tags = json.loads(github_response.read())
+
+        # As tags are placed in time desending order, the latest v3
+        # tag should be the first occurance starts with 'v3.' string
+        latest_v3 = [
+            gt for gt in tags if gt['name'].startswith(WEBHOST_TAG_PREFIX)
+        ]
+        return latest_v3[0]['name'].replace('v', '')
+
+    def _download_webhost_zip(self, version: str) -> str:
+        # Return the path of the downloaded host
+        temporary_file = tempfile.NamedTemporaryFile()
+        zip_url = (
+            'https://github.com/Azure/azure-functions-host/archive/'
+            f'v{version}.zip'
+        )
+        print(f'Downloading Functions Host ({version}) from {zip_url}')
+
+        with temporary_file as zipf:
             zipf.close()
             try:
-                print('Downloading Azure Functions Web Host...')
-                urllib.request.urlretrieve(self.webhost_url, zipf.name)
+                urllib.request.urlretrieve(zip_url, zipf.name)
             except Exception as e:
-                print(f"could not download Azure Functions Web Host binaries "
-                      f"from {self.webhost_url}: {e!r}", file=sys.stderr)
+                print('Failed to download Functions Host source code from'
+                      f' {zip_url}: {e!r}', file=sys.stderr)
                 sys.exit(1)
 
-            if not self.webhost_dir.exists():
-                os.makedirs(self.webhost_dir, exist_ok=True)
+        print(f'Functions Host is downloaded into {temporary_file.name}')
+        return temporary_file.name
 
-            with zipfile.ZipFile(zipf.name) as archive:
-                print('Extracting Azure Functions Web Host binaries...')
+    def _create_webhost_folder(self, dest_folder: pathlib.Path):
+        if dest_folder.exists():
+            shutil.rmtree(dest_folder)
+        os.makedirs(dest_folder, exist_ok=True)
+        print(f'Functions Host folder is created in {dest_folder}')
 
-                # We cannot simply use extractall(), as the archive
-                # contains Windows-style path names, which are not
-                # automatically converted into Unix-style paths, so
-                # extractall() will produce a flat directory with
-                # backslashes in file names.
-                for archive_name in archive.namelist():
-                    destination = \
-                        self.webhost_dir / archive_name.replace('\\', os.sep)
-                    if not destination.parent.exists():
-                        os.makedirs(destination.parent, exist_ok=True)
-                    with archive.open(archive_name) as src, \
-                            open(destination, 'wb') as dst:
-                        dst.write(src.read())
+    def _extract_webhost_zip(self, version: str, src_zip: str, dest: str):
+        print(f'Extracting Functions Host from {src_zip}')
+
+        with zipfile.ZipFile(src_zip) as archive:
+            # We cannot simply use extractall(), as the archive
+            # contains Windows-style path names, which are not
+            # automatically converted into Unix-style paths, so
+            # extractall() will produce a flat directory with
+            # backslashes in file names.
+
+            for archive_name in archive.namelist():
+                prefix = f'azure-functions-host-{version}/'
+                if archive_name.startswith(prefix):
+                    sanitized_name = archive_name \
+                        .replace('\\', os.sep) \
+                        .replace(prefix, '')
+                    dest_filename = dest / sanitized_name
+                    zipinfo = archive.getinfo(archive_name)
+
+                    try:
+                        if not dest_filename.parent.exists():
+                            os.makedirs(dest_filename.parent, exist_ok=True)
+
+                        if zipinfo.is_dir():
+                            os.makedirs(dest_filename, exist_ok=True)
+                        else:
+                            with archive.open(archive_name) as src, \
+                                    open(dest_filename, 'wb') as dst:
+                                dst.write(src.read())
+                    except Exception as e:
+                        print(f'Failed to extract file {archive_name}'
+                              f': {e!r}', file=sys.stderr)
+                        sys.exit(1)
+
+        print(f'Functions Host is extracted into {dest}')
+
+    def _chmod_protobuf_generation_script(self, webhost_dir: pathlib.Path):
+        # This script is needed to set to executable in order to build the
+        # WebJobs.Script.Grpc project in Linux and MacOS
+        script_path = (
+            webhost_dir / 'src' / 'WebJobs.Script.Grpc' / 'generate_protos.sh'
+        )
+        if sys.platform != 'win32' and os.path.exists(script_path):
+            print('Change generate_protos.sh script permission')
+            os.chmod(script_path, 0o555)
+
+    def _compile_webhost(self, webhost_dir: pathlib.Path):
+        print(f'Compiling Functions Host from {webhost_dir}')
+
+        try:
+            subprocess.run(
+                args=['dotnet', 'build', 'WebJobs.Script.sln', '-o', 'bin'],
+                check=True,
+                cwd=str(webhost_dir),
+                stdout=sys.stdout, stderr=sys.stderr)
+        except Exception:
+            print(f"Failed to compile webhost in {webhost_dir}. "
+                  ".NET Core SDK is required to build the solution. "
+                  "Please visit https://aka.ms/dotnet-download",
+                  file=sys.stderr)
+            sys.exit(1)
+
+        print('Functions Host is compiled successfully')
 
     def _install_extensions(self):
         if not self.extensions_dir.exists():
@@ -241,15 +313,25 @@ class webhost(distutils.cmd.Command):
         env['TERM'] = 'xterm'  # ncurses 6.1 workaround
         try:
             subprocess.run(
-                args=['dotnet', 'build', '-o', 'bin'], check=True,
+                args=['dotnet', 'build', '-o', '.'], check=True,
                 cwd=str(self.extensions_dir),
                 stdout=sys.stdout, stderr=sys.stderr, env=env)
         except Exception:
-            print(f"dotnet core SDK is required")
+            print(".NET Core SDK is required to build the extensions. "
+                  "Please visit https://aka.ms/dotnet-download")
             sys.exit(1)
 
     def run(self):
-        self._install_webhost()
+        # Prepare webhost
+        zip_path = self._download_webhost_zip(self.webhost_version)
+        self._create_webhost_folder(self.webhost_dir)
+        self._extract_webhost_zip(version=self.webhost_version,
+                                  src_zip=zip_path,
+                                  dest=self.webhost_dir)
+        self._chmod_protobuf_generation_script(self.webhost_dir)
+        self._compile_webhost(self.webhost_dir)
+
+        # Prepare extensions
         self._install_extensions()
 
 
@@ -259,12 +341,12 @@ with open("README.md") as readme:
 
 setup(
     name='azure-functions-worker',
-    version='1.1.6',
+    version='1.1.10',
     description='Python Language Worker for Azure Functions Host',
     author="Microsoft Corp.",
     author_email="azurefunctions@microsoft.com",
     keywords="azure azurefunctions python",
-    url="http://packages.python.org/an_example_pypi_project",
+    url="https://github.com/Azure/azure-functions-python-worker",
     long_description=long_description,
     long_description_content_type='text/markdown',
     classifiers=[
@@ -272,10 +354,10 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Intended Audience :: Developers',
         'Programming Language :: Python :: 3',
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         'Operating System :: MacOS :: MacOS X',
@@ -290,12 +372,12 @@ setup(
               'azure_functions_worker.utils',
               'azure_functions_worker._thirdparty'],
     install_requires=[
-        'grpcio~=1.32.0',
-        'grpcio-tools~=1.32.0',
+        'grpcio~=1.33.2',
+        'grpcio-tools~=1.33.2',
     ],
     extras_require={
         'dev': [
-            'azure-functions==1.4.0',
+            'azure-functions==1.6.0',
             'azure-eventhub~=5.1.0',
             'python-dateutil~=2.8.1',
             'flake8~=3.7.9',

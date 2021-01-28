@@ -94,6 +94,3 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertIsNone(sys_props['PartitionKey'])
         self.assertGreaterEqual(sys_props['SequenceNumber'], 0)
         self.assertIsNotNone(sys_props['Offset'])
-
-        # Metadata check eventhub trigger name
-        self.assertEqual(metadata['sys']['MethodName'], 'metadata_trigger')

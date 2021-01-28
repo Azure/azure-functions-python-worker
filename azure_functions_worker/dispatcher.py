@@ -7,8 +7,6 @@ Implements loading and execution of Python workers.
 
 import asyncio
 import concurrent.futures
-import importlib
-import inspect
 import logging
 import os
 import queue
@@ -16,7 +14,7 @@ import sys
 import threading
 from asyncio import BaseEventLoop
 from logging import LogRecord
-from typing import Optional
+from typing import List, Optional
 
 import grpc
 
@@ -35,6 +33,7 @@ from .logging import disable_console_logging, enable_console_logging
 from .logging import error_logger, is_system_log_category, logger
 from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
+from .utils.dependency import DependencyManager
 from .utils.wrappers import disable_feature_by
 
 _TRUE = "true"
@@ -77,12 +76,14 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         self._old_task_factory = None
 
-        # We allow the customer to change synchronous thread pool count by
-        # PYTHON_THREADPOOL_THREAD_COUNT app setting. The default value is 1.
-        self._sync_tp_max_workers: int = self._get_sync_tp_max_workers()
+        # We allow the customer to change synchronous thread pool max worker
+        # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
+        #   For 3.[6|7|8] The default value is 1.
+        #   For 3.9, we don't set this value by default but we honor incoming
+        #     the app setting.
         self._sync_call_tp: concurrent.futures.Executor = (
-            concurrent.futures.ThreadPoolExecutor(
-                max_workers=self._sync_tp_max_workers))
+            self._create_sync_call_tp(self._get_sync_tp_max_workers())
+        )
 
         self._grpc_connect_timeout: float = grpc_connect_timeout
         # This is set to -1 by default to remove the limitation on msg size
@@ -92,6 +93,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_thread: threading.Thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
 
+    def get_sync_tp_workers_set(self):
+        """We don't know the exact value of the threadcount set for the Python
+         3.9 scenarios (as we'll start passing only None by default), and we
+         need to get that information.
+
+         Ref: concurrent.futures.thread.ThreadPoolExecutor.__init__._max_workers
+        """
+        return self._sync_call_tp._max_workers
+
     @classmethod
     async def connect(cls, host: str, port: int, worker_id: str,
                       request_id: str, connect_timeout: float):
@@ -99,9 +109,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
         disp._grpc_thread.start()
         await disp._grpc_connected_fut
-        logger.info('Successfully opened gRPC channel to %s:%s '
-                    'with sync threadpool max workers set to %s',
-                    host, port, disp._sync_tp_max_workers)
+        logger.info('Successfully opened gRPC channel to %s:%s ', host, port)
         return disp
 
     async def dispatch_forever(self):
@@ -134,7 +142,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             # established, should use it for system and user logs
             logging_handler = AsyncLoggingHandler()
             root_logger = logging.getLogger()
-            root_logger.setLevel(logging.DEBUG)
+
+            # Don't change this unless you read #780 and #745
+            root_logger.setLevel(logging.INFO)
             root_logger.addHandler(logging_handler)
             logger.info('Switched to gRPC logging.')
             logging_handler.flush()
@@ -163,9 +173,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._grpc_thread.join()
             self._grpc_thread = None
 
-        if self._sync_call_tp is not None:
-            self._sync_call_tp.shutdown()
-            self._sync_call_tp = None
+        self._stop_sync_call_tp()
 
     def on_logging(self, record: logging.LogRecord, formatted_msg: str) -> None:
         if record.levelno >= logging.CRITICAL:
@@ -257,6 +265,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
         }
 
+        # Can detech worker packages
+        DependencyManager.use_customer_dependencies()
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
@@ -320,11 +331,21 @@ class Dispatcher(metaclass=DispatcherMeta):
             fi: functions.FunctionInfo = self._functions.get_function(
                 function_id)
 
-            logger.info(f'Received FunctionInvocationRequest, '
-                        f'request ID: {self.request_id}, '
-                        f'function ID: {function_id}, '
-                        f'invocation ID: {invocation_id}, '
-                        f'function type: {"async" if fi.is_async else "sync"}')
+            function_invocation_logs: List[str] = [
+                'Received FunctionInvocationRequest',
+                f'request ID: {self.request_id}',
+                f'function ID: {function_id}',
+                f'function name: {fi.name}',
+                f'invocation ID: {invocation_id}',
+                f'function type: {"async" if fi.is_async else "sync"}'
+            ]
+            if not fi.is_async:
+                function_invocation_logs.append(
+                    f'sync threadpool max workers: '
+                    f'{self.get_sync_tp_workers_set()}'
+                )
+            logger.info(', '.join(function_invocation_logs))
+
             args = {}
             for pb in invoc_request.input_data:
                 pb_type_info = fi.input_types[pb.name]
@@ -446,26 +467,16 @@ class Dispatcher(metaclass=DispatcherMeta):
             for var in env_vars:
                 os.environ[var] = env_vars[var]
 
-            # Reload package namespaces for customer's libraries
-            packages_to_reload = ['azure', 'google']
-            for p in packages_to_reload:
-                try:
-                    logger.info(f'Reloading {p} module')
-                    importlib.reload(sys.modules[p])
-                except Exception as ex:
-                    logger.info('Unable to reload {}: \n{}'.format(p, ex))
-                logger.info(f'Reloaded {p} module')
+            # Apply PYTHON_THREADPOOL_THREAD_COUNT
+            self._stop_sync_call_tp()
+            self._sync_call_tp = (
+                self._create_sync_call_tp(self._get_sync_tp_max_workers())
+            )
 
-            # Reload azure.functions to give user package precedence
-            logger.info('Reloading azure.functions module at %s',
-                        inspect.getfile(sys.modules['azure.functions']))
-            try:
-                importlib.reload(sys.modules['azure.functions'])
-                logger.info('Reloaded azure.functions module now at %s',
-                            inspect.getfile(sys.modules['azure.functions']))
-            except Exception as ex:
-                logger.info('Unable to reload azure.functions. '
-                            'Using default. Exception:\n{}'.format(ex))
+            # Reload azure google namespaces
+            DependencyManager.reload_azure_google_namespace(
+                func_env_reload_request.function_app_directory
+            )
 
             # Change function app directory
             if getattr(func_env_reload_request,
@@ -499,7 +510,17 @@ class Dispatcher(metaclass=DispatcherMeta):
         else:
             logger.warning('Directory %s is not found when reloading', new_cwd)
 
-    def _get_sync_tp_max_workers(self) -> int:
+    def _stop_sync_call_tp(self):
+        """Deallocate the current synchronous thread pool and assign
+        self._sync_call_tp to None. If the thread pool does not exist,
+        this will be a no op.
+        """
+        if getattr(self, '_sync_call_tp', None):
+            self._sync_call_tp.shutdown()
+            self._sync_call_tp = None
+
+    @staticmethod
+    def _get_sync_tp_max_workers() -> Optional[int]:
         def tp_max_workers_validator(value: str) -> bool:
             try:
                 int_value = int(value)
@@ -509,17 +530,35 @@ class Dispatcher(metaclass=DispatcherMeta):
                 return False
 
             if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN or (
-               int_value > PYTHON_THREADPOOL_THREAD_COUNT_MAX):
+                    int_value > PYTHON_THREADPOOL_THREAD_COUNT_MAX):
                 logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
-                               'to a value between 1 and 32')
+                               'to a value between 1 and 32. '
+                               'Reverting to default value for max_workers')
                 return False
 
             return True
 
-        return int(get_app_setting(
-            setting=PYTHON_THREADPOOL_THREAD_COUNT,
-            default_value=f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}',
-            validator=tp_max_workers_validator))
+        # Starting Python 3.9, worker won't be putting a limit on the
+        # max_workers count in the created threadpool.
+        default_value = None if sys.version_info.minor == 9 \
+            else f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}'
+        max_workers = get_app_setting(setting=PYTHON_THREADPOOL_THREAD_COUNT,
+                                      default_value=default_value,
+                                      validator=tp_max_workers_validator)
+
+        # We can box the app setting as int for earlier python versions.
+        return int(max_workers) if max_workers else None
+
+    def _create_sync_call_tp(
+            self, max_worker: Optional[int]) -> concurrent.futures.Executor:
+        """Create a thread pool executor with max_worker. This is a wrapper
+        over ThreadPoolExecutor constructor. Consider calling this method after
+        _stop_sync_call_tp() to ensure only 1 synchronous thread pool is
+        running.
+        """
+        return concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_worker
+        )
 
     def __run_sync_func(self, invocation_id, func, params):
         # This helper exists because we need to access the current

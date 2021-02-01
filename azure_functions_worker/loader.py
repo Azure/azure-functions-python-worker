@@ -23,7 +23,11 @@ _submodule_dirs = []
 
 
 def register_function_dir(path: PathLike) -> None:
-    _submodule_dirs.append(fspath(path))
+    try:
+        _submodule_dirs.append(fspath(path))
+    except TypeError as e:
+        raise RuntimeError(f'Path ({path}) is incompatible with fspath. '
+                           f'It is of type {type(path)}.', e)
 
 
 def install() -> None:

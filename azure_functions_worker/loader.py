@@ -69,7 +69,10 @@ def load_function(name: str, directory: str, script_file: str,
 
     modname_parts = [_AZURE_NAMESPACE]
     modname_parts.extend(rel_script_path.parts[:-1])
-    modname_parts.append(modname)
+
+    # If the __init__.py contains the code, we should avoid double loading.
+    if modname.lower() != '__init__':
+        modname_parts.append(modname)
 
     fullmodname = '.'.join(modname_parts)
 

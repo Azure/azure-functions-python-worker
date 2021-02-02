@@ -276,10 +276,12 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__function_load_request(self, req):
         func_request = req.function_load_request
         function_id = func_request.function_id
+        function_name = func_request.metadata.name
 
         logger.info(f'Received FunctionLoadRequest, '
                     f'request ID: {self.request_id}, '
-                    f'function ID: {function_id}')
+                    f'function ID: {function_id}'
+                    f'function Name: {function_name}')
         try:
             func = loader.load_function(
                 func_request.metadata.name,
@@ -292,7 +294,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             logger.info('Successfully processed FunctionLoadRequest, '
                         f'request ID: {self.request_id}, '
-                        f'function ID: {function_id}')
+                        f'function ID: {function_id},'
+                        f'function Name: {function_name}')
 
             return protos.StreamingMessage(
                 request_id=self.request_id,

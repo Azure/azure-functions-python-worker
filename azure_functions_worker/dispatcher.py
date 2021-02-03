@@ -29,6 +29,7 @@ from .constants import (CONSOLE_LOG_PREFIX, PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 from .logging import disable_console_logging, enable_console_logging
 from .logging import error_logger, is_system_log_category, logger
+from .extension import ExtensionManager
 from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
 from .utils.dependency import DependencyManager
@@ -301,6 +302,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._functions.add_function(
                 function_id, func, func_request.metadata)
 
+            ExtensionManager.function_load_extension(
+                function_name,
+                func_request.metadata.directory
+            )
+
             logger.info('Successfully processed FunctionLoadRequest, '
                         f'request ID: {self.request_id}, '
                         f'function ID: {function_id},'
@@ -368,20 +374,24 @@ class Dispatcher(metaclass=DispatcherMeta):
                     trigger_metadata=trigger_metadata,
                     pytype=pb_type_info.pytype)
 
+            fi_context = bindings.Context(
+                fi.name, fi.directory, invocation_id, trace_context)
             if fi.requires_context:
-                args['context'] = bindings.Context(
-                    fi.name, fi.directory, invocation_id, trace_context)
+                args['context'] = fi_context
 
             if fi.output_types:
                 for name in fi.output_types:
                     args[name] = bindings.Out()
 
             if fi.is_async:
-                call_result = await fi.func(**args)
+                call_result = await self.__run_async_func(
+                    fi_context, fi.func, args
+                )
             else:
                 call_result = await self._loop.run_in_executor(
                     self._sync_call_tp,
-                    self.__run_sync_func, invocation_id, fi.func, args)
+                    self.__run_sync_func,
+                    invocation_id, fi_context, fi.func, args)
             if call_result is not None and not fi.has_return:
                 raise RuntimeError(f'function {fi.name!r} without a $return '
                                    'binding returned a non-None value')
@@ -552,14 +562,20 @@ class Dispatcher(metaclass=DispatcherMeta):
             max_workers=max_worker
         )
 
-    def __run_sync_func(self, invocation_id, func, params):
+    def __run_sync_func(self, invocation_id, context, func, params):
         # This helper exists because we need to access the current
         # invocation_id from ThreadPoolExecutor's threads.
         _invocation_id_local.v = invocation_id
         try:
-            return func(**params)
+            return ExtensionManager.get_invocation_wrapper(context,
+                                                           func)(params)
         finally:
             _invocation_id_local.v = None
+
+    async def __run_async_func(self, context, func, params):
+        return await ExtensionManager.get_invocation_wrapper_async(
+            context, func, params
+        )
 
     def __poll_grpc(self):
         options = []

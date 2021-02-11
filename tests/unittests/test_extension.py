@@ -25,8 +25,13 @@ class TestExtension(unittest.TestCase):
             os.path.dirname(__file__), 'resources', 'mock_sdk_without_ext'
         )
 
+        if sys.modules.get('azure.functions'):
+            sys.modules.pop('azure')
+            sys.modules.pop('azure.functions')
+
     def setUp(self):
         super().setUp()
+
         self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
         self.mock_sys_path = patch('sys.path', sys.path.copy())
 
@@ -132,7 +137,6 @@ class TestExtension(unittest.TestCase):
 
         from azure.functions import MockExtension
         self.assertIsNone(MockExtension.before_invocation_context)
-
 
     @patch('azure_functions_worker.extension.logger')
     def test_invoke_before_invocations_sdk_not_supported(self,

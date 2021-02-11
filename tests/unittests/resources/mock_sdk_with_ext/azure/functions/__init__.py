@@ -64,7 +64,6 @@ class FuncExtension:
         pass
 
 
-
 MESSAGE = "This is a mocked azure.functions package (with sdk)"
 
 __version__ = "1.7.0"

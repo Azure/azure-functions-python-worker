@@ -409,10 +409,7 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipUnless(
-        sys.version_info.major == 3 and sys.version_info.minor == 9,
-        'Test only available for Python 3.9'
-    )
+    @unittest.skip('The isolation feature is disabled for Python 3.9 for now')
     def test_use_worker_dependencies_default_python_39(self):
         # Feature should be enabled in Python 3.9 by default
         # Setup paths
@@ -475,10 +472,7 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipUnless(
-        sys.version_info.major == 3 and sys.version_info.minor == 9,
-        'Test only available for Python 3.9'
-    )
+    @unittest.skip("The isolation feature is disabled for Python 3.9 for now")
     def test_use_customer_dependencies_default_python_39(self):
         # Feature should be enabled in Python 3.9 by default
         # Setup paths

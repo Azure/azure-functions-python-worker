@@ -275,9 +275,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     status=protos.StatusResult.Success)))
 
     async def _handle__worker_status_request(self, req):
-        logger.info('Received WorkerStatusRequest, request ID %s',
-                    self.request_id)
-
+        # Logging is not necessary in this request since the response is used
+        # for host to judge scale decisions of out-of-proc languages.
+        # Having log here will reduce the responsiveness of the worker.
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_status_response=protos.WorkerStatusResponse())

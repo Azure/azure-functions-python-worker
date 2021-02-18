@@ -3,12 +3,13 @@
 
 from __future__ import annotations
 import uuid
-from typing import Dict
-from typing import Optional
+from typing import Dict, Optional
 from ..logging import logger
 from ..mmap_handler.file_writer import FileWriter
 from ..mmap_handler.file_reader import FileReader
 from ..mmap_handler.file_accessor_factory import FileAccessorFactory
+from ..utils.common import is_envvar_true
+from ..constants import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
 
 
 class SharedMemoryManager:
@@ -24,7 +25,7 @@ class SharedMemoryManager:
         # functions host).
         # Having a mapping of the name and the memory map is then later used to close a given
         # memory map by its name, after it has been used.
-        # key: map_name, val: mmap.mmap
+        # key: mem_map_name, val: mmap.mmap
         self.allocated_mem_maps: Dict[str, mmap.mmap] = {}
         self.file_accessor = FileAccessorFactory.create_file_accessor()
         self.file_reader = FileReader()
@@ -35,7 +36,7 @@ class SharedMemoryManager:
         Whether supported types should be transferred between functions host and the worker using
         shared memory.
         """
-        return True
+        return is_envvar_true(FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
 
     def is_supported(self, datum: Datum) -> bool:
         """
@@ -51,24 +52,22 @@ class SharedMemoryManager:
             return True
         return False
 
-    def get_bytes(self, map_name: str, offset: int, count: int) -> Optional[bytes]:
+    def get_bytes(self, mem_map_name: str, offset: int, count: int) -> Optional[bytes]:
         """
         Reads data from the given memory map with the provided name, starting at the provided
         offset and reading a total of count bytes.
         Returns the data read from shared memory as bytes if successful, None otherwise.
         """
-        logger.info('Reading bytes from shared memory: %s', map_name)
-        data = self.file_reader.read_content_as_bytes(map_name, offset, count)
+        data = self.file_reader.read_content_as_bytes(mem_map_name, offset, count)
         return data
 
-    def get_string(self, map_name: str, offset: int, count: int) -> Optional[str]:
+    def get_string(self, mem_map_name: str, offset: int, count: int) -> Optional[str]:
         """
         Reads data from the given memory map with the provided name, starting at the provided
         offset and reading a total of count bytes.
         Returns the data read from shared memory as a string if successful, None otherwise.
         """
-        logger.info('Reading string from shared memory: %s', map_name)
-        data = self.file_reader.read_content_as_string(map_name, offset, count)
+        data = self.file_reader.read_content_as_string(mem_map_name, offset, count)
         return data
 
     def put_bytes(self, data: bytes) -> Optional[str]:
@@ -77,12 +76,12 @@ class SharedMemoryManager:
         Returns the name of the memory map into which the data was written if successful, None
         otherwise.
         """
-        map_name = str(uuid.uuid4())
-        logger.info('Writing bytes to shared memory: %s', map_name)
-        mem_map = self.file_writer.create_with_content_bytes(map_name, data)
-        if mem_map is not None:
-            self.allocated_mem_maps[map_name] = mem_map
-        return map_name
+        mem_map_name = str(uuid.uuid4())
+        mem_map = self.file_writer.create_with_content_bytes(mem_map_name, data)
+        if mem_map is None:
+            return None
+        self.allocated_mem_maps[mem_map_name] = mem_map
+        return mem_map_name
 
     def put_string(self, data: str) -> Optional[str]:
         """
@@ -90,27 +89,27 @@ class SharedMemoryManager:
         Returns the name of the memory map into which the data was written if succesful, None
         otherwise.
         """
-        map_name = str(uuid.uuid4())
-        logger.info('Writing string to shared memory: %s', map_name)
-        mem_map = self.file_writer.create_with_content_string(map_name, data)
-        if mem_map is not None:
-            self.allocated_mem_maps[map_name] = mem_map
-        return map_name
+        mem_map_name = str(uuid.uuid4())
+        mem_map = self.file_writer.create_with_content_string(mem_map_name, data)
+        if mem_map is None:
+            return None
+        self.allocated_mem_maps[mem_map_name] = mem_map
+        return mem_map_name
 
-    def free_mem_map(self, map_name: str):
+    def free_mem_map(self, mem_map_name: str):
         """
-        Frees the memory map and any backing resources (e.g. file in the case of Linux) associated
+        Frees the memory map and any backing resources (e.g. file in the case of Unix) associated
         with it.
         If there is no memory map with the given name being tracked, then no action is performed.
         Returns True if the memory map was freed successfully, False otherwise.
         """
-        if map_name not in self.allocated_mem_maps:
-            # TODO Log Error
+        if mem_map_name not in self.allocated_mem_maps:
+            logger.error('Cannot find shared memory in list of allocations: %s', mem_map_name)
             return False
-        mem_map = self.allocated_mem_maps[map_name]
-        success = self.file_accessor.delete_mem_map(map_name, mem_map)
-        del self.allocated_mem_maps[map_name]
+        mem_map = self.allocated_mem_maps[mem_map_name]
+        success = self.file_accessor.delete_mem_map(mem_map_name, mem_map)
+        del self.allocated_mem_maps[mem_map_name]
         if not success:
-            # TODO Log Error
+            logger.error('Cannot delete shared memory: %s', mem_map_name)
             return False
         return True

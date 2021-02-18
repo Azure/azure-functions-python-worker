@@ -2,14 +2,18 @@
 # Licensed under the MIT License.
 
 import os
-from .file_accessor_linux import FileAccessorLinux
+from .file_accessor_unix import FileAccessorUnix
 from .file_accessor_windows import FileAccessorWindows
 
 
 class FileAccessorFactory:
+    """
+    For creating the platform-appropriate instance of FileAccessor to perform memory map related
+    operations.
+    """
     @staticmethod
     def create_file_accessor():
-        if os.name == 'posix':
-            return FileAccessorLinux()
-        else:
+        if os.name == 'nt':
             return FileAccessorWindows()
+        else:
+            return FileAccessorUnix()

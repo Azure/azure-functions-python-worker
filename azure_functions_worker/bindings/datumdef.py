@@ -2,10 +2,10 @@
 # Licensed under the MIT License.
 
 from __future__ import annotations
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 import json
 from .. import protos
+from ..logging import logger
 
 
 class Datum:
@@ -100,49 +100,52 @@ class Datum:
         Reads the specified shared memory region and converts the read data into a datum object of
         the corresponding type.
         """
-        mmap_name = shmem.name
+        mem_map_name = shmem.name
         offset = shmem.offset
         count = shmem.count
         data_type = shmem.type
+        ret_val = None
         if data_type == protos.RpcDataType.bytes:
-            val = shmem_mgr.get_bytes(mmap_name, offset, count)
+            val = shmem_mgr.get_bytes(mem_map_name, offset, count)
             if val is not None:
-                return cls(val, 'bytes')
+                ret_val = cls(val, 'bytes')
         elif data_type == protos.RpcDataType.string:
-            val = shmem_mgr.get_string(mmap_name, offset, count)
+            val = shmem_mgr.get_string(mem_map_name, offset, count)
             if val is not None:
-                return cls(val, 'string')
+                ret_val = cls(val, 'string')
+        if ret_val is not None:
+            logger.info(f'Read {count} bytes from memory map {mem_map_name} for data type {data_type}')
+            return ret_val
         return None
 
     @classmethod
-    def to_rpc_shared_memory(cls, datum: Datum, shmem_mgr: SharedMemoryManager) -> protos.RpcSharedMemory:
+    def to_rpc_shared_memory(cls, datum: Datum, shmem_mgr: SharedMemoryManager) -> Optional[protos.RpcSharedMemory]:
         """
         Writes the given value to shared memory and returns the corresponding RpcSharedMemory
         object which can be sent back to the functions host over RPC.
         """
         if datum.type == 'bytes':
             value = datum.value
-            map_name = shmem_mgr.put_bytes(value)
-            if map_name is not None:
-                shmem = protos.RpcSharedMemory(
-                    name=map_name,
-                    offset=0,
-                    count=len(value),
-                    type=protos.RpcDataType.bytes)
-                return shmem
+            mem_map_name = shmem_mgr.put_bytes(value)
+            data_type = protos.RpcDataType.bytes
         elif datum.type == 'string':
             value = datum.value
-            map_name = shmem_mgr.put_string(value)
-            if map_name is not None:
-                shmem = protos.RpcSharedMemory(
-                    name=map_name,
-                    offset=0,
-                    count=len(value),
-                    type=protos.RpcDataType.string)
-                return shmem
-        raise NotImplementedError(
-            f'unsupported datum type ({datum.type}) for shared memory'
-        )
+            mem_map_name = shmem_mgr.put_string(value)
+            data_type = protos.RpcDataType.string
+        else:
+            raise NotImplementedError(
+                f'Unsupported datum type ({datum.type}) for shared memory'
+            )
+        if mem_map_name is None:
+            return None
+        content_size = len(value)
+        shmem = protos.RpcSharedMemory(
+            name=mem_map_name,
+            offset=0,
+            count=content_size,
+            type=data_type)
+        logger.info(f'Wrote {content_size} bytes to memory map {mem_map_name} for data type {data_type}')
+        return shmem
 
 def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager,
                    invocation_id: str) -> protos.TypedData:
@@ -162,6 +165,13 @@ def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager,
             enable_content_negotiation=False,
             body=datum_as_proto(datum.value['body']),
         ))
+<<<<<<< HEAD
     raise NotImplementedError(
         'unexpected Datum type: {!r}'.format(datum.type)
     )
+=======
+    else:
+        raise NotImplementedError(
+            'unexpected Datum type: {!r}'.format(datum.type)
+        )
+>>>>>>> Cleaning up, addressing comments

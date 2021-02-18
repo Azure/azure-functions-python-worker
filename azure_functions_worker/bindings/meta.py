@@ -85,7 +85,6 @@ def from_incoming_proto(
     except NotImplementedError:
         # Binding does not support the data.
         dt = val.WhichOneof('data')
-
         raise TypeError(
             f'unable to decode incoming TypedData: '
             f'unsupported combination of TypedData field {dt!r} '
@@ -120,24 +119,21 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
                       out_name: str,
                       shmem_mgr: SharedMemoryManager) -> protos.ParameterBinding:
     datum = get_datum(binding, obj, pytype)
-    # TODO gochaudh: IMPORTANT: Right now we set the AppSetting to disable this
-    # However that takes impact only for data coming from host -> worker
-    # Is there a way to check the AppSetting here so that this does not respond back
-    # with shared memory?
     shared_mem_value = None
     parameter_binding = None
     # If shared memory is enabled, try to transfer to host over shared memory
     if shmem_mgr.is_enabled() and shmem_mgr.is_supported(datum):
         shared_mem_value = datumdef.Datum.to_rpc_shared_memory(datum, shmem_mgr)
+    # Check if data was written into shared memory
     if shared_mem_value is not None:
-        # Check if data was transferred over shared memory.
-        # If it was, then use the rpc_shared_memory field in the response message. 
+        # If it was, then use the rpc_shared_memory field in the response message
         parameter_binding = protos.ParameterBinding(
                             name=out_name,
                             rpc_shared_memory=shared_mem_value)
     else:
-        # If data was not trasnferred over shared memory, send it as part of the response message
+        # If not, send it as part of the response message over RPC
         rpc_val = datumdef.datum_as_proto(datum)
+        assert rpc_val is not None
         parameter_binding = protos.ParameterBinding(
                             name=out_name,
                             data=rpc_val)

@@ -2,12 +2,13 @@
 # Licensed under the MIT License.
 
 from __future__ import annotations
+from azure_functions_worker.bindings.shared_memory_metadata import SharedMemoryMetadata
 import uuid
 from typing import Dict, Optional
 from ..logging import logger
-from ..mmap_handler.file_writer import FileWriter
-from ..mmap_handler.file_reader import FileReader
 from ..mmap_handler.file_accessor_factory import FileAccessorFactory
+from ..mmap_handler.shared_memory_constants import SharedMemoryConstants as consts
+from ..mmap_handler.shared_memory_map import SharedMemoryMap
 from ..utils.common import is_envvar_true
 from ..constants import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
 
@@ -25,11 +26,9 @@ class SharedMemoryManager:
         # functions host).
         # Having a mapping of the name and the memory map is then later used to close a given
         # memory map by its name, after it has been used.
-        # key: mem_map_name, val: mmap.mmap
-        self.allocated_mem_maps: Dict[str, mmap.mmap] = {}
+        # key: mem_map_name, val: SharedMemoryMap
+        self.allocated_mem_maps: Dict[str, SharedMemoryMap] = {}
         self.file_accessor = FileAccessorFactory.create_file_accessor()
-        self.file_reader = FileReader()
-        self.file_writer = FileWriter()
 
     def is_enabled(self) -> bool:
         """
@@ -42,15 +41,52 @@ class SharedMemoryManager:
         """
         Whether the given Datum object can be transferred to the functions host using shared
         memory.
+        This logic is kept consistent with the host's which can be found in SharedMemoryManager.cs
         """
         if datum.type == 'bytes':
-            # TODO gochaudh: Check for min size config
-            # Is there a common place to put configs shared b/w host and worker?
-            # Env variable? App Setting?
-            return True
+            num_bytes = len(datum.value)
+            if num_bytes >= consts.MIN_OBJECT_BYTES_FOR_SHARED_MEMORY_TRANSFER and \
+                    num_bytes <= consts.MAX_OBJECT_BYTES_FOR_SHARED_MEMORY_TRANSFER:
+                return True
         elif datum.type == 'string':
-            return True
+            num_bytes = len(datum.value) * consts.SIZE_OF_CHAR_BYTES
+            if num_bytes >= consts.MIN_OBJECT_BYTES_FOR_SHARED_MEMORY_TRANSFER and \
+                    num_bytes <= consts.MAX_OBJECT_BYTES_FOR_SHARED_MEMORY_TRANSFER:
+                return True
         return False
+
+    def put_bytes(self, content: bytes) -> Optional[SharedMemoryMetadata]:
+        """
+        Writes the given bytes into shared memory.
+        Returns metadata about the shared memory region to which the content was written if
+        successful, None otherwise.
+        """
+        if content is None:
+            return None
+        mem_map_name = str(uuid.uuid4())
+        content_length = len(content)
+        shared_mem_map = self.create(mem_map_name, content_length)
+        if shared_mem_map is None:
+            return None
+        num_bytes_written = shared_mem_map.put_bytes(content)
+        if num_bytes_written != content_length:
+            logger.error(
+                f'Cannot write data into shared memory {mem_map_name} '
+                f'({num_bytes_written} != {content_length})')
+            return None
+        self.allocated_mem_maps[mem_map_name] = shared_mem_map
+        return SharedMemoryMetadata(mem_map_name, content_length)
+
+    def put_string(self, content: str) -> Optional[SharedMemoryMetadata]:
+        """
+        Writes the given string into shared memory.
+        Returns the name of the memory map into which the data was written if succesful, None
+        otherwise.
+        """
+        if content is None:
+            return None
+        content_bytes = content.encode('utf-8')
+        return self.put_bytes(content_bytes)
 
     def get_bytes(self, mem_map_name: str, offset: int, count: int) -> Optional[bytes]:
         """
@@ -58,8 +94,17 @@ class SharedMemoryManager:
         offset and reading a total of count bytes.
         Returns the data read from shared memory as bytes if successful, None otherwise.
         """
-        data = self.file_reader.read_content_as_bytes(mem_map_name, offset, count)
-        return data
+        if offset != 0:
+            logger.error(f'Cannot read bytes. Non-zero offset ({offset}) not supported.')
+            return None
+        shared_mem_map = self.open(mem_map_name, count)
+        if shared_mem_map is None:
+            return None
+        try:
+            content = shared_mem_map.get_bytes(content_offset=0, bytes_to_read=count)
+        finally:
+            shared_mem_map.dispose(is_delete_file=False)
+        return content
 
     def get_string(self, mem_map_name: str, offset: int, count: int) -> Optional[str]:
         """
@@ -67,34 +112,11 @@ class SharedMemoryManager:
         offset and reading a total of count bytes.
         Returns the data read from shared memory as a string if successful, None otherwise.
         """
-        data = self.file_reader.read_content_as_string(mem_map_name, offset, count)
-        return data
-
-    def put_bytes(self, data: bytes) -> Optional[str]:
-        """
-        Writes the given bytes into shared memory.
-        Returns the name of the memory map into which the data was written if successful, None
-        otherwise.
-        """
-        mem_map_name = str(uuid.uuid4())
-        mem_map = self.file_writer.create_with_content_bytes(mem_map_name, data)
-        if mem_map is None:
+        content_bytes = self.get_bytes(mem_map_name, offset, count)
+        if content_bytes is None:
             return None
-        self.allocated_mem_maps[mem_map_name] = mem_map
-        return mem_map_name
-
-    def put_string(self, data: str) -> Optional[str]:
-        """
-        Writes the given string into shared memory.
-        Returns the name of the memory map into which the data was written if succesful, None
-        otherwise.
-        """
-        mem_map_name = str(uuid.uuid4())
-        mem_map = self.file_writer.create_with_content_string(mem_map_name, data)
-        if mem_map is None:
-            return None
-        self.allocated_mem_maps[mem_map_name] = mem_map
-        return mem_map_name
+        content_str = content_bytes.decode('utf-8')
+        return content_str
 
     def free_mem_map(self, mem_map_name: str):
         """
@@ -104,12 +126,31 @@ class SharedMemoryManager:
         Returns True if the memory map was freed successfully, False otherwise.
         """
         if mem_map_name not in self.allocated_mem_maps:
-            logger.error('Cannot find shared memory in list of allocations: %s', mem_map_name)
+            logger.error(f'Cannot find memory map in list of allocations {mem_map_name}')
             return False
-        mem_map = self.allocated_mem_maps[mem_map_name]
-        success = self.file_accessor.delete_mem_map(mem_map_name, mem_map)
+        shared_mem_map = self.allocated_mem_maps[mem_map_name]
+        success = shared_mem_map.dispose()
         del self.allocated_mem_maps[mem_map_name]
-        if not success:
-            logger.error('Cannot delete shared memory: %s', mem_map_name)
-            return False
-        return True
+        return success
+
+    def create(self, mem_map_name: str, content_length: int) -> Optional[SharedMemoryMap]:
+        """
+        Creates a new SharedMemoryMap with the given name and content length.
+        Returns the SharedMemoryMap object if successful, None otherwise.
+        """
+        mem_map_size = consts.CONTENT_HEADER_TOTAL_BYTES + content_length
+        mem_map = self.file_accessor.create_mem_map(mem_map_name, mem_map_size)
+        if mem_map is None:
+            return None
+        return SharedMemoryMap(self.file_accessor, mem_map_name, mem_map)
+
+    def open(self, mem_map_name: str, content_length: int) -> Optional[SharedMemoryMap]:
+        """
+        Opens an existing SharedMemoryMap with the given name and content length.
+        Returns the SharedMemoryMap object if successful, None otherwise.
+        """
+        mem_map_size = consts.CONTENT_HEADER_TOTAL_BYTES + content_length
+        mem_map = self.file_accessor.open_mem_map(mem_map_name, mem_map_size)
+        if mem_map is None:
+            return None
+        return SharedMemoryMap(self.file_accessor, mem_map_name, mem_map)

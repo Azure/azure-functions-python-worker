@@ -126,25 +126,26 @@ class Datum:
         """
         if datum.type == 'bytes':
             value = datum.value
-            mem_map_name = shmem_mgr.put_bytes(value)
+            shared_mem_meta = shmem_mgr.put_bytes(value)
             data_type = protos.RpcDataType.bytes
         elif datum.type == 'string':
             value = datum.value
-            mem_map_name = shmem_mgr.put_string(value)
+            shared_mem_meta = shmem_mgr.put_string(value)
             data_type = protos.RpcDataType.string
         else:
             raise NotImplementedError(
                 f'Unsupported datum type ({datum.type}) for shared memory'
             )
-        if mem_map_name is None:
+        if shared_mem_meta is None:
             return None
-        content_size = len(value)
         shmem = protos.RpcSharedMemory(
-            name=mem_map_name,
+            name=shared_mem_meta.mem_map_name,
             offset=0,
-            count=content_size,
+            count=shared_mem_meta.count,
             type=data_type)
-        logger.info(f'Wrote {content_size} bytes to memory map {mem_map_name} for data type {data_type}')
+        logger.info(
+            f'Wrote {shared_mem_meta.count} bytes to memory map {shared_mem_meta.mem_map_name} '
+            f'for data type {data_type}')
         return shmem
 
 def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager,

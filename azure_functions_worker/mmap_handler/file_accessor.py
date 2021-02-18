@@ -2,9 +2,10 @@
 # Licensed under the MIT License.
 
 from __future__ import annotations
+import mmap
 from abc import ABCMeta, abstractmethod
 from typing import Optional
-from .memorymappedfile_constants import MemoryMappedFileConstants as consts
+from .shared_memory_constants import SharedMemoryConstants as consts
 
 
 class FileAccessor(metaclass=ABCMeta):
@@ -21,7 +22,7 @@ class FileAccessor(metaclass=ABCMeta):
             self,
             mem_map_name: str,
             mem_map_size: int,
-            access: int) -> Optional[mmap.mmap]:
+            access: int = mmap.ACCESS_READ) -> Optional[mmap.mmap]:
         """
         Opens an existing memory map.
         Returns the opened mmap if successful, None otherwise.
@@ -45,7 +46,7 @@ class FileAccessor(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def _is_dirty_bit_set(self, mem_map_name: str, mem_map) -> bool:
+    def _is_mem_map_initialized(self, mem_map: mmap.mmap) -> bool:
         """
         Checks if the dirty bit of the memory map has been set or not.
         This is used to check if a new memory map was created successfully and we don't end up
@@ -56,7 +57,7 @@ class FileAccessor(metaclass=ABCMeta):
         # Read the first byte
         byte_read = mem_map.read(1)
         # Check if the dirty bit was set or not
-        if byte_read == consts.DIRTY_BIT_SET:
+        if byte_read == consts.MEM_MAP_INITIALIZED_FLAG:
             is_set = True
         else:
             is_set = False
@@ -64,7 +65,7 @@ class FileAccessor(metaclass=ABCMeta):
         mem_map.seek(0)
         return is_set
 
-    def _set_dirty_bit(self, mem_map_name: str, mem_map):
+    def _set_mem_map_initialized(self, mem_map: mmap.mmap):
         """
         Sets the dirty bit in the header of the memory map to indicate that this memory map is not
         new anymore.
@@ -72,6 +73,6 @@ class FileAccessor(metaclass=ABCMeta):
         # The dirty bit is the first byte of the header so seek to the beginning
         mem_map.seek(0)
         # Set the dirty bit
-        mem_map.write(consts.DIRTY_BIT_SET)
+        mem_map.write(consts.MEM_MAP_INITIALIZED_FLAG)
         # Seek back the memory map to the begginging
         mem_map.seek(0)

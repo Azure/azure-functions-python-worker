@@ -6,7 +6,7 @@ import os
 import mmap
 from typing import Optional
 from io import BufferedRandom
-from .memorymappedfile_constants import MemoryMappedFileConstants as consts
+from .shared_memory_constants import SharedMemoryConstants as consts
 from .file_accessor import FileAccessor
 from ..logging import logger
 
@@ -20,7 +20,7 @@ class FileAccessorUnix(FileAccessor):
             self,
             mem_map_name: str,
             mem_map_size: int,
-            access: int) -> Optional[mmap.mmap]:
+            access: int = mmap.ACCESS_READ) -> Optional[mmap.mmap]:
         fd = self._open_mem_map_file(mem_map_name)
         if fd is None:
             return None
@@ -32,9 +32,9 @@ class FileAccessorUnix(FileAccessor):
         if fd is None:
             return None
         mem_map = mmap.mmap(fd, mem_map_size, mmap.MAP_SHARED, mmap.PROT_WRITE)
-        if self._is_dirty_bit_set(mem_map_name, mem_map):
+        if self._is_mem_map_initialized(mem_map):
             raise Exception(f'Memory map {mem_map_name} already exists')
-        self._set_dirty_bit(mem_map_name, mem_map)
+        self._set_mem_map_initialized(mem_map)
         return mem_map
 
     def delete_mem_map(self, mem_map_name: str, mem_map: mmap.mmap) -> bool:
@@ -65,7 +65,7 @@ class FileAccessorUnix(FileAccessor):
             except FileNotFoundError:
                 pass
         # The memory map was not found in any of the known directories
-        logger.warn(f'Cannot open memory map {mem_map_name}')
+        logger.error(f'Cannot open memory map {mem_map_name}')
         return None
 
     def _create_mem_map_dir(self):
@@ -124,5 +124,5 @@ class FileAccessorUnix(FileAccessor):
                 return fd
             except:
                 pass
-        logger.warn(f'Cannot create memory map {mem_map_name} with size {mem_mem_map_size}')
+        logger.error(f'Cannot create memory map {mem_map_name} with size {mem_mem_map_size}')
         return None

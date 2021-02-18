@@ -17,7 +17,7 @@ class FileAccessorWindows(FileAccessor):
             self,
             mem_map_name: str,
             mem_map_size: int,
-            access: int) -> Optional[mmap.mmap]:
+            access: int = mmap.ACCESS_READ) -> Optional[mmap.mmap]:
         try:
             mmap_ret = mmap.mmap(-1, mem_map_size, mem_map_name, access=access)
             return mmap_ret
@@ -30,9 +30,9 @@ class FileAccessorWindows(FileAccessor):
         mem_map = self.open_mem_map(mem_map_name, mem_map_size, mmap.ACCESS_WRITE)
         if mem_map is None:
             return None
-        if self._is_dirty_bit_set(mem_map_name, mem_map):
+        if self._is_mem_map_initialized(mem_map):
             raise Exception(f'Cannot create memory map {mem_map_name} as it already exists')
-        self._set_dirty_bit(mem_map_name, mem_map)
+        self._set_mem_map_initialized(mem_map)
         return mem_map
 
     def delete_mem_map(self, mem_map_name: str, mmap) -> bool:

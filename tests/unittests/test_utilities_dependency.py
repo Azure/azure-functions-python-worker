@@ -481,7 +481,6 @@ class TestDependencyManager(unittest.TestCase):
         )
 
         # The worker path should be the last in the sys.path
-        print(f'{sys.path=}')
         self.assertEqual(sys.path[-1], self._worker_deps_path)
 
     def test_prioritize_customer_dependencies_disable(self):

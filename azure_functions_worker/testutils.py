@@ -250,6 +250,8 @@ class SharedMemoryTestCase(unittest.TestCase):
     """
     def setUp(self):
         self.file_accessor = FileAccessorFactory.create_file_accessor()
+        if os.name != 'nt':
+            self._setUpUnix()
 
     def tearDown(self):
         if os.name != 'nt':
@@ -260,6 +262,12 @@ class SharedMemoryTestCase(unittest.TestCase):
 
     def get_random_bytes(self, num_bytes):
         return bytearray(random.getrandbits(8) for _ in range(num_bytes))
+
+    def _setUpUnix(self):
+        for temp_dir in consts.UNIX_TEMP_DIRS:
+            temp_dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
+            if not os.path.exists(temp_dir_path):
+                os.makedirs(temp_dir_path)
 
     def _tearDownUnix(self):
         for temp_dir in consts.UNIX_TEMP_DIRS:

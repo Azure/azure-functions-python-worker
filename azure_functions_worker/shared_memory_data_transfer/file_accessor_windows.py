@@ -21,9 +21,13 @@ class FileAccessorWindows(FileAccessor):
         Note: On Windows, an mmap is created if one does not exist even when
               attempting to open it.
         """
+        if mem_map_name is None or mem_map_name == '':
+            raise Exception('Cannot open memory map. Invalid name.')
+        if mem_map_size < 0:
+            raise Exception('Cannot open memory map. Invalid size.')
         try:
-            mmap_ret = mmap.mmap(-1, mem_map_size, mem_map_name, access=access)
-            return mmap_ret
+            mem_map = mmap.mmap(-1, mem_map_size, mem_map_name, access=access)
+            return mem_map
         except Exception as e:
             logger.warn(
                 f'Cannot open memory map {mem_map_name} with size '
@@ -34,6 +38,10 @@ class FileAccessorWindows(FileAccessor):
             -> Optional[mmap.mmap]:
         # Windows also creates the mmap when trying to open it, if it does not
         # already exist.
+        if mem_map_name is None or mem_map_name == '':
+            raise Exception('Cannot create memory map. Invalid name.')
+        if mem_map_size <= 0:
+            raise Exception('Cannot create memory map. Invalid size.')
         mem_map = self.open_mem_map(mem_map_name, mem_map_size,
                                     mmap.ACCESS_WRITE)
         if mem_map is None:

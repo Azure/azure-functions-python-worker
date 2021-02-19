@@ -18,6 +18,7 @@ import os
 import pathlib
 import platform
 import queue
+import random
 import re
 import shutil
 import socket
@@ -33,6 +34,10 @@ import grpc
 import requests
 
 from azure_functions_worker._thirdparty import aio_compat
+from azure_functions_worker.shared_memory_data_transfer.file_accessor_factory \
+    import FileAccessorFactory
+from azure_functions_worker.shared_memory_data_transfer. \
+    shared_memory_constants import SharedMemoryConstants as consts
 from . import dispatcher
 from . import protos
 from .constants import PYAZURE_WEBHOST_DEBUG
@@ -237,6 +242,29 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
             finally:
                 if test_exception is not None:
                     raise test_exception
+
+
+class SharedMemoryTestCase(unittest.TestCase):
+    """
+    For tests involving shared memory data transfer usage.
+    """
+    def setUp(self):
+        self.file_accessor = FileAccessorFactory.create_file_accessor()
+
+    def tearDown(self):
+        if os.name != 'nt':
+            self._tearDownUnix()
+
+    def get_new_mem_map_name(self):
+        return str(uuid.uuid4())
+
+    def get_random_bytes(self, num_bytes):
+        return bytearray(random.getrandbits(8) for _ in range(num_bytes))
+
+    def _tearDownUnix(self):
+        for temp_dir in consts.UNIX_TEMP_DIRS:
+            temp_dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
+            shutil.rmtree(temp_dir_path)
 
 
 class _MockWebHostServicer(protos.FunctionRpcServicer):

@@ -258,6 +258,41 @@ class TestDependencyManager(unittest.TestCase):
             os.path.join(self._customer_deps_path, 'common_module')
         )
 
+    def test_reload_all_namespaces_from_customer_deps(self):
+        # Setup app settings
+        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
+        os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
+
+        # Setup paths
+        DependencyManager.worker_deps_path = self._worker_deps_path
+        DependencyManager.cx_deps_path = self._customer_deps_path
+
+        # Ensure the common_module is imported from _worker_deps_path
+        DependencyManager.use_worker_dependencies()
+        import common_module  # NoQA
+        self.assertEqual(
+            common_module.package_location,
+            os.path.join(self._worker_deps_path, 'common_module')
+        )
+
+        # Placeholder specialization
+        DependencyManager.prioritize_customer_dependencies()
+        DependencyManager.reload_all_namespaces_from_customer_deps(
+            self._customer_func_path
+        )
+        del common_module
+
+        # Now the module should be imported from customer dependency
+        import common_module  # NoQA
+        self.assertIn(self._customer_deps_path, sys.path_importer_cache)
+        self.assertEqual(
+            common_module.package_location,
+            os.path.join(self._customer_deps_path, 'common_module')
+        )
+
+        # The worker dependency path remains as the last entry in sys.path
+        self.assertEqual(sys.path[-1], self._worker_deps_path)
+
     def test_remove_from_sys_path(self):
         sys.path.append(self._customer_deps_path)
         DependencyManager._remove_from_sys_path(self._customer_deps_path)
@@ -409,7 +444,10 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skip('The isolation feature is disabled for Python 3.9 for now')
+    @unittest.skipUnless(
+        sys.version_info.major == 3 and sys.version_info.minor == 9,
+        'Test only available for Python 3.9'
+    )
     def test_use_worker_dependencies_default_python_39(self):
         # Feature should be enabled in Python 3.9 by default
         # Setup paths
@@ -425,7 +463,7 @@ class TestDependencyManager(unittest.TestCase):
             os.path.join(self._worker_deps_path, 'common_module')
         )
 
-    def test_use_customer_dependencies(self):
+    def test_prioritize_customer_dependencies(self):
         # Setup app settings
         os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
 
@@ -435,14 +473,18 @@ class TestDependencyManager(unittest.TestCase):
         DependencyManager.cx_working_dir = self._customer_func_path
 
         # Ensure the common_module is imported from _customer_deps_path
-        DependencyManager.use_customer_dependencies()
+        DependencyManager.prioritize_customer_dependencies()
         import common_module  # NoQA
         self.assertEqual(
             common_module.package_location,
             os.path.join(self._customer_deps_path, 'common_module')
         )
 
-    def test_use_customer_dependencies_disable(self):
+        # The worker path should be the last in the sys.path
+        print(f'{sys.path=}')
+        self.assertEqual(sys.path[-1], self._worker_deps_path)
+
+    def test_prioritize_customer_dependencies_disable(self):
         # Setup app settings
         os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'false'
 
@@ -452,7 +494,7 @@ class TestDependencyManager(unittest.TestCase):
         DependencyManager.cx_working_dir = self._customer_func_path
 
         # Ensure the common_module is imported from _customer_deps_path
-        DependencyManager.use_customer_dependencies()
+        DependencyManager.prioritize_customer_dependencies()
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
@@ -460,7 +502,7 @@ class TestDependencyManager(unittest.TestCase):
         sys.version_info.major == 3 and sys.version_info.minor in (6, 7, 8),
         'Test only available for Python 3.6, 3.7, or 3.8'
     )
-    def test_use_customer_dependencies_default_python_36_37_38(self):
+    def test_prioritize_customer_dependencies_default_python_36_37_38(self):
         # Feature should be disabled in Python 3.6, 3.7, and 3.8
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
@@ -468,12 +510,15 @@ class TestDependencyManager(unittest.TestCase):
         DependencyManager.cx_working_dir = self._customer_func_path
 
         # Ensure the common_module is imported from _customer_deps_path
-        DependencyManager.use_customer_dependencies()
+        DependencyManager.prioritize_customer_dependencies()
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skip("The isolation feature is disabled for Python 3.9 for now")
-    def test_use_customer_dependencies_default_python_39(self):
+    @unittest.skipUnless(
+        sys.version_info.major == 3 and sys.version_info.minor == 9,
+        'Test only available for Python 3.9'
+    )
+    def test_prioritize_customer_dependencies_default_python_39(self):
         # Feature should be enabled in Python 3.9 by default
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
@@ -481,14 +526,14 @@ class TestDependencyManager(unittest.TestCase):
         DependencyManager.cx_working_dir = self._customer_func_path
 
         # Ensure the common_module is imported from _customer_deps_path
-        DependencyManager.use_customer_dependencies()
+        DependencyManager.prioritize_customer_dependencies()
         import common_module  # NoQA
         self.assertEqual(
             common_module.package_location,
             os.path.join(self._customer_deps_path, 'common_module')
         )
 
-    def test_use_customer_dependencies_import_from_working_directory(self):
+    def test_prioritize_customer_dependencies_from_working_directory(self):
         # Setup app settings
         os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
 
@@ -498,7 +543,7 @@ class TestDependencyManager(unittest.TestCase):
         DependencyManager.cx_working_dir = self._customer_func_path
 
         # Ensure the func_specific_module is imported from _customer_func_path
-        DependencyManager.use_customer_dependencies()
+        DependencyManager.prioritize_customer_dependencies()
         import func_specific_module  # NoQA
         self.assertEqual(
             func_specific_module.package_location,

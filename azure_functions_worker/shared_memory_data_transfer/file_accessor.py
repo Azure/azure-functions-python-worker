@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from __future__ import annotations
 import mmap
 from abc import ABCMeta, abstractmethod
 from typing import Optional
@@ -11,8 +10,8 @@ from .shared_memory_constants import SharedMemoryConstants as consts
 class FileAccessor(metaclass=ABCMeta):
     """
     For accessing memory maps.
-    This is an interface that must be implemented by sub-classes to provide platform-specific
-    support for accessing memory maps.
+    This is an interface that must be implemented by sub-classes to provide
+    platform-specific support for accessing memory maps.
     Currently the following two sub-classes are implemented:
         1) FileAccessorWindows
         2) FileAccessorUnix
@@ -30,7 +29,8 @@ class FileAccessor(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def create_mem_map(self, mem_map_name: str, mem_map_size: int) -> Optional[mmap.mmap]:
+    def create_mem_map(self, mem_map_name: str, mem_map_size: int) \
+            -> Optional[mmap.mmap]:
         """
         Creates a new memory map.
         Returns the created mmap if successful, None otherwise.
@@ -41,16 +41,18 @@ class FileAccessor(metaclass=ABCMeta):
     def delete_mem_map(self, mem_map_name: str, mem_map: mmap.mmap) -> bool:
         """
         Deletes the memory map and any backing resources associated with it.
-        If there is no memory map with the given name, then no action is performed.
-        Returns True if the memory map was successfully deleted, False otherwise.
+        If there is no memory map with the given name, then no action is
+        performed.
+        Returns True if the memory map was successfully deleted, False
+        otherwise.
         """
         raise NotImplementedError
 
     def _is_mem_map_initialized(self, mem_map: mmap.mmap) -> bool:
         """
         Checks if the dirty bit of the memory map has been set or not.
-        This is used to check if a new memory map was created successfully and we don't end up
-        using an existing one.
+        This is used to check if a new memory map was created successfully and
+        we don't end up using an existing one.
         """
         # The dirty bit is the first byte of the header so seek to the beginning
         mem_map.seek(0)
@@ -67,8 +69,8 @@ class FileAccessor(metaclass=ABCMeta):
 
     def _set_mem_map_initialized(self, mem_map: mmap.mmap):
         """
-        Sets the dirty bit in the header of the memory map to indicate that this memory map is not
-        new anymore.
+        Sets the dirty bit in the header of the memory map to indicate that this
+        memory map is not new anymore.
         """
         # The dirty bit is the first byte of the header so seek to the beginning
         mem_map.seek(0)

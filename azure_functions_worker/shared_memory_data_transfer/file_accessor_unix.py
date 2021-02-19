@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from __future__ import annotations
 import os
 import mmap
 from typing import Optional
@@ -27,7 +26,8 @@ class FileAccessorUnix(FileAccessor):
         mem_map = mmap.mmap(fd.fileno(), mem_map_size, access=access)
         return mem_map
 
-    def create_mem_map(self, mem_map_name: str, mem_map_size: int) -> Optional[mmap.mmap]:
+    def create_mem_map(self, mem_map_name: str, mem_map_size: int) \
+            -> Optional[mmap.mmap]:
         fd = self._create_mem_map_file(mem_map_name, mem_map_size)
         if fd is None:
             return None
@@ -42,10 +42,12 @@ class FileAccessorUnix(FileAccessor):
             fd = self._open_mem_map_file(mem_map_name)
             os.remove(fd.name)
         except Exception as e:
-            # In this case, we don't want to fail right away but log that deletion was unsuccessful.
-            # These logs can help identify if we may be leaking memory and not cleaning up the
-            # created memory maps.
-            logger.error(f'Cannot delete memory map {mem_map_name} - {e}', exc_info=True)
+            # In this case, we don't want to fail right away but log that
+            # deletion was unsuccessful.
+            # These logs can help identify if we may be leaking memory and not
+            # cleaning up the created memory maps.
+            logger.error(f'Cannot delete memory map {mem_map_name} - {e}',
+                exc_info=True)
             return False
         mem_map.close()
         return True
@@ -55,10 +57,11 @@ class FileAccessorUnix(FileAccessor):
         Get the file descriptor of an existing memory map.
         Returns the BufferedRandom stream to the file.
         """
-        # Iterate over all the possible directories where the memory map could be present and try
-        # to open it.
+        # Iterate over all the possible directories where the memory map could
+        # be present and try to open it.
         for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
-            file_path = os.path.join(mem_map_temp_dir, consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
+            file_path = os.path.join(mem_map_temp_dir,
+                consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
             try:
                 fd = open(file_path, 'r+b')
                 return fd
@@ -72,10 +75,11 @@ class FileAccessorUnix(FileAccessor):
         """
         Create a directory to create memory maps.
         """
-        # Iterate over all the possible directories where the memory map could be created and try
-        # to create in one of them.
+        # Iterate over all the possible directories where the memory map could
+        # be created and try to create in one of them.
         for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
-            dir_path = os.path.join(mem_map_temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
+            dir_path = os.path.join(mem_map_temp_dir,
+                consts.UNIX_TEMP_DIR_SUFFIX)
             if os.path.isdir(dir_path):
                 # One of the directories already exists, no need
                 return
@@ -83,15 +87,17 @@ class FileAccessorUnix(FileAccessor):
                 os.makedirs(dir_path)
                 return
             except:
-                # We try to create a directory in each of the applicable directory paths until we
-                # successfully create one or one that already exists is found.
+                # We try to create a directory in each of the applicable
+                # directory paths until we successfully create one or one that
+                # already exists is found.
                 # Even if this fails, we keep trying others.
                 pass
         # Could not create a directory in any of the applicable directory paths.
         # We will not be able to create any memory maps so we fail.
         raise Exception(f'Cannot create directory for memory maps')
 
-    def _create_mem_map_file(self, mem_map_name: str, mem_mem_map_size: int) -> Optional[int]:
+    def _create_mem_map_file(self, mem_map_name: str, mem_mem_map_size: int) \
+            -> Optional[int]:
         """
         Get the file descriptor for a new memory map.
         Returns the file descriptor.
@@ -99,11 +105,15 @@ class FileAccessorUnix(FileAccessor):
         dir_exists = False
         for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
             # Check if the file already exists
-            file_path = os.path.join(mem_map_temp_dir, consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
+            file_path = os.path.join(mem_map_temp_dir,
+                consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
             if os.path.exists(file_path):
-                raise Exception(f'File {file_path} for memory map {mem_map_name} already exists')
+                raise Exception(
+                    f'File {file_path} for memory map {mem_map_name} '
+                    f'already exists')
             # Check if the parent directory exists
-            dir_path = os.path.join(mem_map_temp_dir, consts.UNIX_TEMP_DIR_SUFFI)
+            dir_path = os.path.join(mem_map_temp_dir,
+                consts.UNIX_TEMP_DIR_SUFFIX)
             if os.path.isdir(dir_path):
                 dir_exists = True
         # Check if any of the parent directories exists
@@ -111,7 +121,8 @@ class FileAccessorUnix(FileAccessor):
             self._create_mem_map_dir()
         # Create the file
         for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
-            file_path = os.path.join(mem_map_temp_dir, consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
+            file_path = os.path.join(mem_map_temp_dir,
+                consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
             try:
                 fd = os.open(file_path, os.O_CREAT | os.O_TRUNC | os.O_RDWR)
                 # Write 0s to allocate
@@ -124,5 +135,7 @@ class FileAccessorUnix(FileAccessor):
                 return fd
             except:
                 pass
-        logger.error(f'Cannot create memory map {mem_map_name} with size {mem_mem_map_size}')
+        logger.error(
+            f'Cannot create memory map {mem_map_name} with size '
+            f'{mem_mem_map_size}')
         return None

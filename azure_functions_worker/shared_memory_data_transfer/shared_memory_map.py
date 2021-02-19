@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from __future__ import annotations
 import mmap
 import os
 import struct
@@ -16,11 +15,19 @@ class SharedMemoryMap:
     """
     Shared memory region to read/write data from.
     """
-    def __init__(self, file_accessor: FileAccessor, mem_map_name: str, mem_map: mmap.mmap):
+    def __init__(
+            self,
+            file_accessor: FileAccessor,
+            mem_map_name: str,
+            mem_map: mmap.mmap):
         if mem_map is None:
-            raise Exception(f'Cannot initialize SharedMemoryMap. Invalid memory map provided')
+            raise Exception(
+                f'Cannot initialize SharedMemoryMap. '
+                f'Invalid memory map provided')
         if mem_map_name is None or mem_map_name == '':
-            raise Exception(f'Cannot initialize SharedMemoryMap. Invalid name {mem_map_name}')
+            raise Exception(
+                f'Cannot initialize SharedMemoryMap. Invalid name '
+                f'{mem_map_name}')
         self.file_accessor = file_accessor
         self.mem_map_name = mem_map_name
         self.mem_map = mem_map
@@ -28,7 +35,8 @@ class SharedMemoryMap:
     def put_bytes(self, content: bytes) -> int:
         """
         Writes the given content bytes into this SharedMemoryMap.
-        The number of bytes written must be less than or equal to the size of the SharedMemoryMap.
+        The number of bytes written must be less than or equal to the size of
+        the SharedMemoryMap.
         Returns the number of bytes of content written.
         """
         if content is None:
@@ -37,23 +45,27 @@ class SharedMemoryMap:
         # Seek past the MemoryMapInitialized flag section of the header
         self.mem_map.seek(consts.MEM_MAP_INITIALIZED_FLAG_NUM_BYTES)
         # Write the content length into the header
-        content_length_bytes = content_length.to_bytes(consts.CONTENT_LENGTH_NUM_BYTES,
-            byteorder=sys.byteorder)
+        content_length_bytes = content_length.to_bytes(
+            consts.CONTENT_LENGTH_NUM_BYTES, byteorder=sys.byteorder)
         num_content_length_bytes = len(content_length_bytes)
-        num_content_length_bytes_written = self.mem_map.write(content_length_bytes)
+        num_content_length_bytes_written = self.mem_map.write(
+            content_length_bytes)
         if num_content_length_bytes_written != num_content_length_bytes:
             logger.error(
-                f'Cannot write content size into memory map {self.mem_map_name} '
-                f'({num_content_length_bytes_written} != {num_content_length_bytes})')
+                f'Cannot write content size to memory map {self.mem_map_name} '
+                f'({num_content_length_bytes_written} != '
+                f'{num_content_length_bytes})')
             return 0
         # Write the content
         num_content_bytes_written = self.mem_map.write(content)
         self.mem_map.flush()
         return num_content_bytes_written
 
-    def get_bytes(self, content_offset: int = 0, bytes_to_read: int = 0) -> Optional[bytes]:
+    def get_bytes(self, content_offset: int = 0, bytes_to_read: int = 0) \
+            -> Optional[bytes]:
         """
-        Read content from this SharedMemoryMap with the given name and starting at the given offset.
+        Read content from this SharedMemoryMap with the given name and starting
+        at the given offset.
         content_offset = 0 means read from the beginning of the content.
         bytes_to_read = 0 means read the entire content.
         Returns the content as bytes if successful, None otherwise.
@@ -80,10 +92,9 @@ class SharedMemoryMap:
         """
         success = True
         if is_delete_file:
-            if not self.file_accessor.delete_mem_map(self.mem_map_name, self.mem_map):
-                success = False
-        mem_map = self.mem_map
-        mem_map.close()
+            success = self.file_accessor.delete_mem_map(self.mem_map_name,
+                self.mem_map)
+        self.mem_map.close()
         return success
 
     def _bytes_to_long(self, input_bytes) -> int:
@@ -95,9 +106,10 @@ class SharedMemoryMap:
 
     def _get_content_length(self) -> Optional[int]:
         """
-        Read the header of the memory map to determine the length of content contained in that
-        memory map.
-        Returns the content length as a non-negative integer if successful, None otherwise.
+        Read the header of the memory map to determine the length of content
+        contained in that memory map.
+        Returns the content length as a non-negative integer if successful,
+        None otherwise.
         """
         self.mem_map.seek(consts.MEM_MAP_INITIALIZED_FLAG_NUM_BYTES)
         header_bytes = self.mem_map.read(consts.CONTENT_LENGTH_NUM_BYTES)

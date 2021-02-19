@@ -8,8 +8,8 @@ from .file_accessor_windows import FileAccessorWindows
 
 class FileAccessorFactory:
     """
-    For creating the platform-appropriate instance of FileAccessor to perform memory map related
-    operations.
+    For creating the platform-appropriate instance of FileAccessor to perform
+    memory map related operations.
     """
     @staticmethod
     def create_file_accessor():

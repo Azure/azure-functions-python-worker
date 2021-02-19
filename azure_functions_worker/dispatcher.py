@@ -33,7 +33,8 @@ from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
 from .utils.dependency import DependencyManager
 from .utils.wrappers import disable_feature_by
-from .shared_memory_data_transfer.shared_memory_manager import SharedMemoryManager
+from .shared_memory_data_transfer.shared_memory_manager import \
+    SharedMemoryManager
 
 _TRUE = "true"
 
@@ -488,14 +489,16 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def _handle__close_shared_memory_resources_request(self, req):
         """
-        Frees any memory maps that were produced as output for a given invocation.
-        This is called after the functions host is done reading the output from the worker and
-        wants the worker to free up those resources.
+        Frees any memory maps that were produced as output for a given
+        invocation.
+        This is called after the functions host is done reading the output from
+        the worker and wants the worker to free up those resources.
         """
         close_request = req.close_shared_memory_resources_request
         map_names = close_request.map_names
         # Assign default value of False to all result values.
-        # If we are successfully able to close a memory map, its result will be set to True.
+        # If we are successfully able to close a memory map, its result will be
+        # set to True.
         results = {map_name: False for map_name in map_names}
 
         try:
@@ -506,7 +509,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             # TODO log exception
             print(str(ex))
         finally:
-            response = protos.CloseSharedMemoryResourcesResponse(close_map_results=results)
+            response = protos.CloseSharedMemoryResourcesResponse(
+                close_map_results=results)
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 close_shared_memory_resources_response=response)

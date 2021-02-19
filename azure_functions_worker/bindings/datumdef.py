@@ -1,11 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from __future__ import annotations
 from typing import Any, Optional
 import json
 from .. import protos
 from ..logging import logger
+from ..shared_memory_data_transfer.shared_memory_manager import SharedMemoryManager
 
 
 class Datum:

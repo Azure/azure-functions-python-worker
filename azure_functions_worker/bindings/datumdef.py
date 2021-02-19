@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from __future__ import annotations
 from typing import Any, Optional
 import json
 from .. import protos
@@ -98,7 +97,7 @@ class Datum:
     def from_rpc_shared_memory(
             cls,
             shmem: protos.RpcSharedMemory,
-            shmem_mgr) -> Optional[Datum]:
+            shmem_mgr) -> Optional['Datum']:
         """
         Reads the specified shared memory region and converts the read data into
         a datum object of the corresponding type.
@@ -126,7 +125,7 @@ class Datum:
     @classmethod
     def to_rpc_shared_memory(
             cls,
-            datum: Datum,
+            datum: 'Datum',
             shmem_mgr) -> Optional[protos.RpcSharedMemory]:
         """
         Writes the given value to shared memory and returns the corresponding

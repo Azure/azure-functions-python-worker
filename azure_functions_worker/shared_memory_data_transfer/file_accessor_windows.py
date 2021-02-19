@@ -17,6 +17,10 @@ class FileAccessorWindows(FileAccessor):
             mem_map_name: str,
             mem_map_size: int,
             access: int = mmap.ACCESS_READ) -> Optional[mmap.mmap]:
+        """
+        Note: On Windows, an mmap is created if one does not exist even when
+              attempting to open it.
+        """
         try:
             mmap_ret = mmap.mmap(-1, mem_map_size, mem_map_name, access=access)
             return mmap_ret
@@ -41,6 +45,6 @@ class FileAccessorWindows(FileAccessor):
         self._set_mem_map_initialized(mem_map)
         return mem_map
 
-    def delete_mem_map(self, mem_map_name: str, mem_map) -> bool:
+    def delete_mem_map(self, mem_map_name: str, mem_map: mmap.mmap) -> bool:
         mem_map.close()
         return True

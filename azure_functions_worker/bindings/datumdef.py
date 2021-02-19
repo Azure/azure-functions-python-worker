@@ -155,8 +155,7 @@ class Datum:
             f'for data type {data_type}')
         return shmem
 
-def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager,
-                   invocation_id: str) -> protos.TypedData:
+def datum_as_proto(datum: Datum) -> protos.TypedData:
     if datum.type == 'string':
         return protos.TypedData(string=datum.value)
     elif datum.type == 'bytes':
@@ -173,13 +172,7 @@ def datum_as_proto(datum: Datum, shmem_mgr: SharedMemoryManager,
             enable_content_negotiation=False,
             body=datum_as_proto(datum.value['body']),
         ))
-<<<<<<< HEAD
-    raise NotImplementedError(
-        'unexpected Datum type: {!r}'.format(datum.type)
-    )
-=======
     else:
         raise NotImplementedError(
             'unexpected Datum type: {!r}'.format(datum.type)
         )
->>>>>>> Cleaning up, addressing comments

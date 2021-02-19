@@ -93,7 +93,7 @@ class SharedMemoryMap:
         success = True
         if is_delete_file:
             success = self.file_accessor.delete_mem_map(self.mem_map_name,
-                self.mem_map)
+                                                        self.mem_map)
         self.mem_map.close()
         return success
 

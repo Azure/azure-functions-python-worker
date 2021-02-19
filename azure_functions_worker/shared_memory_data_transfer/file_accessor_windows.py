@@ -31,7 +31,7 @@ class FileAccessorWindows(FileAccessor):
         # Windows also creates the mmap when trying to open it, if it does not
         # already exist.
         mem_map = self.open_mem_map(mem_map_name, mem_map_size,
-            mmap.ACCESS_WRITE)
+                                    mmap.ACCESS_WRITE)
         if mem_map is None:
             return None
         if self._is_mem_map_initialized(mem_map):
@@ -41,6 +41,6 @@ class FileAccessorWindows(FileAccessor):
         self._set_mem_map_initialized(mem_map)
         return mem_map
 
-    def delete_mem_map(self, mem_map_name: str, mmap) -> bool:
-        mmap.close()
+    def delete_mem_map(self, mem_map_name: str, mem_map) -> bool:
+        mem_map.close()
         return True

@@ -47,7 +47,7 @@ class FileAccessorUnix(FileAccessor):
             # These logs can help identify if we may be leaking memory and not
             # cleaning up the created memory maps.
             logger.error(f'Cannot delete memory map {mem_map_name} - {e}',
-                exc_info=True)
+                         exc_info=True)
             return False
         mem_map.close()
         return True
@@ -61,7 +61,7 @@ class FileAccessorUnix(FileAccessor):
         # be present and try to open it.
         for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
             file_path = os.path.join(mem_map_temp_dir,
-                consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
+                                     consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
             try:
                 fd = open(file_path, 'r+b')
                 return fd
@@ -71,22 +71,24 @@ class FileAccessorUnix(FileAccessor):
         logger.error(f'Cannot open memory map {mem_map_name}')
         return None
 
-    def _create_mem_map_dir(self):
+    def _create_mem_map_dir(self) -> bool:
         """
         Create a directory to create memory maps.
+        Returns True if either a valid directory already exists or one was
+        created successfully, False otherwise.
         """
         # Iterate over all the possible directories where the memory map could
         # be created and try to create in one of them.
         for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
             dir_path = os.path.join(mem_map_temp_dir,
-                consts.UNIX_TEMP_DIR_SUFFIX)
+                                    consts.UNIX_TEMP_DIR_SUFFIX)
             if os.path.isdir(dir_path):
                 # One of the directories already exists, no need
-                return
+                return True
             try:
                 os.makedirs(dir_path)
-                return
-            except:
+                return True
+            except Exception:
                 # We try to create a directory in each of the applicable
                 # directory paths until we successfully create one or one that
                 # already exists is found.
@@ -94,7 +96,8 @@ class FileAccessorUnix(FileAccessor):
                 pass
         # Could not create a directory in any of the applicable directory paths.
         # We will not be able to create any memory maps so we fail.
-        raise Exception(f'Cannot create directory for memory maps')
+        logger.error(f'Cannot create directory for memory maps')
+        return False
 
     def _create_mem_map_file(self, mem_map_name: str, mem_mem_map_size: int) \
             -> Optional[int]:
@@ -106,23 +109,24 @@ class FileAccessorUnix(FileAccessor):
         for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
             # Check if the file already exists
             file_path = os.path.join(mem_map_temp_dir,
-                consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
+                                     consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
             if os.path.exists(file_path):
                 raise Exception(
                     f'File {file_path} for memory map {mem_map_name} '
                     f'already exists')
             # Check if the parent directory exists
             dir_path = os.path.join(mem_map_temp_dir,
-                consts.UNIX_TEMP_DIR_SUFFIX)
+                                    consts.UNIX_TEMP_DIR_SUFFIX)
             if os.path.isdir(dir_path):
                 dir_exists = True
         # Check if any of the parent directories exists
         if not dir_exists:
-            self._create_mem_map_dir()
+            if not self._create_mem_map_dir():
+                return None
         # Create the file
         for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
             file_path = os.path.join(mem_map_temp_dir,
-                consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
+                                     consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
             try:
                 fd = os.open(file_path, os.O_CREAT | os.O_TRUNC | os.O_RDWR)
                 # Write 0s to allocate
@@ -133,8 +137,12 @@ class FileAccessorUnix(FileAccessor):
                         f'Cannot write 0s into new memory map {file_path} '
                         f'({bytes_written} != {mem_mem_map_size})')
                 return fd
-            except:
+            except Exception:
+                # If the memory map could not be created in this directory, we
+                # keep trying in other applicable directories.
                 pass
+        # Could not create the memory map in any of the applicable directory
+        # paths so we fail.
         logger.error(
             f'Cannot create memory map {mem_map_name} with size '
             f'{mem_mem_map_size}')

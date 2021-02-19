@@ -37,7 +37,7 @@ class SharedMemoryConstants:
     # If the object is smaller than this, gRPC is used.
     # Note: This needs to be consistent among the host and workers.
     #       e.g. in the host, it is defined in SharedMemoryConstants.cs
-    MIN_BYTES_FOR_SHARED_MEM_TRANSFER = 1024 * 1024 # 1 MB
+    MIN_BYTES_FOR_SHARED_MEM_TRANSFER = 1024 * 1024  # 1 MB
 
     # Maximum size (in number of bytes) an object must be in order for it to be
     # transferred over shared memory.
@@ -46,7 +46,7 @@ class SharedMemoryConstants:
     # Ref: https://stackoverflow.com/a/3944336/3132415
     # Note: This needs to be consistent among the host and workers.
     #       e.g. in the host, it is defined in SharedMemoryConstants.cs
-    MAX_BYTES_FOR_SHARED_MEM_TRANSFER = 1024 * 1024 # 1 MB
+    MAX_BYTES_FOR_SHARED_MEM_TRANSFER = 1024 * 1024  # 1 MB
 
     # This is what the size of a character is in DotNet. Can be verified by
     # doing "sizeof(char)".

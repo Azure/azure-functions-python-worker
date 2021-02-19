@@ -1,11 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+from __future__ import annotations
 from typing import Any, Optional
 import json
 from .. import protos
 from ..logging import logger
-from ..shared_memory_data_transfer.shared_memory_manager import SharedMemoryManager
 
 
 class Datum:
@@ -98,10 +98,10 @@ class Datum:
     def from_rpc_shared_memory(
             cls,
             shmem: protos.RpcSharedMemory,
-            shmem_mgr: SharedMemoryManager) -> Optional[Datum]:
+            shmem_mgr) -> Optional[Datum]:
         """
-        Reads the specified shared memory region and converts the read data into a datum object of
-        the corresponding type.
+        Reads the specified shared memory region and converts the read data into
+        a datum object of the corresponding type.
         """
         mem_map_name = shmem.name
         offset = shmem.offset
@@ -118,7 +118,8 @@ class Datum:
                 ret_val = cls(val, 'string')
         if ret_val is not None:
             logger.info(
-                f'Read {count} bytes from memory map {mem_map_name} for data type {data_type}')
+                f'Read {count} bytes from memory map {mem_map_name} '
+                f'for data type {data_type}')
             return ret_val
         return None
 
@@ -126,10 +127,11 @@ class Datum:
     def to_rpc_shared_memory(
             cls,
             datum: Datum,
-            shmem_mgr: SharedMemoryManager) -> Optional[protos.RpcSharedMemory]:
+            shmem_mgr) -> Optional[protos.RpcSharedMemory]:
         """
-        Writes the given value to shared memory and returns the corresponding RpcSharedMemory
-        object which can be sent back to the functions host over RPC.
+        Writes the given value to shared memory and returns the corresponding
+        RpcSharedMemory object which can be sent back to the functions host over
+        RPC.
         """
         if datum.type == 'bytes':
             value = datum.value
@@ -151,9 +153,10 @@ class Datum:
             count=shared_mem_meta.count,
             type=data_type)
         logger.info(
-            f'Wrote {shared_mem_meta.count} bytes to memory map {shared_mem_meta.mem_map_name} '
-            f'for data type {data_type}')
+            f'Wrote {shared_mem_meta.count} bytes to memory map '
+            f'{shared_mem_meta.mem_map_name} for data type {data_type}')
         return shmem
+
 
 def datum_as_proto(datum: Datum) -> protos.TypedData:
     if datum.type == 'string':

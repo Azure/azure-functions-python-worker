@@ -7,7 +7,8 @@ from .. import protos
 
 from . import datumdef
 from . import generic
-from ..shared_memory_data_transfer.shared_memory_manager import SharedMemoryManager
+from ..shared_memory_data_transfer.shared_memory_manager \
+    import SharedMemoryManager
 
 
 def get_binding_registry():
@@ -72,7 +73,8 @@ def from_incoming_proto(
     pb_type = pb.WhichOneof('rpc_data')
     if pb_type == 'rpc_shared_memory':
         # Data was sent over shared memory, attempt to read
-        datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory, shmem_mgr)
+        datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory,
+                                                      shmem_mgr)
         # TODO gochaudh: check trigger_metadata (try with blob triggered func)
     elif pb_type == 'data':
         val = pb.data
@@ -115,9 +117,10 @@ def to_outgoing_proto(binding: str, obj: typing.Any, *,
 
 
 def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
-                      pytype: typing.Optional[type],
-                      out_name: str,
-                      shmem_mgr: SharedMemoryManager) -> protos.ParameterBinding:
+                              pytype: typing.Optional[type],
+                              out_name: str,
+                              shmem_mgr: SharedMemoryManager) \
+        -> protos.ParameterBinding:
     datum = get_datum(binding, obj, pytype)
     shared_mem_value = None
     parameter_binding = None
@@ -126,15 +129,15 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
         shared_mem_value = datumdef.Datum.to_rpc_shared_memory(datum, shmem_mgr)
     # Check if data was written into shared memory
     if shared_mem_value is not None:
-        # If it was, then use the rpc_shared_memory field in the response message
+        # If it was, then use the rpc_shared_memory field in response message
         parameter_binding = protos.ParameterBinding(
-                            name=out_name,
-                            rpc_shared_memory=shared_mem_value)
+            name=out_name,
+            rpc_shared_memory=shared_mem_value)
     else:
         # If not, send it as part of the response message over RPC
         rpc_val = datumdef.datum_as_proto(datum)
         assert rpc_val is not None
         parameter_binding = protos.ParameterBinding(
-                            name=out_name,
-                            data=rpc_val)
+            name=out_name,
+            data=rpc_val)
     return parameter_binding

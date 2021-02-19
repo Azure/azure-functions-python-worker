@@ -7,6 +7,7 @@ from .shared_memory_constants import SharedMemoryConstants as consts
 from .file_accessor_factory import FileAccessorFactory
 from .shared_memory_metadata import SharedMemoryMetadata
 from .shared_memory_map import SharedMemoryMap
+from ..bindings.datumdef import Datum
 from ..logging import logger
 from ..utils.common import is_envvar_true
 from ..constants import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
@@ -108,7 +109,7 @@ class SharedMemoryManager:
             return None
         try:
             content = shared_mem_map.get_bytes(content_offset=0,
-                bytes_to_read=count)
+                                               bytes_to_read=count)
         finally:
             shared_mem_map.dispose(is_delete_file=False)
         return content

@@ -390,7 +390,8 @@ setup(
             'pytest-xdist',
             'pytest-randomly',
             'pytest-instafail',
-            'pytest-rerunfailures'
+            'pytest-rerunfailures',
+            'ptvsd'
         ]
     },
     include_package_data=True,

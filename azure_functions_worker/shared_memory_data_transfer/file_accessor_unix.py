@@ -21,9 +21,11 @@ class FileAccessorUnix(FileAccessor):
             mem_map_size: int,
             access: int = mmap.ACCESS_READ) -> Optional[mmap.mmap]:
         if mem_map_name is None or mem_map_name == '':
-            raise Exception('Cannot open memory map. Invalid name.')
+            raise Exception(
+                f'Cannot open memory map. Invalid name {mem_map_name}')
         if mem_map_size < 0:
-            raise Exception('Cannot open memory map. Invalid size.')
+            raise Exception(
+                f'Cannot open memory map. Invalid size {mem_map_size}')
         fd = self._open_mem_map_file(mem_map_name)
         if fd is None:
             return None
@@ -33,9 +35,11 @@ class FileAccessorUnix(FileAccessor):
     def create_mem_map(self, mem_map_name: str, mem_map_size: int) \
             -> Optional[mmap.mmap]:
         if mem_map_name is None or mem_map_name == '':
-            raise Exception('Cannot create memory map. Invalid name.')
+            raise Exception(
+                f'Cannot create memory map. Invalid name {mem_map_name}')
         if mem_map_size <= 0:
-            raise Exception('Cannot create memory map. Invalid size.')
+            raise Exception(
+                f'Cannot create memory map. Invalid size {mem_map_size}')
         fd = self._create_mem_map_file(mem_map_name, mem_map_size)
         if fd is None:
             return None
@@ -47,7 +51,8 @@ class FileAccessorUnix(FileAccessor):
 
     def delete_mem_map(self, mem_map_name: str, mem_map: mmap.mmap) -> bool:
         if mem_map_name is None or mem_map_name == '':
-            raise Exception('Cannot delete memory map. Invalid name.')
+            raise Exception(
+                f'Cannot delete memory map. Invalid name {mem_map_name}')
         try:
             fd = self._open_mem_map_file(mem_map_name)
             os.remove(fd.name)

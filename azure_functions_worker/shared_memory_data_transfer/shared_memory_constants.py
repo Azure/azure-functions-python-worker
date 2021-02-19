@@ -46,7 +46,7 @@ class SharedMemoryConstants:
     # Ref: https://stackoverflow.com/a/3944336/3132415
     # Note: This needs to be consistent among the host and workers.
     #       e.g. in the host, it is defined in SharedMemoryConstants.cs
-    MAX_BYTES_FOR_SHARED_MEM_TRANSFER = 1024 * 1024  # 1 MB
+    MAX_BYTES_FOR_SHARED_MEM_TRANSFER = 2 * 1024 * 1024 * 1024  # 2 GB
 
     # This is what the size of a character is in DotNet. Can be verified by
     # doing "sizeof(char)".

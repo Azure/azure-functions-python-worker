@@ -68,7 +68,7 @@ class SharedMemoryManager:
             return None
         mem_map_name = str(uuid.uuid4())
         content_length = len(content)
-        shared_mem_map = self.create(mem_map_name, content_length)
+        shared_mem_map = self._create(mem_map_name, content_length)
         if shared_mem_map is None:
             return None
         num_bytes_written = shared_mem_map.put_bytes(content)
@@ -76,6 +76,7 @@ class SharedMemoryManager:
             logger.error(
                 f'Cannot write data into shared memory {mem_map_name} '
                 f'({num_bytes_written} != {content_length})')
+            shared_mem_map.dispose()
             return None
         self.allocated_mem_maps[mem_map_name] = shared_mem_map
         return SharedMemoryMetadata(mem_map_name, content_length)
@@ -104,7 +105,7 @@ class SharedMemoryManager:
                 f'Cannot read bytes. Non-zero offset ({offset}) '
                 f'not supported.')
             return None
-        shared_mem_map = self.open(mem_map_name, count)
+        shared_mem_map = self._open(mem_map_name, count)
         if shared_mem_map is None:
             return None
         try:
@@ -128,7 +129,7 @@ class SharedMemoryManager:
         content_str = content_bytes.decode('utf-8')
         return content_str
 
-    def free_mem_map(self, mem_map_name: str):
+    def free_mem_map(self, mem_map_name: str) -> bool:
         """
         Frees the memory map and any backing resources (e.g. file in the case of
         Unix) associated with it.
@@ -145,7 +146,7 @@ class SharedMemoryManager:
         del self.allocated_mem_maps[mem_map_name]
         return success
 
-    def create(self, mem_map_name: str, content_length: int) \
+    def _create(self, mem_map_name: str, content_length: int) \
             -> Optional[SharedMemoryMap]:
         """
         Creates a new SharedMemoryMap with the given name and content length.
@@ -157,7 +158,7 @@ class SharedMemoryManager:
             return None
         return SharedMemoryMap(self.file_accessor, mem_map_name, mem_map)
 
-    def open(self, mem_map_name: str, content_length: int) \
+    def _open(self, mem_map_name: str, content_length: int) \
             -> Optional[SharedMemoryMap]:
         """
         Opens an existing SharedMemoryMap with the given name and content

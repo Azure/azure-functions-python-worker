@@ -22,6 +22,7 @@ import random
 import re
 import shutil
 import socket
+import string
 import subprocess
 import sys
 import tempfile
@@ -262,6 +263,10 @@ class SharedMemoryTestCase(unittest.TestCase):
 
     def get_random_bytes(self, num_bytes):
         return bytearray(random.getrandbits(8) for _ in range(num_bytes))
+
+    def get_random_string(self, num_chars):
+        return ''.join(random.choices(string.ascii_uppercase + string.digits,
+                                      k=num_chars))
 
     def _setUpUnix(self):
         for temp_dir in consts.UNIX_TEMP_DIRS:

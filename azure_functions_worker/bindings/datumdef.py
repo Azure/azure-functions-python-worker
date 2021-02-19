@@ -107,6 +107,7 @@ class Datum:
         count = shmem.count
         data_type = shmem.type
         ret_val = None
+
         if data_type == protos.RpcDataType.bytes:
             val = shmem_mgr.get_bytes(mem_map_name, offset, count)
             if val is not None:
@@ -115,6 +116,7 @@ class Datum:
             val = shmem_mgr.get_string(mem_map_name, offset, count)
             if val is not None:
                 ret_val = cls(val, 'string')
+
         if ret_val is not None:
             logger.info(
                 f'Read {count} bytes from memory map {mem_map_name} '
@@ -144,13 +146,16 @@ class Datum:
             raise NotImplementedError(
                 f'Unsupported datum type ({datum.type}) for shared memory'
             )
+
         if shared_mem_meta is None:
             return None
+
         shmem = protos.RpcSharedMemory(
             name=shared_mem_meta.mem_map_name,
             offset=0,
             count=shared_mem_meta.count,
             type=data_type)
+
         logger.info(
             f'Wrote {shared_mem_meta.count} bytes to memory map '
             f'{shared_mem_meta.mem_map_name} for data type {data_type}')

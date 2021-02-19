@@ -22,8 +22,8 @@ class SharedMemoryMap:
             mem_map: mmap.mmap):
         if mem_map is None:
             raise Exception(
-                f'Cannot initialize SharedMemoryMap. '
-                f'Invalid memory map provided')
+                'Cannot initialize SharedMemoryMap. Invalid memory map '
+                'provided')
         if mem_map_name is None or mem_map_name == '':
             raise Exception(
                 f'Cannot initialize SharedMemoryMap. Invalid name '

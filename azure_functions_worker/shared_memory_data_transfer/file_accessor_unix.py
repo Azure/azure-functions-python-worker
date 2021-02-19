@@ -96,7 +96,7 @@ class FileAccessorUnix(FileAccessor):
                 pass
         # Could not create a directory in any of the applicable directory paths.
         # We will not be able to create any memory maps so we fail.
-        logger.error(f'Cannot create directory for memory maps')
+        logger.error('Cannot create directory for memory maps')
         return False
 
     def _create_mem_map_file(self, mem_map_name: str, mem_mem_map_size: int) \

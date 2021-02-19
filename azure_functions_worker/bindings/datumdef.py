@@ -95,7 +95,10 @@ class Datum:
         return cls(val, tt)
 
     @classmethod
-    def from_rpc_shared_memory(cls, shmem: protos.RpcSharedMemory, shmem_mgr: SharedMemoryManager) -> Optional[Datum]:
+    def from_rpc_shared_memory(
+            cls,
+            shmem: protos.RpcSharedMemory,
+            shmem_mgr: SharedMemoryManager) -> Optional[Datum]:
         """
         Reads the specified shared memory region and converts the read data into a datum object of
         the corresponding type.
@@ -114,12 +117,16 @@ class Datum:
             if val is not None:
                 ret_val = cls(val, 'string')
         if ret_val is not None:
-            logger.info(f'Read {count} bytes from memory map {mem_map_name} for data type {data_type}')
+            logger.info(
+                f'Read {count} bytes from memory map {mem_map_name} for data type {data_type}')
             return ret_val
         return None
 
     @classmethod
-    def to_rpc_shared_memory(cls, datum: Datum, shmem_mgr: SharedMemoryManager) -> Optional[protos.RpcSharedMemory]:
+    def to_rpc_shared_memory(
+            cls,
+            datum: Datum,
+            shmem_mgr: SharedMemoryManager) -> Optional[protos.RpcSharedMemory]:
         """
         Writes the given value to shared memory and returns the corresponding RpcSharedMemory
         object which can be sent back to the functions host over RPC.

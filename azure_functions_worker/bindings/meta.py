@@ -7,7 +7,7 @@ from .. import protos
 
 from . import datumdef
 from . import generic
-from .shared_memory_manager import SharedMemoryManager
+from ..shared_memory_data_transfer.shared_memory_manager import SharedMemoryManager
 
 
 def get_binding_registry():

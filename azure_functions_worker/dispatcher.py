@@ -33,7 +33,7 @@ from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
 from .utils.dependency import DependencyManager
 from .utils.wrappers import disable_feature_by
-from .bindings.shared_memory_manager import SharedMemoryManager
+from .shared_memory_data_transfer.shared_memory_manager import SharedMemoryManager
 
 _TRUE = "true"
 

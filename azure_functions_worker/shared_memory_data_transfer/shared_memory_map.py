@@ -8,6 +8,7 @@ import struct
 import sys
 from typing import Optional
 from .shared_memory_constants import SharedMemoryConstants as consts
+from .file_accessor import FileAccessor
 from ..logging import logger
 
 

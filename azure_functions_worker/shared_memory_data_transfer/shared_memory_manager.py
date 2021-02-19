@@ -2,13 +2,13 @@
 # Licensed under the MIT License.
 
 from __future__ import annotations
-from azure_functions_worker.bindings.shared_memory_metadata import SharedMemoryMetadata
 import uuid
 from typing import Dict, Optional
+from .shared_memory_constants import SharedMemoryConstants as consts
+from .file_accessor_factory import FileAccessorFactory
+from .shared_memory_metadata import SharedMemoryMetadata
+from .shared_memory_map import SharedMemoryMap
 from ..logging import logger
-from ..mmap_handler.file_accessor_factory import FileAccessorFactory
-from ..mmap_handler.shared_memory_constants import SharedMemoryConstants as consts
-from ..mmap_handler.shared_memory_map import SharedMemoryMap
 from ..utils.common import is_envvar_true
 from ..constants import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
 

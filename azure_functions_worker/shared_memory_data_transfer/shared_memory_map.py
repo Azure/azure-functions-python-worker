@@ -17,6 +17,10 @@ class SharedMemoryMap:
     Shared memory region to read/write data from.
     """
     def __init__(self, file_accessor: FileAccessor, mem_map_name: str, mem_map: mmap.mmap):
+        if mem_map is None:
+            raise Exception(f'Cannot initialize SharedMemoryMap. Invalid memory map provided')
+        if mem_map_name is None or mem_map_name == '':
+            raise Exception(f'Cannot initialize SharedMemoryMap. Invalid name {mem_map_name}')
         self.file_accessor = file_accessor
         self.mem_map_name = mem_map_name
         self.mem_map = mem_map

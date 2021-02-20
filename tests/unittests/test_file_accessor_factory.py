@@ -3,7 +3,7 @@
 
 import os
 import unittest
-from azure_functions_worker.shared_memory_data_transfer.file_accessor_factory \
+from azure_functions_worker.shared_memory_data_transfer \
     import FileAccessorFactory
 from azure_functions_worker.shared_memory_data_transfer.file_accessor_unix \
     import FileAccessorUnix

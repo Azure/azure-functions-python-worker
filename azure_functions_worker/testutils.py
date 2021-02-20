@@ -35,13 +35,14 @@ import grpc
 import requests
 
 from azure_functions_worker._thirdparty import aio_compat
-from azure_functions_worker.shared_memory_data_transfer.file_accessor_factory \
+from azure_functions_worker.shared_memory_data_transfer \
     import FileAccessorFactory
-from azure_functions_worker.shared_memory_data_transfer. \
-    shared_memory_constants import SharedMemoryConstants as consts
+from azure_functions_worker.shared_memory_data_transfer \
+    import SharedMemoryConstants as consts
 from . import dispatcher
 from . import protos
-from .constants import PYAZURE_WEBHOST_DEBUG
+from .constants import (PYAZURE_WEBHOST_DEBUG,
+                        FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
 from .utils.common import is_envvar_true
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
@@ -251,12 +252,19 @@ class SharedMemoryTestCase(unittest.TestCase):
     """
     def setUp(self):
         self.file_accessor = FileAccessorFactory.create_file_accessor()
+        self.was_shmem_env_true = is_envvar_true(
+            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
+        os.environ.update(
+            {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '1'})
         if os.name != 'nt':
             self._setUpUnix()
 
     def tearDown(self):
         if os.name != 'nt':
             self._tearDownUnix()
+        if not self.was_shmem_env_true:
+            os.environ.update(
+                {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '0'})
 
     def get_new_mem_map_name(self):
         return str(uuid.uuid4())
@@ -267,6 +275,17 @@ class SharedMemoryTestCase(unittest.TestCase):
     def get_random_string(self, num_chars):
         return ''.join(random.choices(string.ascii_uppercase + string.digits,
                                       k=num_chars))
+
+    def is_valid_uuid(self, uuid_to_test: str, version: int = 4) -> bool:
+        """
+        Check if uuid_to_test is a valid UUID.
+        Reference: https://stackoverflow.com/a/33245493/3132415
+        """
+        try:
+            uuid_obj = uuid.UUID(uuid_to_test, version=version)
+        except ValueError:
+            return False
+        return str(uuid_obj) == uuid_to_test
 
     def _setUpUnix(self):
         for temp_dir in consts.UNIX_TEMP_DIRS:

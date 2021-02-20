@@ -2,10 +2,9 @@
 # Licensed under the MIT License.
 
 from azure_functions_worker import testutils
-from azure_functions_worker.shared_memory_data_transfer.shared_memory_map \
-    import SharedMemoryMap
-from azure_functions_worker.shared_memory_data_transfer. \
-    shared_memory_constants import SharedMemoryConstants as consts
+from azure_functions_worker.shared_memory_data_transfer import SharedMemoryMap
+from azure_functions_worker.shared_memory_data_transfer \
+    import SharedMemoryConstants as consts
 
 
 class TestSharedMemoryMap(testutils.SharedMemoryTestCase):

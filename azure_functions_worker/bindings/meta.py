@@ -7,8 +7,6 @@ from .. import protos
 
 from . import datumdef
 from . import generic
-from ..shared_memory_data_transfer.shared_memory_manager \
-    import SharedMemoryManager
 
 
 def get_binding_registry():
@@ -60,7 +58,7 @@ def from_incoming_proto(
         pb: protos.ParameterBinding, *,
         pytype: typing.Optional[type],
         trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]],
-        shmem_mgr: SharedMemoryManager) -> typing.Any:
+        shmem_mgr) -> typing.Any:
     binding = get_binding(binding)
     if trigger_metadata:
         metadata = {
@@ -119,7 +117,7 @@ def to_outgoing_proto(binding: str, obj: typing.Any, *,
 def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
                               pytype: typing.Optional[type],
                               out_name: str,
-                              shmem_mgr: SharedMemoryManager) \
+                              shmem_mgr) \
         -> protos.ParameterBinding:
     datum = get_datum(binding, obj, pytype)
     shared_mem_value = None

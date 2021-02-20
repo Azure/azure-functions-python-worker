@@ -2,13 +2,12 @@
 # Licensed under the MIT License.
 
 import math
-import uuid
 from azure.functions import meta as bind_meta
 from azure_functions_worker import testutils
-from azure_functions_worker.shared_memory_data_transfer.shared_memory_manager \
+from azure_functions_worker.shared_memory_data_transfer \
     import SharedMemoryManager
-from azure_functions_worker.shared_memory_data_transfer. \
-    shared_memory_constants import SharedMemoryConstants as consts
+from azure_functions_worker.shared_memory_data_transfer \
+    import SharedMemoryConstants as consts
 
 
 class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
@@ -110,7 +109,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         expected_size = len(content.encode('utf-8'))
         shared_mem_meta = manager.put_string(content)
         self.assertIsNotNone(shared_mem_meta)
-        self.assertTrue(self._is_valid_uuid(shared_mem_meta.mem_map_name))
+        self.assertTrue(self.is_valid_uuid(shared_mem_meta.mem_map_name))
         self.assertEqual(expected_size, shared_mem_meta.count)
         free_success = manager.free_mem_map(shared_mem_meta.mem_map_name)
         self.assertTrue(free_success)
@@ -161,14 +160,3 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         mem_map_name = self.get_new_mem_map_name()
         free_success = manager.free_mem_map(mem_map_name)
         self.assertFalse(free_success)
-
-    def _is_valid_uuid(self, uuid_to_test: str, version: int = 4) -> bool:
-        """
-        Check if uuid_to_test is a valid UUID.
-        Reference: https://stackoverflow.com/a/33245493/3132415
-        """
-        try:
-            uuid_obj = uuid.UUID(uuid_to_test, version=version)
-        except ValueError:
-            return False
-        return str(uuid_obj) == uuid_to_test

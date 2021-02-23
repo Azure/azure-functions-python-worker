@@ -123,4 +123,4 @@ class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
         self.assertIsNotNone(mem_map_op)
         delete_status = \
             self.file_accessor.delete_mem_map(mem_map_name, mem_map_op)
-        self.assertEqual(delete_status)
+        self.assertTrue(delete_status)

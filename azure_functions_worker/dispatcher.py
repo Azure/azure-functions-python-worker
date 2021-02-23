@@ -264,7 +264,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         }
 
         # Can detech worker packages
-        DependencyManager.use_customer_dependencies()
+        DependencyManager.prioritize_customer_dependencies()
 
         return protos.StreamingMessage(
             request_id=self.request_id,

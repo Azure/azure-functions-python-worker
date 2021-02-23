@@ -259,6 +259,14 @@ class TestDependencyManager(unittest.TestCase):
         )
 
     def test_reload_all_namespaces_from_customer_deps(self):
+        """The test simulates a linux consumption environment where the worker
+        transits from placeholder mode to specialized worker with customer's
+        dependencies. First the worker will use worker's dependencies for its
+        own modules. After worker init request, it starts adding customer's
+        library path into sys.path (e.g. .python_packages/). The final step
+        is in environment reload where the worker is fully specialized,
+        reloading all libraries from customer's package.
+        """
         # Setup app settings
         os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
         os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
@@ -275,8 +283,10 @@ class TestDependencyManager(unittest.TestCase):
             os.path.join(self._worker_deps_path, 'common_module')
         )
 
-        # Placeholder specialization
+        # At worker init request
         DependencyManager.prioritize_customer_dependencies()
+
+        # At placeholder specialization from function_environment_reload
         DependencyManager.reload_all_namespaces_from_customer_deps(
             self._customer_func_path
         )

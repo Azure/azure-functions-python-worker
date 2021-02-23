@@ -8,6 +8,11 @@ import azure.functions as azf
 
 
 def main(req: azf.HttpRequest, file: azf.Out[bytes]) -> azf.HttpResponse:
+    """
+    Write a blob (bytes) and respond back (in HTTP response) with the number of
+    bytes written and the MD5 digest of the content.
+    The number of bytes to write are specified in the input HTTP request.
+    """
     content_size = int(req.params['content_size'])
 
     # When this is set, then 0x01 byte is repeated content_size number of

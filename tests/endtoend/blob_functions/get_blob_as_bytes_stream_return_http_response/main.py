@@ -7,6 +7,10 @@ import azure.functions as azf
 
 
 def main(req: azf.HttpRequest, file: azf.InputStream) -> azf.HttpResponse:
+    """
+    Read a blob (bytes) and respond back (in HTTP response) with the number of
+    bytes read and the MD5 digest of the content.
+    """
     file_bytes = file.read()
 
     content_size = len(file_bytes)

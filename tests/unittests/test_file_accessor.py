@@ -7,7 +7,13 @@ from azure_functions_worker import testutils
 
 
 class TestFileAccessor(testutils.SharedMemoryTestCase):
+    """
+    Tests for FileAccessor.
+    """
     def test_create_and_delete_mem_map(self):
+        """
+        Verify if memory maps were created and deleted.
+        """
         for mem_map_size in [1, 10, 1024, 2 * 1024 * 1024, 10 * 1024 * 1024]:
             mem_map_name = self.get_new_mem_map_name()
             mem_map = self.file_accessor.create_mem_map(mem_map_name,
@@ -18,6 +24,10 @@ class TestFileAccessor(testutils.SharedMemoryTestCase):
             self.assertTrue(delete_status)
 
     def test_create_mem_map_invalid_inputs(self):
+        """
+        Attempt to create memory maps with invalid inputs (size and name) and
+        verify that an Exception is raised.
+        """
         mem_map_name = self.get_new_mem_map_name()
         inv_mem_map_size = 0
         with self.assertRaisesRegex(Exception, 'Invalid size'):
@@ -31,6 +41,9 @@ class TestFileAccessor(testutils.SharedMemoryTestCase):
             self.file_accessor.create_mem_map(inv_mem_map_name, mem_map_size)
 
     def test_open_existing_mem_map(self):
+        """
+        Verify that an existing memory map can be opened.
+        """
         mem_map_size = 1024
         mem_map_name = self.get_new_mem_map_name()
         mem_map = self.file_accessor.create_mem_map(mem_map_name, mem_map_size)
@@ -41,6 +54,10 @@ class TestFileAccessor(testutils.SharedMemoryTestCase):
         self.assertTrue(delete_status)
 
     def test_open_mem_map_invalid_inputs(self):
+        """
+        Attempt to open a memory map with invalid inputs (size and name) and
+        verify that an Exception is raised.
+        """
         mem_map_name = self.get_new_mem_map_name()
         inv_mem_map_size = -1
         with self.assertRaisesRegex(Exception, 'Invalid size'):
@@ -56,6 +73,11 @@ class TestFileAccessor(testutils.SharedMemoryTestCase):
     @unittest.skipIf(os.name == 'nt',
                      'Windows will create an mmap if one does not exist')
     def test_open_deleted_mem_map(self):
+        """
+        Attempt to open a deleted memory map and verify that it fails.
+        Note: Windows creates a new memory map if one does not exist when
+              opening a memory map, so we skip this test on Windows.
+        """
         mem_map_size = 1024
         mem_map_name = self.get_new_mem_map_name()
         mem_map = self.file_accessor.create_mem_map(mem_map_name, mem_map_size)

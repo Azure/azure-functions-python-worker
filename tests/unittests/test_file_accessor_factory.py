@@ -12,9 +12,23 @@ from azure_functions_worker.shared_memory_data_transfer.file_accessor_windows \
 
 
 class TestFileAccessorFactory(unittest.TestCase):
-    def test_proper_subclass_generated(self):
+    """
+    Tests for FileAccessorFactory.
+    """
+    @unittest.skipIf(os.name != 'nt',
+                     'FileAccessorWindows is only valid on Windows')
+    def test_file_accessor_windows_created(self):
+        """
+        Verify that FileAccessorWindows was created when running on Windows.
+        """
         file_accessor = FileAccessorFactory.create_file_accessor()
-        if os.name == 'nt':
-            self.assertTrue(type(file_accessor) is FileAccessorWindows)
-        else:
-            self.assertTrue(type(file_accessor) is FileAccessorUnix)
+        self.assertTrue(type(file_accessor) is FileAccessorWindows)
+
+    @unittest.skipIf(os.name == 'nt',
+                     'FileAccessorUnix is only valid on Unix')
+    def test_file_accessor_unix_created(self):
+        """
+        Verify that FileAccessorUnix was created when running on Windows.
+        """
+        file_accessor = FileAccessorFactory.create_file_accessor()
+        self.assertTrue(type(file_accessor) is FileAccessorUnix)

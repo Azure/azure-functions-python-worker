@@ -86,6 +86,8 @@ class SharedMemoryManager:
         Writes the given string into shared memory.
         Returns the name of the memory map into which the data was written if
         succesful, None otherwise.
+        Note: The encoding used here must be consistent with what is used by the
+              host in SharedMemoryManager.cs (GetStringAsync/PutStringAsync).
         """
         if content is None:
             return None
@@ -122,6 +124,8 @@ class SharedMemoryManager:
         the provided offset and reading a total of count bytes.
         Returns the data read from shared memory as a string if successful, None
         otherwise.
+        Note: The encoding used here must be consistent with what is used by the
+              host in SharedMemoryManager.cs (GetStringAsync/PutStringAsync).
         """
         content_bytes = self.get_bytes(mem_map_name, offset, count)
         if content_bytes is None:

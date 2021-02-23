@@ -12,6 +12,10 @@ from azure_functions_worker import testutils
 
 class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
                                         testutils.AsyncTestCase):
+    """
+    Test the use of shared memory to transfer input and output data to and from
+    the host/worker.
+    """
     def setUp(self):
         super().setUp()
         self.blob_funcs_dir = testutils.E2E_TESTS_FOLDER / 'blob_functions'
@@ -495,6 +499,10 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
                                          func_created_content_md5_2)
 
     async def _test_binary_blob_read_function(self, func_name):
+        """
+        Verify that the function executed successfully when the worker received
+        inputs for the function over shared memory.
+        """
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
             await host.load_function(func_name)
@@ -558,6 +566,10 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             shmem: protos.RpcSharedMemory,
             expected_size: int,
             expected_md5: str):
+        """
+        Verify if the output produced by the worker is what we expect it to be
+        based on the size and MD5 digest.
+        """
         output_mem_map_name = shmem.name
         output_offset = shmem.offset
         output_count = shmem.count

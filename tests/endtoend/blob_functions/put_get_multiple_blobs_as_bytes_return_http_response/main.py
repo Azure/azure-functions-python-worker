@@ -19,6 +19,13 @@ def main(
         input_file_2: bytes,
         output_file_1: azf.Out[bytes],
         output_file_2: azf.Out[bytes]) -> azf.HttpResponse:
+    """
+    Read two blobs (bytes) and respond back (in HTTP response) with the number
+    of bytes read from each blob and the MD5 digest of the content of each.
+    Write two blobs (bytes) and respond back (in HTTP response) with the number
+    bytes written in each blob and the MD5 digest of the content of each.
+    The number of bytes to write are specified in the input HTTP request.
+    """
     input_content_size_1 = len(input_file_1)
     input_content_size_2 = len(input_file_2)
 

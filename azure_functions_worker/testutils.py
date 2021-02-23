@@ -470,6 +470,21 @@ class _MockWebHost:
 
         return invocation_id, r
 
+    async def close_shared_memory_resources(
+            self,
+            map_names: typing.List[str]):
+
+        request = protos.CloseSharedMemoryResourcesRequest(
+            map_names=map_names)
+
+        r = await self.communicate(
+            protos.StreamingMessage(
+                close_shared_memory_resources_request=request
+            ),
+            wait_for='close_shared_memory_resources_response')
+
+        return r
+
     async def reload_environment(
         self,
         environment: typing.Dict[str, str],

@@ -20,6 +20,9 @@ class FileAccessorUnix(FileAccessor):
             mem_map_name: str,
             mem_map_size: int,
             access: int = mmap.ACCESS_READ) -> Optional[mmap.mmap]:
+        """
+        Note: mem_map_size = 0 means open the entire mmap.
+        """
         if mem_map_name is None or mem_map_name == '':
             raise Exception(
                 f'Cannot open memory map. Invalid name {mem_map_name}')

@@ -15,6 +15,8 @@ class FileAccessor(metaclass=ABCMeta):
     Currently the following two sub-classes are implemented:
         1) FileAccessorWindows
         2) FileAccessorUnix
+    Note: Platform specific details of mmap can be found in the official docs:
+          https://docs.python.org/3/library/mmap.html
     """
     @abstractmethod
     def open_mem_map(
@@ -54,17 +56,18 @@ class FileAccessor(metaclass=ABCMeta):
         This is used to check if a new memory map was created successfully and
         we don't end up using an existing one.
         """
+        original_pos = mem_map.tell()
         # The dirty bit is the first byte of the header so seek to the beginning
         mem_map.seek(0)
         # Read the first byte
         byte_read = mem_map.read(1)
         # Check if the dirty bit was set or not
-        if byte_read == consts.MEM_MAP_INITIALIZED_FLAG:
+        if byte_read == consts.HeaderFlags.Initialized:
             is_set = True
         else:
             is_set = False
-        # Seek back the memory map to the begginging
-        mem_map.seek(0)
+        # Seek back the memory map to the original position
+        mem_map.seek(original_pos)
         return is_set
 
     def _set_mem_map_initialized(self, mem_map: mmap.mmap):
@@ -72,9 +75,10 @@ class FileAccessor(metaclass=ABCMeta):
         Sets the dirty bit in the header of the memory map to indicate that this
         memory map is not new anymore.
         """
+        original_pos = mem_map.tell()
         # The dirty bit is the first byte of the header so seek to the beginning
         mem_map.seek(0)
         # Set the dirty bit
-        mem_map.write(consts.MEM_MAP_INITIALIZED_FLAG)
-        # Seek back the memory map to the begginging
-        mem_map.seek(0)
+        mem_map.write(consts.HeaderFlags.Initialized)
+        # Seek back the memory map to the original position
+        mem_map.seek(original_pos)

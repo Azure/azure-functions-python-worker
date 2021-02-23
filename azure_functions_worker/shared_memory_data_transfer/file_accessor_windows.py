@@ -18,6 +18,7 @@ class FileAccessorWindows(FileAccessor):
             mem_map_size: int,
             access: int = mmap.ACCESS_READ) -> Optional[mmap.mmap]:
         """
+        Note: mem_map_size = 0 means open the entire mmap.
         Note: On Windows, an mmap is created if one does not exist even when
               attempting to open it.
         """
@@ -58,5 +59,9 @@ class FileAccessorWindows(FileAccessor):
         return mem_map
 
     def delete_mem_map(self, mem_map_name: str, mem_map: mmap.mmap) -> bool:
+        """
+        In Windows, an mmap is not backed by a file so no file needs to be
+        deleted.
+        """
         mem_map.close()
         return True

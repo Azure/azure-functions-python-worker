@@ -3,16 +3,20 @@
 
 
 class SharedMemoryConstants:
-    # Directories in Unix where the memory maps can be found
-    UNIX_TEMP_DIRS = ["/dev/shm"]
-
-    # Suffix for the temp directories containing memory maps in Unix
-    UNIX_TEMP_DIR_SUFFIX = "AzureFunctions"
+    class HeaderFlags:
+        """
+        Flags that are present in the header region of the memory maps.
+        """
+        # Indicates that the memory map has been initialized, may be in use and
+        # is not new.
+        # This represents a boolean value of True.
+        Initialized = b'\x01'
 
     # The length of a bool which is the length of the part of the header flag
     # specifying if the memory map is already created and used.
     # This is to distinguish between new memory maps and ones that were
     # previously created and may be in use already.
+    # Header flags are defined in the class SharedMemoryConstants.HeaderFlags.
     MEM_MAP_INITIALIZED_FLAG_NUM_BYTES = 1
 
     # The length of a long which is the length of the part of the header
@@ -22,15 +26,6 @@ class SharedMemoryConstants:
     # The total length of the header
     CONTENT_HEADER_TOTAL_BYTES = MEM_MAP_INITIALIZED_FLAG_NUM_BYTES + \
         CONTENT_LENGTH_NUM_BYTES
-
-    # A flag to indicate that the memory map has been initialized, may be in use
-    # and is not new.
-    # This represents a boolean value of True.
-    MEM_MAP_INITIALIZED_FLAG = b'\x01'
-
-    # A flag to indicate that the memory map has not yet been initialized.
-    # This represents a boolean value of False.
-    MEM_MAP_UNINITIALIZED_FLAG = b'\x00'
 
     # Minimum size (in number of bytes) an object must be in order for it to be
     # transferred over shared memory.
@@ -55,3 +50,9 @@ class SharedMemoryConstants:
     # by this constant.
     # Corresponding logic in the host can be found in SharedMemoryManager.cs
     SIZE_OF_CHAR_BYTES = 2
+
+    # Directories in Unix where the memory maps can be found
+    UNIX_TEMP_DIRS = ["/dev/shm"]
+
+    # Suffix for the temp directories containing memory maps in Unix
+    UNIX_TEMP_DIR_SUFFIX = "AzureFunctions"

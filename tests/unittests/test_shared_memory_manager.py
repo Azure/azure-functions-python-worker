@@ -78,7 +78,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         content = self.get_random_bytes(content_size)
         shared_mem_meta = manager.put_bytes(content)
         self.assertIsNotNone(shared_mem_meta)
-        self.assertTrue(self._is_valid_uuid(shared_mem_meta.mem_map_name))
+        self.assertTrue(self.is_valid_uuid(shared_mem_meta.mem_map_name))
         self.assertEqual(content_size, shared_mem_meta.count)
         free_success = manager.free_mem_map(shared_mem_meta.mem_map_name)
         self.assertTrue(free_success)

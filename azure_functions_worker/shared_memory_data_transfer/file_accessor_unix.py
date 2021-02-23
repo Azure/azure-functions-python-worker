@@ -40,10 +40,11 @@ class FileAccessorUnix(FileAccessor):
         if mem_map_size <= 0:
             raise Exception(
                 f'Cannot create memory map. Invalid size {mem_map_size}')
-        fd = self._create_mem_map_file(mem_map_name, mem_map_size)
-        if fd is None:
+        file = self._create_mem_map_file(mem_map_name, mem_map_size)
+        if file is None:
             return None
-        mem_map = mmap.mmap(fd, mem_map_size, mmap.MAP_SHARED, mmap.PROT_WRITE)
+        mem_map = mmap.mmap(file.fileno(), mem_map_size, mmap.MAP_SHARED,
+                            mmap.PROT_WRITE)
         if self._is_mem_map_initialized(mem_map):
             raise Exception(f'Memory map {mem_map_name} already exists')
         self._set_mem_map_initialized(mem_map)
@@ -114,8 +115,8 @@ class FileAccessorUnix(FileAccessor):
         logger.error('Cannot create directory for memory maps')
         return False
 
-    def _create_mem_map_file(self, mem_map_name: str, mem_mem_map_size: int) \
-            -> Optional[int]:
+    def _create_mem_map_file(self, mem_map_name: str, mem_map_size: int) \
+            -> Optional[BufferedRandom]:
         """
         Get the file descriptor for a new memory map.
         Returns the file descriptor.
@@ -143,15 +144,9 @@ class FileAccessorUnix(FileAccessor):
             file_path = os.path.join(mem_map_temp_dir,
                                      consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
             try:
-                fd = os.open(file_path, os.O_CREAT | os.O_TRUNC | os.O_RDWR)
-                # Write 0s to allocate
-                # TODO use truncate here instead of zeroeing out the memory
-                bytes_written = os.write(fd, b'\x00' * mem_mem_map_size)
-                if bytes_written != mem_mem_map_size:
-                    raise Exception(
-                        f'Cannot write 0s into new memory map {file_path} '
-                        f'({bytes_written} != {mem_mem_map_size})')
-                return fd
+                file = open(file_path, 'wb+')
+                file.truncate(mem_map_size)
+                return file
             except Exception:
                 # If the memory map could not be created in this directory, we
                 # keep trying in other applicable directories.
@@ -160,5 +155,5 @@ class FileAccessorUnix(FileAccessor):
         # paths so we fail.
         logger.error(
             f'Cannot create memory map {mem_map_name} with size '
-            f'{mem_mem_map_size}')
+            f'{mem_map_size}')
         return None

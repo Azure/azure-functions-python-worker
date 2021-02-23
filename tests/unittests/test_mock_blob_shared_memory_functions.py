@@ -16,67 +16,29 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
         super().setUp()
         self.blob_funcs_dir = testutils.E2E_TESTS_FOLDER / 'blob_functions'
 
-    async def test_binary_blob_read_function(self):
+    async def test_binary_blob_read_as_bytes_function(self):
+        """
+        Read a blob with binary input that was transferred between the host and
+        worker over shared memory.
+        The function's input data type will be bytes.
+        """
         func_name = 'get_blob_as_bytes_return_http_response'
-        async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
-                as host:
-            await host.load_function(func_name)
+        await self._test_binary_blob_read_function(func_name)
 
-            # Write binary content into shared memory
-            mem_map_name = self.get_new_mem_map_name()
-            content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
-            content = self.get_random_bytes(content_size)
-            content_md5 = hashlib.md5(content).hexdigest()
-            mem_map_size = consts.CONTENT_HEADER_TOTAL_BYTES + content_size
-            mem_map = self.file_accessor.create_mem_map(mem_map_name,
-                                                        mem_map_size)
-            shared_mem_map = SharedMemoryMap(self.file_accessor, mem_map_name,
-                                             mem_map)
-            num_bytes_written = shared_mem_map.put_bytes(content)
-
-            # Create a message to send to the worker containing info about the
-            # shared memory region to read input from
-            value = protos.RpcSharedMemory(
-                name=mem_map_name,
-                offset=0,
-                count=num_bytes_written,
-                type=protos.RpcDataType.bytes
-            )
-
-            # Invoke the function; it should read the input blob from shared
-            # memory and respond back in the HTTP body with the number of bytes
-            # it read in the input
-            _, response_msg = await host.invoke_function(
-                func_name, [
-                    protos.ParameterBinding(
-                        name='req',
-                        data=protos.TypedData(
-                            http=protos.RpcHttp(
-                                method='GET'))),
-                    protos.ParameterBinding(
-                        name='file',
-                        rpc_shared_memory=value
-                    )
-                ])
-
-            # Dispose the shared memory map since the function is done using it
-            shared_mem_map.dispose()
-
-            # Verify if the function executed successfully
-            self.assertEqual(protos.StatusResult.Success,
-                             response_msg.response.result.status)
-
-            response_bytes = response_msg.response.return_value.http.body.bytes
-            json_response = json.loads(response_bytes)
-            func_received_content_size = json_response['content_size']
-            func_received_content_md5 = json_response['content_md5']
-
-            # Check the function response to ensure that it read the complete
-            # input that we provided and the md5 matches
-            self.assertEqual(content_size, func_received_content_size)
-            self.assertEqual(content_md5, func_received_content_md5)
+    async def test_binary_blob_read_as_stream_function(self):
+        """
+        Read a blob with binary input that was transferred between the host and
+        worker over shared memory.
+        The function's input data type will be InputStream.
+        """
+        func_name = 'get_blob_as_bytes_stream_return_http_response'
+        await self._test_binary_blob_read_function(func_name)
 
     async def test_binary_blob_write_function(self):
+        """
+        Write a blob with binary output that was transferred between the worker
+        and host over shared memory.
+        """
         func_name = 'put_blob_as_bytes_return_http_response'
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
@@ -151,6 +113,11 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             self.assertEqual(len(read_content), func_created_content_size)
 
     async def test_str_blob_read_function(self):
+        """
+        Read a blob with binary input that was transferred between the host and
+        worker over shared memory.
+        The function's input data type will be str.
+        """
         func_name = 'get_blob_as_str_return_http_response'
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
@@ -213,6 +180,10 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             self.assertEqual(content_md5, func_received_content_md5)
 
     async def test_str_blob_write_function(self):
+        """
+        Write a blob with string output that was transferred between the worker
+        and host over shared memory.
+        """
         func_name = 'put_blob_as_str_return_http_response'
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
@@ -289,6 +260,10 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             self.assertEqual(len(read_content), func_created_num_chars)
 
     async def test_close_shared_memory_maps(self):
+        """
+        Close the shared memory maps created by the worker to transfer output
+        blob to the host after the host is done processing the response.
+        """
         func_name = 'put_blob_as_bytes_return_http_response'
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
@@ -338,15 +313,19 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
                 status = mem_map_statuses[mem_map_name]
                 self.assertTrue(status)
 
-    async def _test_shared_memory_not_used(self, content_size):
+    async def test_shared_memory_not_used_with_small_output(self):
+        """
+        Even though shared memory is enabled, small inputs will not be
+        transferred over shared memory (in this case from the worker to the
+        host.)
+        """
         func_name = 'put_blob_as_bytes_return_http_response'
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
             await host.load_function(func_name)
 
-            http_params = {
-                'content_size': str(content_size),
-                'no_random_input': str('1')}
+            content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER - 10
+            http_params = {'content_size': str(content_size)}
 
             # Invoke the function; it should read the input blob from shared
             # memory and respond back in the HTTP body with the number of bytes
@@ -374,29 +353,239 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             binding_type = output_binding.WhichOneof('rpc_data')
             self.assertEqual('data', binding_type)
 
-    async def test_shared_memory_not_used_with_small_output(self):
-        # TODO
-        # Type not supported but size within shared memory enabled range
-        content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER - 10
-        await self._test_shared_memory_not_used(content_size)
+    async def test_multiple_input_output_blobs(self):
+        """
+        Read two blobs and write two blobs, all over shared memory.
+        """
+        func_name = 'put_get_multiple_blobs_as_bytes_return_http_response'
+        async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
+                as host:
+            await host.load_function(func_name)
 
-    async def test_shared_memory_not_used_with_large_output(self):
-        content_size = consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER + 10
-        await self._test_shared_memory_not_used(content_size)
+            # Input 1
+            # Write binary content into shared memory
+            mem_map_name_1 = self.get_new_mem_map_name()
+            input_content_size_1 = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
+            input_content_1 = self.get_random_bytes(input_content_size_1)
+            input_content_md5_1 = hashlib.md5(input_content_1).hexdigest()
+            input_mem_map_size_1 = \
+                consts.CONTENT_HEADER_TOTAL_BYTES + input_content_size_1
+            input_mem_map_1 = \
+                self.file_accessor.create_mem_map(mem_map_name_1,
+                                                  input_mem_map_size_1)
+            input_shared_mem_map_1 = \
+                SharedMemoryMap(self.file_accessor, mem_map_name_1,
+                                input_mem_map_1)
+            input_num_bytes_written_1 = \
+                input_shared_mem_map_1.put_bytes(input_content_1)
 
-    def test_blob_input_as_stream(self):
-        # Use binary, use stream also in func
-        # TODO
-        pass
+            # Create a message to send to the worker containing info about the
+            # shared memory region to read input from
+            input_value_1 = protos.RpcSharedMemory(
+                name=mem_map_name_1,
+                offset=0,
+                count=input_num_bytes_written_1,
+                type=protos.RpcDataType.bytes
+            )
 
-    def test_multiple_input_blobs(self):
-        # TODO
-        pass
+            # Input 2
+            # Write binary content into shared memory
+            mem_map_name_2 = self.get_new_mem_map_name()
+            input_content_size_2 = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 20
+            input_content_2 = self.get_random_bytes(input_content_size_2)
+            input_content_md5_2 = hashlib.md5(input_content_2).hexdigest()
+            input_mem_map_size_2 = \
+                consts.CONTENT_HEADER_TOTAL_BYTES + input_content_size_2
+            input_mem_map_2 = \
+                self.file_accessor.create_mem_map(mem_map_name_2,
+                                                  input_mem_map_size_2)
+            input_shared_mem_map_2 = \
+                SharedMemoryMap(self.file_accessor, mem_map_name_2,
+                                input_mem_map_2)
+            input_num_bytes_written_2 = \
+                input_shared_mem_map_2.put_bytes(input_content_2)
 
-    def test_multiple_output_blobs(self):
-        # TODO
-        pass
+            # Outputs
+            output_content_size_1 = \
+                consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 11
+            output_content_size_2 = \
+                consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 22
+            http_params = {
+                'output_content_size_1': str(output_content_size_1),
+                'output_content_size_2': str(output_content_size_2)}
 
-    def test_multiple_input_and_output_blobs(self):
-        # TODO
-        pass
+            # Create a message to send to the worker containing info about the
+            # shared memory region to read input from
+            input_value_2 = protos.RpcSharedMemory(
+                name=mem_map_name_2,
+                offset=0,
+                count=input_num_bytes_written_2,
+                type=protos.RpcDataType.bytes
+            )
+
+            # Invoke the function; it should read the input blob from shared
+            # memory and respond back in the HTTP body with the number of bytes
+            # it read in the input
+            _, response_msg = await host.invoke_function(
+                func_name, [
+                    protos.ParameterBinding(
+                        name='req',
+                        data=protos.TypedData(
+                            http=protos.RpcHttp(
+                                method='GET',
+                                query=http_params))),
+                    protos.ParameterBinding(
+                        name='input_file_1',
+                        rpc_shared_memory=input_value_1
+                    ),
+                    protos.ParameterBinding(
+                        name='input_file_2',
+                        rpc_shared_memory=input_value_2
+                    )
+                ])
+
+            # Dispose the shared memory map since the function is done using it
+            input_shared_mem_map_1.dispose()
+            input_shared_mem_map_2.dispose()
+
+            # Verify if the function executed successfully
+            self.assertEqual(protos.StatusResult.Success,
+                             response_msg.response.result.status)
+
+            response_bytes = response_msg.response.return_value.http.body.bytes
+            json_response = json.loads(response_bytes)
+
+            func_received_content_size_1 = json_response['input_content_size_1']
+            func_received_content_md5_1 = json_response['input_content_md5_1']
+            func_received_content_size_2 = json_response['input_content_size_2']
+            func_received_content_md5_2 = json_response['input_content_md5_2']
+            func_created_content_size_1 = json_response['output_content_size_1']
+            func_created_content_size_2 = json_response['output_content_size_2']
+            func_created_content_md5_1 = json_response['output_content_md5_1']
+            func_created_content_md5_2 = json_response['output_content_md5_2']
+
+            # Check the function response to ensure that it read the complete
+            # input that we provided and the md5 matches
+            self.assertEqual(input_content_size_1, func_received_content_size_1)
+            self.assertEqual(input_content_md5_1, func_received_content_md5_1)
+            self.assertEqual(input_content_size_2, func_received_content_size_2)
+            self.assertEqual(input_content_md5_2, func_received_content_md5_2)
+
+            # Verify if the worker produced two output blobs which were written
+            # in shared memory
+            output_data = response_msg.response.output_data
+            self.assertEqual(2, len(output_data))
+
+            # Output 1
+            output_binding_1 = output_data[0]
+            binding_type = output_binding_1.WhichOneof('rpc_data')
+            self.assertEqual('rpc_shared_memory', binding_type)
+
+            shmem_1 = output_binding_1.rpc_shared_memory
+            self._verify_function_output(shmem_1, func_created_content_size_1,
+                                         func_created_content_md5_1)
+
+            # Output 2
+            output_binding_2 = output_data[1]
+            binding_type = output_binding_2.WhichOneof('rpc_data')
+            self.assertEqual('rpc_shared_memory', binding_type)
+
+            shmem_2 = output_binding_2.rpc_shared_memory
+            self._verify_function_output(shmem_2, func_created_content_size_2,
+                                         func_created_content_md5_2)
+
+    async def _test_binary_blob_read_function(self, func_name):
+        async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
+                as host:
+            await host.load_function(func_name)
+
+            # Write binary content into shared memory
+            mem_map_name = self.get_new_mem_map_name()
+            content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
+            content = self.get_random_bytes(content_size)
+            content_md5 = hashlib.md5(content).hexdigest()
+            mem_map_size = consts.CONTENT_HEADER_TOTAL_BYTES + content_size
+            mem_map = self.file_accessor.create_mem_map(mem_map_name,
+                                                        mem_map_size)
+            shared_mem_map = SharedMemoryMap(self.file_accessor, mem_map_name,
+                                             mem_map)
+            num_bytes_written = shared_mem_map.put_bytes(content)
+
+            # Create a message to send to the worker containing info about the
+            # shared memory region to read input from
+            value = protos.RpcSharedMemory(
+                name=mem_map_name,
+                offset=0,
+                count=num_bytes_written,
+                type=protos.RpcDataType.bytes
+            )
+
+            # Invoke the function; it should read the input blob from shared
+            # memory and respond back in the HTTP body with the number of bytes
+            # it read in the input
+            _, response_msg = await host.invoke_function(
+                func_name, [
+                    protos.ParameterBinding(
+                        name='req',
+                        data=protos.TypedData(
+                            http=protos.RpcHttp(
+                                method='GET'))),
+                    protos.ParameterBinding(
+                        name='file',
+                        rpc_shared_memory=value
+                    )
+                ])
+
+            # Dispose the shared memory map since the function is done using it
+            shared_mem_map.dispose()
+
+            # Verify if the function executed successfully
+            self.assertEqual(protos.StatusResult.Success,
+                             response_msg.response.result.status)
+
+            response_bytes = response_msg.response.return_value.http.body.bytes
+            json_response = json.loads(response_bytes)
+            func_received_content_size = json_response['content_size']
+            func_received_content_md5 = json_response['content_md5']
+
+            # Check the function response to ensure that it read the complete
+            # input that we provided and the md5 matches
+            self.assertEqual(content_size, func_received_content_size)
+            self.assertEqual(content_md5, func_received_content_md5)
+
+    def _verify_function_output(
+            self,
+            shmem: protos.RpcSharedMemory,
+            expected_size: int,
+            expected_md5: str):
+        output_mem_map_name = shmem.name
+        output_offset = shmem.offset
+        output_count = shmem.count
+        output_data_type = shmem.type
+
+        # Verify if the shared memory region's information is valid
+        self.assertTrue(self.is_valid_uuid(output_mem_map_name))
+        self.assertEqual(0, output_offset)
+        self.assertEqual(expected_size, output_count)
+        self.assertEqual(protos.RpcDataType.bytes, output_data_type)
+
+        # Read data from the shared memory region
+        output_mem_map_size = \
+            consts.CONTENT_HEADER_TOTAL_BYTES + output_count
+        output_mem_map = \
+            self.file_accessor.open_mem_map(output_mem_map_name,
+                                            output_mem_map_size)
+        output_shared_mem_map = \
+            SharedMemoryMap(self.file_accessor, output_mem_map_name,
+                            output_mem_map)
+        output_read_content = output_shared_mem_map.get_bytes()
+
+        # Dispose the shared memory map since we have read the function's
+        # output now
+        output_shared_mem_map.dispose()
+
+        # Verify if we were able to read the correct output that the
+        # function has produced
+        output_read_content_md5 = hashlib.md5(output_read_content).hexdigest()
+        self.assertEqual(expected_md5, output_read_content_md5)
+        self.assertEqual(len(output_read_content), expected_size)

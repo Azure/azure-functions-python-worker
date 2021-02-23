@@ -73,7 +73,6 @@ def from_incoming_proto(
         # Data was sent over shared memory, attempt to read
         datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory,
                                                       shmem_mgr)
-        # TODO gochaudh: check trigger_metadata (try with blob triggered func)
     elif pb_type == 'data':
         val = pb.data
         datum = datumdef.Datum.from_typed_data(val)

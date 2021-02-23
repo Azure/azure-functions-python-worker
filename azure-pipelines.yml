@@ -3,6 +3,7 @@ name: $(Date:yyyyMMdd).$(Rev:r)
 trigger:
 - release/2.*
 - release/3.*
+- dev
 
 variables:
     DOTNET_VERSION: '3.1.405'
@@ -156,25 +157,36 @@ jobs:
 
 - job: PackageWorkers
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64']
-  condition: startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')
+  condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
   pool:
       vmImage: 'vs2017-win2016'
   steps:
   - bash: |
       echo "Releasing from $BUILD_SOURCEBRANCHNAME"
+      apt install jq
 
       if [[ $BUILD_SOURCEBRANCHNAME = 2\.* ]]
       then
+        echo "Generating V2 Release Package for $BUILD_SOURCEBRANCHNAME"
         NUSPEC="pack\Microsoft.Azure.Functions.V2.PythonWorker.nuspec"
+        WKVERSION="$BUILD_SOURCEBRANCHNAME"
       elif [[ $BUILD_SOURCEBRANCHNAME = 3\.* ]]
       then
+        echo "Generating V3 Release Package for $BUILD_SOURCEBRANCHNAME"
         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
+        WKVERSION="$BUILD_SOURCEBRANCHNAME"
+      elif [[ $BUILD_SOURCEBRANCHNAME = dev ]]
+      then
+        echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
+        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g')
+        NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
+        WKVERSION="3.$LATEST_TAG-dev"  # Integration Test (e.g. 3.1.1.6-dev)
       else
-        echo "No Matching Release Tag For $BUILD_SOURCEBRANCHNAME"
+        echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
       fi
 
-      echo "##vso[task.setvariable variable=worker_version]$BUILD_SOURCEBRANCHNAME"
       echo "##vso[task.setvariable variable=nuspec_path]$NUSPEC"
+      echo "##vso[task.setvariable variable=worker_version]$WKVERSION"
     displayName: "Generate Worker NuGet Package for Release $BUILD_SOURCEBRANCHNAME"
   - task: DownloadBuildArtifacts@0
     inputs:
@@ -191,3 +203,21 @@ jobs:
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: 'PythonWorker'
+  - pwsh: |
+      $uploadPackage = $null
+      if (-not ([bool]::TryParse($env:UPLOADPACKAGETOPRERELEASEFEED, [ref] $uploadPackage)))
+      {
+        throw "UploadPackageToPreReleaseFeed can only be set to True or False. Current value is set to $env:UPLOADPACKAGETOPRERELEASEFEED"
+      }
+      Write-Host "##vso[task.setvariable variable=UploadPackage]$uploadPackage"
+      Write-Host "UploadPackage: $uploadPackage"
+    displayName: '[Integration Test] Set UploadPackage variable'
+  - task: NuGetCommand@2
+    condition: and(eq(variables.UploadPackage, true), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
+    inputs:
+      command: 'push'
+      packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+      nuGetFeedType: 'internal'
+      publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df'
+      allowPackageConflicts: true
+    displayName: '[Integration Test] Push NuGet package to the AzureFunctionsPreRelease feed'

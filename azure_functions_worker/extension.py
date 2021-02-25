@@ -48,7 +48,7 @@ def is_extension_enabled_in_sdk(module: ModuleType) -> bool:
     bool
         True on azure.functions SDK supports extension registration
     """
-    return getattr(module, 'FuncExtension', None) is not None
+    return getattr(module, 'ExtensionMeta', None) is not None
 
 
 def get_sdk_version(module: ModuleType) -> str:
@@ -99,7 +99,7 @@ def invoke_extension(context, hook_name):
                        f'{PYTHON_ENABLE_WORKER_EXTENSIONS} to "true"')
         return
 
-    hooks = sdk.FuncExtension.get_hooks_of_trigger(context.function_name)
+    hooks = sdk.ExtensionMeta.get_hooks_of_trigger(context.function_name)
     for hook_meta in getattr(hooks, hook_name, []):
         ext_logger = logging.getLogger(hook_meta.ext_name)
         try:

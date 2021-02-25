@@ -1,9 +1,9 @@
 # <img src="https://raw.githubusercontent.com/Azure/azure-functions-python-worker/dev/docs/Azure.Functions.svg" width = "30" alt="Functions Header Image - Lightning Logo"> Azure Functions Python Worker
 
-|Branch|Status|Coverage|CodeCov|Unittests|E2E tests|
-|---|---|---|---|---|---|
-|master|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_apis/build/status/Azure%20Functions%20Python-CI?branchName=master)](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_build/latest?definitionId=3&branchName=master)|![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/azfunc/Azure%20Functions%20Python/3/master)|[![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/master/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)|![CI Unit tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20Unit%20tests/badge.svg?branch=master)|![CI E2E tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20E2E%20tests/badge.svg?branch=master)
-|dev|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_apis/build/status/Azure%20Functions%20Python-CI?branchName=dev)](https://azfunc.visualstudio.com/Azure%20Functions%20Python/_build/latest?definitionId=3&branchName=dev)|![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/azfunc/Azure%20Functions%20Python/3/dev)|[![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/dev/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)|![CI Unit tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20Unit%20tests/badge.svg?branch=dev)|![CI E2E tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20E2E%20tests/badge.svg?branch=dev)
+|Branch|Status|CodeCov|Unittests|E2E tests|
+|---|---|---|---|---|
+|master|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions/_apis/build/status/Azure.azure-functions-python-worker?branchName=master)](https://azfunc.visualstudio.com/Azure%20Functions/_build/latest?definitionId=57&branchName=master)|[![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/master/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)|![CI Unit tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20Unit%20tests/badge.svg?branch=master)|![CI E2E tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20E2E%20tests/badge.svg?branch=master)
+|dev|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions/_apis/build/status/Azure.azure-functions-python-worker?branchName=dev)](https://azfunc.visualstudio.com/Azure%20Functions/_build/latest?definitionId=57&branchName=dev)|[![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/dev/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)|![CI Unit tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20Unit%20tests/badge.svg?branch=dev)|![CI E2E tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20E2E%20tests/badge.svg?branch=dev)
 
 Python support for Azure Functions is based on Python 3.6, Python 3.7, and Python 3.8, serverless hosting on Linux and the Functions 2.0 and 3.0 runtime.
 
@@ -14,7 +14,7 @@ What are the supported Python versions?
 |Azure Functions Runtime|Python 3.6|Python 3.7|Python 3.8|Python 3.9|
 |---|---|---|---|---|
 |Azure Functions 2.0|✔|✔|-|-|
-|Azure Functions 3.0|✔|✔|✔|-|
+|Azure Functions 3.0|✔|✔|✔|(preview)|
 
 What's available?
 

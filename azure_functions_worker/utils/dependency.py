@@ -101,7 +101,7 @@ class DependencyManager:
             PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
         )
     )
-    def use_customer_dependencies(cls):
+    def prioritize_customer_dependencies(cls):
         """Switch the sys.path and ensure the customer's code import are loaded
         from CX's deppendencies.
 
@@ -119,6 +119,13 @@ class DependencyManager:
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.cx_deps_path, True)
         cls._add_to_sys_path(cls.cx_working_dir, False)
+
+        # Deprioritize worker dependencies but don't completely remove it
+        # Otherwise, it will break some really old function apps, those
+        # don't have azure-functions module in .python_packages
+        # https://github.com/Azure/azure-functions-core-tools/pull/1498
+        cls._add_to_sys_path(cls.worker_deps_path, False)
+
         logger.info(f'Start using customer dependencies {cls.cx_deps_path}')
 
     @classmethod
@@ -200,8 +207,14 @@ class DependencyManager:
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.cx_deps_path, True)
         cls._add_to_sys_path(working_directory, False)
-        logger.info('Reloaded azure google namespaces from '
-                    'customer dependencies')
+
+        # Deprioritize worker dependencies but don't completely remove it
+        # Otherwise, it will break some really old function apps, those
+        # don't have azure-functions module in .python_packages
+        # https://github.com/Azure/azure-functions-core-tools/pull/1498
+        cls._add_to_sys_path(cls.worker_deps_path, False)
+
+        logger.info('Reloaded all namespaces from customer dependencies')
 
     @classmethod
     def _add_to_sys_path(cls, path: str, add_to_first: bool):

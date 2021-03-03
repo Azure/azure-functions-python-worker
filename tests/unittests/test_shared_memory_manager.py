@@ -6,9 +6,9 @@ import os
 from azure_functions_worker.utils.common import is_envvar_true
 from azure.functions import meta as bind_meta
 from azure_functions_worker import testutils
-from azure_functions_worker.shared_memory_data_transfer \
+from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryManager
-from azure_functions_worker.shared_memory_data_transfer \
+from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryConstants as consts
 from azure_functions_worker.constants \
     import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED

@@ -35,9 +35,9 @@ import grpc
 import requests
 
 from azure_functions_worker._thirdparty import aio_compat
-from azure_functions_worker.shared_memory_data_transfer \
+from azure_functions_worker.bindings.shared_memory_data_transfer \
     import FileAccessorFactory
-from azure_functions_worker.shared_memory_data_transfer \
+from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryConstants as consts
 from . import dispatcher
 from . import protos

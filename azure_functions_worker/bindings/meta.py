@@ -8,6 +8,10 @@ from .. import protos
 from . import datumdef
 from . import generic
 
+PB_TYPE = 'rpc_data'
+PB_TYPE_DATA = 'data'
+PB_TYPE_SHARED_MEMORY = 'rpc_shared_memory'
+
 
 def get_binding_registry():
     func = sys.modules.get('azure.functions')
@@ -68,14 +72,14 @@ def from_incoming_proto(
     else:
         metadata = {}
 
-    pb_type = pb.WhichOneof('rpc_data')
-    if pb_type == 'rpc_shared_memory':
+    pb_type = pb.WhichOneof(PB_TYPE)
+    if pb_type == PB_TYPE_DATA:
+        val = pb.data
+        datum = datumdef.Datum.from_typed_data(val)
+    elif pb_type == PB_TYPE_RPC_SHARED_MEMORY:
         # Data was sent over shared memory, attempt to read
         datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory,
                                                       shmem_mgr)
-    elif pb_type == 'data':
-        val = pb.data
-        datum = datumdef.Datum.from_typed_data(val)
     else:
         raise TypeError(f'Unknown ParameterBindingType: {pb_type}')
 
@@ -120,21 +124,19 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
         -> protos.ParameterBinding:
     datum = get_datum(binding, obj, pytype)
     shared_mem_value = None
-    parameter_binding = None
     # If shared memory is enabled, try to transfer to host over shared memory
     if shmem_mgr.is_enabled() and shmem_mgr.is_supported(datum):
         shared_mem_value = datumdef.Datum.to_rpc_shared_memory(datum, shmem_mgr)
     # Check if data was written into shared memory
     if shared_mem_value is not None:
         # If it was, then use the rpc_shared_memory field in response message
-        parameter_binding = protos.ParameterBinding(
+        return protos.ParameterBinding(
             name=out_name,
             rpc_shared_memory=shared_mem_value)
     else:
         # If not, send it as part of the response message over RPC
         rpc_val = datumdef.datum_as_proto(datum)
         assert rpc_val is not None
-        parameter_binding = protos.ParameterBinding(
+        return protos.ParameterBinding(
             name=out_name,
             data=rpc_val)
-    return parameter_binding

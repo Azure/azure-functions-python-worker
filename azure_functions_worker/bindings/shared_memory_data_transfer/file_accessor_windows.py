@@ -4,7 +4,7 @@
 import mmap
 from typing import Optional
 from .file_accessor import FileAccessor
-from ..logging import logger
+from ...logging import logger
 
 
 class FileAccessorWindows(FileAccessor):

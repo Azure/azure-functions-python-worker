@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 """
 This module provides functionality for accessing shared memory maps.
 These are used for transferring data between functions host and the worker

@@ -7,10 +7,10 @@ from .shared_memory_constants import SharedMemoryConstants as consts
 from .file_accessor_factory import FileAccessorFactory
 from .shared_memory_metadata import SharedMemoryMetadata
 from .shared_memory_map import SharedMemoryMap
-from ..bindings.datumdef import Datum
-from ..logging import logger
-from ..utils.common import is_envvar_true
-from ..constants import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
+from ..datumdef import Datum
+from ...logging import logger
+from ...utils.common import is_envvar_true
+from ...constants import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
 
 
 class SharedMemoryManager:

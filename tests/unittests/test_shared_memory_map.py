@@ -4,8 +4,9 @@
 import os
 import unittest
 from azure_functions_worker import testutils
-from azure_functions_worker.shared_memory_data_transfer import SharedMemoryMap
-from azure_functions_worker.shared_memory_data_transfer \
+from azure_functions_worker.bindings.shared_memory_data_transfer \
+    import SharedMemoryMap
+from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryConstants as consts
 
 

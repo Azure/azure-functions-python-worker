@@ -3,12 +3,12 @@
 
 import os
 import unittest
-from azure_functions_worker.shared_memory_data_transfer \
+from azure_functions_worker.bindings.shared_memory_data_transfer \
     import FileAccessorFactory
-from azure_functions_worker.shared_memory_data_transfer.file_accessor_unix \
-    import FileAccessorUnix
-from azure_functions_worker.shared_memory_data_transfer.file_accessor_windows \
-    import FileAccessorWindows
+from azure_functions_worker.bindings.\
+    shared_memory_data_transfer.file_accessor_unix import FileAccessorUnix
+from azure_functions_worker.bindings.\
+    shared_memory_data_transfer.file_accessor_windows import FileAccessorWindows
 
 
 class TestFileAccessorFactory(unittest.TestCase):

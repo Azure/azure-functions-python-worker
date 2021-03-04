@@ -10,7 +10,7 @@ from . import generic
 
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
-PB_TYPE_SHARED_MEMORY = 'rpc_shared_memory'
+PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 
 
 def get_binding_registry():

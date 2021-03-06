@@ -99,20 +99,33 @@ def invoke_extension(context, hook_name):
                        f'{PYTHON_ENABLE_WORKER_EXTENSIONS} to "true"')
         return
 
-    hooks = sdk.ExtensionMeta.get_hooks_of_trigger(context.function_name)
-    for hook_meta in getattr(hooks, hook_name, []):
-        ext_logger = logging.getLogger(hook_meta.ext_name)
-        try:
-            hook_meta.impl(ext_logger, context)
-        except Exception as e:
-            ext_logger.error(e, exc_info=True)
+    func_hooks = sdk.ExtensionMeta.get_function_hooks(context.function_name)
+    safe_invoke_hooks(func_hooks, hook_name, context)
+    app_hooks = sdk.ExtensionMeta.get_applicaiton_hooks()
+    safe_invoke_hooks(app_hooks, hook_name, context)
+
+
+def safe_invoke_hooks(hooks, hook_name, context):
+    if hooks:
+        for hook_meta in getattr(hooks, hook_name, []):
+            ext_app_instance = getattr(hook_meta, 'ext_app_instance', None)
+            ext_logger = logging.getLogger(hook_meta.ext_name)
+            try:
+                if ext_app_instance:
+                    hook_meta.ext_impl(ext_app_instance, ext_logger, context)
+                else:
+                    hook_meta.ext_impl(ext_logger, context)
+            except Exception as e:
+                ext_logger.error(e, exc_info=True)
 
 
 def raw_invocation_wrapper(context, function, args) -> Any:
     """Calls before_invocation and after_invocation extensions additional to
     function invocation"""
     invoke_extension(context, 'before_invocation')
+    invoke_extension(context, 'before_invocation_global')
     result = function(**args)
+    invoke_extension(context, 'after_invocation_global')
     invoke_extension(context, 'after_invocation')
     return result
 
@@ -126,6 +139,8 @@ def get_invocation_wrapper(context, function) -> Callable[[List], Any]:
 async def get_invocation_wrapper_async(context, function, args) -> Any:
     """An asynchronous coroutine for executing function with extensions"""
     invoke_extension(context, 'before_invocation')
+    invoke_extension(context, 'before_invocation_global')
     result = await function(**args)
+    invoke_extension(context, 'after_invocation_global')
     invoke_extension(context, 'after_invocation')
     return result

@@ -29,7 +29,7 @@ from .constants import (CONSOLE_LOG_PREFIX, PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 from .logging import disable_console_logging, enable_console_logging
 from .logging import error_logger, is_system_log_category, logger
-from .extension import get_invocation_wrapper, get_invocation_wrapper_async
+from .extension import ExtensionManager
 from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
 from .utils.dependency import DependencyManager
@@ -293,6 +293,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._functions.add_function(
                 function_id, func, func_request.metadata)
 
+            ExtensionManager.function_load_extension(
+                function_name,
+                func_request.metadata.directory
+            )
+
             logger.info('Successfully processed FunctionLoadRequest, '
                         f'request ID: {self.request_id}, '
                         f'function ID: {function_id},'
@@ -370,7 +375,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     args[name] = bindings.Out()
 
             if fi.is_async:
-                call_result = await get_invocation_wrapper_async(
+                call_result = await self.__run_async_func(
                     fi_context, fi.func, args
                 )
             else:
@@ -553,9 +558,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         # invocation_id from ThreadPoolExecutor's threads.
         _invocation_id_local.v = invocation_id
         try:
-            return get_invocation_wrapper(context, func)(params)
+            return ExtensionManager.get_invocation_wrapper(context,
+                                                           func)(params)
         finally:
             _invocation_id_local.v = None
+
+    async def __run_async_func(self, context, func, params):
+        return await ExtensionManager.get_invocation_wrapper_async(
+            context, func, params
+        )
 
     def __poll_grpc(self):
         options = []

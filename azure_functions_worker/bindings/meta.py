@@ -124,7 +124,8 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
         -> protos.ParameterBinding:
     datum = get_datum(binding, obj, pytype)
     shared_mem_value = None
-    # If shared memory is enabled, try to transfer to host over shared memory
+    # If shared memory is enabled and supported for the given datum, try to
+    # transfer to host over shared memory as a default
     if shmem_mgr.is_enabled() and shmem_mgr.is_supported(datum):
         shared_mem_value = datumdef.Datum.to_rpc_shared_memory(datum, shmem_mgr)
     # Check if data was written into shared memory

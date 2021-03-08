@@ -102,6 +102,11 @@ class Datum:
         Reads the specified shared memory region and converts the read data into
         a datum object of the corresponding type.
         """
+        if shmem is None:
+            logger.warn('Cannot read from shared memory. '
+                        'RpcSharedMemory is None.')
+            return None
+
         mem_map_name = shmem.name
         offset = shmem.offset
         count = shmem.count
@@ -148,16 +153,17 @@ class Datum:
             )
 
         if shared_mem_meta is None:
+            logger.warn(f'Cannot write to shared memory for type: {datum.type}')
             return None
 
         shmem = protos.RpcSharedMemory(
             name=shared_mem_meta.mem_map_name,
             offset=0,
-            count=shared_mem_meta.count,
+            count=shared_mem_meta.count_bytes,
             type=data_type)
 
         logger.info(
-            f'Wrote {shared_mem_meta.count} bytes to memory map '
+            f'Wrote {shared_mem_meta.count_bytes} bytes to memory map '
             f'{shared_mem_meta.mem_map_name} for data type {data_type}')
         return shmem
 

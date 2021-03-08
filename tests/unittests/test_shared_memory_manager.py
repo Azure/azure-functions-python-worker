@@ -3,6 +3,7 @@
 
 import math
 import os
+import json
 from azure_functions_worker.utils.common import is_envvar_true
 from azure.functions import meta as bind_meta
 from azure_functions_worker import testutils
@@ -79,6 +80,84 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         is_supported = manager.is_supported(bytes_datum)
         self.assertTrue(is_supported)
 
+    def test_int_input_unsupported(self):
+        """
+        Verify that the given input is unsupported by SharedMemoryManager.
+        This input is int.
+        """
+        manager = SharedMemoryManager()
+        datum = bind_meta.Datum(type='int', value=1)
+        is_supported = manager.is_supported(datum)
+        self.assertFalse(is_supported)
+
+    def test_double_input_unsupported(self):
+        """
+        Verify that the given input is unsupported by SharedMemoryManager.
+        This input is double.
+        """
+        manager = SharedMemoryManager()
+        datum = bind_meta.Datum(type='double', value=1.0)
+        is_supported = manager.is_supported(datum)
+        self.assertFalse(is_supported)
+
+    def test_json_input_unsupported(self):
+        """
+        Verify that the given input is unsupported by SharedMemoryManager.
+        This input is json.
+        """
+        manager = SharedMemoryManager()
+        content = {
+            'name': 'foo',
+            'val': 'bar'
+        }
+        datum = bind_meta.Datum(type='json', value=json.dumps(content))
+        is_supported = manager.is_supported(datum)
+        self.assertFalse(is_supported)
+
+    def test_collection_string_unsupported(self):
+        """
+        Verify that the given input is unsupported by SharedMemoryManager.
+        This input is collection_string.
+        """
+        manager = SharedMemoryManager()
+        content = ['foo', 'bar']
+        datum = bind_meta.Datum(type='collection_string', value=content)
+        is_supported = manager.is_supported(datum)
+        self.assertFalse(is_supported)
+
+    def test_collection_bytes_unsupported(self):
+        """
+        Verify that the given input is unsupported by SharedMemoryManager.
+        This input is collection_bytes.
+        """
+        manager = SharedMemoryManager()
+        content = [b'x01', b'x02']
+        datum = bind_meta.Datum(type='collection_bytes', value=content)
+        is_supported = manager.is_supported(datum)
+        self.assertFalse(is_supported)
+
+    def test_collection_double_unsupported(self):
+        """
+        Verify that the given input is unsupported by SharedMemoryManager.
+        This input is collection_double.
+        """
+        manager = SharedMemoryManager()
+        content = [1.0, 2.0]
+        datum = bind_meta.Datum(type='collection_double', value=content)
+        is_supported = manager.is_supported(datum)
+        self.assertFalse(is_supported)
+
+    def test_collection_sint64_unsupported(self):
+        """
+        Verify that the given input is unsupported by SharedMemoryManager.
+        This input is collection_sint64.
+        """
+        manager = SharedMemoryManager()
+        content = [1, 2]
+        datum = bind_meta.Datum(type='collection_sint64', value=content)
+        is_supported = manager.is_supported(datum)
+        self.assertFalse(is_supported)
+
     def test_large_invalid_bytes_input_support(self):
         """
         Verify that the given input is NOT supported by SharedMemoryManager to
@@ -148,7 +227,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         shared_mem_meta = manager.put_bytes(content)
         self.assertIsNotNone(shared_mem_meta)
         self.assertTrue(self.is_valid_uuid(shared_mem_meta.mem_map_name))
-        self.assertEqual(content_size, shared_mem_meta.count)
+        self.assertEqual(content_size, shared_mem_meta.count_bytes)
         free_success = manager.free_mem_map(shared_mem_meta.mem_map_name)
         self.assertTrue(free_success)
 
@@ -171,7 +250,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         content = self.get_random_bytes(content_size)
         shared_mem_meta = manager.put_bytes(content)
         mem_map_name = shared_mem_meta.mem_map_name
-        num_bytes_written = shared_mem_meta.count
+        num_bytes_written = shared_mem_meta.count_bytes
         read_content = manager.get_bytes(mem_map_name, offset=0,
                                          count=num_bytes_written)
         self.assertEqual(content, read_content)
@@ -191,7 +270,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         shared_mem_meta = manager.put_string(content)
         self.assertIsNotNone(shared_mem_meta)
         self.assertTrue(self.is_valid_uuid(shared_mem_meta.mem_map_name))
-        self.assertEqual(expected_size, shared_mem_meta.count)
+        self.assertEqual(expected_size, shared_mem_meta.count_bytes)
         free_success = manager.free_mem_map(shared_mem_meta.mem_map_name)
         self.assertTrue(free_success)
 
@@ -215,7 +294,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         content = self.get_random_string(num_chars)
         shared_mem_meta = manager.put_string(content)
         mem_map_name = shared_mem_meta.mem_map_name
-        num_bytes_written = shared_mem_meta.count
+        num_bytes_written = shared_mem_meta.count_bytes
         read_content = manager.get_string(mem_map_name, offset=0,
                                           count=num_bytes_written)
         self.assertEqual(content, read_content)

@@ -498,15 +498,16 @@ class Dispatcher(metaclass=DispatcherMeta):
         # Assign default value of False to all result values.
         # If we are successfully able to close a memory map, its result will be
         # set to True.
-        results = {map_name: False for map_name in map_names}
+        results = {mem_map_name: False for mem_map_name in map_names}
 
         try:
-            for map_name in map_names:
-                success = self._shmem_mgr.free_mem_map(map_name)
-                results[map_name] = success
-        except Exception as ex:
-            # TODO log exception
-            print(str(ex))
+            for mem_map_name in map_names:
+                try:
+                    success = self._shmem_mgr.free_mem_map(mem_map_name)
+                    results[mem_map_name] = success
+                except Exception as e:
+                    logger.error(f'Cannot free memory map {mem_map_name} - {e}',
+                                 exc_info=True)
         finally:
             response = protos.CloseSharedMemoryResourcesResponse(
                 close_map_results=results)

@@ -7,6 +7,7 @@ import struct
 import sys
 from typing import Optional
 from .shared_memory_constants import SharedMemoryConstants as consts
+from .shared_memory_exception import SharedMemoryException
 from .file_accessor import FileAccessor
 from ...logging import logger
 
@@ -21,11 +22,11 @@ class SharedMemoryMap:
             mem_map_name: str,
             mem_map: mmap.mmap):
         if mem_map is None:
-            raise Exception(
+            raise SharedMemoryException(
                 'Cannot initialize SharedMemoryMap. Invalid memory map '
                 'provided')
         if mem_map_name is None or mem_map_name == '':
-            raise Exception(
+            raise SharedMemoryException(
                 f'Cannot initialize SharedMemoryMap. Invalid name '
                 f'{mem_map_name}')
         self.file_accessor = file_accessor

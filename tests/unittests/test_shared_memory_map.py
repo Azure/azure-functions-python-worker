@@ -8,6 +8,8 @@ from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryMap
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryConstants as consts
+from azure_functions_worker.bindings.shared_memory_data_transfer \
+    import SharedMemoryException
 
 
 class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
@@ -30,18 +32,19 @@ class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
     def test_init_with_invalid_inputs(self):
         """
         Attempt to initialize a SharedMemoryMap from invalid inputs (name and
-        mmap) and verify that an Exception is raised.
+        mmap) and verify that an SharedMemoryException is raised.
         """
         inv_mem_map_name = None
         mem_map_name = self.get_new_mem_map_name()
         mem_map_size = 1024
         mem_map = self.file_accessor.create_mem_map(mem_map_name, mem_map_size)
-        with self.assertRaisesRegex(Exception, 'Invalid name'):
+        with self.assertRaisesRegex(SharedMemoryException, 'Invalid name'):
             SharedMemoryMap(self.file_accessor, inv_mem_map_name, mem_map)
         inv_mem_map_name = ''
-        with self.assertRaisesRegex(Exception, 'Invalid name'):
+        with self.assertRaisesRegex(SharedMemoryException, 'Invalid name'):
             SharedMemoryMap(self.file_accessor, inv_mem_map_name, mem_map)
-        with self.assertRaisesRegex(Exception, 'Invalid memory map'):
+        with self.assertRaisesRegex(SharedMemoryException,
+                                    'Invalid memory map'):
             SharedMemoryMap(self.file_accessor, mem_map_name, None)
 
     def test_put_bytes(self):
@@ -84,7 +87,8 @@ class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
     def test_put_bytes_more_than_capacity(self):
         """
         Attempt to put more bytes into the created SharedMemoryMap than the
-        size with which it was created. Verify that an Exception is raised.
+        size with which it was created. Verify that an SharedMemoryException is
+        raised.
         """
         mem_map_name = self.get_new_mem_map_name()
         mem_map_size = 1024 + consts.CONTENT_HEADER_TOTAL_BYTES
@@ -96,7 +100,7 @@ class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
         # earlier (1024).
         content_size = 2048
         content = self.get_random_bytes(content_size)
-        with self.assertRaisesRegex(Exception, 'out of range'):
+        with self.assertRaisesRegex(SharedMemoryException, 'out of range'):
             shared_mem_map.put_bytes(content)
         dispose_status = shared_mem_map.dispose()
         self.assertTrue(dispose_status)

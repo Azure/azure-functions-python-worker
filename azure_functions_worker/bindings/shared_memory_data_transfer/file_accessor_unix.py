@@ -6,6 +6,7 @@ import mmap
 from typing import Optional
 from io import BufferedRandom
 from .shared_memory_constants import SharedMemoryConstants as consts
+from .shared_memory_exception import SharedMemoryException
 from .file_accessor import FileAccessor
 from ...logging import logger
 
@@ -24,13 +25,14 @@ class FileAccessorUnix(FileAccessor):
         Note: mem_map_size = 0 means open the entire mmap.
         """
         if mem_map_name is None or mem_map_name == '':
-            raise Exception(
+            raise SharedMemoryException(
                 f'Cannot open memory map. Invalid name {mem_map_name}')
         if mem_map_size < 0:
-            raise Exception(
+            raise SharedMemoryException(
                 f'Cannot open memory map. Invalid size {mem_map_size}')
         fd = self._open_mem_map_file(mem_map_name)
         if fd is None:
+            logger.warn(f'Cannot open file: {mem_map_name}')
             return None
         mem_map = mmap.mmap(fd.fileno(), mem_map_size, access=access)
         return mem_map
@@ -38,18 +40,20 @@ class FileAccessorUnix(FileAccessor):
     def create_mem_map(self, mem_map_name: str, mem_map_size: int) \
             -> Optional[mmap.mmap]:
         if mem_map_name is None or mem_map_name == '':
-            raise Exception(
+            raise SharedMemoryException(
                 f'Cannot create memory map. Invalid name {mem_map_name}')
         if mem_map_size <= 0:
-            raise Exception(
+            raise SharedMemoryException(
                 f'Cannot create memory map. Invalid size {mem_map_size}')
         file = self._create_mem_map_file(mem_map_name, mem_map_size)
         if file is None:
+            logger.warn(f'Cannot create file: {mem_map_name}')
             return None
         mem_map = mmap.mmap(file.fileno(), mem_map_size, mmap.MAP_SHARED,
                             mmap.PROT_WRITE)
         if self._is_mem_map_initialized(mem_map):
-            raise Exception(f'Memory map {mem_map_name} already exists')
+            raise SharedMemoryException(f'Memory map {mem_map_name} '
+                                        'already exists')
         self._set_mem_map_initialized(mem_map)
         return mem_map
 
@@ -70,25 +74,6 @@ class FileAccessorUnix(FileAccessor):
             return False
         mem_map.close()
         return True
-
-    def _open_mem_map_file(self, mem_map_name: str) -> Optional[BufferedRandom]:
-        """
-        Get the file descriptor of an existing memory map.
-        Returns the BufferedRandom stream to the file.
-        """
-        # Iterate over all the possible directories where the memory map could
-        # be present and try to open it.
-        for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
-            file_path = os.path.join(mem_map_temp_dir,
-                                     consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
-            try:
-                fd = open(file_path, 'r+b')
-                return fd
-            except FileNotFoundError:
-                pass
-        # The memory map was not found in any of the known directories
-        logger.error(f'Cannot open memory map {mem_map_name}')
-        return None
 
     def _create_mem_map_dir(self) -> bool:
         """
@@ -118,11 +103,31 @@ class FileAccessorUnix(FileAccessor):
         logger.error('Cannot create directory for memory maps')
         return False
 
+    def _open_mem_map_file(self, mem_map_name: str) -> Optional[BufferedRandom]:
+        """
+        Get the file descriptor of an existing memory map.
+        Returns the BufferedRandom stream to the file.
+        """
+        # Iterate over all the possible directories where the memory map could
+        # be present and try to open it.
+        for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
+            file_path = os.path.join(mem_map_temp_dir,
+                                     consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
+            try:
+                fd = open(file_path, 'r+b')
+                return fd
+            except FileNotFoundError:
+                pass
+        # The memory map was not found in any of the known directories
+        logger.error(f'Cannot open memory map {mem_map_name} in any of the '
+                     f'following directories: {consts.UNIX_TEMP_DIRS}')
+        return None
+
     def _create_mem_map_file(self, mem_map_name: str, mem_map_size: int) \
             -> Optional[BufferedRandom]:
         """
-        Get the file descriptor for a new memory map.
-        Returns the file descriptor.
+        Create the file descriptor for a new memory map.
+        Returns the BufferedRandom stream to the file.
         """
         dir_exists = False
         for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
@@ -130,7 +135,7 @@ class FileAccessorUnix(FileAccessor):
             file_path = os.path.join(mem_map_temp_dir,
                                      consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
             if os.path.exists(file_path):
-                raise Exception(
+                raise SharedMemoryException(
                     f'File {file_path} for memory map {mem_map_name} '
                     f'already exists')
             # Check if the parent directory exists
@@ -158,5 +163,6 @@ class FileAccessorUnix(FileAccessor):
         # paths so we fail.
         logger.error(
             f'Cannot create memory map {mem_map_name} with size '
-            f'{mem_map_size}')
+            f'{mem_map_size} in any of the following directories: '
+            f'{consts.UNIX_TEMP_DIRS}')
         return None

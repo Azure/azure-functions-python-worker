@@ -4,6 +4,8 @@
 import os
 import unittest
 from azure_functions_worker import testutils
+from azure_functions_worker.bindings.shared_memory_data_transfer \
+    import SharedMemoryException
 
 
 class TestFileAccessor(testutils.SharedMemoryTestCase):
@@ -26,18 +28,18 @@ class TestFileAccessor(testutils.SharedMemoryTestCase):
     def test_create_mem_map_invalid_inputs(self):
         """
         Attempt to create memory maps with invalid inputs (size and name) and
-        verify that an Exception is raised.
+        verify that an SharedMemoryException is raised.
         """
         mem_map_name = self.get_new_mem_map_name()
         inv_mem_map_size = 0
-        with self.assertRaisesRegex(Exception, 'Invalid size'):
+        with self.assertRaisesRegex(SharedMemoryException, 'Invalid size'):
             self.file_accessor.create_mem_map(mem_map_name, inv_mem_map_size)
         inv_mem_map_name = None
         mem_map_size = 1024
-        with self.assertRaisesRegex(Exception, 'Invalid name'):
+        with self.assertRaisesRegex(SharedMemoryException, 'Invalid name'):
             self.file_accessor.create_mem_map(inv_mem_map_name, mem_map_size)
         inv_mem_map_name = ''
-        with self.assertRaisesRegex(Exception, 'Invalid name'):
+        with self.assertRaisesRegex(SharedMemoryException, 'Invalid name'):
             self.file_accessor.create_mem_map(inv_mem_map_name, mem_map_size)
 
     def test_open_existing_mem_map(self):
@@ -56,18 +58,18 @@ class TestFileAccessor(testutils.SharedMemoryTestCase):
     def test_open_mem_map_invalid_inputs(self):
         """
         Attempt to open a memory map with invalid inputs (size and name) and
-        verify that an Exception is raised.
+        verify that an SharedMemoryException is raised.
         """
         mem_map_name = self.get_new_mem_map_name()
         inv_mem_map_size = -1
-        with self.assertRaisesRegex(Exception, 'Invalid size'):
+        with self.assertRaisesRegex(SharedMemoryException, 'Invalid size'):
             self.file_accessor.open_mem_map(mem_map_name, inv_mem_map_size)
         inv_mem_map_name = None
         mem_map_size = 1024
-        with self.assertRaisesRegex(Exception, 'Invalid name'):
+        with self.assertRaisesRegex(SharedMemoryException, 'Invalid name'):
             self.file_accessor.open_mem_map(inv_mem_map_name, mem_map_size)
         inv_mem_map_name = ''
-        with self.assertRaisesRegex(Exception, 'Invalid name'):
+        with self.assertRaisesRegex(SharedMemoryException, 'Invalid name'):
             self.file_accessor.open_mem_map(inv_mem_map_name, mem_map_size)
 
     @unittest.skipIf(os.name == 'nt',

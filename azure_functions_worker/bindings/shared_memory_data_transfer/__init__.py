@@ -15,10 +15,11 @@ https://github.com/Azure/azure-functions-host/issues/6791
 from .file_accessor_factory import FileAccessorFactory
 from .file_accessor import FileAccessor
 from .shared_memory_constants import SharedMemoryConstants
+from .shared_memory_exception import SharedMemoryException
 from .shared_memory_map import SharedMemoryMap
 from .shared_memory_manager import SharedMemoryManager
 
 __all__ = (
     'FileAccessorFactory', 'FileAccessor', 'SharedMemoryConstants',
-    'SharedMemoryMap', 'SharedMemoryManager'
+    'SharedMemoryException', 'SharedMemoryMap', 'SharedMemoryManager'
 )

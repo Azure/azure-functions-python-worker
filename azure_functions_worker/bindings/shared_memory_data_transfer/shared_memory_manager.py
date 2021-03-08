@@ -19,7 +19,7 @@ class SharedMemoryManager:
     memory.
     This is used for transferring input/output data of the function from/to the
     functions host over shared memory as opposed to RPC to improve the rate of
-    data transfer and the function's nd-to-end latency.
+    data transfer and the function's end-to-end latency.
     """
     def __init__(self):
         # The allocated memory maps are tracked here so that a reference to them
@@ -28,8 +28,22 @@ class SharedMemoryManager:
         # Having a mapping of the name and the memory map is then later used to
         # close a given memory map by its name, after it has been used.
         # key: mem_map_name, val: SharedMemoryMap
-        self.allocated_mem_maps: Dict[str, SharedMemoryMap] = {}
-        self.file_accessor = FileAccessorFactory.create_file_accessor()
+        self._allocated_mem_maps: Dict[str, SharedMemoryMap] = {}
+        self._file_accessor = FileAccessorFactory.create_file_accessor()
+
+    @property
+    def allocated_mem_maps(self):
+        """
+        List of allocated shared memory maps.
+        """
+        return self._allocated_mem_maps
+
+    @property
+    def file_accessor(self):
+        """
+        FileAccessor instance for accessing memory maps.
+        """
+        return self._file_accessor
 
     def is_enabled(self) -> bool:
         """

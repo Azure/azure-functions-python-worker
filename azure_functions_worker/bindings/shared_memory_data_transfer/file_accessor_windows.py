@@ -3,6 +3,7 @@
 
 import mmap
 from typing import Optional
+from .shared_memory_exception import SharedMemoryException
 from .file_accessor import FileAccessor
 from ...logging import logger
 
@@ -23,10 +24,10 @@ class FileAccessorWindows(FileAccessor):
               attempting to open it.
         """
         if mem_map_name is None or mem_map_name == '':
-            raise Exception(
+            raise SharedMemoryException(
                 f'Cannot open memory map. Invalid name {mem_map_name}')
         if mem_map_size < 0:
-            raise Exception(
+            raise SharedMemoryException(
                 f'Cannot open memory map. Invalid size {mem_map_size}')
         try:
             mem_map = mmap.mmap(-1, mem_map_size, mem_map_name, access=access)
@@ -42,17 +43,17 @@ class FileAccessorWindows(FileAccessor):
         # Windows also creates the mmap when trying to open it, if it does not
         # already exist.
         if mem_map_name is None or mem_map_name == '':
-            raise Exception(
+            raise SharedMemoryException(
                 f'Cannot create memory map. Invalid name {mem_map_name}')
         if mem_map_size <= 0:
-            raise Exception(
+            raise SharedMemoryException(
                 f'Cannot create memory map. Invalid size {mem_map_size}')
         mem_map = self.open_mem_map(mem_map_name, mem_map_size,
                                     mmap.ACCESS_WRITE)
         if mem_map is None:
             return None
         if self._is_mem_map_initialized(mem_map):
-            raise Exception(
+            raise SharedMemoryException(
                 f'Cannot create memory map {mem_map_name} as it '
                 f'already exists')
         self._set_mem_map_initialized(mem_map)

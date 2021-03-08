@@ -1,0 +1,21 @@
+{
+  "scriptFile": "main.py",
+  "bindings": [
+    {
+      "type": "blobTrigger",
+      "direction": "in",
+      "name": "file",
+      "dataType": "binary",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/shmem-test-blob-trigger-bytes.txt"
+    },
+    {
+      "type": "blob",
+      "direction": "out",
+      "name": "$return",
+      "dataType": "string",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/shmem-test-blob-triggered-bytes.json"
+    }
+  ]
+}

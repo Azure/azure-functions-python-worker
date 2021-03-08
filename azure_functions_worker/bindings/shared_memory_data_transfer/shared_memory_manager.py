@@ -85,7 +85,13 @@ class SharedMemoryManager:
         shared_mem_map = self._create(mem_map_name, content_length)
         if shared_mem_map is None:
             return None
-        num_bytes_written = shared_mem_map.put_bytes(content)
+        try:
+            num_bytes_written = shared_mem_map.put_bytes(content)
+        except Exception as e:
+            logger.warn(f'Cannot write {content_length} bytes into shared '
+                        f'memory {mem_map_name} - {e}')
+            shared_mem_map.dispose()
+            return None
         if num_bytes_written != content_length:
             logger.error(
                 f'Cannot write data into shared memory {mem_map_name} '

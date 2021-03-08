@@ -100,7 +100,7 @@ class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
         # earlier (1024).
         content_size = 2048
         content = self.get_random_bytes(content_size)
-        with self.assertRaisesRegex(SharedMemoryException, 'out of range'):
+        with self.assertRaisesRegex(ValueError, 'out of range'):
             shared_mem_map.put_bytes(content)
         dispose_status = shared_mem_map.dispose()
         self.assertTrue(dispose_status)

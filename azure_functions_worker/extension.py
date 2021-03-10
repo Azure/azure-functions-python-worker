@@ -3,9 +3,9 @@
 
 from types import ModuleType
 from typing import Any, Callable, List
-import logging
 import sys
 import importlib
+import logging
 import functools
 from .utils.common import is_python_version
 from .utils.wrappers import enable_feature_by
@@ -93,17 +93,20 @@ class ExtensionManager:
         """
         sdk = cls.get_sdk_from_sys_path()
         if not cls.is_extension_enabled_in_sdk(sdk):
-            logger.warning(
-                f'The azure.functions ({cls.get_sdk_version(sdk)}) does not '
-                'support Python worker extensions. If you believe extensions '
-                'are correctly installed, please set the '
-                f'{PYTHON_ISOLATE_WORKER_DEPENDENCIES} and '
-                f'{PYTHON_ENABLE_WORKER_EXTENSIONS} to "true"'
-            )
+            cls._warn_extension_is_not_enabled_in_sdk(sdk)
             return
 
+        # Invoke function hooks
         funcs = sdk.ExtensionMeta.get_function_hooks(func_name)
-        cls.safe_execute_function_load_hooks(funcs, func_name, func_directory)
+        cls.safe_execute_function_load_hooks(
+            funcs, 'after_function_load', func_name, func_directory
+        )
+
+        # Invoke application hook
+        apps = sdk.ExtensionMeta.get_applicaiton_hooks()
+        cls.safe_execute_function_load_hooks(
+            apps, 'after_function_load_global', func_name, func_directory
+        )
 
     @classmethod
     @enable_feature_by(
@@ -114,14 +117,14 @@ class ExtensionManager:
             PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT
         )
     )
-    def invocation_extension(cls, context, hook_name):
+    def invocation_extension(cls, ctx, hook_name, func_args, func_ret=None):
         """Helper to execute extensions. If one of the extension fails in the
         extension chain, the rest of them will continue, emitting an error log
         of an exception trace for failed extension.
 
         Parameters
         ----------
-        context: azure.functions.Context
+        ctx: azure.functions.Context
             Azure Functions context to be passed onto extension
         hook_name: str
             The exetension name to be executed (e.g. before_invocations).
@@ -129,50 +132,53 @@ class ExtensionManager:
         """
         sdk = cls.get_sdk_from_sys_path()
         if not cls.is_extension_enabled_in_sdk(sdk):
-            logger.warning(
-                f'The azure.functions ({cls.get_sdk_version(sdk)}) does not '
-                'support Python worker extensions. If you believe extensions '
-                'are correctly installed, please set the '
-                f'{PYTHON_ISOLATE_WORKER_DEPENDENCIES} and '
-                f'{PYTHON_ENABLE_WORKER_EXTENSIONS} to "true"'
-            )
+            cls._warn_extension_is_not_enabled_in_sdk(sdk)
             return
 
-        funcs = sdk.ExtensionMeta.get_function_hooks(context.function_name)
-        cls.safe_execute_invocation_hooks(funcs, hook_name, context)
-        apps = sdk.ExtensionMeta.get_applicaiton_hooks()
-        cls.safe_execute_invocation_hooks(apps, hook_name, context)
+        # Invoke function hooks
+        funcs = sdk.ExtensionMeta.get_function_hooks(ctx.function_name)
+        cls.safe_execute_invocation_hooks(
+            funcs, hook_name, ctx, func_args, func_ret
+        )
 
-    @staticmethod
-    def safe_execute_invocation_hooks(hooks, hook_name, context):
+        # Invoke application hook
+        apps = sdk.ExtensionMeta.get_applicaiton_hooks()
+        cls.safe_execute_invocation_hooks(
+            apps, hook_name, ctx, func_args, func_ret
+        )
+
+    @classmethod
+    def safe_execute_invocation_hooks(cls, hooks, hook_name, ctx, fargs, fret):
         if hooks:
             for hook_meta in getattr(hooks, hook_name, []):
                 ext_logger = logging.getLogger(hook_meta.ext_name)
                 try:
-                    hook_meta.ext_impl(ext_logger, context)
+                    if cls._is_before_invocation_hook(hook_name):
+                        hook_meta.ext_impl(ext_logger, ctx, fargs)
+                    elif cls._is_after_invocation_hook(hook_name):
+                        hook_meta.ext_impl(ext_logger, ctx, fargs, fret)
                 except Exception as e:
+                    # Send error trace to customer logs
                     ext_logger.error(e, exc_info=True)
+                    # Send error trace to system logs
+                    logger.error(e, exc_info=True)
 
-    @staticmethod
-    def safe_execute_function_load_hooks(hooks, func_name, func_directory):
+    @classmethod
+    def safe_execute_function_load_hooks(cls, hooks, hook_name, fname, fdir):
         if hooks:
-            for hook_meta in getattr(hooks, 'after_function_load', []):
-                ext_logger = logging.getLogger(hook_meta.ext_name)
-                try:
-                    hook_meta.ext_impl(ext_logger, func_name, func_directory)
-                except Exception as e:
-                    ext_logger.error(e, exc_info=True)
+            for hook_meta in getattr(hooks, hook_name, []):
+                hook_meta.ext_impl(fname, fdir)
 
     @classmethod
     def raw_invocation_wrapper(cls, ctx, function, args) -> Any:
         """Calls before_invocation and after_invocation extensions additional
         to function invocation
         """
-        cls.invocation_extension(ctx, 'before_invocation')
-        cls.invocation_extension(ctx, 'before_invocation_global')
+        cls.invocation_extension(ctx, 'before_invocation_global', args)
+        cls.invocation_extension(ctx, 'before_invocation', args)
         result = function(**args)
-        cls.invocation_extension(ctx, 'after_invocation_global')
-        cls.invocation_extension(ctx, 'after_invocation')
+        cls.invocation_extension(ctx, 'after_invocation', args, result)
+        cls.invocation_extension(ctx, 'after_invocation_global', args, result)
         return result
 
     @classmethod
@@ -185,9 +191,27 @@ class ExtensionManager:
     @classmethod
     async def get_invocation_wrapper_async(cls, ctx, function, args) -> Any:
         """An asynchronous coroutine for executing function with extensions"""
-        cls.invocation_extension(ctx, 'before_invocation')
-        cls.invocation_extension(ctx, 'before_invocation_global')
+        cls.invocation_extension(ctx, 'before_invocation_global', args)
+        cls.invocation_extension(ctx, 'before_invocation', args)
         result = await function(**args)
-        cls.invocation_extension(ctx, 'after_invocation_global')
-        cls.invocation_extension(ctx, 'after_invocation')
+        cls.invocation_extension(ctx, 'after_invocation', args, result)
+        cls.invocation_extension(ctx, 'after_invocation_global', args, result)
         return result
+
+    @classmethod
+    def _is_before_invocation_hook(cls, name) -> bool:
+        return name in ('before_invocation', 'before_invocation_global')
+
+    @classmethod
+    def _is_after_invocation_hook(cls, name) -> bool:
+        return name in ('after_invocation', 'after_invocation_global')
+
+    @classmethod
+    def _warn_extension_is_not_enabled_in_sdk(cls, sdk):
+        logger.warning(
+            f'The azure.functions ({cls.get_sdk_version(sdk)}) does not '
+            'support Python worker extensions. If you believe extensions '
+            'are correctly installed, please set the '
+            f'{PYTHON_ISOLATE_WORKER_DEPENDENCIES} and '
+            f'{PYTHON_ENABLE_WORKER_EXTENSIONS} to "true"'
+        )

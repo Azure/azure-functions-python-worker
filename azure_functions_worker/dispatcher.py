@@ -262,7 +262,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
             constants.TYPED_DATA_COLLECTION: _TRUE,
             constants.RPC_HTTP_BODY_ONLY: _TRUE,
-            constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,            
+            constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.WORKER_STATUS: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }

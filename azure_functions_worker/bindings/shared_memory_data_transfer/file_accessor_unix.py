@@ -103,10 +103,9 @@ class FileAccessorUnix(FileAccessor):
                     os.makedirs(dir_path)
                     valid_dirs.append(dir_path)
                 except Exception as e:
+                    # We keep trying to check/create others
                     logger.warn(f'Cannot create directory {dir_path} to store '
                                 f' memory maps - {e}', exc_info=True)
-                    # We keep trying to check/create others
-                    continue
         if len(valid_dirs) == 0:
             logger.error('No valid directory for memory maps in '
                          f'{consts.UNIX_TEMP_DIRS}')
@@ -158,7 +157,6 @@ class FileAccessorUnix(FileAccessor):
                 # keep trying in other applicable directories.
                 logger.warn(f'Cannot create memory map in {file_path} - {e}. '
                             'Trying other directories.', exc_info=True)
-                continue
         # Could not create the memory map in any of the applicable directory
         # paths so we fail.
         logger.error(

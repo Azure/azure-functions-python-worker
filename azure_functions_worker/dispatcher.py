@@ -262,7 +262,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
             constants.TYPED_DATA_COLLECTION: _TRUE,
             constants.RPC_HTTP_BODY_ONLY: _TRUE,
-            constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
+            constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,            
+            constants.WORKER_STATUS: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
@@ -275,6 +276,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                 capabilities=capabilities,
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success)))
+
+    async def _handle__worker_status_request(self, req):
+        # Logging is not necessary in this request since the response is used
+        # for host to judge scale decisions of out-of-proc languages.
+        # Having log here will reduce the responsiveness of the worker.
+        return protos.StreamingMessage(
+            request_id=self.request_id,
+            worker_status_response=protos.WorkerStatusResponse())
 
     async def _handle__function_load_request(self, req):
         func_request = req.function_load_request

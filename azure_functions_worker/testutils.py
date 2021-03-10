@@ -401,6 +401,18 @@ class _MockWebHost:
     def request_id(self):
         return self._request_id
 
+    async def init_worker(self, host_version: str):
+        r = await self.communicate(
+            protos.StreamingMessage(
+                worker_init_request=protos.WorkerInitRequest(
+                    host_version=host_version
+                )
+            ),
+            wait_for='worker_init_response'
+        )
+
+        return r
+
     async def load_function(self, name):
         if name not in self._available_functions:
             raise RuntimeError(f'cannot load function {name}')
@@ -503,6 +515,16 @@ class _MockWebHost:
                 function_environment_reload_request=request_content
             ),
             wait_for='function_environment_reload_response'
+        )
+
+        return r
+
+    async def get_worker_status(self):
+        r = await self.communicate(
+            protos.StreamingMessage(
+                worker_status_request=protos.WorkerStatusRequest()
+            ),
+            wait_for='worker_status_response'
         )
 
         return r

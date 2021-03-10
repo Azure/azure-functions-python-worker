@@ -46,6 +46,34 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         os.environ.update(self._pre_env)
         self.mock_version_info.stop()
 
+    async def test_dispatcher_initialize_worker(self):
+        """Test if the dispatcher can be initialized worker successfully
+        """
+        async with self._ctrl as host:
+            r = await host.init_worker('3.0.12345')
+            self.assertIsInstance(r.response, protos.WorkerInitResponse)
+
+    async def test_dispatcher_initialize_worker_logging(self):
+        """Test if the dispatcher's log can be flushed out during worker
+        initialization
+        """
+        async with self._ctrl as host:
+            r = await host.init_worker('3.0.12345')
+            self.assertEqual(
+                len([l for l in r.logs if l.message.startswith(
+                    'Received WorkerInitRequest'
+                )]),
+                1
+            )
+
+    async def test_dispatcher_send_worker_request(self):
+        """Test if the worker status response will be sent correctly when
+        a worker status request is received
+        """
+        async with self._ctrl as host:
+            r = await host.get_worker_status()
+            self.assertIsInstance(r.response, protos.WorkerStatusResponse)
+
     async def test_dispatcher_sync_threadpool_default_worker(self):
         """Test if the sync threadpool has maximum worker count set the
         correct default value

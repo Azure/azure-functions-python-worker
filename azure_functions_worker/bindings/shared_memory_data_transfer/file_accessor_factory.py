@@ -15,5 +15,4 @@ class FileAccessorFactory:
     def create_file_accessor():
         if os.name == 'nt':
             return FileAccessorWindows()
-        else:
-            return FileAccessorUnix()
+        return FileAccessorUnix()

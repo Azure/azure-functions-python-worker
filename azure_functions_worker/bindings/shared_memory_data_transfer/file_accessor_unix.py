@@ -16,6 +16,12 @@ class FileAccessorUnix(FileAccessor):
     For accessing memory maps.
     This implements the FileAccessor interface for Unix platforms.
     """
+    def __init__(self):
+        # From the list of configured directories where memory maps can be
+        # stored, get the list of directories which are valid (either existed
+        # already or have been created successfully for use).
+        self.valid_dirs = self._get_valid_mem_map_dirs()
+
     def open_mem_map(
             self,
             mem_map_name: str,
@@ -75,33 +81,36 @@ class FileAccessorUnix(FileAccessor):
         mem_map.close()
         return True
 
-    def _create_mem_map_dir(self) -> bool:
+    def _get_valid_mem_map_dirs(self) -> bool:
         """
-        Create a directory to create memory maps.
-        Returns True if either a valid directory already exists or one was
-        created successfully, False otherwise.
+        From the configured list of allowed directories where memory maps can be
+        stored, return all those that either already existed or were created
+        successfully for use.
+        Returns list of directories, in decreasing order of preference, where
+        memory maps can be created.
         """
         # Iterate over all the possible directories where the memory map could
-        # be created and try to create in one of them.
-        for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
-            dir_path = os.path.join(mem_map_temp_dir,
-                                    consts.UNIX_TEMP_DIR_SUFFIX)
-            if os.path.isdir(dir_path):
-                # One of the directories already exists, no need
-                return True
-            try:
-                os.makedirs(dir_path)
-                return True
-            except Exception:
-                # We try to create a directory in each of the applicable
-                # directory paths until we successfully create one or one that
-                # already exists is found.
-                # Even if this fails, we keep trying others.
-                pass
-        # Could not create a directory in any of the applicable directory paths.
-        # We will not be able to create any memory maps so we fail.
-        logger.error('Cannot create directory for memory maps')
-        return False
+        # be created and try to create each of them if they don't exist already.
+        valid_dirs = []
+        for temp_dir in consts.UNIX_TEMP_DIRS:
+            dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
+            if os.path.exists(dir_path):
+                # A valid directory already exists
+                valid_dirs.append(dir_path)
+                logger.debug(f'Found directory {dir_path} to store memory maps')
+            else:
+                try:
+                    os.makedirs(dir_path)
+                    valid_dirs.append(dir_path)
+                except Exception as e:
+                    logger.warn(f'Cannot create directory {dir_path} to store '
+                                f' memory maps - {e}', exc_info=True)
+                    # We keep trying to check/create others
+                    continue
+        if len(valid_dirs) == 0:
+            logger.error('No valid directory for memory maps in '
+                         f'{consts.UNIX_TEMP_DIRS}')
+        return valid_dirs
 
     def _open_mem_map_file(self, mem_map_name: str) -> Optional[BufferedRandom]:
         """
@@ -110,17 +119,18 @@ class FileAccessorUnix(FileAccessor):
         """
         # Iterate over all the possible directories where the memory map could
         # be present and try to open it.
-        for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
-            file_path = os.path.join(mem_map_temp_dir,
-                                     consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
-            try:
-                fd = open(file_path, 'r+b')
-                return fd
-            except FileNotFoundError:
-                pass
+        for temp_dir in self.valid_dirs:
+            file_path = os.path.join(temp_dir, mem_map_name)
+            if os.path.exists(file_path):
+                try:
+                    fd = open(file_path, 'r+b')
+                    return fd
+                except Exception as e:
+                    logger.error(f'Cannot open file {file_path} - {e}',
+                                 exc_info=True)
         # The memory map was not found in any of the known directories
         logger.error(f'Cannot open memory map {mem_map_name} in any of the '
-                     f'following directories: {consts.UNIX_TEMP_DIRS}')
+                     f'following directories: {self.valid_dirs}')
         return None
 
     def _create_mem_map_file(self, mem_map_name: str, mem_map_size: int) \
@@ -129,40 +139,30 @@ class FileAccessorUnix(FileAccessor):
         Create the file descriptor for a new memory map.
         Returns the BufferedRandom stream to the file.
         """
-        dir_exists = False
-        for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
-            # Check if the file already exists
-            file_path = os.path.join(mem_map_temp_dir,
-                                     consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
+        # Ensure that the file does not already exist
+        for temp_dir in self.valid_dirs:
+            file_path = os.path.join(temp_dir, mem_map_name)
             if os.path.exists(file_path):
                 raise SharedMemoryException(
                     f'File {file_path} for memory map {mem_map_name} '
                     f'already exists')
-            # Check if the parent directory exists
-            dir_path = os.path.join(mem_map_temp_dir,
-                                    consts.UNIX_TEMP_DIR_SUFFIX)
-            if os.path.isdir(dir_path):
-                dir_exists = True
-        # Check if any of the parent directories exists
-        if not dir_exists:
-            if not self._create_mem_map_dir():
-                return None
         # Create the file
-        for mem_map_temp_dir in consts.UNIX_TEMP_DIRS:
-            file_path = os.path.join(mem_map_temp_dir,
-                                     consts.UNIX_TEMP_DIR_SUFFIX, mem_map_name)
+        for temp_dir in self.valid_dirs:
+            file_path = os.path.join(temp_dir, mem_map_name)
             try:
                 file = open(file_path, 'wb+')
                 file.truncate(mem_map_size)
                 return file
-            except Exception:
+            except Exception as e:
                 # If the memory map could not be created in this directory, we
                 # keep trying in other applicable directories.
-                pass
+                logger.warn(f'Cannot create memory map in {file_path} - {e}. '
+                            'Trying other directories.', exc_info=True)
+                continue
         # Could not create the memory map in any of the applicable directory
         # paths so we fail.
         logger.error(
             f'Cannot create memory map {mem_map_name} with size '
             f'{mem_map_size} in any of the following directories: '
-            f'{consts.UNIX_TEMP_DIRS}')
+            f'{self.valid_dirs}')
         return None

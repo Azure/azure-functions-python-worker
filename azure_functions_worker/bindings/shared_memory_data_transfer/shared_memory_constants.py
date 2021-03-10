@@ -66,7 +66,9 @@ class SharedMemoryConstants:
     SIZE_OF_CHAR_BYTES = 2
 
     """
-    Directories in Unix where the memory maps can be found
+    Directories in Unix where the memory maps can be found.
+    These list is in order of preference, starting with the highest preference
+    directory.
     """
     UNIX_TEMP_DIRS = ["/dev/shm"]
 

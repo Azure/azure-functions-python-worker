@@ -7,6 +7,10 @@ $FUNC_RUNTIME_LANGUAGE = 'python'
 $PYTHON_VERSION = '3.7'
 $AZURE_FUNCTIONS_ENVIRONMENT = "development"
 
+# Speed up Invoke-RestMethod by turning off progress bar
+$ProgressPreference = 'SilentlyContinue'
+
+
 function get_architecture() {
     # Return "x64" or "x86"
     return [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant();
@@ -43,7 +47,7 @@ if ($FUNC_CLI_DIRECTORY_EXIST) {
 }
 
 $version = Invoke-RestMethod -Uri "$(get_core_tools_version_url)"
-Write-Host "Downloading Functions Core Tools (version: $version)..."
+Write-Host "Downloading Functions Core Tools $version..."
 
 $output = "$FUNC_CLI_DIRECTORY.zip"
 Invoke-RestMethod -Uri "$(get_core_tool_download_url)" -OutFile $output
@@ -59,7 +63,7 @@ $env:Path = "$env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
 $funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
 
 if ($IsMacOS -or $IsLinux) {
-    chmod +x $funcExePath
+    chmod -R 755 $FUNC_CLI_DIRECTORY
 }
 Write-Host "Function Exe Path: $funcExePath"
 

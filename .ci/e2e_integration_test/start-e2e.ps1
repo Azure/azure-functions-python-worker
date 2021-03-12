@@ -38,7 +38,7 @@ function get_core_tools_version_url() {
     return "https://functionsintegclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest/version.txt"
 }
 
-$FUNC_CLI_DIRECTORY = Join-Path $env:AGENT_TEMPDIRECTORY 'Azure.Functions.Cli'
+$FUNC_CLI_DIRECTORY = Join-Path $PSScriptRoot 'Azure.Functions.Cli'
 $FUNC_CLI_DIRECTORY_EXIST = Test-Path -Path $FUNC_CLI_DIRECTORY -PathType Container
 if ($FUNC_CLI_DIRECTORY_EXIST) {
     Write-Host 'Deleting Functions Core Tools...'
@@ -49,19 +49,18 @@ if ($FUNC_CLI_DIRECTORY_EXIST) {
 $version = Invoke-RestMethod -Uri "$(get_core_tools_version_url)"
 Write-Host "Downloading Functions Core Tools $version..."
 
-$output = "$FUNC_CLI_DIRECTORY/$FUNC_CLI_DIRECTORY.zip"
+$output = "$FUNC_CLI_DIRECTORY.zip"
 Invoke-RestMethod -Uri "$(get_core_tool_download_url)" -OutFile $output
 
 Write-Host 'Extracting Functions Core Tools...'
 Expand-Archive $output -DestinationPath $FUNC_CLI_DIRECTORY
 
 Write-Host "Starting Functions Host..."
-$env:Path = "$env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
-$funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
-
 $env:FUNCTIONS_WORKER_RUNTIME = $FUNC_RUNTIME_LANGUAGE
 $env:FUNCTIONS_WORKER_RUNTIME_VERSION = $PYTHON_VERSION
 $env:AZURE_FUNCTIONS_ENVIRONMENT = $AZURE_FUNCTIONS_ENVIRONMENT
+$env:Path = "$env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
+$funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
 
 if ($IsMacOS -or $IsLinux) {
     chmod -R 777 $FUNC_CLI_DIRECTORY

@@ -1,0 +1,33 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+# E2E Integration Test Pipeline
+
+pr: none
+trigger: none
+
+pool:
+    vmImage: 'ubuntu-latest'
+
+variables:
+    DOTNET_VERSION: '3.1.405'
+    PYTHON_VERSION: '3.8'
+
+steps:
+- task: UsePythonVersion@0
+  displayName: 'Install Python'
+  inputs:
+    versionSpec: $(PYTHON_VERSION)
+    addToPath: true
+- task: UseDotNet@2
+  displayName: 'Install DotNet'
+  inputs:
+    packageType: 'sdk'
+    version: $(DOTNET_VERSION)
+- pwsh: ./start-e2e.ps1
+  env:
+    AzureWebJobsStorage: $(AzureWebJobsStorage)
+    AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
+    AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
+    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
+  displayName: 'Running Python Language Worker E2E Tests'

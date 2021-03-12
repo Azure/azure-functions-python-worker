@@ -163,6 +163,54 @@ class develop(develop.develop, BuildGRPC):
         super().run(*args, **kwargs)
 
 
+class extension(distutils.cmd.Command):
+    description = (
+        'Resolve WebJobs Extensions from AZURE_EXTENSIONS and NUGET_CONFIG.'
+    )
+    user_options = [
+        ('extensions-dir', None,
+         'A path to the directory where extension should be installed')
+    ]
+
+    def initialize_options(self):
+        self.extensions_dir = None
+
+    def finalize_options(self):
+        if self.extensions_dir is None:
+            self.extensions_dir = \
+                pathlib.Path(__file__).parent / 'build' / 'extensions'
+
+    def _install_extensions(self):
+        if not self.extensions_dir.exists():
+            os.makedirs(self.extensions_dir, exist_ok=True)
+
+        if not (self.extensions_dir / 'host.json').exists():
+            with open(self.extensions_dir / 'host.json', 'w') as f:
+                print('{}', file=f)
+
+        if not (self.extensions_dir / 'extensions.csproj').exists():
+            with open(self.extensions_dir / 'extensions.csproj', 'w') as f:
+                print(AZURE_EXTENSIONS, file=f)
+
+        with open(self.extensions_dir / 'NuGet.config', 'w') as f:
+            print(NUGET_CONFIG, file=f)
+
+        env = os.environ.copy()
+        env['TERM'] = 'xterm'  # ncurses 6.1 workaround
+        try:
+            subprocess.run(
+                args=['dotnet', 'build', '-o', '.'], check=True,
+                cwd=str(self.extensions_dir),
+                stdout=sys.stdout, stderr=sys.stderr, env=env)
+        except Exception:
+            print(".NET Core SDK is required to build the extensions. "
+                  "Please visit https://aka.ms/dotnet-download")
+            sys.exit(1)
+
+    def run(self):
+        self._install_extensions()
+
+
 class webhost(distutils.cmd.Command):
     description = 'Download and setup Azure Functions Web Host.'
     user_options = [
@@ -175,7 +223,6 @@ class webhost(distutils.cmd.Command):
     def initialize_options(self):
         self.webhost_version = None
         self.webhost_dir = None
-        self.extensions_dir = None
 
     def finalize_options(self):
         if self.webhost_version is None:
@@ -184,10 +231,6 @@ class webhost(distutils.cmd.Command):
         if self.webhost_dir is None:
             self.webhost_dir = \
                 pathlib.Path(__file__).parent / 'build' / 'webhost'
-
-        if self.extensions_dir is None:
-            self.extensions_dir = \
-                pathlib.Path(__file__).parent / 'build' / 'extensions'
 
     def _get_webhost_version(self) -> str:
         # Return the latest matched version (e.g. 3.0.15278)
@@ -294,33 +337,6 @@ class webhost(distutils.cmd.Command):
 
         print('Functions Host is compiled successfully')
 
-    def _install_extensions(self):
-        if not self.extensions_dir.exists():
-            os.makedirs(self.extensions_dir, exist_ok=True)
-
-        if not (self.extensions_dir / 'host.json').exists():
-            with open(self.extensions_dir / 'host.json', 'w') as f:
-                print('{}', file=f)
-
-        if not (self.extensions_dir / 'extensions.csproj').exists():
-            with open(self.extensions_dir / 'extensions.csproj', 'w') as f:
-                print(AZURE_EXTENSIONS, file=f)
-
-        with open(self.extensions_dir / 'NuGet.config', 'w') as f:
-            print(NUGET_CONFIG, file=f)
-
-        env = os.environ.copy()
-        env['TERM'] = 'xterm'  # ncurses 6.1 workaround
-        try:
-            subprocess.run(
-                args=['dotnet', 'build', '-o', '.'], check=True,
-                cwd=str(self.extensions_dir),
-                stdout=sys.stdout, stderr=sys.stderr, env=env)
-        except Exception:
-            print(".NET Core SDK is required to build the extensions. "
-                  "Please visit https://aka.ms/dotnet-download")
-            sys.exit(1)
-
     def run(self):
         # Prepare webhost
         zip_path = self._download_webhost_zip(self.webhost_version)
@@ -330,9 +346,6 @@ class webhost(distutils.cmd.Command):
                                   dest=self.webhost_dir)
         self._chmod_protobuf_generation_script(self.webhost_dir)
         self._compile_webhost(self.webhost_dir)
-
-        # Prepare extensions
-        self._install_extensions()
 
 
 with open("README.md") as readme:
@@ -396,9 +409,10 @@ setup(
     },
     include_package_data=True,
     cmdclass={
-        'build': build,
         'develop': develop,
+        'build': build,
         'webhost': webhost,
+        'extension': extension
     },
     test_suite='tests'
 )

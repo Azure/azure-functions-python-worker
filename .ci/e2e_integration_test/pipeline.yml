@@ -28,6 +28,8 @@ steps:
   env:
     AzureWebJobsStorage: $(AzureWebJobsStorage)
     AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
-    AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
-    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
+    AzureWebJobsEventHubConnectionString: $(AzureWebJobsEventHubConnectionString)
+    AzureWebJobsServiceBusConnectionString: $(AzureWebJobsServiceBusConnectionString)
+    AzureWebJobsEventGridTopicUri: $(AzureWebJobsEventGridTopicUri)
+    AzureWebJobsEventGridConnectionKey: $(AzureWebJobsEventGridConnectionKey)
   displayName: 'Running Python Language Worker E2E Tests'

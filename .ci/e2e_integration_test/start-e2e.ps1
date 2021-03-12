@@ -38,6 +38,14 @@ function get_core_tools_version_url() {
     return "https://functionsintegclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest/version.txt"
 }
 
+function get_func_execuable_path($path) {
+    $exe_name = "func"
+    if ($IsWindows) {
+        $exe_name = "func.exe"
+    }
+    return Join-Path $path $exe_name
+}
+
 $FUNC_CLI_DIRECTORY = Join-Path $PSScriptRoot 'Azure.Functions.Cli'
 $FUNC_CLI_DIRECTORY_EXIST = Test-Path -Path $FUNC_CLI_DIRECTORY -PathType Container
 if ($FUNC_CLI_DIRECTORY_EXIST) {
@@ -60,10 +68,10 @@ $env:FUNCTIONS_WORKER_RUNTIME = $FUNC_RUNTIME_LANGUAGE
 $env:FUNCTIONS_WORKER_RUNTIME_VERSION = $PYTHON_VERSION
 $env:AZURE_FUNCTIONS_ENVIRONMENT = $AZURE_FUNCTIONS_ENVIRONMENT
 $env:Path = "$env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
-$funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
+$funcExePath = $(get_func_execuable_path $FUNC_CLI_DIRECTORY)
 
 if ($IsMacOS -or $IsLinux) {
-    chmod -R 777 $FUNC_CLI_DIRECTORY
+    chmod -R 755 $FUNC_CLI_DIRECTORY
 }
 Write-Host "Function Exe Path: $funcExePath"
 

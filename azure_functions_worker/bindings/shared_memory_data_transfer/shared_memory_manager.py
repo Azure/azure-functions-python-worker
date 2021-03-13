@@ -88,8 +88,8 @@ class SharedMemoryManager:
         try:
             num_bytes_written = shared_mem_map.put_bytes(content)
         except Exception as e:
-            logger.warn(f'Cannot write {content_length} bytes into shared '
-                        f'memory {mem_map_name} - {e}')
+            logger.warning(f'Cannot write {content_length} bytes into shared '
+                           f'memory {mem_map_name} - {e}')
             shared_mem_map.dispose()
             return None
         if num_bytes_written != content_length:

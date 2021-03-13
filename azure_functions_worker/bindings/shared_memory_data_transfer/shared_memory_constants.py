@@ -66,9 +66,11 @@ class SharedMemoryConstants:
     SIZE_OF_CHAR_BYTES = 2
 
     """
-    Directories in Unix where the memory maps can be found.
+    Default directories in Unix where the memory maps can be found.
     These list is in order of preference, starting with the highest preference
     directory.
+    A user can override this by using the AppSetting:
+    UNIX_SHARED_MEMORY_DIRECTORIES.
     """
     UNIX_TEMP_DIRS = ["/dev/shm"]
 

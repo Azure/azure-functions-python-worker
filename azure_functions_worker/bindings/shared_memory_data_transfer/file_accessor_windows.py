@@ -33,7 +33,7 @@ class FileAccessorWindows(FileAccessor):
             mem_map = mmap.mmap(-1, mem_map_size, mem_map_name, access=access)
             return mem_map
         except Exception as e:
-            logger.warn(
+            logger.warning(
                 f'Cannot open memory map {mem_map_name} with size '
                 f'{mem_map_size} - {e}')
             return None

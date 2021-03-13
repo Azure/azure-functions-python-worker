@@ -42,8 +42,9 @@ from azure_functions_worker.bindings.shared_memory_data_transfer \
 from . import dispatcher
 from . import protos
 from .constants import (PYAZURE_WEBHOST_DEBUG,
-                        FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
-from .utils.common import is_envvar_true
+                        FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
+                        UNIX_SHARED_MEMORY_DIRECTORIES)
+from .utils.common import get_app_setting, is_envvar_true
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
 TESTS_ROOT = PROJECT_ROOT / 'tests'
@@ -252,16 +253,34 @@ class SharedMemoryTestCase(unittest.TestCase):
     """
     def setUp(self):
         self.file_accessor = FileAccessorFactory.create_file_accessor()
+
         self.was_shmem_env_true = is_envvar_true(
             FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
         os.environ.update(
             {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '1'})
-        if os.name != 'nt':
-            self._setUpUnix()
+
+        os_name = platform.system()
+        if os_name == 'Darwin':
+            # If an existing AppSetting is specified, save it so it can be
+            # restored later
+            self.was_shmem_dirs = get_app_setting(
+                UNIX_SHARED_MEMORY_DIRECTORIES
+            )
+            self._setUpDarwin()
+        elif os_name == 'Linux':
+            self._setUpLinxx()
 
     def tearDown(self):
-        if os.name != 'nt':
-            self._tearDownUnix()
+        os_name = platform.system()
+        if os_name == 'Darwin':
+            self._setUpDarwin()
+        if self.was_shmem_dirs is not None:
+            # If an AppSetting was set before the tests ran, restore it back
+            os.environ.update(
+                {UNIX_SHARED_MEMORY_DIRECTORIES: self.was_shmem_dirs})
+        elif os_name == 'Linux':
+            self._tearDownLinux()
+
         if not self.was_shmem_env_true:
             os.environ.update(
                 {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '0'})
@@ -287,16 +306,52 @@ class SharedMemoryTestCase(unittest.TestCase):
             return False
         return str(uuid_obj) == uuid_to_test
 
-    def _setUpUnix(self):
-        for temp_dir in consts.UNIX_TEMP_DIRS:
+    def _createSharedMemoryDirectories(self, directories):
+        for temp_dir in directories:
             temp_dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
             if not os.path.exists(temp_dir_path):
                 os.makedirs(temp_dir_path)
 
-    def _tearDownUnix(self):
-        for temp_dir in consts.UNIX_TEMP_DIRS:
+    def _deleteSharedMemoryDirectories(self, directories):
+        for temp_dir in directories:
             temp_dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
             shutil.rmtree(temp_dir_path)
+
+    def _setUpLinux(self):
+        self._createSharedMemoryDirectories(consts.UNIX_TEMP_DIRS)
+
+    def _tearDownLinux(self):
+        self._deleteSharedMemoryDirectories(consts.UNIX_TEMP_DIRS)
+
+    def _setUpDarwin(self):
+        """
+        Create a RAM disk on macOS.
+        Ref: https://stackoverflow.com/a/2033417/3132415
+        """
+        size_in_mb = consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER / (1024 * 1024)
+        size = 2048 * size_in_mb
+        # The following command returns the name of the created disk
+        cmd = ['hdutil', 'attach', '-nomount', f'ram://{size}']
+        result = subprocess.run(cmd, stdout=subprocess.PIPE)
+        if result.returncode != 0:
+            raise Exception(f'Cannot create ram disk with command: {cmd}')
+        disk_name = result.stdout
+        # We create a volume on the disk created above and mount it
+        volume_name = 'shm'
+        cmd = ['diskutil', 'eraseVolume', 'HFS+', volume_name, disk_name]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE)
+        if result.returncode != 0:
+            raise Exception(f'Cannot create volume with command: {cmd}')
+        directory = f'/Volumes/{volume_name}'
+        self.created_directories = [directory]
+        self._createSharedMemoryDirectories(self.created_directories)
+        # Override the AppSetting for the duration of this test so the
+        # FileAccessorUnix can use these directories for creating memory maps
+        os.environ.update(
+            {UNIX_SHARED_MEMORY_DIRECTORIES: self.created_directories})
+
+    def _tearDownDarwin(self):
+        self._deleteSharedMemoryDirectories(self.created_directories)
 
 
 class _MockWebHostServicer(protos.FunctionRpcServicer):

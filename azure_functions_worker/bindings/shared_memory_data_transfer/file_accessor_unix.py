@@ -1,13 +1,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+from azure_functions_worker import constants
 import os
 import mmap
-from typing import Optional
+from typing import Optional, List
 from io import BufferedRandom
 from .shared_memory_constants import SharedMemoryConstants as consts
 from .shared_memory_exception import SharedMemoryException
 from .file_accessor import FileAccessor
+from ...utils.common import get_app_setting
 from ...logging import logger
 
 
@@ -38,7 +40,7 @@ class FileAccessorUnix(FileAccessor):
                 f'Cannot open memory map. Invalid size {mem_map_size}')
         fd = self._open_mem_map_file(mem_map_name)
         if fd is None:
-            logger.warn(f'Cannot open file: {mem_map_name}')
+            logger.warning(f'Cannot open file: {mem_map_name}')
             return None
         mem_map = mmap.mmap(fd.fileno(), mem_map_size, access=access)
         return mem_map
@@ -53,7 +55,7 @@ class FileAccessorUnix(FileAccessor):
                 f'Cannot create memory map. Invalid size {mem_map_size}')
         file = self._create_mem_map_file(mem_map_name, mem_map_size)
         if file is None:
-            logger.warn(f'Cannot create file: {mem_map_name}')
+            logger.warning(f'Cannot create file: {mem_map_name}')
             return None
         mem_map = mmap.mmap(file.fileno(), mem_map_size, mmap.MAP_SHARED,
                             mmap.PROT_WRITE)
@@ -81,7 +83,20 @@ class FileAccessorUnix(FileAccessor):
         mem_map.close()
         return True
 
-    def _get_valid_mem_map_dirs(self) -> bool:
+    def _get_allowed_mem_map_dirs(self) -> List[str]:
+        """
+        Get the list of directories where memory maps can be created.
+        If specified in AppSetting, that list will be used.
+        Otherwise, the default value will be used.
+        """
+        allowed_mem_map_dirs_str = get_app_setting(
+            constants.UNIX_SHARED_MEMORY_DIRECTORIES)
+        allowed_mem_map_dirs = allowed_mem_map_dirs_str.split(',')
+        if allowed_mem_map_dirs is None:
+            allowed_mem_map_dirs = consts.UNIX_TEMP_DIR_SUFFIX
+        return allowed_mem_map_dirs
+
+    def _get_valid_mem_map_dirs(self) -> List[str]:
         """
         From the configured list of allowed directories where memory maps can be
         stored, return all those that either already existed or were created
@@ -89,10 +104,11 @@ class FileAccessorUnix(FileAccessor):
         Returns list of directories, in decreasing order of preference, where
         memory maps can be created.
         """
+        allowed_dirs = self._get_allowed_mem_map_dirs()
         # Iterate over all the possible directories where the memory map could
         # be created and try to create each of them if they don't exist already.
         valid_dirs = []
-        for temp_dir in consts.UNIX_TEMP_DIRS:
+        for temp_dir in allowed_dirs:
             dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
             if os.path.exists(dir_path):
                 # A valid directory already exists
@@ -104,11 +120,11 @@ class FileAccessorUnix(FileAccessor):
                     valid_dirs.append(dir_path)
                 except Exception as e:
                     # We keep trying to check/create others
-                    logger.warn(f'Cannot create directory {dir_path} to store '
-                                f' memory maps - {e}', exc_info=True)
+                    logger.warning(f'Cannot create directory {dir_path} to '
+                                   f'store memory maps - {e}', exc_info=True)
         if len(valid_dirs) == 0:
             logger.error('No valid directory for memory maps in '
-                         f'{consts.UNIX_TEMP_DIRS}')
+                         f'{allowed_dirs}')
         return valid_dirs
 
     def _open_mem_map_file(self, mem_map_name: str) -> Optional[BufferedRandom]:
@@ -155,8 +171,8 @@ class FileAccessorUnix(FileAccessor):
             except Exception as e:
                 # If the memory map could not be created in this directory, we
                 # keep trying in other applicable directories.
-                logger.warn(f'Cannot create memory map in {file_path} - {e}. '
-                            'Trying other directories.', exc_info=True)
+                logger.warning(f'Cannot create memory map in {file_path} - {e}.'
+                               ' Trying other directories.', exc_info=True)
         # Could not create the memory map in any of the applicable directory
         # paths so we fail.
         logger.error(

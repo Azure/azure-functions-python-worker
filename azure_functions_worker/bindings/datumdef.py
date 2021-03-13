@@ -103,8 +103,8 @@ class Datum:
         a datum object of the corresponding type.
         """
         if shmem is None:
-            logger.warn('Cannot read from shared memory. '
-                        'RpcSharedMemory is None.')
+            logger.warning('Cannot read from shared memory. '
+                           'RpcSharedMemory is None.')
             return None
 
         mem_map_name = shmem.name
@@ -153,7 +153,8 @@ class Datum:
             )
 
         if shared_mem_meta is None:
-            logger.warn(f'Cannot write to shared memory for type: {datum.type}')
+            logger.warning('Cannot write to shared memory for type: '
+                           f'{datum.type}')
             return None
 
         shmem = protos.RpcSharedMemory(

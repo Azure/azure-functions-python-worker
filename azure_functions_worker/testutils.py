@@ -268,7 +268,7 @@ class SharedMemoryTestCase(unittest.TestCase):
             )
             self._setUpDarwin()
         elif os_name == 'Linux':
-            self._setUpLinxx()
+            self._setUpLinux()
 
     def tearDown(self):
         os_name = platform.system()

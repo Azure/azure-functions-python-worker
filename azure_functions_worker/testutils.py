@@ -273,7 +273,7 @@ class SharedMemoryTestCase(unittest.TestCase):
     def tearDown(self):
         os_name = platform.system()
         if os_name == 'Darwin':
-            self._setUpDarwin()
+            self._tearDownDarwin()
             if self.was_shmem_dirs is not None:
                 # If an AppSetting was set before the tests ran, restore it back
                 os.environ.update(

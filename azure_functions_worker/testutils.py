@@ -334,16 +334,16 @@ class SharedMemoryTestCase(unittest.TestCase):
         cmd = ['hdutil', 'attach', '-nomount', f'ram://{size}']
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
         if result.returncode != 0:
-            raise Exception(f'Cannot create ram disk with command: {cmd} - '
-                            f'{result.stdout} - {result.stderr}')
+            raise IOError(f'Cannot create ram disk with command: {cmd} - '
+                          f'{result.stdout} - {result.stderr}')
         disk_name = result.stdout
         # We create a volume on the disk created above and mount it
         volume_name = 'shm'
         cmd = ['diskutil', 'eraseVolume', 'HFS+', volume_name, disk_name]
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
         if result.returncode != 0:
-            raise Exception(f'Cannot create volume with command: {cmd} - '
-                            f'{result.stdout} - {result.stderr}')
+            raise IOError(f'Cannot create volume with command: {cmd} - '
+                          f'{result.stdout} - {result.stderr}')
         directory = f'/Volumes/{volume_name}'
         self.created_directories = [directory]
         self._createSharedMemoryDirectories(self.created_directories)

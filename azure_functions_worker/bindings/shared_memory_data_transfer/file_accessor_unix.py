@@ -92,7 +92,7 @@ class FileAccessorUnix(FileAccessor):
         allowed_mem_map_dirs_str = get_app_setting(
             constants.UNIX_SHARED_MEMORY_DIRECTORIES)
         if allowed_mem_map_dirs_str is None:
-            allowed_mem_map_dirs = consts.UNIX_TEMP_DIR_SUFFIX
+            allowed_mem_map_dirs = consts.UNIX_TEMP_DIRS
         else:
             allowed_mem_map_dirs = allowed_mem_map_dirs_str.split(',')
         return allowed_mem_map_dirs

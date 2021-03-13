@@ -6,6 +6,7 @@ $FUNC_RUNTIME_VERSION = '3'
 $FUNC_RUNTIME_LANGUAGE = 'python'
 $PYTHON_VERSION = '3.7'
 $AZURE_FUNCTIONS_ENVIRONMENT = "development"
+$PYAZURE_WEBHOST_DEBUG = "true"
 
 # Speed up Invoke-RestMethod by turning off progress bar
 $ProgressPreference = 'SilentlyContinue'
@@ -67,6 +68,8 @@ Write-Host "Starting Functions Host..."
 $env:FUNCTIONS_WORKER_RUNTIME = $FUNC_RUNTIME_LANGUAGE
 $env:FUNCTIONS_WORKER_RUNTIME_VERSION = $PYTHON_VERSION
 $env:AZURE_FUNCTIONS_ENVIRONMENT = $AZURE_FUNCTIONS_ENVIRONMENT
+$env:PYAZURE_WEBHOST_DEBUG = $PYAZURE_WEBHOST_DEBUG
+
 $env:Path = "$env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
 $funcExePath = $(get_func_execuable_path $FUNC_CLI_DIRECTORY)
 

@@ -654,7 +654,10 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             '      dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
             ' * or download Azure Functions Core Tools binaries and',
             '   then write the full path to func.exe into the ',
-            '   `CORE_TOOLS_PATH` envrionment variable.'
+            '   `CORE_TOOLS_EXE_PATH` envrionment variable.',
+            '',
+            'Setting "export PYAZURE_WEBHOST_DEBUG=true" to get the full',
+            'stdout and stderr from function host.'
         ]))
 
     worker_path = os.environ.get('PYAZURE_WORKER_DIR')

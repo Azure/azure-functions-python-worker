@@ -274,10 +274,10 @@ class SharedMemoryTestCase(unittest.TestCase):
         os_name = platform.system()
         if os_name == 'Darwin':
             self._setUpDarwin()
-        if self.was_shmem_dirs is not None:
-            # If an AppSetting was set before the tests ran, restore it back
-            os.environ.update(
-                {UNIX_SHARED_MEMORY_DIRECTORIES: self.was_shmem_dirs})
+            if self.was_shmem_dirs is not None:
+                # If an AppSetting was set before the tests ran, restore it back
+                os.environ.update(
+                    {UNIX_SHARED_MEMORY_DIRECTORIES: self.was_shmem_dirs})
         elif os_name == 'Linux':
             self._tearDownLinux()
 

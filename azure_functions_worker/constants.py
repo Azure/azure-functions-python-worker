@@ -11,8 +11,10 @@ RPC_HTTP_BODY_ONLY = "RpcHttpBodyOnly"
 RPC_HTTP_TRIGGER_METADATA_REMOVED = "RpcHttpTriggerMetadataRemoved"
 WORKER_STATUS = "WorkerStatus"
 
-# Debug Flags
+# Debug Flags and Worker Test Util Configuration
 PYAZURE_WEBHOST_DEBUG = "PYAZURE_WEBHOST_DEBUG"
+PYAZURE_WORKER_DIR = "PYAZURE_WORKER_DIR"
+PYAZURE_INTEGRATION_TEST = "PYAZURE_INTEGRATION_TEST"
 
 # Platform Environment Variables
 AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"

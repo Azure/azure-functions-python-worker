@@ -4,13 +4,12 @@
 #
 $FUNC_RUNTIME_VERSION = '3'
 $FUNC_RUNTIME_LANGUAGE = 'python'
-$PYTHON_VERSION = '3.7'
 $AZURE_FUNCTIONS_ENVIRONMENT = "development"
 $PYAZURE_WEBHOST_DEBUG = "true"
+$PYAZURE_INTEGRATION_TEST = "true"
 
-# Speed up Invoke-RestMethod by turning off progress bar
+# Speed up Invoke-RestMethod and  by turning off progress bar
 $ProgressPreference = 'SilentlyContinue'
-
 
 function get_architecture() {
     # Return "x64" or "x86"
@@ -66,9 +65,10 @@ Expand-Archive $output -DestinationPath $FUNC_CLI_DIRECTORY
 
 Write-Host "Starting Functions Host..."
 $env:FUNCTIONS_WORKER_RUNTIME = $FUNC_RUNTIME_LANGUAGE
-$env:FUNCTIONS_WORKER_RUNTIME_VERSION = $PYTHON_VERSION
+$env:FUNCTIONS_WORKER_RUNTIME_VERSION = $env:PythonVersion
 $env:AZURE_FUNCTIONS_ENVIRONMENT = $AZURE_FUNCTIONS_ENVIRONMENT
 $env:PYAZURE_WEBHOST_DEBUG = $PYAZURE_WEBHOST_DEBUG
+$env:PYAZURE_INTEGRATION_TEST = $PYAZURE_INTEGRATION_TEST
 
 $env:Path = "$env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
 $funcExePath = $(get_func_execuable_path $FUNC_CLI_DIRECTORY)
@@ -81,14 +81,15 @@ Write-Host "Function Exe Path: $funcExePath"
 Set-Location $env:BUILD_SOURCESDIRECTORY
 Write-Host "Set-Location: $env:BUILD_SOURCESDIRECTORY"
 
-Write-Host "Running E2E integration tests..." -ForegroundColor Green
+Write-Host "Preparing E2E integration tests..." -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
-
 pip install -e .[dev]
 python setup.py build
 python setup.py extension
+Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 
+Write-Host "Running E2E integration tests..." -ForegroundColor Green
+Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 $env:CORE_TOOLS_EXE_PATH = "$funcExePath"
 pytest --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
-
-Write-Host "-----------------------------------------------------------------------------" -ForegroundColor Green
+Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green

@@ -7,7 +7,7 @@ on:
 
 env:
   REPO_URL: "https://raw.githubusercontent.com/Azure/azure-functions-python-worker"
-  TESTS_DIR_PATH: ".ci/perf_tests/k6scripts"
+  TESTS_DIR_PATH: ".ci/perf_tests/k6scripts/"
   PYTHON_VERSION: "3.8"
   PORT: 8000
 
@@ -60,4 +60,4 @@ jobs:
     - name: Run Throughput tests
       run: |
         chmod 755 .ci/perf_tests/run-perftests.sh
-        .ci/perf_tests/run-perftests.sh localhost $PORT ${{ steps.get_perf_tests_link.outputs.link }} ${{ matrix.test_to_run }}
+        .ci/perf_tests/run-perftests.sh localhost $PORT ${{ env.TESTS_DIR_PATH }} ${{ matrix.test_to_run }}

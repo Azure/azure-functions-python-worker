@@ -6,7 +6,8 @@ on:
     branches: [ dev ]
 
 env:
-  PERF_TESTS_LINK: "https://raw.githubusercontent.com/Azure/azure-functions-python-worker/${GITHUB_REF##*/}/.ci/perf_tests/k6scripts/"
+  REPO_URL: "https://raw.githubusercontent.com/Azure/azure-functions-python-worker"
+  TESTS_DIR_PATH: ".ci/perf_tests/k6scripts"
   PYTHON_VERSION: "3.8"
   PORT: 8000
 
@@ -48,7 +49,15 @@ jobs:
     - name: Validate if the functions are now running
       run: |
         curl --get http://localhost:${PORT}/api/${{ matrix.test_to_run }}
+	- name: Extract branch name
+	  run: |
+		echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+	  id: extract_branch
+	- name: Get Perf Tests Link
+	  run: |
+		echo "##[set-output name=link;]$(echo ${{ env.REPO_URL }}/${{ steps.extract_branch.outputs.branch }}/${{ env.TESTS_DIR_PATH }})"
+	  id: get_perf_tests_link
     - name: Run Throughput tests
       run: |
         chmod 755 .ci/perf_tests/run-perftests.sh
-        .ci/perf_tests/run-perftests.sh localhost $PORT $PERF_TESTS_LINK ${{ matrix.test_to_run }}
+        .ci/perf_tests/run-perftests.sh localhost $PORT ${{ steps.get_perf_tests_link.outputs.link }} ${{ matrix.test_to_run }}

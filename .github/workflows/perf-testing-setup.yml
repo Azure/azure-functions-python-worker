@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test_to_run: [ SyncHttpTriggerHelloWorld, SyncHttpTriggerWithSyncRequests, AsyncHttpTriggerWithAsyncRequest, SyncHttpTriggerCPUIntensive ]
+        test_to_run: [ SyncHttpTriggerHelloWorld, SyncHttpTriggerWithSyncRequests, AsyncHttpTriggerWithAsyncRequest, SyncHttpTriggerCPUIntensive, SyncPutBlobAsBytesReturnHttpResponse, SyncGetBlobAsBytesReturnHttpResponse ]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ env.PYTHON_VERSION }}
@@ -43,7 +43,7 @@ jobs:
     - name: Build and Run the Docker image
       run: |
         docker build --build-arg PYTHON_VERSION=${{ env.PYTHON_VERSION }} --file .ci/perf_tests/dockerfiles/perf_tests.Dockerfile --tag perfimage:latest .
-        docker run -d --env FUNCTIONS_WORKER_RUNTIME_VERSION=${{ env.PYTHON_VERSION }} -p ${PORT}:80 -v $GITHUB_WORKSPACE/azure_functions_worker:/azure-functions-host/workers/python/${{ env.PYTHON_VERSION }}/LINUX/X64/azure_functions_worker perfimage:latest
+        docker run -d --shm-size="2g" --env FUNCTIONS_WORKER_RUNTIME_VERSION=${{ env.PYTHON_VERSION }} -p ${PORT}:80 -v $GITHUB_WORKSPACE/azure_functions_worker:/azure-functions-host/workers/python/${{ env.PYTHON_VERSION }}/LINUX/X64/azure_functions_worker perfimage:latest
         sleep 10  # host needs some time to start.
     - name: Validate if the functions are now running
       run: |

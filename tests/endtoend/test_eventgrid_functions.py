@@ -92,7 +92,7 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
             else:
                 break
 
-    @testutils.retryable_test(1, 5)
+    @testutils.retryable_test(3, 5)
     def test_eventgrid_output_binding(self):
         """test event_grid output binding
 

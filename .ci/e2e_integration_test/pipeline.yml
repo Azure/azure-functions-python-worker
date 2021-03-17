@@ -30,7 +30,7 @@ steps:
     AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
     AzureWebJobsEventHubConnectionString: $(AzureWebJobsEventHubConnectionString)
     AzureWebJobsServiceBusConnectionString: $(AzureWebJobsServiceBusConnectionString)
-    AzureWebJobPythonVersionsEventGridTopicUri: $(AzureWebJobsEventGridTopicUri)
+    AzureWebJobsEventGridTopicUri: $(AzureWebJobsEventGridTopicUri)
     AzureWebJobsEventGridConnectionKey: $(AzureWebJobsEventGridConnectionKey)
     PythonVersion: $(PYTHON_VERSION)
   displayName: 'Running Python Language Worker E2E Tests'

@@ -14,6 +14,10 @@ WORKER_STATUS = "WorkerStatus"
 # Debug Flags
 PYAZURE_WEBHOST_DEBUG = "PYAZURE_WEBHOST_DEBUG"
 
+# E2E Integration Flags and Configurations
+PYAZURE_INTEGRATION_TEST = "PYAZURE_INTEGRATION_TEST"
+PYAZURE_WORKER_DIR = "PYAZURE_WORKER_DIR"
+
 # Platform Environment Variables
 AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
 

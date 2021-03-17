@@ -122,3 +122,7 @@ py3env/
 
 # Profiling info
 prof/
+
+# E2E Integration Test Core Tools
+.ci/e2e_integration_test/Azure.Functions.Cli/
+.ci/e2e_integration_test/Azure.Functions.Cli*

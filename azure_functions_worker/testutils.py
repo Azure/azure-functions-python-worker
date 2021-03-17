@@ -35,7 +35,11 @@ import requests
 from azure_functions_worker._thirdparty import aio_compat
 from . import dispatcher
 from . import protos
-from .constants import PYAZURE_WEBHOST_DEBUG
+from .constants import (
+    PYAZURE_WEBHOST_DEBUG,
+    PYAZURE_WORKER_DIR,
+    PYAZURE_INTEGRATION_TEST
+)
 from .utils.common import is_envvar_true
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
@@ -654,10 +658,13 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             '      dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
             ' * or download Azure Functions Core Tools binaries and',
             '   then write the full path to func.exe into the ',
-            '   `CORE_TOOLS_PATH` envrionment variable.'
+            '   `CORE_TOOLS_EXE_PATH` envrionment variable.',
+            '',
+            'Setting "export PYAZURE_WEBHOST_DEBUG=true" to get the full',
+            'stdout and stderr from function host.'
         ]))
 
-    worker_path = os.environ.get('PYAZURE_WORKER_DIR')
+    worker_path = os.environ.get(PYAZURE_WORKER_DIR)
     worker_path = WORKER_PATH if not worker_path else pathlib.Path(worker_path)
     if not worker_path.exists():
         raise RuntimeError(f'Worker path {worker_path} does not exist')
@@ -671,6 +678,11 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         'AZURE_FUNCTIONS_ENVIRONMENT': 'development',
         'AzureWebJobsSecretStorageType': 'files'
     }
+
+    # In E2E Integration mode, we should use the core tools worker
+    # from the latest artifact instead of the azure_functions_worker module
+    if is_envvar_true(PYAZURE_INTEGRATION_TEST):
+        extra_env.pop('languageWorkers:python:workerDirectory')
 
     if testconfig and 'azure' in testconfig:
         st = testconfig['azure'].get('storage_key')

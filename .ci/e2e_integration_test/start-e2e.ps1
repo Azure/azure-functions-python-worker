@@ -2,13 +2,16 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
+
+# Python worker E2E integration test
+# The E2E integration test will test the worker against a prerelease version of core tools
 $FUNC_RUNTIME_VERSION = '3'
 $FUNC_RUNTIME_LANGUAGE = 'python'
 $AZURE_FUNCTIONS_ENVIRONMENT = "development"
 $PYAZURE_WEBHOST_DEBUG = "true"
 $PYAZURE_INTEGRATION_TEST = "true"
 
-# Speed up Invoke-RestMethod and  by turning off progress bar
+# Speed up Invoke-RestMethod by turning off progress bar
 $ProgressPreference = 'SilentlyContinue'
 
 function get_architecture() {

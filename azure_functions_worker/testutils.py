@@ -252,8 +252,6 @@ class SharedMemoryTestCase(unittest.TestCase):
     For tests involving shared memory data transfer usage.
     """
     def setUp(self):
-        self.file_accessor = FileAccessorFactory.create_file_accessor()
-
         self.was_shmem_env_true = is_envvar_true(
             FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
         os.environ.update(
@@ -269,6 +267,7 @@ class SharedMemoryTestCase(unittest.TestCase):
             self._setUpDarwin()
         elif os_name == 'Linux':
             self._setUpLinux()
+        self.file_accessor = FileAccessorFactory.create_file_accessor()
 
     def tearDown(self):
         os_name = platform.system()
@@ -346,6 +345,7 @@ class SharedMemoryTestCase(unittest.TestCase):
                           f'{result.stdout} - {result.stderr}')
         directory = f'/Volumes/{volume_name}'
         self.created_directories = [directory]
+        # Create directories in the volume for shared memory maps
         self._createSharedMemoryDirectories(self.created_directories)
         # Override the AppSetting for the duration of this test so the
         # FileAccessorUnix can use these directories for creating memory maps
@@ -354,14 +354,16 @@ class SharedMemoryTestCase(unittest.TestCase):
                 ','.join(self.created_directories)})
 
     def _tearDownDarwin(self):
+        # Delete the directories containing shared memory maps
+        self._deleteSharedMemoryDirectories(self.created_directories)
+        # Unmount the volume used for shared memory maps
         volume_name = 'shm'
-        cmd = ['find', '/Volumes', '-type', 'd', '-name', volume_name,
-               '-print0', '|', 'xargs', '-0', 'umount']
+        cmd = f"find /Volumes -type d -name '{volume_name}*' -print0 " \
+              "| xargs -0 umount -f"
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
         if result.returncode != 0:
             raise IOError(f'Cannot delete volume with command: {cmd} - '
                           f'{result.stdout} - {result.stderr}')
-        self._deleteSharedMemoryDirectories(self.created_directories)
 
 
 class _MockWebHostServicer(protos.FunctionRpcServicer):

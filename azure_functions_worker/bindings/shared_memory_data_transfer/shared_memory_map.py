@@ -33,7 +33,7 @@ class SharedMemoryMap:
         self.mem_map_name = mem_map_name
         self.mem_map = mem_map
 
-    def put_bytes(self, content: bytes) -> int:
+    def put_bytes(self, content: bytes) -> Optional[int]:
         """
         Writes the given content bytes into this SharedMemoryMap.
         The number of bytes written must be less than or equal to the size of

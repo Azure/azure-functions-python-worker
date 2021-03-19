@@ -331,12 +331,12 @@ class SharedMemoryTestCase(unittest.TestCase):
         size_in_mb = consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER / (1024 * 1024)
         size = 2048 * size_in_mb
         # The following command returns the name of the created disk
-        cmd = ['hdutil', 'attach', '-nomount', f'ram://{size}']
+        cmd = ['hdiutil', 'attach', '-nomount', f'ram://{size}']
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
         if result.returncode != 0:
             raise IOError(f'Cannot create ram disk with command: {cmd} - '
                           f'{result.stdout} - {result.stderr}')
-        disk_name = result.stdout
+        disk_name = result.stdout.strip().decode()
         # We create a volume on the disk created above and mount it
         volume_name = 'shm'
         cmd = ['diskutil', 'eraseVolume', 'HFS+', volume_name, disk_name]
@@ -350,9 +350,17 @@ class SharedMemoryTestCase(unittest.TestCase):
         # Override the AppSetting for the duration of this test so the
         # FileAccessorUnix can use these directories for creating memory maps
         os.environ.update(
-            {UNIX_SHARED_MEMORY_DIRECTORIES: self.created_directories})
+            {UNIX_SHARED_MEMORY_DIRECTORIES:
+                ','.join(self.created_directories)})
 
     def _tearDownDarwin(self):
+        volume_name = 'shm'
+        cmd = ['find', '/Volumes', '-type', 'd', '-name', volume_name,
+               '-print0', '|', 'xargs', '-0', 'umount']
+        result = subprocess.run(cmd, stdout=subprocess.PIPE)
+        if result.returncode != 0:
+            raise IOError(f'Cannot delete volume with command: {cmd} - '
+                          f'{result.stdout} - {result.stderr}')
         self._deleteSharedMemoryDirectories(self.created_directories)
 
 

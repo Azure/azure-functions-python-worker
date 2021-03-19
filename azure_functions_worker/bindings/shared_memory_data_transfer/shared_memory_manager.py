@@ -31,6 +31,10 @@ class SharedMemoryManager:
         self._allocated_mem_maps: Dict[str, SharedMemoryMap] = {}
         self._file_accessor = FileAccessorFactory.create_file_accessor()
 
+    def __del__(self):
+        del self._file_accessor
+        del self._allocated_mem_maps
+
     @property
     def allocated_mem_maps(self):
         """

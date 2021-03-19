@@ -7,13 +7,14 @@ class SharedMemoryConstants:
         """
         Flags that are present in the header region of the memory maps.
         """
+        Initialized = b'\x01'
         """
         Indicates that the memory map has been initialized, may be in use and
         is not new.
         This represents a boolean value of True.
         """
-        Initialized = b'\x01'
 
+    MEM_MAP_INITIALIZED_FLAG_NUM_BYTES = 1
     """
     The length of a bool which is the length of the part of the header flag
     specifying if the memory map is already created and used.
@@ -21,20 +22,20 @@ class SharedMemoryConstants:
     previously created and may be in use already.
     Header flags are defined in the class SharedMemoryConstants.HeaderFlags.
     """
-    MEM_MAP_INITIALIZED_FLAG_NUM_BYTES = 1
 
+    CONTENT_LENGTH_NUM_BYTES = 8
     """
     The length of a long which is the length of the part of the header
     specifying content length in the memory map.
     """
-    CONTENT_LENGTH_NUM_BYTES = 8
 
+    CONTENT_HEADER_TOTAL_BYTES = MEM_MAP_INITIALIZED_FLAG_NUM_BYTES + \
+        CONTENT_LENGTH_NUM_BYTES
     """
     The total length of the header
     """
-    CONTENT_HEADER_TOTAL_BYTES = MEM_MAP_INITIALIZED_FLAG_NUM_BYTES + \
-        CONTENT_LENGTH_NUM_BYTES
 
+    MIN_BYTES_FOR_SHARED_MEM_TRANSFER = 1024 * 1024  # 1 MB
     """
     Minimum size (in number of bytes) an object must be in order for it to be
     transferred over shared memory.
@@ -42,8 +43,8 @@ class SharedMemoryConstants:
     Note: This needs to be consistent among the host and workers.
           e.g. in the host, it is defined in SharedMemoryConstants.cs
     """
-    MIN_BYTES_FOR_SHARED_MEM_TRANSFER = 1024 * 1024  # 1 MB
 
+    MAX_BYTES_FOR_SHARED_MEM_TRANSFER = 2 * 1024 * 1024 * 1024  # 2 GB
     """
     Maximum size (in number of bytes) an object must be in order for it to be
     transferred over shared memory.
@@ -53,8 +54,8 @@ class SharedMemoryConstants:
     Note: This needs to be consistent among the host and workers.
           e.g. in the host, it is defined in SharedMemoryConstants.cs
     """
-    MAX_BYTES_FOR_SHARED_MEM_TRANSFER = 2 * 1024 * 1024 * 1024  # 2 GB
 
+    SIZE_OF_CHAR_BYTES = 2
     """
     This is what the size of a character is in DotNet. Can be verified by
     doing "sizeof(char)".
@@ -63,8 +64,8 @@ class SharedMemoryConstants:
     by this constant.
     Corresponding logic in the host can be found in SharedMemoryManager.cs
     """
-    SIZE_OF_CHAR_BYTES = 2
 
+    UNIX_TEMP_DIRS = ["/dev/shm"]
     """
     Default directories in Unix where the memory maps can be found.
     These list is in order of preference, starting with the highest preference
@@ -72,9 +73,8 @@ class SharedMemoryConstants:
     A user can override this by using the AppSetting:
     UNIX_SHARED_MEMORY_DIRECTORIES.
     """
-    UNIX_TEMP_DIRS = ["/dev/shm"]
 
+    UNIX_TEMP_DIR_SUFFIX = "AzureFunctions"
     """
     Suffix for the temp directories containing memory maps in Unix
     """
-    UNIX_TEMP_DIR_SUFFIX = "AzureFunctions"

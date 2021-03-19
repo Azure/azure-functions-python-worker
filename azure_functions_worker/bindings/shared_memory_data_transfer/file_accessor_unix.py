@@ -24,6 +24,9 @@ class FileAccessorUnix(FileAccessor):
         # already or have been created successfully for use).
         self.valid_dirs = self._get_valid_mem_map_dirs()
 
+    def __del__(self):
+        del self.valid_dirs
+
     def open_mem_map(
             self,
             mem_map_name: str,
@@ -67,7 +70,7 @@ class FileAccessorUnix(FileAccessor):
 
     def delete_mem_map(self, mem_map_name: str, mem_map: mmap.mmap) -> bool:
         if mem_map_name is None or mem_map_name == '':
-            raise Exception(
+            raise SharedMemoryException(
                 f'Cannot delete memory map. Invalid name {mem_map_name}')
         try:
             fd = self._open_mem_map_file(mem_map_name)

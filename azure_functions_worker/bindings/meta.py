@@ -137,7 +137,8 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
     else:
         # If not, send it as part of the response message over RPC
         rpc_val = datumdef.datum_as_proto(datum)
-        assert rpc_val is not None
+        if rpc_val is None:
+            raise TypeError('Cannot convert datum to rpc_val')
         return protos.ParameterBinding(
             name=out_name,
             data=rpc_val)

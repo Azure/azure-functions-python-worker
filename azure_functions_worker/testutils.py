@@ -364,7 +364,7 @@ class SharedMemoryTestCase(unittest.TestCase):
         volume_name = 'shm'
         cmd = f"find /Volumes -type d -name '{volume_name}*' -print0 " \
               "| xargs -0 umount -f"
-        result = subprocess.run(cmd, stdout=subprocess.PIPE)
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
         if result.returncode != 0:
             raise IOError(f'Cannot delete volume with command: {cmd} - '
                           f'{result.stdout} - {result.stderr}')

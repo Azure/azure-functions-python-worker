@@ -12,3 +12,6 @@ python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-ur
 
 # Download Azure Functions Host
 python setup.py webhost
+
+# Setup WebJobs Extensions
+python setup.py extension

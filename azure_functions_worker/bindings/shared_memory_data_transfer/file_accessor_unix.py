@@ -92,12 +92,16 @@ class FileAccessorUnix(FileAccessor):
         If specified in AppSetting, that list will be used.
         Otherwise, the default value will be used.
         """
-        allowed_mem_map_dirs_str = get_app_setting(
-            constants.UNIX_SHARED_MEMORY_DIRECTORIES)
+        setting = constants.UNIX_SHARED_MEMORY_DIRECTORIES
+        allowed_mem_map_dirs_str = get_app_setting(setting)
         if allowed_mem_map_dirs_str is None:
             allowed_mem_map_dirs = consts.UNIX_TEMP_DIRS
+            logger.info('Using allowed directories for shared memory: '
+                        f'{allowed_mem_map_dirs} from App Setting: {setting}')
         else:
             allowed_mem_map_dirs = allowed_mem_map_dirs_str.split(',')
+            logger.info('Using default allowed directories for shared memory: '
+                        f'{allowed_mem_map_dirs}')
         return allowed_mem_map_dirs
 
     def _get_valid_mem_map_dirs(self) -> List[str]:

@@ -18,6 +18,7 @@ from typing import List, Optional
 
 import grpc
 
+from . import __version__
 from . import bindings
 from . import constants
 from . import functions
@@ -254,8 +255,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_resp_queue.put_nowait(resp)
 
     async def _handle__worker_init_request(self, req):
-        logger.info('Received WorkerInitRequest, request ID %s',
-                    self.request_id)
+        logger.info('Received WorkerInitRequest, '
+                    'python version %s, worker version %s, request ID %s',
+                    sys.version, __version__, self.request_id)
 
         capabilities = {
             constants.RAW_HTTP_BODY_BYTES: _TRUE,

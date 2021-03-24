@@ -3,6 +3,7 @@
 
 # Prefixes
 CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
+SYSTEM_LOG_PREFIX = "azure_functions_worker"
 
 # Capabilities
 RAW_HTTP_BODY_BYTES = "RawHttpBodyBytes"
@@ -38,3 +39,11 @@ PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39 = True
 
 # External Site URLs
 MODULE_NOT_FOUND_TS_URL = "https://aka.ms/functions-modulenotfound"
+
+# Extension Hooks
+FUNC_EXT_POST_FUNCTION_LOAD = "post_function_load"
+FUNC_EXT_PRE_INVOCATION = "pre_invocation"
+FUNC_EXT_POST_INVOCATION = "post_invocation"
+APP_EXT_POST_FUNCTION_LOAD = "post_function_load_app_level"
+APP_EXT_PRE_INVOCATION = "pre_invocation_app_level"
+APP_EXT_POST_INVOCATION = "post_invocation_app_level"

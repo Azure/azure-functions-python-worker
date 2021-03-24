@@ -18,9 +18,11 @@ import os
 import pathlib
 import platform
 import queue
+import random
 import re
 import shutil
 import socket
+import string
 import subprocess
 import sys
 import tempfile
@@ -33,14 +35,20 @@ import grpc
 import requests
 
 from azure_functions_worker._thirdparty import aio_compat
+from azure_functions_worker.bindings.shared_memory_data_transfer \
+    import FileAccessorFactory
+from azure_functions_worker.bindings.shared_memory_data_transfer \
+    import SharedMemoryConstants as consts
 from . import dispatcher
 from . import protos
 from .constants import (
     PYAZURE_WEBHOST_DEBUG,
     PYAZURE_WORKER_DIR,
-    PYAZURE_INTEGRATION_TEST
+    PYAZURE_INTEGRATION_TEST,
+    FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
+    UNIX_SHARED_MEMORY_DIRECTORIES
 )
-from .utils.common import is_envvar_true
+from .utils.common import is_envvar_true, get_app_setting
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
 TESTS_ROOT = PROJECT_ROOT / 'tests'
@@ -243,6 +251,125 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     raise test_exception
 
 
+class SharedMemoryTestCase(unittest.TestCase):
+    """
+    For tests involving shared memory data transfer usage.
+    """
+    def setUp(self):
+        self.was_shmem_env_true = is_envvar_true(
+            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
+        os.environ.update(
+            {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '1'})
+
+        os_name = platform.system()
+        if os_name == 'Darwin':
+            # If an existing AppSetting is specified, save it so it can be
+            # restored later
+            self.was_shmem_dirs = get_app_setting(
+                UNIX_SHARED_MEMORY_DIRECTORIES
+            )
+            self._setUpDarwin()
+        elif os_name == 'Linux':
+            self._setUpLinux()
+        self.file_accessor = FileAccessorFactory.create_file_accessor()
+
+    def tearDown(self):
+        os_name = platform.system()
+        if os_name == 'Darwin':
+            self._tearDownDarwin()
+            if self.was_shmem_dirs is not None:
+                # If an AppSetting was set before the tests ran, restore it back
+                os.environ.update(
+                    {UNIX_SHARED_MEMORY_DIRECTORIES: self.was_shmem_dirs})
+        elif os_name == 'Linux':
+            self._tearDownLinux()
+
+        if not self.was_shmem_env_true:
+            os.environ.update(
+                {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '0'})
+
+    def get_new_mem_map_name(self):
+        return str(uuid.uuid4())
+
+    def get_random_bytes(self, num_bytes):
+        return bytearray(random.getrandbits(8) for _ in range(num_bytes))
+
+    def get_random_string(self, num_chars):
+        return ''.join(random.choices(string.ascii_uppercase + string.digits,
+                                      k=num_chars))
+
+    def is_valid_uuid(self, uuid_to_test: str, version: int = 4) -> bool:
+        """
+        Check if uuid_to_test is a valid UUID.
+        Reference: https://stackoverflow.com/a/33245493/3132415
+        """
+        try:
+            uuid_obj = uuid.UUID(uuid_to_test, version=version)
+        except ValueError:
+            return False
+        return str(uuid_obj) == uuid_to_test
+
+    def _createSharedMemoryDirectories(self, directories):
+        for temp_dir in directories:
+            temp_dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
+            if not os.path.exists(temp_dir_path):
+                os.makedirs(temp_dir_path)
+
+    def _deleteSharedMemoryDirectories(self, directories):
+        for temp_dir in directories:
+            temp_dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
+            shutil.rmtree(temp_dir_path)
+
+    def _setUpLinux(self):
+        self._createSharedMemoryDirectories(consts.UNIX_TEMP_DIRS)
+
+    def _tearDownLinux(self):
+        self._deleteSharedMemoryDirectories(consts.UNIX_TEMP_DIRS)
+
+    def _setUpDarwin(self):
+        """
+        Create a RAM disk on macOS.
+        Ref: https://stackoverflow.com/a/2033417/3132415
+        """
+        size_in_mb = consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER / (1024 * 1024)
+        size = 2048 * size_in_mb
+        # The following command returns the name of the created disk
+        cmd = ['hdiutil', 'attach', '-nomount', f'ram://{size}']
+        result = subprocess.run(cmd, stdout=subprocess.PIPE)
+        if result.returncode != 0:
+            raise IOError(f'Cannot create ram disk with command: {cmd} - '
+                          f'{result.stdout} - {result.stderr}')
+        disk_name = result.stdout.strip().decode()
+        # We create a volume on the disk created above and mount it
+        volume_name = 'shm'
+        cmd = ['diskutil', 'eraseVolume', 'HFS+', volume_name, disk_name]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE)
+        if result.returncode != 0:
+            raise IOError(f'Cannot create volume with command: {cmd} - '
+                          f'{result.stdout} - {result.stderr}')
+        directory = f'/Volumes/{volume_name}'
+        self.created_directories = [directory]
+        # Create directories in the volume for shared memory maps
+        self._createSharedMemoryDirectories(self.created_directories)
+        # Override the AppSetting for the duration of this test so the
+        # FileAccessorUnix can use these directories for creating memory maps
+        os.environ.update(
+            {UNIX_SHARED_MEMORY_DIRECTORIES:
+                ','.join(self.created_directories)})
+
+    def _tearDownDarwin(self):
+        # Delete the directories containing shared memory maps
+        self._deleteSharedMemoryDirectories(self.created_directories)
+        # Unmount the volume used for shared memory maps
+        volume_name = 'shm'
+        cmd = f"find /Volumes -type d -name '{volume_name}*' -print0 " \
+              "| xargs -0 umount -f"
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+        if result.returncode != 0:
+            raise IOError(f'Cannot delete volume with command: {cmd} - '
+                          f'{result.stdout} - {result.stderr}')
+
+
 class _MockWebHostServicer(protos.FunctionRpcServicer):
 
     _STOP = object()
@@ -425,6 +552,21 @@ class _MockWebHost:
             wait_for='invocation_response')
 
         return invocation_id, r
+
+    async def close_shared_memory_resources(
+            self,
+            map_names: typing.List[str]):
+
+        request = protos.CloseSharedMemoryResourcesRequest(
+            map_names=map_names)
+
+        r = await self.communicate(
+            protos.StreamingMessage(
+                close_shared_memory_resources_request=request
+            ),
+            wait_for='close_shared_memory_resources_response')
+
+        return r
 
     async def reload_environment(
         self,

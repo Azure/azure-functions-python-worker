@@ -4,10 +4,10 @@
 import logging
 import os
 import sys
-import asyncio
 import unittest
 from unittest.mock import patch, Mock, call
 from importlib import import_module
+from azure_functions_worker._thirdparty import aio_compat
 from azure_functions_worker.extension import ExtensionManager
 from azure_functions_worker.constants import (
     PYTHON_ENABLE_WORKER_EXTENSIONS,
@@ -587,7 +587,7 @@ class TestExtension(unittest.TestCase):
         the customer's function.
         """
         # Create a mocked customer_function with async wrapper
-        result = asyncio.run(
+        result = aio_compat.run(
             self._instance.get_invocation_wrapper_async(
                 self._mock_context,
                 self._mock_function_main_async,
@@ -611,7 +611,7 @@ class TestExtension(unittest.TestCase):
         _func_ext_instance = FuncExtClass()
 
         # Create a mocked customer_function with async wrapper
-        result = asyncio.run(
+        result = aio_compat.run(
             self._instance.get_invocation_wrapper_async(
                 self._mock_context,
                 self._mock_function_main_async,
@@ -640,7 +640,7 @@ class TestExtension(unittest.TestCase):
         _func_ext_instance = FuncExtClass()
 
         # Create a mocked customer_function with async wrapper
-        result = asyncio.run(
+        result = aio_compat.run(
             self._instance.get_invocation_wrapper_async(
                 self._mock_context,
                 self._mock_function_main_async,

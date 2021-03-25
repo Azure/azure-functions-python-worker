@@ -10,8 +10,9 @@
       "type": "blob",
       "direction": "out",
       "name": "file",
+      "dataType": "string",
       "connection": "AzureWebJobsStorage",
-      "path": "python-worker-tests/test-blob-trigger.txt"
+      "path": "python-worker-tests/shmem-test-str-out.txt"
     },
     {
       "type": "http",

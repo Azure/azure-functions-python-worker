@@ -1,6 +1,6 @@
 ARG PYTHON_VERSION=3.8
 
-FROM mcr.microsoft.com/azure-functions/python:3.0.14492-python$PYTHON_VERSION
+FROM mcr.microsoft.com/azure-functions/python:3.0.15418-python$PYTHON_VERSION
 
 # Mounting local machines azure-functions-python-worker and azure-functions-python-library onto it
 RUN rm -rf /azure-functions-host/workers/python/${PYTHON_VERSION}/LINUX/X64/azure_functions_worker
@@ -11,7 +11,8 @@ VOLUME ["/azure-functions-host/workers/python/${PYTHON_VERSION}/LINUX/X64/azure_
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
     FUNCTIONS_WORKER_PROCESS_COUNT=1 \
-    AZURE_FUNCTIONS_ENVIRONMENT=Development
+    AZURE_FUNCTIONS_ENVIRONMENT=Development \
+    FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED=1
 
 RUN apt-get --quiet update && \
     apt-get install --quiet -y git && \

@@ -182,7 +182,10 @@ class ExtensionManager:
     def safe_execute_function_load_hooks(cls, hooks, hook_name, fname, fdir):
         if hooks:
             for hook_meta in getattr(hooks, hook_name, []):
-                hook_meta.ext_impl(fname, fdir)
+                try:
+                    hook_meta.ext_impl(fname, fdir)
+                except Exception:
+                    pass  # logger is not initialized
 
     @classmethod
     def raw_invocation_wrapper(cls, ctx, function, args) -> Any:
@@ -205,7 +208,8 @@ class ExtensionManager:
 
     @classmethod
     async def get_invocation_wrapper_async(cls, ctx, function, args) -> Any:
-        """An asynchronous coroutine for executing function with extensions"""
+        """An asynchronous coroutine for executing function with extensions
+        """
         cls.invocation_extension(ctx, APP_EXT_PRE_INVOCATION, args)
         cls.invocation_extension(ctx, FUNC_EXT_PRE_INVOCATION, args)
         result = await function(**args)
@@ -231,7 +235,7 @@ class ExtensionManager:
             cls._info_extension_is_enabled(sdk)
             cls.extension_enabled_sdk = sdk
         else:
-            cls._warn_extension_is_not_enabled_in_sdk(sdk)
+            cls._warn_sdk_not_support_extension(sdk)
             cls.extension_enabled_sdk = None
 
         cls.is_sdk_detected = True
@@ -246,7 +250,7 @@ class ExtensionManager:
         )
 
     @classmethod
-    def _warn_extension_is_not_enabled_in_sdk(cls, sdk):
+    def _warn_sdk_not_support_extension(cls, sdk):
         logger.warning(
             f'The azure.functions ({cls.get_sdk_version(sdk)}) does not '
             'support Python worker extensions. If you believe extensions '

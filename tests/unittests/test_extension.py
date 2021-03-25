@@ -432,7 +432,11 @@ class TestExtension(unittest.TestCase):
         for current_return in comparisons:
             self.assertEqual(current_return, 'request_ok')
 
-    def test_exception_handling_in_post_function_load_app_level(self):
+    @patch('azure_functions_worker.extension.logger.error')
+    def test_exception_handling_in_post_function_load_app_level(
+        self,
+        error_mock: Mock
+    ):
         """When there's a chain breaks in the extension chain, it should not
         pause other executions. For post_function_load_app_level, becasue the
         logger is not fully initialized, the exception will be suppressed.
@@ -464,6 +468,9 @@ class TestExtension(unittest.TestCase):
 
         # Ensure the extension is executed, but the exception shouldn't surface
         self.assertTrue(BadAppExtension.post_function_load_app_level_executed)
+
+        # Ensure errors are reported from system logger
+        error_mock.assert_called_with(expt, exc_info=True)
 
     def test_exception_handling_in_pre_invocation_app_level(self):
         """When there's a chain breaks in the extension chain, it should not
@@ -722,12 +729,12 @@ class TestExtension(unittest.TestCase):
         # Check logs
         self._instance._info_extension_is_enabled(sdk)
         info_mock.assert_called_once_with(
-            'Python Worker Extension is enabled in azure.functions (1.7.0). '
-            'Extension list: {}'
+            'Python Worker Extension is enabled in azure.functions '
+            f'({sdk.__version__}).'
         )
 
     @patch('azure_functions_worker.extension.logger.info')
-    def test_info_extension_is_enabled_with_func_exts(self, info_mock: Mock):
+    def test_info_discover_extension_list_func_ext(self, info_mock: Mock):
         # Get SDK from sys.path
         sdk = self._instance.get_sdk_from_sys_path()
 
@@ -741,15 +748,15 @@ class TestExtension(unittest.TestCase):
         FuncExtClass()
 
         # Check logs
-        self._instance._info_extension_is_enabled(sdk)
+        self._instance._info_discover_extension_list(self._mock_func_name, sdk)
         info_mock.assert_called_once_with(
-            'Python Worker Extension is enabled in azure.functions (1.7.0). '
-            'Extension list: '
+            'Python Worker Extension Manager is loading HttpTrigger, '
+            'current registered extensions: '
             r'{"FuncExtension": {"HttpTrigger": ["NewFuncExtension"]}}'
         )
 
     @patch('azure_functions_worker.extension.logger.info')
-    def test_info_extension_is_enabled_with_app_exts(self, info_mock: Mock):
+    def test_info_discover_extension_list_app_ext(self, info_mock: Mock):
         # Get SDK from sys.path
         sdk = self._instance.get_sdk_from_sys_path()
 
@@ -757,10 +764,10 @@ class TestExtension(unittest.TestCase):
         self._generate_new_app_extension(sdk.AppExtensionBase)
 
         # Check logs
-        self._instance._info_extension_is_enabled(sdk)
+        self._instance._info_discover_extension_list(self._mock_func_name, sdk)
         info_mock.assert_called_once_with(
-            'Python Worker Extension is enabled in azure.functions (1.7.0). '
-            'Extension list: '
+            'Python Worker Extension Manager is loading HttpTrigger, '
+            'current registered extensions: '
             r'{"AppExtension": ["NewAppExtension"]}'
         )
 

@@ -111,6 +111,8 @@ class ExtensionManager:
         sdk = cls._try_get_sdk_with_extension_enabled()
         if sdk is None:
             return
+        else:
+            cls._info_discover_extension_list(func_name, sdk)
 
         # Invoke function hooks
         funcs = sdk.ExtensionMeta.get_function_hooks(func_name)
@@ -184,8 +186,8 @@ class ExtensionManager:
             for hook_meta in getattr(hooks, hook_name, []):
                 try:
                     hook_meta.ext_impl(fname, fdir)
-                except Exception:
-                    pass  # logger is not initialized
+                except Exception as e:
+                    logger.error(e, exc_info=True)
 
     @classmethod
     def raw_invocation_wrapper(cls, ctx, function, args) -> Any:
@@ -245,7 +247,14 @@ class ExtensionManager:
     def _info_extension_is_enabled(cls, sdk):
         logger.info(
             'Python Worker Extension is enabled in azure.functions '
-            f'({cls.get_sdk_version(sdk)}). Extension list: '
+            f'({cls.get_sdk_version(sdk)}).'
+        )
+
+    @classmethod
+    def _info_discover_extension_list(cls, function_name, sdk):
+        logger.info(
+            f'Python Worker Extension Manager is loading {function_name}, '
+            'current registered extensions: '
             f'{sdk.ExtensionMeta.get_registered_extensions_json()}'
         )
 

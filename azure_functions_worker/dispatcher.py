@@ -35,6 +35,7 @@ from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
 from .utils.dependency import DependencyManager
 from .utils.wrappers import disable_feature_by
+from .bindings.shared_memory_data_transfer import SharedMemoryManager
 
 _TRUE = "true"
 
@@ -73,6 +74,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._request_id = request_id
         self._worker_id = worker_id
         self._functions = functions.Registry()
+        self._shmem_mgr = SharedMemoryManager()
 
         self._old_task_factory = None
 
@@ -265,6 +267,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_BODY_ONLY: _TRUE,
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.WORKER_STATUS: _TRUE,
+            constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
         # Can detech worker packages
@@ -371,10 +374,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     trigger_metadata = invoc_request.trigger_metadata
                 else:
                     trigger_metadata = None
+
                 args[pb.name] = bindings.from_incoming_proto(
-                    pb_type_info.binding_name, pb.data,
+                    pb_type_info.binding_name, pb,
                     trigger_metadata=trigger_metadata,
-                    pytype=pb_type_info.pytype)
+                    pytype=pb_type_info.pytype,
+                    shmem_mgr=self._shmem_mgr)
 
             fi_context = bindings.Context(
                 fi.name, fi.directory, invocation_id, trace_context)
@@ -407,15 +412,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                         # Can "None" be marshaled into protos.TypedData?
                         continue
 
-                    rpc_val = bindings.to_outgoing_proto(
+                    param_binding = bindings.to_outgoing_param_binding(
                         out_type_info.binding_name, val,
-                        pytype=out_type_info.pytype)
-                    assert rpc_val is not None
-
-                    output_data.append(
-                        protos.ParameterBinding(
-                            name=out_name,
-                            data=rpc_val))
+                        pytype=out_type_info.pytype,
+                        out_name=out_name, shmem_mgr=self._shmem_mgr)
+                    output_data.append(param_binding)
 
             return_value = None
             if fi.return_type is not None:
@@ -505,6 +506,35 @@ class Dispatcher(metaclass=DispatcherMeta):
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
+
+    async def _handle__close_shared_memory_resources_request(self, req):
+        """
+        Frees any memory maps that were produced as output for a given
+        invocation.
+        This is called after the functions host is done reading the output from
+        the worker and wants the worker to free up those resources.
+        """
+        close_request = req.close_shared_memory_resources_request
+        map_names = close_request.map_names
+        # Assign default value of False to all result values.
+        # If we are successfully able to close a memory map, its result will be
+        # set to True.
+        results = {mem_map_name: False for mem_map_name in map_names}
+
+        try:
+            for mem_map_name in map_names:
+                try:
+                    success = self._shmem_mgr.free_mem_map(mem_map_name)
+                    results[mem_map_name] = success
+                except Exception as e:
+                    logger.error(f'Cannot free memory map {mem_map_name} - {e}',
+                                 exc_info=True)
+        finally:
+            response = protos.CloseSharedMemoryResourcesResponse(
+                close_map_results=results)
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                close_shared_memory_resources_response=response)
 
     @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):

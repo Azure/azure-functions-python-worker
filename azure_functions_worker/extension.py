@@ -10,81 +10,33 @@ import functools
 from .utils.common import is_python_version
 from .utils.wrappers import enable_feature_by
 from .constants import (
-    SYSTEM_LOG_PREFIX,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
     PYTHON_ENABLE_WORKER_EXTENSIONS,
     PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT,
-    PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39,
-    FUNC_EXT_POST_FUNCTION_LOAD,
-    FUNC_EXT_PRE_INVOCATION,
-    FUNC_EXT_POST_INVOCATION,
-    APP_EXT_POST_FUNCTION_LOAD,
-    APP_EXT_PRE_INVOCATION,
-    APP_EXT_POST_INVOCATION
+    PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39
 )
-from .logging import logger
+from .logging import logger, SYSTEM_LOG_PREFIX
+
+
+# Extension Hooks
+FUNC_EXT_POST_FUNCTION_LOAD = "post_function_load"
+FUNC_EXT_PRE_INVOCATION = "pre_invocation"
+FUNC_EXT_POST_INVOCATION = "post_invocation"
+APP_EXT_POST_FUNCTION_LOAD = "post_function_load_app_level"
+APP_EXT_PRE_INVOCATION = "pre_invocation_app_level"
+APP_EXT_POST_INVOCATION = "post_invocation_app_level"
 
 
 class ExtensionManager:
     """This marks if the ExtensionManager has already proceeded a detection,
-    if so, the sdk will be cached in .extension_enabled_sdk
+    if so, the sdk will be cached in ._extension_enabled_sdk
     """
-    is_sdk_detected: bool = False
+    _is_sdk_detected: bool = False
 
     """This is a cache of azure.functions module that supports extension
     interfaces. If this is None, that mean the sdk does not support extension.
     """
-    extension_enabled_sdk: Optional[ModuleType] = None
-
-    @staticmethod
-    def get_sdk_from_sys_path() -> ModuleType:
-        """Get the azure.functions SDK from the latest sys.path defined.
-        This is to ensure the extension loaded from SDK is actually coming from
-        customer's site-packages.
-
-        Returns
-        -------
-        ModuleType
-            The azure.functions that is loaded from the first sys.path entry
-        """
-        if 'azure.functions' in sys.modules:
-            sys.modules.pop('azure.functions')
-
-        return importlib.import_module('azure.functions')
-
-    @staticmethod
-    def is_extension_enabled_in_sdk(module: ModuleType) -> bool:
-        """Check if the extension feature is enabled in particular
-        azure.functions package.
-
-        Parameters
-        ----------
-        module: ModuleType
-            The azure.functions SDK module
-
-        Returns
-        -------
-        bool
-            True on azure.functions SDK supports extension registration
-        """
-        return getattr(module, 'ExtensionMeta', None) is not None
-
-    @staticmethod
-    def get_sdk_version(module: ModuleType) -> str:
-        """Check the version of azure.functions sdk.
-
-        Parameters
-        ----------
-        module: ModuleType
-            The azure.functions SDK module
-
-        Returns
-        -------
-        str
-            The SDK version that our customer has installed.
-        """
-
-        return getattr(module, '__version__', 'undefined')
+    _extension_enabled_sdk: Optional[ModuleType] = None
 
     @classmethod
     @enable_feature_by(
@@ -116,13 +68,13 @@ class ExtensionManager:
 
         # Invoke function hooks
         funcs = sdk.ExtensionMeta.get_function_hooks(func_name)
-        cls.safe_execute_function_load_hooks(
+        cls._safe_execute_function_load_hooks(
             funcs, FUNC_EXT_POST_FUNCTION_LOAD, func_name, func_directory
         )
 
         # Invoke application hook
         apps = sdk.ExtensionMeta.get_application_hooks()
-        cls.safe_execute_function_load_hooks(
+        cls._safe_execute_function_load_hooks(
             apps, APP_EXT_POST_FUNCTION_LOAD, func_name, func_directory
         )
 
@@ -154,40 +106,15 @@ class ExtensionManager:
 
         # Invoke function hooks
         funcs = sdk.ExtensionMeta.get_function_hooks(ctx.function_name)
-        cls.safe_execute_invocation_hooks(
+        cls._safe_execute_invocation_hooks(
             funcs, hook_name, ctx, func_args, func_ret
         )
 
         # Invoke application hook
         apps = sdk.ExtensionMeta.get_application_hooks()
-        cls.safe_execute_invocation_hooks(
+        cls._safe_execute_invocation_hooks(
             apps, hook_name, ctx, func_args, func_ret
         )
-
-    @classmethod
-    def safe_execute_invocation_hooks(cls, hooks, hook_name, ctx, fargs, fret):
-        if hooks:
-            for hook_meta in getattr(hooks, hook_name, []):
-                # Register a system logger with prefix azure_functions_worker
-                ext_logger = logging.getLogger(
-                    f'{SYSTEM_LOG_PREFIX}.extension.{hook_meta.ext_name}'
-                )
-                try:
-                    if cls._is_pre_invocation_hook(hook_name):
-                        hook_meta.ext_impl(ext_logger, ctx, fargs)
-                    elif cls._is_post_invocation_hook(hook_name):
-                        hook_meta.ext_impl(ext_logger, ctx, fargs, fret)
-                except Exception as e:
-                    ext_logger.error(e, exc_info=True)
-
-    @classmethod
-    def safe_execute_function_load_hooks(cls, hooks, hook_name, fname, fdir):
-        if hooks:
-            for hook_meta in getattr(hooks, hook_name, []):
-                try:
-                    hook_meta.ext_impl(fname, fdir)
-                except Exception as e:
-                    logger.error(e, exc_info=True)
 
     @classmethod
     def raw_invocation_wrapper(cls, ctx, function, args) -> Any:
@@ -219,6 +146,56 @@ class ExtensionManager:
         cls.invocation_extension(ctx, APP_EXT_POST_INVOCATION, args, result)
         return result
 
+    @staticmethod
+    def _get_sdk_from_sys_path() -> ModuleType:
+        """Get the azure.functions SDK from the latest sys.path defined.
+        This is to ensure the extension loaded from SDK is actually coming from
+        customer's site-packages.
+
+        Returns
+        -------
+        ModuleType
+            The azure.functions that is loaded from the first sys.path entry
+        """
+        if 'azure.functions' in sys.modules:
+            sys.modules.pop('azure.functions')
+
+        return importlib.import_module('azure.functions')
+
+    @staticmethod
+    def _is_extension_enabled_in_sdk(module: ModuleType) -> bool:
+        """Check if the extension feature is enabled in particular
+        azure.functions package.
+
+        Parameters
+        ----------
+        module: ModuleType
+            The azure.functions SDK module
+
+        Returns
+        -------
+        bool
+            True on azure.functions SDK supports extension registration
+        """
+        return getattr(module, 'ExtensionMeta', None) is not None
+
+    @staticmethod
+    def _get_sdk_version(module: ModuleType) -> str:
+        """Check the version of azure.functions sdk.
+
+        Parameters
+        ----------
+        module: ModuleType
+            The azure.functions SDK module
+
+        Returns
+        -------
+        str
+            The SDK version that our customer has installed.
+        """
+
+        return getattr(module, '__version__', 'undefined')
+
     @classmethod
     def _is_pre_invocation_hook(cls, name) -> bool:
         return name in (FUNC_EXT_PRE_INVOCATION, APP_EXT_PRE_INVOCATION)
@@ -228,26 +205,51 @@ class ExtensionManager:
         return name in (FUNC_EXT_POST_INVOCATION, APP_EXT_POST_INVOCATION)
 
     @classmethod
-    def _try_get_sdk_with_extension_enabled(cls) -> Optional[ModuleType]:
-        if cls.is_sdk_detected:
-            return cls.extension_enabled_sdk
+    def _safe_execute_invocation_hooks(cls, hooks, hook_name, ctx, fargs, fret):
+        if hooks:
+            for hook_meta in getattr(hooks, hook_name, []):
+                # Register a system logger with prefix azure_functions_worker
+                ext_logger = logging.getLogger(
+                    f'{SYSTEM_LOG_PREFIX}.extension.{hook_meta.ext_name}'
+                )
+                try:
+                    if cls._is_pre_invocation_hook(hook_name):
+                        hook_meta.ext_impl(ext_logger, ctx, fargs)
+                    elif cls._is_post_invocation_hook(hook_name):
+                        hook_meta.ext_impl(ext_logger, ctx, fargs, fret)
+                except Exception as e:
+                    ext_logger.error(e, exc_info=True)
 
-        sdk = cls.get_sdk_from_sys_path()
-        if cls.is_extension_enabled_in_sdk(sdk):
+    @classmethod
+    def _safe_execute_function_load_hooks(cls, hooks, hook_name, fname, fdir):
+        if hooks:
+            for hook_meta in getattr(hooks, hook_name, []):
+                try:
+                    hook_meta.ext_impl(fname, fdir)
+                except Exception as e:
+                    logger.error(e, exc_info=True)
+
+    @classmethod
+    def _try_get_sdk_with_extension_enabled(cls) -> Optional[ModuleType]:
+        if cls._is_sdk_detected:
+            return cls._extension_enabled_sdk
+
+        sdk = cls._get_sdk_from_sys_path()
+        if cls._is_extension_enabled_in_sdk(sdk):
             cls._info_extension_is_enabled(sdk)
-            cls.extension_enabled_sdk = sdk
+            cls._extension_enabled_sdk = sdk
         else:
             cls._warn_sdk_not_support_extension(sdk)
-            cls.extension_enabled_sdk = None
+            cls._extension_enabled_sdk = None
 
-        cls.is_sdk_detected = True
-        return cls.extension_enabled_sdk
+        cls._is_sdk_detected = True
+        return cls._extension_enabled_sdk
 
     @classmethod
     def _info_extension_is_enabled(cls, sdk):
         logger.info(
             'Python Worker Extension is enabled in azure.functions '
-            f'({cls.get_sdk_version(sdk)}).'
+            f'({cls._get_sdk_version(sdk)}).'
         )
 
     @classmethod
@@ -261,7 +263,7 @@ class ExtensionManager:
     @classmethod
     def _warn_sdk_not_support_extension(cls, sdk):
         logger.warning(
-            f'The azure.functions ({cls.get_sdk_version(sdk)}) does not '
+            f'The azure.functions ({cls._get_sdk_version(sdk)}) does not '
             'support Python worker extensions. If you believe extensions '
             'are correctly installed, please set the '
             f'{PYTHON_ISOLATE_WORKER_DEPENDENCIES} and '

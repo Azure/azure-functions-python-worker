@@ -8,13 +8,13 @@ import unittest
 from unittest.mock import patch, Mock, call
 from importlib import import_module
 from azure_functions_worker._thirdparty import aio_compat
-from azure_functions_worker.extension import ExtensionManager
-from azure_functions_worker.constants import (
-    PYTHON_ENABLE_WORKER_EXTENSIONS,
+from azure_functions_worker.extension import (
+    ExtensionManager,
     APP_EXT_POST_FUNCTION_LOAD, FUNC_EXT_POST_FUNCTION_LOAD,
     APP_EXT_PRE_INVOCATION, FUNC_EXT_PRE_INVOCATION,
     APP_EXT_POST_INVOCATION, FUNC_EXT_POST_INVOCATION
 )
+from azure_functions_worker.constants import PYTHON_ENABLE_WORKER_EXTENSIONS
 
 
 class MockContext:
@@ -28,8 +28,8 @@ class TestExtension(unittest.TestCase):
     def setUp(self):
         # Initialize Extension Manager Instance
         self._instance = ExtensionManager
-        self._instance.is_sdk_detected = False
-        self._instance.extension_enabled_sdk = None
+        self._instance._is_sdk_detected = False
+        self._instance._extension_enabled_sdk = None
 
         # Initialize Azure Functions SDK and clear cache
         self._sdk = import_module('azure.functions')
@@ -72,7 +72,7 @@ class TestExtension(unittest.TestCase):
     def test_extension_get_sdk_from_sys_path(self):
         """Test if the extension manager can find azure.functions module
         """
-        module = self._instance.get_sdk_from_sys_path()
+        module = self._instance._get_sdk_from_sys_path()
         self.assertIsNotNone(module.__file__)
 
     def test_extension_get_sdk_from_sys_path_after_updating_sys_path(self):
@@ -81,7 +81,7 @@ class TestExtension(unittest.TestCase):
         after the dependency manager is switched to customer's path
         """
         sys.path.insert(0, self._dummy_sdk_sys_path)
-        module = self._instance.get_sdk_from_sys_path()
+        module = self._instance._get_sdk_from_sys_path()
         self.assertEqual(
             os.path.dirname(module.__file__),
             os.path.join(self._dummy_sdk_sys_path, 'azure', 'functions')
@@ -91,8 +91,8 @@ class TestExtension(unittest.TestCase):
         """Test if extension interface supports check as expected on
         new version of azure.functions SDK
         """
-        module = self._instance.get_sdk_from_sys_path()
-        sdk_enabled = self._instance.is_extension_enabled_in_sdk(module)
+        module = self._instance._get_sdk_from_sys_path()
+        sdk_enabled = self._instance._is_extension_enabled_in_sdk(module)
         self.assertTrue(sdk_enabled)
 
     def test_extension_is_not_supported_by_mock_sdk(self):
@@ -100,15 +100,15 @@ class TestExtension(unittest.TestCase):
         support extension management.
         """
         sys.path.insert(0, self._dummy_sdk_sys_path)
-        module = self._instance.get_sdk_from_sys_path()
-        sdk_enabled = self._instance.is_extension_enabled_in_sdk(module)
+        module = self._instance._get_sdk_from_sys_path()
+        sdk_enabled = self._instance._is_extension_enabled_in_sdk(module)
         self.assertFalse(sdk_enabled)
 
-    def test_get_sdk_version(self):
+    def test__get_sdk_version(self):
         """Test if sdk version can be retrieved correctly
         """
-        module = self._instance.get_sdk_from_sys_path()
-        sdk_version = self._instance.get_sdk_version(module)
+        module = self._instance._get_sdk_from_sys_path()
+        sdk_version = self._instance._get_sdk_version(module)
         # e.g. 1.6.0, 1.7.0b, 1.8.1dev
         self.assertRegex(sdk_version, r'\d+\.\d+\.\w+')
 
@@ -116,12 +116,12 @@ class TestExtension(unittest.TestCase):
         """Test if sdk version can get dummy sdk version
         """
         sys.path.insert(0, self._dummy_sdk_sys_path)
-        module = self._instance.get_sdk_from_sys_path()
-        sdk_version = self._instance.get_sdk_version(module)
+        module = self._instance._get_sdk_from_sys_path()
+        sdk_version = self._instance._get_sdk_version(module)
         self.assertEqual(sdk_version, 'dummy')
 
-    @patch('azure_functions_worker.extension.'
-           'ExtensionManager.get_sdk_from_sys_path')
+    @patch('azure_functions_worker.extension.ExtensionManager.'
+           '_get_sdk_from_sys_path')
     def test_function_load_extension_enable_when_feature_flag_is_on(
         self,
         get_sdk_from_sys_path_mock: Mock
@@ -136,7 +136,7 @@ class TestExtension(unittest.TestCase):
         get_sdk_from_sys_path_mock.assert_called_once()
 
     @patch('azure_functions_worker.extension.ExtensionManager.'
-           'get_sdk_from_sys_path')
+           '_get_sdk_from_sys_path')
     def test_function_load_extension_disable_when_feature_flag_is_off(
         self,
         get_sdk_from_sys_path_mock: Mock
@@ -168,7 +168,7 @@ class TestExtension(unittest.TestCase):
         _warn_sdk_not_support_extension_mock.assert_called_once()
 
     @patch('azure_functions_worker.extension.ExtensionManager.'
-           'safe_execute_function_load_hooks')
+           '_safe_execute_function_load_hooks')
     def test_function_load_extension_should_invoke_extension_call(
         self,
         safe_execute_function_load_hooks_mock: Mock
@@ -194,8 +194,8 @@ class TestExtension(unittest.TestCase):
             any_order=True
         )
 
-    @patch('azure_functions_worker.extension.'
-           'ExtensionManager.get_sdk_from_sys_path')
+    @patch('azure_functions_worker.extension.ExtensionManager.'
+           '_get_sdk_from_sys_path')
     def test_invocation_extension_enable_when_feature_flag_is_on(
         self,
         get_sdk_from_sys_path_mock: Mock
@@ -212,7 +212,7 @@ class TestExtension(unittest.TestCase):
         get_sdk_from_sys_path_mock.assert_called_once()
 
     @patch('azure_functions_worker.extension.ExtensionManager.'
-           'get_sdk_from_sys_path')
+           '_get_sdk_from_sys_path')
     def test_invocation_extension_extension_disable_when_feature_flag_is_off(
         self,
         get_sdk_from_sys_path_mock: Mock
@@ -248,7 +248,7 @@ class TestExtension(unittest.TestCase):
         _warn_sdk_not_support_extension_mock.assert_called_once()
 
     @patch('azure_functions_worker.extension.ExtensionManager.'
-           'safe_execute_invocation_hooks')
+           '_safe_execute_invocation_hooks')
     def test_invocation_extension_should_invoke_extension_call(
         self,
         safe_execute_invocation_hooks_mock: Mock
@@ -288,7 +288,7 @@ class TestExtension(unittest.TestCase):
         """
         for hook_name in (APP_EXT_PRE_INVOCATION, FUNC_EXT_PRE_INVOCATION,
                           APP_EXT_POST_INVOCATION, FUNC_EXT_POST_INVOCATION):
-            self._instance.safe_execute_invocation_hooks(
+            self._instance._safe_execute_invocation_hooks(
                 hooks=[],
                 hook_name=hook_name,
                 ctx=self._mock_context,
@@ -312,7 +312,7 @@ class TestExtension(unittest.TestCase):
             self._sdk.ExtensionMeta.get_function_hooks(self._mock_func_name)
         )
         for hook_name in (FUNC_EXT_PRE_INVOCATION, FUNC_EXT_POST_INVOCATION):
-            self._instance.safe_execute_invocation_hooks(
+            self._instance._safe_execute_invocation_hooks(
                 hooks=hook_instances,
                 hook_name=hook_name,
                 ctx=self._mock_context,
@@ -336,7 +336,7 @@ class TestExtension(unittest.TestCase):
             self._sdk.ExtensionMeta.get_function_hooks(self._mock_func_name)
         )
         for hook_name in (FUNC_EXT_POST_FUNCTION_LOAD,):
-            self._instance.safe_execute_function_load_hooks(
+            self._instance._safe_execute_function_load_hooks(
                 hooks=hook_instances,
                 hook_name=hook_name,
                 fname=self._mock_func_name,
@@ -358,7 +358,7 @@ class TestExtension(unittest.TestCase):
             self._sdk.ExtensionMeta.get_application_hooks()
         )
         for hook_name in (APP_EXT_PRE_INVOCATION, APP_EXT_POST_INVOCATION):
-            self._instance.safe_execute_invocation_hooks(
+            self._instance._safe_execute_invocation_hooks(
                 hooks=hook_instances,
                 hook_name=hook_name,
                 ctx=self._mock_context,
@@ -380,7 +380,7 @@ class TestExtension(unittest.TestCase):
             self._sdk.ExtensionMeta.get_application_hooks()
         )
         for hook_name in (APP_EXT_POST_FUNCTION_LOAD,):
-            self._instance.safe_execute_function_load_hooks(
+            self._instance._safe_execute_function_load_hooks(
                 hooks=hook_instances,
                 hook_name=hook_name,
                 fname=self._mock_func_name,
@@ -459,7 +459,7 @@ class TestExtension(unittest.TestCase):
 
         # Execute function with a broken extension
         hooks = self._sdk.ExtensionMeta.get_application_hooks()
-        self._instance.safe_execute_function_load_hooks(
+        self._instance._safe_execute_function_load_hooks(
             hooks=hooks,
             hook_name=APP_EXT_POST_FUNCTION_LOAD,
             fname=self._mock_func_name,
@@ -724,7 +724,7 @@ class TestExtension(unittest.TestCase):
     @patch('azure_functions_worker.extension.logger.info')
     def test_info_extension_is_enabled(self, info_mock: Mock):
         # Get SDK from sys.path
-        sdk = self._instance.get_sdk_from_sys_path()
+        sdk = self._instance._get_sdk_from_sys_path()
 
         # Check logs
         self._instance._info_extension_is_enabled(sdk)
@@ -736,7 +736,7 @@ class TestExtension(unittest.TestCase):
     @patch('azure_functions_worker.extension.logger.info')
     def test_info_discover_extension_list_func_ext(self, info_mock: Mock):
         # Get SDK from sys.path
-        sdk = self._instance.get_sdk_from_sys_path()
+        sdk = self._instance._get_sdk_from_sys_path()
 
         # Register a function extension class
         FuncExtClass = self._generate_new_func_extension_class(
@@ -758,7 +758,7 @@ class TestExtension(unittest.TestCase):
     @patch('azure_functions_worker.extension.logger.info')
     def test_info_discover_extension_list_app_ext(self, info_mock: Mock):
         # Get SDK from sys.path
-        sdk = self._instance.get_sdk_from_sys_path()
+        sdk = self._instance._get_sdk_from_sys_path()
 
         # Register a function extension class
         self._generate_new_app_extension(sdk.AppExtensionBase)
@@ -775,7 +775,7 @@ class TestExtension(unittest.TestCase):
     def test_warn_sdk_not_support_extension(self, warning_mock: Mock):
         # Get SDK from dummy
         sys.path.insert(0, self._dummy_sdk_sys_path)
-        sdk = self._instance.get_sdk_from_sys_path()
+        sdk = self._instance._get_sdk_from_sys_path()
 
         # Check logs
         self._instance._warn_sdk_not_support_extension(sdk)

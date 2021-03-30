@@ -24,12 +24,13 @@ from . import constants
 from . import functions
 from . import loader
 from . import protos
-from .constants import (CONSOLE_LOG_PREFIX, PYTHON_THREADPOOL_THREAD_COUNT,
+from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 from .logging import disable_console_logging, enable_console_logging
-from .logging import error_logger, is_system_log_category, logger
+from .logging import (logger, error_logger, is_system_log_category,
+                      CONSOLE_LOG_PREFIX)
 from .extension import ExtensionManager
 from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace

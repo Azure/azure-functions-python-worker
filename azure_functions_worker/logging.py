@@ -6,7 +6,9 @@ import logging
 import logging.handlers
 import sys
 
-from .constants import CONSOLE_LOG_PREFIX, SYSTEM_LOG_PREFIX
+# Logging Prefixes
+CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
+SYSTEM_LOG_PREFIX = "azure_functions_worker"
 
 
 logger: logging.Logger = logging.getLogger('azure_functions_worker')

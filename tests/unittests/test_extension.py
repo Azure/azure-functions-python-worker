@@ -404,7 +404,7 @@ class TestExtension(unittest.TestCase):
         func_ext_instance = FuncExtClass()
 
         # Invoke with wrapper
-        self._instance.raw_invocation_wrapper(
+        self._instance._raw_invocation_wrapper(
             self._mock_context, self._mock_function_main, self._mock_arguments
         )
 

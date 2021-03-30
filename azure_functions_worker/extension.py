@@ -117,23 +117,11 @@ class ExtensionManager:
         )
 
     @classmethod
-    def raw_invocation_wrapper(cls, ctx, function, args) -> Any:
-        """Calls pre_invocation and post_invocation extensions additional
-        to function invocation
-        """
-        cls.invocation_extension(ctx, APP_EXT_PRE_INVOCATION, args)
-        cls.invocation_extension(ctx, FUNC_EXT_PRE_INVOCATION, args)
-        result = function(**args)
-        cls.invocation_extension(ctx, FUNC_EXT_POST_INVOCATION, args, result)
-        cls.invocation_extension(ctx, APP_EXT_POST_INVOCATION, args, result)
-        return result
-
-    @classmethod
     def get_invocation_wrapper(cls, ctx, function) -> Callable[[List], Any]:
         """Get a synchronous lambda of extension wrapped function which takes
         function parameters
         """
-        return functools.partial(cls.raw_invocation_wrapper, ctx, function)
+        return functools.partial(cls._raw_invocation_wrapper, ctx, function)
 
     @classmethod
     async def get_invocation_wrapper_async(cls, ctx, function, args) -> Any:
@@ -228,6 +216,18 @@ class ExtensionManager:
                     hook_meta.ext_impl(fname, fdir)
                 except Exception as e:
                     logger.error(e, exc_info=True)
+
+    @classmethod
+    def _raw_invocation_wrapper(cls, ctx, function, args) -> Any:
+        """Calls pre_invocation and post_invocation extensions additional
+        to function invocation
+        """
+        cls.invocation_extension(ctx, APP_EXT_PRE_INVOCATION, args)
+        cls.invocation_extension(ctx, FUNC_EXT_PRE_INVOCATION, args)
+        result = function(**args)
+        cls.invocation_extension(ctx, FUNC_EXT_POST_INVOCATION, args, result)
+        cls.invocation_extension(ctx, APP_EXT_POST_INVOCATION, args, result)
+        return result
 
     @classmethod
     def _try_get_sdk_with_extension_enabled(cls) -> Optional[ModuleType]:

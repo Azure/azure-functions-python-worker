@@ -488,7 +488,7 @@ class TestExtension(unittest.TestCase):
                 raise expt
 
         # Create a mocked customer_function
-        wrapped = self._instance.get_invocation_wrapper(
+        wrapped = self._instance.get_sync_invocation_wrapper(
             self._mock_context,
             self._mock_function_main
         )
@@ -510,12 +510,12 @@ class TestExtension(unittest.TestCase):
         # Ensure the error is reported
         ext_logger_error_mock.assert_called_with(expt, exc_info=True)
 
-    def test_get_invocation_wrapper_no_extension(self):
+    def test_get_sync_invocation_wrapper_no_extension(self):
         """The wrapper is using functools.partial() to expose the arguments
         for synchronous execution in dispatcher.
         """
         # Create a mocked customer_function
-        wrapped = self._instance.get_invocation_wrapper(
+        wrapped = self._instance.get_sync_invocation_wrapper(
             self._mock_context,
             self._mock_function_main
         )
@@ -526,7 +526,7 @@ class TestExtension(unittest.TestCase):
         # Ensure the return value matches the function method
         self.assertEqual(result, 'request_ok')
 
-    def test_get_invocation_wrapper_with_func_extension(self):
+    def test_get_sync_invocation_wrapper_with_func_extension(self):
         """The wrapper is using functools.partial() to expose the arguments.
         Ensure the func extension can be executed along with customer's funcs.
         """
@@ -538,7 +538,7 @@ class TestExtension(unittest.TestCase):
         _func_ext_instance = FuncExtClass()
 
         # Create a mocked customer_function
-        wrapped = self._instance.get_invocation_wrapper(
+        wrapped = self._instance.get_sync_invocation_wrapper(
             self._mock_context,
             self._mock_function_main
         )
@@ -552,7 +552,7 @@ class TestExtension(unittest.TestCase):
         # Ensure the customer's function is executed
         self.assertEqual(result, 'request_ok')
 
-    def test_get_invocation_wrapper_disabled_with_flag(self):
+    def test_get_sync_invocation_wrapper_disabled_with_flag(self):
         """The wrapper should still exist, customer's functions should still
         be executed, but not the extension
         """
@@ -567,7 +567,7 @@ class TestExtension(unittest.TestCase):
         _func_ext_instance = FuncExtClass()
 
         # Create a mocked customer_function
-        wrapped = self._instance.get_invocation_wrapper(
+        wrapped = self._instance.get_sync_invocation_wrapper(
             self._mock_context,
             self._mock_function_main
         )
@@ -581,14 +581,14 @@ class TestExtension(unittest.TestCase):
         # Ensure the customer's function is executed
         self.assertEqual(result, 'request_ok')
 
-    def test_get_invocation_wrapper_async_no_extension(self):
+    def test_get_async_invocation_wrapper_no_extension(self):
         """The async wrapper will wrap an asynchronous function with a
         coroutine interface. When there is no extension, it should only invoke
         the customer's function.
         """
         # Create a mocked customer_function with async wrapper
         result = aio_compat.run(
-            self._instance.get_invocation_wrapper_async(
+            self._instance.get_async_invocation_wrapper(
                 self._mock_context,
                 self._mock_function_main_async,
                 self._mock_arguments
@@ -598,7 +598,7 @@ class TestExtension(unittest.TestCase):
         # Ensure the return value matches the function method
         self.assertEqual(result, 'request_ok')
 
-    def test_get_invocation_wrapper_async_with_func_extension(self):
+    def test_get_async_invocation_wrapper_with_func_extension(self):
         """The async wrapper will wrap an asynchronous function with a
         coroutine interface. When there is registered extension, it should
         execute the extension as well.
@@ -612,7 +612,7 @@ class TestExtension(unittest.TestCase):
 
         # Create a mocked customer_function with async wrapper
         result = aio_compat.run(
-            self._instance.get_invocation_wrapper_async(
+            self._instance.get_async_invocation_wrapper(
                 self._mock_context,
                 self._mock_function_main_async,
                 self._mock_arguments
@@ -641,7 +641,7 @@ class TestExtension(unittest.TestCase):
 
         # Create a mocked customer_function with async wrapper
         result = aio_compat.run(
-            self._instance.get_invocation_wrapper_async(
+            self._instance.get_async_invocation_wrapper(
                 self._mock_context,
                 self._mock_function_main_async,
                 self._mock_arguments

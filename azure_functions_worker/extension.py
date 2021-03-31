@@ -117,14 +117,14 @@ class ExtensionManager:
         )
 
     @classmethod
-    def get_invocation_wrapper(cls, ctx, function) -> Callable[[List], Any]:
+    def get_sync_invocation_wrapper(cls, ctx, func) -> Callable[[List], Any]:
         """Get a synchronous lambda of extension wrapped function which takes
         function parameters
         """
-        return functools.partial(cls._raw_invocation_wrapper, ctx, function)
+        return functools.partial(cls._raw_invocation_wrapper, ctx, func)
 
     @classmethod
-    async def get_invocation_wrapper_async(cls, ctx, function, args) -> Any:
+    async def get_async_invocation_wrapper(cls, ctx, function, args) -> Any:
         """An asynchronous coroutine for executing function with extensions
         """
         cls.invocation_extension(ctx, APP_EXT_PRE_INVOCATION, args)

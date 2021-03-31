@@ -392,13 +392,13 @@ class Dispatcher(metaclass=DispatcherMeta):
                     args[name] = bindings.Out()
 
             if fi.is_async:
-                call_result = await self.__run_async_func(
+                call_result = await self._run_async_func(
                     fi_context, fi.func, args
                 )
             else:
                 call_result = await self._loop.run_in_executor(
                     self._sync_call_tp,
-                    self.__run_sync_func,
+                    self._run_sync_func,
                     invocation_id, fi_context, fi.func, args)
             if call_result is not None and not fi.has_return:
                 raise RuntimeError(f'function {fi.name!r} without a $return '
@@ -595,18 +595,18 @@ class Dispatcher(metaclass=DispatcherMeta):
             max_workers=max_worker
         )
 
-    def __run_sync_func(self, invocation_id, context, func, params):
+    def _run_sync_func(self, invocation_id, context, func, params):
         # This helper exists because we need to access the current
         # invocation_id from ThreadPoolExecutor's threads.
         _invocation_id_local.v = invocation_id
         try:
-            return ExtensionManager.get_invocation_wrapper(context,
-                                                           func)(params)
+            return ExtensionManager.get_sync_invocation_wrapper(context,
+                                                                func)(params)
         finally:
             _invocation_id_local.v = None
 
-    async def __run_async_func(self, context, func, params):
-        return await ExtensionManager.get_invocation_wrapper_async(
+    async def _run_async_func(self, context, func, params):
+        return await ExtensionManager.get_async_invocation_wrapper(
             context, func, params
         )
 

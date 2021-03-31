@@ -28,15 +28,15 @@ APP_EXT_POST_INVOCATION = "post_invocation_app_level"
 
 
 class ExtensionManager:
+    _is_sdk_detected: bool = False
     """This marks if the ExtensionManager has already proceeded a detection,
     if so, the sdk will be cached in ._extension_enabled_sdk
     """
-    _is_sdk_detected: bool = False
 
+    _extension_enabled_sdk: Optional[ModuleType] = None
     """This is a cache of azure.functions module that supports extension
     interfaces. If this is None, that mean the sdk does not support extension.
     """
-    _extension_enabled_sdk: Optional[ModuleType] = None
 
     @classmethod
     @enable_feature_by(
@@ -63,17 +63,24 @@ class ExtensionManager:
         sdk = cls._try_get_sdk_with_extension_enabled()
         if sdk is None:
             return
-        else:
-            cls._info_discover_extension_list(func_name, sdk)
+
+        # Reports application & function extensions installed on customer's app
+        cls._info_discover_extension_list(func_name, sdk)
+
+        # Get function hooks from azure.functions.extension.ExtensionMeta
+        # The return type is FuncExtensionHooks
+        funcs = sdk.ExtensionMeta.get_function_hooks(func_name)
 
         # Invoke function hooks
-        funcs = sdk.ExtensionMeta.get_function_hooks(func_name)
         cls._safe_execute_function_load_hooks(
             funcs, FUNC_EXT_POST_FUNCTION_LOAD, func_name, func_directory
         )
 
-        # Invoke application hook
+        # Get application hooks from azure.functions.extension.ExtensionMeta
+        # The reutnr type is AppExtensionHooks
         apps = sdk.ExtensionMeta.get_application_hooks()
+
+        # Invoke application hook
         cls._safe_execute_function_load_hooks(
             apps, APP_EXT_POST_FUNCTION_LOAD, func_name, func_directory
         )
@@ -87,7 +94,7 @@ class ExtensionManager:
             PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT
         )
     )
-    def invocation_extension(cls, ctx, hook_name, func_args, func_ret=None):
+    def _invocation_extension(cls, ctx, hook_name, func_args, func_ret=None):
         """Helper to execute extensions. If one of the extension fails in the
         extension chain, the rest of them will continue, emitting an error log
         of an exception trace for failed extension.
@@ -104,14 +111,20 @@ class ExtensionManager:
         if sdk is None:
             return
 
-        # Invoke function hooks
+        # Get function hooks from azure.functions.extension.ExtensionMeta
+        # The return type is FuncExtensionHooks
         funcs = sdk.ExtensionMeta.get_function_hooks(ctx.function_name)
+
+        # Invoke function hooks
         cls._safe_execute_invocation_hooks(
             funcs, hook_name, ctx, func_args, func_ret
         )
 
-        # Invoke application hook
+        # Get application hooks from azure.functions.extension.ExtensionMeta
+        # The reutnr type is AppExtensionHooks
         apps = sdk.ExtensionMeta.get_application_hooks()
+
+        # Invoke application hook
         cls._safe_execute_invocation_hooks(
             apps, hook_name, ctx, func_args, func_ret
         )
@@ -127,11 +140,11 @@ class ExtensionManager:
     async def get_async_invocation_wrapper(cls, ctx, function, args) -> Any:
         """An asynchronous coroutine for executing function with extensions
         """
-        cls.invocation_extension(ctx, APP_EXT_PRE_INVOCATION, args)
-        cls.invocation_extension(ctx, FUNC_EXT_PRE_INVOCATION, args)
+        cls._invocation_extension(ctx, APP_EXT_PRE_INVOCATION, args)
+        cls._invocation_extension(ctx, FUNC_EXT_PRE_INVOCATION, args)
         result = await function(**args)
-        cls.invocation_extension(ctx, FUNC_EXT_POST_INVOCATION, args, result)
-        cls.invocation_extension(ctx, APP_EXT_POST_INVOCATION, args, result)
+        cls._invocation_extension(ctx, FUNC_EXT_POST_INVOCATION, args, result)
+        cls._invocation_extension(ctx, APP_EXT_POST_INVOCATION, args, result)
         return result
 
     @staticmethod
@@ -194,7 +207,10 @@ class ExtensionManager:
 
     @classmethod
     def _safe_execute_invocation_hooks(cls, hooks, hook_name, ctx, fargs, fret):
+        # hooks from azure.functions.ExtensionMeta.get_function_hooks() or
+        #            azure.functions.ExtensionMeta.get_application_hooks()
         if hooks:
+            # Invoke extension implementation from .<hook_name>.ext_impl
             for hook_meta in getattr(hooks, hook_name, []):
                 # Register a system logger with prefix azure_functions_worker
                 ext_logger = logging.getLogger(
@@ -210,7 +226,10 @@ class ExtensionManager:
 
     @classmethod
     def _safe_execute_function_load_hooks(cls, hooks, hook_name, fname, fdir):
+        # hooks from azure.functions.ExtensionMeta.get_function_hooks() or
+        #            azure.functions.ExtensionMeta.get_application_hooks()
         if hooks:
+            # Invoke extension implementation from .<hook_name>.ext_impl
             for hook_meta in getattr(hooks, hook_name, []):
                 try:
                     hook_meta.ext_impl(fname, fdir)
@@ -222,11 +241,11 @@ class ExtensionManager:
         """Calls pre_invocation and post_invocation extensions additional
         to function invocation
         """
-        cls.invocation_extension(ctx, APP_EXT_PRE_INVOCATION, args)
-        cls.invocation_extension(ctx, FUNC_EXT_PRE_INVOCATION, args)
+        cls._invocation_extension(ctx, APP_EXT_PRE_INVOCATION, args)
+        cls._invocation_extension(ctx, FUNC_EXT_PRE_INVOCATION, args)
         result = function(**args)
-        cls.invocation_extension(ctx, FUNC_EXT_POST_INVOCATION, args, result)
-        cls.invocation_extension(ctx, APP_EXT_POST_INVOCATION, args, result)
+        cls._invocation_extension(ctx, FUNC_EXT_POST_INVOCATION, args, result)
+        cls._invocation_extension(ctx, APP_EXT_POST_INVOCATION, args, result)
         return result
 
     @classmethod

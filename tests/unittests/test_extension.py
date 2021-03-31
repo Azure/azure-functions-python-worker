@@ -203,7 +203,7 @@ class TestExtension(unittest.TestCase):
         """When turning off the feature flag PYTHON_ENABLE_WORKER_EXTENSIONS,
         the pre_invocation and post_invocation extension should be disabled
         """
-        self._instance.invocation_extension(
+        self._instance._invocation_extension(
             ctx=self._mock_context,
             hook_name=FUNC_EXT_PRE_INVOCATION,
             func_args=[],
@@ -221,7 +221,7 @@ class TestExtension(unittest.TestCase):
         the pre_invocation and post_invocation extension should be disabled
         """
         os.environ[PYTHON_ENABLE_WORKER_EXTENSIONS] = 'false'
-        self._instance.invocation_extension(
+        self._instance._invocation_extension(
             ctx=self._mock_context,
             hook_name=FUNC_EXT_PRE_INVOCATION,
             func_args=[],
@@ -239,7 +239,7 @@ class TestExtension(unittest.TestCase):
         extension support and turning on the feature flag, we should warn them
         """
         sys.path.insert(0, self._dummy_sdk_sys_path)
-        self._instance.invocation_extension(
+        self._instance._invocation_extension(
             ctx=self._mock_context,
             hook_name=FUNC_EXT_PRE_INVOCATION,
             func_args=[],
@@ -257,7 +257,7 @@ class TestExtension(unittest.TestCase):
         """
         for hook_name in (APP_EXT_PRE_INVOCATION, FUNC_EXT_PRE_INVOCATION,
                           APP_EXT_POST_INVOCATION, FUNC_EXT_POST_INVOCATION):
-            self._instance.invocation_extension(
+            self._instance._invocation_extension(
                 ctx=self._mock_context,
                 hook_name=hook_name,
                 func_args=[],

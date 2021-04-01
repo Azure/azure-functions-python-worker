@@ -1,8 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 from typing import Optional, Callable
+from types import ModuleType
 import os
 import sys
+import importlib
 
 
 def is_true_like(setting: str) -> bool:
@@ -79,3 +81,36 @@ def get_app_setting(
     if validator(app_setting_value):
         return app_setting_value
     return default_value
+
+
+def get_sdk_version(module: ModuleType) -> str:
+    """Check the version of azure.functions sdk.
+
+    Parameters
+    ----------
+    module: ModuleType
+        The azure.functions SDK module
+
+    Returns
+    -------
+    str
+        The SDK version that our customer has installed.
+    """
+
+    return getattr(module, '__version__', 'undefined')
+
+
+def get_sdk_from_sys_path() -> ModuleType:
+    """Get the azure.functions SDK from the latest sys.path defined.
+    This is to ensure the extension loaded from SDK is actually coming from
+    customer's site-packages.
+
+    Returns
+    -------
+    ModuleType
+        The azure.functions that is loaded from the first sys.path entry
+    """
+    if 'azure.functions' in sys.modules:
+        sys.modules.pop('azure.functions')
+
+    return importlib.import_module('azure.functions')

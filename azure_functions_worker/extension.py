@@ -3,11 +3,13 @@
 
 from types import ModuleType
 from typing import Any, Callable, List, Optional
-import sys
-import importlib
 import logging
 import functools
-from .utils.common import is_python_version
+from .utils.common import (
+    is_python_version,
+    get_sdk_from_sys_path,
+    get_sdk_version
+)
 from .utils.wrappers import enable_feature_by
 from .constants import (
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
@@ -148,22 +150,6 @@ class ExtensionManager:
         return result
 
     @staticmethod
-    def _get_sdk_from_sys_path() -> ModuleType:
-        """Get the azure.functions SDK from the latest sys.path defined.
-        This is to ensure the extension loaded from SDK is actually coming from
-        customer's site-packages.
-
-        Returns
-        -------
-        ModuleType
-            The azure.functions that is loaded from the first sys.path entry
-        """
-        if 'azure.functions' in sys.modules:
-            sys.modules.pop('azure.functions')
-
-        return importlib.import_module('azure.functions')
-
-    @staticmethod
     def _is_extension_enabled_in_sdk(module: ModuleType) -> bool:
         """Check if the extension feature is enabled in particular
         azure.functions package.
@@ -179,23 +165,6 @@ class ExtensionManager:
             True on azure.functions SDK supports extension registration
         """
         return getattr(module, 'ExtensionMeta', None) is not None
-
-    @staticmethod
-    def _get_sdk_version(module: ModuleType) -> str:
-        """Check the version of azure.functions sdk.
-
-        Parameters
-        ----------
-        module: ModuleType
-            The azure.functions SDK module
-
-        Returns
-        -------
-        str
-            The SDK version that our customer has installed.
-        """
-
-        return getattr(module, '__version__', 'undefined')
 
     @classmethod
     def _is_pre_invocation_hook(cls, name) -> bool:
@@ -253,7 +222,7 @@ class ExtensionManager:
         if cls._is_sdk_detected:
             return cls._extension_enabled_sdk
 
-        sdk = cls._get_sdk_from_sys_path()
+        sdk = get_sdk_from_sys_path()
         if cls._is_extension_enabled_in_sdk(sdk):
             cls._info_extension_is_enabled(sdk)
             cls._extension_enabled_sdk = sdk
@@ -268,7 +237,7 @@ class ExtensionManager:
     def _info_extension_is_enabled(cls, sdk):
         logger.info(
             'Python Worker Extension is enabled in azure.functions '
-            f'({cls._get_sdk_version(sdk)}).'
+            f'({get_sdk_version(sdk)}).'
         )
 
     @classmethod
@@ -282,16 +251,9 @@ class ExtensionManager:
     @classmethod
     def _warn_sdk_not_support_extension(cls, sdk):
         logger.warning(
-            f'The azure.functions ({cls._get_sdk_version(sdk)}) does not '
+            f'The azure.functions ({get_sdk_version(sdk)}) does not '
             'support Python worker extensions. If you believe extensions '
             'are correctly installed, please set the '
             f'{PYTHON_ISOLATE_WORKER_DEPENDENCIES} and '
             f'{PYTHON_ENABLE_WORKER_EXTENSIONS} to "true"'
-        )
-
-    @classmethod
-    def _warn_context_has_no_function_name(cls):
-        logger.warning(
-            'Extension manager fails to execute invocation life-cycles. '
-            'Property .function_name is not found in context'
         )

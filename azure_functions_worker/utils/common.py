@@ -102,15 +102,27 @@ def get_sdk_version(module: ModuleType) -> str:
 
 def get_sdk_from_sys_path() -> ModuleType:
     """Get the azure.functions SDK from the latest sys.path defined.
-    This is to ensure the extension loaded from SDK is actually coming from
-    customer's site-packages.
+    This is to ensure the extension loaded from SDK coming from customer's
+    site-packages.
 
     Returns
     -------
     ModuleType
         The azure.functions that is loaded from the first sys.path entry
     """
-    if 'azure.functions' in sys.modules:
-        sys.modules.pop('azure.functions')
+    backup_azure_functions = None
+    backup_azure = None
 
-    return importlib.import_module('azure.functions')
+    if 'azure.functions' in sys.modules:
+        backup_azure_functions = sys.modules.pop('azure.functions')
+    if 'azure' in sys.modules:
+        backup_azure = sys.modules.pop('azure')
+
+    module = importlib.import_module('azure.functions')
+
+    if backup_azure:
+        sys.modules['azure'] = backup_azure
+    if backup_azure_functions:
+        sys.modules['azure.functions'] = backup_azure_functions
+
+    return module

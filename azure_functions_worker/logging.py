@@ -6,7 +6,9 @@ import logging
 import logging.handlers
 import sys
 
-from .constants import CONSOLE_LOG_PREFIX
+# Logging Prefixes
+CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
+SYSTEM_LOG_PREFIX = "azure_functions_worker"
 
 
 logger: logging.Logger = logging.getLogger('azure_functions_worker')
@@ -76,4 +78,4 @@ def enable_console_logging() -> None:
 def is_system_log_category(ctg: str) -> bool:
     # Category starts with 'azure_functions_worker' or
     # 'azure_functions_worker_errors' will be treated as system logs
-    return ctg.lower().startswith('azure_functions_worker')
+    return ctg.lower().startswith(SYSTEM_LOG_PREFIX)

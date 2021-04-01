@@ -16,6 +16,8 @@ from distutils.command import build
 from setuptools import setup
 from setuptools.command import develop
 
+from azure_functions_worker import __version__
+
 # The GitHub repository of the Azure Functions Host
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
 WEBHOST_TAG_PREFIX = "v3."
@@ -354,7 +356,7 @@ with open("README.md") as readme:
 
 setup(
     name='azure-functions-worker',
-    version='1.1.10',
+    version=__version__,
     description='Python Language Worker for Azure Functions Host',
     author="Microsoft Corp.",
     author_email="azurefunctions@microsoft.com",

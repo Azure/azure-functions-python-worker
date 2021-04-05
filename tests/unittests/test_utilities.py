@@ -1,7 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+import sys
 import unittest
+from unittest.mock import patch
 import typing
 
 from azure_functions_worker.utils import common, wrappers
@@ -19,9 +21,21 @@ class MockFeature:
         output.append(result)
         return result
 
+    @wrappers.enable_feature_by(TEST_FEATURE_FLAG, flag_default=True)
+    def mock_enabled_default_true(self, output: typing.List[str]) -> str:
+        result = 'mock_enabled_default_true'
+        output.append(result)
+        return result
+
     @wrappers.disable_feature_by(TEST_FEATURE_FLAG)
     def mock_feature_disabled(self, output: typing.List[str]) -> str:
         result = 'mock_feature_disabled'
+        output.append(result)
+        return result
+
+    @wrappers.disable_feature_by(TEST_FEATURE_FLAG, flag_default=True)
+    def mock_disabled_default_true(self, output: typing.List[str]) -> str:
+        result = 'mock_disabled_default_true'
         output.append(result)
         return result
 
@@ -56,8 +70,22 @@ class TestUtilities(unittest.TestCase):
 
     def setUp(self):
         self._pre_env = dict(os.environ)
+        self._dummy_sdk_sys_path = os.path.join(
+            os.path.dirname(__file__),
+            'resources',
+            'mock_azure_functions'
+        )
+
+        self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
+        self.mock_sys_path = patch('sys.path', sys.path.copy())
+
+        self.mock_sys_module.start()
+        self.mock_sys_path.start()
 
     def tearDown(self):
+        self.mock_sys_path.stop()
+        self.mock_sys_module.stop()
+
         os.environ.clear()
         os.environ.update(self._pre_env)
 
@@ -73,6 +101,18 @@ class TestUtilities(unittest.TestCase):
         self.assertFalse(common.is_true_like(''))
         self.assertFalse(common.is_true_like('secret'))
 
+    def test_is_false_like_accepted(self):
+        self.assertTrue(common.is_false_like('0'))
+        self.assertTrue(common.is_false_like('false'))
+        self.assertTrue(common.is_false_like('F'))
+        self.assertTrue(common.is_false_like('NO'))
+        self.assertTrue(common.is_false_like('n'))
+
+    def test_is_false_like_rejected(self):
+        self.assertFalse(common.is_false_like(None))
+        self.assertFalse(common.is_false_like(''))
+        self.assertFalse(common.is_false_like('secret'))
+
     def test_is_envvar_true(self):
         os.environ[TEST_FEATURE_FLAG] = 'true'
         self.assertTrue(common.is_envvar_true(TEST_FEATURE_FLAG))
@@ -81,10 +121,25 @@ class TestUtilities(unittest.TestCase):
         self._unset_feature_flag()
         self.assertFalse(common.is_envvar_true(TEST_FEATURE_FLAG))
 
+    def test_is_envvar_false(self):
+        os.environ[TEST_FEATURE_FLAG] = 'false'
+        self.assertTrue(common.is_envvar_false(TEST_FEATURE_FLAG))
+
+    def test_is_envvar_not_false_on_unset(self):
+        self._unset_feature_flag()
+        self.assertFalse(common.is_envvar_true(TEST_FEATURE_FLAG))
+
     def test_disable_feature_with_no_feature_flag(self):
         mock_feature = MockFeature()
         output = []
         result = mock_feature.mock_feature_enabled(output)
+        self.assertIsNone(result)
+        self.assertListEqual(output, [])
+
+    def test_disable_feature_with_default_value(self):
+        mock_feature = MockFeature()
+        output = []
+        result = mock_feature.mock_disabled_default_true(output)
         self.assertIsNone(result)
         self.assertListEqual(output, [])
 
@@ -97,12 +152,28 @@ class TestUtilities(unittest.TestCase):
         self.assertEqual(result, 'mock_feature_enabled')
         self.assertListEqual(output, ['mock_feature_enabled'])
 
+    def test_enable_feature_with_default_value(self):
+        mock_feature = MockFeature()
+        output = []
+        result = mock_feature.mock_enabled_default_true(output)
+        self.assertEqual(result, 'mock_enabled_default_true')
+        self.assertListEqual(output, ['mock_enabled_default_true'])
+
     def test_enable_feature_with_no_rollback_flag(self):
         mock_feature = MockFeature()
         output = []
         result = mock_feature.mock_feature_disabled(output)
         self.assertEqual(result, 'mock_feature_disabled')
         self.assertListEqual(output, ['mock_feature_disabled'])
+
+    def test_ignore_disable_default_value_when_set_explicitly(self):
+        feature_flag = TEST_FEATURE_FLAG
+        os.environ[feature_flag] = '0'
+        mock_feature = MockFeature()
+        output = []
+        result = mock_feature.mock_disabled_default_true(output)
+        self.assertEqual(result, 'mock_disabled_default_true')
+        self.assertListEqual(output, ['mock_disabled_default_true'])
 
     def test_disable_feature_with_rollback_flag(self):
         rollback_flag = TEST_FEATURE_FLAG
@@ -121,6 +192,15 @@ class TestUtilities(unittest.TestCase):
         result = mock_feature.mock_feature_disabled(output)
         self.assertEqual(result, 'mock_feature_disabled')
         self.assertListEqual(output, ['mock_feature_disabled'])
+
+    def test_ignore_enable_default_value_when_set_explicitly(self):
+        feature_flag = TEST_FEATURE_FLAG
+        os.environ[feature_flag] = '0'
+        mock_feature = MockFeature()
+        output = []
+        result = mock_feature.mock_enabled_default_true(output)
+        self.assertIsNone(result)
+        self.assertListEqual(output, [])
 
     def test_fail_to_enable_feature_return_default_value(self):
         mock_feature = MockFeature()
@@ -233,6 +313,54 @@ class TestUtilities(unittest.TestCase):
 
         # Because 'invalid' is not an interger, falls back to default value
         self.assertEqual(app_setting, '42')
+
+    def test_is_python_version(self):
+        # Should pass at least 1 test
+        is_python_version_36 = common.is_python_version('3.6')
+        is_python_version_37 = common.is_python_version('3.7')
+        is_python_version_38 = common.is_python_version('3.8')
+        is_python_version_39 = common.is_python_version('3.9')
+
+        self.assertTrue(any([
+            is_python_version_36,
+            is_python_version_37,
+            is_python_version_38,
+            is_python_version_39
+        ]))
+
+    def test_get_sdk_from_sys_path(self):
+        """Test if the extension manager can find azure.functions module
+        """
+        module = common.get_sdk_from_sys_path()
+        self.assertIsNotNone(module.__file__)
+
+    def test_get_sdk_from_sys_path_after_updating_sys_path(self):
+        """Test if the get_sdk_from_sys_path can find the newer azure.functions
+        module after updating the sys.path. This is specifically for a scenario
+        after the dependency manager is switched to customer's path
+        """
+        sys.path.insert(0, self._dummy_sdk_sys_path)
+        module = common.get_sdk_from_sys_path()
+        self.assertEqual(
+            os.path.dirname(module.__file__),
+            os.path.join(self._dummy_sdk_sys_path, 'azure', 'functions')
+        )
+
+    def test_get_sdk_version(self):
+        """Test if sdk version can be retrieved correctly
+        """
+        module = common.get_sdk_from_sys_path()
+        sdk_version = common.get_sdk_version(module)
+        # e.g. 1.6.0, 1.7.0b, 1.8.1dev
+        self.assertRegex(sdk_version, r'\d+\.\d+\.\w+')
+
+    def test_get_sdk_dummy_version(self):
+        """Test if sdk version can get dummy sdk version
+        """
+        sys.path.insert(0, self._dummy_sdk_sys_path)
+        module = common.get_sdk_from_sys_path()
+        sdk_version = common.get_sdk_version(module)
+        self.assertEqual(sdk_version, 'dummy')
 
     def _unset_feature_flag(self):
         try:

@@ -1,0 +1,23 @@
+{
+  "scriptFile": "main.py",
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req"
+    },
+    {
+      "type": "blob",
+      "direction": "out",
+      "name": "file",
+      "dataType": "string",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/shmem-test-str-out.txt"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "$return"
+    }
+  ]
+}

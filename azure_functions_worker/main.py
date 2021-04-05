@@ -5,11 +5,6 @@
 
 import argparse
 
-from . import dispatcher
-from . import logging
-from ._thirdparty import aio_compat
-from .logging import error_logger, logger
-
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -36,6 +31,14 @@ def parse_args():
 
 
 def main():
+    from .utils.dependency import DependencyManager
+    DependencyManager.initialize()
+    DependencyManager.use_worker_dependencies()
+
+    from . import logging
+    from ._thirdparty import aio_compat
+    from .logging import error_logger, logger
+
     args = parse_args()
     logging.setup(log_level=args.log_level, log_destination=args.log_to)
 
@@ -52,6 +55,8 @@ def main():
 
 
 async def start_async(host, port, worker_id, request_id):
+    from . import dispatcher
+
     disp = await dispatcher.Dispatcher.connect(host=host, port=port,
                                                worker_id=worker_id,
                                                request_id=request_id,

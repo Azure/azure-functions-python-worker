@@ -13,14 +13,14 @@ on:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string
     - cron: "0 8 * * 1,2,3,4"
-      
+
 jobs:
   build:
     name: "Python E2E CI Run"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: 
+      matrix:
         python-version: [ 3.6, 3.7, 3.8, 3.9 ]
 
     steps:
@@ -30,10 +30,10 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set up Dotnet 2.2.207
+      - name: Set up Dotnet 3.1.405
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '2.2.207'
+          dotnet-version: '3.1.405'
       - name: Install dependencies and the worker
         run: |
           python -m pip install --upgrade pip
@@ -41,6 +41,7 @@ jobs:
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
           python setup.py build
           python setup.py webhost
+          python setup.py extension
       - name: Running 3.6 Tests
         if: matrix.python-version == 3.6
         env:

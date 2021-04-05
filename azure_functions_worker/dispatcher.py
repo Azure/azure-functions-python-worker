@@ -7,8 +7,6 @@ Implements loading and execution of Python workers.
 
 import asyncio
 import concurrent.futures
-import importlib
-import inspect
 import logging
 import os
 import queue
@@ -16,24 +14,29 @@ import sys
 import threading
 from asyncio import BaseEventLoop
 from logging import LogRecord
-from typing import Optional, List
+from typing import List, Optional
 
 import grpc
 
+from . import __version__
 from . import bindings
 from . import constants
 from . import functions
 from . import loader
 from . import protos
-from .constants import (CONSOLE_LOG_PREFIX, PYTHON_THREADPOOL_THREAD_COUNT,
+from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 from .logging import disable_console_logging, enable_console_logging
-from .logging import error_logger, is_system_log_category, logger
+from .logging import (logger, error_logger, is_system_log_category,
+                      CONSOLE_LOG_PREFIX)
+from .extension import ExtensionManager
 from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
+from .utils.dependency import DependencyManager
 from .utils.wrappers import disable_feature_by
+from .bindings.shared_memory_data_transfer import SharedMemoryManager
 
 _TRUE = "true"
 
@@ -72,14 +75,17 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._request_id = request_id
         self._worker_id = worker_id
         self._functions = functions.Registry()
+        self._shmem_mgr = SharedMemoryManager()
 
         self._old_task_factory = None
 
-        # We allow the customer to change synchronous thread pool count by
-        # PYTHON_THREADPOOL_THREAD_COUNT app setting. The default value is 1.
-        self._sync_tp_max_workers: int = self._get_sync_tp_max_workers()
+        # We allow the customer to change synchronous thread pool max worker
+        # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
+        #   For 3.[6|7|8] The default value is 1.
+        #   For 3.9, we don't set this value by default but we honor incoming
+        #     the app setting.
         self._sync_call_tp: concurrent.futures.Executor = (
-            self._create_sync_call_tp(self._sync_tp_max_workers)
+            self._create_sync_call_tp(self._get_sync_tp_max_workers())
         )
 
         self._grpc_connect_timeout: float = grpc_connect_timeout
@@ -89,6 +95,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread: threading.Thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
+
+    def get_sync_tp_workers_set(self):
+        """We don't know the exact value of the threadcount set for the Python
+         3.9 scenarios (as we'll start passing only None by default), and we
+         need to get that information.
+
+         Ref: concurrent.futures.thread.ThreadPoolExecutor.__init__._max_workers
+        """
+        return self._sync_call_tp._max_workers
 
     @classmethod
     async def connect(cls, host: str, port: int, worker_id: str,
@@ -243,15 +258,21 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_resp_queue.put_nowait(resp)
 
     async def _handle__worker_init_request(self, req):
-        logger.info('Received WorkerInitRequest, request ID %s',
-                    self.request_id)
+        logger.info('Received WorkerInitRequest, '
+                    'python version %s, worker version %s, request ID %s',
+                    sys.version, __version__, self.request_id)
 
         capabilities = {
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
             constants.TYPED_DATA_COLLECTION: _TRUE,
             constants.RPC_HTTP_BODY_ONLY: _TRUE,
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
+            constants.WORKER_STATUS: _TRUE,
+            constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
+
+        # Can detech worker packages
+        DependencyManager.prioritize_customer_dependencies()
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -260,13 +281,23 @@ class Dispatcher(metaclass=DispatcherMeta):
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success)))
 
+    async def _handle__worker_status_request(self, req):
+        # Logging is not necessary in this request since the response is used
+        # for host to judge scale decisions of out-of-proc languages.
+        # Having log here will reduce the responsiveness of the worker.
+        return protos.StreamingMessage(
+            request_id=self.request_id,
+            worker_status_response=protos.WorkerStatusResponse())
+
     async def _handle__function_load_request(self, req):
         func_request = req.function_load_request
         function_id = func_request.function_id
+        function_name = func_request.metadata.name
 
         logger.info(f'Received FunctionLoadRequest, '
                     f'request ID: {self.request_id}, '
-                    f'function ID: {function_id}')
+                    f'function ID: {function_id}'
+                    f'function Name: {function_name}')
         try:
             func = loader.load_function(
                 func_request.metadata.name,
@@ -277,9 +308,15 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._functions.add_function(
                 function_id, func, func_request.metadata)
 
+            ExtensionManager.function_load_extension(
+                function_name,
+                func_request.metadata.directory
+            )
+
             logger.info('Successfully processed FunctionLoadRequest, '
                         f'request ID: {self.request_id}, '
-                        f'function ID: {function_id}')
+                        f'function ID: {function_id},'
+                        f'function Name: {function_name}')
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -320,12 +357,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                 'Received FunctionInvocationRequest',
                 f'request ID: {self.request_id}',
                 f'function ID: {function_id}',
+                f'function name: {fi.name}',
                 f'invocation ID: {invocation_id}',
                 f'function type: {"async" if fi.is_async else "sync"}'
             ]
             if not fi.is_async:
                 function_invocation_logs.append(
-                    f'sync threadpool max workers: {self._sync_tp_max_workers}'
+                    f'sync threadpool max workers: '
+                    f'{self.get_sync_tp_workers_set()}'
                 )
             logger.info(', '.join(function_invocation_logs))
 
@@ -336,25 +375,31 @@ class Dispatcher(metaclass=DispatcherMeta):
                     trigger_metadata = invoc_request.trigger_metadata
                 else:
                     trigger_metadata = None
-                args[pb.name] = bindings.from_incoming_proto(
-                    pb_type_info.binding_name, pb.data,
-                    trigger_metadata=trigger_metadata,
-                    pytype=pb_type_info.pytype)
 
+                args[pb.name] = bindings.from_incoming_proto(
+                    pb_type_info.binding_name, pb,
+                    trigger_metadata=trigger_metadata,
+                    pytype=pb_type_info.pytype,
+                    shmem_mgr=self._shmem_mgr)
+
+            fi_context = bindings.Context(
+                fi.name, fi.directory, invocation_id, trace_context)
             if fi.requires_context:
-                args['context'] = bindings.Context(
-                    fi.name, fi.directory, invocation_id, trace_context)
+                args['context'] = fi_context
 
             if fi.output_types:
                 for name in fi.output_types:
                     args[name] = bindings.Out()
 
             if fi.is_async:
-                call_result = await fi.func(**args)
+                call_result = await self._run_async_func(
+                    fi_context, fi.func, args
+                )
             else:
                 call_result = await self._loop.run_in_executor(
                     self._sync_call_tp,
-                    self.__run_sync_func, invocation_id, fi.func, args)
+                    self._run_sync_func,
+                    invocation_id, fi_context, fi.func, args)
             if call_result is not None and not fi.has_return:
                 raise RuntimeError(f'function {fi.name!r} without a $return '
                                    'binding returned a non-None value')
@@ -368,15 +413,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                         # Can "None" be marshaled into protos.TypedData?
                         continue
 
-                    rpc_val = bindings.to_outgoing_proto(
+                    param_binding = bindings.to_outgoing_param_binding(
                         out_type_info.binding_name, val,
-                        pytype=out_type_info.pytype)
-                    assert rpc_val is not None
-
-                    output_data.append(
-                        protos.ParameterBinding(
-                            name=out_name,
-                            data=rpc_val))
+                        pytype=out_type_info.pytype,
+                        out_name=out_name, shmem_mgr=self._shmem_mgr)
+                    output_data.append(param_binding)
 
             return_value = None
             if fi.return_type is not None:
@@ -434,31 +475,14 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             # Apply PYTHON_THREADPOOL_THREAD_COUNT
             self._stop_sync_call_tp()
-            self._sync_tp_max_workers = self._get_sync_tp_max_workers()
             self._sync_call_tp = (
-                self._create_sync_call_tp(self._sync_tp_max_workers)
+                self._create_sync_call_tp(self._get_sync_tp_max_workers())
             )
 
-            # Reload package namespaces for customer's libraries
-            packages_to_reload = ['azure', 'google']
-            for p in packages_to_reload:
-                try:
-                    logger.info(f'Reloading {p} module')
-                    importlib.reload(sys.modules[p])
-                except Exception as ex:
-                    logger.info('Unable to reload {}: \n{}'.format(p, ex))
-                logger.info(f'Reloaded {p} module')
-
-            # Reload azure.functions to give user package precedence
-            logger.info('Reloading azure.functions module at %s',
-                        inspect.getfile(sys.modules['azure.functions']))
-            try:
-                importlib.reload(sys.modules['azure.functions'])
-                logger.info('Reloaded azure.functions module now at %s',
-                            inspect.getfile(sys.modules['azure.functions']))
-            except Exception as ex:
-                logger.info('Unable to reload azure.functions. '
-                            'Using default. Exception:\n{}'.format(ex))
+            # Reload azure google namespaces
+            DependencyManager.reload_azure_google_namespace(
+                func_env_reload_request.function_app_directory
+            )
 
             # Change function app directory
             if getattr(func_env_reload_request,
@@ -484,6 +508,35 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
 
+    async def _handle__close_shared_memory_resources_request(self, req):
+        """
+        Frees any memory maps that were produced as output for a given
+        invocation.
+        This is called after the functions host is done reading the output from
+        the worker and wants the worker to free up those resources.
+        """
+        close_request = req.close_shared_memory_resources_request
+        map_names = close_request.map_names
+        # Assign default value of False to all result values.
+        # If we are successfully able to close a memory map, its result will be
+        # set to True.
+        results = {mem_map_name: False for mem_map_name in map_names}
+
+        try:
+            for mem_map_name in map_names:
+                try:
+                    success = self._shmem_mgr.free_mem_map(mem_map_name)
+                    results[mem_map_name] = success
+                except Exception as e:
+                    logger.error(f'Cannot free memory map {mem_map_name} - {e}',
+                                 exc_info=True)
+        finally:
+            response = protos.CloseSharedMemoryResourcesResponse(
+                close_map_results=results)
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                close_shared_memory_resources_response=response)
+
     @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):
         if os.path.exists(new_cwd):
@@ -501,7 +554,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._sync_call_tp.shutdown()
             self._sync_call_tp = None
 
-    def _get_sync_tp_max_workers(self) -> int:
+    @staticmethod
+    def _get_sync_tp_max_workers() -> Optional[int]:
         def tp_max_workers_validator(value: str) -> bool:
             try:
                 int_value = int(value)
@@ -511,20 +565,27 @@ class Dispatcher(metaclass=DispatcherMeta):
                 return False
 
             if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN or (
-               int_value > PYTHON_THREADPOOL_THREAD_COUNT_MAX):
+                    int_value > PYTHON_THREADPOOL_THREAD_COUNT_MAX):
                 logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
-                               'to a value between 1 and 32')
+                               'to a value between 1 and 32. '
+                               'Reverting to default value for max_workers')
                 return False
 
             return True
 
-        return int(get_app_setting(
-            setting=PYTHON_THREADPOOL_THREAD_COUNT,
-            default_value=f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}',
-            validator=tp_max_workers_validator))
+        # Starting Python 3.9, worker won't be putting a limit on the
+        # max_workers count in the created threadpool.
+        default_value = None if sys.version_info.minor == 9 \
+            else f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}'
+        max_workers = get_app_setting(setting=PYTHON_THREADPOOL_THREAD_COUNT,
+                                      default_value=default_value,
+                                      validator=tp_max_workers_validator)
+
+        # We can box the app setting as int for earlier python versions.
+        return int(max_workers) if max_workers else None
 
     def _create_sync_call_tp(
-            self, max_worker: int) -> concurrent.futures.Executor:
+            self, max_worker: Optional[int]) -> concurrent.futures.Executor:
         """Create a thread pool executor with max_worker. This is a wrapper
         over ThreadPoolExecutor constructor. Consider calling this method after
         _stop_sync_call_tp() to ensure only 1 synchronous thread pool is
@@ -534,14 +595,20 @@ class Dispatcher(metaclass=DispatcherMeta):
             max_workers=max_worker
         )
 
-    def __run_sync_func(self, invocation_id, func, params):
+    def _run_sync_func(self, invocation_id, context, func, params):
         # This helper exists because we need to access the current
         # invocation_id from ThreadPoolExecutor's threads.
         _invocation_id_local.v = invocation_id
         try:
-            return func(**params)
+            return ExtensionManager.get_sync_invocation_wrapper(context,
+                                                                func)(params)
         finally:
             _invocation_id_local.v = None
+
+    async def _run_async_func(self, context, func, params):
+        return await ExtensionManager.get_async_invocation_wrapper(
+            context, func, params
+        )
 
     def __poll_grpc(self):
         options = []

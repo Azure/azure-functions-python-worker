@@ -1,9 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from typing import Any
+from typing import Any, Optional
 import json
 from .. import protos
+from ..logging import logger
 
 
 class Datum:
@@ -91,6 +92,81 @@ class Datum:
             )
 
         return cls(val, tt)
+
+    @classmethod
+    def from_rpc_shared_memory(
+            cls,
+            shmem: protos.RpcSharedMemory,
+            shmem_mgr) -> Optional['Datum']:
+        """
+        Reads the specified shared memory region and converts the read data into
+        a datum object of the corresponding type.
+        """
+        if shmem is None:
+            logger.warning('Cannot read from shared memory. '
+                           'RpcSharedMemory is None.')
+            return None
+
+        mem_map_name = shmem.name
+        offset = shmem.offset
+        count = shmem.count
+        data_type = shmem.type
+        ret_val = None
+
+        if data_type == protos.RpcDataType.bytes:
+            val = shmem_mgr.get_bytes(mem_map_name, offset, count)
+            if val is not None:
+                ret_val = cls(val, 'bytes')
+        elif data_type == protos.RpcDataType.string:
+            val = shmem_mgr.get_string(mem_map_name, offset, count)
+            if val is not None:
+                ret_val = cls(val, 'string')
+
+        if ret_val is not None:
+            logger.info(
+                f'Read {count} bytes from memory map {mem_map_name} '
+                f'for data type {data_type}')
+            return ret_val
+        return None
+
+    @classmethod
+    def to_rpc_shared_memory(
+            cls,
+            datum: 'Datum',
+            shmem_mgr) -> Optional[protos.RpcSharedMemory]:
+        """
+        Writes the given value to shared memory and returns the corresponding
+        RpcSharedMemory object which can be sent back to the functions host over
+        RPC.
+        """
+        if datum.type == 'bytes':
+            value = datum.value
+            shared_mem_meta = shmem_mgr.put_bytes(value)
+            data_type = protos.RpcDataType.bytes
+        elif datum.type == 'string':
+            value = datum.value
+            shared_mem_meta = shmem_mgr.put_string(value)
+            data_type = protos.RpcDataType.string
+        else:
+            raise NotImplementedError(
+                f'Unsupported datum type ({datum.type}) for shared memory'
+            )
+
+        if shared_mem_meta is None:
+            logger.warning('Cannot write to shared memory for type: '
+                           f'{datum.type}')
+            return None
+
+        shmem = protos.RpcSharedMemory(
+            name=shared_mem_meta.mem_map_name,
+            offset=0,
+            count=shared_mem_meta.count_bytes,
+            type=data_type)
+
+        logger.info(
+            f'Wrote {shared_mem_meta.count_bytes} bytes to memory map '
+            f'{shared_mem_meta.mem_map_name} for data type {data_type}')
+        return shmem
 
 
 def datum_as_proto(datum: Datum) -> protos.TypedData:

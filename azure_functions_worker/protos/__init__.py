@@ -16,10 +16,16 @@ from .FunctionRpc_pb2 import (  # NoQA
     InvocationRequest,
     InvocationResponse,
     WorkerHeartbeat,
+    WorkerStatusRequest,
+    WorkerStatusResponse,
     BindingInfo,
     StatusResult,
     RpcException,
     ParameterBinding,
     TypedData,
     RpcHttp,
-    RpcLog)
+    RpcLog,
+    RpcSharedMemory,
+    RpcDataType,
+    CloseSharedMemoryResourcesRequest,
+    CloseSharedMemoryResourcesResponse)

@@ -1,0 +1,47 @@
+{
+  "scriptFile": "main.py",
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req"
+    },
+    {
+      "type": "blob",
+      "direction": "in",
+      "name": "input_file_1",
+      "dataType": "binary",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/shmem-test-bytes-1.txt"
+    },
+    {
+      "type": "blob",
+      "direction": "in",
+      "name": "input_file_2",
+      "dataType": "binary",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/shmem-test-bytes-2.txt"
+    },
+    {
+      "type": "blob",
+      "direction": "out",
+      "name": "output_file_1",
+      "dataType": "binary",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/shmem-test-bytes-out-1.txt"
+    },
+    {
+      "type": "blob",
+      "direction": "out",
+      "name": "output_file_2",
+      "dataType": "binary",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/shmem-test-bytes-out-2.txt"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "$return"
+    }
+  ]
+}

@@ -504,6 +504,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         """
         close_request = req.close_shared_memory_resources_request
         map_names = close_request.map_names
+        to_delete = close_request.to_delete
         # Assign default value of False to all result values.
         # If we are successfully able to close a memory map, its result will be
         # set to True.
@@ -512,7 +513,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             for mem_map_name in map_names:
                 try:
-                    success = self._shmem_mgr.free_mem_map(mem_map_name)
+                    success = self._shmem_mgr.free_mem_map(mem_map_name,
+                                                           to_delete)
                     results[mem_map_name] = success
                 except Exception as e:
                     logger.error(f'Cannot free memory map {mem_map_name} - {e}',

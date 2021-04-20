@@ -157,10 +157,11 @@ class SharedMemoryManager:
         content_str = content_bytes.decode('utf-8')
         return content_str
 
-    def free_mem_map(self, mem_map_name: str) -> bool:
+    def free_mem_map(self, mem_map_name: str,
+                     is_delete_backing_resources: bool = True) -> bool:
         """
-        Frees the memory map and any backing resources (e.g. file in the case of
-        Unix) associated with it.
+        Frees the memory map and, if specified, any backing resources (e.g.
+        file in the case of Unix) associated with it.
         If there is no memory map with the given name being tracked, then no
         action is performed.
         Returns True if the memory map was freed successfully, False otherwise.
@@ -170,7 +171,7 @@ class SharedMemoryManager:
                 f'Cannot find memory map in list of allocations {mem_map_name}')
             return False
         shared_mem_map = self.allocated_mem_maps[mem_map_name]
-        success = shared_mem_map.dispose()
+        success = shared_mem_map.dispose(is_delete_backing_resources)
         del self.allocated_mem_maps[mem_map_name]
         return success
 

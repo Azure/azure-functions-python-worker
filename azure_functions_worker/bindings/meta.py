@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+from operator import truediv
 import sys
 import typing
 
@@ -111,6 +112,14 @@ def get_datum(binding: str, obj: typing.Any,
     return datum
 
 
+def is_cache_supported(datum: datumdef.Datum):
+    if datum.type == 'bytes':
+        return True
+    elif datum.type == 'string':
+        return True
+    return False
+
+
 def to_outgoing_proto(binding: str, obj: typing.Any, *,
                       pytype: typing.Optional[type]) -> protos.TypedData:
     datum = get_datum(binding, obj, pytype)
@@ -120,13 +129,16 @@ def to_outgoing_proto(binding: str, obj: typing.Any, *,
 def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
                               pytype: typing.Optional[type],
                               out_name: str,
-                              shmem_mgr) \
+                              shmem_mgr,
+                              is_function_data_cache_enabled: bool) \
         -> protos.ParameterBinding:
     datum = get_datum(binding, obj, pytype)
     shared_mem_value = None
     # If shared memory is enabled and supported for the given datum, try to
     # transfer to host over shared memory as a default
-    if shmem_mgr.is_enabled() and shmem_mgr.is_supported(datum):
+    can_transfer_over_shmem = shmem_mgr.is_supported(datum) or \
+        (is_function_data_cache_enabled and is_cache_supported(datum))
+    if shmem_mgr.is_enabled() and can_transfer_over_shmem:
         shared_mem_value = datumdef.Datum.to_rpc_shared_memory(datum, shmem_mgr)
     # Check if data was written into shared memory
     if shared_mem_value is not None:

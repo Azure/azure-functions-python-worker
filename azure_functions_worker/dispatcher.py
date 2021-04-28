@@ -15,6 +15,7 @@ import threading
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
+import time # TODO del
 
 import grpc
 
@@ -71,6 +72,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._port = port
         self._request_id = request_id
         self._worker_id = worker_id
+        self._function_data_cache_enabled = False
         self._functions = functions.Registry()
         self._shmem_mgr = SharedMemoryManager()
 
@@ -258,6 +260,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Received WorkerInitRequest, request ID %s',
                     self.request_id)
 
+        worker_init_request = req.worker_init_request
+        host_capabilities = worker_init_request.capabilities
+        if constants.FUNCTION_DATA_CACHE in host_capabilities:
+            val = host_capabilities[constants.FUNCTION_DATA_CACHE]
+            self._function_data_cache_enabled = val == _TRUE
+
         capabilities = {
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
             constants.TYPED_DATA_COLLECTION: _TRUE,
@@ -392,6 +400,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                                    'binding returned a non-None value')
 
             output_data = []
+            cache_enabled = self._function_data_cache_enabled
             if fi.output_types:
                 for out_name, out_type_info in fi.output_types.items():
                     val = args[out_name].get()
@@ -403,7 +412,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     param_binding = bindings.to_outgoing_param_binding(
                         out_type_info.binding_name, val,
                         pytype=out_type_info.pytype,
-                        out_name=out_name, shmem_mgr=self._shmem_mgr)
+                        out_name=out_name, shmem_mgr=self._shmem_mgr,
+                        is_function_data_cache_enabled=cache_enabled)
                     output_data.append(param_binding)
 
             return_value = None
@@ -504,7 +514,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         """
         close_request = req.close_shared_memory_resources_request
         map_names = close_request.map_names
-        to_delete = close_request.to_delete
         # Assign default value of False to all result values.
         # If we are successfully able to close a memory map, its result will be
         # set to True.
@@ -513,8 +522,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             for mem_map_name in map_names:
                 try:
-                    success = self._shmem_mgr.free_mem_map(mem_map_name,
-                                                           to_delete)
+                    success = self._shmem_mgr.free_mem_map(mem_map_name, False)
                     results[mem_map_name] = success
                 except Exception as e:
                     logger.error(f'Cannot free memory map {mem_map_name} - {e}',

@@ -39,5 +39,5 @@ steps:
   condition: succeededOrFailed()
   inputs:
     testResultsFiles: '**/*.xml'
-    testRunTitle: 'Publish test results for Python $(python.version)'
+    testRunTitle: 'Publish test results for Python $(PYTHON_VERSION)'
     failTaskOnFailedTests: true

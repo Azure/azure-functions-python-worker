@@ -38,6 +38,6 @@ steps:
   displayName: 'Publish Python Worker E2E Test Result'
   condition: succeededOrFailed()
   inputs:
-    testResultsFiles: '**/*.xml'
-    testRunTitle: 'Publish test results for Python $(PYTHON_VERSION)'
+    testResultsFiles: 'e2e-integration-test-report.xml'
+    testRunTitle: 'Publish Python Worker E2E Test Result'
     failTaskOnFailedTests: true

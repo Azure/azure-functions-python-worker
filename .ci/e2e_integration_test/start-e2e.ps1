@@ -64,7 +64,7 @@ $output = "$FUNC_CLI_DIRECTORY.zip"
 Invoke-RestMethod -Uri "$(get_core_tool_download_url)" -OutFile $output
 
 Write-Host 'Extracting Functions Core Tools...'
-Expand-Archive $output -DestinationPath $FUNC_CLI_DIRECTORY
+Expand-Archive $output -DestinationPath $FUNC_CLI_DIRECTORY -InformationAction SilentlyContinue
 
 Write-Host "Starting Functions Host..."
 $env:FUNCTIONS_WORKER_RUNTIME = $FUNC_RUNTIME_LANGUAGE
@@ -95,5 +95,5 @@ Write-Host "--------------------------------------------------------------------
 Write-Host "Running E2E integration tests..." -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 $env:CORE_TOOLS_EXE_PATH = "$funcExePath"
-pytest --doctest-modules --junitxml=junit/test-results.xml --cov=./azure_functions_worker --cov-branch --cov-append tests/endtoend --cov-report=xml --cov-report=html
+pytest --junitxml=e2e-integration-test-report.xml --cov=./azure_functions_worker --cov-branch --cov-append tests/endtoend --cov-report xml --cov-report html
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green

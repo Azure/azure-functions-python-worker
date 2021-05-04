@@ -384,6 +384,7 @@ setup(
               'azure_functions_worker.protos.identity',
               'azure_functions_worker.protos.shared',
               'azure_functions_worker.bindings',
+              'azure_functions_worker.bindings.shared_memory_data_transfer',
               'azure_functions_worker.utils',
               'azure_functions_worker._thirdparty'],
     install_requires=[

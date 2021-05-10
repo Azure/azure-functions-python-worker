@@ -266,6 +266,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
             constants.TYPED_DATA_COLLECTION: _TRUE,
             constants.RPC_HTTP_BODY_ONLY: _TRUE,
+            constants.WORKER_STATUS: _TRUE,
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
@@ -285,7 +286,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # for host to judge scale decisions of out-of-proc languages.
         # Having log here will reduce the responsiveness of the worker.
         return protos.StreamingMessage(
-            request_id=self.request_id,
+            request_id=req.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
     async def _handle__function_load_request(self, req):

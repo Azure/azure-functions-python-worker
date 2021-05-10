@@ -1,5 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import os
+from unittest.mock import patch
+
 import requests
 from azure_functions_worker import testutils
 
@@ -17,6 +20,12 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     Compared to the unittests/test_http_functions.py, this file is more focus
     on testing the E2E flow scenarios.
     """
+    def setUp(self):
+        self._patch_environ = patch.dict('os.environ', os.environ.copy())
+        self._patch_environ.start()
+
+    def tearDown(self):
+        self._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -87,6 +96,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         _handle__worker_status_request and sends a worker status response back
         to host
         """
+        os.environ['WEBSITE_PING_METRICS_SCALE_ENABLED'] = '0'
         root_url = self.webhost._addr
         health_check_url = f'{root_url}/admin/host/ping'
         r = requests.post(health_check_url,

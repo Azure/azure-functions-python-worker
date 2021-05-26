@@ -77,11 +77,15 @@ def enable_console_logging() -> None:
 
 
 def is_system_log_category(ctg: str) -> bool:
-    # Category starts with the following name will be treated as system logs,
-    # and send to our customers and function teams Kusto logs:
-    # 1. 'azure_functions_worker' (Worker Info)
-    # 2. 'azure_functions_worker_errors' (Worker Error)
-    # 3. 'azure.functions' (SDK)
-    ctg_lower = ctg.lower()
-    return ctg_lower.startswith(SYSTEM_LOG_PREFIX) or (
-        ctg_lower.startswith(SDK_LOG_PREFIX))
+    """Check if the logging namespace belongs to system logs. Category starts
+    with the following name will be treated as system logs.
+    1. 'azure_functions_worker' (Worker Info)
+    2. 'azure_functions_worker_errors' (Worker Error)
+    3. 'azure.functions' (SDK)
+
+    Expected behaviors for sytem logs and customer logs are listed below:
+                  local_console  customer_app_insight  functions_kusto_table
+    system_log    false          false                 true
+    customer_log  true           true                  false
+    """
+    return ctg.startswith(SYSTEM_LOG_PREFIX) or ctg.startswith(SDK_LOG_PREFIX)

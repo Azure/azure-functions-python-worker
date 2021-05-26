@@ -23,7 +23,7 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
     dealing with customer's log and system's log. Here's a list of expected
     behaviors:
                   local_console  customer_app_insight  functions_kusto_table
-    system_log    false          true                  true
+    system_log    false          false                 true
     customer_log  true           true                  false
 
     Please ensure the following unit test cases align with the expectations

@@ -23,8 +23,10 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def setUp(self):
         self._patch_environ = patch.dict('os.environ', os.environ.copy())
         self._patch_environ.start()
+        super().setUp()
 
     def tearDown(self):
+        super().tearDown()
         self._patch_environ.stop()
 
     @classmethod

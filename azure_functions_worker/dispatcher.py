@@ -271,8 +271,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
-        # Can detech worker packages
-        DependencyManager.prioritize_customer_dependencies()
+        # Can detech worker packages only when customer's code is present
+        # This only works in dedicated and premium sku.
+        # The consumption sku will switch on environment_reload request.
+        if not DependencyManager.is_in_linux_consumption():
+            DependencyManager.prioritize_customer_dependencies()
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -480,9 +483,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             )
 
             # Reload azure google namespaces
-            DependencyManager.reload_azure_google_namespace(
-                func_env_reload_request.function_app_directory
-            )
+            if DependencyManager.is_in_linux_consumption():
+                DependencyManager.reload_azure_google_namespace(
+                    func_env_reload_request.function_app_directory
+                )
 
             # Change function app directory
             if getattr(func_env_reload_request,

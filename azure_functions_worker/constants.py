@@ -18,6 +18,7 @@ PYAZURE_WORKER_DIR = "PYAZURE_WORKER_DIR"
 
 # Platform Environment Variables
 AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
+CONTAINER_NAME = "CONTAINER_NAME"
 
 # Python Specific Feature Flags and App Settings
 PYTHON_ROLLBACK_CWD_PATH = "PYTHON_ROLLBACK_CWD_PATH"

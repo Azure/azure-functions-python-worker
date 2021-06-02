@@ -454,7 +454,7 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipUnless(
+    @unittest.skipIf(
         sys.version_info.major == 3 and sys.version_info.minor == 9,
         'Test only available for Python 3.9'
     )
@@ -523,7 +523,7 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipUnless(
+    @unittest.skipIf(
         sys.version_info.major == 3 and sys.version_info.minor == 9,
         'Test only available for Python 3.9'
     )

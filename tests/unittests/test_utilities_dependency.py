@@ -454,9 +454,8 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipUnless(
-        sys.version_info.major == 3 and sys.version_info.minor == 9,
-        'Test only available for Python 3.9'
+    @unittest.skip(
+        'Test is not available due to feature flag is turned off'
     )
     def test_use_worker_dependencies_default_python_39(self):
         # Feature should be enabled in Python 3.9 by default
@@ -523,9 +522,8 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipUnless(
-        sys.version_info.major == 3 and sys.version_info.minor == 9,
-        'Test only available for Python 3.9'
+    @unittest.skip(
+        'Test is not available since feature flag is turned off'
     )
     def test_prioritize_customer_dependencies_default_python_39(self):
         # Feature should be enabled in Python 3.9 by default

@@ -483,10 +483,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             )
 
             # Reload azure google namespaces
-            if DependencyManager.is_in_linux_consumption():
-                DependencyManager.reload_azure_google_namespace(
-                    func_env_reload_request.function_app_directory
-                )
+            DependencyManager.reload_azure_google_namespace(
+                func_env_reload_request.function_app_directory
+            )
 
             # Change function app directory
             if getattr(func_env_reload_request,

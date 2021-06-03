@@ -1,5 +1,6 @@
 from azure_functions_worker.utils.common import is_true_like
 from typing import List, Optional
+from types import ModuleType
 import importlib
 import inspect
 import os
@@ -92,6 +93,11 @@ class DependencyManager:
         # The following log line will not show up in core tools but should
         # work in kusto since core tools only collects gRPC logs. This function
         # is executed even before the gRPC logging channel is ready.
+        logger.info(f'Applying use_worker_dependencies:'
+                    f' worker_dependencies: {cls.worker_deps_path},'
+                    f' customer_dependencies: {cls.cx_deps_path},'
+                    f' working_directory: {cls.cx_working_dir}')
+
         cls._remove_from_sys_path(cls.cx_deps_path)
         cls._remove_from_sys_path(cls.cx_working_dir)
         cls._add_to_sys_path(cls.worker_deps_path, True)
@@ -121,6 +127,11 @@ class DependencyManager:
         1. cx_deps_path
         2. cx_working_dir
         """
+        logger.info(f'Applying prioritize_customer_dependencies:'
+                    f' worker_dependencies: {cls.worker_deps_path},'
+                    f' customer_dependencies: {cls.cx_deps_path},'
+                    f' working_directory: {cls.cx_working_dir}')
+
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.cx_deps_path, True)
 
@@ -219,6 +230,11 @@ class DependencyManager:
         cx_deps_path: str = cls._get_cx_deps_path()
         if not cx_deps_path:
             cx_deps_path = cls.cx_deps_path
+
+        logger.info('Applying reload_all_namespaces_from_customer_deps:'
+                    f' worker_dependencies: {cls.worker_deps_path},'
+                    f' customer_dependencies: {cx_deps_path},'
+                    f' working_directory: {working_directory}')
 
         # Switch to customer deps and clear out all module cache in worker deps
         cls._remove_from_sys_path(cls.worker_deps_path)
@@ -379,18 +395,31 @@ class DependencyManager:
         if not path:
             return
 
-        all_modules = set(sys.modules.keys()) - set(sys.builtin_module_names)
-        for module_name in all_modules:
+        not_builtin = set(sys.modules.keys()) - set(sys.builtin_module_names)
+
+        # Don't reload azure_functions_worker
+        to_be_reloaded = set([
+            module_name for module_name in not_builtin
+            if not module_name.startswith('azure_functions_worker')
+        ])
+
+        for module_name in to_be_reloaded:
             module = sys.modules.get(module_name)
-            if module is None:
+            if not isinstance(module, ModuleType):
                 continue
 
             # Module path can be actual file path or a pure namespace path.
             # Both of these has the module path placed in __path__ property
+            # The property .__path__ can be None or does not exist in module
             try:
-                # The module is a namespace
-                module_paths = getattr(module, '__path__', [])
+                module_paths = set(getattr(module, '__path__', None) or [])
+                if hasattr(module, '__file__') and module.__file__:
+                    module_paths.add(module.__file__)
+
                 if any([p for p in module_paths if p.startswith(path)]):
                     sys.modules.pop(module_name)
-            except Exception:
-                logger.warning(f'Fail to clear module cache for {module_name}')
+            except Exception as e:
+                logger.warning(
+                    f'Attempt to remove module cache for {module_name} but'
+                    f' failed with {e}. Using the original module cache.'
+                )

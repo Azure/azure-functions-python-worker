@@ -340,7 +340,7 @@ class TestDependencyManager(unittest.TestCase):
         )
 
         # At placeholder specialization from function_environment_reload
-        DependencyManager.reload_all_namespaces_from_customer_deps(
+        DependencyManager.prioritize_customer_dependencies(
             self._customer_func_path
         )
 
@@ -372,11 +372,8 @@ class TestDependencyManager(unittest.TestCase):
         import common_namespace.nested_module  # NoQA
         self.assertEqual(common_namespace.nested_module.__version__, 'worker')
 
-        # At worker init request
-        DependencyManager.prioritize_customer_dependencies()
-
         # At placeholder specialization from function_environment_reload
-        DependencyManager.reload_all_namespaces_from_customer_deps(
+        DependencyManager.prioritize_customer_dependencies(
             self._customer_func_path
         )
 
@@ -389,8 +386,12 @@ class TestDependencyManager(unittest.TestCase):
         )
         self.assertEqual(common_namespace.nested_module.__version__, 'customer')
 
-        # The worker dependency path remains as the last entry in sys.path
-        self.assertEqual(sys.path[-1], self._worker_deps_path)
+        # Check if the order matches expectation
+        self._assert_path_order(sys.path, [
+            self._customer_deps_path,
+            self._worker_deps_path,
+            self._customer_func_path,
+        ])
 
     def test_remove_from_sys_path(self):
         sys.path.append(self._customer_deps_path)

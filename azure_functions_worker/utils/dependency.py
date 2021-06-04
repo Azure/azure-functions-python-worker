@@ -112,7 +112,7 @@ class DependencyManager:
             PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
         )
     )
-    def prioritize_customer_dependencies(cls):
+    def prioritize_customer_dependencies(cls, cx_working_dir=None):
         """Switch the sys.path and ensure the customer's code import are loaded
         from CX's deppendencies.
 
@@ -123,14 +123,30 @@ class DependencyManager:
         As for Linux Consumption, this will only remove worker_deps_path,
         but the customer's path will be loaded in function_environment_reload.
 
-        The search order of a module name in customer frame is:
+        The search order of a module name in customer's paths is:
         1. cx_deps_path
-        2. cx_working_dir
+        2. worker_deps_path
+        3. cx_working_dir
         """
-        logger.info(f'Applying prioritize_customer_dependencies:'
+        # Try to get the latest customer's working directory
+        # cx_working_dir => cls.cx_working_dir => AzureWebJobsScriptRoot
+        working_directory: str = ''
+        if cx_working_dir:
+            working_directory: str = os.path.abspath(cx_working_dir)
+        if not working_directory:
+            working_directory = cls.cx_working_dir
+        if not working_directory:
+            working_directory = os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT, '')
+
+        # Try to get the latest customer's dependency path
+        cx_deps_path: str = cls._get_cx_deps_path()
+        if not cx_deps_path:
+            cx_deps_path = cls.cx_deps_path
+
+        logger.info('Applying prioritize_customer_dependencies:'
                     f' worker_dependencies: {cls.worker_deps_path},'
-                    f' customer_dependencies: {cls.cx_deps_path},'
-                    f' working_directory: {cls.cx_working_dir}')
+                    f' customer_dependencies: {cx_deps_path},'
+                    f' working_directory: {working_directory}')
 
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.cx_deps_path, True)
@@ -145,12 +161,12 @@ class DependencyManager:
         # least priority since we uses the new folder structure.
         # Please check the "Message to customer" section in the following PR:
         # https://github.com/Azure/azure-functions-python-worker/pull/726
-        cls._add_to_sys_path(cls.cx_working_dir, False)
+        cls._add_to_sys_path(working_directory, False)
 
-        logger.info(f'Start using customer dependencies {cls.cx_deps_path}')
+        logger.info(f'Finished prioritize_customer_dependencies')
 
     @classmethod
-    def reload_azure_google_namespace(cls, cx_working_dir: str):
+    def reload_customer_libraries(cls, cx_working_dir: str):
         """Reload azure and google namespace, this including any modules in
         this namespace, such as azure-functions, grpcio, grpcio-tools etc.
 
@@ -173,7 +189,7 @@ class DependencyManager:
             use_new = is_true_like(use_new_env)
 
         if use_new:
-            cls.reload_all_namespaces_from_customer_deps(cx_working_dir)
+            cls.prioritize_customer_dependencies(cx_working_dir)
         else:
             cls.reload_azure_google_namespace_from_worker_deps()
 
@@ -209,50 +225,6 @@ class DependencyManager:
         except Exception as ex:
             logger.info('Unable to reload azure.functions. '
                         'Using default. Exception:\n{}'.format(ex))
-
-    @classmethod
-    def reload_all_namespaces_from_customer_deps(cls, cx_working_dir: str):
-        """This is a new implementation of reloading azure and google
-        namespace from customer's .python_packages folder. Only intended to be
-        used in Linux Consumption scenario.
-
-        Parameters
-        ----------
-        cx_working_dir: str
-            The path which contains customer's project file (e.g. wwwroot).
-        """
-        # Specialized function app working directory and customer dependency
-        # paths need to be added
-        working_directory: str = os.path.abspath(cx_working_dir)
-        if not working_directory:
-            working_directory = os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT, '')
-
-        cx_deps_path: str = cls._get_cx_deps_path()
-        if not cx_deps_path:
-            cx_deps_path = cls.cx_deps_path
-
-        logger.info('Applying reload_all_namespaces_from_customer_deps:'
-                    f' worker_dependencies: {cls.worker_deps_path},'
-                    f' customer_dependencies: {cx_deps_path},'
-                    f' working_directory: {working_directory}')
-
-        # Switch to customer deps and clear out all module cache in worker deps
-        cls._remove_from_sys_path(cls.worker_deps_path)
-        cls._add_to_sys_path(cx_deps_path, True)
-
-        # Deprioritize worker dependencies but don't completely remove it
-        # Otherwise, it will break some really old function apps, those
-        # don't have azure-functions module in .python_packages
-        # https://github.com/Azure/azure-functions-core-tools/pull/1498
-        cls._add_to_sys_path(cls.worker_deps_path, False)
-
-        # The modules defined in customer's working directory should have the
-        # least priority since we uses the new folder structure.
-        # Please check the "Message to customer" section in the following PR:
-        # https://github.com/Azure/azure-functions-python-worker/pull/726
-        cls._add_to_sys_path(working_directory, False)
-
-        logger.info('Reloaded all namespaces from customer dependencies')
 
     @classmethod
     def _add_to_sys_path(cls, path: str, add_to_first: bool):

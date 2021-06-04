@@ -483,7 +483,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             )
 
             # Reload azure google namespaces
-            DependencyManager.reload_azure_google_namespace(
+            DependencyManager.reload_customer_libraries(
                 func_env_reload_request.function_app_directory
             )
 

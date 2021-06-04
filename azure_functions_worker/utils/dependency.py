@@ -163,7 +163,7 @@ class DependencyManager:
         # https://github.com/Azure/azure-functions-python-worker/pull/726
         cls._add_to_sys_path(working_directory, False)
 
-        logger.info(f'Finished prioritize_customer_dependencies')
+        logger.info('Finished prioritize_customer_dependencies')
 
     @classmethod
     def reload_customer_libraries(cls, cx_working_dir: str):

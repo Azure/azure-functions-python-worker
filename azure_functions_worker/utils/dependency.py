@@ -1,3 +1,4 @@
+from azure_functions_worker.utils.common import is_true_like
 from typing import List, Optional
 from types import ModuleType
 import importlib
@@ -14,7 +15,7 @@ from ..constants import (
     PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39
 )
-from ..utils.common import is_python_version, is_true_like
+from ..utils.common import is_python_version
 from ..utils.wrappers import enable_feature_by
 
 

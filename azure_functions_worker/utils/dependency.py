@@ -245,9 +245,9 @@ class DependencyManager:
             else:
                 sys.path.append(path)
 
-        # Only clear path importer and sys.modules cache if path is not
-        # defined in sys.path
-        cls._clear_path_importer_cache_and_modules(path)
+            # Only clear path importer and sys.modules cache if path is not
+            # defined in sys.path
+            cls._clear_path_importer_cache_and_modules(path)
 
     @classmethod
     def _remove_from_sys_path(cls, path: str):

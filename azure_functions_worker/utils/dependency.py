@@ -247,8 +247,7 @@ class DependencyManager:
 
         # Only clear path importer and sys.modules cache if path is not
         # defined in sys.path
-        if path:
-            cls._clear_path_importer_cache_and_modules(path)
+        cls._clear_path_importer_cache_and_modules(path)
 
     @classmethod
     def _remove_from_sys_path(cls, path: str):
@@ -267,8 +266,7 @@ class DependencyManager:
 
         # In case if any part of worker initialization do sys.path.pop()
         # Always do a cache clear in path importer and sys.modules
-        if path:
-            cls._clear_path_importer_cache_and_modules(path)
+        cls._clear_path_importer_cache_and_modules(path)
 
     @classmethod
     def _clear_path_importer_cache_and_modules(cls, path: str):

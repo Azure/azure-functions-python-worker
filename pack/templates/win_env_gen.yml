@@ -15,7 +15,7 @@ steps:
 # The following task is disabled since Python 3.9 to fix azure/ namespace
 # https://github.com/Azure/azure-functions-python-worker/pull/854
 - task: CopyFiles@2
-  condition: and(succeeded(), in('${{ parameters.pythonVersion }}', '3.6', '3.7', '3.8'))
+  condition: and(succeeded(), in(variables['pythonVersion'], '3.6', '3.7', '3.8'))
   inputs:
     contents: |
       pack\utils\__init__.py

@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import os
 import sys
+import importlib.util
 import unittest
 from unittest.mock import patch
 
@@ -12,7 +13,7 @@ from azure_functions_worker.utils.dependency import DependencyManager
 class TestDependencyManager(unittest.TestCase):
 
     def setUp(self):
-        self._patch_environ = patch.dict('os.environ', {})
+        self._patch_environ = patch.dict('os.environ', os.environ.copy())
         self._patch_sys_path = patch('sys.path', [])
         self._patch_importer_cache = patch.dict('sys.path_importer_cache', {})
         self._patch_modules = patch.dict('sys.modules', {})
@@ -170,10 +171,13 @@ class TestDependencyManager(unittest.TestCase):
         result = DependencyManager._get_cx_working_dir()
         self.assertEqual(result, 'C:\\FunctionApp')
 
+    @unittest.skipIf(os.environ.get('VIRTUAL_ENV'),
+                     'Test is not capable to run in a virtual environment')
     def test_get_worker_deps_path_with_no_worker_sys_path(self):
         result = DependencyManager._get_worker_deps_path()
+        azf_spec = importlib.util.find_spec('azure.functions')
         worker_parent = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', '..')
+            os.path.join(os.path.dirname(azf_spec.origin), '..', '..')
         )
         self.assertEqual(result.lower(), worker_parent.lower())
 
@@ -195,8 +199,10 @@ class TestDependencyManager(unittest.TestCase):
         self.assertEqual(result,
                          '/azure-functions-host/workers/python/3.7/LINUX/X64')
 
-    def test_get_worker_deps_path_without_worker_path(self):
+    @patch('azure_functions_worker.utils.dependency.importlib.util')
+    def test_get_worker_deps_path_without_worker_path(self, mock):
         # Test when worker path is not provided
+        mock.find_spec.return_value = None
         sys.path.append('/home/site/wwwroot')
         result = DependencyManager._get_worker_deps_path()
         worker_parent = os.path.abspath(
@@ -228,6 +234,62 @@ class TestDependencyManager(unittest.TestCase):
             os.path.join(self._customer_deps_path, 'common_module')
         )
 
+    def test_add_to_sys_path_import_namespace_path(self):
+        """Check if a common_namespace can be loaded after adding its path
+        into sys.path
+        """
+        DependencyManager._add_to_sys_path(self._customer_deps_path, True)
+        import common_namespace # NoQA
+        self.assertEqual(len(common_namespace.__path__), 1)
+        self.assertEqual(
+            common_namespace.__path__[0],
+            os.path.join(self._customer_deps_path, 'common_namespace')
+        )
+
+    def test_add_to_sys_path_import_nested_module_in_namespace(self):
+        """Check if a nested module in a namespace can be imported correctly
+        """
+        DependencyManager._add_to_sys_path(self._customer_deps_path, True)
+        import common_namespace.nested_module  # NoQA
+        self.assertEqual(common_namespace.nested_module.__version__, 'customer')
+
+    def test_add_to_sys_path_disallow_module_resolution_from_namespace(self):
+        """The standard Python import mechanism does not allow deriving a
+        specific module from a namespace without the import statement, e.g.
+
+        import azure
+        azure.functions  # Error: module 'azure' has not attribute 'functions'
+        """
+        DependencyManager._add_to_sys_path(self._customer_deps_path, True)
+        import common_namespace  # NoQA
+        with self.assertRaises(AttributeError):
+            common_namespace.nested_module
+
+    def test_add_to_sys_path_allow_resolution_from_import_statement(self):
+        """The standard Python import mechanism allows deriving a specific
+        module in a import statement, e.g.
+
+        from azure import functions  # OK
+        """
+        DependencyManager._add_to_sys_path(self._customer_deps_path, True)
+        from common_namespace import nested_module  # NoQA
+        self.assertEqual(nested_module.__version__, 'customer')
+
+    def test_add_to_sys_path_picks_latest_module_in_same_namespace(self):
+        """If a Linux Consumption function app is switching from placeholder to
+        specialized customer's app, the latest call of a nested module should
+        be picked from the most recently import namespace.
+        """
+        DependencyManager._add_to_sys_path(self._worker_deps_path, True)
+        from common_namespace import nested_module  # NoQA
+        self.assertEqual(nested_module.__version__, 'worker')
+
+        # Now switch to customer's function app
+        DependencyManager._remove_from_sys_path(self._worker_deps_path)
+        DependencyManager._add_to_sys_path(self._customer_deps_path, True)
+        from common_namespace import nested_module  # NoQA
+        self.assertEqual(nested_module.__version__, 'customer')
+
     def test_add_to_sys_path_importer_cache(self):
         DependencyManager._add_to_sys_path(self._customer_deps_path, True)
         import common_module  # NoQA
@@ -258,7 +320,7 @@ class TestDependencyManager(unittest.TestCase):
             os.path.join(self._customer_deps_path, 'common_module')
         )
 
-    def test_reload_all_namespaces_from_customer_deps(self):
+    def test_reload_all_modules_from_customer_deps(self):
         """The test simulates a linux consumption environment where the worker
         transits from placeholder mode to specialized worker with customer's
         dependencies. First the worker will use worker's dependencies for its
@@ -267,13 +329,7 @@ class TestDependencyManager(unittest.TestCase):
         is in environment reload where the worker is fully specialized,
         reloading all libraries from customer's package.
         """
-        # Setup app settings
-        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
-        os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
-
-        # Setup paths
-        DependencyManager.worker_deps_path = self._worker_deps_path
-        DependencyManager.cx_deps_path = self._customer_deps_path
+        self._initialize_scenario()
 
         # Ensure the common_module is imported from _worker_deps_path
         DependencyManager.use_worker_dependencies()
@@ -283,14 +339,10 @@ class TestDependencyManager(unittest.TestCase):
             os.path.join(self._worker_deps_path, 'common_module')
         )
 
-        # At worker init request
-        DependencyManager.prioritize_customer_dependencies()
-
         # At placeholder specialization from function_environment_reload
-        DependencyManager.reload_all_namespaces_from_customer_deps(
+        DependencyManager.prioritize_customer_dependencies(
             self._customer_func_path
         )
-        del common_module
 
         # Now the module should be imported from customer dependency
         import common_module  # NoQA
@@ -300,8 +352,46 @@ class TestDependencyManager(unittest.TestCase):
             os.path.join(self._customer_deps_path, 'common_module')
         )
 
-        # The worker dependency path remains as the last entry in sys.path
-        self.assertEqual(sys.path[-1], self._worker_deps_path)
+        # Check if the order matches expectation
+        self._assert_path_order(sys.path, [
+            self._customer_deps_path,
+            self._worker_deps_path,
+            self._customer_func_path,
+        ])
+
+    def test_reload_all_namespaces_from_customer_deps(self):
+        """The test simulates a linux consumption environment where the worker
+        transits from placeholder mode to specialized mode. In a very typical
+        scenario, the nested azure.functions library (with common azure)
+        namespace needs to be switched from worker_deps to customer_Deps.
+        """
+        self._initialize_scenario()
+
+        # Ensure the nested_module is imported from _worker_deps_path
+        DependencyManager.use_worker_dependencies()
+        import common_namespace.nested_module  # NoQA
+        self.assertEqual(common_namespace.nested_module.__version__, 'worker')
+
+        # At placeholder specialization from function_environment_reload
+        DependencyManager.prioritize_customer_dependencies(
+            self._customer_func_path
+        )
+
+        # Now the nested_module should be imported from customer dependency
+        import common_namespace.nested_module  # NoQA
+        self.assertIn(self._customer_deps_path, sys.path_importer_cache)
+        self.assertEqual(
+            common_namespace.__path__[0],
+            os.path.join(self._customer_deps_path, 'common_namespace')
+        )
+        self.assertEqual(common_namespace.nested_module.__version__, 'customer')
+
+        # Check if the order matches expectation
+        self._assert_path_order(sys.path, [
+            self._customer_deps_path,
+            self._worker_deps_path,
+            self._customer_func_path,
+        ])
 
     def test_remove_from_sys_path(self):
         sys.path.append(self._customer_deps_path)
@@ -335,6 +425,32 @@ class TestDependencyManager(unittest.TestCase):
         # Remove sys.path_importer_cache
         DependencyManager._remove_from_sys_path(self._customer_deps_path)
         self.assertNotIn('common_module', sys.modules)
+
+    def test_remove_from_sys_path_should_remove_related_namespace(self):
+        """When a namespace is imported, the sys.modules should cache it.
+        After calling the remove_from_sys_path, the namespace in sys.modules
+        cache should be removed.
+        """
+        sys.path.insert(0, self._customer_deps_path)
+        import common_namespace  # NoQA
+        self.assertIn('common_namespace', sys.modules)
+
+        # Remove from sys.modules via _remove_from_sys_path
+        DependencyManager._remove_from_sys_path(self._customer_deps_path)
+        self.assertNotIn('common_namespace', sys.modules)
+
+    def test_remove_from_sys_path_should_remove_nested_module(self):
+        """When a nested module is imported into a namespace, the sys.modules
+        should cache it. After calling the remove_from_sys_path, the nested
+        module should be removed from sys.modules
+        """
+        sys.path.insert(0, self._customer_deps_path)
+        import common_namespace.nested_module  # NoQA
+        self.assertIn('common_namespace.nested_module', sys.modules)
+
+        # Remove from sys.modules via _remove_from_sys_path
+        DependencyManager._remove_from_sys_path(self._customer_deps_path)
+        self.assertNotIn('common_namespace.nested_module', sys.modules)
 
     def test_clear_path_importer_cache_and_modules(self):
         # Ensure sys.path_importer_cache and sys.modules cache is cleared
@@ -454,8 +570,9 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skip(
-        'Test is not available due to feature flag is turned off'
+    @unittest.skipUnless(
+        sys.version_info.major == 3 and sys.version_info.minor == 9,
+        'Test only available for Python 3.9'
     )
     def test_use_worker_dependencies_default_python_39(self):
         # Feature should be enabled in Python 3.9 by default
@@ -489,8 +606,12 @@ class TestDependencyManager(unittest.TestCase):
             os.path.join(self._customer_deps_path, 'common_module')
         )
 
-        # The worker path should be the last in the sys.path
-        self.assertEqual(sys.path[-1], self._worker_deps_path)
+        # Check if the sys.path order matches the expected order
+        self._assert_path_order(sys.path, [
+            self._customer_deps_path,
+            self._worker_deps_path,
+            self._customer_func_path,
+        ])
 
     def test_prioritize_customer_dependencies_disable(self):
         # Setup app settings
@@ -522,8 +643,9 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skip(
-        'Test is not available since feature flag is turned off'
+    @unittest.skipUnless(
+        sys.version_info.major == 3 and sys.version_info.minor == 9,
+        'Test only available for Python 3.9'
     )
     def test_prioritize_customer_dependencies_default_python_39(self):
         # Feature should be enabled in Python 3.9 by default
@@ -541,8 +663,7 @@ class TestDependencyManager(unittest.TestCase):
         )
 
     def test_prioritize_customer_dependencies_from_working_directory(self):
-        # Setup app settings
-        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
+        self._initialize_scenario()
 
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
@@ -575,3 +696,33 @@ class TestDependencyManager(unittest.TestCase):
         # Ensure namespace remains after module cache is removed
         DependencyManager._remove_module_cache(self._customer_deps_path)
         self.assertIsNotNone(common_module)
+
+    def _initialize_scenario(self):
+        # Setup app settings
+        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
+        os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
+
+        # Setup paths
+        DependencyManager.worker_deps_path = self._worker_deps_path
+        DependencyManager.cx_deps_path = self._customer_deps_path
+        DependencyManager.cx_working_dir = self._customer_func_path
+
+    def _assert_path_order(self, sys_paths, expected_order):
+        """Check if the path exist in sys_paths meets the path ordering in
+        expected_order.
+        """
+        if not expected_order:
+            return
+
+        next_check = 0
+        for path in sys_paths:
+            if path == expected_order[next_check]:
+                next_check += 1
+
+            if next_check == len(expected_order):
+                break
+
+        self.assertEqual(
+            next_check, len(expected_order),
+            'The order in sys_paths does not match the expected_order paths'
+        )

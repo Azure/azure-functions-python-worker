@@ -28,7 +28,7 @@ class TestExtension(unittest.TestCase):
 
     def setUp(self):
         # Patch sys.modules and sys.path to avoid pollution between tests
-        self.mock_environ = patch.dict('os.environ',  os.environ.copy())
+        self.mock_environ = patch.dict('os.environ', os.environ.copy())
         self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
         self.mock_sys_path = patch('sys.path', sys.path.copy())
         self.mock_environ.start()

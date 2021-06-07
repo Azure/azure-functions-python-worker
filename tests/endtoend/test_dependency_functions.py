@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 from requests import Response
 from azure_functions_worker import testutils
-import azure_functions_worker
 from azure_functions_worker.utils.common import is_envvar_true
 from azure_functions_worker.constants import PYAZURE_INTEGRATION_TEST
 

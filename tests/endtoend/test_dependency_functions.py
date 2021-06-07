@@ -2,10 +2,13 @@
 # Licensed under the MIT License.
 import os
 import importlib.util
+from unittest.case import skipIf
 from unittest.mock import patch
 
 from requests import Response
 from azure_functions_worker import testutils
+from azure_functions_worker.utils.common import is_envvar_true
+from azure_functions_worker.constants import PYAZURE_INTEGRATION_TEST
 
 REQUEST_TIMEOUT_SEC = 5
 
@@ -74,6 +77,10 @@ class TestDependencyFunctionsOnDedicated(testutils.WebHostTestCase):
             os.path.join(dir, 'dependency_functions').lower()
         )
 
+    @skipIf(
+        is_envvar_true(PYAZURE_INTEGRATION_TEST),
+        'Integration test expects dependencies derived from core tools folder'
+    )
     @testutils.retryable_test(3, 5)
     def test_paths_resolution(self):
         """Dependency manager requires paths to be resolved correctly before

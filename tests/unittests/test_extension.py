@@ -27,6 +27,14 @@ class MockContext:
 class TestExtension(unittest.TestCase):
 
     def setUp(self):
+        # Patch sys.modules and sys.path to avoid pollution between tests
+        self.mock_environ = patch.dict('os.environ',  os.environ.copy())
+        self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
+        self.mock_sys_path = patch('sys.path', sys.path.copy())
+        self.mock_environ.start()
+        self.mock_sys_module.start()
+        self.mock_sys_path.start()
+
         # Initialize Extension Manager Instance
         self._instance = ExtensionManager
         self._instance._is_sdk_detected = False
@@ -56,19 +64,15 @@ class TestExtension(unittest.TestCase):
             function_directory=self._mock_func_dir
         )
 
-        # Patch sys.modules and sys.path to avoid pollution between tests
-        self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
-        self.mock_sys_path = patch('sys.path', sys.path.copy())
-        self.mock_sys_module.start()
-        self.mock_sys_path.start()
-
         # Set feature flag to on
         os.environ[PYTHON_ENABLE_WORKER_EXTENSIONS] = 'true'
 
     def tearDown(self) -> None:
+        os.environ.pop(PYTHON_ENABLE_WORKER_EXTENSIONS)
+
         self.mock_sys_path.stop()
         self.mock_sys_module.stop()
-        os.environ.pop(PYTHON_ENABLE_WORKER_EXTENSIONS)
+        self.mock_environ.stop()
 
     def test_extension_is_supported_by_latest_sdk(self):
         """Test if extension interface supports check as expected on

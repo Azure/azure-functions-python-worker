@@ -266,13 +266,16 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
             constants.TYPED_DATA_COLLECTION: _TRUE,
             constants.RPC_HTTP_BODY_ONLY: _TRUE,
-            constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.WORKER_STATUS: _TRUE,
+            constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
-        # Can detech worker packages
-        DependencyManager.prioritize_customer_dependencies()
+        # Can detech worker packages only when customer's code is present
+        # This only works in dedicated and premium sku.
+        # The consumption sku will switch on environment_reload request.
+        if not DependencyManager.is_in_linux_consumption():
+            DependencyManager.prioritize_customer_dependencies()
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -286,7 +289,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # for host to judge scale decisions of out-of-proc languages.
         # Having log here will reduce the responsiveness of the worker.
         return protos.StreamingMessage(
-            request_id=self.request_id,
+            request_id=req.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
     async def _handle__function_load_request(self, req):
@@ -480,7 +483,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             )
 
             # Reload azure google namespaces
-            DependencyManager.reload_azure_google_namespace(
+            DependencyManager.reload_customer_libraries(
                 func_env_reload_request.function_app_directory
             )
 

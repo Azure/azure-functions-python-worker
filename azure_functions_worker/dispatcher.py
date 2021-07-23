@@ -570,7 +570,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN or (
                     int_value > PYTHON_THREADPOOL_THREAD_COUNT_MAX):
                 logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
-                               'to a value between 1 and 32. '
+                               f'to a value between '
+                               f'{PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
+                               f'{PYTHON_THREADPOOL_THREAD_COUNT_MAX}. '
                                'Reverting to default value for max_workers')
                 return False
 

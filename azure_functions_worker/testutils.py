@@ -66,6 +66,8 @@ WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
 WORKER_CONFIG = PROJECT_ROOT / '.testconfig'
 ON_WINDOWS = platform.system() == 'Windows'
 LOCALHOST = "127.0.0.1"
+MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
+MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
 
 HOST_JSON_TEMPLATE = """\
 {
@@ -642,6 +644,33 @@ class _MockWebHost:
 
             self._available_functions[fn.name] = fn
 
+
+class _MockLinuxConsumptionWebHostController:
+
+    def __init__(self, scripts_dir: pathlib.PurePath):
+        self._host: typing.Optional[_MockWebHost] = None
+        self._scripts_dir: pathlib.PurePath = scripts_dir
+        self._worker: typing.Optional[dispatcher.Dispatcher] = None
+
+    def _find_latest_mesh_image_tag(self, host_major: str) -> str:
+        """Find the latest image in https://mcr.microsoft.com/v2/
+        azure-functions/mesh/tags/list. Match either (3.1.3, or 3.1.3-python3.x)
+        """
+        py_major_minor = f'{sys.version_info.major}.{sys.version_info.minor}'
+        regex = re.compile(host_major + r'.\d+.\d+') # match 3.1.3
+        if py_major_minor != '3.6': # match 3.1.3-python3.x
+            regex = re.compile(host_major + r'.\d+.\d+-python' + py_major_minor)
+
+        response = requests.get(MESH_IMAGE_URL, allow_redirects=True)
+        if not response.ok:
+            raise RuntimeError(f'Failed to query latest image for v{host_major}'
+                               f' Python {py_major_minor}.'
+                               f' Status {response.status_code}')
+
+        tag_list = response.json().get('tags', [])
+        version = list(filter(regex.match, tag_list))[-1]
+
+        return f'{MESH_IMAGE_REPO}:{version}'
 
 class _MockWebHostController:
 

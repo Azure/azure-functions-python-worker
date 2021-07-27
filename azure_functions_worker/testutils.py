@@ -66,9 +66,13 @@ WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
 WORKER_CONFIG = PROJECT_ROOT / '.testconfig'
 ON_WINDOWS = platform.system() == 'Windows'
 LOCALHOST = "127.0.0.1"
+
+# Linux Consumption Testing Configs
 MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
 MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
+MESH_CONTAINER_DUMMY_KEY = "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY="
 
+# The template of host.json that will be applied to each test functions
 HOST_JSON_TEMPLATE = """\
 {
     "version": "2.0",
@@ -648,29 +652,94 @@ class _MockWebHost:
 class _MockLinuxConsumptionWebHostController:
 
     def __init__(self, scripts_dir: pathlib.PurePath):
+        self._py: str = f'{sys.version_info.major}.{sys.version_info.minor}'
         self._host: typing.Optional[_MockWebHost] = None
         self._scripts_dir: pathlib.PurePath = scripts_dir
         self._worker: typing.Optional[dispatcher.Dispatcher] = None
+        self._container_ports: typing.Dict[str, str] = {}
 
-    def _find_latest_mesh_image_tag(self, host_major: str) -> str:
+        self._mesh_image: str = self._find_latest_mesh_image('3')
+
+    def _find_latest_mesh_image(self, host_major: str) -> str:
         """Find the latest image in https://mcr.microsoft.com/v2/
         azure-functions/mesh/tags/list. Match either (3.1.3, or 3.1.3-python3.x)
         """
-        py_major_minor = f'{sys.version_info.major}.{sys.version_info.minor}'
-        regex = re.compile(host_major + r'.\d+.\d+') # match 3.1.3
-        if py_major_minor != '3.6': # match 3.1.3-python3.x
-            regex = re.compile(host_major + r'.\d+.\d+-python' + py_major_minor)
+        # match 3.1.3
+        regex = re.compile(host_major + r'.\d+.\d+')
+
+        # match 3.1.3-python3.x
+        if self._py != '3.6':
+            regex = re.compile(host_major + r'.\d+.\d+-python' + self._py)
 
         response = requests.get(MESH_IMAGE_URL, allow_redirects=True)
         if not response.ok:
             raise RuntimeError(f'Failed to query latest image for v{host_major}'
-                               f' Python {py_major_minor}.'
+                               f' Python {self._py}.'
                                f' Status {response.status_code}')
 
         tag_list = response.json().get('tags', [])
         version = list(filter(regex.match, tag_list))[-1]
 
         return f'{MESH_IMAGE_REPO}:{version}'
+
+    def _spawn_container(
+        self, image: str, name: str, env: typing.Dict[str, str] = {}
+    ) -> int:
+        """Create a docker container and record its port. Accept the image and
+        the new name for the container. Return the port number of container.
+        """
+        # Construct environment variables and start the docker container
+        run_cmd = (
+            f"docker run -p 0:80 -d --name {name}"
+            f" -e CONTAINER_NAME={name}"
+            f" -e CONTAINER_ENCRYPTION_KEY={MESH_CONTAINER_DUMMY_KEY}"
+        )
+        for key, value in env.items():
+            run_cmd += f' -e "{key}"="{value}"'
+        run_cmd += f' {image}'
+        run_process = subprocess.run(run_cmd)
+        if run_process.returncode != 0:
+            raise RuntimeError('Failed to spawn docker container for'
+                               f' {image} with name {name}')
+
+        # Wait for one second for the port to expose
+        time.sleep(1)
+
+        # Acquire the port number of the container
+        port_cmd = f"docker port {name}"
+        port_process = subprocess.run(port_cmd, capture_output=True)
+        if port_process.returncode != 0:
+            raise RuntimeError(f'Failed to acquire container port for {name}')
+        port_number = port_process.stdout.decode().strip('\n').split(':')[-1]
+
+        # Register port number onto the table
+        self._container_ports[name] = port_number
+        return port_number
+
+    def _safe_kill_container(self, name: str) -> bool:
+        """Kill a container by its name. Returns True on success.
+        """
+        kill_cmd = f"docker kill {name}"
+        kill_process = subprocess.run(kill_cmd)
+        exit_code = kill_process.returncode
+
+        if name in self._container_ports:
+            del self._container_ports[name]
+        return exit_code == 0
+
+    def _safe_clean_up_containers(self) -> bool:
+        """Clean up all containers that have been used. Returns True on success.
+        """
+        result = True
+        for name in self._container_ports:
+            kill_cmd = f"docker kill {name}"
+            kill_process = subprocess.run(kill_cmd)
+            exit_code = kill_process.returncode
+            if exit_code != 0:
+                result = False
+
+        self._container_ports.clear()
+        return result
 
 class _MockWebHostController:
 

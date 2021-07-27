@@ -23,6 +23,7 @@ import re
 import shutil
 import socket
 import string
+import base64
 import subprocess
 import sys
 import tempfile
@@ -30,9 +31,13 @@ import time
 import typing
 import unittest
 import uuid
+import datetime
 
 import grpc
 import requests
+from Crypto.Cipher import AES
+from Crypto.Hash.SHA256 import SHA256Hash
+from Crypto.Util.Padding import pad
 
 from azure_functions_worker._thirdparty import aio_compat
 from azure_functions_worker.bindings.shared_memory_data_transfer \
@@ -658,8 +663,6 @@ class _MockLinuxConsumptionWebHostController:
         self._worker: typing.Optional[dispatcher.Dispatcher] = None
         self._container_ports: typing.Dict[str, str] = {}
 
-        self._mesh_image: str = self._find_latest_mesh_image('3')
-
     def _find_latest_mesh_image(self, host_major: str) -> str:
         """Find the latest image in https://mcr.microsoft.com/v2/
         azure-functions/mesh/tags/list. Match either (3.1.3, or 3.1.3-python3.x)
@@ -740,6 +743,32 @@ class _MockLinuxConsumptionWebHostController:
 
         self._container_ports.clear()
         return result
+
+    def _get_site_restricted_token(self) -> str:
+        """Get the header value which can be used by x-ms-site-restricted-token
+        """
+        expiry = datetime.datetime.utcnow() + datetime.timedelta(days=2)
+        exp_ns = expiry.microsecond * 1000
+        return self._encrypt_context(MESH_CONTAINER_DUMMY_KEY, f'exp={exp_ns}')
+
+    def _encrypt_context(self, encryption_key: str, plain_text: str) -> str:
+        """Encrypt plain text context into a encrypted message which can
+        be accepted by the host
+        """
+        encryption_key_bytes = base64.b64decode(encryption_key.encode())
+        plain_text_bytes = pad(plain_text.encode(), 16)
+        iv_bytes = '0123456789abcedf'.encode()
+
+        # Start encryption
+        cipher = AES.new(encryption_key_bytes, AES.MODE_CBC, iv=iv_bytes)
+        encrypted_bytes = cipher.encrypt(plain_text_bytes)
+
+        # Prepare final result
+        iv_base64 = base64.b64encode(iv_bytes).decode()
+        encrypted_base64 = base64.b64encode(encrypted_bytes).decode()
+        key_sha256 = SHA256Hash(encryption_key_bytes).digest()
+        key_sha256_base64 = base64.b64encode(key_sha256).decode()
+        return f'{iv_base64}.{encrypted_base64}.{key_sha256_base64}'
 
 class _MockWebHostController:
 

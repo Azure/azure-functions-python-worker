@@ -31,7 +31,6 @@ import time
 import typing
 import unittest
 import uuid
-import datetime
 
 import grpc
 import requests
@@ -746,10 +745,24 @@ class _MockLinuxConsumptionWebHostController:
 
     def _get_site_restricted_token(self) -> str:
         """Get the header value which can be used by x-ms-site-restricted-token
+        which expires in one day.
         """
-        expiry = datetime.datetime.utcnow() + datetime.timedelta(days=2)
-        exp_ns = expiry.microsecond * 1000
+        exp_ns = time.time_ns() + 24 * 60 * 60 * 1000 * 1000 * 1000
         return self._encrypt_context(MESH_CONTAINER_DUMMY_KEY, f'exp={exp_ns}')
+
+    def _get_site_encrypted_context(self,
+                                    site_name: str,
+                                    env: typing.Dict[str, str]) -> str:
+        """Get the encrypted context for placeholder mode specialization"""
+        ctx = {
+            "SiteId": 1,
+            "SiteName": site_name,
+            "Environmnet": env
+        }
+
+        # Ensure WEBSITE_SITE_NAME is set to simulate production mode
+        ctx["Environment"]["WEBSITE_SITE_NAME"] = site_name
+        return self._encrypt_context(MESH_CONTAINER_DUMMY_KEY, json.dumps(ctx))
 
     def _encrypt_context(self, encryption_key: str, plain_text: str) -> str:
         """Encrypt plain text context into a encrypted message which can

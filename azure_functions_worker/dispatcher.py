@@ -337,6 +337,19 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Failure,
                         exception=self._serialize_exception(ex))))
 
+    async def _handle__functions_metadata_request(self, req):
+        metadata_request = req.functions_metadata_request
+        directory = metadata_request.directory
+
+        ### ToDo implement this code - for legacy apps
+
+        return protos.StreamingMessage(
+            request_id=req.request_id,
+            function_metadata_responses=protos.FunctionMetadataResponses(
+                results=None,
+                overall_status=protos.StatusResult(
+                    status=protos.StatusResult.Success)))
+
     async def _handle__invocation_request(self, req):
         invoc_request = req.invocation_request
 

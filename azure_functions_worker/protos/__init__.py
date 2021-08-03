@@ -28,4 +28,6 @@ from .FunctionRpc_pb2 import (  # NoQA
     RpcSharedMemory,
     RpcDataType,
     CloseSharedMemoryResourcesRequest,
-    CloseSharedMemoryResourcesResponse)
+    CloseSharedMemoryResourcesResponse,
+    FunctionsMetadataRequest,
+    FunctionMetadataResponses)

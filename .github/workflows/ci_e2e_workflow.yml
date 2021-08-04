@@ -34,7 +34,11 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '3.1.405'
-      - name: Install dependencies and the worker
+      - name: Install dependencies on the GitHub Host Agent
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y fuse
+      - name: Install dependencies for the Python Worker
         run: |
           retry() {
             local -r -i max_attempts="$1"; shift

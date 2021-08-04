@@ -1,4 +1,3 @@
-import subprocess
 from unittest import TestCase
 
 import os

@@ -34,8 +34,9 @@ class TestLinuxConsumption(TestCase):
                                'required before running Linux Consumption test')
 
     def test_docker(self):
-        process = subprocess.run("docker --help", stdout=subprocess.PIPE,
-                                                  stderr=subprocess.PIPE)
+        process = subprocess.run(args=["docker", "--help"],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
         print(process.stdout.decode())
         print(process.stderr.decode())
         self.assertTrue(process.returncode == 0)

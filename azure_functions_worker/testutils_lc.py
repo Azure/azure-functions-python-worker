@@ -139,19 +139,26 @@ class LinuxConsumptionWebHostController:
         """
         # Construct environment variables and start the docker container
         worker_path = os.path.dirname(__file__)
-        run_cmd = (
-            f"{self._docker_cmd} run -p 0:80 -d --name {self._uuid}"
-            " --cap-add SYS_ADMIN --device /dev/fuse"
-            f' -e "CONTAINER_NAME"="{self._uuid}"'
-            f' -e "CONTAINER_ENCRYPTION_KEY"="{DUMMY_CONTAINER_KEY}"'
-            f' -e "WEBSITE_PLACEHOLDER_MODE"="1"'
-            f' -v "{worker_path}":"/azure-functions-host/workers/python'
-            f'/{self._py_version}/LINUX/X64/azure_functions_worker"'
+        container_worker_path = (
+            f"/azure-functions-host/workers/python/{self._py_version}/"
+            "LINUX/X64/azure_functions_worker"
         )
+
+        run_cmd = []
+        run_cmd.extend([self._docker_cmd, "run", "-p", "0:80", "-d"])
+        run_cmd.extend(["--name", self._uuid])
+        run_cmd.extend(["--cap-add", "SYS_ADMIN"])
+        run_cmd.extend(["--device", "/dev/fuse"])
+        run_cmd.extend(["-e", f"CONTAINER_NAME={self._uuid}"])
+        run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={DUMMY_CONTAINER_KEY}"])
+        run_cmd.extend(["-e", f"WEBSITE_PLACEHOLDER_MODE=1"])
+        run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
+
         for key, value in env.items():
-            run_cmd += f' -e "{key}"="{value}"'
-        run_cmd += f' {image}'
-        run_process = subprocess.run(run_cmd,
+            run_cmd.extend(["-e", f"{key}={value}"])
+        run_cmd.append(image)
+
+        run_process = subprocess.run(args=run_cmd,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE)
         if run_process.returncode != 0:
@@ -163,8 +170,8 @@ class LinuxConsumptionWebHostController:
         time.sleep(3)
 
         # Acquire the port number of the container
-        port_cmd = f"{self._docker_cmd} port {self._uuid}"
-        port_process = subprocess.run(port_cmd,
+        port_cmd = [self._docker_cmd, "port", self._uuid]
+        port_process = subprocess.run(args=port_cmd,
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE)
         if port_process.returncode != 0:
@@ -183,8 +190,8 @@ class LinuxConsumptionWebHostController:
         """Get container logs, the first element in tuple is stdout and the
         second element is stderr
         """
-        get_logs_cmd = f"{self._docker_cmd} logs {self._uuid}"
-        get_logs_process = subprocess.run(get_logs_cmd,
+        get_logs_cmd = [self._docker_cmd, "logs", self._uuid]
+        get_logs_process = subprocess.run(args=get_logs_cmd,
                                           stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE)
 
@@ -194,8 +201,8 @@ class LinuxConsumptionWebHostController:
     def safe_kill_container(self) -> bool:
         """Kill a container by its name. Returns True on success.
         """
-        kill_cmd = f"{self._docker_cmd} rm -f {self._uuid}"
-        kill_process = subprocess.run(kill_cmd)
+        kill_cmd = [self._docker_cmd, "rm", "-f", self._uuid]
+        kill_process = subprocess.run(args=kill_cmd)
         exit_code = kill_process.returncode
 
         if self._uuid in self._ports:

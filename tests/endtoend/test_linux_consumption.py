@@ -1,8 +1,8 @@
+import subprocess
 from unittest import TestCase
 
 import os
 import sys
-from unittest.case import skip
 from requests import Request
 
 from azure_functions_worker.testutils_lc import (
@@ -32,6 +32,13 @@ class TestLinuxConsumption(TestCase):
         if cls._storage is None:
             raise RuntimeError('Environment variable AzureWebJobsStorage is '
                                'required before running Linux Consumption test')
+
+    def test_docker(self):
+        process = subprocess.run("docker --help", stdout=subprocess.PIPE,
+                                                  stderr=subprocess.PIPE)
+        print(process.stdout.decode())
+        print(process.stderr.decode())
+        self.assertTrue(process.returncode == 0)
 
     def test_placeholder_mode_root_returns_ok(self):
         """In any circumstances, a placeholder container should returns 200

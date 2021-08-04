@@ -74,8 +74,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString36 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString36 }}
         run: |
-          docker --help
-          DOCKER_PATH="$(which docker)" pytest --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          DOCKER_PATH="$(which docker)" python -m pytest --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Running 3.7 Tests
         if: matrix.python-version == 3.7
         env:
@@ -86,8 +85,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
         run: |
-          docker --help
-          DOCKER_PATH="$(which docker)" pytest --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          DOCKER_PATH="$(which docker)" python -m pytest --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Running 3.8 Tests
         if: matrix.python-version == 3.8
         env:
@@ -98,8 +96,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
         run: |
-          docker --help
-          DOCKER_PATH="$(which docker)" pytest --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          DOCKER_PATH="$(which docker)" python -m pytest --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
         env:
@@ -110,8 +107,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
         run: |
-          docker --help
-          DOCKER_PATH="$(which docker)" pytest --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          DOCKER_PATH="$(which docker)" python -m pytest --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Codecov
         uses: codecov/codecov-action@v1.0.13
         with:

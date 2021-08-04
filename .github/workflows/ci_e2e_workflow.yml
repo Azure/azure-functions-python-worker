@@ -34,11 +34,7 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '3.1.405'
-      - name: Install dependencies on the GitHub Host Agent
-      - run: |
-          sudo apt-get update
-          sudo apt-get install -y fuse
-      - name: Install dependencies for the Python Worker
+      - name: Install dependencies and the worker
         run: |
           retry() {
             local -r -i max_attempts="$1"; shift
@@ -56,6 +52,9 @@ jobs:
               fi
             done
           }
+
+          sudo apt-get update
+          sudo apt-get install -y fuse
 
           python -m pip install --upgrade pip
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U -e .[dev]

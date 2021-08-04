@@ -207,7 +207,7 @@ class LinuxConsumptionWebHostController:
         """Get the header value which can be used by x-ms-site-restricted-token
         which expires in one day.
         """
-        exp_ns = time.time_ns() + 24 * 60 * 60 * 1000 * 1000 * 1000
+        exp_ns = int(time.time() + 24 * 60 * 60) * 1000000000
         return cls._encrypt_context(DUMMY_CONTAINER_KEY, f'exp={exp_ns}')
 
     @classmethod

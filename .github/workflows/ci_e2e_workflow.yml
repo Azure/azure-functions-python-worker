@@ -56,14 +56,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y fuse
 
-          python -m pip install --upgrade pip
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U -e .[dev]
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
+          sudo python -m pip install --upgrade pip
+          sudo python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U -e .[dev]
+          sudo python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
 
           # Retry a couple times to avoid certificate issue
-          retry 5 python setup.py build
-          retry 5 python setup.py webhost
-          retry 5 python setup.py extension
+          retry 5 sudo python setup.py build
+          retry 5 sudo python setup.py webhost
+          retry 5 sudo python setup.py extension
       - name: Running 3.6 Tests
         if: matrix.python-version == 3.6
         env:

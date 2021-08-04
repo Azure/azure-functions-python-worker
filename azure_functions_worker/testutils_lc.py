@@ -151,7 +151,9 @@ class LinuxConsumptionWebHostController:
         for key, value in env.items():
             run_cmd += f' -e "{key}"="{value}"'
         run_cmd += f' {image}'
-        run_process = subprocess.run(run_cmd, capture_output=True)
+        run_process = subprocess.run(run_cmd,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
         if run_process.returncode != 0:
             raise RuntimeError('Failed to spawn docker container for'
                                f' {image} with uuid {self._uuid}.'
@@ -162,7 +164,9 @@ class LinuxConsumptionWebHostController:
 
         # Acquire the port number of the container
         port_cmd = f"{self._docker_cmd} port {self._uuid}"
-        port_process = subprocess.run(port_cmd, capture_output=True)
+        port_process = subprocess.run(port_cmd,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
         if port_process.returncode != 0:
             raise RuntimeError(f'Failed to acquire port for {self._uuid}.'
                                f' stderr: {port_process.stderr}')
@@ -180,7 +184,9 @@ class LinuxConsumptionWebHostController:
         second element is stderr
         """
         get_logs_cmd = f"{self._docker_cmd} logs {self._uuid}"
-        get_logs_process = subprocess.run(get_logs_cmd, capture_output=True)
+        get_logs_process = subprocess.run(get_logs_cmd,
+                                          stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE)
 
         # The `docker logs` command will merge stdout and stderr into stdout
         return get_logs_process.stdout.decode('utf-8')

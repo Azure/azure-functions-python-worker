@@ -18,6 +18,8 @@ from Crypto.Util.Padding import pad
 import requests
 
 # Linux Consumption Testing Configs
+DOCKER_PATH = "DOCKER_PATH"
+DOCKER_DEFAULT_PATH = "docker"
 MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
 MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
 DUMMY_CONTAINER_KEY = "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY="
@@ -28,6 +30,7 @@ class LinuxConsumptionWebHostController:
     test cases on it.
     """
 
+    _docker_cmd = os.getenv(DOCKER_PATH, DOCKER_DEFAULT_PATH)
     _ports: Dict[str, str] = {}  # { uuid: port }
     _mesh_images: Dict[str, str] = {}  # { host version: image tag }
 
@@ -137,7 +140,7 @@ class LinuxConsumptionWebHostController:
         # Construct environment variables and start the docker container
         worker_path = os.path.dirname(__file__)
         run_cmd = (
-            f"docker run -p 0:80 -d --name {self._uuid}"
+            f"{self._docker_cmd} run -p 0:80 -d --name {self._uuid}"
             " --cap-add SYS_ADMIN --device /dev/fuse"
             f' -e "CONTAINER_NAME"="{self._uuid}"'
             f' -e "CONTAINER_ENCRYPTION_KEY"="{DUMMY_CONTAINER_KEY}"'
@@ -158,7 +161,7 @@ class LinuxConsumptionWebHostController:
         time.sleep(3)
 
         # Acquire the port number of the container
-        port_cmd = f"docker port {self._uuid}"
+        port_cmd = f"{self._docker_cmd} port {self._uuid}"
         port_process = subprocess.run(port_cmd, capture_output=True)
         if port_process.returncode != 0:
             raise RuntimeError(f'Failed to acquire port for {self._uuid}.'
@@ -176,7 +179,7 @@ class LinuxConsumptionWebHostController:
         """Get container logs, the first element in tuple is stdout and the
         second element is stderr
         """
-        get_logs_cmd = f"docker logs {self._uuid}"
+        get_logs_cmd = f"{self._docker_cmd} logs {self._uuid}"
         get_logs_process = subprocess.run(get_logs_cmd, capture_output=True)
 
         # The `docker logs` command will merge stdout and stderr into stdout
@@ -185,7 +188,7 @@ class LinuxConsumptionWebHostController:
     def safe_kill_container(self) -> bool:
         """Kill a container by its name. Returns True on success.
         """
-        kill_cmd = f"docker rm -f {self._uuid}"
+        kill_cmd = f"{self._docker_cmd} rm -f {self._uuid}"
         kill_process = subprocess.run(kill_cmd)
         exit_code = kill_process.returncode
 

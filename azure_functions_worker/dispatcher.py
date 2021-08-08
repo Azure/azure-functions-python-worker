@@ -7,11 +7,13 @@ Implements loading and execution of Python workers.
 
 import asyncio
 import concurrent.futures
+import json
 import logging
 import os
 import queue
 import sys
 import threading
+import uuid
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
@@ -24,19 +26,19 @@ from . import constants
 from . import functions
 from . import loader
 from . import protos
+from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN)
-from .logging import disable_console_logging, enable_console_logging
-from .logging import (logger, error_logger, is_system_log_category,
-                      CONSOLE_LOG_PREFIX)
 from .extension import ExtensionManager
+from .logging import CONSOLE_LOG_PREFIX, error_logger, is_system_log_category, \
+    logger
+from .logging import disable_console_logging, enable_console_logging
 from .utils.common import get_app_setting
-from .utils.tracing import marshall_exception_trace
 from .utils.dependency import DependencyManager
+from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
-from .bindings.shared_memory_data_transfer import SharedMemoryManager
 
 _TRUE = "true"
 
@@ -292,6 +294,37 @@ class Dispatcher(metaclass=DispatcherMeta):
             request_id=req.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
+    async def _handle__functions_metadata_request(self, req):
+        metadata_request = req.functions_metadata_request
+        directory = metadata_request.directory
+        indexed_functions = loader.index_function_app(directory)
+
+        x = []
+        for idx_fx in indexed_functions:
+            f_id = str(uuid.uuid4())
+            id, f_info = self._functions.add_indexed_function(function_id=f_id,
+                                                              function=idx_fx)
+            fld_req = protos. \
+                FunctionLoadRequest(function_id=id,
+                                    managed_dependency_enabled=False,
+                                    metadata=protos.RpcFunctionMetadata(
+                                            name=f_info.name,
+                                            directory=f_info.directory,
+                                            script_file=idx_fx.script_file,
+                                            entry_point=f_info.name,
+                                            raw_bindings=[
+                                                json.dumps(idx_fx.
+                                                           get_dict_repr()[
+                                                             "bindings"])]))
+            x.append(fld_req)
+
+        return protos.StreamingMessage(
+            request_id=req.request_id,
+            function_metadata_responses=protos.FunctionMetadataResponses(
+                results=x,
+                overall_status=protos.StatusResult(
+                    status=protos.StatusResult.Success)))
+
     async def _handle__function_load_request(self, req):
         func_request = req.function_load_request
         function_id = func_request.function_id
@@ -336,19 +369,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                     result=protos.StatusResult(
                         status=protos.StatusResult.Failure,
                         exception=self._serialize_exception(ex))))
-
-    async def _handle__functions_metadata_request(self, req):
-        metadata_request = req.functions_metadata_request
-        directory = metadata_request.directory
-
-        ### ToDo implement this code - for legacy apps
-
-        return protos.StreamingMessage(
-            request_id=req.request_id,
-            function_metadata_responses=protos.FunctionMetadataResponses(
-                results=None,
-                overall_status=protos.StatusResult(
-                    status=protos.StatusResult.Success)))
 
     async def _handle__invocation_request(self, req):
         invoc_request = req.invocation_request

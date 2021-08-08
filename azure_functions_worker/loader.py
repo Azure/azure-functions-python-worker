@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 """Python functions loader."""
 
-
 import importlib
 import importlib.machinery
 import importlib.util
@@ -11,11 +10,15 @@ import os.path
 import pathlib
 import sys
 import typing
+from os import PathLike, fspath
+
+from azure.functions import FunctionsApp
+from azure.functions.decorators import Function
 
 from .constants import MODULE_NOT_FOUND_TS_URL
 from .utils.wrappers import attach_message_to_exception
-from os import PathLike, fspath
 
+from . import protos
 
 _AZURE_NAMESPACE = '__app__'
 
@@ -44,8 +47,8 @@ def uninstall() -> None:
 
 
 @attach_message_to_exception(
-    expt_type=ImportError,
-    message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
+        expt_type=ImportError,
+        message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
 )
 def load_function(name: str, directory: str, script_file: str,
                   entry_point: typing.Optional[str]):
@@ -60,16 +63,16 @@ def load_function(name: str, directory: str, script_file: str,
         rel_script_path = script_path.relative_to(dir_path.parent)
     except ValueError:
         raise RuntimeError(
-            f'script path {script_file} is not relative to the specified '
-            f'directory {directory}'
+                f'script path {script_file} is not relative to the specified '
+                f'directory {directory}'
         )
 
     last_part = rel_script_path.parts[-1]
     modname, ext = os.path.splitext(last_part)
     if ext != '.py':
         raise RuntimeError(
-            f'cannot load function {name}: '
-            f'invalid Python filename {script_file}')
+                f'cannot load function {name}: '
+                f'invalid Python filename {script_file}')
 
     modname_parts = [_AZURE_NAMESPACE]
     modname_parts.extend(rel_script_path.parts[:-1])
@@ -85,7 +88,45 @@ def load_function(name: str, directory: str, script_file: str,
     func = getattr(mod, entry_point, None)
     if func is None or not callable(func):
         raise RuntimeError(
-            f'cannot load function {name}: function {entry_point}() is not '
-            f'present in {rel_script_path}')
+                f'cannot load function {name}: function {entry_point}() is not '
+                f'present in {rel_script_path}')
 
     return func
+
+
+@attach_message_to_exception(
+        expt_type=ImportError,
+        message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
+)
+def index_function_app(directory: str) -> typing.List[Function]:
+    dir_path = pathlib.Path(directory)
+    top_level_script_files = list(dir_path.glob('*.py'))
+    top_level_script_file_rel_paths = [i.relative_to(dir_path.parent)
+                                       for i in top_level_script_files]
+    top_level_script_file_last_parts = [i.parts[-1] for i
+                                        in top_level_script_file_rel_paths]
+    top_level_module_names = [os.path.splitext(i)[0] for i
+                              in top_level_script_file_last_parts]
+    imported_modules = [importlib.import_module(i) for i in
+                        top_level_module_names]
+
+    app: typing.Optional[FunctionsApp] = None
+    for m in imported_modules:
+        for i in m.__dir__():
+            if isinstance(getattr(m, i, None), FunctionsApp):
+                if not app:
+                    app = getattr(m, i, None)
+                else:
+                    raise ValueError("Multiple Apps defined")
+
+    if app:
+        all_functions = app.get_functions()
+    else:
+        raise ValueError("No Apps defined")
+
+    return all_functions
+
+
+def convert_indexed_fx_to_metadata(idx_fx: Function):
+    protos.RpcFunctionMetadata()
+    return None

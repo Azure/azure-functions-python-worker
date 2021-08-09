@@ -320,8 +320,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                                             is_proxy=False,
                                             language="python",
                                             bindings=b_proto,
-                                            raw_bindings=[
-                                                json.dumps(idx_fx.get_bindings_dict())]))
+                                            raw_bindings=[json.dumps(i) for i in idx_fx.get_bindings_dict()["bindings"]]))
             x.append(fld_req)
 
         return protos.StreamingMessage(
@@ -341,24 +340,25 @@ class Dispatcher(metaclass=DispatcherMeta):
                     f'function ID: {function_id}'
                     f'function Name: {function_name}')
         try:
-            func = loader.load_function(
-                func_request.metadata.name,
-                func_request.metadata.directory,
-                func_request.metadata.script_file,
-                func_request.metadata.entry_point)
+            if not self._functions.get_function(function_id):
+                func = loader.load_function(
+                    func_request.metadata.name,
+                    func_request.metadata.directory,
+                    func_request.metadata.script_file,
+                    func_request.metadata.entry_point)
 
-            self._functions.add_function(
-                function_id, func, func_request.metadata)
+                self._functions.add_function(
+                    function_id, func, func_request.metadata)
 
-            ExtensionManager.function_load_extension(
-                function_name,
-                func_request.metadata.directory
-            )
+                ExtensionManager.function_load_extension(
+                    function_name,
+                    func_request.metadata.directory
+                )
 
-            logger.info('Successfully processed FunctionLoadRequest, '
-                        f'request ID: {self.request_id}, '
-                        f'function ID: {function_id},'
-                        f'function Name: {function_name}')
+                logger.info('Successfully processed FunctionLoadRequest, '
+                            f'request ID: {self.request_id}, '
+                            f'function ID: {function_id},'
+                            f'function Name: {function_name}')
 
             return protos.StreamingMessage(
                 request_id=self.request_id,

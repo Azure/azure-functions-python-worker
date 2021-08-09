@@ -5,7 +5,7 @@ import operator
 import pathlib
 import typing
 
-from azure.functions._decorators import Binding, DataType, BindingDirection, DataType
+from azure.functions._decorators import Binding, DataType
 from azure.functions.decorators import Function
 
 from . import bindings as bindings_utils
@@ -296,13 +296,13 @@ class Registry:
 
         bound_params = {}
         for binding in function.get_bindings():
-            if binding.direction == BindingDirection(protos.BindingInfo.inout):
+            if binding.direction == protos.BindingInfo.inout:
                 raise FunctionLoadError(
                     func_name,
                     '"inout" bindings are not supported')
 
             if binding.name == '$return':
-                if binding.direction != BindingDirection(protos.BindingInfo.out):
+                if binding.direction != protos.BindingInfo.out:
                     raise FunctionLoadError(
                         func_name,
                         '"$return" binding must have direction set to "out"')
@@ -373,7 +373,7 @@ class Registry:
             else:
                 is_param_out = False
 
-            is_binding_out = binding.direction == BindingDirection(protos.BindingInfo.out)
+            is_binding_out = binding.direction == protos.BindingInfo.out
 
             if is_param_out:
                 param_anno_args = typing_inspect.get_args(param_anno)

@@ -304,18 +304,24 @@ class Dispatcher(metaclass=DispatcherMeta):
             f_id = str(uuid.uuid4())
             id, f_info = self._functions.add_indexed_function(function_id=f_id,
                                                               function=idx_fx)
+            b_proto = {}
+            for b in idx_fx.get_bindings():
+                b_proto[b.name] = protos.BindingInfo(type=b.type,
+                                                    data_type=b.data_type,
+                                                    direction=b.direction)
             fld_req = protos. \
                 FunctionLoadRequest(function_id=id,
                                     managed_dependency_enabled=False,
                                     metadata=protos.RpcFunctionMetadata(
                                             name=f_info.name,
                                             directory=f_info.directory,
-                                            script_file=idx_fx.script_file,
+                                            script_file=idx_fx.function_script_file,
                                             entry_point=f_info.name,
+                                            is_proxy=False,
+                                            language="python",
+                                            bindings=b_proto,
                                             raw_bindings=[
-                                                json.dumps(idx_fx.
-                                                           get_dict_repr()[
-                                                             "bindings"])]))
+                                                json.dumps(idx_fx.get_bindings_dict())]))
             x.append(fld_req)
 
         return protos.StreamingMessage(

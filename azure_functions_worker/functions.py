@@ -277,7 +277,7 @@ class Registry:
     def add_indexed_function(self, function_id: str,
                              function: Function):
         func = function.get_user_function()
-        func_name = func.__name__
+        func_name = function.get_function_name()
 
         input_types: typing.Dict[str, ParamTypeInfo] = {}
         output_types: typing.Dict[str, ParamTypeInfo] = {}

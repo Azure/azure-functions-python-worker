@@ -17,12 +17,12 @@ from Crypto.Hash.SHA256 import SHA256Hash
 from Crypto.Util.Padding import pad
 import requests
 
-# Linux Consumption Testing Configs
-DOCKER_PATH = "DOCKER_PATH"
-DOCKER_DEFAULT_PATH = "docker"
-MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
-MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
-DUMMY_CONT_KEY = "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY="
+# Linux Consumption Testing Constants
+_DOCKER_PATH = "DOCKER_PATH"
+_DOCKER_DEFAULT_PATH = "docker"
+_MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
+_MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
+_DUMMY_CONT_KEY = "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY="
 
 
 class LinuxConsumptionWebHostController:
@@ -30,7 +30,7 @@ class LinuxConsumptionWebHostController:
     test cases on it.
     """
 
-    _docker_cmd = os.getenv(DOCKER_PATH, DOCKER_DEFAULT_PATH)
+    _docker_cmd = os.getenv(_DOCKER_PATH, _DOCKER_DEFAULT_PATH)
     _ports: Dict[str, str] = {}  # { uuid: port }
     _mesh_images: Dict[str, str] = {}  # { host version: image tag }
 
@@ -63,18 +63,16 @@ class LinuxConsumptionWebHostController:
         env["WEBSITE_HOSTNAME"] = f"{self._uuid}.azurewebsites.com"
 
         # Send the specialization context via a POST request
-        response = requests.post(
-            f'{url}/admin/instance/assign',
-            headers={
-                "Content-Type": "application/json",
-                "x-ms-site-restricted-token": self._get_site_restricted_token()
-            },
+        req = requests.Request(
+            method="POST",
+            url=f"{url}/admin/instance/assign",
             data=json.dumps({
                 "encryptedContext": self._get_site_encrypted_context(
                     self._uuid, env
                 )
             })
         )
+        response = self.send_request(req)
         if not response.ok:
             stdout = self.get_container_logs()
             raise RuntimeError(f'Failed to specialize container {self._uuid}'
@@ -118,7 +116,7 @@ class LinuxConsumptionWebHostController:
         if python_version != '3.6':
             regex = re.compile(host_major + r'.\d+.\d+-python' + python_version)
 
-        response = requests.get(MESH_IMAGE_URL, allow_redirects=True)
+        response = requests.get(_MESH_IMAGE_URL, allow_redirects=True)
         if not response.ok:
             raise RuntimeError(f'Failed to query latest image for v{host_major}'
                                f' Python {python_version}.'
@@ -127,7 +125,7 @@ class LinuxConsumptionWebHostController:
         tag_list = response.json().get('tags', [])
         version = list(filter(regex.match, tag_list))[-1]
 
-        image_tag = f'{MESH_IMAGE_REPO}:{version}'
+        image_tag = f'{_MESH_IMAGE_REPO}:{version}'
         cls._mesh_images[host_major] = image_tag
         return image_tag
 
@@ -150,7 +148,7 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["--cap-add", "SYS_ADMIN"])
         run_cmd.extend(["--device", "/dev/fuse"])
         run_cmd.extend(["-e", f"CONTAINER_NAME={self._uuid}"])
-        run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={DUMMY_CONT_KEY}"])
+        run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={_DUMMY_CONT_KEY}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
 
@@ -202,7 +200,7 @@ class LinuxConsumptionWebHostController:
         """Kill a container by its name. Returns True on success.
         """
         kill_cmd = [self._docker_cmd, "rm", "-f", self._uuid]
-        kill_process = subprocess.run(args=kill_cmd)
+        kill_process = subprocess.run(args=kill_cmd, stdout=subprocess.DEVNULL)
         exit_code = kill_process.returncode
 
         if self._uuid in self._ports:
@@ -215,7 +213,7 @@ class LinuxConsumptionWebHostController:
         which expires in one day.
         """
         exp_ns = int(time.time() + 24 * 60 * 60) * 1000000000
-        return cls._encrypt_context(DUMMY_CONT_KEY, f'exp={exp_ns}')
+        return cls._encrypt_context(_DUMMY_CONT_KEY, f'exp={exp_ns}')
 
     @classmethod
     def _get_site_encrypted_context(cls,
@@ -230,7 +228,7 @@ class LinuxConsumptionWebHostController:
 
         # Ensure WEBSITE_SITE_NAME is set to simulate production mode
         ctx["Environment"]["WEBSITE_SITE_NAME"] = site_name
-        return cls._encrypt_context(DUMMY_CONT_KEY, json.dumps(ctx))
+        return cls._encrypt_context(_DUMMY_CONT_KEY, json.dumps(ctx))
 
     @classmethod
     def _encrypt_context(cls, encryption_key: str, plain_text: str) -> str:

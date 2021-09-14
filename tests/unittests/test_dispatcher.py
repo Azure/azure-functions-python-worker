@@ -128,17 +128,17 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._default_workers)
             mock_logger.warning.assert_any_call(
-                    f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
-                    f'to a value between '
-                    f'{PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
-                    'sys.maxint. Reverting to default value for '
-                    'max_workers')
+                f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
+                f'to a value between '
+                f'{PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
+                'sys.maxint. Reverting to default value for '
+                'max_workers')
 
     async def test_dispatcher_sync_threadpool_exceed_max_setting(self):
         """Test if the sync threadpool will pick up default max value when the
         setting is above maximum
         """
-        with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+        with patch('azure_functions_worker.dispatcher.logger'):
             # Configure thread pool max worker to an invalid value
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT:
                               f'{self._over_max_workers}'})
@@ -188,7 +188,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
         Note: This is designed for Linux Consumption.
         """
-        with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+        with patch('azure_functions_worker.dispatcher.logger'):
             async with self._ctrl as host:
                 await self._check_if_function_is_ok(host)
 
@@ -216,11 +216,11 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                                       self._default_workers)
 
                 mock_logger.warning.assert_any_call(
-                        f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
-                        f'to a value between '
-                        f'{PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
-                        'sys.maxint. Reverting to default value for '
-                        'max_workers')
+                    f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
+                    f'to a value between '
+                    f'{PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
+                    'sys.maxint. Reverting to default value for '
+                    'max_workers')
 
     async def test_sync_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
@@ -419,7 +419,7 @@ class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):
         """Test if the sync threadpool will use any value and there isn't any
         artificial max value set.
         """
-        with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+        with patch('azure_functions_worker.dispatcher.logger'):
             async with self._ctrl as host:
                 await self._check_if_function_is_ok(host)
 
@@ -430,8 +430,8 @@ class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._allowed_max_workers)
                 self.assertNotEqual(
-                        self._ctrl._worker.get_sync_tp_workers_set(),
-                        self._default_workers)
+                    self._ctrl._worker.get_sync_tp_workers_set(),
+                    self._default_workers)
 
 
 @unittest.skipIf(sys.version_info.minor != 9,

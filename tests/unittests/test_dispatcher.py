@@ -445,15 +445,13 @@ class TestThreadPoolSettingsPython39(TestThreadPoolSettingsPython38):
 
         self.mock_os_cpu = patch(
             'os.cpu_count', return_value=2)
-        self.mock_os_cpu.start()
         # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
         self._default_workers: Optional[int] = 6
-        self._over_max_workers: int = 10000
-        self._allowed_max_workers: int = self._over_max_workers
-
         self.mock_version_info = patch(
             'azure_functions_worker.dispatcher.sys.version_info',
             SysVersionInfo(3, 9, 0, 'final', 0))
+
+        self.mock_os_cpu.start()
         self.mock_version_info.start()
 
     def tearDown(self):

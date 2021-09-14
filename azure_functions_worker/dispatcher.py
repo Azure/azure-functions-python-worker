@@ -18,17 +18,20 @@ from typing import List, Optional
 
 import grpc
 
+from . import __version__
 from . import bindings
 from . import constants
 from . import functions
 from . import loader
 from . import protos
-from .constants import (CONSOLE_LOG_PREFIX, PYTHON_THREADPOOL_THREAD_COUNT,
+from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 from .logging import disable_console_logging, enable_console_logging
-from .logging import error_logger, is_system_log_category, logger
+from .logging import (logger, error_logger, is_system_log_category,
+                      CONSOLE_LOG_PREFIX)
+from .extension import ExtensionManager
 from .utils.common import get_app_setting
 from .utils.tracing import marshall_exception_trace
 from .utils.dependency import DependencyManager
@@ -256,8 +259,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_resp_queue.put_nowait(resp)
 
     async def _handle__worker_init_request(self, req):
-        logger.info('Received WorkerInitRequest, request ID %s',
-                    self.request_id)
+        logger.info('Received WorkerInitRequest, '
+                    'python version %s, worker version %s, request ID %s',
+                    sys.version, __version__, self.request_id)
 
         worker_init_request = req.worker_init_request
         host_capabilities = worker_init_request.capabilities
@@ -269,13 +273,16 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
             constants.TYPED_DATA_COLLECTION: _TRUE,
             constants.RPC_HTTP_BODY_ONLY: _TRUE,
-            constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.WORKER_STATUS: _TRUE,
+            constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
-        # Can detech worker packages
-        DependencyManager.prioritize_customer_dependencies()
+        # Can detech worker packages only when customer's code is present
+        # This only works in dedicated and premium sku.
+        # The consumption sku will switch on environment_reload request.
+        if not DependencyManager.is_in_linux_consumption():
+            DependencyManager.prioritize_customer_dependencies()
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -289,7 +296,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # for host to judge scale decisions of out-of-proc languages.
         # Having log here will reduce the responsiveness of the worker.
         return protos.StreamingMessage(
-            request_id=self.request_id,
+            request_id=req.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
     async def _handle__function_load_request(self, req):
@@ -310,6 +317,11 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             self._functions.add_function(
                 function_id, func, func_request.metadata)
+
+            ExtensionManager.function_load_extension(
+                function_name,
+                func_request.metadata.directory
+            )
 
             logger.info('Successfully processed FunctionLoadRequest, '
                         f'request ID: {self.request_id}, '
@@ -380,20 +392,24 @@ class Dispatcher(metaclass=DispatcherMeta):
                     pytype=pb_type_info.pytype,
                     shmem_mgr=self._shmem_mgr)
 
+            fi_context = bindings.Context(
+                fi.name, fi.directory, invocation_id, trace_context)
             if fi.requires_context:
-                args['context'] = bindings.Context(
-                    fi.name, fi.directory, invocation_id, trace_context)
+                args['context'] = fi_context
 
             if fi.output_types:
                 for name in fi.output_types:
                     args[name] = bindings.Out()
 
             if fi.is_async:
-                call_result = await fi.func(**args)
+                call_result = await self._run_async_func(
+                    fi_context, fi.func, args
+                )
             else:
                 call_result = await self._loop.run_in_executor(
                     self._sync_call_tp,
-                    self.__run_sync_func, invocation_id, fi.func, args)
+                    self._run_sync_func,
+                    invocation_id, fi_context, fi.func, args)
             if call_result is not None and not fi.has_return:
                 raise RuntimeError(f'function {fi.name!r} without a $return '
                                    'binding returned a non-None value')
@@ -476,7 +492,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             )
 
             # Reload azure google namespaces
-            DependencyManager.reload_azure_google_namespace(
+            DependencyManager.reload_customer_libraries(
                 func_env_reload_request.function_app_directory
             )
 
@@ -563,7 +579,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN or (
                     int_value > PYTHON_THREADPOOL_THREAD_COUNT_MAX):
                 logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
-                               'to a value between 1 and 32. '
+                               f'to a value between '
+                               f'{PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
+                               f'{PYTHON_THREADPOOL_THREAD_COUNT_MAX}. '
                                'Reverting to default value for max_workers')
                 return False
 
@@ -591,14 +609,20 @@ class Dispatcher(metaclass=DispatcherMeta):
             max_workers=max_worker
         )
 
-    def __run_sync_func(self, invocation_id, func, params):
+    def _run_sync_func(self, invocation_id, context, func, params):
         # This helper exists because we need to access the current
         # invocation_id from ThreadPoolExecutor's threads.
         _invocation_id_local.v = invocation_id
         try:
-            return func(**params)
+            return ExtensionManager.get_sync_invocation_wrapper(context,
+                                                                func)(params)
         finally:
             _invocation_id_local.v = None
+
+    async def _run_async_func(self, context, func, params):
+        return await ExtensionManager.get_async_invocation_wrapper(
+            context, func, params
+        )
 
     def __poll_grpc(self):
         options = []

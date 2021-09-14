@@ -16,6 +16,8 @@ from distutils.command import build
 from setuptools import setup
 from setuptools.command import develop
 
+from azure_functions_worker import __version__
+
 # The GitHub repository of the Azure Functions Host
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
 WEBHOST_TAG_PREFIX = "v3."
@@ -71,7 +73,7 @@ NUGET_CONFIG = """\
     <add key="buildTools"
          value="https://www.myget.org/F/30de4ee06dd54956a82013fa17a3accb/" />
     <add key="AspNetVNext"
-         value="https://dotnet.myget.org/F/aspnetcore-dev/api/v3/index.json" />
+         value="https://www.myget.org/F/aspnetcore-dev/api/v3/index.json" />
   </packageSources>
 </configuration>
 """
@@ -354,7 +356,7 @@ with open("README.md") as readme:
 
 setup(
     name='azure-functions-worker',
-    version='1.1.10',
+    version=__version__,
     description='Python Language Worker for Azure Functions Host',
     author="Microsoft Corp.",
     author_email="azurefunctions@microsoft.com",
@@ -382,6 +384,7 @@ setup(
               'azure_functions_worker.protos.identity',
               'azure_functions_worker.protos.shared',
               'azure_functions_worker.bindings',
+              'azure_functions_worker.bindings.shared_memory_data_transfer',
               'azure_functions_worker.utils',
               'azure_functions_worker._thirdparty'],
     install_requires=[
@@ -390,7 +393,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'azure-functions==1.7.0',
+            'azure-functions==1.7.2',
             'azure-eventhub~=5.1.0',
             'python-dateutil~=2.8.1',
             'flake8~=3.7.9',

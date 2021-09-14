@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
 import typing
 
 from azure_functions_worker import testutils
@@ -20,6 +19,15 @@ HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
 
 
 class TestLogFilteringFunctions(testutils.WebHostTestCase):
+    """This class is for testing the logger behavior in Python Worker when
+    dealing with customer's log and system's log. Here's a list of expected
+    behaviors:
+                  local_console  customer_app_insight  functions_kusto_table
+    system_log    false          false                 true
+    customer_log  true           true                  false
+
+    Please ensure the following unit test cases align with the expectations
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -50,6 +58,7 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
         self.assertIn('logging info', host_out)
         self.assertIn('logging warning', host_out)
         self.assertIn('logging error', host_out)
+        # See HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO, debug log is disabled
         self.assertNotIn('logging debug', host_out)
 
     def test_debug_with_user_logging(self):
@@ -61,4 +70,40 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
         self.assertIn('logging info', host_out)
         self.assertIn('logging warning', host_out)
         self.assertIn('logging error', host_out)
+        # See HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO, debug log is disabled
         self.assertNotIn('logging debug', host_out)
+
+    def test_info_with_sdk_logging(self):
+        """Invoke a HttpTrigger sdk_logging which contains logging invocation
+        via the azure.functions logger. This should be treated as system logs,
+        which means the log should not be displayed in local console.
+        """
+        r = self.webhost.request('GET', 'sdk_logging')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-sdk-logger')
+
+    def check_log_info_with_sdk_logging(self, host_out: typing.List[str]):
+        # See TestLogFilteringFunctions docstring
+        # System log should not be captured in console
+        self.assertNotIn('sdk_logger info', host_out)
+        self.assertNotIn('sdk_logger warning', host_out)
+        self.assertNotIn('sdk_logger error', host_out)
+        self.assertNotIn('sdk_logger debug', host_out)
+
+    def test_info_with_sdk_submodule_logging(self):
+        """Invoke a HttpTrigger sdk_submodule_logging which contains logging
+        invocation via the azure.functions logger. This should be treated as
+        system logs.
+        """
+        r = self.webhost.request('GET', 'sdk_submodule_logging')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-sdk-submodule-logging')
+
+    def check_log_info_with_sdk_submodule_logging(self,
+                                                  host_out: typing.List[str]):
+        # See TestLogFilteringFunctions docstring
+        # System log should not be captured in console
+        self.assertNotIn('sdk_submodule_logger info', host_out)
+        self.assertNotIn('sdk_submodule_logger warning', host_out)
+        self.assertNotIn('sdk_submodule_logger error', host_out)
+        self.assertNotIn('sdk_submodule_logger debug', host_out)

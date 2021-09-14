@@ -10,7 +10,9 @@ from unittest.mock import patch
 from azure_functions_worker import protos
 from azure_functions_worker import testutils
 from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
-    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT
+    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT, \
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX, \
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
@@ -35,6 +37,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             script_root=DISPATCHER_FUNCTIONS_DIR)
         self._default_workers: Optional[
             int] = PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT
+        self._allowed_max_workers: int = 100000
         self._pre_env = dict(os.environ)
         self.mock_version_info = patch(
             'azure_functions_worker.dispatcher.sys.version_info',
@@ -87,10 +90,12 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """Test if the sync threadpool maximum worker can be set
         """
         # Configure thread pool max worker
-        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
+        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT:
+                          f'{self._allowed_max_workers}'})
         async with self._ctrl as host:
             await self._check_if_function_is_ok(host)
-            await self._assert_workers_threadpool(self._ctrl, host, 5)
+            await self._assert_workers_threadpool(self._ctrl, host,
+                                                  self._allowed_max_workers)
 
     async def test_dispatcher_sync_threadpool_invalid_worker_count(self):
         """Test when sync threadpool maximum worker is set to an invalid value,
@@ -124,15 +129,20 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                                       self._default_workers)
             mock_logger.warning.assert_any_call(
                 f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set to a value '
-                'between 1 and 32. Reverting to default value for max_workers')
+                f'between {PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
+                f'{PYTHON_THREADPOOL_THREAD_COUNT_MAX}. Reverting to default '
+                f'value for max_workers')
 
+    @unittest.skip("We no more check any max limit. This is up to the customer,"
+                   " how ever high int they want to set")
     async def test_dispatcher_sync_threadpool_exceed_max_setting(self):
         """Test if the sync threadpool will pick up default value when the
         setting is above maximum
         """
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             # Configure thread pool max worker to an invalid value
-            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '33'})
+            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT:
+                              f'{self._over_max_workers}'})
             async with self._ctrl as host:
                 await self._check_if_function_is_ok(host)
 
@@ -142,8 +152,9 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
             mock_logger.warning.assert_any_call(
                 f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set to a value '
-                'between 1 and 32. '
-                'Reverting to default value for max_workers')
+                f'between {PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
+                f'{PYTHON_THREADPOOL_THREAD_COUNT_MAX}. Reverting to default '
+                f'value for max_workers')
 
     async def test_dispatcher_sync_threadpool_in_placeholder(self):
         """Test if the sync threadpool will pick up app setting in placeholder
@@ -154,10 +165,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
             # Reload environment variable on specialization
             await host.reload_environment(environment={
-                PYTHON_THREADPOOL_THREAD_COUNT: '3'
+                PYTHON_THREADPOOL_THREAD_COUNT: f'{self._allowed_max_workers}'
             })
-            # Ensure the dispatcher sync threadpool should fallback to 1
-            await self._assert_workers_threadpool(self._ctrl, host, 3)
+            await self._assert_workers_threadpool(self._ctrl, host,
+                                                  self._allowed_max_workers)
 
     async def test_dispatcher_sync_threadpool_in_placeholder_invalid(self):
         """Test if the sync threadpool will use the default setting when the
@@ -178,6 +189,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 mock_logger.warning.assert_any_call(
                     f'{PYTHON_THREADPOOL_THREAD_COUNT} must be an integer')
 
+    @unittest.skip("We no more check any max limit. This is up to the customer,"
+                   " how ever high int they want to set")
     async def test_dispatcher_sync_threadpool_in_placeholder_above_max(self):
         """Test if the sync threadpool will use the default setting when the
         app setting is above maximum
@@ -188,7 +201,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
                 # Reload environment variable on specialization
                 await host.reload_environment(environment={
-                    PYTHON_THREADPOOL_THREAD_COUNT: '33'
+                    PYTHON_THREADPOOL_THREAD_COUNT: f'{self._over_max_workers}'
                 })
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._default_workers)
@@ -196,7 +209,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 mock_logger.warning.assert_any_call(
                     f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set to a '
                     f'value '
-                    'between 1 and 32. '
+                    'between 1 and 1024. '
                     'Reverting to default value for max_workers')
 
     async def test_dispatcher_sync_threadpool_in_placeholder_below_min(self):
@@ -216,10 +229,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                                       self._default_workers)
 
                 mock_logger.warning.assert_any_call(
-                    f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set to a '
-                    f'value '
-                    'between 1 and 32. '
-                    'Reverting to default value for max_workers')
+                    f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set to a value '
+                    f'between {PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
+                    f'{PYTHON_THREADPOOL_THREAD_COUNT_MAX}. Reverting to '
+                    f'default value for max_workers')
 
     async def test_sync_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
@@ -346,7 +359,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         # Check if the dispatcher still function
         await self._check_if_function_is_ok(host)
 
-    async def _check_if_function_is_ok(self, host) -> Tuple[str, str]:
+    async def _check_if_function_is_ok(self, host) -> Tuple[str, str, str]:
         # Ensure the function can be properly loaded
         function_name = "show_context"
         func_id, load_r = await host.load_function(function_name)

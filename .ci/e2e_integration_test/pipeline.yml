@@ -34,3 +34,10 @@ steps:
     AzureWebJobsEventGridConnectionKey: $(AzureWebJobsEventGridConnectionKey)
     PythonVersion: $(PYTHON_VERSION)
   displayName: 'Running Python Language Worker E2E Tests'
+- task: PublishTestResults@2
+  displayName: 'Publish Python Worker E2E Test Result'
+  condition: succeededOrFailed()
+  inputs:
+    testResultsFiles: 'e2e-integration-test-report.xml'
+    testRunTitle: 'Publish Python Worker E2E Test Result'
+    failTaskOnFailedTests: true

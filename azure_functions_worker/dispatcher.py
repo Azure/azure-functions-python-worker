@@ -26,7 +26,7 @@ from . import loader
 from . import protos
 from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-                        PYTHON_THREADPOOL_THREAD_COUNT_MAX,
+                        PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
@@ -576,24 +576,27 @@ class Dispatcher(metaclass=DispatcherMeta):
                                'integer')
                 return False
 
-            if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN or (
-                    int_value > PYTHON_THREADPOOL_THREAD_COUNT_MAX):
+            if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN:
                 logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
                                f'to a value between '
                                f'{PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
-                               f'{PYTHON_THREADPOOL_THREAD_COUNT_MAX}. '
-                               'Reverting to default value for max_workers')
+                               'sys.maxint. Reverting to default value for '
+                               'max_workers')
                 return False
-
             return True
 
         # Starting Python 3.9, worker won't be putting a limit on the
         # max_workers count in the created threadpool.
         default_value = None if sys.version_info.minor == 9 \
             else f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}'
+
         max_workers = get_app_setting(setting=PYTHON_THREADPOOL_THREAD_COUNT,
                                       default_value=default_value,
                                       validator=tp_max_workers_validator)
+
+        if sys.version_info.minor <= 7:
+            max_workers = min(int(max_workers),
+                              PYTHON_THREADPOOL_THREAD_COUNT_MAX_37)
 
         # We can box the app setting as int for earlier python versions.
         return int(max_workers) if max_workers else None

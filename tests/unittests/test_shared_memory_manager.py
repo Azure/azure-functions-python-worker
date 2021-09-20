@@ -323,6 +323,28 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         self.assertFalse(is_mem_map_found)
         self.assertEqual(0, len(manager.allocated_mem_maps.keys()))
 
+    def test_do_not_free_resources_on_dispose(self):
+        """
+        Verify that when the allocated shared memory maps are freed,
+        their backing resources are not freed.
+        Note: The shared memory map should no longer be tracked by the
+        SharedMemoryManager, though.
+        """
+        manager = SharedMemoryManager()
+        content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
+        content = self.get_random_bytes(content_size)
+        shared_mem_meta = manager.put_bytes(content)
+        self.assertIsNotNone(shared_mem_meta)
+        mem_map_name = shared_mem_meta.mem_map_name
+        is_mem_map_found = mem_map_name in manager.allocated_mem_maps
+        self.assertTrue(is_mem_map_found)
+        self.assertEqual(1, len(manager.allocated_mem_maps.keys()))
+        free_success = manager.free_mem_map(mem_map_name, False)
+        self.assertTrue(free_success)
+        is_mem_map_found = mem_map_name in manager.allocated_mem_maps
+        self.assertFalse(is_mem_map_found)
+        self.assertEqual(0, len(manager.allocated_mem_maps.keys()))
+
     def test_invalid_put_allocated_mem_maps(self):
         """
         Verify that after an invalid put operation, no shared memory maps were

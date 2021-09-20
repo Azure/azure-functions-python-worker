@@ -6,7 +6,10 @@ import logging
 import logging.handlers
 import sys
 
-from .constants import CONSOLE_LOG_PREFIX
+# Logging Prefixes
+CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
+SYSTEM_LOG_PREFIX = "azure_functions_worker"
+SDK_LOG_PREFIX = "azure.functions"
 
 
 logger: logging.Logger = logging.getLogger('azure_functions_worker')
@@ -74,6 +77,15 @@ def enable_console_logging() -> None:
 
 
 def is_system_log_category(ctg: str) -> bool:
-    # Category starts with 'azure_functions_worker' or
-    # 'azure_functions_worker_errors' will be treated as system logs
-    return ctg.lower().startswith('azure_functions_worker')
+    """Check if the logging namespace belongs to system logs. Category starts
+    with the following name will be treated as system logs.
+    1. 'azure_functions_worker' (Worker Info)
+    2. 'azure_functions_worker_errors' (Worker Error)
+    3. 'azure.functions' (SDK)
+
+    Expected behaviors for sytem logs and customer logs are listed below:
+                  local_console  customer_app_insight  functions_kusto_table
+    system_log    false          false                 true
+    customer_log  true           true                  false
+    """
+    return ctg.startswith(SYSTEM_LOG_PREFIX) or ctg.startswith(SDK_LOG_PREFIX)

@@ -1,5 +1,6 @@
 from azure_functions_worker.utils.common import is_true_like
 from typing import List, Optional
+from types import ModuleType
 import importlib
 import inspect
 import os
@@ -9,6 +10,7 @@ import sys
 from ..logging import logger
 from ..constants import (
     AZURE_WEBJOBS_SCRIPT_ROOT,
+    CONTAINER_NAME,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39
@@ -67,6 +69,10 @@ class DependencyManager:
         cls.worker_deps_path = cls._get_worker_deps_path()
 
     @classmethod
+    def is_in_linux_consumption(cls):
+        return CONTAINER_NAME in os.environ
+
+    @classmethod
     @enable_feature_by(
         flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
         flag_default=(
@@ -87,6 +93,11 @@ class DependencyManager:
         # The following log line will not show up in core tools but should
         # work in kusto since core tools only collects gRPC logs. This function
         # is executed even before the gRPC logging channel is ready.
+        logger.info(f'Applying use_worker_dependencies:'
+                    f' worker_dependencies: {cls.worker_deps_path},'
+                    f' customer_dependencies: {cls.cx_deps_path},'
+                    f' working_directory: {cls.cx_working_dir}')
+
         cls._remove_from_sys_path(cls.cx_deps_path)
         cls._remove_from_sys_path(cls.cx_working_dir)
         cls._add_to_sys_path(cls.worker_deps_path, True)
@@ -101,7 +112,7 @@ class DependencyManager:
             PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
         )
     )
-    def prioritize_customer_dependencies(cls):
+    def prioritize_customer_dependencies(cls, cx_working_dir=None):
         """Switch the sys.path and ensure the customer's code import are loaded
         from CX's deppendencies.
 
@@ -112,13 +123,33 @@ class DependencyManager:
         As for Linux Consumption, this will only remove worker_deps_path,
         but the customer's path will be loaded in function_environment_reload.
 
-        The search order of a module name in customer frame is:
+        The search order of a module name in customer's paths is:
         1. cx_deps_path
-        2. cx_working_dir
+        2. worker_deps_path
+        3. cx_working_dir
         """
+        # Try to get the latest customer's working directory
+        # cx_working_dir => cls.cx_working_dir => AzureWebJobsScriptRoot
+        working_directory: str = ''
+        if cx_working_dir:
+            working_directory: str = os.path.abspath(cx_working_dir)
+        if not working_directory:
+            working_directory = cls.cx_working_dir
+        if not working_directory:
+            working_directory = os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT, '')
+
+        # Try to get the latest customer's dependency path
+        cx_deps_path: str = cls._get_cx_deps_path()
+        if not cx_deps_path:
+            cx_deps_path = cls.cx_deps_path
+
+        logger.info('Applying prioritize_customer_dependencies:'
+                    f' worker_dependencies: {cls.worker_deps_path},'
+                    f' customer_dependencies: {cx_deps_path},'
+                    f' working_directory: {working_directory}')
+
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.cx_deps_path, True)
-        cls._add_to_sys_path(cls.cx_working_dir, False)
 
         # Deprioritize worker dependencies but don't completely remove it
         # Otherwise, it will break some really old function apps, those
@@ -126,10 +157,16 @@ class DependencyManager:
         # https://github.com/Azure/azure-functions-core-tools/pull/1498
         cls._add_to_sys_path(cls.worker_deps_path, False)
 
-        logger.info(f'Start using customer dependencies {cls.cx_deps_path}')
+        # The modules defined in customer's working directory should have the
+        # least priority since we uses the new folder structure.
+        # Please check the "Message to customer" section in the following PR:
+        # https://github.com/Azure/azure-functions-python-worker/pull/726
+        cls._add_to_sys_path(working_directory, False)
+
+        logger.info('Finished prioritize_customer_dependencies')
 
     @classmethod
-    def reload_azure_google_namespace(cls, cx_working_dir: str):
+    def reload_customer_libraries(cls, cx_working_dir: str):
         """Reload azure and google namespace, this including any modules in
         this namespace, such as azure-functions, grpcio, grpcio-tools etc.
 
@@ -152,7 +189,7 @@ class DependencyManager:
             use_new = is_true_like(use_new_env)
 
         if use_new:
-            cls.reload_all_namespaces_from_customer_deps(cx_working_dir)
+            cls.prioritize_customer_dependencies(cx_working_dir)
         else:
             cls.reload_azure_google_namespace_from_worker_deps()
 
@@ -188,33 +225,6 @@ class DependencyManager:
         except Exception as ex:
             logger.info('Unable to reload azure.functions. '
                         'Using default. Exception:\n{}'.format(ex))
-
-    @classmethod
-    def reload_all_namespaces_from_customer_deps(cls, cx_working_dir: str):
-        """This is a new implementation of reloading azure and google
-        namespace from customer's .python_packages folder. Only intended to be
-        used in Linux Consumption scenario.
-
-        Parameters
-        ----------
-        cx_working_dir: str
-            The path which contains customer's project file (e.g. wwwroot).
-        """
-        # Specialized working directory needs to be added
-        working_directory: str = os.path.abspath(cx_working_dir)
-
-        # Switch to customer deps and clear out all module cache in worker deps
-        cls._remove_from_sys_path(cls.worker_deps_path)
-        cls._add_to_sys_path(cls.cx_deps_path, True)
-        cls._add_to_sys_path(working_directory, False)
-
-        # Deprioritize worker dependencies but don't completely remove it
-        # Otherwise, it will break some really old function apps, those
-        # don't have azure-functions module in .python_packages
-        # https://github.com/Azure/azure-functions-core-tools/pull/1498
-        cls._add_to_sys_path(cls.worker_deps_path, False)
-
-        logger.info('Reloaded all namespaces from customer dependencies')
 
     @classmethod
     def _add_to_sys_path(cls, path: str, add_to_first: bool):
@@ -325,7 +335,18 @@ class DependencyManager:
         if worker_deps_paths:
             return worker_deps_paths[0]
 
-        # 2. If it fails to find one, try to find one from the parent path
+        # 2. Try to find module spec of azure.functions without actually
+        #    importing it (e.g. lib/site-packages/azure/functions/__init__.py)
+        try:
+            azf_spec = importlib.util.find_spec('azure.functions')
+            if azf_spec and azf_spec.origin:
+                return os.path.abspath(
+                    os.path.join(os.path.dirname(azf_spec.origin), '..', '..')
+                )
+        except ModuleNotFoundError:
+            logger.warning('Cannot locate built-in azure.functions module')
+
+        # 3. If it fails to find one, try to find one from the parent path
         #    This is used for handling the CI/localdev environment
         return os.path.abspath(
             os.path.join(os.path.dirname(__file__), '..', '..')
@@ -341,18 +362,34 @@ class DependencyManager:
         path: str
             The module cache to be removed if it is imported from this path.
         """
-        all_modules = set(sys.modules.keys()) - set(sys.builtin_module_names)
-        for module_name in all_modules:
-            module = sys.modules[module_name]
-            # Module path can be actual file path or a pure namespace path
-            # For actual files: use __file__ attribute to retrieve module path
-            # For namespace: use __path__[0] to retrieve module path
-            module_path = ''
-            if getattr(module, '__file__', None):
-                module_path = os.path.dirname(module.__file__)
-            elif getattr(module, '__path__', None) and getattr(
-                    module.__path__, '_path', None):
-                module_path = module.__path__._path[0]
+        if not path:
+            return
 
-            if module_path.startswith(path):
-                sys.modules.pop(module_name)
+        not_builtin = set(sys.modules.keys()) - set(sys.builtin_module_names)
+
+        # Don't reload azure_functions_worker
+        to_be_cleared_from_cache = set([
+            module_name for module_name in not_builtin
+            if not module_name.startswith('azure_functions_worker')
+        ])
+
+        for module_name in to_be_cleared_from_cache:
+            module = sys.modules.get(module_name)
+            if not isinstance(module, ModuleType):
+                continue
+
+            # Module path can be actual file path or a pure namespace path.
+            # Both of these has the module path placed in __path__ property
+            # The property .__path__ can be None or does not exist in module
+            try:
+                module_paths = set(getattr(module, '__path__', None) or [])
+                if hasattr(module, '__file__') and module.__file__:
+                    module_paths.add(module.__file__)
+
+                if any([p for p in module_paths if p.startswith(path)]):
+                    sys.modules.pop(module_name)
+            except Exception as e:
+                logger.warning(
+                    f'Attempt to remove module cache for {module_name} but'
+                    f' failed with {e}. Using the original module cache.'
+                )

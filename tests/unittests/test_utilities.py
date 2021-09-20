@@ -1,7 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+import sys
 import unittest
+from unittest.mock import patch
 import typing
 
 from azure_functions_worker.utils import common, wrappers
@@ -67,11 +69,23 @@ class MockMethod:
 class TestUtilities(unittest.TestCase):
 
     def setUp(self):
-        self._pre_env = dict(os.environ)
+        self._dummy_sdk_sys_path = os.path.join(
+            os.path.dirname(__file__),
+            'resources',
+            'mock_azure_functions'
+        )
+
+        self.mock_environ = patch.dict('os.environ', os.environ.copy())
+        self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
+        self.mock_sys_path = patch('sys.path', sys.path.copy())
+        self.mock_environ.start()
+        self.mock_sys_module.start()
+        self.mock_sys_path.start()
 
     def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self._pre_env)
+        self.mock_sys_path.stop()
+        self.mock_sys_module.stop()
+        self.mock_environ.stop()
 
     def test_is_true_like_accepted(self):
         self.assertTrue(common.is_true_like('1'))
@@ -311,6 +325,40 @@ class TestUtilities(unittest.TestCase):
             is_python_version_38,
             is_python_version_39
         ]))
+
+    def test_get_sdk_from_sys_path(self):
+        """Test if the extension manager can find azure.functions module
+        """
+        module = common.get_sdk_from_sys_path()
+        self.assertIsNotNone(module.__file__)
+
+    def test_get_sdk_from_sys_path_after_updating_sys_path(self):
+        """Test if the get_sdk_from_sys_path can find the newer azure.functions
+        module after updating the sys.path. This is specifically for a scenario
+        after the dependency manager is switched to customer's path
+        """
+        sys.path.insert(0, self._dummy_sdk_sys_path)
+        module = common.get_sdk_from_sys_path()
+        self.assertEqual(
+            os.path.dirname(module.__file__),
+            os.path.join(self._dummy_sdk_sys_path, 'azure', 'functions')
+        )
+
+    def test_get_sdk_version(self):
+        """Test if sdk version can be retrieved correctly
+        """
+        module = common.get_sdk_from_sys_path()
+        sdk_version = common.get_sdk_version(module)
+        # e.g. 1.6.0, 1.7.0b, 1.8.1dev
+        self.assertRegex(sdk_version, r'\d+\.\d+\.\w+')
+
+    def test_get_sdk_dummy_version(self):
+        """Test if sdk version can get dummy sdk version
+        """
+        sys.path.insert(0, self._dummy_sdk_sys_path)
+        module = common.get_sdk_from_sys_path()
+        sdk_version = common.get_sdk_version(module)
+        self.assertEqual(sdk_version, 'dummy')
 
     def _unset_feature_flag(self):
         try:

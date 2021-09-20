@@ -4,6 +4,8 @@
 import math
 import os
 import json
+import sys
+from unittest.mock import patch
 from azure_functions_worker.utils.common import is_envvar_true
 from azure.functions import meta as bind_meta
 from azure_functions_worker import testutils
@@ -19,11 +21,25 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
     """
     Tests for SharedMemoryManager.
     """
+    def setUp(self):
+        self.mock_environ = patch.dict('os.environ', os.environ.copy())
+        self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
+        self.mock_sys_path = patch('sys.path', sys.path.copy())
+        self.mock_environ.start()
+        self.mock_sys_module.start()
+        self.mock_sys_path.start()
+
+    def tearDown(self):
+        self.mock_sys_path.stop()
+        self.mock_sys_module.stop()
+        self.mock_environ.stop()
+
     def test_is_enabled(self):
         """
         Verify that when the AppSetting is enabled, SharedMemoryManager is
         enabled.
         """
+
         # Make sure shared memory data transfer is enabled
         was_shmem_env_true = is_envvar_true(
             FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)

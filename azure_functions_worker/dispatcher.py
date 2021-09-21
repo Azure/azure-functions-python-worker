@@ -535,12 +535,13 @@ class Dispatcher(metaclass=DispatcherMeta):
         results = {mem_map_name: False for mem_map_name in map_names}
 
         try:
-            for mem_map_name in map_names:
+            for map_name in map_names:
                 try:
-                    success = self._shmem_mgr.free_mem_map(mem_map_name, False)
-                    results[mem_map_name] = success
+                    to_delete = False
+                    success = self._shmem_mgr.free_mem_map(map_name, to_delete)
+                    results[map_name] = success
                 except Exception as e:
-                    logger.error(f'Cannot free memory map {mem_map_name} - {e}',
+                    logger.error(f'Cannot free memory map {map_name} - {e}',
                                  exc_info=True)
         finally:
             response = protos.CloseSharedMemoryResourcesResponse(

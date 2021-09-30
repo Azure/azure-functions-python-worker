@@ -69,25 +69,23 @@ class MockMethod:
 class TestUtilities(unittest.TestCase):
 
     def setUp(self):
-        self._pre_env = dict(os.environ)
         self._dummy_sdk_sys_path = os.path.join(
             os.path.dirname(__file__),
             'resources',
             'mock_azure_functions'
         )
 
+        self.mock_environ = patch.dict('os.environ', os.environ.copy())
         self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
         self.mock_sys_path = patch('sys.path', sys.path.copy())
-
+        self.mock_environ.start()
         self.mock_sys_module.start()
         self.mock_sys_path.start()
 
     def tearDown(self):
         self.mock_sys_path.stop()
         self.mock_sys_module.stop()
-
-        os.environ.clear()
-        os.environ.update(self._pre_env)
+        self.mock_environ.stop()
 
     def test_is_true_like_accepted(self):
         self.assertTrue(common.is_true_like('1'))

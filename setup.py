@@ -73,7 +73,7 @@ NUGET_CONFIG = """\
     <add key="buildTools"
          value="https://www.myget.org/F/30de4ee06dd54956a82013fa17a3accb/" />
     <add key="AspNetVNext"
-         value="https://dotnet.myget.org/F/aspnetcore-dev/api/v3/index.json" />
+         value="https://www.myget.org/F/aspnetcore-dev/api/v3/index.json" />
   </packageSources>
 </configuration>
 """
@@ -396,6 +396,7 @@ setup(
             'azure-functions==1.7.2',
             'azure-eventhub~=5.1.0',
             'python-dateutil~=2.8.1',
+            'pycryptodome~=3.10.1',
             'flake8~=3.7.9',
             'mypy',
             'pytest',

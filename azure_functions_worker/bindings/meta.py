@@ -112,11 +112,8 @@ def get_datum(binding: str, obj: typing.Any,
 
 
 def is_cache_supported(datum: datumdef.Datum):
-    if datum.type == 'bytes':
-        return True
-    elif datum.type == 'string':
-        return True
-    return False
+    supported_datatypes = ('bytes', 'string')
+    return datum.type in supported_datatypes
 
 
 def to_outgoing_proto(binding: str, obj: typing.Any, *,

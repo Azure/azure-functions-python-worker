@@ -7,6 +7,7 @@ from .. import protos
 
 from . import datumdef
 from . import generic
+from .shared_memory_data_transfer import SharedMemoryManager
 
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
@@ -62,7 +63,7 @@ def from_incoming_proto(
         pb: protos.ParameterBinding, *,
         pytype: typing.Optional[type],
         trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]],
-        shmem_mgr) -> typing.Any:
+        shmem_mgr: SharedMemoryManager) -> typing.Any:
     binding = get_binding(binding)
     if trigger_metadata:
         metadata = {
@@ -111,7 +112,7 @@ def get_datum(binding: str, obj: typing.Any,
     return datum
 
 
-def is_cache_supported(datum: datumdef.Datum):
+def _does_datatype_support_caching(datum: datumdef.Datum):
     supported_datatypes = ('bytes', 'string')
     return datum.type in supported_datatypes
 
@@ -125,15 +126,21 @@ def to_outgoing_proto(binding: str, obj: typing.Any, *,
 def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
                               pytype: typing.Optional[type],
                               out_name: str,
-                              shmem_mgr,
+                              shmem_mgr: SharedMemoryManager,
                               is_function_data_cache_enabled: bool) \
         -> protos.ParameterBinding:
     datum = get_datum(binding, obj, pytype)
     shared_mem_value = None
     # If shared memory is enabled and supported for the given datum, try to
-    # transfer to host over shared memory as a default
+    # transfer to host over shared memory as a default.
+    # If caching is enabled, then also check if this type is supported - if so,
+    # transfer over shared memory.
+    # In case of caching, some conditions like object size may not be
+    # applicable since even small objects are also allowed to be cached.
+    is_cache_supported = is_function_data_cache_enabled and \
+        _does_datatype_support_caching(datum)
     can_transfer_over_shmem = shmem_mgr.is_supported(datum) or \
-        (is_function_data_cache_enabled and is_cache_supported(datum))
+        is_cache_supported
     if shmem_mgr.is_enabled() and can_transfer_over_shmem:
         shared_mem_value = datumdef.Datum.to_rpc_shared_memory(datum, shmem_mgr)
     # Check if data was written into shared memory

@@ -537,7 +537,16 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             for map_name in map_names:
                 try:
-                    to_delete = False
+                    if self._function_data_cache_enabled:
+                        # If the cache is enabled, let the host decide when to
+                        # delete the resources.
+                        # Just drop the reference from the worker.
+                        to_delete = False
+                    else:
+                        # If the cache is not enabled, the worker should free
+                        # the resources as at this point the host has read the
+                        # memory maps and does not need them.
+                        to_delete = True
                     success = self._shmem_mgr.free_mem_map(map_name, to_delete)
                     results[map_name] = success
                 except Exception as e:

@@ -526,6 +526,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         invocation.
         This is called after the functions host is done reading the output from
         the worker and wants the worker to free up those resources.
+        If the cache is enabled, let the host decide when to delete the
+        resources. Just drop the reference from the worker.
+        If the cache is not enabled, the worker should free the resources as at
+        this point the host has read the memory maps and does not need them.
         """
         close_request = req.close_shared_memory_resources_request
         map_names = close_request.map_names
@@ -537,17 +541,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             for map_name in map_names:
                 try:
-                    if self._function_data_cache_enabled:
-                        # If the cache is enabled, let the host decide when to
-                        # delete the resources.
-                        # Just drop the reference from the worker.
-                        to_delete = False
-                    else:
-                        # If the cache is not enabled, the worker should free
-                        # the resources as at this point the host has read the
-                        # memory maps and does not need them.
-                        to_delete = True
-                    success = self._shmem_mgr.free_mem_map(map_name, to_delete)
+                    to_delete_resources = \
+                        False if self._function_data_cache_enabled else True
+                    success = self._shmem_mgr.free_mem_map(map_name,
+                                                           to_delete_resources)
                     results[map_name] = success
                 except Exception as e:
                     logger.error(f'Cannot free memory map {map_name} - {e}',

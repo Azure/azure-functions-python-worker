@@ -74,6 +74,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._port = port
         self._request_id = request_id
         self._worker_id = worker_id
+        self._function_data_cache_enabled = False
         self._functions = functions.Registry()
         self._shmem_mgr = SharedMemoryManager()
 
@@ -262,6 +263,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     'python version %s, worker version %s, request ID %s',
                     sys.version, __version__, self.request_id)
 
+        worker_init_request = req.worker_init_request
+        host_capabilities = worker_init_request.capabilities
+        if constants.FUNCTION_DATA_CACHE in host_capabilities:
+            val = host_capabilities[constants.FUNCTION_DATA_CACHE]
+            self._function_data_cache_enabled = val == _TRUE
+
         capabilities = {
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
             constants.TYPED_DATA_COLLECTION: _TRUE,
@@ -408,6 +415,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                                    'binding returned a non-None value')
 
             output_data = []
+            cache_enabled = self._function_data_cache_enabled
             if fi.output_types:
                 for out_name, out_type_info in fi.output_types.items():
                     val = args[out_name].get()
@@ -419,7 +427,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     param_binding = bindings.to_outgoing_param_binding(
                         out_type_info.binding_name, val,
                         pytype=out_type_info.pytype,
-                        out_name=out_name, shmem_mgr=self._shmem_mgr)
+                        out_name=out_name, shmem_mgr=self._shmem_mgr,
+                        is_function_data_cache_enabled=cache_enabled)
                     output_data.append(param_binding)
 
             return_value = None
@@ -517,6 +526,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         invocation.
         This is called after the functions host is done reading the output from
         the worker and wants the worker to free up those resources.
+        If the cache is enabled, let the host decide when to delete the
+        resources. Just drop the reference from the worker.
+        If the cache is not enabled, the worker should free the resources as at
+        this point the host has read the memory maps and does not need them.
         """
         close_request = req.close_shared_memory_resources_request
         map_names = close_request.map_names
@@ -526,12 +539,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         results = {mem_map_name: False for mem_map_name in map_names}
 
         try:
-            for mem_map_name in map_names:
+            for map_name in map_names:
                 try:
-                    success = self._shmem_mgr.free_mem_map(mem_map_name)
-                    results[mem_map_name] = success
+                    to_delete_resources = \
+                        False if self._function_data_cache_enabled else True
+                    success = self._shmem_mgr.free_mem_map(map_name,
+                                                           to_delete_resources)
+                    results[map_name] = success
                 except Exception as e:
-                    logger.error(f'Cannot free memory map {mem_map_name} - {e}',
+                    logger.error(f'Cannot free memory map {map_name} - {e}',
                                  exc_info=True)
         finally:
             response = protos.CloseSharedMemoryResourcesResponse(

@@ -10,7 +10,7 @@ pool:
     vmImage: 'ubuntu-latest'
 
 variables:
-    DOTNET_VERSION: '3.1.405'
+    DOTNET_VERSION: '5.0.x'
     PYTHON_VERSION: '3.8'
 
 steps:

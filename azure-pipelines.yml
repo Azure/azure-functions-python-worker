@@ -7,6 +7,7 @@ trigger:
 
 variables:
     DOTNET_VERSION: '3.1.405'
+    DOTNET_VERSION_5: '5.0.x'
 
 jobs:
 - job: Tests
@@ -28,10 +29,15 @@ jobs:
       versionSpec: '$(pythonVersion)'
       addToPath: true
   - task: UseDotNet@2
+    displayName: 'Install dotnet'
     inputs:
       packageType: 'sdk'
       version: $(DOTNET_VERSION)
-    displayName: 'Install dotnet'
+  - task: UseDotNet@2
+    displayName: 'Install DotNet 5.x'
+    inputs:
+      packageType: 'sdk'
+      version: $(DOTNET_VERSION_5)
   - task: ShellScript@2
     inputs:
       disableAutoCwd: true

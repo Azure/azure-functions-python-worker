@@ -10,7 +10,8 @@ pool:
     vmImage: 'ubuntu-latest'
 
 variables:
-    DOTNET_VERSION: '3.1.405'
+    DOTNET_VERSION: '3.1.x'
+    DOTNET_VERSION_5: '5.0.x'
     PYTHON_VERSION: '3.8'
 
 steps:
@@ -24,6 +25,11 @@ steps:
   inputs:
     packageType: 'sdk'
     version: $(DOTNET_VERSION)
+- task: UseDotNet@2
+  displayName: 'Install DotNet'
+  inputs:
+    packageType: 'sdk'
+    version: $(DOTNET_VERSION_5)
 - pwsh: '$(Build.SourcesDirectory)/.ci/e2e_integration_test/start-e2e.ps1'
   env:
     AzureWebJobsStorage: $(AzureWebJobsStorage)

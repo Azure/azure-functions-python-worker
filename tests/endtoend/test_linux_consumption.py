@@ -1,4 +1,4 @@
-from unittest import TestCase
+from unittest import TestCase, skip
 
 import os
 import sys
@@ -9,6 +9,7 @@ from azure_functions_worker.testutils_lc import (
 )
 
 
+@skip('Flaky test and needs stabilization')
 class TestLinuxConsumption(TestCase):
     """Test worker behaviors on specific scenarios.
 

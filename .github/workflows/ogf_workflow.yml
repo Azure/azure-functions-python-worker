@@ -59,7 +59,7 @@ jobs:
     env:
       RESOURCE_GROUP_NAME: "ogf_test_run_${{ matrix.sku }}_${{ matrix.region }}"
       FUNCTION_APP_NAME: "ogfpy-${{ matrix.sku }}-${{ matrix.region }}-${{ github.run_number }}"
-      STORAGE_ACCOUNT_NAME: "ogf${{ matrix.sku }}${{ matrix.region }}${{ github.run_number }}"
+      STORAGE_ACCOUNT_NAME: "ogf${{ matrix.sku }}${{ github.run_number }}"
       FUNCTION_APP_PLAN_NAME: "ogf-epplan-${{ matrix.sku }}-${{ matrix.region }}-${{ github.run_number }}"
     runs-on: ubuntu-latest
     timeout-minutes: 30

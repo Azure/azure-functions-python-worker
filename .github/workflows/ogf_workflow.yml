@@ -180,12 +180,12 @@ jobs:
         run: |
           if [ ${{ matrix.region }} = 'northcentralus' ]
           then
-              STORAGE_ACCOUNT_NAME="ogf${{ matrix.sku }}ncus{{ github.run_number }}"
+              STORAGE_ACCOUNT_NAME="ogf${{ matrix.sku }}ncus${{ github.run_number }}"
           fi
 
           if [ ${{ matrix.region }} = 'southcentralus' ]
           then
-              STORAGE_ACCOUNT_NAME="ogf${{ matrix.sku }}scus{{ github.run_number }}"
+              STORAGE_ACCOUNT_NAME="ogf${{ matrix.sku }}scus${{ github.run_number }}"
           fi
             
           az functionapp plan create --resource-group $RESOURCE_GROUP_NAME \

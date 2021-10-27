@@ -164,7 +164,7 @@ jobs:
 
 - job: PackageWorkers
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64']
-  #condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
+  condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
   pool:
       vmImage: 'vs2017-win2016'
   steps:

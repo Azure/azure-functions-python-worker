@@ -187,13 +187,9 @@ jobs:
         echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
         LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
-        WKVERSION="99.$LATEST_TAG.$(patchBuildNumberForDev)-$BUILD_SOURCEBRANCHNAME"  # Integration Test (e.g. 99.1.2.121-dev)
+        WKVERSION="99.$LATEST_TAG.$(patchBuildNumberForDev)-dev"  # Integration Test (e.g. 99.1.2.121-dev)
       else
-        echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
-        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
-        NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
-        WKVERSION="99.$LATEST_TAG.$(patchBuildNumberForDev)-$BUILD_SOURCEBRANCHNAME"  # Integration Test (e.g. 99.1.2.121-dev)
-        # echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
+        echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
       fi
 
       echo "##vso[task.setvariable variable=nuspec_path]$NUSPEC"

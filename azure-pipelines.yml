@@ -8,7 +8,7 @@ trigger:
 variables:
     DOTNET_VERSION: '3.1.405'
     DOTNET_VERSION_5: '5.0.x'
-    patchBuildNumberForDev: $[ counter('build', 1) ]
+    patchBuildNumberForDev: $(Build.BuildNumber)
 
 jobs:
 - job: Tests
@@ -187,7 +187,7 @@ jobs:
         echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
         LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
-        WKVERSION="99.$LATEST_TAG.$(patchBuildNumberForDev)-dev"  # Integration Test (e.g. 99.1.2.121-dev)
+        WKVERSION="3.$LATEST_TAG.$(patchBuildNumberForDev)-$BUILD_SOURCEBRANCH"  # Integration Test (e.g. 99.1.2.121-dev)
       else
         echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
       fi

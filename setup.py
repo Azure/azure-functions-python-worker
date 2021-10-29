@@ -246,7 +246,6 @@ class webhost(distutils.cmd.Command):
         latest_v3 = [
             gt for gt in tags if gt['name'].startswith(WEBHOST_TAG_PREFIX)
         ]
-        print(f'Latest version: {latest_v3[0]["name"]}')
         return latest_v3[0]['name'].replace('v', '')
 
     def _download_webhost_zip(self, version: str) -> str:

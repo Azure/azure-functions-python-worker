@@ -6,9 +6,7 @@ import filecmp
 import typing
 import os
 import unittest
-
 import pytest
-from _distutils_hack import override
 
 from azure_functions_worker import testutils
 
@@ -420,6 +418,4 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('Current retry count: 3', host_out)
         self.assertNotIn('Current retry count: 4', host_out)
         self.assertIn('Max retry count: 3', host_out)
-
-
-
+        

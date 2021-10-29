@@ -412,10 +412,10 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'http_retries_exponential_backoff')
         self.assertEqual(r.status_code, 500)
 
-    def check_log_retry_context_exponential_backoff(self, host_out: typing.List[str]):
+    def check_log_retry_context_exponential_backoff(self,
+                                                    host_out: typing.List[str]):
         self.assertIn('Current retry count: 1', host_out)
         self.assertIn('Current retry count: 2', host_out)
         self.assertIn('Current retry count: 3', host_out)
         self.assertNotIn('Current retry count: 4', host_out)
         self.assertIn('Max retry count: 3', host_out)
-        

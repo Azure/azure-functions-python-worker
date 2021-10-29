@@ -22,9 +22,9 @@ on:
         description: 'To cleanup the test resource groups'
         default: 'true'
   schedule:
-    # Runs every 3 hours.
+    # Runs every 8 hours.
     # * is a special character in YAML so you have to quote this string
-    - cron: "10 0/3 * * *"
+    - cron: "10 0/8 * * *"
 
 env:
   PROCESS_COUNT: "FUNCTIONS_WORKER_PROCESS_COUNT"
@@ -111,6 +111,16 @@ jobs:
               --tags "created on= $(date)" "Use=OGFTest" > /dev/null
             sleep 3 # once the RG is created
             
+            if [ ${{ matrix.region }} = 'northcentralus' ]
+            then
+                STORAGE_ACCOUNT_NAME=(ogf${{ matrix.sku }}ncus${{ github.run_number }})
+            fi
+            
+            if [ ${{ matrix.region }} = 'southcentralus' ]
+            then
+                STORAGE_ACCOUNT_NAME=(ogf${{ matrix.sku }}scus${{ github.run_number }})
+            fi
+            
             az storage account create --resource-group $RESOURCE_GROUP_NAME \
                 --name $STORAGE_ACCOUNT_NAME --location ${{ matrix.region }} \
                 --tags "created on= $(date)" "Use=OGFTest" --sku Standard_LRS
@@ -121,6 +131,16 @@ jobs:
         with:
           azcliversion: 2.16.0
           inlineScript: |
+            if [ ${{ matrix.region }} = 'northcentralus' ]
+            then
+                STORAGE_ACCOUNT_NAME="ogf${{ matrix.sku }}ncus${{ github.run_number }}"
+            fi
+            
+            if [ ${{ matrix.region }} = 'southcentralus' ]
+            then
+                STORAGE_ACCOUNT_NAME="ogf${{ matrix.sku }}scus${{ github.run_number }}"
+            fi
+            
             az functionapp create --consumption-plan-location ${{ matrix.region }} \
               --name $FUNCTION_APP_NAME --os-type $OS \
               --functions-version 3 --runtime ${{ env.LANGUAGE || env.DEFAULT_DEPLOYMENT_LANGUAGE }} \
@@ -133,21 +153,41 @@ jobs:
       - name: Create new EP1 Azure Function App
         if: ${{ matrix.sku == 'ep1' }}
         run: |
-          az functionapp plan create --resource-group $RESOURCE_GROUP_NAME \
-            --name $FUNCTION_APP_PLAN_NAME --is-linux true --max-burst 1 \
-            --min-instances 1 --location ${{ matrix.region }} --sku EP1 \
-            --tags "created on= $(date)" "Use=OGFTest"
-          sleep 2
+            if [ ${{ matrix.region }} = 'northcentralus' ]
+            then
+                STORAGE_ACCOUNT_NAME="ogf${{ matrix.sku }}ncus${{ github.run_number }}"
+            fi
 
-          az functionapp create --resource-group $RESOURCE_GROUP_NAME --plan $FUNCTION_APP_PLAN_NAME \
-            --name $FUNCTION_APP_NAME --functions-version 3 --runtime ${{ env.LANGUAGE || env.DEFAULT_DEPLOYMENT_LANGUAGE }} \
-            --runtime-version ${{ env.LANGUAGE_VERSION || env.DEFAULT_DEPLOYMENT_LANGUAGE_VERSION }} --storage-account $STORAGE_ACCOUNT_NAME \
-            --tags "created on= $(date)" "Use=OGFTest"
-          sleep 2
+            if [ ${{ matrix.region }} = 'southcentralus' ]
+            then
+                STORAGE_ACCOUNT_NAME="ogf${{ matrix.sku }}scus${{ github.run_number }}"
+            fi
+
+            az functionapp plan create --resource-group $RESOURCE_GROUP_NAME \
+              --name $FUNCTION_APP_PLAN_NAME --is-linux true --max-burst 1 \
+              --min-instances 1 --location ${{ matrix.region }} --sku EP1 \
+              --tags "created on= $(date)" "Use=OGFTest"
+            sleep 2
+
+            az functionapp create --resource-group $RESOURCE_GROUP_NAME --plan $FUNCTION_APP_PLAN_NAME \
+              --name $FUNCTION_APP_NAME --functions-version 3 --runtime ${{ env.LANGUAGE || env.DEFAULT_DEPLOYMENT_LANGUAGE }} \
+              --runtime-version ${{ env.LANGUAGE_VERSION || env.DEFAULT_DEPLOYMENT_LANGUAGE_VERSION }} --storage-account $STORAGE_ACCOUNT_NAME \
+              --tags "created on= $(date)" "Use=OGFTest"
+            sleep 2
 
       - name: Create new AppService plan Azure Function App
         if: ${{ matrix.sku == 'p1v2' }}
         run: |
+          if [ ${{ matrix.region }} = 'northcentralus' ]
+          then
+              STORAGE_ACCOUNT_NAME="ogf${{ matrix.sku }}ncus${{ github.run_number }}"
+          fi
+
+          if [ ${{ matrix.region }} = 'southcentralus' ]
+          then
+              STORAGE_ACCOUNT_NAME="ogf${{ matrix.sku }}scus${{ github.run_number }}"
+          fi
+            
           az functionapp plan create --resource-group $RESOURCE_GROUP_NAME \
             --name $FUNCTION_APP_PLAN_NAME --is-linux true --number-of-workers 1 \
             --location ${{ matrix.region }} --sku P1v2 \

@@ -465,7 +465,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             # Import before clearing path cache so that the default
             # azure.functions modules is available in sys.modules for
             # customer use
-            import azure.functions  # NoQA
+            import azure.functions # NoQA
 
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:

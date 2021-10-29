@@ -346,7 +346,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         invoc_request = req.invocation_request
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
-        trace_context, retry_context = self._get_trace_and_retry_context(invoc_request)
+        trace_context, retry_context = \
+            self._get_trace_and_retry_context(invoc_request)
 
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
@@ -388,7 +389,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     shmem_mgr=self._shmem_mgr)
 
             fi_context = bindings.Context(
-                fi.name, fi.directory, invocation_id, trace_context, retry_context)
+                fi.name, fi.directory, invocation_id,
+                trace_context, retry_context)
             if fi.requires_context:
                 args['context'] = fi_context
 

@@ -27,22 +27,22 @@ AZURE_EXTENSIONS = """\
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AzureFunctionsVersion>v3</AzureFunctionsVersion>
+    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
     <WarningsAsErrors></WarningsAsErrors>
     <DefaultItemExcludes>**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference
         Include="Microsoft.NET.Sdk.Functions"
-        Version="3.0.3"
+        Version="3.0.13"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-        Version="3.0.5"
+        Version="3.0.9"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-        Version="3.0.6"
+        Version="4.2.0"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
@@ -50,13 +50,13 @@ AZURE_EXTENSIONS = """\
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.Storage"
-        Version="3.0.10"
+        Version="4.0.4"
     />
     <PackageReference
-        Include="Microsoft.Azure.WebJobs.ServiceBus"
-        Version="3.0.0-beta8"
+        Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
+        Version="4.2.1"
     />
-  </ItemGroup>
+    </ItemGroup>
 </Project>
 """
 
@@ -246,6 +246,7 @@ class webhost(distutils.cmd.Command):
         latest_v3 = [
             gt for gt in tags if gt['name'].startswith(WEBHOST_TAG_PREFIX)
         ]
+        print(f'Latest version: {latest_v3[0]["name"]}')
         return latest_v3[0]['name'].replace('v', '')
 
     def _download_webhost_zip(self, version: str) -> str:

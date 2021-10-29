@@ -50,7 +50,6 @@ _CURRENT_TASK = asyncio.Task.current_task \
 
 
 class DispatcherMeta(type):
-
     __current_dispatcher__ = None
 
     @property
@@ -62,7 +61,6 @@ class DispatcherMeta(type):
 
 
 class Dispatcher(metaclass=DispatcherMeta):
-
     _GRPC_STOP_RESPONSE = object()
 
     def __init__(self, loop: BaseEventLoop, host: str, port: int,
@@ -346,13 +344,17 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def _handle__invocation_request(self, req):
         invoc_request = req.invocation_request
-
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
         trace_context = bindings.TraceContext(
             invoc_request.trace_context.trace_parent,
             invoc_request.trace_context.trace_state,
             invoc_request.trace_context.attributes)
+        retry_context = bindings.RetryContext(
+            invoc_request.retry_context.retry_count,
+            invoc_request.retry_context.max_retry_count,
+            invoc_request.retry_context.exception)
+
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
         current_task = _CURRENT_TASK(self._loop)
@@ -393,7 +395,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     shmem_mgr=self._shmem_mgr)
 
             fi_context = bindings.Context(
-                fi.name, fi.directory, invocation_id, trace_context)
+                fi.name, fi.directory, invocation_id, trace_context, retry_context)
             if fi.requires_context:
                 args['context'] = fi_context
 
@@ -470,7 +472,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             # Import before clearing path cache so that the default
             # azure.functions modules is available in sys.modules for
             # customer use
-            import azure.functions # NoQA
+            import azure.functions  # NoQA
 
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:
@@ -702,7 +704,6 @@ class AsyncLoggingHandler(logging.Handler):
 
 
 class ContextEnabledTask(asyncio.Task):
-
     AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
 
     def __init__(self, coro, loop):

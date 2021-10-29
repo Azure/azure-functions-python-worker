@@ -75,13 +75,17 @@ message StreamingMessage {
     // Ask the worker to close any open shared memory resources for a given invocation
     CloseSharedMemoryResourcesRequest close_shared_memory_resources_request = 27;
     CloseSharedMemoryResourcesResponse close_shared_memory_resources_response = 28;
+
+    // Worker indexing message types
+    FunctionsMetadataRequest functions_metadata_request = 29;
+    FunctionMetadataResponses function_metadata_responses = 30;
   }
 }
 
 // Process.Start required info
 //   connection details
 //   protocol type
-//   protocol version 
+//   protocol version
 
 // Worker sends the host information identifying itself
 message StartStream {
@@ -89,7 +93,7 @@ message StartStream {
   string worker_id = 2;
 }
 
-// Host requests the worker to initialize itself 
+// Host requests the worker to initialize itself
 message WorkerInitRequest {
   // version of the host sending init request
   string host_version = 1;
@@ -177,7 +181,7 @@ message WorkerActionResponse {
     Restart = 0;
     Reload = 1;
   }
-  
+
   // action for this response
   Action action = 1;
 
@@ -248,7 +252,7 @@ message RpcFunctionMetadata {
 
   // base directory for the Function
   string directory = 1;
-  
+
   // Script file specified
   string script_file = 2;
 
@@ -260,6 +264,30 @@ message RpcFunctionMetadata {
 
   // Is set to true for proxy
   bool is_proxy = 7;
+
+  // Function indexing status
+  StatusResult status = 8;
+
+  // Function language
+  string language = 9;
+
+  // Raw binding info
+  repeated string raw_bindings = 10;
+}
+
+// Host tells worker it is ready to receive metadata
+message FunctionsMetadataRequest {
+  // base directory for function app
+  string function_app_directory = 1;
+}
+
+// Worker sends function metadata back to host
+message FunctionMetadataResponses {
+  // list of function indexing responses
+  repeated FunctionLoadRequest function_load_requests_results = 1;
+
+  // status of overall metadata request
+  StatusResult result = 2;
 }
 
 // Host requests worker to invoke a Function
@@ -297,14 +325,14 @@ message RpcTraceContext {
 
 // Host sends retry context for a function invocation
 message RetryContext {
-    // // Current retry count
-    int32 retry_count = 1;
+  // Current retry count
+  int32 retry_count = 1;
 
-    // Max retry count
-    int32 max_retry_count = 2;
+  // Max retry count
+  int32 max_retry_count = 2;
 
-    // Exception that caused the retry
-    RpcException exception = 3;
+  // Exception that caused the retry
+  RpcException exception = 3;
 }
 
 // Host requests worker to cancel invocation
@@ -436,7 +464,7 @@ message BindingInfo {
   DataType data_type = 4;
 }
 
-// Used to send logs back to the Host 
+// Used to send logs back to the Host
 message RpcLog {
   // Matching ILogger semantics
   // https://github.com/aspnet/Logging/blob/9506ccc3f3491488fe88010ef8b9eb64594abf95/src/Microsoft.Extensions.Logging/Logger.cs
@@ -483,7 +511,7 @@ message RpcLog {
   RpcLogCategory log_category = 8;
 }
 
-// Encapsulates an Exception 
+// Encapsulates an Exception
 message RpcException {
   // Source of the exception
   string source = 3;
@@ -537,7 +565,7 @@ message RpcHttpCookie {
 // TODO - solidify this or remove it
 message RpcHttp {
   string method = 1;
-  string url = 2; 
+  string url = 2;
   map<string,string> headers = 3;
   TypedData body = 4;
   map<string,string> params = 10;

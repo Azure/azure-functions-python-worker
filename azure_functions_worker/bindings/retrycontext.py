@@ -5,8 +5,8 @@ from . import rpcexception
 
 
 class RetryContext:
-    """Check https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-error-pages?tabs=python#retry
-    -policies-preview """
+    """Check https://docs.microsoft.com/en-us/azure/azure-functions/
+       functions-bindings-error-pages?tabs=python#retry-policies-preview"""
 
     def __init__(self,
                  retry_count: int,

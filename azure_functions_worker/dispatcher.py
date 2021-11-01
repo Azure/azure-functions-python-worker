@@ -346,8 +346,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         invoc_request = req.invocation_request
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
-        trace_context, retry_context = \
-            self._get_trace_and_retry_context(invoc_request)
 
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
@@ -388,9 +386,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     pytype=pb_type_info.pytype,
                     shmem_mgr=self._shmem_mgr)
 
-            fi_context = bindings.Context(
-                fi.name, fi.directory, invocation_id,
-                trace_context, retry_context)
+            fi_context = self._get_context(invoc_request, fi.name, fi.directory)
             if fi.requires_context:
                 args['context'] = fi_context
 
@@ -554,17 +550,20 @@ class Dispatcher(metaclass=DispatcherMeta):
                 close_shared_memory_resources_response=response)
 
     @staticmethod
-    def _get_trace_and_retry_context(invocation_request):
+    def _get_context(invoc_request, name, directory):
         trace_context = bindings.TraceContext(
-            invocation_request.trace_context.trace_parent,
-            invocation_request.trace_context.trace_state,
-            invocation_request.trace_context.attributes)
-        retry_context = bindings.RetryContext(
-            invocation_request.retry_context.retry_count,
-            invocation_request.retry_context.max_retry_count,
-            invocation_request.retry_context.exception)
+            invoc_request.trace_context.trace_parent,
+            invoc_request.trace_context.trace_state,
+            invoc_request.trace_context.attributes)
 
-        return trace_context, retry_context
+        retry_context = bindings.RetryContext(
+            invoc_request.retry_context.retry_count,
+            invoc_request.retry_context.max_retry_count,
+            invoc_request.retry_context.exception)
+
+        return bindings.Context(
+            name, directory, invoc_request.invocation_id,
+            trace_context, retry_context)
 
     @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):

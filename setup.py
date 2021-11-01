@@ -53,10 +53,10 @@ AZURE_EXTENSIONS = """\
         Version="3.0.10"
     />
     <PackageReference
-        Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
+        Include="Microsoft.Azure.WebJobs.ServiceBus"
         Version="3.0.0-beta8"
     />
-    </ItemGroup>
+  </ItemGroup>
 </Project>
 """
 

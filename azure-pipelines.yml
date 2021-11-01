@@ -8,6 +8,7 @@ trigger:
 variables:
     DOTNET_VERSION: '3.1.405'
     DOTNET_VERSION_5: '5.0.x'
+    patchBuildNumberForDev: $(Build.BuildNumber)
 
 jobs:
 - job: Tests
@@ -184,9 +185,10 @@ jobs:
       elif [[ $BUILD_SOURCEBRANCHNAME = dev ]]
       then
         echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
-        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g')
+        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
-        WKVERSION="3.$LATEST_TAG-dev"  # Integration Test (e.g. 3.1.1.6-dev)
+        # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
+        WKVERSION="3.$LATEST_TAG-$(patchBuildNumberForDev)"
       else
         echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
       fi
@@ -209,17 +211,8 @@ jobs:
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: 'PythonWorker'
-  - pwsh: |
-      $uploadPackage = $null
-      if (-not ([bool]::TryParse($env:UPLOADPACKAGETOPRERELEASEFEED, [ref] $uploadPackage)))
-      {
-        throw "UploadPackageToPreReleaseFeed can only be set to True or False. Current value is set to $env:UPLOADPACKAGETOPRERELEASEFEED"
-      }
-      Write-Host "##vso[task.setvariable variable=UploadPackage]$uploadPackage"
-      Write-Host "UploadPackage: $uploadPackage"
-    displayName: '[Integration Test] Set UploadPackage variable'
   - task: NuGetCommand@2
-    condition: and(eq(variables.UploadPackage, true), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
+    condition: eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true)
     inputs:
       command: 'push'
       packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'

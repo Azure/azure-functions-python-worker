@@ -211,17 +211,8 @@ jobs:
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: 'PythonWorker'
-  - pwsh: |
-      $uploadPackage = $null
-      if (-not ([bool]::TryParse($env:UPLOADPACKAGETOPRERELEASEFEED, [ref] $uploadPackage)))
-      {
-        throw "UploadPackageToPreReleaseFeed can only be set to True or False. Current value is set to $env:UPLOADPACKAGETOPRERELEASEFEED"
-      }
-      Write-Host "##vso[task.setvariable variable=UploadPackage]$uploadPackage"
-      Write-Host "UploadPackage: $uploadPackage"
-    displayName: '[Integration Test] Set UploadPackage variable'
   - task: NuGetCommand@2
-    condition: and(eq(variables.UploadPackage, true), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
+    condition: eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true)
     inputs:
       command: 'push'
       packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'

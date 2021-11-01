@@ -50,7 +50,6 @@ _CURRENT_TASK = asyncio.Task.current_task \
 
 
 class DispatcherMeta(type):
-
     __current_dispatcher__ = None
 
     @property
@@ -62,7 +61,6 @@ class DispatcherMeta(type):
 
 
 class Dispatcher(metaclass=DispatcherMeta):
-
     _GRPC_STOP_RESPONSE = object()
 
     def __init__(self, loop: BaseEventLoop, host: str, port: int,
@@ -346,13 +344,9 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def _handle__invocation_request(self, req):
         invoc_request = req.invocation_request
-
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
-        trace_context = bindings.TraceContext(
-            invoc_request.trace_context.trace_parent,
-            invoc_request.trace_context.trace_state,
-            invoc_request.trace_context.attributes)
+
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
         current_task = _CURRENT_TASK(self._loop)
@@ -392,8 +386,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     pytype=pb_type_info.pytype,
                     shmem_mgr=self._shmem_mgr)
 
-            fi_context = bindings.Context(
-                fi.name, fi.directory, invocation_id, trace_context)
+            fi_context = self._get_context(invoc_request, fi.name, fi.directory)
             if fi.requires_context:
                 args['context'] = fi_context
 
@@ -470,7 +463,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             # Import before clearing path cache so that the default
             # azure.functions modules is available in sys.modules for
             # customer use
-            import azure.functions # NoQA
+            import azure.functions  # NoQA
 
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:
@@ -555,6 +548,25 @@ class Dispatcher(metaclass=DispatcherMeta):
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 close_shared_memory_resources_response=response)
+
+    @staticmethod
+    def _get_context(invoc_request: protos.InvocationRequest, name: str,
+                     directory: str) -> bindings.Context:
+        """ For more information refer: https://aka.ms/azfunc-invocation-context
+        """
+        trace_context = bindings.TraceContext(
+            invoc_request.trace_context.trace_parent,
+            invoc_request.trace_context.trace_state,
+            invoc_request.trace_context.attributes)
+
+        retry_context = bindings.RetryContext(
+            invoc_request.retry_context.retry_count,
+            invoc_request.retry_context.max_retry_count,
+            invoc_request.retry_context.exception)
+
+        return bindings.Context(
+            name, directory, invoc_request.invocation_id,
+            trace_context, retry_context)
 
     @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):
@@ -702,7 +714,6 @@ class AsyncLoggingHandler(logging.Handler):
 
 
 class ContextEnabledTask(asyncio.Task):
-
     AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
 
     def __init__(self, coro, loop):

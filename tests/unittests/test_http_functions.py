@@ -6,7 +6,6 @@ import filecmp
 import typing
 import os
 import unittest
-
 import pytest
 
 from azure_functions_worker import testutils
@@ -397,3 +396,26 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
         # System logs should not exist in host_out
         self.assertNotIn('parallelly_log_system at disguised_logger', host_out)
+
+    def test_retry_context_fixed_delay(self):
+        r = self.webhost.request('GET', 'http_retries_fixed_delay')
+        self.assertEqual(r.status_code, 500)
+
+    def check_log_retry_context_fixed_delay(self, host_out: typing.List[str]):
+        self.assertIn('Current retry count: 1', host_out)
+        self.assertIn('Current retry count: 2', host_out)
+        self.assertIn('Current retry count: 3', host_out)
+        self.assertNotIn('Current retry count: 4', host_out)
+        self.assertIn('Max retry count: 3', host_out)
+
+    def test_retry_context_exponential_backoff(self):
+        r = self.webhost.request('GET', 'http_retries_exponential_backoff')
+        self.assertEqual(r.status_code, 500)
+
+    def check_log_retry_context_exponential_backoff(self,
+                                                    host_out: typing.List[str]):
+        self.assertIn('Current retry count: 1', host_out)
+        self.assertIn('Current retry count: 2', host_out)
+        self.assertIn('Current retry count: 3', host_out)
+        self.assertNotIn('Current retry count: 4', host_out)
+        self.assertIn('Max retry count: 3', host_out)

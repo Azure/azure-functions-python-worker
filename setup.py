@@ -27,22 +27,22 @@ AZURE_EXTENSIONS = """\
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
+    <AzureFunctionsVersion>v3</AzureFunctionsVersion>
     <WarningsAsErrors></WarningsAsErrors>
     <DefaultItemExcludes>**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference
         Include="Microsoft.NET.Sdk.Functions"
-        Version="3.0.13"
+        Version="3.0.3"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-        Version="3.0.9"
+        Version="3.0.5"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-        Version="4.2.0"
+        Version="3.0.6"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
@@ -50,11 +50,11 @@ AZURE_EXTENSIONS = """\
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.Storage"
-        Version="4.0.4"
+        Version="3.0.10"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
-        Version="4.2.1"
+        Version="3.0.0-beta8"
     />
     </ItemGroup>
 </Project>

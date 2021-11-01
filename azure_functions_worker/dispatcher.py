@@ -463,7 +463,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             # Import before clearing path cache so that the default
             # azure.functions modules is available in sys.modules for
             # customer use
-            import azure.functions # NoQA
+            import azure.functions  # NoQA
 
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:
@@ -550,7 +550,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                 close_shared_memory_resources_response=response)
 
     @staticmethod
-    def _get_context(invoc_request, name, directory):
+    def _get_context(invoc_request: protos.InvocationRequest, name: str,
+                     directory: str) -> bindings.Context:
+        """ For more information refer: https://aka.ms/azfunc-invocation-context
+        """
         trace_context = bindings.TraceContext(
             invoc_request.trace_context.trace_parent,
             invoc_request.trace_context.trace_state,

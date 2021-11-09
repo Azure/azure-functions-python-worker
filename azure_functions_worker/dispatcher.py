@@ -29,7 +29,7 @@ from . import protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-                        PYTHON_THREADPOOL_THREAD_COUNT_MAX,
+                        PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 from .extension import ExtensionManager
 from .logging import CONSOLE_LOG_PREFIX, error_logger, is_system_log_category, \
@@ -52,7 +52,6 @@ _CURRENT_TASK = asyncio.Task.current_task \
 
 
 class DispatcherMeta(type):
-
     __current_dispatcher__ = None
 
     @property
@@ -64,7 +63,6 @@ class DispatcherMeta(type):
 
 
 class Dispatcher(metaclass=DispatcherMeta):
-
     _GRPC_STOP_RESPONSE = object()
 
     def __init__(self, loop: BaseEventLoop, host: str, port: int,
@@ -76,6 +74,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._port = port
         self._request_id = request_id
         self._worker_id = worker_id
+        self._function_data_cache_enabled = False
         self._functions = functions.Registry()
         self._shmem_mgr = SharedMemoryManager()
 
@@ -264,6 +263,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     'python version %s, worker version %s, request ID %s',
                     sys.version, __version__, self.request_id)
 
+        worker_init_request = req.worker_init_request
+        host_capabilities = worker_init_request.capabilities
+        if constants.FUNCTION_DATA_CACHE in host_capabilities:
+            val = host_capabilities[constants.FUNCTION_DATA_CACHE]
+            self._function_data_cache_enabled = val == _TRUE
+
         capabilities = {
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
             constants.TYPED_DATA_COLLECTION: _TRUE,
@@ -378,13 +383,9 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def _handle__invocation_request(self, req):
         invoc_request = req.invocation_request
-
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
-        trace_context = bindings.TraceContext(
-            invoc_request.trace_context.trace_parent,
-            invoc_request.trace_context.trace_state,
-            invoc_request.trace_context.attributes)
+
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
         current_task = _CURRENT_TASK(self._loop)
@@ -424,8 +425,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     pytype=pb_type_info.pytype,
                     shmem_mgr=self._shmem_mgr)
 
-            fi_context = bindings.Context(
-                fi.name, fi.directory, invocation_id, trace_context)
+            fi_context = self._get_context(invoc_request, fi.name, fi.directory)
             if fi.requires_context:
                 args['context'] = fi_context
 
@@ -447,6 +447,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                                    'binding returned a non-None value')
 
             output_data = []
+            cache_enabled = self._function_data_cache_enabled
             if fi.output_types:
                 for out_name, out_type_info in fi.output_types.items():
                     val = args[out_name].get()
@@ -458,7 +459,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     param_binding = bindings.to_outgoing_param_binding(
                         out_type_info.binding_name, val,
                         pytype=out_type_info.pytype,
-                        out_name=out_name, shmem_mgr=self._shmem_mgr)
+                        out_name=out_name, shmem_mgr=self._shmem_mgr,
+                        is_function_data_cache_enabled=cache_enabled)
                     output_data.append(param_binding)
 
             return_value = None
@@ -500,7 +502,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             # Import before clearing path cache so that the default
             # azure.functions modules is available in sys.modules for
             # customer use
-            import azure.functions # NoQA
+            import azure.functions  # NoQA
 
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:
@@ -556,6 +558,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         invocation.
         This is called after the functions host is done reading the output from
         the worker and wants the worker to free up those resources.
+        If the cache is enabled, let the host decide when to delete the
+        resources. Just drop the reference from the worker.
+        If the cache is not enabled, the worker should free the resources as at
+        this point the host has read the memory maps and does not need them.
         """
         close_request = req.close_shared_memory_resources_request
         map_names = close_request.map_names
@@ -565,12 +571,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         results = {mem_map_name: False for mem_map_name in map_names}
 
         try:
-            for mem_map_name in map_names:
+            for map_name in map_names:
                 try:
-                    success = self._shmem_mgr.free_mem_map(mem_map_name)
-                    results[mem_map_name] = success
+                    to_delete_resources = \
+                        False if self._function_data_cache_enabled else True
+                    success = self._shmem_mgr.free_mem_map(map_name,
+                                                           to_delete_resources)
+                    results[map_name] = success
                 except Exception as e:
-                    logger.error(f'Cannot free memory map {mem_map_name} - {e}',
+                    logger.error(f'Cannot free memory map {map_name} - {e}',
                                  exc_info=True)
         finally:
             response = protos.CloseSharedMemoryResourcesResponse(
@@ -578,6 +587,25 @@ class Dispatcher(metaclass=DispatcherMeta):
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 close_shared_memory_resources_response=response)
+
+    @staticmethod
+    def _get_context(invoc_request: protos.InvocationRequest, name: str,
+                     directory: str) -> bindings.Context:
+        """ For more information refer: https://aka.ms/azfunc-invocation-context
+        """
+        trace_context = bindings.TraceContext(
+            invoc_request.trace_context.trace_parent,
+            invoc_request.trace_context.trace_state,
+            invoc_request.trace_context.attributes)
+
+        retry_context = bindings.RetryContext(
+            invoc_request.retry_context.retry_count,
+            invoc_request.retry_context.max_retry_count,
+            invoc_request.retry_context.exception)
+
+        return bindings.Context(
+            name, directory, invoc_request.invocation_id,
+            trace_context, retry_context)
 
     @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):
@@ -606,24 +634,27 @@ class Dispatcher(metaclass=DispatcherMeta):
                                'integer')
                 return False
 
-            if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN or (
-                    int_value > PYTHON_THREADPOOL_THREAD_COUNT_MAX):
+            if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN:
                 logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
                                f'to a value between '
                                f'{PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
-                               f'{PYTHON_THREADPOOL_THREAD_COUNT_MAX}. '
-                               'Reverting to default value for max_workers')
+                               'sys.maxint. Reverting to default value for '
+                               'max_workers')
                 return False
-
             return True
 
         # Starting Python 3.9, worker won't be putting a limit on the
         # max_workers count in the created threadpool.
         default_value = None if sys.version_info.minor == 9 \
             else f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}'
+
         max_workers = get_app_setting(setting=PYTHON_THREADPOOL_THREAD_COUNT,
                                       default_value=default_value,
                                       validator=tp_max_workers_validator)
+
+        if sys.version_info.minor <= 7:
+            max_workers = min(int(max_workers),
+                              PYTHON_THREADPOOL_THREAD_COUNT_MAX_37)
 
         # We can box the app setting as int for earlier python versions.
         return int(max_workers) if max_workers else None
@@ -722,7 +753,6 @@ class AsyncLoggingHandler(logging.Handler):
 
 
 class ContextEnabledTask(asyncio.Task):
-
     AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
 
     def __init__(self, coro, loop):

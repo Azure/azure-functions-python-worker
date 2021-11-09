@@ -67,6 +67,7 @@ WORKER_CONFIG = PROJECT_ROOT / '.testconfig'
 ON_WINDOWS = platform.system() == 'Windows'
 LOCALHOST = "127.0.0.1"
 
+# The template of host.json that will be applied to each test functions
 HOST_JSON_TEMPLATE = """\
 {
     "version": "2.0",

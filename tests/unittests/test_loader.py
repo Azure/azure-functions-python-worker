@@ -25,6 +25,11 @@ class TestLoader(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, '__app__.entrypoint.main')
 
+    def test_loader_no_script_file(self):
+        r = self.webhost.request('GET', 'no_script_file')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '__app__.no_script_file.main')
+
     def test_loader_subdir(self):
         r = self.webhost.request('GET', 'subdir')
         self.assertEqual(r.status_code, 200)

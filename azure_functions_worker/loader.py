@@ -18,9 +18,9 @@ from azure.functions.decorators import Function
 from .constants import MODULE_NOT_FOUND_TS_URL
 from .utils.wrappers import attach_message_to_exception
 
-from . import protos
-
 _AZURE_NAMESPACE = '__app__'
+_DEFAULT_SCRIPT_FILENAME = '__init__.py'
+_DEFAULT_ENTRY_POINT = 'main'
 
 _submodule_dirs = []
 
@@ -53,9 +53,10 @@ def uninstall() -> None:
 def load_function(name: str, directory: str, script_file: str,
                   entry_point: typing.Optional[str]):
     dir_path = pathlib.Path(directory)
-    script_path = pathlib.Path(script_file)
+    script_path = pathlib.Path(script_file) if script_file else pathlib.Path(
+        _DEFAULT_SCRIPT_FILENAME)
     if not entry_point:
-        entry_point = 'main'
+        entry_point = _DEFAULT_ENTRY_POINT
 
     register_function_dir(dir_path.parent)
 

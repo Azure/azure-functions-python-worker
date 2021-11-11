@@ -69,6 +69,15 @@ jobs:
       Python39V3:
         pythonVersion: '3.9'
         workerPath: 'python/prodV3/worker.py'
+      Python37V4:
+        pythonVersion: '3.7'
+        workerPath: 'python/prodV4/worker.py'
+      Python38V4:
+        pythonVersion: '3.8'
+        workerPath: 'python/prodV4/worker.py'
+      Python39V4:
+        pythonVersion: '3.9'
+        workerPath: 'python/prodV4/worker.py'
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
@@ -94,6 +103,15 @@ jobs:
       Python39V3:
         pythonVersion: '3.9'
         workerPath: 'python/prodV3/worker.py'
+      Python37V4:
+        pythonVersion: '3.7'
+        workerPath: 'python/prodV4/worker.py'
+      Python38V4:
+        pythonVersion: '3.8'
+        workerPath: 'python/prodV4/worker.py'
+      Python39V4:
+        pythonVersion: '3.9'
+        workerPath: 'python/prodV4/worker.py'
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
@@ -125,6 +143,15 @@ jobs:
       Python39V3:
         pythonVersion: '3.9'
         workerPath: 'python/prodV3/worker.py'
+      Python37V4:
+        pythonVersion: '3.7'
+        workerPath: 'python/prodV4/worker.py'
+      Python38V4:
+        pythonVersion: '3.8'
+        workerPath: 'python/prodV4/worker.py'
+      Python39V4:
+        pythonVersion: '3.9'
+        workerPath: 'python/prodV4/worker.py'
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:
@@ -155,6 +182,15 @@ jobs:
       Python39V3:
         pythonVersion: '3.9'
         workerPath: 'python/prodV3/worker.py'
+      Python37V4:
+        pythonVersion: '3.7'
+        workerPath: 'python/prodV4/worker.py'
+      Python38V4:
+        pythonVersion: '3.8'
+        workerPath: 'python/prodV4/worker.py'
+      Python39V4:
+        pythonVersion: '3.9'
+        workerPath: 'python/prodV4/worker.py'
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:
@@ -182,13 +218,18 @@ jobs:
         echo "Generating V3 Release Package for $BUILD_SOURCEBRANCHNAME"
         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
         WKVERSION="$BUILD_SOURCEBRANCHNAME"
+      elif [[ $BUILD_SOURCEBRANCHNAME = 4\.* ]]
+      then
+        echo "Generating V4 Release Package for $BUILD_SOURCEBRANCHNAME"
+        NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+        WKVERSION="$BUILD_SOURCEBRANCHNAME"
       elif [[ $BUILD_SOURCEBRANCHNAME = dev ]]
       then
-        echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
-        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
+        echo "Generating V4 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
+        LATEST_TAG=$(cat azure_functions_worker/__init__.py | grep __version__ | cut -d'=' -f2 | tr -d \' | tr -d ' ')
         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
         # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
-        WKVERSION="3.$LATEST_TAG-$(patchBuildNumberForDev)"
+        WKVERSION="$LATEST_TAG.$(patchBuildNumberForDev)"
       else
         echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
       fi

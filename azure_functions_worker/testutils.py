@@ -444,15 +444,14 @@ class _WorkerResponseMessages(typing.NamedTuple):
 class _MockWebHost:
 
     def __init__(self, loop, scripts_dir):
-        self._loop = loop
         self._scripts_dir = scripts_dir
 
         self._available_functions = {}
         self._read_available_functions()
 
         self._connected_fut = loop.create_future()
-        self._in_queue = queue.Queue()
-        self._out_aqueue = asyncio.Queue(loop=self._loop)
+        self._in_queue: queue.Queue = queue.Queue()
+        self._out_aqueue: asyncio.Queue = asyncio.Queue()
         self._threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._server = grpc.server(self._threadpool)
         self._servicer = _MockWebHostServicer(self)
@@ -894,7 +893,8 @@ def start_webhost(*, script_dir=None, stdout=None):
                 time.sleep(2)
                 break
             else:
-                print(f'Failed to ping {health_check_endpoint}', flush=True)
+                print(f'Failed to ping {health_check_endpoint} Please check the'
+                      f' log file for details: {stdout.name}', flush=True)
         except requests.exceptions.ConnectionError:
             pass
         time.sleep(2)

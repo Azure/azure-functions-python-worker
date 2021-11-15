@@ -314,16 +314,16 @@ class TestUtilities(unittest.TestCase):
 
     def test_is_python_version(self):
         # Should pass at least 1 test
-        is_python_version_36 = common.is_python_version('3.6')
         is_python_version_37 = common.is_python_version('3.7')
         is_python_version_38 = common.is_python_version('3.8')
         is_python_version_39 = common.is_python_version('3.9')
+        is_python_version_310 = common.is_python_version('3.10')
 
         self.assertTrue(any([
-            is_python_version_36,
             is_python_version_37,
             is_python_version_38,
-            is_python_version_39
+            is_python_version_39,
+            is_python_version_310
         ]))
 
     def test_get_sdk_from_sys_path(self):

@@ -276,6 +276,7 @@ message RpcFunctionMetadata {
 }
 
 // Host tells worker it is ready to receive metadata
+message FunctionsMetadataRequest {
   // base directory for function app
   string function_app_directory = 1;
 }
@@ -289,7 +290,6 @@ message FunctionMetadataResponses {
   StatusResult result = 2;
 }
 
-message FunctionsMetadataRequest {
 // Host requests worker to invoke a Function
 message InvocationRequest {
   // Unique id for each invocation

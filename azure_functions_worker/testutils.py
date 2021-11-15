@@ -894,7 +894,9 @@ def start_webhost(*, script_dir=None, stdout=None):
                 time.sleep(2)
                 break
             else:
-                print(f'Failed to ping {health_check_endpoint}', flush=True)
+                print(f'Failed to ping {health_check_endpoint}. '
+                      f'Check the log file for details: {stdout.name}',
+                      flush=True)
         except requests.exceptions.ConnectionError:
             pass
         time.sleep(2)

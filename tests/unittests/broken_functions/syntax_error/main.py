@@ -3,4 +3,4 @@
 
 
 def main(req):
-    1 /  # noqa
+    1 /   # NOQA

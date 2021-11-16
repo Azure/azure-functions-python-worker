@@ -71,21 +71,14 @@ LOCALHOST = "127.0.0.1"
 HOST_JSON_TEMPLATE = """\
 {
     "version": "2.0",
+    "extensionBundle": {
+        "id": "Microsoft.Azure.Functions.ExtensionBundle",
+        "version": "[2.*, 3.3.0)"
+    },
     "logging": {
         "logLevel": {
            "default": "Trace"
         }
-    },
-    "http": {
-        "routePrefix": "api"
-    },
-    "swagger": {
-        "enabled": true
-    },
-    "eventHub": {
-        "maxBatchSize": 1000,
-        "prefetchCount": 1000,
-        "batchCheckpointFrequency": 1
     },
     "functionTimeout": "00:05:00"
 }
@@ -451,8 +444,10 @@ class _MockWebHost:
         self._read_available_functions()
 
         self._connected_fut = loop.create_future()
-        self._in_queue = queue.Queue()
-        self._out_aqueue = asyncio.Queue(loop=self._loop)
+        self._in_queue: queue.Queue = queue.Queue()
+        self._out_aqueue: asyncio.Queue = asyncio.Queue()
+        # self._in_queue = queue.Queue()
+        # self._out_aqueue = asyncio.Queue(loop=self._loop)
         self._threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._server = grpc.server(self._threadpool)
         self._servicer = _MockWebHostServicer(self)
@@ -754,7 +749,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
     if coretools_exe:
         coretools_exe = coretools_exe.strip()
         if pathlib.Path(coretools_exe).exists():
-            hostexe_args = [str(coretools_exe), 'host', 'start']
+            hostexe_args = [str(coretools_exe), 'host', 'start', '--verbose']
             if port is not None:
                 hostexe_args.extend(['--port', str(port)])
 

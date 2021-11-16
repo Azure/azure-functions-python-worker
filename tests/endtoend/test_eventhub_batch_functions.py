@@ -4,6 +4,8 @@ import json
 import time
 import pathlib
 from datetime import datetime
+
+import requests
 from dateutil import parser, tz
 
 from azure_functions_worker import testutils
@@ -22,7 +24,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_batch_functions'
 
-    @testutils.retryable_test(3, 5)
+    # @testutils.retryable_test(3, 5)
     def test_eventhub_multiple(self):
         NUM_EVENTS = 3
         all_row_keys_seen = dict([(str(i), True) for i in range(NUM_EVENTS)])
@@ -34,7 +36,10 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self._set_table_partition_key(partition_key)
 
         # wait for host to restart after change
-        time.sleep(5)
+        time.sleep(30)
+
+        r = self.webhost.request('GET', 'ping')
+        self.assertEqual(r.status_code, 204)
 
         docs = []
         for i in range(NUM_EVENTS):
@@ -60,7 +65,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
                 self.assertEqual(entry['PartitionKey'], partition_key)
                 row_key = entry['RowKey']
                 row_keys_seen[row_key] = True
-
             self.assertDictEqual(all_row_keys_seen, row_keys_seen)
         finally:
             self._cleanup(old_partition_key)

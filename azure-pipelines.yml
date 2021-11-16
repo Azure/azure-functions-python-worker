@@ -1,222 +1,268 @@
 name: $(Date:yyyyMMdd).$(Rev:r)
 
 trigger:
-- release/2.*
-- release/3.*
-- dev
+  - release/2.*
+  - release/3.*
+  - dev
 
 variables:
-    DOTNET_VERSION: '3.1.405'
-    DOTNET_VERSION_5: '5.0.x'
-    patchBuildNumberForDev: $(Build.BuildNumber)
+  DOTNET_VERSION: '3.1.405'
+  DOTNET_VERSION_5: '5.0.x'
+  patchBuildNumberForDev: $(Build.BuildNumber)
 
 jobs:
-- job: Tests
-  pool:
-    vmImage: 'ubuntu-18.04'
-  strategy:
-    matrix:
-      Python36:
-        pythonVersion: '3.6'
-      Python37:
-        pythonVersion: '3.7'
-      Python38:
-        pythonVersion: '3.8'
-      Python39:
-        pythonVersion: '3.9'
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '$(pythonVersion)'
-      addToPath: true
-  - task: UseDotNet@2
-    displayName: 'Install dotnet'
-    inputs:
-      packageType: 'sdk'
-      version: $(DOTNET_VERSION)
-  - task: UseDotNet@2
-    displayName: 'Install DotNet 5.x'
-    inputs:
-      packageType: 'sdk'
-      version: $(DOTNET_VERSION_5)
-  - task: ShellScript@2
-    inputs:
-      disableAutoCwd: true
-      scriptPath: .ci/linux_devops_build.sh
-    displayName: 'Build'
+  - job: Tests
+    pool:
+      vmImage: 'ubuntu-18.04'
+    strategy:
+      matrix:
+        Python36:
+          pythonVersion: '3.6'
+        Python37:
+          pythonVersion: '3.7'
+        Python38:
+          pythonVersion: '3.8'
+        Python39:
+          pythonVersion: '3.9'
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '$(pythonVersion)'
+          addToPath: true
+      - task: UseDotNet@2
+        displayName: 'Install dotnet'
+        inputs:
+          packageType: 'sdk'
+          version: $(DOTNET_VERSION)
+      - task: UseDotNet@2
+        displayName: 'Install DotNet 5.x'
+        inputs:
+          packageType: 'sdk'
+          version: $(DOTNET_VERSION_5)
+      - task: ShellScript@2
+        inputs:
+          disableAutoCwd: true
+          scriptPath: .ci/linux_devops_build.sh
+        displayName: 'Build'
 
-- job: Build_WINDOWS_X64
-  dependsOn: 'Tests'
-  pool:
-    vmImage: 'windows-2019'
-  strategy:
-    matrix:
-      Python36V2:
-        pythonVersion: '3.6'
-        workerPath: 'python/prodV2/worker.py'
-      Python37V2:
-        pythonVersion: '3.7'
-        workerPath: 'python/prodV2/worker.py'
-      Python36V3:
-        pythonVersion: '3.6'
-        workerPath: 'python/prodV3/worker.py'
-      Python37V3:
-        pythonVersion: '3.7'
-        workerPath: 'python/prodV3/worker.py'
-      Python38V3:
-        pythonVersion: '3.8'
-        workerPath: 'python/prodV3/worker.py'
-      Python39V3:
-        pythonVersion: '3.9'
-        workerPath: 'python/prodV3/worker.py'
-  steps:
-  - template: pack/templates/win_env_gen.yml
-    parameters:
-      pythonVersion: '$(pythonVersion)'
-      workerPath: '$(workerPath)'
-      architecture: 'x64'
-      artifactName: '$(pythonVersion)_WINDOWS_X64'
-- job: Build_WINDOWS_X86
-  dependsOn: 'Tests'
-  pool:
-    vmImage: 'windows-2019'
-  strategy:
-    matrix:
-      Python37V2:
-        pythonVersion: '3.7'
-        workerPath: 'python/prodV2/worker.py'
-      Python37V3:
-        pythonVersion: '3.7'
-        workerPath: 'python/prodV3/worker.py'
-      Python38V3:
-        pythonVersion: '3.8'
-        workerPath: 'python/prodV3/worker.py'
-      Python39V3:
-        pythonVersion: '3.9'
-        workerPath: 'python/prodV3/worker.py'
-  steps:
-  - template: pack/templates/win_env_gen.yml
-    parameters:
-      pythonVersion: '$(pythonVersion)'
-      workerPath: '$(workerPath)'
-      architecture: 'x86'
-      artifactName: '$(pythonVersion)_WINDOWS_x86'
-- job: Build_LINUX_X64
-  dependsOn: 'Tests'
-  pool:
-    vmImage: 'ubuntu-18.04'
-  strategy:
-    matrix:
-      Python36V2:
-        pythonVersion: '3.6'
-        workerPath: 'python/prodV2/worker.py'
-      Python37V2:
-        pythonVersion: '3.7'
-        workerPath: 'python/prodV2/worker.py'
-      Python36V3:
-        pythonVersion: '3.6'
-        workerPath: 'python/prodV3/worker.py'
-      Python37V3:
-        pythonVersion: '3.7'
-        workerPath: 'python/prodV3/worker.py'
-      Python38V3:
-        pythonVersion: '3.8'
-        workerPath: 'python/prodV3/worker.py'
-      Python39V3:
-        pythonVersion: '3.9'
-        workerPath: 'python/prodV3/worker.py'
-  steps:
-  - template: pack/templates/nix_env_gen.yml
-    parameters:
-      pythonVersion: '$(pythonVersion)'
-      workerPath: '$(workerPath)'
-      artifactName: '$(pythonVersion)_LINUX_X64'
-- job: Build_OSX_X64
-  dependsOn: 'Tests'
-  pool:
-    vmImage: 'macOS-10.15'
-  strategy:
-    matrix:
-      Python36V2:
-        pythonVersion: '3.6'
-        workerPath: 'python/prodV2/worker.py'
-      Python37V2:
-        pythonVersion: '3.7'
-        workerPath: 'python/prodV2/worker.py'
-      Python36V3:
-        pythonVersion: '3.6'
-        workerPath: 'python/prodV3/worker.py'
-      Python37V3:
-        pythonVersion: '3.7'
-        workerPath: 'python/prodV3/worker.py'
-      Python38V3:
-        pythonVersion: '3.8'
-        workerPath: 'python/prodV3/worker.py'
-      Python39V3:
-        pythonVersion: '3.9'
-        workerPath: 'python/prodV3/worker.py'
-  steps:
-  - template: pack/templates/nix_env_gen.yml
-    parameters:
-      pythonVersion: '$(pythonVersion)'
-      workerPath: '$(workerPath)'
-      artifactName: '$(pythonVersion)_OSX_X64'
+  - job: Build_WINDOWS_X64
+    dependsOn: 'Tests'
+    pool:
+      vmImage: 'windows-2019'
+    strategy:
+      matrix:
+        Python36V2:
+          pythonVersion: '3.6'
+          workerPath: 'python/prodV2/worker.py'
+        Python37V2:
+          pythonVersion: '3.7'
+          workerPath: 'python/prodV2/worker.py'
+        Python36V3:
+          pythonVersion: '3.6'
+          workerPath: 'python/prodV3/worker.py'
+        Python37V3:
+          pythonVersion: '3.7'
+          workerPath: 'python/prodV3/worker.py'
+        Python38V3:
+          pythonVersion: '3.8'
+          workerPath: 'python/prodV3/worker.py'
+        Python39V3:
+          pythonVersion: '3.9'
+          workerPath: 'python/prodV3/worker.py'
+        Python37V4:
+          pythonVersion: '3.7'
+          workerPath: 'python/prodV4/worker.py'
+        Python38V4:
+          pythonVersion: '3.8'
+          workerPath: 'python/prodV4/worker.py'
+        Python39V4:
+          pythonVersion: '3.9'
+          workerPath: 'python/prodV4/worker.py'
+    steps:
+      - template: pack/templates/win_env_gen.yml
+        parameters:
+          pythonVersion: '$(pythonVersion)'
+          workerPath: '$(workerPath)'
+          architecture: 'x64'
+          artifactName: '$(pythonVersion)_WINDOWS_X64'
+  - job: Build_WINDOWS_X86
+    dependsOn: 'Tests'
+    pool:
+      vmImage: 'windows-2019'
+    strategy:
+      matrix:
+        Python37V2:
+          pythonVersion: '3.7'
+          workerPath: 'python/prodV2/worker.py'
+        Python37V3:
+          pythonVersion: '3.7'
+          workerPath: 'python/prodV3/worker.py'
+        Python38V3:
+          pythonVersion: '3.8'
+          workerPath: 'python/prodV3/worker.py'
+        Python39V3:
+          pythonVersion: '3.9'
+          workerPath: 'python/prodV3/worker.py'
+        Python37V4:
+          pythonVersion: '3.7'
+          workerPath: 'python/prodV4/worker.py'
+        Python38V4:
+          pythonVersion: '3.8'
+          workerPath: 'python/prodV4/worker.py'
+        Python39V4:
+          pythonVersion: '3.9'
+          workerPath: 'python/prodV4/worker.py'
+    steps:
+      - template: pack/templates/win_env_gen.yml
+        parameters:
+          pythonVersion: '$(pythonVersion)'
+          workerPath: '$(workerPath)'
+          architecture: 'x86'
+          artifactName: '$(pythonVersion)_WINDOWS_x86'
+  - job: Build_LINUX_X64
+    dependsOn: 'Tests'
+    pool:
+      vmImage: 'ubuntu-18.04'
+    strategy:
+      matrix:
+        Python36V2:
+          pythonVersion: '3.6'
+          workerPath: 'python/prodV2/worker.py'
+        Python37V2:
+          pythonVersion: '3.7'
+          workerPath: 'python/prodV2/worker.py'
+        Python36V3:
+          pythonVersion: '3.6'
+          workerPath: 'python/prodV3/worker.py'
+        Python37V3:
+          pythonVersion: '3.7'
+          workerPath: 'python/prodV3/worker.py'
+        Python38V3:
+          pythonVersion: '3.8'
+          workerPath: 'python/prodV3/worker.py'
+        Python39V3:
+          pythonVersion: '3.9'
+          workerPath: 'python/prodV3/worker.py'
+        Python37V4:
+          pythonVersion: '3.7'
+          workerPath: 'python/prodV4/worker.py'
+        Python38V4:
+          pythonVersion: '3.8'
+          workerPath: 'python/prodV4/worker.py'
+        Python39V4:
+          pythonVersion: '3.9'
+          workerPath: 'python/prodV4/worker.py'
+    steps:
+      - template: pack/templates/nix_env_gen.yml
+        parameters:
+          pythonVersion: '$(pythonVersion)'
+          workerPath: '$(workerPath)'
+          artifactName: '$(pythonVersion)_LINUX_X64'
+  - job: Build_OSX_X64
+    dependsOn: 'Tests'
+    pool:
+      vmImage: 'macOS-10.15'
+    strategy:
+      matrix:
+        Python36V2:
+          pythonVersion: '3.6'
+          workerPath: 'python/prodV2/worker.py'
+        Python37V2:
+          pythonVersion: '3.7'
+          workerPath: 'python/prodV2/worker.py'
+        Python36V3:
+          pythonVersion: '3.6'
+          workerPath: 'python/prodV3/worker.py'
+        Python37V3:
+          pythonVersion: '3.7'
+          workerPath: 'python/prodV3/worker.py'
+        Python38V3:
+          pythonVersion: '3.8'
+          workerPath: 'python/prodV3/worker.py'
+        Python39V3:
+          pythonVersion: '3.9'
+          workerPath: 'python/prodV3/worker.py'
+        Python37V4:
+          pythonVersion: '3.7'
+          workerPath: 'python/prodV4/worker.py'
+        Python38V4:
+          pythonVersion: '3.8'
+          workerPath: 'python/prodV4/worker.py'
+        Python39V4:
+          pythonVersion: '3.9'
+          workerPath: 'python/prodV4/worker.py'
+    steps:
+      - template: pack/templates/nix_env_gen.yml
+        parameters:
+          pythonVersion: '$(pythonVersion)'
+          workerPath: '$(workerPath)'
+          artifactName: '$(pythonVersion)_OSX_X64'
 
-- job: PackageWorkers
-  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64']
-  condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
-  pool:
+  - job: PackageWorkers
+    dependsOn: [ 'Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64' ]
+    condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
+    pool:
       vmImage: 'vs2017-win2016'
-  steps:
-  - bash: |
-      echo "Releasing from $BUILD_SOURCEBRANCHNAME"
-      apt install jq
+    steps:
+      - bash: |
+          echo "Releasing from $BUILD_SOURCEBRANCHNAME"
+          apt install jq
 
-      if [[ $BUILD_SOURCEBRANCHNAME = 2\.* ]]
-      then
-        echo "Generating V2 Release Package for $BUILD_SOURCEBRANCHNAME"
-        NUSPEC="pack\Microsoft.Azure.Functions.V2.PythonWorker.nuspec"
-        WKVERSION="$BUILD_SOURCEBRANCHNAME"
-      elif [[ $BUILD_SOURCEBRANCHNAME = 3\.* ]]
-      then
-        echo "Generating V3 Release Package for $BUILD_SOURCEBRANCHNAME"
-        NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
-        WKVERSION="$BUILD_SOURCEBRANCHNAME"
-      elif [[ $BUILD_SOURCEBRANCHNAME = dev ]]
-      then
-        echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
-        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
-        NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
-        # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
-        WKVERSION="3.$LATEST_TAG-$(patchBuildNumberForDev)"
-      else
-        echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
-      fi
+          if [[ $BUILD_SOURCEBRANCHNAME = 2\.* ]]
+          then
+            echo "Generating V2 Release Package for $BUILD_SOURCEBRANCHNAME"
+            NUSPEC="pack\Microsoft.Azure.Functions.V2.PythonWorker.nuspec"
+            WKVERSION="$BUILD_SOURCEBRANCHNAME"
+          elif [[ $BUILD_SOURCEBRANCHNAME = 3\.* ]]
+          then
+            echo "Generating V3 Release Package for $BUILD_SOURCEBRANCHNAME"
+            NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
+            WKVERSION="$BUILD_SOURCEBRANCHNAME"
+          elif [[ $BUILD_SOURCEBRANCHNAME = 4\.* ]]
+          then
+            echo "Generating V4 Release Package for $BUILD_SOURCEBRANCHNAME"
+            NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+            WKVERSION="$BUILD_SOURCEBRANCHNAME"
+          elif [[ $BUILD_SOURCEBRANCHNAME = dev ]]
+          then
+            echo "Generating V4 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
+            LATEST_TAG=$(cat azure_functions_worker/__init__.py | grep __version__ | cut -d'=' -f2 | tr -d \' | tr -d ' ')
+            NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
+            # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
+            WKVERSION="$LATEST_TAG.$(patchBuildNumberForDev)"
+          else
+            echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
+          fi
 
-      echo "##vso[task.setvariable variable=nuspec_path]$NUSPEC"
-      echo "##vso[task.setvariable variable=worker_version]$WKVERSION"
-    displayName: "Generate Worker NuGet Package for Release $BUILD_SOURCEBRANCHNAME"
-  - task: DownloadBuildArtifacts@0
-    inputs:
-      buildType: 'current'
-      downloadType: 'specific'
-      downloadPath: '$(Build.SourcesDirectory)'
-  - task: NuGetCommand@2
-    inputs:
-      command: pack
-      packagesToPack: '$(nuspec_path)'
-      versioningScheme: 'byEnvVar'
-      versionEnvVar: WORKER_VERSION
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: 'PythonWorker'
-  - task: NuGetCommand@2
-    condition: eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true)
-    inputs:
-      command: 'push'
-      packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
-      nuGetFeedType: 'internal'
-      publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df'
-      allowPackageConflicts: true
-    displayName: '[Integration Test] Push NuGet package to the AzureFunctionsPreRelease feed'
+          echo "##vso[task.setvariable variable=nuspec_path]$NUSPEC"
+          echo "##vso[task.setvariable variable=worker_version]$WKVERSION"
+        displayName: "Generate Worker NuGet Package for Release $BUILD_SOURCEBRANCHNAME"
+      - task: DownloadBuildArtifacts@0
+        inputs:
+          buildType: 'current'
+          downloadType: 'specific'
+          downloadPath: '$(Build.SourcesDirectory)'
+      - task: NuGetCommand@2
+        inputs:
+          command: pack
+          packagesToPack: '$(nuspec_path)'
+          versioningScheme: 'byEnvVar'
+          versionEnvVar: WORKER_VERSION
+      - task: ManifestGeneratorTask@0
+        displayName: 'SBOM Generation Task'
+        inputs:
+          BuildDropPath: '$(Build.ArtifactStagingDirectory)'
+          Verbosity: 'Information'
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          artifactName: 'PythonWorker'
+      - task: NuGetCommand@2
+        condition: eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true)
+        inputs:
+          command: 'push'
+          packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+          nuGetFeedType: 'internal'
+          publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df'
+          allowPackageConflicts: true
+        displayName: '[Integration Test] Push NuGet package to the AzureFunctionsPreRelease feed'

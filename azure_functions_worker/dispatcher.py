@@ -301,7 +301,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def _handle__functions_metadata_request(self, req):
         metadata_request = req.functions_metadata_request
-        directory = metadata_request.directory
+        directory = metadata_request.function_app_directory
         indexed_functions = loader.index_function_app(directory)
 
         x = []
@@ -331,8 +331,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         return protos.StreamingMessage(
             request_id=req.request_id,
             function_metadata_responses=protos.FunctionMetadataResponses(
-                results=x,
-                overall_status=protos.StatusResult(
+                function_load_requests_results=x,
+                result=protos.StatusResult(
                     status=protos.StatusResult.Success)))
 
     async def _handle__function_load_request(self, req):

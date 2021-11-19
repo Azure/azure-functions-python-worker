@@ -4,6 +4,6 @@
         "extensions":[".py"],
         "defaultExecutablePath":"python",
         "defaultWorkerPath":"worker.py",
-        "workerIndexing": true
+        "workerIndexing": "true"
     }
 }

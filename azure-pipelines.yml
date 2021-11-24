@@ -205,8 +205,8 @@ jobs:
     displayName: 'Drop validation Task'
     inputs:
       BuildDropPath: '$(Build.ArtifactStagingDirectory)'
-      ManifestPath: ''$(Build.ArtifactStagingDirectory)'
-    OutputPath: ''$(Build.ArtifactStagingDirectory)''
+      ManifestPath: '$(Build.ArtifactStagingDirectory)'
+    OutputPath: '$(Build.ArtifactStagingDirectory)''
     ValidateSignature: false
     Verbosity: 'Verbose'
   - task: DownloadBuildArtifacts@0
@@ -214,7 +214,6 @@ jobs:
       buildType: 'current'
       downloadType: 'specific'
       downloadPath: '$(Build.SourcesDirectory)'
-
   - task: NuGetCommand@2
     inputs:
       command: pack

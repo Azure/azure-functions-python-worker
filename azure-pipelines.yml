@@ -208,6 +208,11 @@ jobs:
       buildType: 'current'
       downloadType: 'specific'
       downloadPath: '$(Build.SourcesDirectory)'
+  - task: ManifestGeneratorTask@0
+    displayName: 'SBOM Generation Task'
+    inputs:
+      BuildDropPath: '$(Build.SourcesDirectory)'
+      Verbosity: 'Verbose'
   - task: NuGetCommand@2
     inputs:
       command: pack
@@ -218,16 +223,11 @@ jobs:
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: 'PythonWorker'
-  - task: ManifestGeneratorTask@0
-    displayName: 'SBOM Generation Task'
-    inputs:
-      BuildDropPath: '$(Build.ArtifactStagingDirectory)'
-      Verbosity: 'Verbose'
   - task: DropValidatorTask@0
     displayName: 'Drop validation Task'
     inputs:
       BuildDropPath: '$(Build.ArtifactStagingDirectory)'
-      ManifestPath: '$(Build.ArtifactStagingDirectory)'
+      ManifestPath: '$(Build.ArtifactStagingDirectory)/_manifest'
       OutputPath: '$(Build.ArtifactStagingDirectory)'
       ValidateSignature: false
       Verbosity: 'Verbose'

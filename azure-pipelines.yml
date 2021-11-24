@@ -206,9 +206,9 @@ jobs:
     inputs:
       BuildDropPath: '$(Build.ArtifactStagingDirectory)'
       ManifestPath: '$(Build.ArtifactStagingDirectory)'
-    OutputPath: '$(Build.ArtifactStagingDirectory)''
-    ValidateSignature: false
-    Verbosity: 'Verbose'
+      OutputPath: '$(Build.ArtifactStagingDirectory)'
+      ValidateSignature: false
+      Verbosity: 'Verbose'
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'

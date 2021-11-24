@@ -196,11 +196,26 @@ jobs:
       echo "##vso[task.setvariable variable=nuspec_path]$NUSPEC"
       echo "##vso[task.setvariable variable=worker_version]$WKVERSION"
     displayName: "Generate Worker NuGet Package for Release $BUILD_SOURCEBRANCHNAME"
+  
+  - task: ManifestGeneratorTask@0
+    inputs:
+      BuildDropPath: '$(Build.ArtifactStagingDirectory)'
+      Verbosity: 'Information'
+
+  - task: DropValidatorTask@0
+    inputs:
+      BuildDropPath: '$(Build.ArtifactStagingDirectory)'
+      ManifestPath: ''$(Build.ArtifactStagingDirectory)'
+    OutputPath: ''$(Build.ArtifactStagingDirectory)''
+    ValidateSignature: true
+    Verbosity: 'Verbose'
+
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'
       downloadType: 'specific'
       downloadPath: '$(Build.SourcesDirectory)'
+      
   - task: NuGetCommand@2
     inputs:
       command: pack

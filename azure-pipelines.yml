@@ -212,6 +212,7 @@ jobs:
     displayName: 'SBOM Generation Task'
     inputs:
       BuildDropPath: '$(Build.SourcesDirectory)'
+      BuildComponentPath: '$(Build.ArtifactStagingDirectory)'
       Verbosity: 'Verbose'
   - task: NuGetCommand@2
     inputs:
@@ -227,7 +228,7 @@ jobs:
     displayName: 'Drop validation Task'
     inputs:
       BuildDropPath: '$(Build.ArtifactStagingDirectory)'
-      ManifestPath: '$(Build.ArtifactStagingDirectory)/_manifest'
+      ManifestPath: '$(Build.ArtifactStagingDirectory)'
       OutputPath: '$(Build.ArtifactStagingDirectory)'
       ValidateSignature: false
       Verbosity: 'Verbose'

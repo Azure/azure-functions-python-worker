@@ -190,30 +190,39 @@ jobs:
         # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
         WKVERSION="3.$LATEST_TAG-$(patchBuildNumberForDev)"
       else
-        # Line 194 to 199 to be commeneted out except when we need
-        # to test something from personal feature branch
-        echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
+        # line 194 to line 198 is for testing sbom generation
+        echo "Generating VTest Integration Test Package for $BUILD_SOURCEBRANCHNAME"
         LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
         # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
-        WKVERSION="0.$LATEST_TAG-$(patchBuildNumberForDev)"
-        echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
+        WKVERSION="0.$LATEST_TAG-$(patchBuildNumberForDev)"  
       fi
 
       echo "##vso[task.setvariable variable=nuspec_path]$NUSPEC"
       echo "##vso[task.setvariable variable=worker_version]$WKVERSION"
     displayName: "Generate Worker NuGet Package for Release $BUILD_SOURCEBRANCHNAME"
-  - task: ManifestGeneratorTask@0
-    displayName: 'SBOM Generation Task'
-    inputs:
-      BuildDropPath: '$(Build.SourcesDirectory)'
-      BuildComponentPath: '$(Build.SourcesDirectory)'
-      Verbosity: 'Verbose'
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'
       downloadType: 'specific'
       downloadPath: '$(Build.SourcesDirectory)'
+  - task: ManifestGeneratorTask@0
+    displayName: 'SBOM Generation Task'
+    inputs:
+      BuildDropPath: '$(Build.SourcesDirectory)\pack'
+      BuildComponentPath: '$(Build.SourcesDirectory)\pack'
+      Verbosity: 'Verbose'
+  - bash: |
+      # Write your commands here
+      
+        echo 'Hello world'
+        echo 'before copy >> build sources dir: '
+        ls -la $BUILD_SOURCESDIRECTORY
+        cd $BUILD_SOURCESDIRECTORY
+        echo 'after copy >> build sources dir/pack: '
+        ls -la pack
+        ls -la pack/_manifest
+    displayName: "after sbom generation"
   - task: NuGetCommand@2
     inputs:
       command: pack
@@ -224,14 +233,23 @@ jobs:
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: 'PythonWorker'
-  #- task: DropValidatorTask@0
-  #  displayName: 'Drop validation Task'
-  #  inputs:
-  #    BuildDropPath: '$(Build.ArtifactStagingDirectory)'
-  #    ManifestPath: '$(Build.ArtifactStagingDirectory)'
-  #    OutputPath: '$(Build.ArtifactStagingDirectory)'
-  #    ValidateSignature: false
-  #    Verbosity: 'Verbose'
+  - bash: |
+      # Write your commands here
+      
+        echo 'Hello world'
+        echo 'before copy >> build artifact dir: '
+        ls -la $BUILD_ARTIFACTSTAGINGDIRECTORY
+        cd $BUILD_ARTIFACTSTAGINGDIRECTORY
+        echo 'after copy >> build artifact dir/pack: '
+        ls -la pack
+  - task: DropValidatorTask@0
+    displayName: 'Drop validation Task'
+    inputs:
+      BuildDropPath: '$(Build.ArtifactStagingDirectory)'
+      ManifestPath: '$(Build.ArtifactStagingDirectory)\pack'
+      OutputPath: '$(Build.ArtifactStagingDirectory)'
+      ValidateSignature: false
+      Verbosity: 'Verbose'
   #- task: NuGetCommand@2
   #  condition: eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true)
   #  inputs:

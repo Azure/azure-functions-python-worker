@@ -209,8 +209,8 @@ jobs:
   - task: ManifestGeneratorTask@0
     displayName: 'SBOM Generation Task'
     inputs:
-      BuildDropPath: '$(Build.SourcesDirectory)\pack'
-      BuildComponentPath: '$(Build.SourcesDirectory)\pack'
+      BuildDropPath: '$(Build.SourcesDirectory)'
+      BuildComponentPath: '$(Build.SourcesDirectory)'
       Verbosity: 'Verbose'
   - bash: |
       # Write your commands here
@@ -221,32 +221,39 @@ jobs:
         cd $BUILD_SOURCESDIRECTORY
         echo 'after copy >> build sources dir/pack: '
         ls -la pack
-        ls -la pack/_manifest
+        ls -la _manifest
     displayName: "after sbom generation"
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)'
+      Contents: '**'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
   - task: NuGetCommand@2
     inputs:
       command: pack
       packagesToPack: '$(nuspec_path)'
       versioningScheme: 'byEnvVar'
       versionEnvVar: WORKER_VERSION
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: 'PythonWorker'
   - bash: |
       # Write your commands here
       
         echo 'Hello world'
-        echo 'before copy >> build artifact dir: '
-        ls -la $BUILD_ARTIFACTSTAGINGDIRECTORY
-        cd $BUILD_ARTIFACTSTAGINGDIRECTORY
-        echo 'after copy >> build artifact dir/pack: '
+        echo 'before copy >> build sources dir: '
+        ls -la $BUILD_SOURCESDIRECTORY
+        cd $BUILD_SOURCESDIRECTORY
+        echo 'after copy >> build sources dir/pack: '
         ls -la pack
+        ls -la _manifest
+    displayName: "before publishing artifact"
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: 'PythonWorker'
   - task: DropValidatorTask@0
     displayName: 'Drop validation Task'
     inputs:
       BuildDropPath: '$(Build.ArtifactStagingDirectory)'
-      ManifestPath: '$(Build.ArtifactStagingDirectory)\pack'
+      ManifestPath: '$(Build.ArtifactStagingDirectory)\_manifest'
       OutputPath: '$(Build.ArtifactStagingDirectory)'
       ValidateSignature: false
       Verbosity: 'Verbose'

@@ -225,7 +225,7 @@ jobs:
     displayName: "after sbom generation"
   - task: CopyFiles@2
     inputs:
-      SourceFolder: '$(Build.SourcesDirectory)'
+      SourceFolder: '$(Build.SourcesDirectory)\_manifest'
       Contents: '**'
       TargetFolder: '$(Build.ArtifactStagingDirectory)'
   - task: NuGetCommand@2
@@ -234,29 +234,10 @@ jobs:
       packagesToPack: '$(nuspec_path)'
       versioningScheme: 'byEnvVar'
       versionEnvVar: WORKER_VERSION
-  - bash: |
-      # Write your commands here
-      
-        echo 'Hello world'
-        echo 'before copy >> build sources dir: '
-        ls -la $BUILD_SOURCESDIRECTORY
-        cd $BUILD_SOURCESDIRECTORY
-        echo 'after copy >> build sources dir/pack: '
-        ls -la pack
-        ls -la _manifest
-    displayName: "before publishing artifact"
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: 'PythonWorker'
-  - task: DropValidatorTask@0
-    displayName: 'Drop validation Task'
-    inputs:
-      BuildDropPath: '$(Build.ArtifactStagingDirectory)'
-      ManifestPath: '$(Build.ArtifactStagingDirectory)\_manifest'
-      OutputPath: '$(Build.ArtifactStagingDirectory)'
-      ValidateSignature: false
-      Verbosity: 'Verbose'
   #- task: NuGetCommand@2
   #  condition: eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true)
   #  inputs:

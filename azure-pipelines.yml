@@ -164,7 +164,7 @@ jobs:
 
 - job: PackageWorkers
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64']
-  #condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
+  condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
   pool:
       vmImage: 'vs2017-win2016'
   steps:
@@ -190,12 +190,7 @@ jobs:
         # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
         WKVERSION="3.$LATEST_TAG-$(patchBuildNumberForDev)"
       else
-        # line 194 to line 198 is for testing sbom generation
-        echo "Generating VTest Integration Test Package for $BUILD_SOURCEBRANCHNAME"
-        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
-        NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
-        # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
-        WKVERSION="0.$LATEST_TAG-$(patchBuildNumberForDev)"  
+        echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
       fi
 
       echo "##vso[task.setvariable variable=nuspec_path]$NUSPEC"
@@ -212,17 +207,6 @@ jobs:
       BuildDropPath: '$(Build.SourcesDirectory)'
       BuildComponentPath: '$(Build.SourcesDirectory)'
       Verbosity: 'Verbose'
-  - bash: |
-      # Write your commands here
-      
-        echo 'Hello world'
-        echo 'before copy >> build sources dir: '
-        ls -la $BUILD_SOURCESDIRECTORY
-        cd $BUILD_SOURCESDIRECTORY
-        echo 'after copy >> build sources dir/pack: '
-        ls -la pack
-        ls -la _manifest
-    displayName: "after sbom generation"
   - task: CopyFiles@2
     inputs:
       SourceFolder: '$(Build.SourcesDirectory)\_manifest'
@@ -238,12 +222,12 @@ jobs:
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: 'PythonWorker'
-  #- task: NuGetCommand@2
-  #  condition: eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true)
-  #  inputs:
-  #    command: 'push'
-  #    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
-  #    nuGetFeedType: 'internal'
-  #    publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df'
-  #    allowPackageConflicts: true
-  #  displayName: '[Integration Test] Push NuGet package to the AzureFunctionsPreRelease feed'
+  - task: NuGetCommand@2
+    condition: eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true)
+    inputs:
+      command: 'push'
+      packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+      nuGetFeedType: 'internal'
+      publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df'
+      allowPackageConflicts: true
+    displayName: '[Integration Test] Push NuGet package to the AzureFunctionsPreRelease feed'

@@ -13,22 +13,25 @@ from azure_functions_worker.constants import PYAZURE_INTEGRATION_TEST
 REQUEST_TIMEOUT_SEC = 5
 
 
-class TestDependencyFunctionsOnDedicated(testutils.WebHostTestCase):
+class TestGRPCandProtobufDependencyIsolationOnDedicated(
+        testutils.WebHostTestCase):
     """Test the dependency manager E2E scneraio via Http Trigger.
 
     The following E2E tests ensures the dependency manager is behaving as
-    expected. They are tested against the dependency_functions/ folder which
-    contain a dummy .python_packages/ folder.
+    expected. They are tested against the dependency_isolation_grpc_protobuf/
+    folder which contain a dummy .python_packages/ folder.
     """
-    project_root = testutils.E2E_TESTS_ROOT / 'dependency_functions'
-    customer_deps = project_root / '.python_packages' / 'lib' / 'site-packages'
+    function_name = 'dependency_isolation_functions'
+    package_name = '.python_packages_grpc_protobuf'
+    project_root = testutils.E2E_TESTS_ROOT / function_name
+    customer_deps = project_root / package_name / 'lib' / 'site-packages'
 
     @classmethod
     def setUpClass(cls):
         os_environ = os.environ.copy()
         # Turn on feature flag
         os_environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = '1'
-        # Emulate Python worker in Azure enviroment.
+        # Emulate Python worker in Azure environment.
         # For how the PYTHONPATH is set in Azure, check prodV3/worker.py.
         os_environ['PYTHONPATH'] = str(cls.customer_deps)
 
@@ -74,7 +77,7 @@ class TestDependencyFunctionsOnDedicated(testutils.WebHostTestCase):
         dir = os.path.dirname(__file__)
         self.assertEqual(
             environments['AzureWebJobsScriptRoot'].lower(),
-            os.path.join(dir, 'dependency_functions').lower()
+            os.path.join(dir, 'dependency_isolation_functions').lower()
         )
 
     @skipIf(
@@ -96,7 +99,7 @@ class TestDependencyFunctionsOnDedicated(testutils.WebHostTestCase):
             dm['cx_deps_path'].lower(), str(self.customer_deps).lower()
         )
 
-        # Should dervie the package location from the built-in azure.functions
+        # Should derive the package location from the built-in azure.functions
         azf_spec = importlib.util.find_spec('azure.functions')
         self.assertEqual(
             dm['worker_deps_path'].lower(),
@@ -108,7 +111,8 @@ class TestDependencyFunctionsOnDedicated(testutils.WebHostTestCase):
     @testutils.retryable_test(3, 5)
     def test_loading_libraries_from_customers_package(self):
         """Since the Python now loaded the customer's dependencies, the
-        libraries version should match the ones in .python_packages/ folder
+        libraries version should match the ones in
+        .python_packages_grpc_protobuf/ folder
         """
         r: Response = self.webhost.request('GET', 'report_dependencies')
         libraries = r.json()['libraries']
@@ -116,6 +120,87 @@ class TestDependencyFunctionsOnDedicated(testutils.WebHostTestCase):
         self.assertEqual(
             libraries['proto.expected.version'], libraries['proto.version']
         )
+
         self.assertEqual(
             libraries['grpc.expected.version'], libraries['grpc.version']
         )
+
+
+class TestOlderVersionOfAzFuncDependencyIsolationOnDedicated(
+        testutils.WebHostTestCase):
+
+    function_name = 'dependency_isolation_functions'
+    package_name = '.python_packages_azf_older_version'
+    project_root = testutils.E2E_TESTS_ROOT / function_name
+    customer_deps = project_root / package_name / 'lib' / 'site-packages'
+    expected_azfunc_version = '1.5.0'
+
+    @classmethod
+    def setUpClass(cls):
+        os_environ = os.environ.copy()
+        # Turn on feature flag
+        os_environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = '1'
+        # Emulate Python worker in Azure environment.
+        # For how the PYTHONPATH is set in Azure, check prodV3/worker.py.
+        os_environ['PYTHONPATH'] = str(cls.customer_deps)
+
+        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ.start()
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(self):
+        super().tearDownClass()
+        self._patch_environ.stop()
+
+    @classmethod
+    def get_script_dir(cls):
+        return cls.project_root
+
+    @testutils.retryable_test(3, 5)
+    def test_loading_libraries_from_customers_package(self):
+        r: Response = self.webhost.request('GET', 'report_dependencies')
+        libraries = r.json()['libraries']
+
+        self.assertEqual(
+            self.expected_azfunc_version, libraries['func.version'])
+
+
+class TestNewerVersionOfAzFuncDependencyIsolationOnDedicated(
+        testutils.WebHostTestCase):
+
+    function_name = 'dependency_isolation_functions'
+    package_name = '.python_packages_azf_newer_version'
+    project_root = testutils.E2E_TESTS_ROOT / function_name
+    customer_deps = project_root / package_name / 'lib' / 'site-packages'
+    expected_azfunc_version = '9.9.9'
+
+    @classmethod
+    def setUpClass(cls):
+        os_environ = os.environ.copy()
+        # Turn on feature flag
+        os_environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = '1'
+        # Emulate Python worker in Azure environment.
+        # For how the PYTHONPATH is set in Azure, check prodV3/worker.py.
+        os_environ['PYTHONPATH'] = str(cls.customer_deps)
+
+        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ.start()
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(self):
+        super().tearDownClass()
+        self._patch_environ.stop()
+
+    @classmethod
+    def get_script_dir(cls):
+        return cls.project_root
+
+    @testutils.retryable_test(3, 5)
+    def test_loading_libraries_from_customers_package(self):
+        r: Response = self.webhost.request('GET', 'report_dependencies')
+        libraries = r.json()['libraries']
+
+        self.assertEqual(
+            self.expected_azfunc_version, libraries['func.version'])

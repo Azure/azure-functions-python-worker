@@ -201,6 +201,12 @@ jobs:
       buildType: 'current'
       downloadType: 'specific'
       downloadPath: '$(Build.SourcesDirectory)'
+  - task: ManifestGeneratorTask@0
+    displayName: 'SBOM Generation Task'
+    inputs:
+      BuildDropPath: '$(Build.ArtifactStagingDirectory)'
+      BuildComponentPath: '$(Build.ArtifactStagingDirectory)'
+      Verbosity: 'Verbose'
   - task: NuGetCommand@2
     inputs:
       command: pack

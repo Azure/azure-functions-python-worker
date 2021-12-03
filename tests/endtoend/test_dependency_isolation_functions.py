@@ -15,11 +15,13 @@ REQUEST_TIMEOUT_SEC = 5
 
 class TestGRPCandProtobufDependencyIsolationOnDedicated(
         testutils.WebHostTestCase):
-    """Test the dependency manager E2E scneraio via Http Trigger.
+    """Test the dependency manager E2E scenario via Http Trigger.
 
     The following E2E tests ensures the dependency manager is behaving as
-    expected. They are tested against the dependency_isolation_grpc_protobuf/
-    folder which contain a dummy .python_packages/ folder.
+    expected. They are tested against the dependency_isolation_functions/
+    folder which contain a dummy .python_packages_grpc_protobuf folder.
+    This testcase checks if the customers library version of grpc and protobuf
+    are being loaded in the functionapp
     """
     function_name = 'dependency_isolation_functions'
     package_name = '.python_packages_grpc_protobuf'
@@ -128,6 +130,14 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
 
 class TestOlderVersionOfAzFuncDependencyIsolationOnDedicated(
         testutils.WebHostTestCase):
+    """Test the dependency manager E2E scenario via Http Trigger.
+
+    The following E2E tests ensures the dependency manager is behaving as
+    expected. They are tested against the dependency_isolation_functions/
+    folder which contain a dummy .python_packages_azf_older_version folder.
+    This testcase checks if the customers older library version of azure
+    functions is being loaded in the functionapp
+    """
 
     function_name = 'dependency_isolation_functions'
     package_name = '.python_packages_azf_older_version'
@@ -168,6 +178,14 @@ class TestOlderVersionOfAzFuncDependencyIsolationOnDedicated(
 
 class TestNewerVersionOfAzFuncDependencyIsolationOnDedicated(
         testutils.WebHostTestCase):
+    """Test the dependency manager E2E scenario via Http Trigger.
+
+    The following E2E tests ensures the dependency manager is behaving as
+    expected. They are tested against the dependency_isolation_functions/
+    folder which contain a dummy .python_packages_azf_newer_version folder.
+    This testcase checks if the customers newer library version of azure
+    functions is being loaded in the functionapp
+    """
 
     function_name = 'dependency_isolation_functions'
     package_name = '.python_packages_azf_newer_version'

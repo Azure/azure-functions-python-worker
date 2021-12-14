@@ -74,6 +74,10 @@ jobs:
           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString36 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString36 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString36 }}
+          ConfluentKafkaUsername: ${{ secrets.ConfluentKafkaUsername36 }}
+          ConfluentKafkaPassword: ${{ secrets.ConfluentKafkaPassword36 }}
+          ConfluentKafkaBrokerList: ${{ secrets.ConfluentKafkaBrokerList36 }}
+          ConfluentKafkaTopic: ${{ secrets.ConfluentKafkaTopic36 }}
         run: |
           pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Running 3.7 Tests
@@ -85,6 +89,10 @@ jobs:
           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString37 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
+          ConfluentKafkaUsername: ${{ secrets.ConfluentKafkaUsername37 }}
+          ConfluentKafkaPassword: ${{ secrets.ConfluentKafkaPassword37 }}
+          ConfluentKafkaBrokerList: ${{ secrets.ConfluentKafkaBrokerList37 }}
+          ConfluentKafkaTopic: ${{ secrets.ConfluentKafkaTopic37 }}
         run: |
           pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Running 3.8 Tests
@@ -96,6 +104,10 @@ jobs:
           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString38 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
+          ConfluentKafkaUsername: ${{ secrets.ConfluentKafkaUsername38 }}
+          ConfluentKafkaPassword: ${{ secrets.ConfluentKafkaPassword38 }}
+          ConfluentKafkaBrokerList: ${{ secrets.ConfluentKafkaBrokerList38 }}
+          ConfluentKafkaTopic: ${{ secrets.ConfluentKafkaTopic38 }}
         run: |
           pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Running 3.9 Tests
@@ -107,6 +119,10 @@ jobs:
           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString39 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
+          ConfluentKafkaUsername: ${{ secrets.ConfluentKafkaUsername39 }}
+          ConfluentKafkaPassword: ${{ secrets.ConfluentKafkaPassword39 }}
+          ConfluentKafkaBrokerList: ${{ secrets.ConfluentKafkaBrokerList39 }}
+          ConfluentKafkaTopic: ${{ secrets.ConfluentKafkaTopic39 }}
         run: |
           pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Codecov

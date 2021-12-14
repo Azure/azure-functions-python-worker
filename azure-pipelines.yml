@@ -187,6 +187,13 @@ jobs:
         echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
         LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
+        # Only required for Integration Test. Version number contains date (e.g. 4.1.2.20211028-dev)
+        WKVERSION="4.$LATEST_TAG-$(patchBuildNumberForDev)"
+      elif [[ $BUILD_SOURCEBRANCHNAME = v3.x-dev ]]
+      then
+        echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
+        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
+        NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
         # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
         WKVERSION="3.$LATEST_TAG-$(patchBuildNumberForDev)"
       else

@@ -465,24 +465,28 @@ class Dispatcher(metaclass=DispatcherMeta):
             # customer use
             import azure.functions  # NoQA
 
+            logger.info('Imported azure.functions')
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:
                 sys.path.append(func_env_reload_request.function_app_directory)
 
             # Clear sys.path import cache, reload all module from new sys.path
             sys.path_importer_cache.clear()
+            logger.info('Cleared cache')
 
             # Reload environment variables
             os.environ.clear()
             env_vars = func_env_reload_request.environment_variables
             for var in env_vars:
-                os.environ[var] = env_vars[var]
+                os.environ[var] = env_vars[var]            
+            logger.info('Reloaded env. vars')
 
             # Apply PYTHON_THREADPOOL_THREAD_COUNT
             self._stop_sync_call_tp()
             self._sync_call_tp = (
                 self._create_sync_call_tp(self._get_sync_tp_max_workers())
             )
+            logger.info('Applied thread pool count')
 
             # Reload azure google namespaces
             DependencyManager.reload_customer_libraries(

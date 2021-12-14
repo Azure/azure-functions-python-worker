@@ -188,6 +188,7 @@ class DependencyManager:
         else:
             use_new = is_true_like(use_new_env)
 
+        logger.info(f'reload_customer_libraries.use_new = {use_new}')
         if use_new:
             cls.prioritize_customer_dependencies(cx_working_dir)
         else:

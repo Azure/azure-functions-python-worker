@@ -478,7 +478,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             os.environ.clear()
             env_vars = func_env_reload_request.environment_variables
             for var in env_vars:
-                os.environ[var] = env_vars[var]            
+                os.environ[var] = env_vars[var]
             logger.info('Reloaded env. vars')
 
             # Apply PYTHON_THREADPOOL_THREAD_COUNT

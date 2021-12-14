@@ -408,7 +408,8 @@ setup(
             'pytest-randomly',
             'pytest-instafail',
             'pytest-rerunfailures',
-            'ptvsd'
+            'ptvsd',
+            'confluent-kafka'
         ]
     },
     include_package_data=True,

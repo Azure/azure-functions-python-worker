@@ -1,0 +1,24 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "type": "kafkaTrigger",
+      "name": "kevent",
+      "direction": "in",
+      "brokerList": "ConfluentKafkaBrokerList",
+      "topic": "ConfluentKafkaTopic",
+      "username": "ConfluentKafkaUsername",
+      "password": "ConfluentKafkaPassword",
+      "protocol": "saslSsl",
+      "authenticationMode": "plain",
+      "consumerGroup": "$Default"
+  },
+    {
+      "type": "blob",
+      "direction": "out",
+      "name": "$return",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-e2e-tests/test-kafka-confluent-triggered.txt"
+    }
+  ]
+}

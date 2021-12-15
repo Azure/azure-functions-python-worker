@@ -11,7 +11,7 @@
       "direction": "in",
       "name": "file",
       "connection": "AzureWebJobsStorage",
-      "path": "python-e2e-tests/test-kafka-confluent-triggered.txt"
+      "path": "python-worker-tests/test-kafka-confluent-triggered.txt"
     },
     {
       "type": "http",

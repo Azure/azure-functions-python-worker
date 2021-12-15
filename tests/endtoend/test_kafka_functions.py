@@ -7,7 +7,6 @@ from dateutil import parser, tz
 
 from azure_functions_worker import testutils
 from azure_functions_worker.testutils import WebHostTestCase, E2E_TESTS_FOLDER
-from build.built_protos.FunctionRpc_pb2 import json
 
 
 class TestKafkaFunctions(WebHostTestCase):

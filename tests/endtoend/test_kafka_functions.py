@@ -55,7 +55,7 @@ class TestKafkaFunctions(WebHostTestCase):
 
         # Invoke metadata_output HttpTrigger to generate an EventHub event
         r = self.webhost.request('POST', 'confluent_metadata_output',
-                                 params={'message' : 'test_meta'})
+                                 params={'message': 'test_meta'})
         self.assertEqual(r.status_code, 200)
         self.assertIn('OK', r.text)
         end_time = datetime.now(tz=tz.UTC)

@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 import logging
 import os
-from sys import platform
+import platform
 
 import azure.functions as func
 import certifi

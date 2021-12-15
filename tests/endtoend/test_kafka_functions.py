@@ -40,7 +40,7 @@ class TestKafkaFunctions(WebHostTestCase):
         time.sleep(5)
 
         # Call get_confluent_triggered to retrieve event metadata from blob.
-        r = self.webhost.request('GET', 'get_metadata_triggered')
+        r = self.webhost.request('GET', 'confluent_get_metadata_triggered')
         self.assertEqual(r.status_code, 200)
         response = r.json()
 
@@ -54,7 +54,7 @@ class TestKafkaFunctions(WebHostTestCase):
         start_time = datetime.now(tz=tz.UTC)
 
         # Invoke metadata_output HttpTrigger to generate an EventHub event
-        r = self.webhost.request('POST', 'metadata_output',
+        r = self.webhost.request('POST', 'confluent_metadata_output',
                                  params={'message' : 'test_meta'})
         self.assertEqual(r.status_code, 200)
         self.assertIn('OK', r.text)
@@ -65,7 +65,7 @@ class TestKafkaFunctions(WebHostTestCase):
         time.sleep(5)
 
         # Call get_metadata_triggered to retrieve event metadata from blob
-        r = self.webhost.request('GET', 'get_metadata_triggered')
+        r = self.webhost.request('GET', 'confluent_get_metadata_triggered')
         self.assertEqual(r.status_code, 200)
 
         # Check if the event body matches the unique random_number

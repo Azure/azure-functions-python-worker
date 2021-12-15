@@ -43,11 +43,14 @@ async def _write_on_topic(producer, python_version):
 
 def _build_producer(python_version):
     producer_conf = {}
-    producer_conf['bootstrap.servers'] = os.environ['ConfluentKafkaBrokerList'+python_version]
+    bootstrap_server = 'ConfluentKafkaBrokerList'+python_version
+    producer_conf['bootstrap.servers'] = os.environ[bootstrap_server]
     producer_conf['security.protocol'] = 'SASL_SSL'
     producer_conf['sasl.mechanisms'] = 'PLAIN'
-    producer_conf['sasl.username'] = os.environ['ConfluentKafkaUsername'+python_version]
-    producer_conf['sasl.password'] = os.environ['ConfluentKafkaPassword'+python_version]
+    confluent_username = 'ConfluentKafkaUsername'+python_version
+    producer_conf['sasl.username'] = os.environ[confluent_username]
+    confluent_passwd = 'ConfluentKafkaPassword' + python_version
+    producer_conf['sasl.password'] = os.environ[confluent_passwd]
     producer_conf.pop('schema.registry.url', None)
     producer_conf.pop('basic.auth.user.info', None)
     producer_conf.pop('basic.auth.credentials.source', None)

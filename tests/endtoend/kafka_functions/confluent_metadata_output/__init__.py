@@ -34,21 +34,22 @@ async def main(req: func.HttpRequest):
 
 
 async def _write_on_topic(producer, python_version):
-    topic = os.environ['ConfluentKafkaTopic'+python_version]
+    topic = os.environ['ConfluentKafkaTopic']
     record_key = "1"
     record_value = "test"
-    producer.produce(topic, key=record_key, value=record_value, on_delivery=acked)
+    producer.produce(topic, key=record_key, value=record_value,
+                     on_delivery=acked)
     producer.poll(0)
     producer.flush()
 
 
 def _build_producer(python_version):
     producer_conf = {}
-    bootstrap_server = 'ConfluentKafkaBrokerList'+python_version
+    bootstrap_server = 'ConfluentKafkaBrokerList' + python_version
     producer_conf['bootstrap.servers'] = os.environ[bootstrap_server]
     producer_conf['security.protocol'] = 'SASL_SSL'
     producer_conf['sasl.mechanisms'] = 'PLAIN'
-    confluent_username = 'ConfluentKafkaUsername'+python_version
+    confluent_username = 'ConfluentKafkaUsername' + python_version
     producer_conf['sasl.username'] = os.environ[confluent_username]
     confluent_passwd = 'ConfluentKafkaPassword' + python_version
     producer_conf['sasl.password'] = os.environ[confluent_passwd]

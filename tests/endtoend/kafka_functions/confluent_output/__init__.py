@@ -8,7 +8,6 @@ import azure.functions as func
 def main(req: func.HttpRequest, out: func.Out[str]) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
-    name = req.params.get('name')
     message = req.params.get('message')
     if not message:
         try:
@@ -22,7 +21,8 @@ def main(req: func.HttpRequest, out: func.Out[str]) -> func.HttpResponse:
         out.set(message)
         return func.HttpResponse(f"{message}")
     else:
-        return func.HttpResponse(
-             "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
-             status_code=200
-        )
+        return func.HttpResponse("This HTTP triggered function executed "
+                                 "successfully. Pass a name in the query "
+                                 "string or in the request body for a "
+                                 "personalized response.",
+                                 status_code=200)

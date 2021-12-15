@@ -755,7 +755,6 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
 
     # If we want to use core-tools
     coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')
-    coretools_exe = 'C:\\Users\\shrohilla\\AppData\\Roaming\\npm\\func.cmd'
     if coretools_exe:
         coretools_exe = coretools_exe.strip()
         if pathlib.Path(coretools_exe).exists():

@@ -13,7 +13,8 @@ variables:
 jobs:
 - job: Tests
   pool:
-    vmImage: 'ubuntu-18.04'
+    name: '1ES-Hosted-AzFunc'
+    vmImage: 'MMSUbuntu20.04TLS'
   strategy:
     matrix:
       Python36:
@@ -80,7 +81,8 @@ jobs:
 - job: Build_WINDOWS_X86
   dependsOn: 'Tests'
   pool:
-    vmImage: 'MMS2019TLS'
+    name: '1ES-Hosted-AzFunc'
+    vmImage: 'MMS2019TLS'  #for Windows2019 or MMSUbuntu20.04TLS for ubuntu
   strategy:
     matrix:
       Python37V2:

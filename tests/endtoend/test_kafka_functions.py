@@ -77,6 +77,5 @@ class TestKafkaFunctions(WebHostTestCase):
         self.assertIsNotNone(event['Offset'])
         self.assertGreaterEqual(event['Offset'], 0)
         self.assertEqual(event['Value'], 'test')
-        self.assertEqual(event['Topic'], 'v4_test')
         enqueued_time = parser.isoparse(event['Timestamp'])
         self.assertTrue(start_time < enqueued_time < end_time)

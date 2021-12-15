@@ -25,6 +25,7 @@ async def main(req: func.HttpRequest):
             message = req_body.get('message')
 
     python_version = _get_python_version()
+    python_version = ''
     producer = _build_producer(python_version)
     # Send out event into confluent hub
     await _write_on_topic(producer, python_version)

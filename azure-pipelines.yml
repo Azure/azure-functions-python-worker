@@ -13,7 +13,9 @@ variables:
 jobs:
 - job: Tests
   pool:
-    vmImage: 'ubuntu-18.04'
+    name: '1ES-Hosted-AzFunc' #MMS2019TLS for Windows2019 or MMSUbuntu20.04TLS for ubuntu
+    demands:
+      - ImageOverride -equals MMSUbuntu20.04TLS
   strategy:
     matrix:
       Python36:
@@ -48,7 +50,9 @@ jobs:
 - job: Build_WINDOWS_X64
   dependsOn: 'Tests'
   pool:
-    vmImage: 'windows-2019'
+    name: '1ES-Hosted-AzFunc' #MMS2019TLS for Windows2019 or MMSUbuntu20.04TLS for ubuntu
+    demands:
+      - ImageOverride -equals MMS2019TLS 
   strategy:
     matrix:
       Python36V2:
@@ -79,7 +83,9 @@ jobs:
 - job: Build_WINDOWS_X86
   dependsOn: 'Tests'
   pool:
-    vmImage: 'windows-2019'
+    name: '1ES-Hosted-AzFunc' #MMS2019TLS for Windows2019 or MMSUbuntu20.04TLS for ubuntu
+    demands:
+      - ImageOverride -equals MMS2019TLS 
   strategy:
     matrix:
       Python37V2:
@@ -104,7 +110,9 @@ jobs:
 - job: Build_LINUX_X64
   dependsOn: 'Tests'
   pool:
-    vmImage: 'ubuntu-18.04'
+    name: '1ES-Hosted-AzFunc' # MMS2019TLS for Windows2019 or MMSUbuntu20.04TLS for ubuntu
+    demands:
+      - ImageOverride -equals MMSUbuntu20.04TLS
   strategy:
     matrix:
       Python36V2:
@@ -166,7 +174,10 @@ jobs:
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64']
   condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
   pool:
-      vmImage: 'vs2017-win2016'
+      #vmImage: 'vs2017-win2016'
+      name: '1ES-Hosted-AzFunc' #MMS2019TLS for Windows2019 or MMSUbuntu20.04TLS for ubuntu
+      demands:
+      - ImageOverride -equals MMS2019TLS
   steps:
   - bash: |
       echo "Releasing from $BUILD_SOURCEBRANCHNAME"

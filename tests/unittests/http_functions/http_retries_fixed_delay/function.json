@@ -1,0 +1,20 @@
+{
+  "scriptFile": "main.py",
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "$return"
+    }
+  ],
+  "retry": {
+        "strategy": "fixedDelay",
+        "maxRetryCount": 3,
+        "delayInterval": "00:00:01"
+    }
+}

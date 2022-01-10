@@ -136,7 +136,7 @@ class TestDependencyManager(unittest.TestCase):
         os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
         result = DependencyManager._get_cx_deps_path()
         self.assertEqual(result, '/home/site/wwwroot/.python_packages/sites/'
-                         'lib/python3.6/site-packages/')
+                                 'lib/python3.6/site-packages/')
 
     def test_get_cx_deps_path_in_script_root_with_sys_path_linux(self):
         # Test for Python 3.7+ Azure Environment
@@ -145,7 +145,7 @@ class TestDependencyManager(unittest.TestCase):
         os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
         result = DependencyManager._get_cx_deps_path()
         self.assertEqual(result, '/home/site/wwwroot/.python_packages/sites/'
-                         'lib/site-packages/')
+                                 'lib/site-packages/')
 
     def test_get_cx_deps_path_in_script_root_with_sys_path_windows(self):
         # Test for Windows Core Tools Environment
@@ -523,9 +523,6 @@ class TestDependencyManager(unittest.TestCase):
             os.path.join(self._worker_deps_path, 'common_module')
         )
 
-    @unittest.skip(
-        'This feature is not ready due to azure. namespace not found bugs.'
-    )
     def test_use_worker_dependencies(self):
         # Setup app settings
         os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
@@ -558,11 +555,11 @@ class TestDependencyManager(unittest.TestCase):
             import common_module  # NoQA
 
     @unittest.skipUnless(
-        sys.version_info.major == 3 and sys.version_info.minor in (6, 7, 8),
-        'Test only available for Python 3.6, 3.7, or 3.8'
+        sys.version_info.major == 3 and sys.version_info.minor != 10,
+        'Test only available for Python 3.6, 3.7, 3.8 or 3.9'
     )
-    def test_use_worker_dependencies_default_python_36_37_38(self):
-        # Feature should be disabled in Python 3.6, 3.7, and 3.8
+    def test_use_worker_dependencies_default_python_36_37_38_39(self):
+        # Feature should be disabled in Python 3.6, 3.7, 3.8 and 3.9
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
         DependencyManager.cx_deps_path = self._customer_deps_path
@@ -573,11 +570,12 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skip(
-        'This feature is not ready due to azure. namespace not found bugs.'
+    @unittest.skipUnless(
+        sys.version_info.major == 3 and sys.version_info.minor == 10,
+        'Test only available for python 3.10'
     )
-    def test_use_worker_dependencies_default_python_39(self):
-        # Feature should be enabled in Python 3.9 by default
+    def test_use_worker_dependencies_default_python_310(self):
+        # Feature should be enabled in Python 3.10 by default
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
         DependencyManager.cx_deps_path = self._customer_deps_path
@@ -630,11 +628,11 @@ class TestDependencyManager(unittest.TestCase):
             import common_module  # NoQA
 
     @unittest.skipIf(
-        sys.version_info.major == 3 and sys.version_info.minor in (6, 7, 8),
-        'Test only available for Python 3.6, 3.7, or 3.8'
+        sys.version_info.major == 3 and sys.version_info.minor == 10,
+        'Test not available for python 3.10'
     )
-    def test_prioritize_customer_dependencies_default_python_36_37_38(self):
-        # Feature should be disabled in Python 3.6, 3.7, and 3.8
+    def test_prioritize_customer_dependencies_default_python_36_37_38_39(self):
+        # Feature should be disabled in Python 3.6, 3.7, 3.8 and 3.9
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
         DependencyManager.cx_deps_path = self._customer_deps_path
@@ -645,11 +643,12 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skip(
-        'This feature is not ready due to azure. namespace not found bugs.'
+    @unittest.skipUnless(
+        sys.version_info.major == 3 and sys.version_info.minor == 10,
+        'Test only available for python 3.10'
     )
-    def test_prioritize_customer_dependencies_default_python_39(self):
-        # Feature should be enabled in Python 3.9 by default
+    def test_prioritize_customer_dependencies_default_python_310(self):
+        # Feature should be enabled in Python 3.10 by default
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
         DependencyManager.cx_deps_path = self._customer_deps_path

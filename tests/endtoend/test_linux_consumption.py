@@ -1,4 +1,4 @@
-from unittest import TestCase, skip
+from unittest import TestCase
 
 import os
 import sys
@@ -135,7 +135,8 @@ class TestLinuxConsumption(TestCase):
 
     def test_debug_logging_disabled(self):
         """An HttpTrigger function app with 'azure-functions' library
-        should return 200 and by default customer debug logging should be disabled.
+        should return 200 and by default customer debug logging should be
+        disabled.
         """
         with LinuxConsumptionWebHostController("3", self._py_version) as ctrl:
             ctrl.assign_container(env={
@@ -147,8 +148,10 @@ class TestLinuxConsumption(TestCase):
 
             self.assertEqual(resp.status_code, 200)
             container_log = ctrl.get_container_logs()
-            func_start_idx = container_log.find("Executing 'Functions.HttpTrigger1'")
-            self.assertTrue(func_start_idx > -1, "HttpTrigger function is not executed.")
+            func_start_idx = container_log.find(
+                "Executing 'Functions.HttpTrigger1'")
+            self.assertTrue(func_start_idx > -1,
+                            "HttpTrigger function is not executed.")
             func_log = container_log[func_start_idx:]
 
             self.assertIn('logging info', func_log)
@@ -158,12 +161,14 @@ class TestLinuxConsumption(TestCase):
 
     def test_debug_logging_enabled(self):
         """An HttpTrigger function app with 'azure-functions' library
-        should return 200 and with customer debug logging enabled, debug logs should be written to container logs.
+        should return 200 and with customer debug logging enabled, debug logs
+        should be written to container logs.
         """
         with LinuxConsumptionWebHostController("3", self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("EnableDebugLogging"),
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
+                    "EnableDebugLogging"),
                 "PYTHON_ENABLE_DEBUG_LOGGING": "1"
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
@@ -171,7 +176,8 @@ class TestLinuxConsumption(TestCase):
 
             self.assertEqual(resp.status_code, 200)
             container_log = ctrl.get_container_logs()
-            func_start_idx = container_log.find("Executing 'Functions.HttpTrigger1'")
+            func_start_idx = container_log.find(
+                "Executing 'Functions.HttpTrigger1'")
             self.assertTrue(func_start_idx > -1)
             func_log = container_log[func_start_idx:]
 

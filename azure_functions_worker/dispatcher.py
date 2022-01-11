@@ -147,7 +147,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             root_logger = logging.getLogger()
 
             # Don't change this unless you read #780 and #745
-            root_logger.setLevel(logging.DEBUG if is_envvar_true(PYTHON_ENABLE_DEBUG_LOGGING) else logging.INFO)
+            root_logger.setLevel(logging.DEBUG if is_envvar_true(
+                PYTHON_ENABLE_DEBUG_LOGGING) else logging.INFO)
             root_logger.addHandler(logging_handler)
             logger.info('Switched to gRPC logging.')
             logging_handler.flush()

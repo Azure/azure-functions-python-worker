@@ -6,7 +6,7 @@ import azure.functions
 
 
 logger = logging.getLogger('my function')
-
+logger.setLevel(logging.DEBUG)
 
 def main(req: azure.functions.HttpRequest):
     logging.critical('logging critical', exc_info=True)

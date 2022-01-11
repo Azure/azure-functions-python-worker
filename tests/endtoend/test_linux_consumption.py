@@ -9,7 +9,6 @@ from azure_functions_worker.testutils_lc import (
 )
 
 
-@skip('Flaky test and needs stabilization')
 class TestLinuxConsumption(TestCase):
     """Test worker behaviors on specific scenarios.
 
@@ -133,6 +132,53 @@ class TestLinuxConsumption(TestCase):
             self.assertIn('google.protobuf', content)
             self.assertIn('grpc', content)
             self.assertEqual(resp.status_code, 200)
+
+    def test_debug_logging_disabled(self):
+        """An HttpTrigger function app with 'azure-functions' library
+        should return 200 and by default customer debug logging should be disabled.
+        """
+        with LinuxConsumptionWebHostController("3", self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("EnableDebugLogging")
+            })
+            req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
+            resp = ctrl.send_request(req)
+
+            self.assertEqual(resp.status_code, 200)
+            container_log = ctrl.get_container_logs()
+            func_start_idx = container_log.find("Executing 'Functions.HttpTrigger1'")
+            self.assertTrue(func_start_idx > -1, "HttpTrigger function is not executed.")
+            func_log = container_log[func_start_idx:]
+
+            self.assertIn('logging info', func_log)
+            self.assertIn('logging warning', func_log)
+            self.assertIn('logging error', func_log)
+            self.assertNotIn('logging debug', func_log)
+
+    def test_debug_logging_enabled(self):
+        """An HttpTrigger function app with 'azure-functions' library
+        should return 200 and with customer debug logging enabled, debug logs should be written to container logs.
+        """
+        with LinuxConsumptionWebHostController("3", self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("EnableDebugLogging"),
+                "PYTHON_ENABLE_DEBUG_LOGGING": "1"
+            })
+            req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
+            resp = ctrl.send_request(req)
+
+            self.assertEqual(resp.status_code, 200)
+            container_log = ctrl.get_container_logs()
+            func_start_idx = container_log.find("Executing 'Functions.HttpTrigger1'")
+            self.assertTrue(func_start_idx > -1)
+            func_log = container_log[func_start_idx:]
+
+            self.assertIn('logging info', func_log)
+            self.assertIn('logging warning', func_log)
+            self.assertIn('logging error', func_log)
+            self.assertIn('logging debug', func_log)
 
     def _get_blob_url(self, scenario_name: str) -> str:
         return (

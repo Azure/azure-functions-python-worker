@@ -8,6 +8,7 @@ trigger:
 variables:
     DOTNET_VERSION: '3.1.405'
     DOTNET_VERSION_5: '5.0.x'
+    DOTNET_VERSION_6: '6.x'
     patchBuildNumberForDev: $(Build.BuildNumber)
 
 jobs:
@@ -41,6 +42,11 @@ jobs:
     inputs:
       packageType: 'sdk'
       version: $(DOTNET_VERSION_5)
+  - task: UseDotNet@2
+    displayName: 'Install DotNet 6.x'
+    inputs:
+      packageType: 'sdk'
+      version: $(DOTNET_VERSION_6)
   - task: ShellScript@2
     inputs:
       disableAutoCwd: true

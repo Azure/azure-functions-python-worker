@@ -20,7 +20,7 @@ from azure_functions_worker import __version__
 
 # The GitHub repository of the Azure Functions Host
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
-WEBHOST_TAG_PREFIX = "v3."
+WEBHOST_TAG_PREFIX = "v4."
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = """\
@@ -31,18 +31,18 @@ AZURE_EXTENSIONS = """\
     <WarningsAsErrors></WarningsAsErrors>
     <DefaultItemExcludes>**</DefaultItemExcludes>
   </PropertyGroup>
-  <ItemGroup>
+    <ItemGroup>
     <PackageReference
         Include="Microsoft.NET.Sdk.Functions"
-        Version="3.0.3"
+        Version="3.0.13"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-        Version="3.0.5"
+        Version="3.0.9"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-        Version="3.0.6"
+        Version="4.2.0"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
@@ -50,11 +50,11 @@ AZURE_EXTENSIONS = """\
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.Storage"
-        Version="3.0.10"
+        Version="4.0.4"
     />
     <PackageReference
-        Include="Microsoft.Azure.WebJobs.ServiceBus"
-        Version="3.0.0-beta8"
+        Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
+        Version="4.2.1"
     />
   </ItemGroup>
 </Project>
@@ -388,8 +388,9 @@ setup(
               'azure_functions_worker.utils',
               'azure_functions_worker._thirdparty'],
     install_requires=[
-        'grpcio~=1.33.2',
-        'grpcio-tools~=1.33.2',
+        'grpcio~=1.43.0',
+        'grpcio-tools~=1.43.0',
+        'protobuf~=3.19.3'
     ],
     extras_require={
         'dev': [

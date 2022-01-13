@@ -27,7 +27,7 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
         return testutils.UNIT_TESTS_FOLDER / 'enable_debug_logging_functions'
 
     def test_debug_logging_enabled(self):
-        r = self.webhost.request('GET', 'enable_debug_logging')
+        r = self.webhost.request('GET', 'debug_logging')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-debug')
 
@@ -57,7 +57,7 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
         return testutils.UNIT_TESTS_FOLDER / 'enable_debug_logging_functions'
 
     def test_debug_logging_disabled(self):
-        r = self.webhost.request('GET', 'enable_debug_logging')
+        r = self.webhost.request('GET', 'debug_logging')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-debug')
 

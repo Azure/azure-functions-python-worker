@@ -146,9 +146,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             logging_handler = AsyncLoggingHandler()
             root_logger = logging.getLogger()
 
-            # Don't change this unless you read #780 and #745
-            root_logger.setLevel(logging.DEBUG if is_envvar_true(
-                PYTHON_ENABLE_DEBUG_LOGGING) else logging.INFO)
+            log_level = logging.INFO if not is_envvar_true(
+                PYTHON_ENABLE_DEBUG_LOGGING) else logging.DEBUG
+            root_logger.setLevel(log_level)
             root_logger.addHandler(logging_handler)
             logger.info('Switched to gRPC logging.')
             logging_handler.flush()
@@ -486,7 +486,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                 self._create_sync_call_tp(self._get_sync_tp_max_workers())
             )
 
-            # Apply PYTHON_ENABLE_DEBUG_LOGGING
             if is_envvar_true(PYTHON_ENABLE_DEBUG_LOGGING):
                 root_logger = logging.getLogger()
                 root_logger.setLevel(logging.DEBUG)

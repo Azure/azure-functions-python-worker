@@ -732,7 +732,10 @@ class _WebHostProxy:
             self._proc.stderr.close()
 
         self._proc.terminate()
-        self._proc.wait(timeout=30)
+        try:
+            self._proc.wait(20)
+        except subprocess.TimeoutExpired:
+            self._proc.kill()
 
 
 def _find_open_port():
@@ -883,22 +886,26 @@ def start_webhost(*, script_dir=None, stdout=None):
 
     addr = f'http://{LOCALHOST}:{port}'
     health_check_endpoint = f'{addr}/api/ping'
-    for _ in range(10):
+    host_out = stdout.readlines(100)
+    for _ in range(5):
         try:
             r = requests.get(health_check_endpoint,
                              params={'code': 'testFunctionKey'})
             # Give the host a bit more time to settle
-            time.sleep(2)
+            time.sleep(5)
 
             if 200 <= r.status_code < 300:
                 # Give the host a bit more time to settle
-                time.sleep(2)
+                time.sleep(1)
                 break
             else:
-                print(f'Failed to ping {health_check_endpoint}', flush=True)
+                print(
+                    f'Failed to ping {health_check_endpoint}, status code: '
+                    f'{r.status_code}',
+                    flush=True)
         except requests.exceptions.ConnectionError:
             pass
-        time.sleep(2)
+        time.sleep(1)
     else:
         proc.terminate()
         try:
@@ -906,7 +913,8 @@ def start_webhost(*, script_dir=None, stdout=None):
         except subprocess.TimeoutExpired:
             proc.kill()
         raise RuntimeError('could not start the webworker in time. Please'
-                           f' check the log file for details: {stdout.name} ')
+                           f' check the log file for details: {stdout.name} \n'
+                           f' Captured WebHost stdout:\n{host_out}')
 
     return _WebHostProxy(proc, addr)
 

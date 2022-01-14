@@ -246,7 +246,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 self.host_stdout.seek(last_pos)
                 self.host_out = self.host_stdout.read()
                 self.host_stdout_logger.error(
-                    f'Captured WebHost stdout:\n{self.host_out}')
+                    f'Captured WebHost stdout from {self.host_stdout.name} '
+                    f':\n{self.host_out}')
             finally:
                 if test_exception is not None:
                     raise test_exception
@@ -731,7 +732,7 @@ class _WebHostProxy:
             self._proc.stderr.close()
 
         self._proc.terminate()
-        self._proc.wait()
+        self._proc.wait(timeout=30)
 
 
 def _find_open_port():

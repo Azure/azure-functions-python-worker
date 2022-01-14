@@ -82,3 +82,16 @@ class FileAccessor(metaclass=ABCMeta):
         mem_map.write(consts.HeaderFlags.Initialized)
         # Seek back the memory map to the original position
         mem_map.seek(original_pos)
+
+
+class DummyFileAccessor(FileAccessor):
+    def open_mem_map(self, mem_map_name: str, mem_map_size: int,
+                     access: int = mmap.ACCESS_READ) -> Optional[mmap.mmap]:
+        pass
+
+    def create_mem_map(self, mem_map_name: str,
+                       mem_map_size: int) -> Optional[mmap.mmap]:
+        pass
+
+    def delete_mem_map(self, mem_map_name: str, mem_map: mmap.mmap) -> bool:
+        pass

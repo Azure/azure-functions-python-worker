@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import os
+import sys
 import unittest
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import FileAccessorFactory
@@ -24,7 +25,7 @@ class TestFileAccessorFactory(unittest.TestCase):
         file_accessor = FileAccessorFactory.create_file_accessor()
         self.assertTrue(type(file_accessor) is FileAccessorWindows)
 
-    @unittest.skipIf(os.name == 'nt',
+    @unittest.skipIf(os.name == 'nt' or sys.platform == 'darwin',
                      'FileAccessorUnix is only valid on Unix')
     def test_file_accessor_unix_created(self):
         """

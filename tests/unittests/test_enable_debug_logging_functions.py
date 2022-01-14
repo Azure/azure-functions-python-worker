@@ -37,7 +37,7 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'enable_debug_logging_functions'
+        return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
 
     def test_debug_logging_enabled(self):
         r = self.webhost.request('GET', 'debug_logging')
@@ -67,7 +67,7 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'enable_debug_logging_functions'
+        return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
 
     def test_debug_logging_disabled(self):
         r = self.webhost.request('GET', 'debug_logging')

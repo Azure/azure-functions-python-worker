@@ -4,8 +4,8 @@ import logging
 
 import azure.functions
 
-
 logger = logging.getLogger('my function')
+logger.setLevel(logging.DEBUG)
 
 
 def main(req: azure.functions.HttpRequest):

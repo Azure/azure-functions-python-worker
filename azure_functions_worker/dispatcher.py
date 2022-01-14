@@ -27,12 +27,13 @@ from . import protos
 from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
-                        PYTHON_THREADPOOL_THREAD_COUNT_MIN)
+                        PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+                        PYTHON_ENABLE_DEBUG_LOGGING)
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX)
 from .extension import ExtensionManager
-from .utils.common import get_app_setting
+from .utils.common import get_app_setting, is_envvar_true
 from .utils.tracing import marshall_exception_trace
 from .utils.dependency import DependencyManager
 from .utils.wrappers import disable_feature_by
@@ -145,8 +146,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             logging_handler = AsyncLoggingHandler()
             root_logger = logging.getLogger()
 
-            # Don't change this unless you read #780 and #745
-            root_logger.setLevel(logging.INFO)
+            log_level = logging.INFO if not is_envvar_true(
+                PYTHON_ENABLE_DEBUG_LOGGING) else logging.DEBUG
+            root_logger.setLevel(log_level)
             root_logger.addHandler(logging_handler)
             logger.info('Switched to gRPC logging.')
             logging_handler.flush()
@@ -483,6 +485,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._sync_call_tp = (
                 self._create_sync_call_tp(self._get_sync_tp_max_workers())
             )
+
+            if is_envvar_true(PYTHON_ENABLE_DEBUG_LOGGING):
+                root_logger = logging.getLogger()
+                root_logger.setLevel(logging.DEBUG)
 
             # Reload azure google namespaces
             DependencyManager.reload_customer_libraries(

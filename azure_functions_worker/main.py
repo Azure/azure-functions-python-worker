@@ -12,12 +12,11 @@ def parse_args():
     parser.add_argument('--host',
                         help="host address")
     parser.add_argument('--port', type=int,
-                        help='id for the requests')
+                        help='port number')
     parser.add_argument('--workerId', dest='worker_id',
                         help='id for the worker')
     parser.add_argument('--requestId', dest='request_id',
-                        help='log destination: stdout, stderr, '
-                             'syslog, or a file path')
+                        help='id of the request')
     parser.add_argument('--log-level', type=str, default='INFO',
                         choices=['TRACE', 'INFO', 'WARNING', 'ERROR'],
                         help="log level: 'TRACE', 'INFO', 'WARNING', "

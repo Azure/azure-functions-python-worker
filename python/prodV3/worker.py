@@ -63,10 +63,9 @@ if __name__ == '__main__':
     # worker.py lives in the same directory as azure_functions_worker
     func_worker_dir = str(Path(__file__).absolute().parent)
     env = os.environ
+    user_pkg_paths = determine_user_pkg_paths()
 
     if is_azure_environment():
-        user_pkg_paths = determine_user_pkg_paths()
-
         joined_pkg_paths = os.pathsep.join(user_pkg_paths)
 
         # On cloud, we prioritize third-party user packages

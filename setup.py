@@ -34,7 +34,7 @@ AZURE_EXTENSIONS = """\
     <ItemGroup>
     <PackageReference
         Include="Microsoft.NET.Sdk.Functions"
-        Version="3.0.13"
+        Version="4.0.1"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
@@ -42,7 +42,7 @@ AZURE_EXTENSIONS = """\
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-        Version="4.2.0"
+        Version="4.3.0"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"

@@ -26,7 +26,9 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
     Tests for SharedMemoryManager.
     """
     def setUp(self):
-        self.mock_environ = patch.dict('os.environ', os.environ.copy())
+        env = os.environ.copy()
+        env['FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED'] = "true"
+        self.mock_environ = patch.dict('os.environ', env)
         self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
         self.mock_sys_path = patch('sys.path', sys.path.copy())
         self.mock_environ.start()

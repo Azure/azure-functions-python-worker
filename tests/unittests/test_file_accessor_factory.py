@@ -4,6 +4,8 @@
 import os
 import sys
 import unittest
+from unittest.mock import patch
+
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import FileAccessorFactory
 from azure_functions_worker.bindings.\
@@ -16,6 +18,15 @@ class TestFileAccessorFactory(unittest.TestCase):
     """
     Tests for FileAccessorFactory.
     """
+    def setUp(self):
+        env = os.environ.copy()
+        env['FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED'] = "true"
+        self.mock_environ = patch.dict('os.environ', env)
+        self.mock_environ.start()
+
+    def tearDown(self):
+        self.mock_environ.stop()
+
     @unittest.skipIf(os.name != 'nt',
                      'FileAccessorWindows is only valid on Windows')
     def test_file_accessor_windows_created(self):

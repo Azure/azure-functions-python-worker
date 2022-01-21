@@ -87,7 +87,11 @@ HOST_JSON_TEMPLATE = """\
         "prefetchCount": 1000,
         "batchCheckpointFrequency": 1
     },
-    "functionTimeout": "00:05:00"
+    "functionTimeout": "00:05:00",
+    "extensionBundle": {
+        "id": "Microsoft.Azure.Functions.ExtensionBundle",
+        "version": "[2.*, 3.0.0)"
+    }
 }
 """
 
@@ -754,7 +758,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
     hostexe_args = []
 
     # If we want to use core-tools
-    coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')
+    coretools_exe = ""  # os.environ.get('CORE_TOOLS_EXE_PATH')
     if coretools_exe:
         coretools_exe = coretools_exe.strip()
         if pathlib.Path(coretools_exe).exists():

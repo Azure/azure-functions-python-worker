@@ -76,7 +76,9 @@ class TestQueueFunctions(testutils.WebHostTestCase):
     def test_queue_return_multiple(self):
         r = self.webhost.request('POST', 'put_queue_return_multiple',
                                  data='foo')
-        self.assertTrue(200 <= r.status_code < 300)
+        self.assertTrue(200 <= r.status_code < 300,
+                        f"Returned status code {r.status_code}, "
+                        "not in the 200-300 range.")
 
         # wait for queue_trigger to process the queue item
         time.sleep(1)
@@ -85,5 +87,7 @@ class TestQueueFunctions(testutils.WebHostTestCase):
     def test_queue_return_multiple_outparam(self):
         r = self.webhost.request('POST', 'put_queue_multiple_out',
                                  data='foo')
-        self.assertTrue(200 <= r.status_code < 300)
+        self.assertTrue(200 <= r.status_code < 300,
+                        f"Returned status code {r.status_code}, "
+                        "not in the 200-300 range.")
         self.assertEqual(r.text, 'HTTP response: foo')

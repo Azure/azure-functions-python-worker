@@ -82,4 +82,7 @@ if __name__ == '__main__':
         add_script_root_to_sys_path()
         from azure_functions_worker import main
 
+        for path in user_pkg_paths:
+            sys.path.append(path)
+
         main.main()

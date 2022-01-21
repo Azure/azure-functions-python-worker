@@ -22,6 +22,9 @@ HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
 
 
 class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
+    """
+    Tests for cx debug logging enabled case.
+    """
     @classmethod
     def setUpClass(cls):
         os_environ = os.environ.copy()
@@ -40,6 +43,10 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
 
     def test_debug_logging_enabled(self):
+        """
+        Verify when cx debug logging is enabled, cx function debug logs
+        are recorded in host logs.
+        """
         r = self.webhost.request('GET', 'debug_logging')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-debug')
@@ -52,6 +59,9 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
 
 
 class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
+    """
+    Tests for cx debug logging disabled case.
+    """
     @classmethod
     def setUpClass(cls):
         os_environ = os.environ.copy()
@@ -70,6 +80,10 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
 
     def test_debug_logging_disabled(self):
+        """
+        Verify when cx debug logging is disabled, cx function debug logs
+        are not written to host logs.
+        """
         r = self.webhost.request('GET', 'debug_logging')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-debug')
@@ -81,7 +95,11 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
         self.assertNotIn('logging debug', host_out)
 
 
-class TestLogFilteringFunctions(testutils.WebHostTestCase):
+class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
+    """
+    Tests for enable debug logging flag enabled and host log level is
+    Information case.
+    """
     @classmethod
     def setUpClass(cls):
         host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
@@ -108,6 +126,10 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
 
     def test_debug_logging_filtered(self):
+        """
+        Verify when cx debug logging is enabled and host logging level
+        is Information, cx function debug logs are not written to host logs.
+        """
         r = self.webhost.request('GET', 'debug_logging')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-debug')

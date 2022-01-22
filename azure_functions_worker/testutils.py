@@ -87,12 +87,25 @@ HOST_JSON_TEMPLATE = """\
         "prefetchCount": 1000,
         "batchCheckpointFrequency": 1
     },
-    "functionTimeout": "00:05:00",
-    "extensionBundle": {
-        "id": "Microsoft.Azure.Functions.ExtensionBundle",
-        "version": "[2.*, 3.0.0)"
-    }
+    "functionTimeout": "00:05:00"
 }
+"""
+
+EXTENSION_CSPROJ_TEMPLATE = """\
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <WarningsAsErrors></WarningsAsErrors>
+    <DefaultItemExcludes>**</DefaultItemExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference
+     Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="5.0.0" />
+    <PackageReference
+     Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
+     Version="1.1.3" />
+  </ItemGroup>
+</Project>
 """
 
 SECRETS_TEMPLATE = """\
@@ -976,10 +989,15 @@ def _setup_func_app(app_root):
     extensions = app_root / 'bin'
     ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
+    csproj_file = app_root / 'extensions.csproj'
 
     if not os.path.isfile(host_json):
         with open(host_json, 'w') as f:
             f.write(HOST_JSON_TEMPLATE)
+
+    if not os.path.isfile(csproj_file):
+        with open(csproj_file, 'w') as f:
+            f.write(EXTENSION_CSPROJ_TEMPLATE)
 
     _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
     _symlink_dir(EXTENSIONS_PATH, extensions)
@@ -989,8 +1007,9 @@ def _teardown_func_app(app_root):
     extensions = app_root / 'bin'
     ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
+    csproj_file = app_root / 'extensions.csproj'
 
-    for path in (extensions, ping_func, host_json):
+    for path in (extensions, ping_func, host_json, csproj_file):
         remove_path(path)
 
 

@@ -3,6 +3,7 @@
 
 import json
 import hashlib
+import time
 from unittest import skipIf
 import sys
 
@@ -454,7 +455,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
                         rpc_shared_memory=input_value_2
                     )
                 ])
-
+            time.sleep(1)
             # Dispose the shared memory map since the function is done using it
             input_shared_mem_map_1.dispose()
             input_shared_mem_map_2.dispose()

@@ -120,7 +120,10 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
             enqueued_time = parser.isoparse(sys_props['EnqueuedTimeUtc'])
 
             # Check event trigger time and other system properties
-            self.assertTrue(start_time < enqueued_time < end_time)
+            self.assertTrue(start_time.timestamp() <
+                            enqueued_time.timestamp() <
+                            end_time.timestamp(),
+                            msg=f"{start_time} < {enqueued_time} < {end_time}")
             self.assertIsNone(sys_props['PartitionKey'])
             self.assertGreaterEqual(sys_props['SequenceNumber'], 0)
             self.assertIsNotNone(sys_props['Offset'])

@@ -70,7 +70,8 @@ LOCALHOST = "127.0.0.1"
 # The template of host.json that will be applied to each test functions
 HOST_JSON_TEMPLATE = """\
 {
-    "version": "2.0"
+    "version": "2.0",
+    "logging": {"logLevel": {"default": "Trace"}}
 }
 """
 

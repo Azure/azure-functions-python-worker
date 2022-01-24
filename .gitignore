@@ -130,3 +130,4 @@ prof/
 # Lingering test files
 tests/**/host.json
 tests/**/bin
+tests/**/extensions.csproj

@@ -15,10 +15,10 @@ def _generate_content_and_digest(content_size):
 
 def main(
         req: azf.HttpRequest,
-        input_file_1: bytes,
-        input_file_2: bytes,
-        output_file_1: azf.Out[bytes],
-        output_file_2: azf.Out[bytes]) -> azf.HttpResponse:
+        inputfile1: bytes,
+        inputfile2: bytes,
+        outputfile1: azf.Out[bytes],
+        outputfile2: azf.Out[bytes]) -> azf.HttpResponse:
     """
     Read two blobs (bytes) and respond back (in HTTP response) with the number
     of bytes read from each blob and the MD5 digest of the content of each.
@@ -26,11 +26,11 @@ def main(
     bytes written in each blob and the MD5 digest of the content of each.
     The number of bytes to write are specified in the input HTTP request.
     """
-    input_content_size_1 = len(input_file_1)
-    input_content_size_2 = len(input_file_2)
+    input_content_size_1 = len(inputfile1)
+    input_content_size_2 = len(inputfile2)
 
-    input_content_md5_1 = hashlib.md5(input_file_1).hexdigest()
-    input_content_md5_2 = hashlib.md5(input_file_2).hexdigest()
+    input_content_md5_1 = hashlib.md5(inputfile1).hexdigest()
+    input_content_md5_2 = hashlib.md5(inputfile2).hexdigest()
 
     output_content_size_1 = int(req.params['output_content_size_1'])
     output_content_size_2 = int(req.params['output_content_size_2'])
@@ -40,8 +40,8 @@ def main(
     output_content_2, output_content_md5_2 = \
         _generate_content_and_digest(output_content_size_2)
 
-    output_file_1.set(output_content_1)
-    output_file_2.set(output_content_2)
+    outputfile1.set(output_content_1)
+    outputfile2.set(output_content_2)
 
     response_dict = {
         'input_content_size_1': input_content_size_1,

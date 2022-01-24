@@ -38,24 +38,27 @@ AZURE_EXTENSIONS = """\
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-        Version="3.0.9"
+        Version="3.0.10"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-        Version="4.3.0"
+        Version="5.0.0"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
-        Version="2.1.0"
+        Version="3.1.0"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.Storage"
-        Version="4.0.4"
+        Version="4.0.5"
     />
     <PackageReference
         Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
         Version="4.2.1"
     />
+    <PackageReference
+     Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
+     Version="1.1.3" />
   </ItemGroup>
 </Project>
 """

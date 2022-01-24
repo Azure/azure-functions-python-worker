@@ -70,24 +70,7 @@ LOCALHOST = "127.0.0.1"
 # The template of host.json that will be applied to each test functions
 HOST_JSON_TEMPLATE = """\
 {
-    "version": "2.0",
-    "logging": {
-        "logLevel": {
-           "default": "Trace"
-        }
-    },
-    "http": {
-        "routePrefix": "api"
-    },
-    "swagger": {
-        "enabled": true
-    },
-    "eventHub": {
-        "maxBatchSize": 1000,
-        "prefetchCount": 1000,
-        "batchCheckpointFrequency": 1
-    },
-    "functionTimeout": "00:05:00"
+    "version": "2.0"
 }
 """
 
@@ -99,8 +82,20 @@ EXTENSION_CSPROJ_TEMPLATE = """\
     <DefaultItemExcludes>**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference
-     Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
+     Version="5.0.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
+     Version="3.1.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
+     Version="3.0.10" />
+     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
+     Version="4.0.5" />
+     <PackageReference
+      Include="Microsoft.Azure.WebJobs.Extensions.Storage.Blobs"
+      Version="5.0.0" />
+     <PackageReference
+      Include="Microsoft.Azure.WebJobs.Extensions.Storage.Queues"
+      Version="5.0.0" />
     <PackageReference
      Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
      Version="1.1.3" />
@@ -989,14 +984,14 @@ def _setup_func_app(app_root):
     extensions = app_root / 'bin'
     ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
-    csproj_file = app_root / 'extensions.csproj'
+    extensions_csproj_file = app_root / 'extensions.csproj'
 
     if not os.path.isfile(host_json):
         with open(host_json, 'w') as f:
             f.write(HOST_JSON_TEMPLATE)
 
-    if not os.path.isfile(csproj_file):
-        with open(csproj_file, 'w') as f:
+    if not os.path.isfile(extensions_csproj_file):
+        with open(extensions_csproj_file, 'w') as f:
             f.write(EXTENSION_CSPROJ_TEMPLATE)
 
     _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
@@ -1007,9 +1002,11 @@ def _teardown_func_app(app_root):
     extensions = app_root / 'bin'
     ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
-    csproj_file = app_root / 'extensions.csproj'
+    extensions_csproj_file = app_root / 'extensions.csproj'
+    extensions_obj_file = app_root / 'obj'
 
-    for path in (extensions, ping_func, host_json, csproj_file):
+    for path in (extensions, ping_func, host_json, extensions_csproj_file,
+                 extensions_obj_file):
         remove_path(path)
 
 

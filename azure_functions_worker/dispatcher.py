@@ -24,23 +24,21 @@ from . import constants
 from . import functions
 from . import loader
 from . import protos
+from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
                         PYTHON_ENABLE_DEBUG_LOGGING)
 from .extension import ExtensionManager
-from .logging import CONSOLE_LOG_PREFIX, error_logger, is_system_log_category, \
-    logger, enable_debug_logging_recommendation
 from .logging import disable_console_logging, enable_console_logging
+from .logging import enable_debug_logging_recommendation
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX)
-from .extension import ExtensionManager
 from .utils.common import get_app_setting, is_envvar_true
-from .utils.tracing import marshall_exception_trace
 from .utils.dependency import DependencyManager
+from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
-from .bindings.shared_memory_data_transfer import SharedMemoryManager
 
 _TRUE = "true"
 

@@ -75,10 +75,12 @@ def enable_console_logging() -> None:
     if logger and handler:
         logger.addHandler(handler)
 
+
 def enable_debug_logging_recommendation():
     logging.info("To enable debug level logging, please refer to "
                  "https://docs.microsoft.com/en-us/azure/azure-functions/"
                  "functions-app-settings#python_enable_debug_logging")
+
 
 def is_system_log_category(ctg: str) -> bool:
     """Check if the logging namespace belongs to system logs. Category starts

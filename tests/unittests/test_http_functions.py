@@ -8,7 +8,6 @@ import os
 import pytest
 
 from azure_functions_worker import testutils
-from azure_functions_worker.logging import enable_debug_logging_recommendation
 
 
 class TestHttpFunctions(testutils.WebHostTestCase):
@@ -104,7 +103,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.text, 'OK-debug')
 
     def check_log_debug_logging(self, host_out: typing.List[str]):
-        self.assertIn(enable_debug_logging_recommendation(), host_out)
         self.assertIn('logging info', host_out)
         self.assertIn('logging warning', host_out)
         self.assertIn('logging error', host_out)

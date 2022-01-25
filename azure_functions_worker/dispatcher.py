@@ -29,6 +29,9 @@ from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
                         PYTHON_ENABLE_DEBUG_LOGGING)
+from .extension import ExtensionManager
+from .logging import CONSOLE_LOG_PREFIX, error_logger, is_system_log_category, \
+    logger, enable_debug_logging_recommendation
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX)
@@ -262,6 +265,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, worker version %s, request ID %s',
                     sys.version, __version__, self.request_id)
+        enable_debug_logging_recommendation()
 
         worker_init_request = req.worker_init_request
         host_capabilities = worker_init_request.capabilities
@@ -459,6 +463,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
                         'request ID: %s', self.request_id)
+            enable_debug_logging_recommendation()
 
             func_env_reload_request = req.function_environment_reload_request
 

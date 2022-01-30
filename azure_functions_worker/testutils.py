@@ -767,7 +767,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
     hostexe_args = []
 
     # If we want to use core-tools
-    coretools_exe = ""  # os.environ.get('CORE_TOOLS_EXE_PATH')
+    coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')
     if coretools_exe:
         coretools_exe = coretools_exe.strip()
         if pathlib.Path(coretools_exe).exists():
@@ -905,17 +905,15 @@ def start_webhost(*, script_dir=None, stdout=None):
             r = requests.get(health_check_endpoint,
                              params={'code': 'testFunctionKey'})
             # Give the host a bit more time to settle
-            time.sleep(5)
+            time.sleep(2)
 
             if 200 <= r.status_code < 300:
                 # Give the host a bit more time to settle
                 time.sleep(1)
                 break
             else:
-                print(
-                    f'Failed to ping {health_check_endpoint}, status code: '
-                    f'{r.status_code}',
-                    flush=True)
+                print(f'Failed to ping {health_check_endpoint}, status code: '
+                      f'{r.status_code}', flush=True)
         except requests.exceptions.ConnectionError:
             pass
         time.sleep(1)

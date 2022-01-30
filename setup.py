@@ -28,60 +28,50 @@ WEBHOST_TAG_PREFIX = "v4."
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = """\
+<?xml version="1.0" encoding="UTF-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AzureFunctionsVersion>v3</AzureFunctionsVersion>
-    <WarningsAsErrors></WarningsAsErrors>
-    <DefaultItemExcludes>**</DefaultItemExcludes>
-  </PropertyGroup>
-    <ItemGroup>
-    <PackageReference
-        Include="Microsoft.NET.Sdk.Functions"
-        Version="4.0.1"
-    />
-    <PackageReference
-        Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-        Version="3.0.10"
-    />
-    <PackageReference
-        Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-        Version="5.0.0"
-    />
-    <PackageReference
-        Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
-        Version="3.1.0"
-    />
-    <PackageReference
-        Include="Microsoft.Azure.WebJobs.Extensions.Storage"
-        Version="4.0.5"
-    />
-    <PackageReference
-        Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
-        Version="4.2.1"
-    />
-    <PackageReference
-     Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
-     Version="1.1.3" />
-  </ItemGroup>
+   <PropertyGroup>
+      <TargetFramework>netcoreapp3.1</TargetFramework>
+      <AzureFunctionsVersion>v3</AzureFunctionsVersion>
+      <WarningsAsErrors />
+      <DefaultItemExcludes>**</DefaultItemExcludes>
+   </PropertyGroup>
+   <ItemGroup>
+      <PackageReference Include="Microsoft.NET.Sdk.Functions"
+        Version="4.0.1" />
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
+        Version="3.0.10" />
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
+        Version="5.0.0" />
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
+        Version="3.1.0" />
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
+        Version="4.0.5" />
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
+        Version="4.2.1" />
+      <PackageReference
+        Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
+        Version="1.1.3" />
+   </ItemGroup>
 </Project>
 """
 
 
 NUGET_CONFIG = """\
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <packageSources>
-    <add key="nuget.org" value="https://www.nuget.org/api/v2/" />
-    <add key="azure_app_service"
-         value="https://www.myget.org/F/azure-appservice/api/v2" />
-    <add key="azure_app_service_staging"
-         value="https://www.myget.org/F/azure-appservice-staging/api/v2" />
-    <add key="buildTools"
-         value="https://www.myget.org/F/30de4ee06dd54956a82013fa17a3accb/" />
-    <add key="AspNetVNext"
-         value="https://www.myget.org/F/aspnetcore-dev/api/v3/index.json" />
-  </packageSources>
+   <packageSources>
+      <add key="nuget.org"
+        value="https://www.nuget.org/api/v2/" />
+      <add key="azure_app_service"
+        value="https://www.myget.org/F/azure-appservice/api/v2" />
+      <add key="azure_app_service_staging"
+        value="https://www.myget.org/F/azure-appservice-staging/api/v2" />
+      <add key="buildTools"
+        value="https://www.myget.org/F/30de4ee06dd54956a82013fa17a3accb/" />
+      <add key="AspNetVNext"
+        value="https://www.myget.org/F/aspnetcore-dev/api/v3/index.json" />
+   </packageSources>
 </configuration>
 """
 

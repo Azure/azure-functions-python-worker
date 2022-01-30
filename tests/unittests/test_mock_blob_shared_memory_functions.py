@@ -447,15 +447,16 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
                                 method='GET',
                                 query=http_params))),
                     protos.ParameterBinding(
-                        name='input_file_1',
+                        name='inputfile1',
                         rpc_shared_memory=input_value_1
                     ),
                     protos.ParameterBinding(
-                        name='input_file_2',
+                        name='inputfile2',
                         rpc_shared_memory=input_value_2
                     )
                 ])
             time.sleep(1)
+
             # Dispose the shared memory map since the function is done using it
             input_shared_mem_map_1.dispose()
             input_shared_mem_map_2.dispose()

@@ -18,7 +18,6 @@ from typing import List, Optional
 
 import grpc
 
-from . import __version__
 from . import bindings
 from . import constants
 from . import functions
@@ -38,6 +37,7 @@ from .utils.tracing import marshall_exception_trace
 from .utils.dependency import DependencyManager
 from .utils.wrappers import disable_feature_by
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
+from .version import VERSION
 
 _TRUE = "true"
 
@@ -261,7 +261,7 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__worker_init_request(self, req):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, worker version %s, request ID %s',
-                    sys.version, __version__, self.request_id)
+                    sys.version, VERSION, self.request_id)
 
         worker_init_request = req.worker_init_request
         host_capabilities = worker_init_request.capabilities

@@ -78,8 +78,7 @@ def enable_console_logging() -> None:
 
 def enable_debug_logging_recommendation():
     logging.info("To enable debug level logging, please refer to "
-                 "https://docs.microsoft.com/en-us/azure/azure-functions/"
-                 "functions-app-settings#python_enable_debug_logging")
+                 "https://aka.ms/python-enable-debug-logging")
 
 
 def is_system_log_category(ctg: str) -> bool:

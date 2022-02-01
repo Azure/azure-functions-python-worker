@@ -14,6 +14,7 @@ from os import PathLike, fspath
 
 from azure.functions import FunctionsApp
 from azure.functions.decorators import Function
+from azure.functions.decorators.core import SCRIPT_FILE_NAME
 
 from .constants import MODULE_NOT_FOUND_TS_URL
 from .utils.wrappers import attach_message_to_exception
@@ -100,25 +101,21 @@ def load_function(name: str, directory: str, script_file: str,
         message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
 )
 def index_function_app(directory: str) -> typing.List[Function]:
-    dir_path = pathlib.Path(directory)
-    top_level_script_files = list(dir_path.glob('*.py'))
-    top_level_script_file_rel_paths = [i.relative_to(dir_path.parent)
-                                       for i in top_level_script_files]
-    top_level_script_file_last_parts = [i.parts[-1] for i
-                                        in top_level_script_file_rel_paths]
-    top_level_module_names = [os.path.splitext(i)[0] for i
-                              in top_level_script_file_last_parts]
-    imported_modules = [importlib.import_module(i) for i in
-                        top_level_module_names]
+    function_dir = os.path.join(directory, SCRIPT_FILE_NAME)
+
+    if not os.path.exists(function_dir):
+        raise IOError(f"{SCRIPT_FILE_NAME} not found in the function app")
+
+    module_name = pathlib.Path(function_dir).stem
+    imported_module = importlib.import_module(module_name)
 
     app: typing.Optional[FunctionsApp] = None
-    for m in imported_modules:
-        for i in m.__dir__():
-            if isinstance(getattr(m, i, None), FunctionsApp):
-                if not app:
-                    app = getattr(m, i, None)
-                else:
-                    raise ValueError("Multiple Apps defined")
+    for i in imported_module.__dir__():
+        if isinstance(getattr(imported_module, i, None), FunctionsApp):
+            if not app:
+                app = getattr(imported_module, i, None)
+            else:
+                raise ValueError("Multiple Apps defined")
 
     if app:
         all_functions = app.get_functions()
@@ -126,8 +123,3 @@ def index_function_app(directory: str) -> typing.List[Function]:
         raise ValueError("No Apps defined")
 
     return all_functions
-
-
-def convert_indexed_fx_to_metadata(idx_fx: Function):
-    protos.RpcFunctionMetadata()
-    return None

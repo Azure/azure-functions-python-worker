@@ -20,12 +20,7 @@ from typing import List, Optional
 
 import grpc
 
-from . import __version__
-from . import bindings
-from . import constants
-from . import functions
-from . import loader
-from . import protos
+from . import __version__, bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
@@ -39,6 +34,8 @@ from .utils.common import get_app_setting
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
+
+from azure.functions.decorators import DataType, BindingDirection
 
 _TRUE = "true"
 
@@ -291,47 +288,55 @@ class Dispatcher(metaclass=DispatcherMeta):
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success)))
 
-    async def _handle__worker_status_request(self, req):
+    async def _handle__worker_status_request(self, request):
         # Logging is not necessary in this request since the response is used
         # for host to judge scale decisions of out-of-proc languages.
         # Having log here will reduce the responsiveness of the worker.
         return protos.StreamingMessage(
-            request_id=req.request_id,
+            request_id=request.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
-    async def _handle__functions_metadata_request(self, req):
-        metadata_request = req.functions_metadata_request
+    async def _handle__functions_metadata_request(self, request):
+        metadata_request = request.functions_metadata_request
         directory = metadata_request.function_app_directory
         indexed_functions = loader.index_function_app(directory)
 
-        x = []
-        for idx_fx in indexed_functions:
-            f_id = str(uuid.uuid4())
-            id, f_info = self._functions.add_indexed_function(function_id=f_id,
-                                                              function=idx_fx)
-            b_proto = {}
-            for b in idx_fx.get_bindings():
-                b_proto[b.name] = protos.BindingInfo(type=b.type,
-                                                    data_type=b.data_type,
-                                                    direction=b.direction)
-            fld_req = protos. \
-                FunctionLoadRequest(function_id=id,
-                                    managed_dependency_enabled=False,
-                                    metadata=protos.RpcFunctionMetadata(
-                                            name=f_info.name,
-                                            directory=f_info.directory,
-                                            script_file=idx_fx.function_script_file,
-                                            entry_point=f_info.name,
-                                            is_proxy=False,
-                                            language="python",
-                                            bindings=b_proto,
-                                            raw_bindings=[json.dumps(i) for i in idx_fx.get_bindings_dict()["bindings"]]))
-            x.append(fld_req)
+        fx_metadata_results = []
+        for indexed_function in indexed_functions:
+            function_id = str(uuid.uuid4())
+            function_info = self._functions.add_indexed_function(
+                function_id,
+                function=indexed_function)
+
+            binding_protos = {}
+            
+            for binding in indexed_function.get_bindings():
+                
+                binding_protos[binding.name] = protos.BindingInfo(
+                    type=binding.type,
+                    data_type=DataType[binding.data_type].value,
+                    direction=int(binding.direction))
+
+            function_load_request = protos.RpcFunctionMetadata(
+                name=function_info.name,
+                function_id=function_id,
+                managed_dependency_enabled=False,
+                directory=function_info.directory,
+                script_file=indexed_function.function_script_file,
+                entry_point=function_info.name,
+                is_proxy=False,
+                language="python",
+                bindings=binding_protos,
+                raw_bindings=[json.dumps(i) for i in
+                              indexed_function.get_bindings_dict()[
+                                  "bindings"]])
+
+            fx_metadata_results.append(function_load_request)
 
         return protos.StreamingMessage(
-            request_id=req.request_id,
-            function_metadata_responses=protos.FunctionMetadataResponses(
-                function_load_requests_results=x,
+            request_id=request.request_id,
+            function_metadata_response=protos.FunctionMetadataResponse(
+                function_metadata_results=fx_metadata_results,
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success)))
 
@@ -395,6 +400,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             fi: functions.FunctionInfo = self._functions.get_function(
                 function_id)
+            assert fi is not None
 
             function_invocation_logs: List[str] = [
                 'Received FunctionInvocationRequest',

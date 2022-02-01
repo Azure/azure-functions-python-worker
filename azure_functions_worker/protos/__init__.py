@@ -30,4 +30,4 @@ from .FunctionRpc_pb2 import (  # NoQA
     CloseSharedMemoryResourcesRequest,
     CloseSharedMemoryResourcesResponse,
     FunctionsMetadataRequest,
-    FunctionMetadataResponses)
+    FunctionMetadataResponse)

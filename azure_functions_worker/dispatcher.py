@@ -317,6 +317,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     data_type=DataType[binding.data_type].value,
                     direction=int(binding.direction))
 
+                binding.direction = BindingDirection(int(binding.direction))
+
             function_load_request = protos.RpcFunctionMetadata(
                 name=function_info.name,
                 function_id=function_id,

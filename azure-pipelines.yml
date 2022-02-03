@@ -1,7 +1,6 @@
 name: $(Date:yyyyMMdd).$(Rev:r)
 
 trigger:
-- release/2.*
 - release/3.*
 - release/4.*
 - dev
@@ -11,6 +10,8 @@ variables:
     DOTNET_VERSION_5: '5.0.x'
     DOTNET_VERSION_6: '6.x'
     patchBuildNumberForDev: $(Build.BuildNumber)
+    PROD_V3_WORKER_PY : 'python/prodV3/worker.py'
+    PROD_V4_WORKER_PY : 'python/prodV4/worker.py'
 
 jobs:
 - job: Tests
@@ -64,25 +65,25 @@ jobs:
     matrix:
       Python36V3:
         pythonVersion: '3.6'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python37V3:
         pythonVersion: '3.7'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python38V3:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python39V3:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python37V4:
         pythonVersion: '3.7'
-        workerPath: 'python/prodV4/worker.py'
+        workerPath: $(PROD_V4_WORKER_PY)
       Python38V4:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV4/worker.py'
+        workerPath: $(PROD_V4_WORKER_PY)
       Python39V4:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV4/worker.py'
+        workerPath: $(PROD_V4_WORKER_PY)
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
@@ -100,22 +101,22 @@ jobs:
     matrix:
       Python37V3:
         pythonVersion: '3.7'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python38V3:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python39V3:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python37V4:
         pythonVersion: '3.7'
-        workerPath: 'python/prodV4/worker.py'
+        workerPath: $(PROD_V4_WORKER_PY)
       Python38V4:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV4/worker.py'
+        workerPath: $(PROD_V4_WORKER_PY)
       Python39V4:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV4/worker.py'
+        workerPath: $(PROD_V4_WORKER_PY)
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
@@ -133,25 +134,25 @@ jobs:
     matrix:
       Python36V3:
         pythonVersion: '3.6'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python37V3:
         pythonVersion: '3.7'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python38V3:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python39V3:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python37V4:
         pythonVersion: '3.7'
-        workerPath: 'python/prodV4/worker.py'
+        workerPath: $(PROD_V4_WORKER_PY)
       Python38V4:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV4/worker.py'
+        workerPath: $(PROD_V4_WORKER_PY)
       Python39V4:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV4/worker.py'
+        workerPath: $(PROD_V4_WORKER_PY)
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:
@@ -166,25 +167,25 @@ jobs:
     matrix:
       Python36V3:
         pythonVersion: '3.6'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python37V3:
         pythonVersion: '3.7'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python38V3:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python39V3:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV3/worker.py'
+        workerPath: $(PROD_V3_WORKER_PY)
       Python37V4:
         pythonVersion: '3.7'
-        workerPath: 'python/prodV4/worker.py'
+        workerPath: $(PROD_V4_WORKER_PY)
       Python38V4:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV4/worker.py'
+        workerPath: $(PROD_V4_WORKER_PY)
       Python39V4:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV4/worker.py'
+        workerPath: $(PROD_V4_WORKER_PY)
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:
@@ -196,8 +197,8 @@ jobs:
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64']
   condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
   pool:
-      #vmImage: 'vs2017-win2016'
-      name: '1ES-Hosted-AzFunc' #MMS2019TLS for Windows2019 or MMSUbuntu20.04TLS for ubuntu
+      # vmImage: 'vs2017-win2016'
+      name: '1ES-Hosted-AzFunc' # MMS2019TLS for Windows2019 or MMSUbuntu20.04TLS for ubuntu
       demands:
       - ImageOverride -equals MMS2019TLS
   steps:
@@ -205,12 +206,7 @@ jobs:
       echo "Releasing from $BUILD_SOURCEBRANCHNAME"
       apt install jq
 
-      if [[ $BUILD_SOURCEBRANCHNAME = 2\.* ]]
-      then
-        echo "Generating V2 Release Package for $BUILD_SOURCEBRANCHNAME"
-        NUSPEC="pack\Microsoft.Azure.Functions.V2.PythonWorker.nuspec"
-        WKVERSION="$BUILD_SOURCEBRANCHNAME"
-      elif [[ $BUILD_SOURCEBRANCHNAME = 3\.* ]]
+      if [[ $BUILD_SOURCEBRANCHNAME = 3\.* ]]
       then
         echo "Generating V3 Release Package for $BUILD_SOURCEBRANCHNAME"
         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
@@ -223,10 +219,9 @@ jobs:
       elif [[ $BUILD_SOURCEBRANCHNAME = dev ]]
       then
         echo "Generating V4 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
-        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
+        VERSION=$(cat azure_functions_worker/version.py | tail -1 | cut -d' ' -f3 | sed  "s/'//g")
         NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
-        # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
-        WKVERSION="$LATEST_TAG-$(patchBuildNumberForDev)"
+        WKVERSION="$VERSION-$(patchBuildNumberForDev)"
       else
         echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
       fi

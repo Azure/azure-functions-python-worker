@@ -32,7 +32,7 @@ AZURE_EXTENSIONS = """\
 <Project Sdk="Microsoft.NET.Sdk">
    <PropertyGroup>
       <TargetFramework>netcoreapp3.1</TargetFramework>
-      <AzureFunctionsVersion>v3</AzureFunctionsVersion>
+      <AzureFunctionsVersion>v4</AzureFunctionsVersion>
       <WarningsAsErrors />
       <DefaultItemExcludes>**</DefaultItemExcludes>
    </PropertyGroup>
@@ -307,10 +307,10 @@ class Webhost(distutils.cmd.Command):
 
         # As tags are placed in time desending order, the latest v3
         # tag should be the first occurance starts with 'v3.' string
-        latest_v3 = [
+        latest = [
             gt for gt in tags if gt['name'].startswith(WEBHOST_TAG_PREFIX)
         ]
-        return latest_v3[0]['name'].replace('v', '')
+        return latest[0]['name'].replace('v', '')
 
     @staticmethod
     def _download_webhost_zip(version: str) -> str:

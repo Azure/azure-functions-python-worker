@@ -68,7 +68,7 @@ class Registry:
 
     @staticmethod
     def is_context_required(params, bound_params: dict,
-                            annotations: dict[str, any],
+                            annotations,
                             func_name: str) -> bool:
         requires_context = False
         if 'context' in params and 'context' not in bound_params:
@@ -212,7 +212,7 @@ class Registry:
     @staticmethod
     def validate_annotations_and_return_type(annotations, has_explicit_return,
                                              has_implicit_return, binding_name,
-                                             func_name):
+                                             func_name: str):
         return_pytype = None
         if has_explicit_return and 'return' in annotations:
             return_anno = annotations.get('return')
@@ -324,10 +324,8 @@ class Registry:
         for binding in function.get_bindings():
 
             self.validate_binding_direction(binding.name,
-                                            BindingDirection[binding.direction].value,
+                                            binding.direction,
                                             func_name)
-
-            binding.direction = BindingDirection[binding.direction].value
 
             if binding.name == '$return':
                 has_explicit_return = True

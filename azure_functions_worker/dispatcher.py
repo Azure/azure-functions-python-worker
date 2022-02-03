@@ -314,10 +314,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 
                 binding_protos[binding.name] = protos.BindingInfo(
                     type=binding.type,
-                    data_type=DataType[binding.data_type].value,
-                    direction=int(binding.direction))
-
-                binding.direction = BindingDirection(int(binding.direction))
+                    data_type=binding.data_type,
+                    direction=binding.direction)
 
             function_load_request = protos.RpcFunctionMetadata(
                 name=function_info.name,

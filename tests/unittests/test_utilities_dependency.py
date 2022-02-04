@@ -98,7 +98,7 @@ class TestDependencyManager(unittest.TestCase):
     def test_initialize_in_windows_core_tools(self):
         os.environ['AzureWebJobsScriptRoot'] = 'C:\\FunctionApp'
         sys.path.extend([
-            'C:\\Users\\hazeng\\AppData\\Roaming\\npm\\'
+            'C:\\Users\\user\\AppData\\Roaming\\npm\\'
             'node_modules\\azure-functions-core-tools\\bin\\'
             'workers\\python\\3.6\\WINDOWS\\X64',
             'C:\\FunctionApp\\.venv38\\lib\\site-packages',
@@ -115,7 +115,7 @@ class TestDependencyManager(unittest.TestCase):
         )
         self.assertEqual(
             DependencyManager.worker_deps_path,
-            'C:\\Users\\hazeng\\AppData\\Roaming\\npm\\node_modules\\'
+            'C:\\Users\\user\\AppData\\Roaming\\npm\\node_modules\\'
             'azure-functions-core-tools\\bin\\workers\\python\\3.6\\WINDOWS'
             '\\X64'
         )
@@ -183,12 +183,12 @@ class TestDependencyManager(unittest.TestCase):
 
     def test_get_worker_deps_path_from_windows_core_tools(self):
         # Test for Windows Core Tools Environment
-        sys.path.append('C:\\Users\\hazeng\\AppData\\Roaming\\npm\\'
+        sys.path.append('C:\\Users\\user\\AppData\\Roaming\\npm\\'
                         'node_modules\\azure-functions-core-tools\\bin\\'
                         'workers\\python\\3.6\\WINDOWS\\X64')
         result = DependencyManager._get_worker_deps_path()
         self.assertEqual(result,
-                         'C:\\Users\\hazeng\\AppData\\Roaming\\npm\\'
+                         'C:\\Users\\user\\AppData\\Roaming\\npm\\'
                          'node_modules\\azure-functions-core-tools\\bin\\'
                          'workers\\python\\3.6\\WINDOWS\\X64')
 
@@ -267,7 +267,7 @@ class TestDependencyManager(unittest.TestCase):
 
     def test_add_to_sys_path_allow_resolution_from_import_statement(self):
         """The standard Python import mechanism allows deriving a specific
-        module in a import statement, e.g.
+        module in an import statement, e.g.
 
         from azure import functions  # OK
         """

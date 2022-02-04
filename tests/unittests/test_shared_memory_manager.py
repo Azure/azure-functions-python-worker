@@ -5,6 +5,7 @@ import math
 import os
 import json
 import sys
+from unittest import skipIf
 from unittest.mock import patch
 from azure_functions_worker.utils.common import is_envvar_true
 from azure.functions import meta as bind_meta
@@ -17,12 +18,17 @@ from azure_functions_worker.constants \
     import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
 
 
+@skipIf(sys.platform == 'darwin', 'MacOS M1 machines do not correctly test the'
+                                  'shared memory filesystems and thus skipping'
+                                  ' these tests for the time being')
 class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
     """
     Tests for SharedMemoryManager.
     """
     def setUp(self):
-        self.mock_environ = patch.dict('os.environ', os.environ.copy())
+        env = os.environ.copy()
+        env['FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED'] = "true"
+        self.mock_environ = patch.dict('os.environ', env)
         self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
         self.mock_sys_path = patch('sys.path', sys.path.copy())
         self.mock_environ.start()

@@ -18,7 +18,6 @@ from typing import List, Optional
 
 import grpc
 
-from . import __version__
 from . import bindings
 from . import constants
 from . import functions
@@ -39,6 +38,8 @@ from .utils.common import get_app_setting, is_envvar_true
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
+from .version import VERSION
+
 
 _TRUE = "true"
 
@@ -262,7 +263,7 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__worker_init_request(self, req):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, worker version %s, request ID %s',
-                    sys.version, __version__, self.request_id)
+                    sys.version, VERSION, self.request_id)
         enable_debug_logging_recommendation()
 
         worker_init_request = req.worker_init_request

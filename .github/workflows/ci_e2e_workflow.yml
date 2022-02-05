@@ -1,122 +1,122 @@
-# This workflow will install Python dependencies and run end to end tests with single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+# # This workflow will install Python dependencies and run end to end tests with single version of Python
+# # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: CI E2E tests
+# name: CI E2E tests
 
-on:
-  workflow_dispatch:
-  push:
-    branches: [ dev, master, main, release/* ]
-  pull_request:
-    branches: [ dev, master, main, release/* ]
-  schedule:
-    # Monday to Thursday 1 AM PDT build
-    # * is a special character in YAML so you have to quote this string
-    - cron: "0 8 * * 1,2,3,4"
+# on:
+#   workflow_dispatch:
+#   push:
+#     branches: [ dev, master, main, release/* ]
+#   pull_request:
+#     branches: [ dev, master, main, release/* ]
+#   schedule:
+#     # Monday to Thursday 1 AM PDT build
+#     # * is a special character in YAML so you have to quote this string
+#     - cron: "0 8 * * 1,2,3,4"
 
-jobs:
-  build:
-    name: "Python E2E CI Run"
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [ 3.6, 3.7, 3.8, 3.9 ]
+# jobs:
+#   build:
+#     name: "Python E2E CI Run"
+#     runs-on: ubuntu-latest
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         python-version: [ 3.6, 3.7, 3.8, 3.9 ]
 
-    steps:
-      - name: Checkout code.
-        uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up Dotnet 3.1.x
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '3.1.x'
-      - name: Set up Dotnet 5.0.x
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '5.0.x'
-      - name: Set up Dotnet 6.x
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '6.x'
-      - name: Install dependencies and the worker
-        run: |
-          retry() {
-            local -r -i max_attempts="$1"; shift
-            local -r cmd="$@"
-            local -i attempt_num=1
-            until $cmd
-            do
-              if (( attempt_num == max_attempts ))
-              then
-                echo "Attempt $attempt_num failed and there are no more attempts left!"
-                return 1
-              else
-                echo "Attempt $attempt_num failed! Trying again in $attempt_num seconds..."
-                sleep 1
-              fi
-            done
-          }
+#     steps:
+#       - name: Checkout code.
+#         uses: actions/checkout@v2
+#       - name: Set up Python ${{ matrix.python-version }}
+#         uses: actions/setup-python@v2
+#         with:
+#           python-version: ${{ matrix.python-version }}
+#       - name: Set up Dotnet 3.1.x
+#         uses: actions/setup-dotnet@v1
+#         with:
+#           dotnet-version: '3.1.x'
+#       - name: Set up Dotnet 5.0.x
+#         uses: actions/setup-dotnet@v1
+#         with:
+#           dotnet-version: '5.0.x'
+#       - name: Set up Dotnet 6.x
+#         uses: actions/setup-dotnet@v1
+#         with:
+#           dotnet-version: '6.x'
+#       - name: Install dependencies and the worker
+#         run: |
+#           retry() {
+#             local -r -i max_attempts="$1"; shift
+#             local -r cmd="$@"
+#             local -i attempt_num=1
+#             until $cmd
+#             do
+#               if (( attempt_num == max_attempts ))
+#               then
+#                 echo "Attempt $attempt_num failed and there are no more attempts left!"
+#                 return 1
+#               else
+#                 echo "Attempt $attempt_num failed! Trying again in $attempt_num seconds..."
+#                 sleep 1
+#               fi
+#             done
+#           }
 
-          python -m pip install --upgrade pip
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U -e .[dev]
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
+#           python -m pip install --upgrade pip
+#           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U -e .[dev]
+#           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
 
-          # Retry a couple times to avoid certificate issue
-          retry 5 python setup.py build
-          retry 5 python setup.py webhost
-          retry 5 python setup.py extension
-      - name: Running 3.6 Tests
-        if: matrix.python-version == 3.6
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString36 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString36 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString36 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString36 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString36 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString36 }}
-        run: |
-          pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
-      - name: Running 3.7 Tests
-        if: matrix.python-version == 3.7
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString37 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString37 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString37 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
-        run: |
-          pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
-      - name: Running 3.8 Tests
-        if: matrix.python-version == 3.8
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString38 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString38 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString38 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
-        run: |
-          pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
-      - name: Running 3.9 Tests
-        if: matrix.python-version == 3.9
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString39 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString39 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString39 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString39 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
-        run: |
-          pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
-      - name: Codecov
-        uses: codecov/codecov-action@v1.0.13
-        with:
-          file: ./coverage.xml # optional
-          flags: unittests # optional
-          name: codecov # optional
-          fail_ci_if_error: false # optional (default = false)
+#           # Retry a couple times to avoid certificate issue
+#           retry 5 python setup.py build
+#           retry 5 python setup.py webhost
+#           retry 5 python setup.py extension
+#       - name: Running 3.6 Tests
+#         if: matrix.python-version == 3.6
+#         env:
+#           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString36 }}
+#           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString36 }}
+#           AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString36 }}
+#           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString36 }}
+#           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString36 }}
+#           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString36 }}
+#         run: |
+#           pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+#       - name: Running 3.7 Tests
+#         if: matrix.python-version == 3.7
+#         env:
+#           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
+#           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString37 }}
+#           AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString37 }}
+#           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString37 }}
+#           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
+#           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
+#         run: |
+#           pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+#       - name: Running 3.8 Tests
+#         if: matrix.python-version == 3.8
+#         env:
+#           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
+#           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString38 }}
+#           AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString38 }}
+#           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString38 }}
+#           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
+#           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
+#         run: |
+#           pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+#       - name: Running 3.9 Tests
+#         if: matrix.python-version == 3.9
+#         env:
+#           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString39 }}
+#           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString39 }}
+#           AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString39 }}
+#           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString39 }}
+#           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
+#           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
+#         run: |
+#           pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+#       - name: Codecov
+#         uses: codecov/codecov-action@v1.0.13
+#         with:
+#           file: ./coverage.xml # optional
+#           flags: unittests # optional
+#           name: codecov # optional
+#           fail_ci_if_error: false # optional (default = false)

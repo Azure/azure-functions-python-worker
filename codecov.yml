@@ -1,3 +1,6 @@
+codecov:
+  branch: wangbill/pr-comment-codecov # set new Default branch
+
 coverage:
   status:
     project:
@@ -9,7 +12,7 @@ flags:
     carryforward: false
     paths:
       - ./azure_functions_worker
-      
+
 comment:                  # this is a top-level key
   layout: "reach, diff, flags, files"
   behavior: default

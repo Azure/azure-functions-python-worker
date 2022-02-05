@@ -1,5 +1,15 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+
 flags:
-  unittests
+  unittests:
+    carryforward: false
+    paths:
+      - ./azure_functions_worker
+      
 comment:                  # this is a top-level key
   layout: "reach, diff, flags, files"
   behavior: default

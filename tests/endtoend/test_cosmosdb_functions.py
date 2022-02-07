@@ -3,7 +3,7 @@
 import json
 import time
 
-from tests.utils import testutils
+from azure_functions_worker import testutils
 
 
 class TestCosmosDBFunctions(testutils.WebHostTestCase):

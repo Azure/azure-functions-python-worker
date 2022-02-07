@@ -6,7 +6,7 @@ import uuid
 
 import requests
 
-from tests.utils import testutils
+from azure_functions_worker import testutils
 
 
 class TestEventGridFunctions(testutils.WebHostTestCase):

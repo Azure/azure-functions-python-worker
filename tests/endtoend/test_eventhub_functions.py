@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from dateutil import parser, tz
 
-from tests.utils import testutils
+from azure_functions_worker import testutils
 
 
 class TestEventHubFunctions(testutils.WebHostTestCase):

@@ -5,8 +5,7 @@ import sys
 import shutil
 import asyncio
 
-from azure_functions_worker import protos
-from tests.utils import testutils
+from azure_functions_worker import protos, testutils
 
 
 async def vertify_nested_namespace_import():

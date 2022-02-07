@@ -7,7 +7,7 @@ import typing
 import os
 import pytest
 
-from tests.utils import testutils
+from azure_functions_worker import testutils
 
 
 class TestHttpFunctions(testutils.WebHostTestCase):

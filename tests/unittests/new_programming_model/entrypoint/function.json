@@ -1,0 +1,16 @@
+{
+  "scriptFile": "main.py",
+  "entryPoint": "customentry",
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "$return"
+    }
+  ]
+}

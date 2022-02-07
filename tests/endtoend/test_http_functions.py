@@ -4,7 +4,7 @@ import os
 from unittest.mock import patch
 
 import requests
-from tests.utils import testutils
+from azure_functions_worker import testutils
 
 REQUEST_TIMEOUT_SEC = 5
 

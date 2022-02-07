@@ -5,11 +5,24 @@ import pathlib
 import subprocess
 import sys
 import textwrap
+import os
+from unittest.mock import patch
 
-from tests.utils import testutils
+from azure_functions_worker import testutils
 
 
 class TestLoader(testutils.WebHostTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        os_environ = os.environ.copy()
+        # Turn on feature flag
+        # os_environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
+        # os_environ['workerIndexing'] = 'true'
+
+        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ.start()
+        super().setUpClass()
 
     @classmethod
     def get_script_dir(cls):

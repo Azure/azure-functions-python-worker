@@ -68,8 +68,7 @@ jobs:
         retry 5 python setup.py extension
     - name: Test with pytest
       run: |
-        coverage run tests/unittests/test_broken_functions.py
-        coverage xml
-        # pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
+        pytest --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
     - name: Codecov
       uses: codecov/codecov-action@v2
+      

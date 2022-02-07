@@ -20,22 +20,24 @@ from typing import List, Optional
 
 import grpc
 
-from . import __version__, bindings, constants, functions, loader, protos
+from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
-                        PYTHON_THREADPOOL_THREAD_COUNT_MIN)
+                        PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+                        PYTHON_ENABLE_DEBUG_LOGGING)
 from .extension import ExtensionManager
-from .logging import CONSOLE_LOG_PREFIX, error_logger, is_system_log_category, \
-    logger
 from .logging import disable_console_logging, enable_console_logging
-from .utils.common import get_app_setting
+from .logging import enable_debug_logging_recommendation
+from .logging import (logger, error_logger, is_system_log_category,
+                      CONSOLE_LOG_PREFIX)
+from .utils.common import get_app_setting, is_envvar_true
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
+from .version import VERSION
 
-from azure.functions.decorators import DataType, BindingDirection
 
 _TRUE = "true"
 
@@ -144,8 +146,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             logging_handler = AsyncLoggingHandler()
             root_logger = logging.getLogger()
 
-            # Don't change this unless you read #780 and #745
-            root_logger.setLevel(logging.INFO)
+            log_level = logging.INFO if not is_envvar_true(
+                PYTHON_ENABLE_DEBUG_LOGGING) else logging.DEBUG
+            root_logger.setLevel(log_level)
             root_logger.addHandler(logging_handler)
             logger.info('Switched to gRPC logging.')
             logging_handler.flush()
@@ -258,7 +261,8 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__worker_init_request(self, req):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, worker version %s, request ID %s',
-                    sys.version, __version__, self.request_id)
+                    sys.version, VERSION, self.request_id)
+        enable_debug_logging_recommendation()
 
         worker_init_request = req.worker_init_request
         host_capabilities = worker_init_request.capabilities
@@ -502,6 +506,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
                         'request ID: %s', self.request_id)
+            enable_debug_logging_recommendation()
 
             func_env_reload_request = req.function_environment_reload_request
 
@@ -528,6 +533,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._sync_call_tp = (
                 self._create_sync_call_tp(self._get_sync_tp_max_workers())
             )
+
+            if is_envvar_true(PYTHON_ENABLE_DEBUG_LOGGING):
+                root_logger = logging.getLogger()
+                root_logger.setLevel(logging.DEBUG)
 
             # Reload azure google namespaces
             DependencyManager.reload_customer_libraries(

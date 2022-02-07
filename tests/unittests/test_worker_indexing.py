@@ -6,7 +6,7 @@ import subprocess
 import sys
 import textwrap
 
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 
 class TestLoader(testutils.WebHostTestCase):

@@ -3,14 +3,21 @@
 
 import json
 import hashlib
+import time
+from unittest import skipIf
+import sys
+
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryMap
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryConstants as consts
 from azure_functions_worker import protos
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 
+@skipIf(sys.platform == 'darwin', 'MacOS M1 machines do not correctly test the'
+                                  'shared memory filesystems and thus skipping'
+                                  ' these tests for the time being')
 class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
                                         testutils.AsyncTestCase):
     """
@@ -440,14 +447,15 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
                                 method='GET',
                                 query=http_params))),
                     protos.ParameterBinding(
-                        name='input_file_1',
+                        name='inputfile1',
                         rpc_shared_memory=input_value_1
                     ),
                     protos.ParameterBinding(
-                        name='input_file_2',
+                        name='inputfile2',
                         rpc_shared_memory=input_value_2
                     )
                 ])
+            time.sleep(1)
 
             # Dispose the shared memory map since the function is done using it
             input_shared_mem_map_1.dispose()

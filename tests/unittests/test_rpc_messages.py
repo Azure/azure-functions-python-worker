@@ -8,7 +8,7 @@ import typing
 import unittest
 
 from azure_functions_worker import protos
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 
 class TestGRPC(testutils.AsyncTestCase):

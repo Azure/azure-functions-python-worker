@@ -20,7 +20,7 @@
     <file src="..\3.7_OSX_X64\**" target="tools\3.7\OSX\X64" />
     <file src="..\python\prodV2\worker.config.json" target="tools" />
     <file src="Microsoft.Azure.Functions.PythonWorker.targets" target="build" />
-    <!--<file src="..\PythonWorker\_manifest\manifest.json" target="SBOM\manifest.json" /> 
-    <file src="..\PythonWorker\_manifest\spdx_2.2\manifest.spdx.json" target="SBOM\manifest.spdx.json" /> -->
+    <file src="..\PythonWorker\_manifest\manifest.json" target="SBOM\manifest.json" /> 
+    <file src="..\PythonWorker\_manifest\spdx_2.2\manifest.spdx.json" target="SBOM\manifest.spdx.json" />
   </files>
 </package>

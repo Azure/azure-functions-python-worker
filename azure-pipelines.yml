@@ -200,7 +200,8 @@ jobs:
       # vmImage: 'vs2017-win2016'
       name: '1ES-Hosted-AzFunc' # MMS2019TLS for Windows2019 or MMSUbuntu20.04TLS for ubuntu
       demands:
-      - ImageOverride -equals MMS2019TLS
+      #- ImageOverride -equals MMS2019TLS
+      - ImageOverride -equals MMSUbuntu20.04TLS
   steps:
   - bash: |
       echo "Releasing from $BUILD_SOURCEBRANCHNAME"
@@ -223,6 +224,11 @@ jobs:
         NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
         WKVERSION="$VERSION-$(patchBuildNumberForDev)"
       else
+        echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
+        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
+        NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
+        # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
+        WKVERSION="3.$LATEST_TAG-$(BUILD_BUILDID)-TEST"
         echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
       fi
 
@@ -237,9 +243,13 @@ jobs:
   - task: ManifestGeneratorTask@0
     displayName: 'SBOM Generation Task'
     inputs:
-      BuildDropPath: '$(Build.ArtifactStagingDirectory)'
+      BuildDropPath: '$(Build.SourcesDirectory)'
       BuildComponentPath: '$(Build.SourcesDirectory)'
       Verbosity: 'Verbose'
+  - bash: |
+      echo "Releasing from $BUILD_SOURCEBRANCHNAME"
+      ls -la $BUILD_SOURCESDIRECTORY
+  
   - task: NuGetCommand@2
     inputs:
       command: pack

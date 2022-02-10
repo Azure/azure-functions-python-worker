@@ -466,7 +466,7 @@ class _MockWebHost:
 
         self._connected_fut = loop.create_future()
         self._in_queue = queue.Queue()
-        self._out_aqueue = asyncio.Queue(loop=self._loop)
+        self._out_aqueue = asyncio.Queue()
         self._threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._server = grpc.server(self._threadpool)
         self._servicer = _MockWebHostServicer(self)

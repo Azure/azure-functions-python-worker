@@ -38,14 +38,14 @@ def determine_user_pkg_paths():
 
     home = Path.home()
     pkgs_path = os.path.join(home, PKGS_PATH)
-    user_pkg_paths = []
+    usr_packages_path = []
 
-    if minor_version in (7, 8, 9):
-        user_pkg_paths.append(os.path.join(pkgs_path, PKGS))
+    if minor_version in (7, 8, 9, 10):
+        usr_packages_path.append(os.path.join(pkgs_path, PKGS))
     else:
         raise RuntimeError(f'Unsupported Python version: 3.{minor_version}')
 
-    return user_pkg_paths
+    return usr_packages_path
 
 
 if __name__ == '__main__':

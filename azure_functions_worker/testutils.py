@@ -499,6 +499,18 @@ class _MockWebHost:
 
         return r
 
+    async def get_functions_metadata(self):
+        r = await self.communicate(
+            protos.StreamingMessage(
+                functions_metadata_request=protos.FunctionsMetadataRequest(
+                    function_app_directory=str(self._scripts_dir)
+                )
+            ),
+            wait_for='function_metadata_response'
+        )
+
+        return r
+
     async def load_function(self, name):
         if name not in self._available_functions:
             raise RuntimeError(f'cannot load function {name}')
@@ -721,6 +733,8 @@ def start_mockhost(*, script_root=FUNCS_PATH):
             f'invalid script_root argument: '
             f'{scripts_dir} directory does not exist')
 
+    sys.path.append(str(scripts_dir))
+
     return _MockWebHostController(scripts_dir)
 
 
@@ -836,7 +850,8 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         'languageWorkers:python:workerDirectory': str(worker_path),
         'host:logger:consoleLoggingMode': 'always',
         'AZURE_FUNCTIONS_ENVIRONMENT': 'development',
-        'AzureWebJobsSecretStorageType': 'files'
+        'AzureWebJobsSecretStorageType': 'files',
+        'FUNCTIONS_WORKER_RUNTIME': 'python'
     }
 
     # In E2E Integration mode, we should use the core tools worker
@@ -901,6 +916,7 @@ def start_webhost(*, script_dir=None, stdout=None):
     health_check_endpoint = f'{addr}/api/ping'
     host_out = stdout.readlines(100)
     for _ in range(5):
+        break
         try:
             r = requests.get(health_check_endpoint,
                              params={'code': 'testFunctionKey'})

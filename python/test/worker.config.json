@@ -2,9 +2,8 @@
     "description":{
         "language":"python",
         "extensions":[".py"],
-        "defaultExecutablePath":"D:/Repos/azure-functions-python-worker/.env39/Scripts/python.exe",
+        "defaultExecutablePath":"python",
         "defaultWorkerPath":"worker.py",
-        "workerIndexing": "true",
-        "AzureWebJobsFeatureFlags": "EnableWorkerIndexing"
+        "workerIndexing": "true"
     }
 }

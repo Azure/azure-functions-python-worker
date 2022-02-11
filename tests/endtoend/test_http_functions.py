@@ -105,3 +105,42 @@ class TestHttpFunctions(testutils.WebHostTestCase):
                           params={'checkHealth': '1'},
                           timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
+
+
+class TestHttpFunctionsNewProgrammingModel(testutils.WebHostTestCase):
+    """Test the native Http Trigger in the local webhost.
+
+        This test class will spawn a webhost from your <project_root>/build/webhost
+        folder and replace the built-in Python with azure_functions_worker from
+        your code base. Since the Http Trigger is a native suport from host, we
+        don't need to setup any external resources.
+
+        Compared to the unittests/test_http_functions.py, this file is more focus
+        on testing the E2E flow scenarios.
+        """
+
+    @classmethod
+    def setUpClass(cls):
+        os_environ = os.environ.copy()
+        # Turn on feature flag
+        os_environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
+        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ.start()
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(self):
+        super().tearDownClass()
+        self._patch_environ.stop()
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'http_functions'
+
+    # @testutils.retryable_test(3, 5)
+    def test_default_http_template_should_return_ok(self):
+        """Test if the default template of Http trigger in Python Function app
+        will return OK
+        """
+        r = self.webhost.request('GET', 'default_template')
+        self.assertEqual(r.status_code, 200)

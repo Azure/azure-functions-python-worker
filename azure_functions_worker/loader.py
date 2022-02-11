@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """Python functions loader."""
-
+import glob
 import importlib
 import importlib.machinery
 import importlib.util
@@ -101,12 +101,20 @@ def load_function(name: str, directory: str, script_file: str,
         message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
 )
 def index_function_app(directory: str) -> typing.List[Function]:
-    function_dir = os.path.join(directory, SCRIPT_FILE_NAME)
+    function_dir_list = glob.glob(os.path.join(directory, '**',
+                                               SCRIPT_FILE_NAME),
+                                  recursive=True)
+    if len(function_dir_list) > 1:
+        raise ValueError(f"Multiple {SCRIPT_FILE_NAME} defined")
 
-    if not os.path.exists(function_dir):
+    function_path = function_dir_list[0]
+    function_dir = pathlib.Path(function_path).parent
+    sys.path.append(str(function_dir))
+
+    if not os.path.exists(function_path):
         raise IOError(f"{SCRIPT_FILE_NAME} not found in the function app")
 
-    module_name = pathlib.Path(function_dir).stem
+    module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)
 
     app: typing.Optional[FunctionsApp] = None

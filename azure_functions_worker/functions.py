@@ -261,7 +261,7 @@ class Registry:
         has_implicit_return = False
 
         bound_params = {}
-        for binding_name, binding_info in metadata.bindings.items():
+        for binding_name, binding_info in func.metadata.bindings.items():
 
             self.validate_binding_direction(binding_name,
                                             binding_info.direction, func_name)

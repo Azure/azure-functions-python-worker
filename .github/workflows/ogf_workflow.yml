@@ -102,7 +102,7 @@ jobs:
           ./k6 version
 
       - name: Setup Azure RG and Storage Account For Functions App
-        uses: Azure/cli@1
+        uses: azure/CLI@v1
         with:
           azcliversion: latest
           inlineScript: |

@@ -102,9 +102,9 @@ jobs:
           ./k6 version
 
       - name: Setup Azure RG and Storage Account For Functions App
-        uses: Azure/cli@1.0.4
+        uses: Azure/cli@1
         with:
-          azcliversion: 2.16.0
+          azcliversion: latest
           inlineScript: |
             echo "GITHUB_WORKSPACE: " $GITHUB_WORKSPACE
             az group create --location ${{ matrix.region }} --name $RESOURCE_GROUP_NAME \

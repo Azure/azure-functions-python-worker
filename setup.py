@@ -115,9 +115,9 @@ INSTALL_REQUIRES = [
 EXTRA_REQUIRES = {
     "dev": [
         "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
-        "python-dateutil~=2.8.1",
+        "python-dateutil~=2.8.2",
         "pycryptodome~=3.10.1",
-        "flake8~=3.7.9",
+        "flake8~=4.0.1",
         "mypy",
         "pytest",
         "requests==2.*",

@@ -9,6 +9,7 @@ import unittest
 
 from azure_functions_worker import protos
 from azure_functions_worker import testutils
+from azure_functions_worker.utils.common import is_python_version
 
 
 class TestGRPC(testutils.AsyncTestCase):
@@ -128,7 +129,7 @@ class TestGRPC(testutils.AsyncTestCase):
     @unittest.skipIf(sys.platform == 'win32',
                      'Linux .sh script only works on Linux')
     @unittest.skipIf(
-        sys.version_info.major == 3 and sys.version_info.minor == 10,
+        is_python_version('3.10'),
         'In Python 3.10, isolate worker dependencies is turned on by default.'
         ' Reloading all customer dependencies on specialization is a must.'
         ' This partially reloading namespace feature is no longer needed.'

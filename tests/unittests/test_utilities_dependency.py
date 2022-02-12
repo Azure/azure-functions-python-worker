@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from azure_functions_worker import testutils
+from azure_functions_worker.utils.common import is_python_version
 from azure_functions_worker.utils.dependency import DependencyManager
 
 
@@ -571,7 +572,7 @@ class TestDependencyManager(unittest.TestCase):
             import common_module  # NoQA
 
     @unittest.skipUnless(
-        sys.version_info.major == 3 and sys.version_info.minor == 10,
+        is_python_version('3.10'),
         'Test only available for python 3.10'
     )
     def test_use_worker_dependencies_default_python_310(self):
@@ -627,10 +628,8 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipIf(
-        sys.version_info.major == 3 and sys.version_info.minor == 10,
-        'Test not available for python 3.10'
-    )
+    @unittest.skipIf(is_python_version('3.10'),
+                     'Test not available for python 3.10')
     def test_prioritize_customer_dependencies_default_python_36_37_38_39(self):
         # Feature should be disabled in Python 3.6, 3.7, 3.8 and 3.9
         # Setup paths
@@ -643,10 +642,8 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipUnless(
-        sys.version_info.major == 3 and sys.version_info.minor == 10,
-        'Test only available for python 3.10'
-    )
+    @unittest.skipUnless(is_python_version('3.10'),
+                         'Test only available for python 3.10')
     def test_prioritize_customer_dependencies_default_python_310(self):
         # Feature should be enabled in Python 3.10 by default
         # Setup paths

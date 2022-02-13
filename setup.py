@@ -108,7 +108,7 @@ INSTALL_REQUIRES = [
     "grpcio~=1.43.0",
     "grpcio-tools~=1.43.0",
     "protobuf~=3.19.3",
-    "azure-functions==1.8.0"
+    "azure-functions==1.9.0"
 ]
 
 

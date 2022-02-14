@@ -195,12 +195,11 @@ jobs:
 
 - job: PackageWorkers
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64']
-  #condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
+  condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
   pool:
       # vmImage: 'vs2017-win2016'
       name: '1ES-Hosted-AzFunc' # MMS2019TLS for Windows2019 or MMSUbuntu20.04TLS for ubuntu
       demands:
-      #- ImageOverride -equals MMS2019TLS
       - ImageOverride -equals MMSUbuntu20.04TLS
   steps:
   - bash: |
@@ -246,10 +245,6 @@ jobs:
       BuildDropPath: '$(Build.SourcesDirectory)'
       BuildComponentPath: '$(Build.SourcesDirectory)'
       Verbosity: 'Verbose'
-  - bash: |
-      echo "Releasing from $BUILD_SOURCEBRANCHNAME"
-      ls -la $BUILD_SOURCESDIRECTORY
-  
   - task: NuGetCommand@2
     inputs:
       command: pack

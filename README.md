@@ -31,7 +31,7 @@ What's coming?
 
 - [Durable Functions For Python](https://github.com/Azure/azure-functions-durable-python)
 
-###Get Started
+### Get Started
 
 - [Create your first Python function](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-function-python)
 - [Developer guide](https://docs.microsoft.com/en-us/azure/azure-functions/functions-reference-python)

@@ -50,7 +50,6 @@ class Registry:
 
         return None
 
-
     @staticmethod
     def validate_binding_direction(binding_name: str,
                                    binding_direction: str,
@@ -113,18 +112,18 @@ class Registry:
                     param_anno_origin = typing_inspect.get_origin(param_anno)
                     if param_anno_origin is not None:
                         is_param_out = (
-                                isinstance(param_anno_origin, type)
-                                and param_anno_origin.__name__ == 'Out'
+                            isinstance(param_anno_origin, type)
+                            and param_anno_origin.__name__ == 'Out'
                         )
                     else:
                         is_param_out = (
-                                isinstance(param_anno, type)
-                                and param_anno.__name__ == 'Out'
+                            isinstance(param_anno, type)
+                            and param_anno.__name__ == 'Out'
                         )
                 else:
                     is_param_out = (
-                            isinstance(param_anno, type)
-                            and param_anno.__name__ == 'Out'
+                        isinstance(param_anno, type)
+                        and param_anno.__name__ == 'Out'
                     )
             else:
                 is_param_out = False
@@ -191,9 +190,9 @@ class Registry:
                         raise FunctionLoadError(
                             func_name,
                             f'{param.name!r} binding type "{binding.type}" '
-                            f'and dataType "{binding.data_type}" in function.json'
-                            f' do not match the corresponding function '
-                            f'parameter\'s Python type '
+                            f'and dataType "{binding.data_type}" in '
+                            f'function.json do not match the corresponding '
+                            f'function parameter\'s Python type '
                             f'annotation "{param_py_type.__name__}"')
                     else:
                         raise FunctionLoadError(
@@ -364,7 +363,8 @@ class Registry:
             directory=func_dir,
             requires_context=requires_context,
             is_async=inspect.iscoroutinefunction(func),
-            has_return=has_explicit_return, # has_explicit_return or has_implicit_return,
+            has_return=has_explicit_return,
+            # has_explicit_return or has_implicit_return,
             input_types=input_types,
             output_types=output_types,
             return_type=return_type)

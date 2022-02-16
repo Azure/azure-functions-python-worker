@@ -18,7 +18,3 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
     def check_test_timer_past_due(self, host_out: typing.List[str]):
         self.assertIn('Python timer trigger function ran at', host_out)
-
-
-
-

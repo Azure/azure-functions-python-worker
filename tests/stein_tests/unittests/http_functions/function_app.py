@@ -221,7 +221,7 @@ def return_context(req: func.HttpRequest, context: func.Context):
 @app.route(route="return_http")
 def return_http(req: func.HttpRequest):
     return func.HttpResponse('<h1>Hello World™</h1>',
-                            mimetype='text/html')
+                             mimetype='text/html')
 
 
 @app.route(route="return_http_404")
@@ -232,7 +232,7 @@ def return_http_404(req: func.HttpRequest):
 @app.route(route="return_http_auth_admin", auth_level=func.AuthLevel.ADMIN)
 def return_http_auth_admin(req: func.HttpRequest):
     return func.HttpResponse('<h1>Hello World™</h1>',
-                            mimetype='text/html')
+                             mimetype='text/html')
 
 
 @app.route(route="return_http_no_body")
@@ -294,9 +294,11 @@ def unhandled_urllib_error(req: func.HttpRequest) -> str:
     image_url = req.params.get('img')
     urlopen(image_url).read()
 
+
 class UnserializableException(Exception):
     def __str__(self):
         raise RuntimeError('cannot serialize me')
+
 
 @app.route(route="unhandled_unserializable_error")
 def unhandled_unserializable_error(req: func.HttpRequest) -> str:
@@ -305,6 +307,7 @@ def unhandled_unserializable_error(req: func.HttpRequest) -> str:
 
 async def try_log():
     logger.info("try_log")
+
 
 @app.route(route="user_event_loop")
 def user_event_loop(req: func.HttpRequest) -> func.HttpResponse:
@@ -315,4 +318,3 @@ def user_event_loop(req: func.HttpRequest) -> func.HttpResponse:
     loop.run_until_complete(try_log())
     loop.close()
     return 'OK-user-event-loop'
-

@@ -1,6 +1,7 @@
 import argparse
 import configparser
 import functools
+import logging
 import os
 import pathlib
 import platform
@@ -9,13 +10,11 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 import unittest
-import tempfile
 
 import requests
-
-import logging
 from tests.stein_tests.constants import PYAZURE_WEBHOST_DEBUG, \
     PYAZURE_WORKER_DIR, \
     PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, STEIN_TESTS_ROOT, WORKER_CONFIG, \
@@ -288,9 +287,9 @@ def popen_webhost(*, stdout, stderr, script_root=HTTP_FUNCS_PATH, port=None):
         stderr=stderr)
 
 
-
 def start_webhost(*, script_dir=None, stdout=None):
-    script_root = STEIN_TESTS_ROOT / script_dir if script_dir else HTTP_FUNCS_PATH
+    script_root = STEIN_TESTS_ROOT / script_dir if script_dir else \
+        HTTP_FUNCS_PATH
     if stdout is None:
         if is_env_var_true(PYAZURE_WEBHOST_DEBUG):
             stdout = sys.stdout
@@ -464,6 +463,6 @@ def _main():
         host.terminate()
         _teardown_func_app()
 
+
 if __name__ == '__main__':
     _main()
-

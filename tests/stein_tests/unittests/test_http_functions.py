@@ -280,13 +280,12 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('try_log', host_out)
 
 
-
 class TestHttpFunctionMissingModule(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
         return testutils.HTTP_FUNCS_PATH / 'invalid_http_functions' / \
-               'missing_module'
+            'missing_module'
 
     def test_missing_module(self):
         r = self.webhost.request('GET', 'missing_module/')

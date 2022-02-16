@@ -16,11 +16,6 @@ logger: logging.Logger = logging.getLogger('azure_functions_worker')
 error_logger: logging.Logger = (
     logging.getLogger('azure_functions_worker_errors'))
 
-local_handler = logging.FileHandler('D://mylog.txt')
-logging.getLogger().addHandler(local_handler)
-
-
-
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
 

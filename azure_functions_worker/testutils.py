@@ -915,7 +915,6 @@ def start_webhost(*, script_dir=None, stdout=None):
     health_check_endpoint = f'{addr}/api/ping'
     host_out = stdout.readlines(100)
     for _ in range(5):
-        break
         try:
             r = requests.get(health_check_endpoint,
                              params={'code': 'testFunctionKey'})

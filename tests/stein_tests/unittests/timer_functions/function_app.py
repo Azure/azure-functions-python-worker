@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import datetime
 import logging
+
 import azure.functions as func
 
 app = func.FunctionsApp()

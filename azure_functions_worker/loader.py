@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """Python functions loader."""
-import glob
 import importlib
 import importlib.machinery
 import importlib.util
@@ -48,8 +47,8 @@ def uninstall() -> None:
 
 
 @attach_message_to_exception(
-        expt_type=ImportError,
-        message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
+    expt_type=ImportError,
+    message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
 )
 def load_function(name: str, directory: str, script_file: str,
                   entry_point: typing.Optional[str]):
@@ -65,16 +64,16 @@ def load_function(name: str, directory: str, script_file: str,
         rel_script_path = script_path.relative_to(dir_path.parent)
     except ValueError:
         raise RuntimeError(
-                f'script path {script_file} is not relative to the specified '
-                f'directory {directory}'
+            f'script path {script_file} is not relative to the specified '
+            f'directory {directory}'
         )
 
     last_part = rel_script_path.parts[-1]
     modname, ext = os.path.splitext(last_part)
     if ext != '.py':
         raise RuntimeError(
-                f'cannot load function {name}: '
-                f'invalid Python filename {script_file}')
+            f'cannot load function {name}: '
+            f'invalid Python filename {script_file}')
 
     modname_parts = [_AZURE_NAMESPACE]
     modname_parts.extend(rel_script_path.parts[:-1])
@@ -90,15 +89,15 @@ def load_function(name: str, directory: str, script_file: str,
     func = getattr(mod, entry_point, None)
     if func is None or not callable(func):
         raise RuntimeError(
-                f'cannot load function {name}: function {entry_point}() is not '
-                f'present in {rel_script_path}')
+            f'cannot load function {name}: function {entry_point}() is not '
+            f'present in {rel_script_path}')
 
     return func
 
 
 @attach_message_to_exception(
-        expt_type=ImportError,
-        message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
+    expt_type=ImportError,
+    message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
 )
 def index_function_app(directory: str) -> typing.List[Function]:
     function_path = os.path.join(directory, SCRIPT_FILE_NAME)

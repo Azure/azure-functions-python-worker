@@ -221,4 +221,3 @@ class TestLoaderNewPrgModel(testutils.WebHostTestCase):
         super().setUpClass()
         r = self.webhost.request('GET', 'hello')
         self.assertEqual(r.status_code, 500)
-

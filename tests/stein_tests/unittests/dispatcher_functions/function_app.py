@@ -6,7 +6,8 @@ app = func.FunctionsApp(auth_level=func.AuthLevel.ANONYMOUS)
 
 @app.function_name(name="dispatcher_test")
 @app.route(route="dispatcher_test")
-def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
+def dispatcher_test(req: func.HttpRequest,
+                    context: func.Context) -> func.HttpResponse:
     result = {
         'function_directory': context.function_directory,
         'function_name': context.function_name

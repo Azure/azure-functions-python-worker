@@ -462,14 +462,6 @@ class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):
                     self._ctrl._worker.get_sync_tp_workers_set(),
                     self._default_workers)
 
-    async def test_dispatcher_functions_metadata_request(self):
-        """Test if the functions metadata response will be sent correctly
-        when a functions metadata request is received
-        """
-        async with self._ctrl as host:
-            r = await host.get_functions_metadata()
-            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-
 
 @unittest.skipIf(sys.version_info.minor != 9,
                  "Run the tests only for Python 3.9. In other platforms, "

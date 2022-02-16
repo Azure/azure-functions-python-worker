@@ -726,8 +726,7 @@ class _MockWebHostController:
 
 
 def start_mockhost(*, script_root=FUNCS_PATH):
-    tests_dir = TESTS_ROOT
-    scripts_dir = tests_dir / script_root
+    scripts_dir = TESTS_ROOT / script_root
     if not (scripts_dir.exists() and scripts_dir.is_dir()):
         raise RuntimeError(
             f'invalid script_root argument: '

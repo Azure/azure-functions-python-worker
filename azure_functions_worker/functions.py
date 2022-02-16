@@ -5,7 +5,7 @@ import operator
 import pathlib
 import typing
 
-from azure.functions.decorators import Function, DataType, BindingDirection
+from azure.functions.decorators import Function, DataType
 
 from . import bindings as bindings_utils
 from . import protos

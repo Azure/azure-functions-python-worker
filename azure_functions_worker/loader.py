@@ -101,15 +101,7 @@ def load_function(name: str, directory: str, script_file: str,
         message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
 )
 def index_function_app(directory: str) -> typing.List[Function]:
-    function_dir_list = glob.glob(os.path.join(directory, '**',
-                                               SCRIPT_FILE_NAME),
-                                  recursive=True)
-    if len(function_dir_list) > 1:
-        raise ValueError(f"Multiple {SCRIPT_FILE_NAME} defined")
-
-    function_path = function_dir_list[0]
-    function_dir = pathlib.Path(function_path).parent
-    sys.path.append(str(function_dir))
+    function_path = os.path.join(directory, SCRIPT_FILE_NAME)
 
     if not os.path.exists(function_path):
         raise IOError(f"{SCRIPT_FILE_NAME} not found in the function app")

@@ -14,11 +14,11 @@ import queue
 import sys
 import threading
 import uuid
+import grpc
+
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
-
-import grpc
 
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
@@ -795,7 +795,12 @@ def get_current_invocation_id() -> Optional[str]:
             if task_invocation_id is not None:
                 return task_invocation_id
 
-    return getattr(_invocation_id_local, 'v', None)
+    #return getattr(_invocation_id_local, 'v', None)
+    
+    invocation_local_id = getattr(logging.getLogger(), 'invocation_local_id', None)
+    return getattr(invocation_local_id, 'v', None)
+
+
 
 
 _invocation_id_local = threading.local()

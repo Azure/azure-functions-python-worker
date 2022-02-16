@@ -223,7 +223,8 @@ jobs:
         NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
         WKVERSION="$VERSION-$(patchBuildNumberForDev)"
       else
-        echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
+        # this is only to test nuget related workflow because we are setting nuspec here
+        echo "Generating Integration Test Package for $BUILD_SOURCEBRANCHNAME for testing purpose"
         LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
         # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)

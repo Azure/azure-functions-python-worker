@@ -94,7 +94,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'get_metadata_batch_triggered')
         self.assertEqual(r.status_code, 200)
 
-        # Check metadata and events length, events should be batch processed
+        # Check metadata and events length, events should be batched processed
         events = r.json()
         self.assertIsInstance(events, list)
         self.assertGreater(len(events), 1)
@@ -104,7 +104,8 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
             event = events[event_index]
 
             # Check if the event is enqueued between start_time and end_time
-            enqueued_time = parser.isoparse(event['enqueued_time'])
+            enqueued_time = parser.isoparse(event['enqueued_time']).astimezone(
+                tz=tz.UTC)
             self.assertTrue(start_time < enqueued_time < end_time)
 
             # Check if event properties are properly set
@@ -120,7 +121,8 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
             enqueued_time = parser.isoparse(sys_props['EnqueuedTimeUtc'])
 
             # Check event trigger time and other system properties
-            self.assertTrue(start_time < enqueued_time < end_time)
+            self.assertTrue(
+                start_time.timestamp() < enqueued_time.timestamp() < end_time.timestamp())  # NoQA
             self.assertIsNone(sys_props['PartitionKey'])
             self.assertGreaterEqual(sys_props['SequenceNumber'], 0)
             self.assertIsNotNone(sys_props['Offset'])

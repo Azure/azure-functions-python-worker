@@ -33,4 +33,4 @@ def main(req: func.HttpRequest):
     with client:
         client.send_batch(event_data_batch)
 
-    return f'OK'
+    return 'OK'

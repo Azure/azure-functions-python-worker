@@ -14,7 +14,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     customer's dependencies. We have mock a .python_packages/ folder in
     this e2e test function app which contains the following stub package:
 
-    azure.functions==1.2.1
     protobuf==3.9.0
     grpc==1.35.0
 
@@ -29,7 +28,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             "worker_deps_path": dm._get_worker_deps_path(),
         },
         "libraries": {
-            "func.expected.version": "1.2.1",
             "func.version": func.__version__,
             "func.file": func.__file__,
             "proto.expected.version": "3.9.0",

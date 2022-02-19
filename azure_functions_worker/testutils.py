@@ -67,27 +67,41 @@ WORKER_CONFIG = PROJECT_ROOT / '.testconfig'
 ON_WINDOWS = platform.system() == 'Windows'
 LOCALHOST = "127.0.0.1"
 
+# The template of host.json that will be applied to each test functions
 HOST_JSON_TEMPLATE = """\
 {
     "version": "2.0",
-    "logging": {
-        "logLevel": {
-           "default": "Trace"
-        }
-    },
-    "http": {
-        "routePrefix": "api"
-    },
-    "swagger": {
-        "enabled": true
-    },
-    "eventHub": {
-        "maxBatchSize": 1000,
-        "prefetchCount": 1000,
-        "batchCheckpointFrequency": 1
-    },
-    "functionTimeout": "00:05:00"
+    "logging": {"logLevel": {"default": "Trace"}}
 }
+"""
+
+EXTENSION_CSPROJ_TEMPLATE = """\
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <WarningsAsErrors></WarningsAsErrors>
+    <DefaultItemExcludes>**</DefaultItemExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
+     Version="5.0.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
+     Version="3.1.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
+     Version="3.0.10" />
+     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
+     Version="4.0.5" />
+     <PackageReference
+      Include="Microsoft.Azure.WebJobs.Extensions.Storage.Blobs"
+      Version="5.0.0" />
+     <PackageReference
+      Include="Microsoft.Azure.WebJobs.Extensions.Storage.Queues"
+      Version="5.0.0" />
+    <PackageReference
+     Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
+     Version="1.1.3" />
+  </ItemGroup>
+</Project>
 """
 
 SECRETS_TEMPLATE = """\
@@ -245,7 +259,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 self.host_stdout.seek(last_pos)
                 self.host_out = self.host_stdout.read()
                 self.host_stdout_logger.error(
-                    f'Captured WebHost stdout:\n{self.host_out}')
+                    f'Captured WebHost stdout from {self.host_stdout.name} '
+                    f':\n{self.host_out}')
             finally:
                 if test_exception is not None:
                     raise test_exception
@@ -451,7 +466,7 @@ class _MockWebHost:
 
         self._connected_fut = loop.create_future()
         self._in_queue = queue.Queue()
-        self._out_aqueue = asyncio.Queue(loop=self._loop)
+        self._out_aqueue = asyncio.Queue()
         self._threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._server = grpc.server(self._threadpool)
         self._servicer = _MockWebHostServicer(self)
@@ -730,7 +745,10 @@ class _WebHostProxy:
             self._proc.stderr.close()
 
         self._proc.terminate()
-        self._proc.wait()
+        try:
+            self._proc.wait(20)
+        except subprocess.TimeoutExpired:
+            self._proc.kill()
 
 
 def _find_open_port():
@@ -881,7 +899,8 @@ def start_webhost(*, script_dir=None, stdout=None):
 
     addr = f'http://{LOCALHOST}:{port}'
     health_check_endpoint = f'{addr}/api/ping'
-    for _ in range(10):
+    host_out = stdout.readlines(100)
+    for _ in range(5):
         try:
             r = requests.get(health_check_endpoint,
                              params={'code': 'testFunctionKey'})
@@ -890,13 +909,14 @@ def start_webhost(*, script_dir=None, stdout=None):
 
             if 200 <= r.status_code < 300:
                 # Give the host a bit more time to settle
-                time.sleep(2)
+                time.sleep(1)
                 break
             else:
-                print(f'Failed to ping {health_check_endpoint}', flush=True)
+                print(f'Failed to ping {health_check_endpoint}, status code: '
+                      f'{r.status_code}', flush=True)
         except requests.exceptions.ConnectionError:
             pass
-        time.sleep(2)
+        time.sleep(1)
     else:
         proc.terminate()
         try:
@@ -904,7 +924,8 @@ def start_webhost(*, script_dir=None, stdout=None):
         except subprocess.TimeoutExpired:
             proc.kill()
         raise RuntimeError('could not start the webworker in time. Please'
-                           f' check the log file for details: {stdout.name} ')
+                           f' check the log file for details: {stdout.name} \n'
+                           f' Captured WebHost stdout:\n{host_out}')
 
     return _WebHostProxy(proc, addr)
 
@@ -962,10 +983,15 @@ def _setup_func_app(app_root):
     extensions = app_root / 'bin'
     ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
+    extensions_csproj_file = app_root / 'extensions.csproj'
 
     if not os.path.isfile(host_json):
         with open(host_json, 'w') as f:
             f.write(HOST_JSON_TEMPLATE)
+
+    if not os.path.isfile(extensions_csproj_file):
+        with open(extensions_csproj_file, 'w') as f:
+            f.write(EXTENSION_CSPROJ_TEMPLATE)
 
     _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
     _symlink_dir(EXTENSIONS_PATH, extensions)
@@ -975,8 +1001,11 @@ def _teardown_func_app(app_root):
     extensions = app_root / 'bin'
     ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
+    extensions_csproj_file = app_root / 'extensions.csproj'
+    extensions_obj_file = app_root / 'obj'
 
-    for path in (extensions, ping_func, host_json):
+    for path in (extensions, ping_func, host_json, extensions_csproj_file,
+                 extensions_obj_file):
         remove_path(path)
 
 

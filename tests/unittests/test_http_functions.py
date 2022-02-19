@@ -5,8 +5,6 @@ import pathlib
 import filecmp
 import typing
 import os
-import unittest
-
 import pytest
 
 from azure_functions_worker import testutils
@@ -99,34 +97,22 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('hello info', host_out)
         self.assertIn('and another error', host_out)
 
-    @unittest.skip("Reverting the debug logs PR as host currently cannot handle"
-                   "apps with lot of debug statements. Reverting PR: "
-                   "azure-functions-python-worker/pull/745")
     def test_debug_logging(self):
         r = self.webhost.request('GET', 'debug_logging')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-debug')
 
-    @unittest.skip("Reverting the debug logs PR as host currently cannot handle"
-                   "apps with lot of debug statements. Reverting PR: "
-                   "azure-functions-python-worker/pull/745")
     def check_log_debug_logging(self, host_out: typing.List[str]):
         self.assertIn('logging info', host_out)
         self.assertIn('logging warning', host_out)
-        self.assertIn('logging debug', host_out)
         self.assertIn('logging error', host_out)
+        self.assertNotIn('logging debug', host_out)
 
-    @unittest.skip("Reverting the debug logs PR as host currently cannot handle"
-                   "apps with lot of debug statements. Reverting PR: "
-                   "azure-functions-python-worker/pull/745")
     def test_debug_with_user_logging(self):
         r = self.webhost.request('GET', 'debug_user_logging')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-user-debug')
 
-    @unittest.skip("Reverting the debug logs PR as host currently cannot handle"
-                   "apps with lot of debug statements. Reverting PR: "
-                   "azure-functions-python-worker/pull/745")
     def check_log_debug_with_user_logging(self, host_out: typing.List[str]):
         self.assertIn('logging info', host_out)
         self.assertIn('logging warning', host_out)
@@ -397,3 +383,26 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
         # System logs should not exist in host_out
         self.assertNotIn('parallelly_log_system at disguised_logger', host_out)
+
+    def test_retry_context_fixed_delay(self):
+        r = self.webhost.request('GET', 'http_retries_fixed_delay')
+        self.assertEqual(r.status_code, 500)
+
+    def check_log_retry_context_fixed_delay(self, host_out: typing.List[str]):
+        self.assertIn('Current retry count: 1', host_out)
+        self.assertIn('Current retry count: 2', host_out)
+        self.assertIn('Current retry count: 3', host_out)
+        self.assertNotIn('Current retry count: 4', host_out)
+        self.assertIn('Max retry count: 3', host_out)
+
+    def test_retry_context_exponential_backoff(self):
+        r = self.webhost.request('GET', 'http_retries_exponential_backoff')
+        self.assertEqual(r.status_code, 500)
+
+    def check_log_retry_context_exponential_backoff(self,
+                                                    host_out: typing.List[str]):
+        self.assertIn('Current retry count: 1', host_out)
+        self.assertIn('Current retry count: 2', host_out)
+        self.assertIn('Current retry count: 3', host_out)
+        self.assertNotIn('Current retry count: 4', host_out)
+        self.assertIn('Max retry count: 3', host_out)

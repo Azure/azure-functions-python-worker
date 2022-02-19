@@ -3,10 +3,11 @@
 #
 # It uses the same pattern rule for gitignore file
 # https://git-scm.com/docs/gitignore#_pattern_format
-#
 
-#
+
+
 # AZURE FUNCTIONS TEAM
-# For all file changes, github would automatically include the following people in the PRs.
-#
-* @anirudhgarg @Hazhzeng @vrdmr @AnatoliB
+# For all file changes, github would automatically
+# include the following people in the PRs.
+
+* @vrdmr @gavin-aguiar @YunchuWang

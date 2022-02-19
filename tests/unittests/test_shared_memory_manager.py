@@ -4,6 +4,9 @@
 import math
 import os
 import json
+import sys
+from unittest import skipIf
+from unittest.mock import patch
 from azure_functions_worker.utils.common import is_envvar_true
 from azure.functions import meta as bind_meta
 from azure_functions_worker import testutils
@@ -15,15 +18,34 @@ from azure_functions_worker.constants \
     import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
 
 
+@skipIf(sys.platform == 'darwin', 'MacOS M1 machines do not correctly test the'
+                                  'shared memory filesystems and thus skipping'
+                                  ' these tests for the time being')
 class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
     """
     Tests for SharedMemoryManager.
     """
+    def setUp(self):
+        env = os.environ.copy()
+        env['FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED'] = "true"
+        self.mock_environ = patch.dict('os.environ', env)
+        self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
+        self.mock_sys_path = patch('sys.path', sys.path.copy())
+        self.mock_environ.start()
+        self.mock_sys_module.start()
+        self.mock_sys_path.start()
+
+    def tearDown(self):
+        self.mock_sys_path.stop()
+        self.mock_sys_module.stop()
+        self.mock_environ.stop()
+
     def test_is_enabled(self):
         """
         Verify that when the AppSetting is enabled, SharedMemoryManager is
         enabled.
         """
+
         # Make sure shared memory data transfer is enabled
         was_shmem_env_true = is_envvar_true(
             FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
@@ -318,6 +340,28 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         self.assertTrue(is_mem_map_found)
         self.assertEqual(1, len(manager.allocated_mem_maps.keys()))
         free_success = manager.free_mem_map(mem_map_name)
+        self.assertTrue(free_success)
+        is_mem_map_found = mem_map_name in manager.allocated_mem_maps
+        self.assertFalse(is_mem_map_found)
+        self.assertEqual(0, len(manager.allocated_mem_maps.keys()))
+
+    def test_do_not_free_resources_on_dispose(self):
+        """
+        Verify that when the allocated shared memory maps are freed,
+        their backing resources are not freed.
+        Note: The shared memory map should no longer be tracked by the
+        SharedMemoryManager, though.
+        """
+        manager = SharedMemoryManager()
+        content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
+        content = self.get_random_bytes(content_size)
+        shared_mem_meta = manager.put_bytes(content)
+        self.assertIsNotNone(shared_mem_meta)
+        mem_map_name = shared_mem_meta.mem_map_name
+        is_mem_map_found = mem_map_name in manager.allocated_mem_maps
+        self.assertTrue(is_mem_map_found)
+        self.assertEqual(1, len(manager.allocated_mem_maps.keys()))
+        free_success = manager.free_mem_map(mem_map_name, False)
         self.assertTrue(free_success)
         is_mem_map_found = mem_map_name in manager.allocated_mem_maps
         self.assertFalse(is_mem_map_found)

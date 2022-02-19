@@ -13,7 +13,7 @@ from ..constants import (
     CONTAINER_NAME,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT,
-    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39
+    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310
 )
 from ..utils.common import is_python_version
 from ..utils.wrappers import enable_feature_by
@@ -76,8 +76,8 @@ class DependencyManager:
     @enable_feature_by(
         flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
         flag_default=(
-            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39 if
-            is_python_version('3.9') else
+            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
+            is_python_version('3.10') else
             PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
         )
     )
@@ -107,8 +107,8 @@ class DependencyManager:
     @enable_feature_by(
         flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
         flag_default=(
-            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39 if
-            is_python_version('3.9') else
+            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
+            is_python_version('3.10') else
             PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
         )
     )
@@ -181,8 +181,8 @@ class DependencyManager:
         use_new_env = os.getenv(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
         if use_new_env is None:
             use_new = (
-                PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_39 if
-                is_python_version('3.9') else
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
+                is_python_version('3.10') else
                 PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
             )
         else:

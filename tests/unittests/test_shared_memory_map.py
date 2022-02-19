@@ -2,7 +2,10 @@
 # Licensed under the MIT License.
 
 import os
+import sys
 import unittest
+from unittest import skipIf
+
 from azure_functions_worker import testutils
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryMap
@@ -12,6 +15,9 @@ from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryException
 
 
+@skipIf(sys.platform == 'darwin', 'MacOS M1 machines do not correctly test the'
+                                  'shared memory filesystems and thus skipping'
+                                  ' these tests for the time being')
 class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
     """
     Tests for SharedMemoryMap.

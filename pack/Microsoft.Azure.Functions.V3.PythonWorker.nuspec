@@ -28,5 +28,7 @@
     <file src="..\3.9_OSX_X64\**" target="tools\3.9\OSX\X64" />
     <file src="..\python\prodV3\worker.config.json" target="tools" />
     <file src="Microsoft.Azure.Functions.PythonWorker.targets" target="build" />
+    <file src="..\_manifest\manifest.json" target="SBOM\manifest.json" />
+    <file src="..\_manifest\spdx_2.2\manifest.spdx.json" target="SBOM\manifest.spdx.json" />
   </files>
 </package>

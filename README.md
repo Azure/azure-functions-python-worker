@@ -14,7 +14,7 @@ What are the supported Python versions?
 |Azure Functions Runtime|Python 3.6|Python 3.7|Python 3.8|Python 3.9|
 |---|---|---|---|---|
 |Azure Functions 2.0|✔|✔|-|-|
-|Azure Functions 3.0|✔|✔|✔|(preview)|
+|Azure Functions 3.0|✔|✔|✔|✔|
 
 What's available?
 
@@ -23,9 +23,6 @@ What's available?
 - Deploy Python Function project in a custom docker image onto dedicated, or elastic premium plan.
 - Triggers / Bindings : HTTP, Blob, Queue, Timer, Cosmos DB, Event Grid, Event Hubs and Service Bus
 - Triggers / Bindings : Custom binding support
-
-What's coming?
-
 - [Durable Functions For Python](https://github.com/Azure/azure-functions-durable-python)
 
 # Get Started

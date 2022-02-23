@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-__version__: str == 'function_app'
+__version__: str = 'function_app'
 
 import os
 # This module should be shadowed from customer_deps_path/common_module

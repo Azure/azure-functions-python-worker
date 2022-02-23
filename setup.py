@@ -79,6 +79,64 @@ NUGET_CONFIG = """\
 """
 
 
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    'Programming Language :: Python',
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS :: MacOS X",
+    "Environment :: Web Environment",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+]
+
+
+PACKAGES = [
+    "azure_functions_worker",
+    "azure_functions_worker.protos",
+    "azure_functions_worker.protos.identity",
+    "azure_functions_worker.protos.shared",
+    "azure_functions_worker.bindings",
+    "azure_functions_worker.bindings.shared_memory_data_transfer",
+    "azure_functions_worker.utils",
+    "azure_functions_worker._thirdparty"
+]
+
+
+INSTALL_REQUIRES = [
+    "grpcio~=1.43.0",
+    "grpcio-tools~=1.43.0",
+    "protobuf~=3.19.3",
+    "azure-functions==1.9.0"
+]
+
+
+EXTRA_REQUIRES = {
+    "dev": [
+        "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
+        "python-dateutil~=2.8.2",
+        "pycryptodome~=3.10.1",
+        "flake8~=4.0.1",
+        "mypy",
+        "pytest",
+        "requests==2.*",
+        "coverage",
+        "pytest-sugar",
+        "pytest-cov",
+        "pytest-xdist",
+        "pytest-randomly",
+        "pytest-instafail",
+        "pytest-rerunfailures",
+        "ptvsd"
+    ]
+}
+
+
 class BuildGRPC:
     """Generate gRPC bindings."""
     def _gen_grpc(self):
@@ -353,6 +411,12 @@ class webhost(distutils.cmd.Command):
 with open("README.md") as readme:
     long_description = readme.read()
 
+COMMAND_CLASS = {
+    'develop': develop,
+    'build': build,
+    'webhost': webhost,
+    'extension': extension
+}
 
 setup(
     name='azure-functions-worker',
@@ -364,59 +428,12 @@ setup(
     url="https://github.com/Azure/azure-functions-python-worker",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'License :: OSI Approved :: MIT License',
-        'Intended Audience :: Developers',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Operating System :: Microsoft :: Windows',
-        'Operating System :: POSIX',
-        'Operating System :: MacOS :: MacOS X',
-        'Environment :: Web Environment',
-    ],
+    classifiers=CLASSIFIERS,
     license='MIT',
-    packages=['azure_functions_worker',
-              'azure_functions_worker.protos',
-              'azure_functions_worker.protos.identity',
-              'azure_functions_worker.protos.shared',
-              'azure_functions_worker.bindings',
-              'azure_functions_worker.bindings.shared_memory_data_transfer',
-              'azure_functions_worker.utils',
-              'azure_functions_worker._thirdparty'],
-    install_requires=[
-        'grpcio~=1.33.2',
-        'grpcio-tools~=1.33.2',
-    ],
-    extras_require={
-        'dev': [
-            'azure-functions==1.8.0',
-            'azure-eventhub~=5.1.0',
-            'python-dateutil~=2.8.1',
-            'pycryptodome~=3.10.1',
-            'flake8~=3.7.9',
-            'mypy',
-            'pytest',
-            'requests==2.*',
-            'coverage',
-            'pytest-sugar',
-            'pytest-cov',
-            'pytest-xdist',
-            'pytest-randomly',
-            'pytest-instafail',
-            'pytest-rerunfailures',
-            'ptvsd'
-        ]
-    },
+    packages=PACKAGES,
+    install_requires=INSTALL_REQUIRES,
+    extras_require=EXTRA_REQUIRES,
     include_package_data=True,
-    cmdclass={
-        'develop': develop,
-        'build': build,
-        'webhost': webhost,
-        'extension': extension
-    },
+    cmdclass=COMMAND_CLASS,
     test_suite='tests'
 )

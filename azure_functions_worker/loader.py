@@ -4,6 +4,7 @@
 import importlib
 import importlib.machinery
 import importlib.util
+import logging
 import os
 import os.path
 import pathlib
@@ -114,11 +115,11 @@ def index_function_app(directory: str) -> typing.List[Function]:
             if not app:
                 app = getattr(imported_module, i, None)
             else:
-                raise ValueError("Multiple Apps defined")
+                raise ValueError(
+                    "Multiple instances of FunctionsApp are defined")
 
-    if app:
-        all_functions = app.get_functions()
-    else:
-        raise ValueError("No Apps defined")
+    if not app:
+        raise ValueError("Could not find instance of FunctionsApp in "
+                         f"{SCRIPT_FILE_NAME}.")
 
-    return all_functions
+    return app.get_functions()

@@ -51,6 +51,32 @@ class Registry:
         return None
 
     @staticmethod
+    def get_explicit_and_implicit_return(binding_name: str,
+                                         binding_type: str):
+        explicit_return = binding_name == '$return'
+        implicit_return = False
+        if not explicit_return:
+            implicit_return = bindings_utils.has_implicit_output(
+                binding_type)
+        return explicit_return, implicit_return
+
+    @staticmethod
+    def get_bound_params_and_return_binding(explicit_binding: bool,
+                                            implicit_binding: bool,
+                                            bound_params: dict,
+                                            binding):
+        return_binding_name: str = None
+        if explicit_binding:
+            return_binding_name = binding.type
+        elif implicit_binding:
+            bound_params[binding.name] = binding
+            return_binding_name = binding.type
+        else:
+            bound_params[binding.name] = binding
+
+        return return_binding_name
+
+    @staticmethod
     def validate_binding_direction(binding_name: str,
                                    binding_direction: str,
                                    func_name: str):
@@ -248,6 +274,31 @@ class Registry:
 
         return return_type
 
+    def add_func_to_registry_an_return_funcinfo(self, function,
+                                                function_name: str,
+                                                function_id: str,
+                                                directory: str,
+                                                requires_context: bool,
+                                                has_explicit_return: bool,
+                                                has_implicit_return: bool,
+                                                input_types,
+                                                output_types,
+                                                return_type):
+
+        function_info = FunctionInfo(
+            func=function,
+            name=function_name,
+            directory=directory,
+            requires_context=requires_context,
+            is_async=inspect.iscoroutinefunction(function),
+            has_return=has_explicit_return or has_implicit_return,
+            input_types=input_types,
+            output_types=output_types,
+            return_type=return_type)
+
+        self._functions[function_id] = function_info
+        return function_info
+
     def add_function(self, function_id: str,
                      func: typing.Callable,
                      metadata: protos.RpcFunctionMetadata):
@@ -265,19 +316,14 @@ class Registry:
             self.validate_binding_direction(binding_name,
                                             binding_info.direction, func_name)
 
-            if binding_name == '$return':
-                return_binding_name = binding_info.type
-                has_explicit_return = True
-                assert binding_name is not None
-            elif bindings_utils.has_implicit_output(binding_info.type):
-                # If the binding specify implicit output binding
-                # (e.g. orchestrationTrigger, activityTrigger)
-                # we should enable output even if $return is not specified
-                return_binding_name = binding_info.type
-                has_implicit_return = True
-                bound_params[binding_name] = binding_info
-            else:
-                bound_params[binding_name] = binding_info
+            has_explicit_return, has_implicit_return = \
+                self.get_explicit_and_implicit_return(
+                    binding_name, binding_info.type)
+
+            return_binding_name = \
+                self.get_bound_params_and_return_binding(
+                    has_explicit_return, has_implicit_return, bound_params,
+                    binding_info)
 
         requires_context = self.is_context_required(params, bound_params,
                                                     annotations,
@@ -295,16 +341,14 @@ class Registry:
                                                       return_binding_name,
                                                       func_name)
 
-        self._functions[function_id] = FunctionInfo(
-            func=func,
-            name=func_name,
-            directory=metadata.directory,
-            requires_context=requires_context,
-            is_async=inspect.iscoroutinefunction(func),
-            has_return=has_explicit_return or has_implicit_return,
-            input_types=input_types,
-            output_types=output_types,
-            return_type=return_type)
+        self.add_func_to_registry_an_return_funcinfo(func, func_name,
+                                                     function_id,
+                                                     metadata.directory,
+                                                     requires_context,
+                                                     has_explicit_return,
+                                                     has_implicit_return,
+                                                     input_types,
+                                                     output_types, return_type)
 
     def add_indexed_function(self, function_id: str,
                              function: Function):
@@ -326,20 +370,14 @@ class Registry:
                                             binding.direction,
                                             func_name)
 
-            if binding.name == '$return':
-                has_explicit_return = True
-                return_binding_name = binding.type
-                assert return_binding_name is not None
+            has_explicit_return, has_implicit_return = \
+                self.get_explicit_and_implicit_return(
+                    binding.name, binding.type)
 
-            elif bindings_utils.has_implicit_output(binding.type):
-                # If the binding specify implicit output binding
-                # (e.g. orchestrationTrigger, activityTrigger)
-                # we should enable output even if $return is not specified
-                has_implicit_return = True
-                return_binding_name = binding.type
-                bound_params[binding.name] = binding
-            else:
-                bound_params[binding.name] = binding
+            return_binding_name = \
+                self.get_bound_params_and_return_binding(
+                    has_explicit_return, has_implicit_return, bound_params,
+                    binding)
 
         requires_context = self.is_context_required(params, bound_params,
                                                     annotations,
@@ -357,17 +395,12 @@ class Registry:
                                                       return_binding_name,
                                                       func_name)
 
-        function_info = FunctionInfo(
-            func=func,
-            name=func_name,
-            directory=func_dir,
-            requires_context=requires_context,
-            is_async=inspect.iscoroutinefunction(func),
-            has_return=has_explicit_return,
-            # has_explicit_return or has_implicit_return,
-            input_types=input_types,
-            output_types=output_types,
-            return_type=return_type)
-
-        self._functions[function_id] = function_info
-        return function_info
+        return self.add_func_to_registry_an_return_funcinfo(func, func_name,
+                                                            function_id,
+                                                            func_dir,
+                                                            requires_context,
+                                                            has_explicit_return,
+                                                            has_implicit_return,
+                                                            input_types,
+                                                            output_types,
+                                                            return_type)

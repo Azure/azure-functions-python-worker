@@ -19,6 +19,7 @@ from logging import LogRecord
 from typing import List, Optional
 
 import grpc
+from azure.functions import Function
 
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
@@ -257,13 +258,13 @@ class Dispatcher(metaclass=DispatcherMeta):
         resp = await request_handler(request)
         self._grpc_resp_queue.put_nowait(resp)
 
-    async def _handle__worker_init_request(self, req):
+    async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, worker version %s, request ID %s',
                     sys.version, VERSION, self.request_id)
         enable_debug_logging_recommendation()
 
-        worker_init_request = req.worker_init_request
+        worker_init_request = request.worker_init_request
         host_capabilities = worker_init_request.capabilities
         if constants.FUNCTION_DATA_CACHE in host_capabilities:
             val = host_capabilities[constants.FUNCTION_DATA_CACHE]
@@ -302,47 +303,29 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__functions_metadata_request(self, request):
         metadata_request = request.functions_metadata_request
         directory = metadata_request.function_app_directory
-        indexed_functions = loader.index_function_app(directory)
 
-        fx_metadata_results = []
-        for indexed_function in indexed_functions:
-            function_id = str(uuid.uuid4())
-            function_info = self._functions.add_indexed_function(
-                function_id,
-                function=indexed_function)
+        try:
+            indexed_functions = loader.index_function_app(directory)
+            fx_metadata_results = self._process_indexed_function(
+                indexed_functions)
 
-            binding_protos = {}
-            for binding in indexed_function.get_bindings():
-                binding_protos[binding.name] = protos.BindingInfo(
-                    type=binding.type,
-                    data_type=binding.data_type,
-                    direction=binding.direction)
+            return protos.StreamingMessage(
+                request_id=request.request_id,
+                function_metadata_response=protos.FunctionMetadataResponse(
+                    function_metadata_results=fx_metadata_results,
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Success)))
 
-            function_load_request = protos.RpcFunctionMetadata(
-                name=function_info.name,
-                function_id=function_id,
-                managed_dependency_enabled=False,
-                directory=function_info.directory,
-                script_file=indexed_function.function_script_file,
-                entry_point=function_info.name,
-                is_proxy=False,
-                language="python",
-                bindings=binding_protos,
-                raw_bindings=[json.dumps(i) for i in
-                              indexed_function.get_bindings_dict()[
-                                  "bindings"]])
+        except Exception as ex:
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                function_metadata_response=protos.FunctionMetadataResponse(
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Failure,
+                        exception=self._serialize_exception(ex))))
 
-            fx_metadata_results.append(function_load_request)
-
-        return protos.StreamingMessage(
-            request_id=request.request_id,
-            function_metadata_response=protos.FunctionMetadataResponse(
-                function_metadata_results=fx_metadata_results,
-                result=protos.StatusResult(
-                    status=protos.StatusResult.Success)))
-
-    async def _handle__function_load_request(self, req):
-        func_request = req.function_load_request
+    async def _handle__function_load_request(self, request):
+        func_request = request.function_load_request
         function_id = func_request.function_id
         function_name = func_request.metadata.name
 
@@ -370,6 +353,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                             f'request ID: {self.request_id}, '
                             f'function ID: {function_id},'
                             f'function Name: {function_name}')
+            else:
+                logger.info(
+                    f"Function {function_name} already exists in the registry")
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -387,8 +373,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Failure,
                         exception=self._serialize_exception(ex))))
 
-    async def _handle__invocation_request(self, req):
-        invoc_request = req.invocation_request
+    async def _handle__invocation_request(self, request):
+        invoc_request = request.invocation_request
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
 
@@ -497,7 +483,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Failure,
                         exception=self._serialize_exception(ex))))
 
-    async def _handle__function_environment_reload_request(self, req):
+    async def _handle__function_environment_reload_request(self, request):
         """Only runs on Linux Consumption placeholder specialization.
         """
         try:
@@ -505,7 +491,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         'request ID: %s', self.request_id)
             enable_debug_logging_recommendation()
 
-            func_env_reload_request = req.function_environment_reload_request
+            func_env_reload_request = request.function_environment_reload_request
 
             # Import before clearing path cache so that the default
             # azure.functions modules is available in sys.modules for
@@ -564,7 +550,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
 
-    async def _handle__close_shared_memory_resources_request(self, req):
+    async def _handle__close_shared_memory_resources_request(self, request):
         """
         Frees any memory maps that were produced as output for a given
         invocation.
@@ -575,7 +561,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         If the cache is not enabled, the worker should free the resources as at
         this point the host has read the memory maps and does not need them.
         """
-        close_request = req.close_shared_memory_resources_request
+        close_request = request.close_shared_memory_resources_request
         map_names = close_request.map_names
         # Assign default value of False to all result values.
         # If we are successfully able to close a memory map, its result will be
@@ -740,6 +726,51 @@ class Dispatcher(metaclass=DispatcherMeta):
                 return
             error_logger.exception('unhandled error in gRPC thread')
             raise
+
+    def _process_indexed_function(self, indexed_functions: List[Function]):
+        fx_metadata_results = []
+        for indexed_function in indexed_functions:
+            function_id = str(uuid.uuid4())
+            function_info = self._functions.add_indexed_function(
+                function_id,
+                function=indexed_function)
+
+            binding_protos = {}
+            for binding in indexed_function.get_bindings():
+                binding_protos[binding.name] = protos.BindingInfo(
+                    type=binding.type,
+                    data_type=binding.data_type,
+                    direction=binding.direction)
+
+            function_load_request = protos.RpcFunctionMetadata(
+                name=function_info.name,
+                function_id=function_id,
+                managed_dependency_enabled=False,
+                directory=function_info.directory,
+                script_file=indexed_function.function_script_file,
+                entry_point=function_info.name,
+                is_proxy=False,
+                language="python",
+                bindings=binding_protos,
+                raw_bindings=[json.dumps(i) for i in
+                              indexed_function.get_bindings_dict()[
+                                  "bindings"]])
+
+            fx_metadata_results.append(function_load_request)
+
+        indexed_function_logs: List[str] = []
+        for function in indexed_functions:
+            function_log = \
+                f"Function Name: {function.get_function_name()} " \
+                f"Function Binding: " \
+                f"{[binding.name for binding in function.get_bindings()]}"
+            indexed_function_logs.append(function_log)
+
+        logger.info(
+            f'Successfully processed FunctionMetadataRequest for functions: '
+            f'{" ".join(indexed_function_logs)}')
+
+        return fx_metadata_results
 
 
 class AsyncLoggingHandler(logging.Handler):

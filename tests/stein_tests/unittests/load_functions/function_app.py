@@ -3,6 +3,7 @@
 import azure.functions as func
 
 app = func.FunctionsApp(auth_level=func.AuthLevel.ANONYMOUS)
+app1 = func.FunctionsApp(auth_level=func.AuthLevel.ANONYMOUS)
 
 
 @app.function_name(name="simple")

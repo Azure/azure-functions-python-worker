@@ -7,7 +7,6 @@ Implements loading and execution of Python workers.
 
 import asyncio
 import concurrent.futures
-import json
 import logging
 import os
 import queue
@@ -27,7 +26,8 @@ from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING)
+                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME,
+                        PYTHON_LANGUAGE_RUNTIME)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import enable_debug_logging_recommendation
@@ -303,11 +303,23 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__functions_metadata_request(self, request):
         metadata_request = request.functions_metadata_request
         directory = metadata_request.function_app_directory
+        function_path = os.path.join(directory, SCRIPT_FILE_NAME)
+
+        if not os.path.exists(function_path):
+            # Fallback to legacy model
+            return protos.StreamingMessage(
+                request_id=request.request_id,
+                function_metadata_response=protos.FunctionMetadataResponse(
+                    use_default_metadata_indexing=True,
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Success)))
 
         try:
-            indexed_functions = loader.index_function_app(directory)
-            fx_metadata_results = self._process_indexed_function(
-                indexed_functions)
+            fx_metadata_results = []
+            indexed_functions = loader.index_function_app(function_path)
+            if indexed_functions:
+                fx_metadata_results = self._process_indexed_function(
+                    indexed_functions)
 
             return protos.StreamingMessage(
                 request_id=request.request_id,
@@ -355,7 +367,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                             f'function Name: {function_name}')
             else:
                 logger.info(
-                    f"Function {function_name} already exists in the registry")
+                    f"Function: {function_name} with FunctionId: {function_id} "
+                    f"already exists in the registry")
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -491,7 +504,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                         'request ID: %s', self.request_id)
             enable_debug_logging_recommendation()
 
-            func_env_reload_request = request.function_environment_reload_request
+            func_env_reload_request = \
+                request.function_environment_reload_request
 
             # Import before clearing path cache so that the default
             # azure.functions modules is available in sys.modules for
@@ -742,7 +756,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     data_type=binding.data_type,
                     direction=binding.direction)
 
-            function_load_request = protos.RpcFunctionMetadata(
+            function_metadata = protos.RpcFunctionMetadata(
                 name=function_info.name,
                 function_id=function_id,
                 managed_dependency_enabled=False,
@@ -750,13 +764,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                 script_file=indexed_function.function_script_file,
                 entry_point=function_info.name,
                 is_proxy=False,
-                language="python",
+                language=PYTHON_LANGUAGE_RUNTIME,
                 bindings=binding_protos,
-                raw_bindings=[json.dumps(i) for i in
-                              indexed_function.get_bindings_dict()[
-                                  "bindings"]])
+                raw_bindings=indexed_function.get_raw_bindings())
 
-            fx_metadata_results.append(function_load_request)
+            fx_metadata_results.append(function_metadata)
 
         indexed_function_logs: List[str] = []
         for function in indexed_functions:

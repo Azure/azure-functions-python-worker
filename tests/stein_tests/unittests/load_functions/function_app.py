@@ -2,8 +2,8 @@
 # Licensed under the MIT License.
 import azure.functions as func
 
-app = func.FunctionsApp(auth_level=func.AuthLevel.ANONYMOUS)
-app1 = func.FunctionsApp(auth_level=func.AuthLevel.ANONYMOUS)
+app = func.FunctionApp(auth_level=func.AuthLevel.ANONYMOUS)
+app1 = func.FunctionApp(auth_level=func.AuthLevel.ANONYMOUS)
 
 
 @app.function_name(name="simple")

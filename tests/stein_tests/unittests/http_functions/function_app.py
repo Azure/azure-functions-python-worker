@@ -10,7 +10,7 @@ from urllib.request import urlopen
 
 import azure.functions as func
 
-app = func.FunctionsApp(auth_level=func.AuthLevel.ANONYMOUS)
+app = func.FunctionApp(auth_level=func.AuthLevel.ANONYMOUS)
 
 logger = logging.getLogger("my-function")
 

@@ -55,16 +55,17 @@ class Registry:
                                          binding_type: str):
         explicit_return = binding_name == '$return'
         implicit_return = False
-        if not explicit_return:
-            implicit_return = bindings_utils.has_implicit_output(
-                binding_type)
+        if not explicit_return and bindings_utils.has_implicit_output(
+                binding_type):
+            implicit_return = True
         return explicit_return, implicit_return
 
     @staticmethod
     def get_bound_params_and_return_binding(explicit_binding: bool,
                                             implicit_binding: bool,
                                             bound_params: dict,
-                                            binding):
+                                            binding_name: str,
+                                            binding) -> str:
         return_binding_name: str = None
         if explicit_binding:
             return_binding_name = binding.type
@@ -72,7 +73,7 @@ class Registry:
             bound_params[binding.name] = binding
             return_binding_name = binding.type
         else:
-            bound_params[binding.name] = binding
+            bound_params[binding_name] = binding
 
         return return_binding_name
 
@@ -235,9 +236,9 @@ class Registry:
         return input_types, output_types
 
     @staticmethod
-    def validate_annotations_and_return_type(annotations, has_explicit_return,
-                                             has_implicit_return, binding_name,
-                                             func_name: str):
+    def get_function_return_type(annotations, has_explicit_return,
+                                 has_implicit_return, binding_name,
+                                 func_name: str):
         return_pytype = None
         if has_explicit_return and 'return' in annotations:
             return_anno = annotations.get('return')
@@ -274,16 +275,16 @@ class Registry:
 
         return return_type
 
-    def add_func_to_registry_an_return_funcinfo(self, function,
-                                                function_name: str,
-                                                function_id: str,
-                                                directory: str,
-                                                requires_context: bool,
-                                                has_explicit_return: bool,
-                                                has_implicit_return: bool,
-                                                input_types,
-                                                output_types,
-                                                return_type):
+    def add_func_to_registry_and_return_funcinfo(self, function,
+                                                 function_name: str,
+                                                 function_id: str,
+                                                 directory: str,
+                                                 requires_context: bool,
+                                                 has_explicit_return: bool,
+                                                 has_implicit_return: bool,
+                                                 input_types,
+                                                 output_types,
+                                                 return_type):
 
         function_info = FunctionInfo(
             func=function,
@@ -311,7 +312,7 @@ class Registry:
         has_implicit_return = False
 
         bound_params = {}
-        for binding_name, binding_info in func.metadata.bindings.items():
+        for binding_name, binding_info in metadata.bindings.items():
 
             self.validate_binding_direction(binding_name,
                                             binding_info.direction, func_name)
@@ -323,7 +324,7 @@ class Registry:
             return_binding_name = \
                 self.get_bound_params_and_return_binding(
                     has_explicit_return, has_implicit_return, bound_params,
-                    binding_info)
+                    binding_name, binding_info)
 
         requires_context = self.is_context_required(params, bound_params,
                                                     annotations,
@@ -335,20 +336,20 @@ class Registry:
                                                                   func_name)
 
         return_type = \
-            self.validate_annotations_and_return_type(annotations,
+            self.get_function_return_type(annotations,
+                                          has_explicit_return,
+                                          has_implicit_return,
+                                          return_binding_name,
+                                          func_name)
+
+        self.add_func_to_registry_and_return_funcinfo(func, func_name,
+                                                      function_id,
+                                                      metadata.directory,
+                                                      requires_context,
                                                       has_explicit_return,
                                                       has_implicit_return,
-                                                      return_binding_name,
-                                                      func_name)
-
-        self.add_func_to_registry_an_return_funcinfo(func, func_name,
-                                                     function_id,
-                                                     metadata.directory,
-                                                     requires_context,
-                                                     has_explicit_return,
-                                                     has_implicit_return,
-                                                     input_types,
-                                                     output_types, return_type)
+                                                      input_types,
+                                                      output_types, return_type)
 
     def add_indexed_function(self, function_id: str,
                              function: Function):
@@ -377,7 +378,7 @@ class Registry:
             return_binding_name = \
                 self.get_bound_params_and_return_binding(
                     has_explicit_return, has_implicit_return, bound_params,
-                    binding)
+                    binding.name, binding)
 
         requires_context = self.is_context_required(params, bound_params,
                                                     annotations,
@@ -389,18 +390,19 @@ class Registry:
                                                                   func_name)
 
         return_type = \
-            self.validate_annotations_and_return_type(annotations,
-                                                      has_explicit_return,
-                                                      has_implicit_return,
-                                                      return_binding_name,
-                                                      func_name)
+            self.get_function_return_type(annotations,
+                                          has_explicit_return,
+                                          has_implicit_return,
+                                          return_binding_name,
+                                          func_name)
 
-        return self.add_func_to_registry_an_return_funcinfo(func, func_name,
-                                                            function_id,
-                                                            func_dir,
-                                                            requires_context,
-                                                            has_explicit_return,
-                                                            has_implicit_return,
-                                                            input_types,
-                                                            output_types,
-                                                            return_type)
+        return \
+            self.add_func_to_registry_and_return_funcinfo(func, func_name,
+                                                          function_id,
+                                                          func_dir,
+                                                          requires_context,
+                                                          has_explicit_return,
+                                                          has_implicit_return,
+                                                          input_types,
+                                                          output_types,
+                                                          return_type)

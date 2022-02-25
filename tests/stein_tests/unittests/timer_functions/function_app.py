@@ -5,7 +5,7 @@ import logging
 
 import azure.functions as func
 
-app = func.FunctionsApp()
+app = func.FunctionApp()
 
 
 @app.schedule(schedule="*/5 * * * * *", arg_name="timer", run_on_startup=False,

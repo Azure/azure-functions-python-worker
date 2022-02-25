@@ -4,7 +4,6 @@
 import importlib
 import importlib.machinery
 import importlib.util
-import logging
 import os
 import os.path
 import pathlib
@@ -12,11 +11,10 @@ import sys
 import typing
 from os import PathLike, fspath
 
-from azure.functions import FunctionsApp
+from azure.functions import FunctionApp
 from azure.functions.decorators import Function
-from azure.functions.decorators.core import SCRIPT_FILE_NAME
 
-from .constants import MODULE_NOT_FOUND_TS_URL
+from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME
 from .utils.wrappers import attach_message_to_exception
 
 _AZURE_NAMESPACE = '__app__'
@@ -100,26 +98,21 @@ def load_function(name: str, directory: str, script_file: str,
     expt_type=ImportError,
     message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
 )
-def index_function_app(directory: str) -> typing.List[Function]:
-    function_path = os.path.join(directory, SCRIPT_FILE_NAME)
-
-    if not os.path.exists(function_path):
-        raise IOError(f"{SCRIPT_FILE_NAME} not found in the function app")
-
+def index_function_app(function_path: str) -> typing.List[Function]:
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)
 
-    app: typing.Optional[FunctionsApp] = None
+    app: typing.Optional[FunctionApp] = None
     for i in imported_module.__dir__():
-        if isinstance(getattr(imported_module, i, None), FunctionsApp):
+        if isinstance(getattr(imported_module, i, None), FunctionApp):
             if not app:
                 app = getattr(imported_module, i, None)
             else:
                 raise ValueError(
-                    "Multiple instances of FunctionsApp are defined")
+                    "Multiple instances of FunctionApp are defined")
 
     if not app:
-        raise ValueError("Could not find instance of FunctionsApp in "
+        raise ValueError("Could not find instance of FunctionApp in "
                          f"{SCRIPT_FILE_NAME}.")
 
     return app.get_functions()

@@ -1,6 +1,3 @@
-import os
-from unittest.mock import patch
-
 from tests.stein_tests import testutils
 from tests.stein_tests.constants import UNIT_TESTS_ROOT
 

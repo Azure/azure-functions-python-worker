@@ -899,11 +899,7 @@ def start_webhost(*, script_dir=None, stdout=None):
 
     addr = f'http://{LOCALHOST}:{port}'
     health_check_endpoint = f'{addr}/api/ping'
-    host_out = ""
-    if stdout is not None and hasattr(stdout,
-                                      "readable") and stdout.readable():
-        host_out = stdout.readlines(100)
-
+    host_out = stdout.readlines(100)
     for _ in range(5):
         try:
             r = requests.get(health_check_endpoint,

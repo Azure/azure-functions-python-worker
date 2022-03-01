@@ -52,10 +52,13 @@ class Registry:
 
     @staticmethod
     def get_explicit_and_implicit_return(binding_name: str,
-                                         binding_type: str):
-        explicit_return = binding_name == '$return'
-        implicit_return = False
-        if not explicit_return and bindings_utils.has_implicit_output(
+                                         binding_type: str,
+                                         explicit_return: bool,
+                                         implicit_return: bool) -> \
+            typing.Tuple[bool, bool]:
+        if binding_name == '$return':
+            explicit_return = True
+        elif bindings_utils.has_implicit_output(
                 binding_type):
             implicit_return = True
         return explicit_return, implicit_return
@@ -94,7 +97,7 @@ class Registry:
 
     @staticmethod
     def is_context_required(params, bound_params: dict,
-                            annotations,
+                            annotations: dict,
                             func_name: str) -> bool:
         requires_context = False
         if 'context' in params and 'context' not in bound_params:
@@ -112,7 +115,8 @@ class Registry:
         return requires_context
 
     @staticmethod
-    def validate_function_params(params, bound_params, annotations, func_name):
+    def validate_function_params(params: dict,  bound_params: dict,
+                                 annotations: dict, func_name: str):
         if set(params) - set(bound_params):
             raise FunctionLoadError(
                 func_name,
@@ -139,18 +143,18 @@ class Registry:
                     param_anno_origin = typing_inspect.get_origin(param_anno)
                     if param_anno_origin is not None:
                         is_param_out = (
-                            isinstance(param_anno_origin, type)
-                            and param_anno_origin.__name__ == 'Out'
+                                isinstance(param_anno_origin, type)
+                                and param_anno_origin.__name__ == 'Out'
                         )
                     else:
                         is_param_out = (
-                            isinstance(param_anno, type)
-                            and param_anno.__name__ == 'Out'
+                                isinstance(param_anno, type)
+                                and param_anno.__name__ == 'Out'
                         )
                 else:
                     is_param_out = (
-                        isinstance(param_anno, type)
-                        and param_anno.__name__ == 'Out'
+                            isinstance(param_anno, type)
+                            and param_anno.__name__ == 'Out'
                     )
             else:
                 is_param_out = False
@@ -313,13 +317,13 @@ class Registry:
 
         bound_params = {}
         for binding_name, binding_info in metadata.bindings.items():
-
             self.validate_binding_direction(binding_name,
                                             binding_info.direction, func_name)
 
             has_explicit_return, has_implicit_return = \
                 self.get_explicit_and_implicit_return(
-                    binding_name, binding_info.type)
+                    binding_name, binding_info.type, has_explicit_return,
+                    has_explicit_return)
 
             return_binding_name = \
                 self.get_bound_params_and_return_binding(
@@ -366,14 +370,14 @@ class Registry:
 
         bound_params = {}
         for binding in function.get_bindings():
-
             self.validate_binding_direction(binding.name,
                                             binding.direction,
                                             func_name)
 
             has_explicit_return, has_implicit_return = \
                 self.get_explicit_and_implicit_return(
-                    binding.name, binding.type)
+                    binding.name, binding.type, has_explicit_return,
+                    has_implicit_return)
 
             return_binding_name = \
                 self.get_bound_params_and_return_binding(

@@ -10,6 +10,7 @@ from azure.functions.decorators import Function, DataType
 from . import bindings as bindings_utils
 from . import protos
 from ._thirdparty import typing_inspect
+from .protos import BindingInfo
 
 
 class ParamTypeInfo(typing.NamedTuple):
@@ -52,31 +53,30 @@ class Registry:
 
     @staticmethod
     def get_explicit_and_implicit_return(binding_name: str,
-                                         binding_type: str,
+                                         binding: BindingInfo,
                                          explicit_return: bool,
-                                         implicit_return: bool) -> \
+                                         implicit_return: bool,
+                                         bound_params: dict) -> \
             typing.Tuple[bool, bool]:
         if binding_name == '$return':
             explicit_return = True
         elif bindings_utils.has_implicit_output(
-                binding_type):
+                binding.type):
             implicit_return = True
+            bound_params[binding_name] = binding
+        else:
+            bound_params[binding_name] = binding
         return explicit_return, implicit_return
 
     @staticmethod
-    def get_bound_params_and_return_binding(explicit_binding: bool,
-                                            implicit_binding: bool,
-                                            bound_params: dict,
-                                            binding_name: str,
-                                            binding) -> str:
-        return_binding_name: str = None
-        if explicit_binding:
-            return_binding_name = binding.type
-        elif implicit_binding:
-            bound_params[binding.name] = binding
-            return_binding_name = binding.type
-        else:
-            bound_params[binding_name] = binding
+    def get_return_binding(binding_name: str,
+                           binding_type: str,
+                           return_binding_name: str) -> str:
+        if binding_name == "$return":
+            return_binding_name = binding_type
+            assert return_binding_name is not None
+        elif bindings_utils.has_implicit_output(binding_type):
+            return_binding_name = binding_type
 
         return return_binding_name
 
@@ -322,13 +322,12 @@ class Registry:
 
             has_explicit_return, has_implicit_return = \
                 self.get_explicit_and_implicit_return(
-                    binding_name, binding_info.type, has_explicit_return,
-                    has_explicit_return)
+                    binding_name, binding_info, has_explicit_return,
+                    has_explicit_return, bound_params)
 
-            return_binding_name = \
-                self.get_bound_params_and_return_binding(
-                    has_explicit_return, has_implicit_return, bound_params,
-                    binding_name, binding_info)
+            return_binding_name = self.get_return_binding(binding_name,
+                                                          binding_info.type,
+                                                          return_binding_name)
 
         requires_context = self.is_context_required(params, bound_params,
                                                     annotations,
@@ -376,13 +375,12 @@ class Registry:
 
             has_explicit_return, has_implicit_return = \
                 self.get_explicit_and_implicit_return(
-                    binding.name, binding.type, has_explicit_return,
-                    has_implicit_return)
+                    binding.name, binding, has_explicit_return,
+                    has_implicit_return, bound_params)
 
-            return_binding_name = \
-                self.get_bound_params_and_return_binding(
-                    has_explicit_return, has_implicit_return, bound_params,
-                    binding.name, binding)
+            return_binding_name = self.get_return_binding(binding.name,
+                                                          binding.type,
+                                                          return_binding_name)
 
         requires_context = self.is_context_required(params, bound_params,
                                                     annotations,

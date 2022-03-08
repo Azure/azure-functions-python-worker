@@ -25,6 +25,7 @@ from azure_functions_worker.version import VERSION
 # The GitHub repository of the Azure Functions Host
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
 WEBHOST_TAG_PREFIX = "v4."
+WEBHOST_GIT_REPO = "https://github.com/Azure/azure-functions-host/archive"
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = """\
@@ -56,7 +57,6 @@ AZURE_EXTENSIONS = """\
 </Project>
 """
 
-
 NUGET_CONFIG = """\
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
@@ -75,7 +75,6 @@ NUGET_CONFIG = """\
 </configuration>
 """
 
-
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     'Programming Language :: Python',
@@ -91,7 +90,6 @@ CLASSIFIERS = [
     "Intended Audience :: Developers",
 ]
 
-
 PACKAGES = [
     "azure_functions_worker",
     "azure_functions_worker.protos",
@@ -103,14 +101,12 @@ PACKAGES = [
     "azure_functions_worker._thirdparty"
 ]
 
-
 INSTALL_REQUIRES = [
     "grpcio~=1.43.0",
     "grpcio-tools~=1.43.0",
     "protobuf~=3.19.3",
     "azure-functions==1.9.0"
 ]
-
 
 EXTRA_REQUIRES = {
     "dev": [
@@ -135,6 +131,7 @@ EXTRA_REQUIRES = {
 
 class BuildGRPC:
     """Generate gRPC bindings."""
+
     def _gen_grpc(self):
         root = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 
@@ -276,18 +273,19 @@ class Webhost(distutils.cmd.Command):
     description = 'Download and setup Azure Functions Web Host.'
     user_options = [
         ('webhost-version=', None,
-            'A Functions Host version to be downloaded (e.g. 3.0.15278).'),
+         'A Functions Host version to be downloaded (e.g. 3.0.15278).'),
         ('webhost-dir=', None,
-            'A path to the directory where Azure Web Host will be installed.'),
-        ('use-branch=', None,
-            'A branch from where azure-functions-host will be installed')
+         'A path to the directory where Azure Web Host will be installed.'),
+        ('branch-name=', None,
+         'A branch from where azure-functions-host will be installed '
+         '(e.g. branch-name=dev, branch-name= abc/branchname)')
     ]
 
     def __init__(self, dist: Distribution):
         super().__init__(dist)
         self.webhost_dir = None
         self.webhost_version = None
-        self.use_branch = None
+        self.branch_name = None
 
     def initialize_options(self):
         pass
@@ -322,13 +320,11 @@ class Webhost(distutils.cmd.Command):
 
         if branch is not None:
             zip_url = (
-                'https://github.com/Azure/azure-functions-host/archive/'
-                f'refs/heads/{branch}.zip'
+                f'{WEBHOST_GIT_REPO}/refs/heads/{branch}.zip'
             )
         else:
             zip_url = (
-                'https://github.com/Azure/azure-functions-host/archive/'
-                f'v{version}.zip'
+                f'{WEBHOST_GIT_REPO}/v{version}.zip'
             )
 
         print(f'Downloading Functions Host from {zip_url}')
@@ -422,9 +418,9 @@ class Webhost(distutils.cmd.Command):
     def run(self):
         # Prepare webhost
         zip_path = self._download_webhost_zip(self.webhost_version,
-                                              self.use_branch)
+                                              self.branch_name)
         self._create_webhost_folder(self.webhost_dir)
-        version = self.use_branch or self.webhost_version
+        version = self.branch_name or self.webhost_version
         self._extract_webhost_zip(version=version.replace('/', '-'),
                                   src_zip=zip_path,
                                   dest=self.webhost_dir)
@@ -453,19 +449,21 @@ class Clean(distutils.cmd.Command):
             dir_delete = pathlib.Path(dir_to_delete)
             if dir_delete.exists():
                 try:
+                    print(f"Deleting directory: {dir_to_delete}")
                     shutil.rmtree(dir_delete)
-                except:
-                    print('Error deleting directory')
+                except OSError as ex:
+                    print(f"Error deleting directory: {dir_to_delete}. "
+                          f"Exception: {ex}")
 
 
 COMMAND_CLASS = {
     'develop': Development,
     'build': BuildProtos,
     'webhost': Webhost,
+    'webhost --branch-name={branch-name}': Webhost,
     'extension': Extension,
     'clean': Clean
 }
-
 
 setup(
     name="azure-functions-worker",

@@ -275,16 +275,19 @@ class Extension(distutils.cmd.Command):
 class Webhost(distutils.cmd.Command):
     description = 'Download and setup Azure Functions Web Host.'
     user_options = [
-        ('webhost-version', None,
+        ('webhost-version=', None,
             'A Functions Host version to be downloaded (e.g. 3.0.15278).'),
-        ('webhost-dir', None,
+        ('webhost-dir=', None,
             'A path to the directory where Azure Web Host will be installed.'),
+        ('use-branch=', None,
+            'A branch from where azure-functions-host will be installed')
     ]
 
     def __init__(self, dist: Distribution):
         super().__init__(dist)
         self.webhost_dir = None
         self.webhost_version = None
+        self.use_branch = None
 
     def initialize_options(self):
         pass
@@ -313,14 +316,22 @@ class Webhost(distutils.cmd.Command):
         return latest[0]['name'].replace('v', '')
 
     @staticmethod
-    def _download_webhost_zip(version: str) -> str:
+    def _download_webhost_zip(version: str, branch: str) -> str:
         # Return the path of the downloaded host
         temporary_file = tempfile.NamedTemporaryFile()
-        zip_url = (
-            'https://github.com/Azure/azure-functions-host/archive/'
-            f'v{version}.zip'
-        )
-        print(f'Downloading Functions Host ({version}) from {zip_url}')
+
+        if branch is not None:
+            zip_url = (
+                'https://github.com/Azure/azure-functions-host/archive/'
+                f'refs/heads/{branch}.zip'
+            )
+        else:
+            zip_url = (
+                'https://github.com/Azure/azure-functions-host/archive/'
+                f'v{version}.zip'
+            )
+
+        print(f'Downloading Functions Host from {zip_url}')
 
         with temporary_file as zipf:
             zipf.close()
@@ -410,9 +421,11 @@ class Webhost(distutils.cmd.Command):
 
     def run(self):
         # Prepare webhost
-        zip_path = self._download_webhost_zip(self.webhost_version)
+        zip_path = self._download_webhost_zip(self.webhost_version,
+                                              self.use_branch)
         self._create_webhost_folder(self.webhost_dir)
-        self._extract_webhost_zip(version=self.webhost_version,
+        version = self.use_branch or self.webhost_version
+        self._extract_webhost_zip(version=version.replace('/', '-'),
                                   src_zip=zip_path,
                                   dest=self.webhost_dir)
         self._chmod_protobuf_generation_script(self.webhost_dir)
@@ -439,7 +452,10 @@ class Clean(distutils.cmd.Command):
         for dir_to_delete in self.dir_list_to_delete:
             dir_delete = pathlib.Path(dir_to_delete)
             if dir_delete.exists():
-                dir_util.remove_tree(str(dir_delete))
+                try:
+                    shutil.rmtree(dir_delete)
+                except:
+                    print('Error deleting directory')
 
 
 COMMAND_CLASS = {

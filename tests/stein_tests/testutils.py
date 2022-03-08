@@ -133,10 +133,13 @@ class _WebHostProxy:
     def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
         params = dict(kwargs.pop('params', {}))
+        no_prefix = kwargs.pop('no_prefix', False)
         if 'code' not in params:
             params['code'] = 'testFunctionKey'
-        return request_method(self._addr + '/api/' + funcname,
-                              *args, params=params, **kwargs)
+
+        return request_method(
+            self._addr + ('/' if no_prefix else '/api/') + funcname,
+            *args, params=params, **kwargs)
 
     def close(self):
         if self._proc.stdout:

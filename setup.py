@@ -108,13 +108,16 @@ INSTALL_REQUIRES = [
     "grpcio~=1.43.0",
     "grpcio-tools~=1.43.0",
     "protobuf~=3.19.3",
-    "azure-functions==1.8.0"
+    "azure-functions==1.9.0"
 ]
 
 
 EXTRA_REQUIRES = {
     "dev": [
         "azure-eventhub~=5.1.0",
+        "flask",
+        "fastapi",
+        "pydantic",
         "python-dateutil~=2.8.1",
         "pycryptodome~=3.10.1",
         "flake8~=3.7.9",

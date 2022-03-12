@@ -64,7 +64,7 @@ jobs:
 
         # Retry a couple times to avoid certificate issue
         retry 5 python setup.py build
-        retry 5 python setup.py webhost
+        retry 5 python setup.py webhost --branch-name=dev
         retry 5 python setup.py extension
     - name: Test with pytest
       run: |

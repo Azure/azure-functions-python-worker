@@ -32,4 +32,4 @@ async def main(req: func.HttpRequest):
     finally:
         await client.close()
 
-    return f'OK'
+    return 'OK'

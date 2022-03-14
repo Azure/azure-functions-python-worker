@@ -5,17 +5,17 @@
 |master|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions/_apis/build/status/Azure.azure-functions-python-worker?branchName=master)](https://azfunc.visualstudio.com/Azure%20Functions/_build/latest?definitionId=57&branchName=master)|[![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/master/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)|![CI Unit tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20Unit%20tests/badge.svg?branch=master)|![CI E2E tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20E2E%20tests/badge.svg?branch=master)
 |dev|[![Build Status](https://azfunc.visualstudio.com/Azure%20Functions/_apis/build/status/Azure.azure-functions-python-worker?branchName=dev)](https://azfunc.visualstudio.com/Azure%20Functions/_build/latest?definitionId=57&branchName=dev)|[![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/dev/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)|![CI Unit tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20Unit%20tests/badge.svg?branch=dev)|![CI E2E tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20E2E%20tests/badge.svg?branch=dev)
 
-Python support for Azure Functions is based on Python 3.6, Python 3.7, Python 3.8, and Python 3.9 serverless hosting on Linux and the Functions 2.0, 3.0 and 4.0 runtime.
+Python support for Azure Functions is based on Python 3.6, Python 3.7, Python 3.8, Python 3.9, and Python 3.10 serverless hosting on Linux and the Functions 2.0, 3.0 and 4.0 runtime.
 
 Here is the current status of Python in Azure Functions:
 
 What are the supported Python versions?
 
-|Azure Functions Runtime|Python 3.6|Python 3.7|Python 3.8|Python 3.9|
-|---|---|---|---|---|
-|Azure Functions 2.0|✔|✔|-|-|
-|Azure Functions 3.0|✔|✔|✔|✔|
-|Azure Functions 4.0|-|✔|✔|✔|
+|Azure Functions Runtime|Python 3.6|Python 3.7|Python 3.8|Python 3.9|Python 3.10|
+|---|---|---|---|---|---|
+|Azure Functions 2.0|✔|✔|-|-|-|
+|Azure Functions 3.0|✔|✔|✔|✔|-|
+|Azure Functions 4.0|-|✔|✔|✔|preview|
 
 For information about Azure Functions Runtime, please refer to [Azure Functions runtime versions overview](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) page.
 
@@ -31,7 +31,7 @@ What's coming?
 
 - [Durable Functions For Python](https://github.com/Azure/azure-functions-durable-python)
 
-###Get Started
+### Get Started
 
 - [Create your first Python function](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-function-python)
 - [Developer guide](https://docs.microsoft.com/en-us/azure/azure-functions/functions-reference-python)

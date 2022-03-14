@@ -62,14 +62,14 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         async with self._ctrl as host:
             r = await host.init_worker('3.0.12345')
             self.assertEqual(
-                len([l for l in r.logs if l.message.startswith(
+                len([log for log in r.logs if log.message.startswith(
                     'Received WorkerInitRequest'
                 )]),
                 1
             )
 
             self.assertEqual(
-                len([l for l in r.logs if l.message.startswith(
+                len([log for log in r.logs if log.message.startswith(
                     'To enable debug level logging'
                 )]),
                 1
@@ -85,14 +85,14 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             # Reload environment variable on specialization
             r = await host.reload_environment(environment={})
             self.assertEqual(
-                len([l for l in r.logs if l.message.startswith(
+                len([log for log in r.logs if log.message.startswith(
                     'Received FunctionEnvironmentReloadRequest'
                 )]),
                 1
             )
 
             self.assertEqual(
-                len([l for l in r.logs if l.message.startswith(
+                len([log for log in r.logs if log.message.startswith(
                     'To enable debug level logging'
                 )]),
                 1

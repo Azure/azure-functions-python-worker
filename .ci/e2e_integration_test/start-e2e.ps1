@@ -5,7 +5,7 @@
 
 # Python worker E2E integration test
 # The E2E integration test will test the worker against a prerelease version of core tools
-$FUNC_RUNTIME_VERSION = '3'
+$FUNC_RUNTIME_VERSION = '4'
 $FUNC_RUNTIME_LANGUAGE = 'python'
 $AZURE_FUNCTIONS_ENVIRONMENT = "development"
 $PYAZURE_WEBHOST_DEBUG = "true"
@@ -84,6 +84,7 @@ Write-Host "Function Exe Path: $funcExePath"
 Set-Location $env:BUILD_SOURCESDIRECTORY
 Write-Host "Set-Location: $env:BUILD_SOURCESDIRECTORY"
 
+Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 Write-Host "Preparing E2E integration tests..." -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 python -m pip install -U pip
@@ -91,7 +92,8 @@ pip install -e .[dev]
 python setup.py build
 python setup.py extension
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
-
+Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
+Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 Write-Host "Running E2E integration tests..." -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 $env:CORE_TOOLS_EXE_PATH = "$funcExePath"

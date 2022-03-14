@@ -34,13 +34,13 @@ import uuid
 import grpc
 import requests
 
+from azure_functions_worker import dispatcher
+from azure_functions_worker import protos
 from azure_functions_worker._thirdparty import aio_compat
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import FileAccessorFactory
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryConstants as consts
-from azure_functions_worker import dispatcher
-from azure_functions_worker import protos
 from azure_functions_worker.constants import (
     PYAZURE_WEBHOST_DEBUG,
     PYAZURE_WORKER_DIR,
@@ -466,7 +466,7 @@ class _MockWebHost:
 
         self._connected_fut = loop.create_future()
         self._in_queue = queue.Queue()
-        self._out_aqueue = asyncio.Queue(loop=self._loop)
+        self._out_aqueue = asyncio.Queue()
         self._threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._server = grpc.server(self._threadpool)
         self._servicer = _MockWebHostServicer(self)

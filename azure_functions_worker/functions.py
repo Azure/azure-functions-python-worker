@@ -115,7 +115,7 @@ class Registry:
         return requires_context
 
     @staticmethod
-    def validate_function_params(params: dict,  bound_params: dict,
+    def validate_function_params(params: dict, bound_params: dict,
                                  annotations: dict, func_name: str):
         if set(params) - set(bound_params):
             raise FunctionLoadError(
@@ -143,18 +143,18 @@ class Registry:
                     param_anno_origin = typing_inspect.get_origin(param_anno)
                     if param_anno_origin is not None:
                         is_param_out = (
-                                isinstance(param_anno_origin, type)
-                                and param_anno_origin.__name__ == 'Out'
+                            isinstance(param_anno_origin, type)
+                            and param_anno_origin.__name__ == 'Out'
                         )
                     else:
                         is_param_out = (
-                                isinstance(param_anno, type)
-                                and param_anno.__name__ == 'Out'
+                            isinstance(param_anno, type)
+                            and param_anno.__name__ == 'Out'
                         )
                 else:
                     is_param_out = (
-                            isinstance(param_anno, type)
-                            and param_anno.__name__ == 'Out'
+                        isinstance(param_anno, type)
+                        and param_anno.__name__ == 'Out'
                     )
             else:
                 is_param_out = False

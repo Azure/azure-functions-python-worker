@@ -247,7 +247,7 @@ def return_http_redirect(req: func.HttpRequest):
         status_code=302,
         headers={'location': location})
 
-# Not working, Needs investigation
+
 @app.route(route="return_out", binding_arg_name="foo")
 def return_out(req: func.HttpRequest, foo: func.Out[func.HttpResponse]):
     foo.set(func.HttpResponse(body='hello', status_code=201))
@@ -287,6 +287,12 @@ def main(req: func.HttpRequest):
 @app.route(route="unhandled_error")
 def unhandled_error(req: func.HttpRequest):
     1 / 0
+
+
+@app.route(route="missing_module")
+def missing_module(req: func.HttpRequest):
+    logger.info('Function should fail before hitting main')
+    return 'OK-async'
 
 
 @app.route(route="unhandled_urllib_error")

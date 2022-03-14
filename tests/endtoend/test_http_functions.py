@@ -105,3 +105,11 @@ class TestHttpFunctions(testutils.WebHostTestCase):
                           params={'checkHealth': '1'},
                           timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
+
+
+class TestHttpFunctionsStein(TestHttpFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
+                                            'http_functions_stein'

@@ -778,6 +778,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         testconfig.read(WORKER_CONFIG)
 
     hostexe_args = []
+    os.environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
 
     # If we want to use core-tools
     coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')
@@ -912,35 +913,6 @@ def start_webhost(*, script_dir=None, stdout=None):
     time.sleep(10)  # Giving host some time to start fully.
 
     addr = f'http://{LOCALHOST}:{port}'
-    health_check_endpoint = f'{addr}/api/ping'
-    host_out = stdout.readlines(100)
-    for _ in range(5):
-        try:
-            r = requests.get(health_check_endpoint,
-                             params={'code': 'testFunctionKey'})
-            # Give the host a bit more time to settle
-            time.sleep(2)
-
-            if 200 <= r.status_code < 300:
-                # Give the host a bit more time to settle
-                time.sleep(1)
-                break
-            else:
-                print(f'Failed to ping {health_check_endpoint}, status code: '
-                      f'{r.status_code}', flush=True)
-        except requests.exceptions.ConnectionError:
-            pass
-        time.sleep(1)
-    else:
-        proc.terminate()
-        try:
-            proc.wait(20)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-        raise RuntimeError('could not start the webworker in time. Please'
-                           f' check the log file for details: {stdout.name} \n'
-                           f' Captured WebHost stdout:\n{host_out}')
-
     return _WebHostProxy(proc, addr)
 
 
@@ -995,7 +967,6 @@ def _symlink_dir(src, dst):
 
 def _setup_func_app(app_root):
     extensions = app_root / 'bin'
-    ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
     extensions_csproj_file = app_root / 'extensions.csproj'
 
@@ -1007,18 +978,16 @@ def _setup_func_app(app_root):
         with open(extensions_csproj_file, 'w') as f:
             f.write(EXTENSION_CSPROJ_TEMPLATE)
 
-    _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
     _symlink_dir(EXTENSIONS_PATH, extensions)
 
 
 def _teardown_func_app(app_root):
     extensions = app_root / 'bin'
-    ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
     extensions_csproj_file = app_root / 'extensions.csproj'
     extensions_obj_file = app_root / 'obj'
 
-    for path in (extensions, ping_func, host_json, extensions_csproj_file,
+    for path in (extensions, host_json, extensions_csproj_file,
                  extensions_obj_file):
         remove_path(path)
 

@@ -1,136 +1,82 @@
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License.
-
 import distutils.cmd
 import glob
-import json
 import os
 import pathlib
-import re
 import shutil
 import subprocess
 import sys
+import json
 import tempfile
 import urllib.request
 import zipfile
+import re
 from distutils import dir_util
 from distutils.command import build
-from distutils.dist import Distribution
 
 from setuptools import setup
 from setuptools.command import develop
 
-from azure_functions_worker.version import VERSION
+from azure_functions_worker import __version__
 
 # The GitHub repository of the Azure Functions Host
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
-WEBHOST_TAG_PREFIX = "v4."
+WEBHOST_TAG_PREFIX = "v3."
 
 # Extensions necessary for non-core bindings.
 AZURE_EXTENSIONS = """\
-<?xml version="1.0" encoding="UTF-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-   <PropertyGroup>
-      <TargetFramework>netcoreapp3.1</TargetFramework>
-      <AzureFunctionsVersion>v4</AzureFunctionsVersion>
-      <WarningsAsErrors />
-      <DefaultItemExcludes>**</DefaultItemExcludes>
-   </PropertyGroup>
-   <ItemGroup>
-      <PackageReference Include="Microsoft.NET.Sdk.Functions"
-        Version="4.0.1" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-        Version="3.0.10" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-        Version="5.0.0" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
-        Version="3.1.0" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
-        Version="4.0.5" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
-        Version="4.2.1" />
-      <PackageReference
-        Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
-        Version="1.1.3" />
-   </ItemGroup>
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <AzureFunctionsVersion>v3</AzureFunctionsVersion>
+    <WarningsAsErrors></WarningsAsErrors>
+    <DefaultItemExcludes>**</DefaultItemExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference
+        Include="Microsoft.NET.Sdk.Functions"
+        Version="3.0.3"
+    />
+    <PackageReference
+        Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
+        Version="3.0.5"
+    />
+    <PackageReference
+        Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
+        Version="3.0.6"
+    />
+    <PackageReference
+        Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
+        Version="2.1.0"
+    />
+    <PackageReference
+        Include="Microsoft.Azure.WebJobs.Extensions.Storage"
+        Version="3.0.10"
+    />
+    <PackageReference
+        Include="Microsoft.Azure.WebJobs.ServiceBus"
+        Version="3.0.0-beta8"
+    />
+  </ItemGroup>
 </Project>
 """
 
 
 NUGET_CONFIG = """\
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <configuration>
-   <packageSources>
-      <add key="nuget.org"
-        value="https://www.nuget.org/api/v2/" />
-      <add key="azure_app_service"
-        value="https://www.myget.org/F/azure-appservice/api/v2" />
-      <add key="azure_app_service_staging"
-        value="https://www.myget.org/F/azure-appservice-staging/api/v2" />
-      <add key="buildTools"
-        value="https://www.myget.org/F/30de4ee06dd54956a82013fa17a3accb/" />
-      <add key="AspNetVNext"
-        value="https://www.myget.org/F/aspnetcore-dev/api/v3/index.json" />
-   </packageSources>
+  <packageSources>
+    <add key="nuget.org" value="https://www.nuget.org/api/v2/" />
+    <add key="azure_app_service"
+         value="https://www.myget.org/F/azure-appservice/api/v2" />
+    <add key="azure_app_service_staging"
+         value="https://www.myget.org/F/azure-appservice-staging/api/v2" />
+    <add key="buildTools"
+         value="https://www.myget.org/F/30de4ee06dd54956a82013fa17a3accb/" />
+    <add key="AspNetVNext"
+         value="https://www.myget.org/F/aspnetcore-dev/api/v3/index.json" />
+  </packageSources>
 </configuration>
 """
-
-
-CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
-    'Programming Language :: Python',
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Operating System :: Microsoft :: Windows",
-    "Operating System :: POSIX",
-    "Operating System :: MacOS :: MacOS X",
-    "Environment :: Web Environment",
-    "License :: OSI Approved :: MIT License",
-    "Intended Audience :: Developers",
-]
-
-
-PACKAGES = [
-    "azure_functions_worker",
-    "azure_functions_worker.protos",
-    "azure_functions_worker.protos.identity",
-    "azure_functions_worker.protos.shared",
-    "azure_functions_worker.bindings",
-    "azure_functions_worker.bindings.shared_memory_data_transfer",
-    "azure_functions_worker.utils",
-    "azure_functions_worker._thirdparty"
-]
-
-
-INSTALL_REQUIRES = [
-    "grpcio~=1.43.0",
-    "grpcio-tools~=1.43.0",
-    "protobuf~=3.19.3",
-    "azure-functions==1.8.0"
-]
-
-
-EXTRA_REQUIRES = {
-    "dev": [
-        "azure-eventhub~=5.1.0",
-        "python-dateutil~=2.8.1",
-        "pycryptodome~=3.10.1",
-        "flake8~=3.7.9",
-        "mypy",
-        "pytest",
-        "requests==2.*",
-        "coverage",
-        "pytest-sugar",
-        "pytest-cov",
-        "pytest-xdist",
-        "pytest-randomly",
-        "pytest-instafail",
-        "pytest-rerunfailures",
-        "ptvsd"
-    ]
-}
 
 
 class BuildGRPC:
@@ -182,10 +128,9 @@ class BuildGRPC:
         # https://github.com/protocolbuffers/protobuf/issues/1491
         self.make_absolute_imports(compiled_files)
 
-        dir_util.copy_tree(str(built_protos_dir), str(proto_root_dir))
+        dir_util.copy_tree(built_protos_dir, str(proto_root_dir))
 
-    @staticmethod
-    def make_absolute_imports(compiled_files):
+    def make_absolute_imports(self, compiled_files):
         for compiled in compiled_files:
             with open(compiled, 'r+') as f:
                 content = f.read()
@@ -208,19 +153,19 @@ class BuildGRPC:
                 f.truncate()
 
 
-class BuildProtos(build.build, BuildGRPC):
+class build(build.build, BuildGRPC):
     def run(self, *args, **kwargs):
         self._gen_grpc()
-        super().run()
+        super().run(*args, **kwargs)
 
 
-class Development(develop.develop, BuildGRPC):
+class develop(develop.develop, BuildGRPC):
     def run(self, *args, **kwargs):
         self._gen_grpc()
-        super().run()
+        super().run(*args, **kwargs)
 
 
-class Extension(distutils.cmd.Command):
+class extension(distutils.cmd.Command):
     description = (
         'Resolve WebJobs Extensions from AZURE_EXTENSIONS and NUGET_CONFIG.'
     )
@@ -229,12 +174,8 @@ class Extension(distutils.cmd.Command):
          'A path to the directory where extension should be installed')
     ]
 
-    def __init__(self, dist: Distribution):
-        super().__init__(dist)
-        self.extensions_dir = None
-
     def initialize_options(self):
-        pass
+        self.extensions_dir = None
 
     def finalize_options(self):
         if self.extensions_dir is None:
@@ -263,7 +204,7 @@ class Extension(distutils.cmd.Command):
                 args=['dotnet', 'build', '-o', '.'], check=True,
                 cwd=str(self.extensions_dir),
                 stdout=sys.stdout, stderr=sys.stderr, env=env)
-        except Exception:  # NoQA
+        except Exception:
             print(".NET Core SDK is required to build the extensions. "
                   "Please visit https://aka.ms/dotnet-download")
             sys.exit(1)
@@ -272,7 +213,7 @@ class Extension(distutils.cmd.Command):
         self._install_extensions()
 
 
-class Webhost(distutils.cmd.Command):
+class webhost(distutils.cmd.Command):
     description = 'Download and setup Azure Functions Web Host.'
     user_options = [
         ('webhost-version', None,
@@ -281,13 +222,9 @@ class Webhost(distutils.cmd.Command):
             'A path to the directory where Azure Web Host will be installed.'),
     ]
 
-    def __init__(self, dist: Distribution):
-        super().__init__(dist)
-        self.webhost_dir = None
-        self.webhost_version = None
-
     def initialize_options(self):
-        pass
+        self.webhost_version = None
+        self.webhost_dir = None
 
     def finalize_options(self):
         if self.webhost_version is None:
@@ -297,8 +234,7 @@ class Webhost(distutils.cmd.Command):
             self.webhost_dir = \
                 pathlib.Path(__file__).parent / 'build' / 'webhost'
 
-    @staticmethod
-    def _get_webhost_version() -> str:
+    def _get_webhost_version(self) -> str:
         # Return the latest matched version (e.g. 3.0.15278)
         github_api_url = f'{WEBHOST_GITHUB_API}/tags?page=1&per_page=10'
         print(f'Checking latest webhost version from {github_api_url}')
@@ -307,13 +243,12 @@ class Webhost(distutils.cmd.Command):
 
         # As tags are placed in time desending order, the latest v3
         # tag should be the first occurance starts with 'v3.' string
-        latest = [
+        latest_v3 = [
             gt for gt in tags if gt['name'].startswith(WEBHOST_TAG_PREFIX)
         ]
-        return latest[0]['name'].replace('v', '')
+        return latest_v3[0]['name'].replace('v', '')
 
-    @staticmethod
-    def _download_webhost_zip(version: str) -> str:
+    def _download_webhost_zip(self, version: str) -> str:
         # Return the path of the downloaded host
         temporary_file = tempfile.NamedTemporaryFile()
         zip_url = (
@@ -334,15 +269,13 @@ class Webhost(distutils.cmd.Command):
         print(f'Functions Host is downloaded into {temporary_file.name}')
         return temporary_file.name
 
-    @staticmethod
-    def _create_webhost_folder(dest_folder: pathlib.Path):
+    def _create_webhost_folder(self, dest_folder: pathlib.Path):
         if dest_folder.exists():
             shutil.rmtree(dest_folder)
         os.makedirs(dest_folder, exist_ok=True)
         print(f'Functions Host folder is created in {dest_folder}')
 
-    @staticmethod
-    def _extract_webhost_zip(version: str, src_zip: str, dest: str):
+    def _extract_webhost_zip(self, version: str, src_zip: str, dest: str):
         print(f'Extracting Functions Host from {src_zip}')
 
         with zipfile.ZipFile(src_zip) as archive:
@@ -378,8 +311,7 @@ class Webhost(distutils.cmd.Command):
 
         print(f'Functions Host is extracted into {dest}')
 
-    @staticmethod
-    def _chmod_protobuf_generation_script(webhost_dir: pathlib.Path):
+    def _chmod_protobuf_generation_script(self, webhost_dir: pathlib.Path):
         # This script is needed to set to executable in order to build the
         # WebJobs.Script.Grpc project in Linux and MacOS
         script_path = (
@@ -389,8 +321,7 @@ class Webhost(distutils.cmd.Command):
             print('Change generate_protos.sh script permission')
             os.chmod(script_path, 0o555)
 
-    @staticmethod
-    def _compile_webhost(webhost_dir: pathlib.Path):
+    def _compile_webhost(self, webhost_dir: pathlib.Path):
         print(f'Compiling Functions Host from {webhost_dir}')
 
         try:
@@ -399,7 +330,7 @@ class Webhost(distutils.cmd.Command):
                 check=True,
                 cwd=str(webhost_dir),
                 stdout=sys.stdout, stderr=sys.stderr)
-        except Exception:  # NoQA
+        except Exception:
             print(f"Failed to compile webhost in {webhost_dir}. "
                   ".NET Core SDK is required to build the solution. "
                   "Please visit https://aka.ms/dotnet-download",
@@ -419,54 +350,73 @@ class Webhost(distutils.cmd.Command):
         self._compile_webhost(self.webhost_dir)
 
 
-class Clean(distutils.cmd.Command):
-    description = 'Clean up build generated files'
-    user_options = []
-
-    def __init__(self, dist: Distribution):
-        super().__init__(dist)
-        self.dir_list_to_delete = [
-            "build"
-        ]
-
-    def initialize_options(self) -> None:
-        pass
-
-    def finalize_options(self) -> None:
-        pass
-
-    def run(self) -> None:
-        for dir_to_delete in self.dir_list_to_delete:
-            dir_delete = pathlib.Path(dir_to_delete)
-            if dir_delete.exists():
-                dir_util.remove_tree(str(dir_delete))
-
-
-COMMAND_CLASS = {
-    'develop': Development,
-    'build': BuildProtos,
-    'webhost': Webhost,
-    'extension': Extension,
-    'clean': Clean
-}
+with open("README.md") as readme:
+    long_description = readme.read()
 
 
 setup(
-    name="azure-functions-worker",
-    version=VERSION,
-    description="Python Language Worker for Azure Functions Host",
-    author="Azure Functions team at Microsoft Corp.",
+    name='azure-functions-worker',
+    version=__version__,
+    description='Python Language Worker for Azure Functions Host',
+    author="Microsoft Corp.",
     author_email="azurefunctions@microsoft.com",
-    keywords="azure functions azurefunctions python serverless",
+    keywords="azure azurefunctions python",
     url="https://github.com/Azure/azure-functions-python-worker",
-    long_description=open("README.md").read(),
-    long_description_content_type="text/markdown",
-    classifiers=CLASSIFIERS,
-    license="MIT",
-    packages=PACKAGES,
-    install_requires=INSTALL_REQUIRES,
-    extras_require=EXTRA_REQUIRES,
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'License :: OSI Approved :: MIT License',
+        'Intended Audience :: Developers',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX',
+        'Operating System :: MacOS :: MacOS X',
+        'Environment :: Web Environment',
+    ],
+    license='MIT',
+    packages=['azure_functions_worker',
+              'azure_functions_worker.protos',
+              'azure_functions_worker.protos.identity',
+              'azure_functions_worker.protos.shared',
+              'azure_functions_worker.bindings',
+              'azure_functions_worker.bindings.shared_memory_data_transfer',
+              'azure_functions_worker.utils',
+              'azure_functions_worker._thirdparty'],
+    install_requires=[
+        'grpcio~=1.33.2',
+        'grpcio-tools~=1.33.2',
+    ],
+    extras_require={
+        'dev': [
+            'azure-functions==1.8.0',
+            'azure-eventhub~=5.1.0',
+            'python-dateutil~=2.8.1',
+            'pycryptodome~=3.10.1',
+            'flake8~=3.7.9',
+            'mypy',
+            'pytest',
+            'requests==2.*',
+            'coverage',
+            'pytest-sugar',
+            'pytest-cov',
+            'pytest-xdist',
+            'pytest-randomly',
+            'pytest-instafail',
+            'pytest-rerunfailures',
+            'ptvsd'
+        ]
+    },
     include_package_data=True,
-    cmdclass=COMMAND_CLASS,
+    cmdclass={
+        'develop': develop,
+        'build': build,
+        'webhost': webhost,
+        'extension': extension
+    },
     test_suite='tests'
 )

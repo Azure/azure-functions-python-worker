@@ -110,7 +110,6 @@ INSTALL_REQUIRES = [
 
 EXTRA_REQUIRES = {
     "dev": [
-        "azure-eventhub~=5.1.0",
         "flask",
         "fastapi",
         "pydantic",

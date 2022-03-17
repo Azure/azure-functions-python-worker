@@ -7,7 +7,7 @@ import importlib
 import importlib.machinery
 import importlib.util
 import os
-import os.path
+from os.path import splitext
 import pathlib
 import sys
 import typing
@@ -67,7 +67,7 @@ def load_function(name: str, directory: str, script_file: str,
         )
 
     last_part = rel_script_path.parts[-1]
-    modname, ext = os.path.splitext(last_part)
+    modname, ext = splitext(last_part)
     if ext != '.py':
         raise RuntimeError(
             f'cannot load function {name}: '

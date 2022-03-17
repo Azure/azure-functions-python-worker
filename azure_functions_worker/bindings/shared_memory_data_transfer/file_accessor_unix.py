@@ -2,7 +2,8 @@
 # Licensed under the MIT License.
 
 from azure_functions_worker import constants
-import os
+from os import makedirs, remove
+from os.path import exists, join
 import mmap
 from typing import Optional, List
 from io import BufferedRandom
@@ -74,7 +75,7 @@ class FileAccessorUnix(FileAccessor):
                 f'Cannot delete memory map. Invalid name {mem_map_name}')
         try:
             fd = self._open_mem_map_file(mem_map_name)
-            os.remove(fd.name)
+            remove(fd.name)
         except Exception as e:
             # In this case, we don't want to fail right away but log that
             # deletion was unsuccessful.
@@ -117,14 +118,14 @@ class FileAccessorUnix(FileAccessor):
         # be created and try to create each of them if they don't exist already.
         valid_dirs = []
         for temp_dir in allowed_dirs:
-            dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
-            if os.path.exists(dir_path):
+            dir_path = join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
+            if exists(dir_path):
                 # A valid directory already exists
                 valid_dirs.append(dir_path)
                 logger.debug(f'Found directory {dir_path} to store memory maps')
             else:
                 try:
-                    os.makedirs(dir_path)
+                    makedirs(dir_path)
                     valid_dirs.append(dir_path)
                 except Exception as e:
                     # We keep trying to check/create others
@@ -143,8 +144,8 @@ class FileAccessorUnix(FileAccessor):
         # Iterate over all the possible directories where the memory map could
         # be present and try to open it.
         for temp_dir in self.valid_dirs:
-            file_path = os.path.join(temp_dir, mem_map_name)
-            if os.path.exists(file_path):
+            file_path = join(temp_dir, mem_map_name)
+            if exists(file_path):
                 try:
                     fd = open(file_path, 'r+b')
                     return fd
@@ -164,14 +165,14 @@ class FileAccessorUnix(FileAccessor):
         """
         # Ensure that the file does not already exist
         for temp_dir in self.valid_dirs:
-            file_path = os.path.join(temp_dir, mem_map_name)
-            if os.path.exists(file_path):
+            file_path = join(temp_dir, mem_map_name)
+            if exists(file_path):
                 raise SharedMemoryException(
                     f'File {file_path} for memory map {mem_map_name} '
                     f'already exists')
         # Create the file
         for temp_dir in self.valid_dirs:
-            file_path = os.path.join(temp_dir, mem_map_name)
+            file_path = join(temp_dir, mem_map_name)
             try:
                 file = open(file_path, 'wb+')
                 file.truncate(mem_map_size)

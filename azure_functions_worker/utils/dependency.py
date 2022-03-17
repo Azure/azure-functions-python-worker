@@ -114,7 +114,7 @@ class DependencyManager:
     )
     def prioritize_customer_dependencies(cls, cx_working_dir=None):
         """Switch the sys.path and ensure the customer's code import are loaded
-        from CX's deppendencies.
+        from CX's dependencies.
 
         This will not affect already imported namespaces, but will clear out
         the module cache and ensure the upcoming modules are loaded from

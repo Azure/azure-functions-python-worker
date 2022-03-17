@@ -1,4 +1,5 @@
 import os
+from os.path import join
 import sys
 
 from pathlib import Path
@@ -43,16 +44,16 @@ def determine_user_pkg_paths():
     minor_version = sys.version_info[1]
 
     home = Path.home()
-    pkgs_path = os.path.join(home, PKGS_PATH)
-    venv_pkgs_path = os.path.join(home, VENV_PKGS_PATH)
+    pkgs_path = join(home, PKGS_PATH)
+    venv_pkgs_path = join(home, VENV_PKGS_PATH)
 
     user_pkg_paths = []
     if minor_version == 6:
-        user_pkg_paths.append(os.path.join(venv_pkgs_path, PKGS_36))
-        user_pkg_paths.append(os.path.join(pkgs_path, PKGS_36))
-        user_pkg_paths.append(os.path.join(pkgs_path, PKGS))
+        user_pkg_paths.append(join(venv_pkgs_path, PKGS_36))
+        user_pkg_paths.append(join(pkgs_path, PKGS_36))
+        user_pkg_paths.append(join(pkgs_path, PKGS))
     elif minor_version in (7, 8, 9):
-        user_pkg_paths.append(os.path.join(pkgs_path, PKGS))
+        user_pkg_paths.append(join(pkgs_path, PKGS))
     else:
         raise RuntimeError(f'Unsupported Python version: 3.{minor_version}')
 

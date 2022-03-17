@@ -1,21 +1,25 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import inspect
-import operator
+from operator import getitem
 import typing
 
-from . import bindings
+from .bindings import has_implicit_output, check_input_type_annotation, check_output_type_annotation
 from . import protos
-from ._thirdparty import typing_inspect
+from ._thirdparty.typing_inspect import get_args, is_generic_type, get_origin
 
 
-class ParamTypeInfo(typing.NamedTuple):
+class ParamTypeInfo:
 
     binding_name: str
     pytype: typing.Optional[type]
 
+    def __init__(self, binding_name: str, pytype: typing.Optional[type] = None):
+        self.binding_name = binding_name
+        self.pytype = pytype
 
-class FunctionInfo(typing.NamedTuple):
+
+class FunctionInfo:
 
     func: typing.Callable
 
@@ -28,6 +32,26 @@ class FunctionInfo(typing.NamedTuple):
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
     return_type: typing.Optional[ParamTypeInfo]
+
+    def __init__(self,
+        func: typing.Callable,
+        name: str,
+        directory: str,
+        requires_context: bool,
+        is_async: bool,
+        has_return: bool,
+        input_types: typing.Mapping[str, ParamTypeInfo],
+        output_types: typing.Mapping[str, ParamTypeInfo],
+        return_type: typing.Optional[ParamTypeInfo] = None):
+        self.func = func
+        self.name = name
+        self.directory = directory
+        self.requires_context = requires_context
+        self.is_async = is_async
+        self.has_return = has_return
+        self.input_types = input_types
+        self.output_types = output_types
+        self.return_type = return_type
 
 
 class FunctionLoadError(RuntimeError):
@@ -69,14 +93,19 @@ class Registry:
         has_implicit_return = False
 
         bound_params = {}
+
+        INOUT_BINDING_INFO = protos.BindingInfo.inout
+        OUT_BINDING_INFO = protos.BindingInfo.out
+        UNDEFINED_BINDING_INFO = protos.BindingInfo.undefined
+
         for name, desc in metadata.bindings.items():
-            if desc.direction == protos.BindingInfo.inout:
+            if desc.direction == INOUT_BINDING_INFO:
                 raise FunctionLoadError(
                     func_name,
                     '"inout" bindings are not supported')
 
             if name == '$return':
-                if desc.direction != protos.BindingInfo.out:
+                if desc.direction != OUT_BINDING_INFO:
                     raise FunctionLoadError(
                         func_name,
                         '"$return" binding must have direction set to "out"')
@@ -85,7 +114,7 @@ class Registry:
                 return_binding_name = desc.type
                 assert return_binding_name is not None
 
-            elif bindings.has_implicit_output(desc.type):
+            elif has_implicit_output(desc.type):
                 # If the binding specify implicit output binding
                 # (e.g. orchestrationTrigger, activityTrigger)
                 # we should enable output even if $return is not specified
@@ -127,8 +156,8 @@ class Registry:
             param_anno = annotations.get(param.name)
 
             if param_has_anno:
-                if typing_inspect.is_generic_type(param_anno):
-                    param_anno_origin = typing_inspect.get_origin(param_anno)
+                if is_generic_type(param_anno):
+                    param_anno_origin = get_origin(param_anno)
                     if param_anno_origin is not None:
                         is_param_out = (
                             isinstance(param_anno_origin, type)
@@ -147,10 +176,10 @@ class Registry:
             else:
                 is_param_out = False
 
-            is_binding_out = desc.direction == protos.BindingInfo.out
+            is_binding_out = desc.direction == OUT_BINDING_INFO
 
             if is_param_out:
-                param_anno_args = typing_inspect.get_args(param_anno)
+                param_anno_args = get_args(param_anno)
                 if len(param_anno_args) != 1:
                     raise FunctionLoadError(
                         func_name,
@@ -162,15 +191,15 @@ class Registry:
                 # so if the annotation was func.Out[typing.List[foo]],
                 # we need to reconstruct it.
                 if (isinstance(param_py_type, tuple)
-                   and typing_inspect.is_generic_type(param_py_type[0])):
+                   and is_generic_type(param_py_type[0])):
 
-                    param_py_type = operator.getitem(
+                    param_py_type = getitem(
                         param_py_type[0], *param_py_type[1:])
             else:
                 param_py_type = param_anno
 
             if (param_has_anno and not isinstance(param_py_type, type)
-               and not typing_inspect.is_generic_type(param_py_type)):
+               and not is_generic_type(param_py_type)):
                 raise FunctionLoadError(
                     func_name,
                     f'binding {param.name} has invalid non-type annotation '
@@ -191,21 +220,21 @@ class Registry:
                     'is azure.functions.Out in Python')
 
             if param_has_anno and param_py_type in (str, bytes) and (
-                    not bindings.has_implicit_output(desc.type)):
+                    not has_implicit_output(desc.type)):
                 param_bind_type = 'generic'
             else:
                 param_bind_type = desc.type
 
             if param_has_anno:
                 if is_param_out:
-                    checks_out = bindings.check_output_type_annotation(
+                    checks_out = check_output_type_annotation(
                         param_bind_type, param_py_type)
                 else:
-                    checks_out = bindings.check_input_type_annotation(
+                    checks_out = check_input_type_annotation(
                         param_bind_type, param_py_type)
 
                 if not checks_out:
-                    if desc.data_type is not protos.BindingInfo.undefined:
+                    if desc.data_type is not UNDEFINED_BINDING_INFO:
                         raise FunctionLoadError(
                             func_name,
                             f'{param.name!r} binding type "{desc.type}" '
@@ -229,8 +258,8 @@ class Registry:
         return_pytype = None
         if has_explicit_return and 'return' in annotations:
             return_anno = annotations.get('return')
-            if (typing_inspect.is_generic_type(return_anno)
-               and typing_inspect.get_origin(return_anno).__name__ == 'Out'):
+            if (is_generic_type(return_anno)
+               and get_origin(return_anno).__name__ == 'Out'):
                 raise FunctionLoadError(
                     func_name,
                     'return annotation should not be azure.functions.Out')
@@ -245,7 +274,7 @@ class Registry:
             if return_pytype is (str, bytes):
                 return_binding_name = 'generic'
 
-            if not bindings.check_output_type_annotation(
+            if not check_output_type_annotation(
                     return_binding_name, return_pytype):
                 raise FunctionLoadError(
                     func_name,

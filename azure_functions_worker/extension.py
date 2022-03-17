@@ -3,7 +3,7 @@
 
 from types import ModuleType
 from typing import Any, Callable, List, Optional
-import logging
+from logging import getLogger
 import functools
 from .utils.common import (
     is_python_version,
@@ -182,7 +182,7 @@ class ExtensionManager:
             # Invoke extension implementation from .<hook_name>.ext_impl
             for hook_meta in getattr(hooks, hook_name, []):
                 # Register a system logger with prefix azure_functions_worker
-                ext_logger = logging.getLogger(
+                ext_logger = getLogger(
                     f'{SYSTEM_LOG_PREFIX}.extension.{hook_meta.ext_name}'
                 )
                 try:

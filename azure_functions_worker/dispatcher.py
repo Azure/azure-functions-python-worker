@@ -18,6 +18,8 @@ from typing import List, Optional
 
 import grpc
 
+from .bindings import (is_trigger_binding, from_incoming_proto,
+                       to_outgoing_param_binding, to_outgoing_proto, Out)
 from . import bindings
 from . import constants
 from . import functions
@@ -380,12 +382,12 @@ class Dispatcher(metaclass=DispatcherMeta):
             args = {}
             for pb in invoc_request.input_data:
                 pb_type_info = fi.input_types[pb.name]
-                if bindings.is_trigger_binding(pb_type_info.binding_name):
+                if is_trigger_binding(pb_type_info.binding_name):
                     trigger_metadata = invoc_request.trigger_metadata
                 else:
                     trigger_metadata = None
 
-                args[pb.name] = bindings.from_incoming_proto(
+                args[pb.name] = from_incoming_proto(
                     pb_type_info.binding_name, pb,
                     trigger_metadata=trigger_metadata,
                     pytype=pb_type_info.pytype,
@@ -397,7 +399,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             if fi.output_types:
                 for name in fi.output_types:
-                    args[name] = bindings.Out()
+                    args[name] = Out()
 
             if fi.is_async:
                 call_result = await self._run_async_func(
@@ -422,7 +424,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         # Can "None" be marshaled into protos.TypedData?
                         continue
 
-                    param_binding = bindings.to_outgoing_param_binding(
+                    param_binding = to_outgoing_param_binding(
                         out_type_info.binding_name, val,
                         pytype=out_type_info.pytype,
                         out_name=out_name, shmem_mgr=self._shmem_mgr,
@@ -431,7 +433,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             return_value = None
             if fi.return_type is not None:
-                return_value = bindings.to_outgoing_proto(
+                return_value = to_outgoing_proto(
                     fi.return_type.binding_name, call_result,
                     pytype=fi.return_type.pytype)
 
@@ -544,8 +546,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             for map_name in map_names:
                 try:
-                    to_delete_resources = \
-                        False if self._function_data_cache_enabled else True
+                    to_delete_resources = not self._function_data_cache_enabled
                     success = self._shmem_mgr.free_mem_map(map_name,
                                                            to_delete_resources)
                     results[map_name] = success

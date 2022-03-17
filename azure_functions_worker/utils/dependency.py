@@ -1,11 +1,13 @@
 from azure_functions_worker.utils.common import is_true_like
 from typing import List, Optional
 from types import ModuleType
-import importlib
+from importlib import reload
+from importlib.util import find_spec
 import inspect
 import os
 import re
 import sys
+from sys import modules
 
 from ..logging import logger
 from ..constants import (
@@ -210,18 +212,18 @@ class DependencyManager:
         for p in packages_to_reload:
             try:
                 logger.info(f'Reloading {p} module')
-                importlib.reload(sys.modules[p])
+                reload(modules[p])
             except Exception as ex:
                 logger.info('Unable to reload {}: \n{}'.format(p, ex))
             logger.info(f'Reloaded {p} module')
 
         # Reload azure.functions to give user package precedence
         logger.info('Reloading azure.functions module at %s',
-                    inspect.getfile(sys.modules['azure.functions']))
+                    inspect.getfile(modules['azure.functions']))
         try:
-            importlib.reload(sys.modules['azure.functions'])
+            reload(modules['azure.functions'])
             logger.info('Reloaded azure.functions module now at %s',
-                        inspect.getfile(sys.modules['azure.functions']))
+                        inspect.getfile(modules['azure.functions']))
         except Exception as ex:
             logger.info('Unable to reload azure.functions. '
                         'Using default. Exception:\n{}'.format(ex))
@@ -261,7 +263,7 @@ class DependencyManager:
             If the path is an empty string, no action will be taken.
         """
         if path and path in sys.path:
-            # Remove all occurances in sys.path
+            # Remove all occurrences in sys.path
             sys.path = list(filter(lambda p: p != path, sys.path))
 
         # In case if any part of worker initialization do sys.path.pop()
@@ -338,7 +340,7 @@ class DependencyManager:
         # 2. Try to find module spec of azure.functions without actually
         #    importing it (e.g. lib/site-packages/azure/functions/__init__.py)
         try:
-            azf_spec = importlib.util.find_spec('azure.functions')
+            azf_spec = find_spec('azure.functions')
             if azf_spec and azf_spec.origin:
                 return os.path.abspath(
                     os.path.join(os.path.dirname(azf_spec.origin), '..', '..')
@@ -365,7 +367,7 @@ class DependencyManager:
         if not path:
             return
 
-        not_builtin = set(sys.modules.keys()) - set(sys.builtin_module_names)
+        not_builtin = set(modules.keys()) - set(sys.builtin_module_names)
 
         # Don't reload azure_functions_worker
         to_be_cleared_from_cache = set([
@@ -374,7 +376,7 @@ class DependencyManager:
         ])
 
         for module_name in to_be_cleared_from_cache:
-            module = sys.modules.get(module_name)
+            module = modules.get(module_name)
             if not isinstance(module, ModuleType):
                 continue
 
@@ -387,7 +389,7 @@ class DependencyManager:
                     module_paths.add(module.__file__)
 
                 if any([p for p in module_paths if p.startswith(path)]):
-                    sys.modules.pop(module_name)
+                    modules.pop(module_name)
             except Exception as e:
                 logger.warning(
                     f'Attempt to remove module cache for {module_name} but'

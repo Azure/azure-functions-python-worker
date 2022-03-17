@@ -1,16 +1,17 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import hashlib
-import pathlib
 import filecmp
-import typing
+import hashlib
 import os
-import unittest
+import pathlib
+import typing
+from unittest import skipIf
 
 import pytest
 
 from azure_functions_worker import testutils
 from azure_functions_worker.testutils import WebHostTestCase
+from azure_functions_worker.utils.common import is_python_version
 
 
 class TestHttpFunctions(WebHostTestCase):
@@ -76,7 +77,6 @@ class TestHttpFunctions(WebHostTestCase):
         r = self.webhost.request('GET', 'no_return')
         self.assertEqual(r.status_code, 204)
 
-    @unittest.skip("Does not work in the new prg model")
     def test_no_return_returns(self):
         r = self.webhost.request('GET', 'no_return_returns')
         self.assertEqual(r.status_code, 500)
@@ -316,10 +316,6 @@ class TestHttpFunctions(WebHostTestCase):
     def check_log_user_event_loop_error(self, host_out: typing.List[str]):
         self.assertIn('try_log', host_out)
 
-    def test_import_module_troubleshooting_url(self):
-        r = self.webhost.request('GET', 'missing_module/')
-        self.assertEqual(r.status_code, 500)
-
     def check_log_import_module_troubleshooting_url(self,
                                                     host_out: typing.List[str]):
         self.assertIn("Exception: ModuleNotFoundError: "
@@ -360,11 +356,11 @@ class TestHttpFunctions(WebHostTestCase):
 
     def test_print_to_console_stderr(self):
         r = self.webhost.request('GET', 'print_logging?console=true'
-                                 '&message=Secret42&is_stderr=true')
+                                        '&message=Secret42&is_stderr=true')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-print-logging')
 
-    def check_log_print_to_console_stderr(self, host_out: typing.List[str],):
+    def check_log_print_to_console_stderr(self, host_out: typing.List[str], ):
         # System logs stderr should not exist in host_out
         self.assertNotIn('Secret42', host_out)
 
@@ -388,9 +384,19 @@ class TestHttpFunctions(WebHostTestCase):
         self.assertNotIn('parallelly_log_system at disguised_logger', host_out)
 
 
+@skipIf(is_python_version('3.6'),
+        "New Programming model is not supported for python 3.6")
 class TestHttpFunctionsStein(TestHttpFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'http_functions' /\
-                                            'http_functions_stein'
+        return testutils.UNIT_TESTS_FOLDER / 'http_functions' / \
+                                             'http_functions_stein'
+
+    def test_no_return(self):
+        r = self.webhost.request('GET', 'no_return')
+        self.assertEqual(r.status_code, 500)
+
+    def test_no_return_returns(self):
+        r = self.webhost.request('GET', 'no_return_returns')
+        self.assertEqual(r.status_code, 200)

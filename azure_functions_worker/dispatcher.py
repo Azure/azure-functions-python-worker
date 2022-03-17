@@ -301,6 +301,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             worker_status_response=protos.WorkerStatusResponse())
 
     async def _handle__functions_metadata_request(self, request):
+        logger.info(f"Received FunctionMetadataRequest: {self.request_id}")
+
         metadata_request = request.functions_metadata_request
         directory = metadata_request.function_app_directory
         function_path = os.path.join(directory, SCRIPT_FILE_NAME)

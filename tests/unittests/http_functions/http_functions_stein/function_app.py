@@ -289,12 +289,6 @@ def unhandled_error(req: func.HttpRequest):
     1 / 0
 
 
-@app.route(route="missing_module")
-def missing_module(req: func.HttpRequest):
-    logger.info('Function should fail before hitting main')
-    return 'OK-async'
-
-
 @app.route(route="unhandled_urllib_error")
 def unhandled_urllib_error(req: func.HttpRequest) -> str:
     image_url = req.params.get('img')

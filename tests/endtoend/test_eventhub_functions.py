@@ -3,10 +3,12 @@
 import json
 import time
 from datetime import datetime
+from unittest import skipIf
 
 from dateutil import parser, tz
 
 from azure_functions_worker import testutils
+from azure_functions_worker.utils.common import is_python_version
 
 
 class TestEventHubFunctions(testutils.WebHostTestCase):
@@ -100,6 +102,8 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertIsNotNone(sys_props['Offset'])
 
 
+@skipIf(is_python_version('3.6'),
+        "New Programming model is not supported for python 3.6")
 class TestEventHubFunctionsStein(TestEventHubFunctions):
 
     @classmethod

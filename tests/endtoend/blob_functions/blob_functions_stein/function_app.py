@@ -236,7 +236,7 @@ def put_blob_as_bytes_return_http_response(req: func.HttpRequest,
                 connection="AzureWebJobsStorage")
 @app.route(route="put_blob_as_str_return_http_response")
 def put_blob_as_str_return_http_response(req: func.HttpRequest, file: func.Out[
-        str]) -> func.HttpResponse:
+    str]) -> func.HttpResponse:
     """
     Write a blob (string) and respond back (in HTTP response) with the number of
     characters written and the MD5 digest of the utf-8 encoded content.
@@ -292,8 +292,9 @@ def put_blob_filelike(req: func.HttpRequest,
 @app.write_blob(arg_name="$return",
                 path="python-worker-tests/test-return.txt",
                 connection="AzureWebJobsStorage")
-@app.route(route="put_blob_return")
-def put_blob_return(req: func.HttpRequest) -> str:
+@app.route(route="put_blob_return", binding_arg_name="resp")
+def put_blob_return(req: func.HttpRequest,
+                    resp: func.Out[func.HttpResponse]) -> str:
     return 'FROM RETURN'
 
 
@@ -326,7 +327,8 @@ def _generate_content_and_digest(content_size):
 @app.function_name(name="put_get_multiple_blobs_as_bytes_return_http_response")
 @app.read_blob(arg_name="inputfile1",
                data_type="BINARY",
-               path="python-worker-tests/shmem-test-bytes-1.txt")
+               path="python-worker-tests/shmem-test-bytes-1.txt",
+               connection="AzureWebJobsStorage")
 @app.read_blob(arg_name="inputfile2",
                data_type="BINARY",
                path="python-worker-tests/shmem-test-bytes-2.txt",

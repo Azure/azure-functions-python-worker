@@ -265,3 +265,16 @@ class TestMockHost(testutils.AsyncTestCase):
                 r.response.result.exception.message,
                 r'.*cannot load the invalid_in_anno_non_type function: '
                 r'binding req has invalid non-type annotation 123')
+
+    async def test_import_module_troubleshooting_url(self):
+        async with testutils.start_mockhost(
+                script_root=self.broken_funcs_dir) as host:
+
+            func_id, r = await host.load_function('missing_module')
+
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*ModuleNotFoundError')

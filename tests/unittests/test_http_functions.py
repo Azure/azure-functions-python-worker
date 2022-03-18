@@ -5,13 +5,11 @@ import hashlib
 import os
 import pathlib
 import typing
-from unittest import skipIf
 
 import pytest
 
 from azure_functions_worker import testutils
 from azure_functions_worker.testutils import WebHostTestCase
-from azure_functions_worker.utils.common import is_python_version
 
 
 class TestHttpFunctions(WebHostTestCase):
@@ -384,8 +382,6 @@ class TestHttpFunctions(WebHostTestCase):
         self.assertNotIn('parallelly_log_system at disguised_logger', host_out)
 
 
-@skipIf(is_python_version('3.6'),
-        "New Programming model is not supported for python 3.6")
 class TestHttpFunctionsStein(TestHttpFunctions):
 
     @classmethod

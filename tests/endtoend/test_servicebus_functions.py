@@ -2,10 +2,8 @@
 # Licensed under the MIT License.
 import json
 import time
-from unittest import skipIf
 
 from azure_functions_worker import testutils
-from azure_functions_worker.utils.common import is_python_version
 
 
 class TestServiceBusFunctions(testutils.WebHostTestCase):
@@ -40,8 +38,6 @@ class TestServiceBusFunctions(testutils.WebHostTestCase):
                 break
 
 
-@skipIf(is_python_version('3.6'),
-        "New Programming model is not supported for python 3.6")
 class TestServiceBusFunctionsStein(TestServiceBusFunctions):
 
     @classmethod

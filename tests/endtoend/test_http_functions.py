@@ -1,12 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
-from unittest import skipIf
 from unittest.mock import patch
 
 import requests
+
 from azure_functions_worker import testutils
-from azure_functions_worker.utils.common import is_python_version
 
 REQUEST_TIMEOUT_SEC = 5
 
@@ -109,8 +108,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertTrue(r.ok)
 
 
-@skipIf(is_python_version('3.6'),
-        "New Programming model is not supported for python 3.6")
 class TestHttpFunctionsStein(TestHttpFunctions):
 
     @classmethod

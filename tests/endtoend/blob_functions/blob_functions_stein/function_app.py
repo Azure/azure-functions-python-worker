@@ -236,7 +236,7 @@ def put_blob_as_bytes_return_http_response(req: func.HttpRequest,
                 connection="AzureWebJobsStorage")
 @app.route(route="put_blob_as_str_return_http_response")
 def put_blob_as_str_return_http_response(req: func.HttpRequest, file: func.Out[
-    str]) -> func.HttpResponse:
+                                         str]) -> func.HttpResponse:
     """
     Write a blob (string) and respond back (in HTTP response) with the number of
     characters written and the MD5 digest of the utf-8 encoded content.

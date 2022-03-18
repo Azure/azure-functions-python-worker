@@ -30,6 +30,7 @@ def blob_trigger(file: func.InputStream) -> str:
 @app.route(route="get_blob_as_bytes")
 @app.read_blob(arg_name="file",
                path="python-worker-tests/test-bytes.txt",
+               data_type="BINARY",
                connection="AzureWebJobsStorage")
 def get_blob_as_bytes(req: func.HttpRequest, file: bytes) -> str:
     assert isinstance(file, bytes)
@@ -102,7 +103,7 @@ def get_blob_as_bytes_stream_return_http_response(req: func.HttpRequest,
 @app.function_name(name="get_blob_as_str")
 @app.route(route="get_blob_as_str")
 @app.read_blob(arg_name="file",
-               path="python-worker-tests/shmem-test-bytes.txt",
+               path="python-worker-tests/test-str.txt",
                data_type="STRING",
                connection="AzureWebJobsStorage")
 def get_blob_as_str(req: func.HttpRequest, file: str) -> str:
@@ -145,7 +146,7 @@ def get_blob_as_str_return_http_response(req: func.HttpRequest,
 @app.function_name(name="get_blob_bytes")
 @app.route(route="get_blob_bytes")
 @app.read_blob(arg_name="file",
-               path="python-worker-tests/shmem-test-bytes.txt",
+               path="python-worker-tests/test-bytes.txt",
                connection="AzureWebJobsStorage")
 def get_blob_bytes(req: func.HttpRequest, file: func.InputStream) -> str:
     return file.read().decode('utf-8')
@@ -272,7 +273,7 @@ def put_blob_as_str_return_http_response(req: func.HttpRequest, file: func.Out[
                 path="python-worker-tests/test-bytes.txt",
                 connection="AzureWebJobsStorage")
 @app.route(route="put_blob_bytes")
-def put_blob_bytes(req: func.HttpRequest, file: func.Out[str]) -> str:
+def put_blob_bytes(req: func.HttpRequest, file: func.Out[bytes]) -> str:
     file.set(req.get_body())
     return 'OK'
 

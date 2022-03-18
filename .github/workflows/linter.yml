@@ -46,7 +46,7 @@ jobs:
           VALIDATE_PYTHON: true
           VALIDATE_PYTHON_FLAKE8: true
           # VALIDATE_PYTHON_PYLINT: false # disable pylint, as we have not configure it
-          # VALIDATE_PYTHON_BLACK: false # same as above
+          VALIDATE_PYTHON_BLACK: true
           PYTHON_FLAKE8_CONFIG_FILE: tox.ini
           FILTER_REGEX_INCLUDE: azure_functions_worker/.*
           FILTER_REGEX_EXCLUDE: tests/.*

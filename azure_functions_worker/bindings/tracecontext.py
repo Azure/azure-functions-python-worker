@@ -7,8 +7,9 @@ from typing import Dict
 class TraceContext:
     """Check https://www.w3.org/TR/trace-context/ for more information"""
 
-    def __init__(self, trace_parent: str,
-                 trace_state: str, attributes: Dict[str, str]) -> None:
+    def __init__(
+        self, trace_parent: str, trace_state: str, attributes: Dict[str, str]
+    ) -> None:
         self.__trace_parent = trace_parent
         self.__trace_state = trace_state
         self.__attributes = attributes

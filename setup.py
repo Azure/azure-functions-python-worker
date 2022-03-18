@@ -77,11 +77,12 @@ NUGET_CONFIG = """\
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
-    'Programming Language :: Python',
+    "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
     "Operating System :: MacOS :: MacOS X",
@@ -124,7 +125,8 @@ EXTRA_REQUIRES = {
         "pytest-randomly",
         "pytest-instafail",
         "pytest-rerunfailures",
-        "ptvsd"
+        "ptvsd",
+        "pre-commit"
     ]
 }
 

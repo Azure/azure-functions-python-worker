@@ -1,24 +1,24 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from typing import Optional, Callable
-from types import ModuleType
+import importlib
 import os
 import sys
-import importlib
+from types import ModuleType
+from typing import Callable, Optional
 
 
 def is_true_like(setting: str) -> bool:
     if setting is None:
         return False
 
-    return setting.lower().strip() in ['1', 'true', 't', 'yes', 'y']
+    return setting.lower().strip() in ["1", "true", "t", "yes", "y"]
 
 
 def is_false_like(setting: str) -> bool:
     if setting is None:
         return False
 
-    return setting.lower().strip() in ['0', 'false', 'f', 'no', 'n']
+    return setting.lower().strip() in ["0", "false", "f", "no", "n"]
 
 
 def is_envvar_true(env_key: str) -> bool:
@@ -36,14 +36,14 @@ def is_envvar_false(env_key: str) -> bool:
 
 
 def is_python_version(version: str) -> bool:
-    current_version = f'{sys.version_info.major}.{sys.version_info.minor}'
+    current_version = f"{sys.version_info.major}.{sys.version_info.minor}"
     return current_version == version
 
 
 def get_app_setting(
     setting: str,
     default_value: Optional[str] = None,
-    validator: Optional[Callable[[str], bool]] = None
+    validator: Optional[Callable[[str], bool]] = None,
 ) -> Optional[str]:
     """Returns the application setting from environment variable.
 
@@ -97,7 +97,7 @@ def get_sdk_version(module: ModuleType) -> str:
         The SDK version that our customer has installed.
     """
 
-    return getattr(module, '__version__', 'undefined')
+    return getattr(module, "__version__", "undefined")
 
 
 def get_sdk_from_sys_path() -> ModuleType:
@@ -113,16 +113,16 @@ def get_sdk_from_sys_path() -> ModuleType:
     backup_azure_functions = None
     backup_azure = None
 
-    if 'azure.functions' in sys.modules:
-        backup_azure_functions = sys.modules.pop('azure.functions')
-    if 'azure' in sys.modules:
-        backup_azure = sys.modules.pop('azure')
+    if "azure.functions" in sys.modules:
+        backup_azure_functions = sys.modules.pop("azure.functions")
+    if "azure" in sys.modules:
+        backup_azure = sys.modules.pop("azure")
 
-    module = importlib.import_module('azure.functions')
+    module = importlib.import_module("azure.functions")
 
     if backup_azure:
-        sys.modules['azure'] = backup_azure
+        sys.modules["azure"] = backup_azure
     if backup_azure_functions:
-        sys.modules['azure.functions'] = backup_azure_functions
+        sys.modules["azure.functions"] = backup_azure_functions
 
     return module

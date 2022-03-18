@@ -1,10 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from typing import Optional
 import logging
 import logging.handlers
 import sys
+from typing import Optional
 
 # Logging Prefixes
 CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
@@ -12,9 +12,8 @@ SYSTEM_LOG_PREFIX = "azure_functions_worker"
 SDK_LOG_PREFIX = "azure.functions"
 
 
-logger: logging.Logger = logging.getLogger('azure_functions_worker')
-error_logger: logging.Logger = (
-    logging.getLogger('azure_functions_worker_errors'))
+logger: logging.Logger = logging.getLogger("azure_functions_worker")
+error_logger: logging.Logger = logging.getLogger("azure_functions_worker_errors")
 
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
@@ -26,11 +25,10 @@ def setup(log_level, log_destination):
     global handler
     global error_handler
 
-    if log_level == 'TRACE':
-        log_level = 'DEBUG'
+    if log_level == "TRACE":
+        log_level = "DEBUG"
 
-    formatter = logging.Formatter(f'{CONSOLE_LOG_PREFIX}'
-                                  ' %(levelname)s: %(message)s')
+    formatter = logging.Formatter(f"{CONSOLE_LOG_PREFIX}" " %(levelname)s: %(message)s")
 
     if log_destination is None:
         # With no explicit log destination we do split logging,
@@ -41,10 +39,10 @@ def setup(log_level, log_destination):
 
         handler = logging.StreamHandler(sys.stdout)
 
-    elif log_destination in ('stdout', 'stderr'):
+    elif log_destination in ("stdout", "stderr"):
         handler = logging.StreamHandler(getattr(sys, log_destination))
 
-    elif log_destination == 'syslog':
+    elif log_destination == "syslog":
         handler = logging.handlers.SysLogHandler()
 
     else:
@@ -77,8 +75,10 @@ def enable_console_logging() -> None:
 
 
 def enable_debug_logging_recommendation():
-    logging.info("To enable debug level logging, please refer to "
-                 "https://aka.ms/python-enable-debug-logging")
+    logging.info(
+        "To enable debug level logging, please refer to "
+        "https://aka.ms/python-enable-debug-logging"
+    )
 
 
 def is_system_log_category(ctg: str) -> bool:

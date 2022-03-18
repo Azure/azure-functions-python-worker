@@ -1,8 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from typing import Any, Optional
 import json
+from typing import Any, Optional
+
 from .. import protos
 from ..logging import logger
 
@@ -16,17 +17,17 @@ class Datum:
     def python_value(self) -> Any:
         if self.value is None or self.type is None:
             return None
-        elif self.type in ('bytes', 'string', 'int', 'double'):
+        elif self.type in ("bytes", "string", "int", "double"):
             return self.value
-        elif self.type == 'json':
+        elif self.type == "json":
             return json.loads(self.value)
-        elif self.type == 'collection_string':
+        elif self.type == "collection_string":
             return [v for v in self.value.string]
-        elif self.type == 'collection_bytes':
+        elif self.type == "collection_bytes":
             return [v for v in self.value.bytes]
-        elif self.type == 'collection_double':
+        elif self.type == "collection_double":
             return [v for v in self.value.double]
-        elif self.type == 'collection_sint64':
+        elif self.type == "collection_sint64":
             return [v for v in self.value.sint64]
         else:
             return self.value
@@ -47,64 +48,55 @@ class Datum:
     def __repr__(self):
         val_repr = repr(self.value)
         if len(val_repr) > 10:
-            val_repr = val_repr[:10] + '...'
-        return '<Datum {} {}>'.format(self.type, val_repr)
+            val_repr = val_repr[:10] + "..."
+        return "<Datum {} {}>".format(self.type, val_repr)
 
     @classmethod
     def from_typed_data(cls, td: protos.TypedData):
-        tt = td.WhichOneof('data')
-        if tt == 'http':
+        tt = td.WhichOneof("data")
+        if tt == "http":
             http = td.http
             val = dict(
-                method=Datum(http.method, 'string'),
-                url=Datum(http.url, 'string'),
-                headers={
-                    k: Datum(v, 'string') for k, v in http.headers.items()
-                },
+                method=Datum(http.method, "string"),
+                url=Datum(http.url, "string"),
+                headers={k: Datum(v, "string") for k, v in http.headers.items()},
                 body=(
-                    Datum.from_typed_data(http.body)
-                    or Datum(type='bytes', value=b'')
+                    Datum.from_typed_data(http.body) or Datum(type="bytes", value=b"")
                 ),
-                params={
-                    k: Datum(v, 'string') for k, v in http.params.items()
-                },
-                query={
-                    k: Datum(v, 'string') for k, v in http.query.items()
-                },
+                params={k: Datum(v, "string") for k, v in http.params.items()},
+                query={k: Datum(v, "string") for k, v in http.query.items()},
             )
-        elif tt == 'string':
+        elif tt == "string":
             val = td.string
-        elif tt == 'bytes':
+        elif tt == "bytes":
             val = td.bytes
-        elif tt == 'json':
+        elif tt == "json":
             val = td.json
-        elif tt == 'collection_bytes':
+        elif tt == "collection_bytes":
             val = td.collection_bytes
-        elif tt == 'collection_string':
+        elif tt == "collection_string":
             val = td.collection_string
-        elif tt == 'collection_sint64':
+        elif tt == "collection_sint64":
             val = td.collection_sint64
         elif tt is None:
             return None
         else:
-            raise NotImplementedError(
-                'unsupported TypeData kind: {!r}'.format(tt)
-            )
+            raise NotImplementedError("unsupported TypeData kind: {!r}".format(tt))
 
         return cls(val, tt)
 
     @classmethod
     def from_rpc_shared_memory(
-            cls,
-            shmem: protos.RpcSharedMemory,
-            shmem_mgr) -> Optional['Datum']:
+        cls, shmem: protos.RpcSharedMemory, shmem_mgr
+    ) -> Optional["Datum"]:
         """
         Reads the specified shared memory region and converts the read data into
         a datum object of the corresponding type.
         """
         if shmem is None:
-            logger.warning('Cannot read from shared memory. '
-                           'RpcSharedMemory is None.')
+            logger.warning(
+                "Cannot read from shared memory. " "RpcSharedMemory is None."
+            )
             return None
 
         mem_map_name = shmem.name
@@ -116,77 +108,75 @@ class Datum:
         if data_type == protos.RpcDataType.bytes:
             val = shmem_mgr.get_bytes(mem_map_name, offset, count)
             if val is not None:
-                ret_val = cls(val, 'bytes')
+                ret_val = cls(val, "bytes")
         elif data_type == protos.RpcDataType.string:
             val = shmem_mgr.get_string(mem_map_name, offset, count)
             if val is not None:
-                ret_val = cls(val, 'string')
+                ret_val = cls(val, "string")
 
         if ret_val is not None:
             logger.info(
-                f'Read {count} bytes from memory map {mem_map_name} '
-                f'for data type {data_type}')
+                f"Read {count} bytes from memory map {mem_map_name} "
+                f"for data type {data_type}"
+            )
             return ret_val
         return None
 
     @classmethod
     def to_rpc_shared_memory(
-            cls,
-            datum: 'Datum',
-            shmem_mgr) -> Optional[protos.RpcSharedMemory]:
+        cls, datum: "Datum", shmem_mgr
+    ) -> Optional[protos.RpcSharedMemory]:
         """
         Writes the given value to shared memory and returns the corresponding
         RpcSharedMemory object which can be sent back to the functions host over
         RPC.
         """
-        if datum.type == 'bytes':
+        if datum.type == "bytes":
             value = datum.value
             shared_mem_meta = shmem_mgr.put_bytes(value)
             data_type = protos.RpcDataType.bytes
-        elif datum.type == 'string':
+        elif datum.type == "string":
             value = datum.value
             shared_mem_meta = shmem_mgr.put_string(value)
             data_type = protos.RpcDataType.string
         else:
             raise NotImplementedError(
-                f'Unsupported datum type ({datum.type}) for shared memory'
+                f"Unsupported datum type ({datum.type}) for shared memory"
             )
 
         if shared_mem_meta is None:
-            logger.warning('Cannot write to shared memory for type: '
-                           f'{datum.type}')
+            logger.warning("Cannot write to shared memory for type: " f"{datum.type}")
             return None
 
         shmem = protos.RpcSharedMemory(
             name=shared_mem_meta.mem_map_name,
             offset=0,
             count=shared_mem_meta.count_bytes,
-            type=data_type)
+            type=data_type,
+        )
 
         logger.info(
-            f'Wrote {shared_mem_meta.count_bytes} bytes to memory map '
-            f'{shared_mem_meta.mem_map_name} for data type {data_type}')
+            f"Wrote {shared_mem_meta.count_bytes} bytes to memory map "
+            f"{shared_mem_meta.mem_map_name} for data type {data_type}"
+        )
         return shmem
 
 
 def datum_as_proto(datum: Datum) -> protos.TypedData:
-    if datum.type == 'string':
+    if datum.type == "string":
         return protos.TypedData(string=datum.value)
-    elif datum.type == 'bytes':
+    elif datum.type == "bytes":
         return protos.TypedData(bytes=datum.value)
-    elif datum.type == 'json':
+    elif datum.type == "json":
         return protos.TypedData(json=datum.value)
-    elif datum.type == 'http':
-        return protos.TypedData(http=protos.RpcHttp(
-            status_code=datum.value['status_code'].value,
-            headers={
-                k: v.value
-                for k, v in datum.value['headers'].items()
-            },
-            enable_content_negotiation=False,
-            body=datum_as_proto(datum.value['body']),
-        ))
-    else:
-        raise NotImplementedError(
-            'unexpected Datum type: {!r}'.format(datum.type)
+    elif datum.type == "http":
+        return protos.TypedData(
+            http=protos.RpcHttp(
+                status_code=datum.value["status_code"].value,
+                headers={k: v.value for k, v in datum.value["headers"].items()},
+                enable_content_negotiation=False,
+                body=datum_as_proto(datum.value["body"]),
+            )
         )
+    else:
+        raise NotImplementedError("unexpected Datum type: {!r}".format(datum.type))

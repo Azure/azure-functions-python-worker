@@ -7,7 +7,8 @@ class SharedMemoryConstants:
         """
         Flags that are present in the header region of the memory maps.
         """
-        Initialized = b'\x01'
+
+        Initialized = b"\x01"
         """
         Indicates that the memory map has been initialized, may be in use and
         is not new.
@@ -29,8 +30,9 @@ class SharedMemoryConstants:
     specifying content length in the memory map.
     """
 
-    CONTENT_HEADER_TOTAL_BYTES = MEM_MAP_INITIALIZED_FLAG_NUM_BYTES + \
-        CONTENT_LENGTH_NUM_BYTES
+    CONTENT_HEADER_TOTAL_BYTES = (
+        MEM_MAP_INITIALIZED_FLAG_NUM_BYTES + CONTENT_LENGTH_NUM_BYTES
+    )
     """
     The total length of the header
     """

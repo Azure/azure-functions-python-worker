@@ -1,24 +1,20 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import functools
+import logging
 from types import ModuleType
 from typing import Any, Callable, List, Optional
-import logging
-import functools
-from .utils.common import (
-    is_python_version,
-    get_sdk_from_sys_path,
-    get_sdk_version
-)
-from .utils.wrappers import enable_feature_by
+
 from .constants import (
-    PYTHON_ISOLATE_WORKER_DEPENDENCIES,
     PYTHON_ENABLE_WORKER_EXTENSIONS,
     PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT,
-    PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39
+    PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39,
+    PYTHON_ISOLATE_WORKER_DEPENDENCIES,
 )
-from .logging import logger, SYSTEM_LOG_PREFIX
-
+from .logging import SYSTEM_LOG_PREFIX, logger
+from .utils.common import get_sdk_from_sys_path, get_sdk_version, is_python_version
+from .utils.wrappers import enable_feature_by
 
 # Extension Hooks
 FUNC_EXT_POST_FUNCTION_LOAD = "post_function_load"
@@ -44,10 +40,10 @@ class ExtensionManager:
     @enable_feature_by(
         flag=PYTHON_ENABLE_WORKER_EXTENSIONS,
         flag_default=(
-            PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39 if
-            is_python_version('3.9') else
-            PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT
-        )
+            PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39
+            if is_python_version("3.9")
+            else PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT
+        ),
     )
     def function_load_extension(cls, func_name, func_directory):
         """Helper to execute function load extensions. If one of the extension
@@ -91,10 +87,10 @@ class ExtensionManager:
     @enable_feature_by(
         flag=PYTHON_ENABLE_WORKER_EXTENSIONS,
         flag_default=(
-            PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39 if
-            is_python_version('3.9') else
-            PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT
-        )
+            PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39
+            if is_python_version("3.9")
+            else PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT
+        ),
     )
     def _invocation_extension(cls, ctx, hook_name, func_args, func_ret=None):
         """Helper to execute extensions. If one of the extension fails in the
@@ -118,18 +114,14 @@ class ExtensionManager:
         funcs = sdk.ExtensionMeta.get_function_hooks(ctx.function_name)
 
         # Invoke function hooks
-        cls._safe_execute_invocation_hooks(
-            funcs, hook_name, ctx, func_args, func_ret
-        )
+        cls._safe_execute_invocation_hooks(funcs, hook_name, ctx, func_args, func_ret)
 
         # Get application hooks from azure.functions.extension.ExtensionMeta
         # The reutnr type is AppExtensionHooks
         apps = sdk.ExtensionMeta.get_application_hooks()
 
         # Invoke application hook
-        cls._safe_execute_invocation_hooks(
-            apps, hook_name, ctx, func_args, func_ret
-        )
+        cls._safe_execute_invocation_hooks(apps, hook_name, ctx, func_args, func_ret)
 
     @classmethod
     def get_sync_invocation_wrapper(cls, ctx, func) -> Callable[[List], Any]:
@@ -140,8 +132,7 @@ class ExtensionManager:
 
     @classmethod
     async def get_async_invocation_wrapper(cls, ctx, function, args) -> Any:
-        """An asynchronous coroutine for executing function with extensions
-        """
+        """An asynchronous coroutine for executing function with extensions"""
         cls._invocation_extension(ctx, APP_EXT_PRE_INVOCATION, args)
         cls._invocation_extension(ctx, FUNC_EXT_PRE_INVOCATION, args)
         result = await function(**args)
@@ -164,7 +155,7 @@ class ExtensionManager:
         bool
             True on azure.functions SDK supports extension registration
         """
-        return getattr(module, 'ExtensionMeta', None) is not None
+        return getattr(module, "ExtensionMeta", None) is not None
 
     @classmethod
     def _is_pre_invocation_hook(cls, name) -> bool:
@@ -183,7 +174,7 @@ class ExtensionManager:
             for hook_meta in getattr(hooks, hook_name, []):
                 # Register a system logger with prefix azure_functions_worker
                 ext_logger = logging.getLogger(
-                    f'{SYSTEM_LOG_PREFIX}.extension.{hook_meta.ext_name}'
+                    f"{SYSTEM_LOG_PREFIX}.extension.{hook_meta.ext_name}"
                 )
                 try:
                     if cls._is_pre_invocation_hook(hook_name):
@@ -236,24 +227,24 @@ class ExtensionManager:
     @classmethod
     def _info_extension_is_enabled(cls, sdk):
         logger.info(
-            'Python Worker Extension is enabled in azure.functions '
-            f'({get_sdk_version(sdk)}).'
+            "Python Worker Extension is enabled in azure.functions "
+            f"({get_sdk_version(sdk)})."
         )
 
     @classmethod
     def _info_discover_extension_list(cls, function_name, sdk):
         logger.info(
-            f'Python Worker Extension Manager is loading {function_name}, '
-            'current registered extensions: '
-            f'{sdk.ExtensionMeta.get_registered_extensions_json()}'
+            f"Python Worker Extension Manager is loading {function_name}, "
+            "current registered extensions: "
+            f"{sdk.ExtensionMeta.get_registered_extensions_json()}"
         )
 
     @classmethod
     def _warn_sdk_not_support_extension(cls, sdk):
         logger.warning(
-            f'The azure.functions ({get_sdk_version(sdk)}) does not '
-            'support Python worker extensions. If you believe extensions '
-            'are correctly installed, please set the '
-            f'{PYTHON_ISOLATE_WORKER_DEPENDENCIES} and '
+            f"The azure.functions ({get_sdk_version(sdk)}) does not "
+            "support Python worker extensions. If you believe extensions "
+            "are correctly installed, please set the "
+            f"{PYTHON_ISOLATE_WORKER_DEPENDENCIES} and "
             f'{PYTHON_ENABLE_WORKER_EXTENSIONS} to "true"'
         )

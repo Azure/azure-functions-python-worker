@@ -1,0 +1,2 @@
+ignore:
+  - "azure_functions_worker/testutils*.py"       # wildcards accepted

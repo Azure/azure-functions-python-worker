@@ -3,7 +3,7 @@
         "language":"python",
         "defaultRuntimeVersion":"3.9",
         "supportedOperatingSystems":["LINUX", "OSX", "WINDOWS"],
-        "supportedRuntimeVersions":["3.7", "3.8", "3.9"],
+        "supportedRuntimeVersions":["3.7", "3.8", "3.9", "3.10"],
         "supportedArchitectures":["X64", "X86"],
         "extensions":[".py"],
         "defaultExecutablePath":"python",

@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from unittest import TestCase
+from unittest import TestCase, skipIf
 
 import os
 import sys
@@ -9,8 +9,12 @@ from requests import Request
 from azure_functions_worker.testutils_lc import (
     LinuxConsumptionWebHostController
 )
+from azure_functions_worker.utils.common import is_python_version
 
 
+@skipIf(is_python_version('3.10'),
+        "Skip the tests for Python 3.10 currently as the mesh images for "
+        "Python 3.10 aren't available currently.")
 class TestLinuxConsumption(TestCase):
     """Test worker behaviors on specific scenarios.
 

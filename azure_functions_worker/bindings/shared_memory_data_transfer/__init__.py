@@ -20,6 +20,10 @@ from .shared_memory_manager import SharedMemoryManager
 from .shared_memory_map import SharedMemoryMap
 
 __all__ = (
-    'FileAccessorFactory', 'FileAccessor', 'SharedMemoryConstants',
-    'SharedMemoryException', 'SharedMemoryMap', 'SharedMemoryManager'
+    "FileAccessorFactory",
+    "FileAccessor",
+    "SharedMemoryConstants",
+    "SharedMemoryException",
+    "SharedMemoryMap",
+    "SharedMemoryManager",
 )

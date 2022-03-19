@@ -17,19 +17,18 @@ class SharedMemoryMap:
     """
     Shared memory region to read/write data from.
     """
+
     def __init__(
-            self,
-            file_accessor: FileAccessor,
-            mem_map_name: str,
-            mem_map: mmap.mmap):
+        self, file_accessor: FileAccessor, mem_map_name: str, mem_map: mmap.mmap
+    ):
         if mem_map is None:
             raise SharedMemoryException(
-                'Cannot initialize SharedMemoryMap. Invalid memory map '
-                'provided')
-        if mem_map_name is None or mem_map_name == '':
+                "Cannot initialize SharedMemoryMap. Invalid memory map " "provided"
+            )
+        if mem_map_name is None or mem_map_name == "":
             raise SharedMemoryException(
-                f'Cannot initialize SharedMemoryMap. Invalid name '
-                f'{mem_map_name}')
+                f"Cannot initialize SharedMemoryMap. Invalid name " f"{mem_map_name}"
+            )
         self.file_accessor = file_accessor
         self.mem_map_name = mem_map_name
         self.mem_map = mem_map
@@ -48,23 +47,25 @@ class SharedMemoryMap:
         self.mem_map.seek(consts.MEM_MAP_INITIALIZED_FLAG_NUM_BYTES)
         # Write the content length into the header
         content_length_bytes = content_length.to_bytes(
-            consts.CONTENT_LENGTH_NUM_BYTES, byteorder=sys.byteorder)
+            consts.CONTENT_LENGTH_NUM_BYTES, byteorder=sys.byteorder
+        )
         num_content_length_bytes = len(content_length_bytes)
-        num_content_length_bytes_written = self.mem_map.write(
-            content_length_bytes)
+        num_content_length_bytes_written = self.mem_map.write(content_length_bytes)
         if num_content_length_bytes_written != num_content_length_bytes:
             logger.error(
-                f'Cannot write content size to memory map {self.mem_map_name} '
-                f'({num_content_length_bytes_written} != '
-                f'{num_content_length_bytes})')
+                f"Cannot write content size to memory map {self.mem_map_name} "
+                f"({num_content_length_bytes_written} != "
+                f"{num_content_length_bytes})"
+            )
             return 0
         # Write the content
         num_content_bytes_written = self.mem_map.write(content)
         self.mem_map.flush()
         return num_content_bytes_written
 
-    def get_bytes(self, content_offset: int = 0, bytes_to_read: int = 0) \
-            -> Optional[bytes]:
+    def get_bytes(
+        self, content_offset: int = 0, bytes_to_read: int = 0
+    ) -> Optional[bytes]:
         """
         Read content from this SharedMemoryMap with the given name and starting
         at the given offset.
@@ -94,8 +95,7 @@ class SharedMemoryMap:
         """
         success = True
         if is_delete_file:
-            success = self.file_accessor.delete_mem_map(self.mem_map_name,
-                                                        self.mem_map)
+            success = self.file_accessor.delete_mem_map(self.mem_map_name, self.mem_map)
         self.mem_map.close()
         return success
 

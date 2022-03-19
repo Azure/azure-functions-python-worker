@@ -6,12 +6,14 @@ from . import rpcexception
 
 class RetryContext:
     """Check https://docs.microsoft.com/en-us/azure/azure-functions/
-       functions-bindings-error-pages?tabs=python#retry-policies-preview"""
+    functions-bindings-error-pages?tabs=python#retry-policies-preview"""
 
-    def __init__(self,
-                 retry_count: int,
-                 max_retry_count: int,
-                 rpc_exception: rpcexception.RpcException) -> None:
+    def __init__(
+        self,
+        retry_count: int,
+        max_retry_count: int,
+        rpc_exception: rpcexception.RpcException,
+    ) -> None:
         self.__retry_count = retry_count
         self.__max_retry_count = max_retry_count
         self.__rpc_exception = rpc_exception

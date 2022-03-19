@@ -7,7 +7,6 @@ from . import datumdef
 
 
 class GenericBinding:
-
     @classmethod
     def has_trigger_support(cls) -> bool:
         return False
@@ -21,13 +20,12 @@ class GenericBinding:
         return issubclass(pytype, (str, bytes, bytearray))
 
     @classmethod
-    def encode(cls, obj: Any, *,
-               expected_type: Optional[type]) -> datumdef.Datum:
+    def encode(cls, obj: Any, *, expected_type: Optional[type]) -> datumdef.Datum:
         if isinstance(obj, str):
-            return datumdef.Datum(type='string', value=obj)
+            return datumdef.Datum(type="string", value=obj)
 
         elif isinstance(obj, (bytes, bytearray)):
-            return datumdef.Datum(type='bytes', value=bytes(obj))
+            return datumdef.Datum(type="bytes", value=bytes(obj))
 
         else:
             raise NotImplementedError
@@ -36,16 +34,16 @@ class GenericBinding:
     def decode(cls, data: datumdef.Datum, *, trigger_metadata) -> typing.Any:
         data_type = data.type
 
-        if data_type == 'string':
+        if data_type == "string":
             result = data.value
-        elif data_type == 'bytes':
+        elif data_type == "bytes":
             result = data.value
-        elif data_type == 'json':
+        elif data_type == "json":
             result = data.value
         else:
             raise ValueError(
                 f'unexpected type of data received for the "generic" binding '
-                f': {data_type!r}'
+                f": {data_type!r}"
             )
 
         return result

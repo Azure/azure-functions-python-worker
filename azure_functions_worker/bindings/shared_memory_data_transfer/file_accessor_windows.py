@@ -3,9 +3,10 @@
 
 import mmap
 from typing import Optional
-from .shared_memory_exception import SharedMemoryException
-from .file_accessor import FileAccessor
+
 from ...logging import logger
+from .file_accessor import FileAccessor
+from .shared_memory_exception import SharedMemoryException
 
 
 class FileAccessorWindows(FileAccessor):

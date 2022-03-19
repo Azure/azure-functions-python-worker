@@ -4,8 +4,7 @@ import inspect
 import operator
 import typing
 
-from . import bindings
-from . import protos
+from . import bindings, protos
 from ._thirdparty import typing_inspect
 
 

@@ -1,20 +1,18 @@
-from azure_functions_worker.utils.common import is_true_like
-from typing import List, Optional
-from types import ModuleType
 import importlib
 import inspect
 import os
 import re
 import sys
+from types import ModuleType
+from typing import List, Optional
 
+from azure_functions_worker.utils.common import is_true_like
+
+from ..constants import (AZURE_WEBJOBS_SCRIPT_ROOT, CONTAINER_NAME,
+                         PYTHON_ISOLATE_WORKER_DEPENDENCIES,
+                         PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT,
+                         PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310)
 from ..logging import logger
-from ..constants import (
-    AZURE_WEBJOBS_SCRIPT_ROOT,
-    CONTAINER_NAME,
-    PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT,
-    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310
-)
 from ..utils.common import is_python_version
 from ..utils.wrappers import enable_feature_by
 

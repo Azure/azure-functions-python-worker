@@ -1,10 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from typing import Optional, Callable
-from types import ModuleType
+import importlib
 import os
 import sys
-import importlib
+from types import ModuleType
+from typing import Callable, Optional
 
 
 def is_true_like(setting: str) -> bool:

@@ -35,20 +35,16 @@ import grpc
 import requests
 
 from azure_functions_worker._thirdparty import aio_compat
-from azure_functions_worker.bindings.shared_memory_data_transfer \
-    import FileAccessorFactory
-from azure_functions_worker.bindings.shared_memory_data_transfer \
-    import SharedMemoryConstants as consts
-from . import dispatcher
-from . import protos
-from .constants import (
-    PYAZURE_WEBHOST_DEBUG,
-    PYAZURE_WORKER_DIR,
-    PYAZURE_INTEGRATION_TEST,
-    FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
-    UNIX_SHARED_MEMORY_DIRECTORIES
-)
-from .utils.common import is_envvar_true, get_app_setting
+from azure_functions_worker.bindings.shared_memory_data_transfer import \
+    FileAccessorFactory
+from azure_functions_worker.bindings.shared_memory_data_transfer import \
+    SharedMemoryConstants as consts
+
+from . import dispatcher, protos
+from .constants import (FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
+                        PYAZURE_INTEGRATION_TEST, PYAZURE_WEBHOST_DEBUG,
+                        PYAZURE_WORKER_DIR, UNIX_SHARED_MEMORY_DIRECTORIES)
+from .utils.common import get_app_setting, is_envvar_true
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
 TESTS_ROOT = PROJECT_ROOT / 'tests'

@@ -4,9 +4,7 @@ import sys
 import typing
 
 from .. import protos
-
-from . import datumdef
-from . import generic
+from . import datumdef, generic
 from .shared_memory_data_transfer import SharedMemoryManager
 
 PB_TYPE = 'rpc_data'

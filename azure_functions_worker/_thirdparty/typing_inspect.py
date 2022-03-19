@@ -12,19 +12,17 @@ Example usage::
 # NOTE: This module must support Python 2.7 in addition to Python 3.x
 
 import sys
+
 NEW_TYPING = sys.version_info[:3] >= (3, 7, 0)  # PEP 560
 if NEW_TYPING:
     import collections.abc
 
 if NEW_TYPING:
-    from typing import (
-        Generic, Callable, Union, TypeVar, ClassVar, Tuple, _GenericAlias
-    )
+    from typing import (Callable, ClassVar, Generic, Tuple, TypeVar, Union,
+                        _GenericAlias)
 else:
-    from typing import (
-        Callable, CallableMeta, Union, _Union, TupleMeta, TypeVar,
-        _ClassVar, GenericMeta,
-    )
+    from typing import (Callable, CallableMeta, GenericMeta, TupleMeta,
+                        TypeVar, Union, _ClassVar, _Union)
 
 NEW_39_TYPING = sys.version_info[:3] >= (3, 9, 0)  # PEP 560
 if NEW_39_TYPING:

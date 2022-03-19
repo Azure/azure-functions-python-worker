@@ -1,8 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from typing import Any, Optional
 import json
+from typing import Any, Optional
+
 from .. import protos
 from ..logging import logger
 

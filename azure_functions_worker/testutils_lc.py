@@ -1,8 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from typing import Dict
-
 import base64
 import json
 import os
@@ -11,11 +9,12 @@ import subprocess
 import sys
 import time
 import uuid
+from typing import Dict
 
+import requests
 from Crypto.Cipher import AES
 from Crypto.Hash.SHA256 import SHA256Hash
 from Crypto.Util.Padding import pad
-import requests
 
 # Linux Consumption Testing Constants
 _DOCKER_PATH = "DOCKER_PATH"

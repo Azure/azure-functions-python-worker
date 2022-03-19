@@ -1,24 +1,19 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import functools
+import logging
 from types import ModuleType
 from typing import Any, Callable, List, Optional
-import logging
-import functools
-from .utils.common import (
-    is_python_version,
-    get_sdk_from_sys_path,
-    get_sdk_version
-)
-from .utils.wrappers import enable_feature_by
-from .constants import (
-    PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-    PYTHON_ENABLE_WORKER_EXTENSIONS,
-    PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT,
-    PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39
-)
-from .logging import logger, SYSTEM_LOG_PREFIX
 
+from .constants import (PYTHON_ENABLE_WORKER_EXTENSIONS,
+                        PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT,
+                        PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39,
+                        PYTHON_ISOLATE_WORKER_DEPENDENCIES)
+from .logging import SYSTEM_LOG_PREFIX, logger
+from .utils.common import (get_sdk_from_sys_path, get_sdk_version,
+                           is_python_version)
+from .utils.wrappers import enable_feature_by
 
 # Extension Hooks
 FUNC_EXT_POST_FUNCTION_LOAD = "post_function_load"

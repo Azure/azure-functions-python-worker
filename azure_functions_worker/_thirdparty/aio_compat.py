@@ -81,7 +81,7 @@ def _cancel_all_tasks(loop):
 
 try:
     # Try to import the 'run' function from asyncio.
-    from asyncio import run, get_running_loop  # NoQA
+    from asyncio import get_running_loop, run  # NoQA
 except ImportError:
     # Python <= 3.6
     pass

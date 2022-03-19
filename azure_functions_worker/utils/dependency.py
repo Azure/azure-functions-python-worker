@@ -8,10 +8,13 @@ from typing import List, Optional
 
 from azure_functions_worker.utils.common import is_true_like
 
-from ..constants import (AZURE_WEBJOBS_SCRIPT_ROOT, CONTAINER_NAME,
-                         PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-                         PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT,
-                         PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310)
+from ..constants import (
+    AZURE_WEBJOBS_SCRIPT_ROOT,
+    CONTAINER_NAME,
+    PYTHON_ISOLATE_WORKER_DEPENDENCIES,
+    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT,
+    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310,
+)
 from ..logging import logger
 from ..utils.common import is_python_version
 from ..utils.wrappers import enable_feature_by
@@ -56,9 +59,9 @@ class DependencyManager:
     will only get loaded from CX's deps path.
     """
 
-    cx_deps_path: str = ''
-    cx_working_dir: str = ''
-    worker_deps_path: str = ''
+    cx_deps_path: str = ""
+    cx_working_dir: str = ""
+    worker_deps_path: str = ""
 
     @classmethod
     def initialize(cls):
@@ -74,10 +77,10 @@ class DependencyManager:
     @enable_feature_by(
         flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
         flag_default=(
-            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
-            is_python_version('3.10') else
-            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
-        )
+            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310
+            if is_python_version("3.10")
+            else PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
+        ),
     )
     def use_worker_dependencies(cls):
         """Switch the sys.path and ensure the worker imports are loaded from
@@ -91,24 +94,26 @@ class DependencyManager:
         # The following log line will not show up in core tools but should
         # work in kusto since core tools only collects gRPC logs. This function
         # is executed even before the gRPC logging channel is ready.
-        logger.info(f'Applying use_worker_dependencies:'
-                    f' worker_dependencies: {cls.worker_deps_path},'
-                    f' customer_dependencies: {cls.cx_deps_path},'
-                    f' working_directory: {cls.cx_working_dir}')
+        logger.info(
+            f"Applying use_worker_dependencies:"
+            f" worker_dependencies: {cls.worker_deps_path},"
+            f" customer_dependencies: {cls.cx_deps_path},"
+            f" working_directory: {cls.cx_working_dir}"
+        )
 
         cls._remove_from_sys_path(cls.cx_deps_path)
         cls._remove_from_sys_path(cls.cx_working_dir)
         cls._add_to_sys_path(cls.worker_deps_path, True)
-        logger.info(f'Start using worker dependencies {cls.worker_deps_path}')
+        logger.info(f"Start using worker dependencies {cls.worker_deps_path}")
 
     @classmethod
     @enable_feature_by(
         flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
         flag_default=(
-            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
-            is_python_version('3.10') else
-            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
-        )
+            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310
+            if is_python_version("3.10")
+            else PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
+        ),
     )
     def prioritize_customer_dependencies(cls, cx_working_dir=None):
         """Switch the sys.path and ensure the customer's code import are loaded
@@ -128,23 +133,25 @@ class DependencyManager:
         """
         # Try to get the latest customer's working directory
         # cx_working_dir => cls.cx_working_dir => AzureWebJobsScriptRoot
-        working_directory: str = ''
+        working_directory: str = ""
         if cx_working_dir:
             working_directory: str = os.path.abspath(cx_working_dir)
         if not working_directory:
             working_directory = cls.cx_working_dir
         if not working_directory:
-            working_directory = os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT, '')
+            working_directory = os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT, "")
 
         # Try to get the latest customer's dependency path
         cx_deps_path: str = cls._get_cx_deps_path()
         if not cx_deps_path:
             cx_deps_path = cls.cx_deps_path
 
-        logger.info('Applying prioritize_customer_dependencies:'
-                    f' worker_dependencies: {cls.worker_deps_path},'
-                    f' customer_dependencies: {cx_deps_path},'
-                    f' working_directory: {working_directory}')
+        logger.info(
+            "Applying prioritize_customer_dependencies:"
+            f" worker_dependencies: {cls.worker_deps_path},"
+            f" customer_dependencies: {cx_deps_path},"
+            f" working_directory: {working_directory}"
+        )
 
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.cx_deps_path, True)
@@ -161,7 +168,7 @@ class DependencyManager:
         # https://github.com/Azure/azure-functions-python-worker/pull/726
         cls._add_to_sys_path(working_directory, False)
 
-        logger.info('Finished prioritize_customer_dependencies')
+        logger.info("Finished prioritize_customer_dependencies")
 
     @classmethod
     def reload_customer_libraries(cls, cx_working_dir: str):
@@ -179,9 +186,9 @@ class DependencyManager:
         use_new_env = os.getenv(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
         if use_new_env is None:
             use_new = (
-                PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
-                is_python_version('3.10') else
-                PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310
+                if is_python_version("3.10")
+                else PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
             )
         else:
             use_new = is_true_like(use_new_env)
@@ -204,25 +211,31 @@ class DependencyManager:
         Only intended to be used in Linux Consumption scenario.
         """
         # Reload package namespaces for customer's libraries
-        packages_to_reload = ['azure', 'google']
+        packages_to_reload = ["azure", "google"]
         for p in packages_to_reload:
             try:
-                logger.info(f'Reloading {p} module')
+                logger.info(f"Reloading {p} module")
                 importlib.reload(sys.modules[p])
             except Exception as ex:
-                logger.info('Unable to reload {}: \n{}'.format(p, ex))
-            logger.info(f'Reloaded {p} module')
+                logger.info("Unable to reload {}: \n{}".format(p, ex))
+            logger.info(f"Reloaded {p} module")
 
         # Reload azure.functions to give user package precedence
-        logger.info('Reloading azure.functions module at %s',
-                    inspect.getfile(sys.modules['azure.functions']))
+        logger.info(
+            "Reloading azure.functions module at %s",
+            inspect.getfile(sys.modules["azure.functions"]),
+        )
         try:
-            importlib.reload(sys.modules['azure.functions'])
-            logger.info('Reloaded azure.functions module now at %s',
-                        inspect.getfile(sys.modules['azure.functions']))
+            importlib.reload(sys.modules["azure.functions"])
+            logger.info(
+                "Reloaded azure.functions module now at %s",
+                inspect.getfile(sys.modules["azure.functions"]),
+            )
         except Exception as ex:
-            logger.info('Unable to reload azure.functions. '
-                        'Using default. Exception:\n{}'.format(ex))
+            logger.info(
+                "Unable to reload azure.functions. "
+                "Using default. Exception:\n{}".format(ex)
+            )
 
     @classmethod
     def _add_to_sys_path(cls, path: str, add_to_first: bool):
@@ -298,11 +311,12 @@ class DependencyManager:
         """
         prefix: Optional[str] = os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT)
         cx_paths: List[str] = [
-            p for p in sys.path
-            if prefix and p.startswith(prefix) and ('site-packages' in p)
+            p
+            for p in sys.path
+            if prefix and p.startswith(prefix) and ("site-packages" in p)
         ]
         # Return first or default of customer path
-        return (cx_paths or [''])[0]
+        return (cx_paths or [""])[0]
 
     @staticmethod
     def _get_cx_working_dir() -> str:
@@ -315,7 +329,7 @@ class DependencyManager:
             Linux Dedicated/Premium: AzureWebJobsScriptRoot env variable
             Linux Consumption: empty string
         """
-        return os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT, '')
+        return os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT, "")
 
     @staticmethod
     def _get_worker_deps_path() -> str:
@@ -328,7 +342,7 @@ class DependencyManager:
             The worker packages path
         """
         # 1. Try to parse the absolute path python/3.8/LINUX/X64 in sys.path
-        r = re.compile(r'.*python(\/|\\)\d+\.\d+(\/|\\)(WINDOWS|LINUX|OSX).*')
+        r = re.compile(r".*python(\/|\\)\d+\.\d+(\/|\\)(WINDOWS|LINUX|OSX).*")
         worker_deps_paths: List[str] = [p for p in sys.path if r.match(p)]
         if worker_deps_paths:
             return worker_deps_paths[0]
@@ -336,19 +350,17 @@ class DependencyManager:
         # 2. Try to find module spec of azure.functions without actually
         #    importing it (e.g. lib/site-packages/azure/functions/__init__.py)
         try:
-            azf_spec = importlib.util.find_spec('azure.functions')
+            azf_spec = importlib.util.find_spec("azure.functions")
             if azf_spec and azf_spec.origin:
                 return os.path.abspath(
-                    os.path.join(os.path.dirname(azf_spec.origin), '..', '..')
+                    os.path.join(os.path.dirname(azf_spec.origin), "..", "..")
                 )
         except ModuleNotFoundError:
-            logger.warning('Cannot locate built-in azure.functions module')
+            logger.warning("Cannot locate built-in azure.functions module")
 
         # 3. If it fails to find one, try to find one from the parent path
         #    This is used for handling the CI/localdev environment
-        return os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', '..')
-        )
+        return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
     @staticmethod
     def _remove_module_cache(path: str):
@@ -366,10 +378,13 @@ class DependencyManager:
         not_builtin = set(sys.modules.keys()) - set(sys.builtin_module_names)
 
         # Don't reload azure_functions_worker
-        to_be_cleared_from_cache = set([
-            module_name for module_name in not_builtin
-            if not module_name.startswith('azure_functions_worker')
-        ])
+        to_be_cleared_from_cache = set(
+            [
+                module_name
+                for module_name in not_builtin
+                if not module_name.startswith("azure_functions_worker")
+            ]
+        )
 
         for module_name in to_be_cleared_from_cache:
             module = sys.modules.get(module_name)
@@ -380,14 +395,14 @@ class DependencyManager:
             # Both of these has the module path placed in __path__ property
             # The property .__path__ can be None or does not exist in module
             try:
-                module_paths = set(getattr(module, '__path__', None) or [])
-                if hasattr(module, '__file__') and module.__file__:
+                module_paths = set(getattr(module, "__path__", None) or [])
+                if hasattr(module, "__file__") and module.__file__:
                     module_paths.add(module.__file__)
 
                 if any([p for p in module_paths if p.startswith(path)]):
                     sys.modules.pop(module_name)
             except Exception as e:
                 logger.warning(
-                    f'Attempt to remove module cache for {module_name} but'
-                    f' failed with {e}. Using the original module cache.'
+                    f"Attempt to remove module cache for {module_name} but"
+                    f" failed with {e}. Using the original module cache."
                 )

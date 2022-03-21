@@ -67,7 +67,8 @@ def from_incoming_proto(
     binding = get_binding(binding)
     if trigger_metadata:
         metadata = {
-            k: datumdef.Datum.from_typed_data(v) for k, v in trigger_metadata.items()
+            k: datumdef.Datum.from_typed_data(v)
+            for k, v in trigger_metadata.items()
         }
     else:
         metadata = {}
@@ -78,7 +79,9 @@ def from_incoming_proto(
         datum = datumdef.Datum.from_typed_data(val)
     elif pb_type == PB_TYPE_RPC_SHARED_MEMORY:
         # Data was sent over shared memory, attempt to read
-        datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory, shmem_mgr)
+        datum = datumdef.Datum.from_rpc_shared_memory(
+            pb.rpc_shared_memory, shmem_mgr
+        )
     else:
         raise TypeError(f"Unknown ParameterBindingType: {pb_type}")
 
@@ -166,7 +169,9 @@ def to_outgoing_param_binding(
 ) -> protos.ParameterBinding:
     datum = get_datum(binding, obj, pytype)
     shared_mem_value = None
-    if _can_transfer_over_shmem(shmem_mgr, is_function_data_cache_enabled, datum):
+    if _can_transfer_over_shmem(
+        shmem_mgr, is_function_data_cache_enabled, datum
+    ):
         shared_mem_value = datumdef.Datum.to_rpc_shared_memory(datum, shmem_mgr)
     # Check if data was written into shared memory
     if shared_mem_value is not None:

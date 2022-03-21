@@ -18,7 +18,15 @@ if NEW_TYPING:
     import collections.abc
 
 if NEW_TYPING:
-    from typing import Callable, ClassVar, Generic, Tuple, TypeVar, Union, _GenericAlias
+    from typing import (
+        Callable,
+        ClassVar,
+        Generic,
+        Tuple,
+        TypeVar,
+        Union,
+        _GenericAlias,
+    )
 else:
     from typing import (
         Callable,
@@ -84,9 +92,12 @@ def is_generic_type(tp):
             isinstance(tp, type)
             and issubclass(tp, Generic)
             or isinstance(tp, _GenericAlias)
-            and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable)
+            and tp.__origin__
+            not in (Union, tuple, ClassVar, collections.abc.Callable)
         )  # NoQA E501
-    return isinstance(tp, GenericMeta) and not isinstance(tp, (CallableMeta, TupleMeta))
+    return isinstance(tp, GenericMeta) and not isinstance(
+        tp, (CallableMeta, TupleMeta)
+    )
 
 
 def is_callable_type(tp):
@@ -159,7 +170,11 @@ def is_union_type(tp):
     is_union_type(Union[T, int]) == True
     """
     if NEW_TYPING:
-        return tp is Union or isinstance(tp, _GenericAlias) and tp.__origin__ is Union
+        return (
+            tp is Union
+            or isinstance(tp, _GenericAlias)
+            and tp.__origin__ is Union
+        )
     return type(tp) is _Union
 
 
@@ -205,7 +220,8 @@ def get_last_origin(tp):
     """
     if NEW_TYPING:
         raise ValueError(
-            "This function is only supported in Python 3.6," " use get_origin instead"
+            "This function is only supported in Python 3.6,"
+            " use get_origin instead"
         )
     sentinel = object()
     origin = getattr(tp, "__origin__", sentinel)
@@ -289,7 +305,8 @@ def get_last_args(tp):
     """
     if NEW_TYPING:
         raise ValueError(
-            "This function is only supported in Python 3.6," " use get_args instead"
+            "This function is only supported in Python 3.6,"
+            " use get_args instead"
         )
     if is_classvar(tp):
         return (tp.__type__,) if tp.__type__ is not None else ()
@@ -347,7 +364,8 @@ def get_args(tp, evaluate=None):
         if isinstance(tp, _GenericAlias):
             res = tp.__args__
             if (
-                get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis
+                get_origin(tp) is collections.abc.Callable
+                and res[0] is not Ellipsis
             ):  # NoQA E501
                 res = (list(res[:-1]), res[-1])
             return res

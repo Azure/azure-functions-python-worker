@@ -20,7 +20,9 @@ class GenericBinding:
         return issubclass(pytype, (str, bytes, bytearray))
 
     @classmethod
-    def encode(cls, obj: Any, *, expected_type: Optional[type]) -> datumdef.Datum:
+    def encode(
+        cls, obj: Any, *, expected_type: Optional[type]
+    ) -> datumdef.Datum:
         if isinstance(obj, str):
             return datumdef.Datum(type="string", value=obj)
 

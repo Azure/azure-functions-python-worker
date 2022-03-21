@@ -22,7 +22,10 @@ class FileAccessor(metaclass=ABCMeta):
 
     @abstractmethod
     def open_mem_map(
-        self, mem_map_name: str, mem_map_size: int, access: int = mmap.ACCESS_READ
+        self,
+        mem_map_name: str,
+        mem_map_size: int,
+        access: int = mmap.ACCESS_READ,
     ) -> Optional[mmap.mmap]:
         """
         Opens an existing memory map.
@@ -87,7 +90,10 @@ class FileAccessor(metaclass=ABCMeta):
 
 class DummyFileAccessor(FileAccessor):
     def open_mem_map(
-        self, mem_map_name: str, mem_map_size: int, access: int = mmap.ACCESS_READ
+        self,
+        mem_map_name: str,
+        mem_map_size: int,
+        access: int = mmap.ACCESS_READ,
     ) -> Optional[mmap.mmap]:
         pass
 

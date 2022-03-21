@@ -56,7 +56,9 @@ class SharedMemoryManager:
         Whether supported types should be transferred between functions host and
         the worker using shared memory.
         """
-        return is_envvar_true(FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
+        return is_envvar_true(
+            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
+        )
 
     def is_supported(self, datum: Datum) -> bool:
         """
@@ -126,7 +128,9 @@ class SharedMemoryManager:
         content_bytes = content.encode("utf-8")
         return self.put_bytes(content_bytes)
 
-    def get_bytes(self, mem_map_name: str, offset: int, count: int) -> Optional[bytes]:
+    def get_bytes(
+        self, mem_map_name: str, offset: int, count: int
+    ) -> Optional[bytes]:
         """
         Reads data from the given memory map with the provided name, starting at
         the provided offset and reading a total of count bytes.
@@ -135,19 +139,24 @@ class SharedMemoryManager:
         """
         if offset != 0:
             logger.error(
-                f"Cannot read bytes. Non-zero offset ({offset}) " f"not supported."
+                f"Cannot read bytes. Non-zero offset ({offset}) "
+                f"not supported."
             )
             return None
         shared_mem_map = self._open(mem_map_name, count)
         if shared_mem_map is None:
             return None
         try:
-            content = shared_mem_map.get_bytes(content_offset=0, bytes_to_read=count)
+            content = shared_mem_map.get_bytes(
+                content_offset=0, bytes_to_read=count
+            )
         finally:
             shared_mem_map.dispose(is_delete_file=False)
         return content
 
-    def get_string(self, mem_map_name: str, offset: int, count: int) -> Optional[str]:
+    def get_string(
+        self, mem_map_name: str, offset: int, count: int
+    ) -> Optional[str]:
         """
         Reads data from the given memory map with the provided name, starting at
         the provided offset and reading a total of count bytes.

@@ -23,11 +23,13 @@ class SharedMemoryMap:
     ):
         if mem_map is None:
             raise SharedMemoryException(
-                "Cannot initialize SharedMemoryMap. Invalid memory map " "provided"
+                "Cannot initialize SharedMemoryMap. Invalid memory map "
+                "provided"
             )
         if mem_map_name is None or mem_map_name == "":
             raise SharedMemoryException(
-                f"Cannot initialize SharedMemoryMap. Invalid name " f"{mem_map_name}"
+                f"Cannot initialize SharedMemoryMap. Invalid name "
+                f"{mem_map_name}"
             )
         self.file_accessor = file_accessor
         self.mem_map_name = mem_map_name
@@ -50,7 +52,9 @@ class SharedMemoryMap:
             consts.CONTENT_LENGTH_NUM_BYTES, byteorder=sys.byteorder
         )
         num_content_length_bytes = len(content_length_bytes)
-        num_content_length_bytes_written = self.mem_map.write(content_length_bytes)
+        num_content_length_bytes_written = self.mem_map.write(
+            content_length_bytes
+        )
         if num_content_length_bytes_written != num_content_length_bytes:
             logger.error(
                 f"Cannot write content size to memory map {self.mem_map_name} "
@@ -95,7 +99,9 @@ class SharedMemoryMap:
         """
         success = True
         if is_delete_file:
-            success = self.file_accessor.delete_mem_map(self.mem_map_name, self.mem_map)
+            success = self.file_accessor.delete_mem_map(
+                self.mem_map_name, self.mem_map
+            )
         self.mem_map.close()
         return success
 

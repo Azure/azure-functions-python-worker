@@ -59,7 +59,9 @@ E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
 UNIT_TESTS_FOLDER = pathlib.Path("unittests")
 UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
 WEBHOST_DLL = "Microsoft.Azure.WebJobs.Script.WebHost.dll"
-DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / "build" / "webhost" / "bin" / WEBHOST_DLL
+DEFAULT_WEBHOST_DLL_PATH = (
+    PROJECT_ROOT / "build" / "webhost" / "bin" / WEBHOST_DLL
+)
 EXTENSIONS_PATH = PROJECT_ROOT / "build" / "extensions" / "bin"
 FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / "http_functions"
 WORKER_PATH = PROJECT_ROOT / "python" / "test"
@@ -135,7 +137,9 @@ SECRETS_TEMPLATE = """\
 class AsyncTestCaseMeta(type(unittest.TestCase)):
     def __new__(mcls, name, bases, ns):
         for attrname, attr in ns.items():
-            if attrname.startswith("test_") and inspect.iscoroutinefunction(attr):
+            if attrname.startswith("test_") and inspect.iscoroutinefunction(
+                attr
+            ):
                 ns[attrname] = mcls._sync_wrap(attr)
 
         return super().__new__(mcls, name, bases, ns)
@@ -182,10 +186,14 @@ class WebHostTestCaseMeta(type(unittest.TestCase)):
                         host_output = getattr(self, "host_out", "")
                         output_lines = host_output.splitlines()
                         ts_re = (
-                            r"^\[\d+(\/|-)\d+(\/|-)\d+T*\d+\:\d+\:\d+.*(" r"A|P)*M*\]"
+                            r"^\[\d+(\/|-)\d+(\/|-)\d+T*\d+\:\d+\:\d+.*("
+                            r"A|P)*M*\]"
                         )
                         output = list(
-                            map(lambda s: re.sub(ts_re, "", s).strip(), output_lines)
+                            map(
+                                lambda s: re.sub(ts_re, "", s).strip(),
+                                output_lines,
+                            )
                         )
 
                         # Execute check_log_ test cases
@@ -229,7 +237,9 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         _setup_func_app(TESTS_ROOT / script_dir)
         try:
-            cls.webhost = start_webhost(script_dir=script_dir, stdout=cls.host_stdout)
+            cls.webhost = start_webhost(
+                script_dir=script_dir, stdout=cls.host_stdout
+            )
         except Exception:
             _teardown_func_app(TESTS_ROOT / script_dir)
             raise
@@ -282,13 +292,17 @@ class SharedMemoryTestCase(unittest.TestCase):
         self.was_shmem_env_true = is_envvar_true(
             FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
         )
-        os.environ.update({FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: "1"})
+        os.environ.update(
+            {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: "1"}
+        )
 
         os_name = platform.system()
         if os_name == "Darwin":
             # If an existing AppSetting is specified, save it so it can be
             # restored later
-            self.was_shmem_dirs = get_app_setting(UNIX_SHARED_MEMORY_DIRECTORIES)
+            self.was_shmem_dirs = get_app_setting(
+                UNIX_SHARED_MEMORY_DIRECTORIES
+            )
             self._setUpDarwin()
         elif os_name == "Linux":
             self._setUpLinux()
@@ -300,7 +314,9 @@ class SharedMemoryTestCase(unittest.TestCase):
             self._tearDownDarwin()
             if self.was_shmem_dirs is not None:
                 # If an AppSetting was set before the tests ran, restore it back
-                os.environ.update({UNIX_SHARED_MEMORY_DIRECTORIES: self.was_shmem_dirs})
+                os.environ.update(
+                    {UNIX_SHARED_MEMORY_DIRECTORIES: self.was_shmem_dirs}
+                )
         elif os_name == "Linux":
             self._tearDownLinux()
 
@@ -509,7 +525,9 @@ class _MockWebHost:
     async def init_worker(self, host_version: str):
         r = await self.communicate(
             protos.StreamingMessage(
-                worker_init_request=protos.WorkerInitRequest(host_version=host_version)
+                worker_init_request=protos.WorkerInitRequest(
+                    host_version=host_version
+                )
             ),
             wait_for="worker_init_response",
         )
@@ -594,7 +612,9 @@ class _MockWebHost:
         request = protos.CloseSharedMemoryResourcesRequest(map_names=map_names)
 
         r = await self.communicate(
-            protos.StreamingMessage(close_shared_memory_resources_request=request),
+            protos.StreamingMessage(
+                close_shared_memory_resources_request=request
+            ),
             wait_for="close_shared_memory_resources_response",
         )
 
@@ -624,7 +644,9 @@ class _MockWebHost:
 
     async def get_worker_status(self):
         r = await self.communicate(
-            protos.StreamingMessage(worker_status_request=protos.WorkerStatusRequest()),
+            protos.StreamingMessage(
+                worker_status_request=protos.WorkerStatusRequest()
+            ),
             wait_for="worker_status_response",
         )
 
@@ -666,7 +688,10 @@ class _MockWebHost:
                 raise RuntimeError(f"could not load function {fd.name}") from ex
 
             fn = _WebHostFunction(
-                name=fd.name, desc=fjson, script=str(fscript_fn), id=self.make_id()
+                name=fd.name,
+                desc=fjson,
+                script=str(fscript_fn),
+                id=self.make_id(),
             )
 
             self._available_functions[fn.name] = fn
@@ -735,7 +760,8 @@ def start_mockhost(*, script_root=FUNCS_PATH):
     scripts_dir = tests_dir / script_root
     if not (scripts_dir.exists() and scripts_dir.is_dir()):
         raise RuntimeError(
-            f"invalid script_root argument: " f"{scripts_dir} directory does not exist"
+            f"invalid script_root argument: "
+            f"{scripts_dir} directory does not exist"
         )
 
     return _MockWebHostController(scripts_dir)
@@ -833,13 +859,14 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
                     f"   {WORKER_CONFIG.name} file in the root folder",
                     "   of the project with the following structure:",
                     "",
-                    "      [webhost]",
-                    "      dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll",
+                    "   [webhost]",
+                    "   dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll",
                     " * or download Azure Functions Core Tools binaries and",
                     "   then write the full path to func.exe into the ",
                     "   `CORE_TOOLS_EXE_PATH` envrionment variable.",
                     "",
-                    'Setting "export PYAZURE_WEBHOST_DEBUG=true" to get the full',
+                    "Setting 'export PYAZURE_WEBHOST_DEBUG=true' "
+                    "to get the full",
                     "stdout and stderr from function host.",
                 ]
             )
@@ -888,7 +915,9 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
 
         eventgrid_topic_key = testconfig["azure"].get("eventgrid_topic_key")
         if eventgrid_topic_key:
-            extra_env["AzureWebJobsEventGridConnectionKey"] = eventgrid_topic_key
+            extra_env[
+                "AzureWebJobsEventGridConnectionKey"
+            ] = eventgrid_topic_key
 
     if port is not None:
         extra_env["ASPNETCORE_URLS"] = f"http://*:{port}"
@@ -915,7 +944,10 @@ def start_webhost(*, script_dir=None, stdout=None):
 
     port = _find_open_port()
     proc = popen_webhost(
-        stdout=stdout, stderr=subprocess.STDOUT, script_root=script_root, port=port
+        stdout=stdout,
+        stderr=subprocess.STDOUT,
+        script_root=script_root,
+        port=port,
     )
     time.sleep(10)  # Giving host some time to start fully.
 
@@ -927,7 +959,9 @@ def start_webhost(*, script_dir=None, stdout=None):
 
     for _ in range(5):
         try:
-            r = requests.get(health_check_endpoint, params={"code": "testFunctionKey"})
+            r = requests.get(
+                health_check_endpoint, params={"code": "testFunctionKey"}
+            )
             # Give the host a bit more time to settle
             time.sleep(2)
 
@@ -962,14 +996,22 @@ def start_webhost(*, script_dir=None, stdout=None):
 def create_dummy_dispatcher():
     dummy_event_loop = asyncio.new_event_loop()
     disp = dispatcher.Dispatcher(
-        dummy_event_loop, LOCALHOST, 0, "test_worker_id", "test_request_id", 1.0, 1000
+        dummy_event_loop,
+        LOCALHOST,
+        0,
+        "test_worker_id",
+        "test_request_id",
+        1.0,
+        1000,
     )
     dummy_event_loop.close()
     return disp
 
 
 def retryable_test(
-    number_of_retries: int, interval_sec: int, expected_exception: type = Exception
+    number_of_retries: int,
+    interval_sec: int,
+    expected_exception: type = Exception,
 ):
     def decorate(func):
         def call(*args, **kwargs):

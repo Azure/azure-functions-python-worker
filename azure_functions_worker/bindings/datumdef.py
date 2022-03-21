@@ -59,9 +59,12 @@ class Datum:
             val = dict(
                 method=Datum(http.method, "string"),
                 url=Datum(http.url, "string"),
-                headers={k: Datum(v, "string") for k, v in http.headers.items()},
+                headers={
+                    k: Datum(v, "string") for k, v in http.headers.items()
+                },
                 body=(
-                    Datum.from_typed_data(http.body) or Datum(type="bytes", value=b"")
+                    Datum.from_typed_data(http.body)
+                    or Datum(type="bytes", value=b"")
                 ),
                 params={k: Datum(v, "string") for k, v in http.params.items()},
                 query={k: Datum(v, "string") for k, v in http.query.items()},
@@ -81,7 +84,9 @@ class Datum:
         elif tt is None:
             return None
         else:
-            raise NotImplementedError("unsupported TypeData kind: {!r}".format(tt))
+            raise NotImplementedError(
+                "unsupported TypeData kind: {!r}".format(tt)
+            )
 
         return cls(val, tt)
 
@@ -145,7 +150,9 @@ class Datum:
             )
 
         if shared_mem_meta is None:
-            logger.warning("Cannot write to shared memory for type: " f"{datum.type}")
+            logger.warning(
+                "Cannot write to shared memory for type: " f"{datum.type}"
+            )
             return None
 
         shmem = protos.RpcSharedMemory(
@@ -179,4 +186,6 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
             )
         )
     else:
-        raise NotImplementedError("unexpected Datum type: {!r}".format(datum.type))
+        raise NotImplementedError(
+            "unexpected Datum type: {!r}".format(datum.type)
+        )

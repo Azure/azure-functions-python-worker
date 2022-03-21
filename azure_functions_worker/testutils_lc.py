@@ -43,7 +43,8 @@ class LinuxConsumptionWebHostController:
     def url(self) -> str:
         if self._uuid not in self._ports:
             raise RuntimeError(
-                f"Failed to assign container {self._name} since" " it is not spawned"
+                f"Failed to assign container {self._name} since"
+                " it is not spawned"
             )
 
         return f"http://localhost:{self._ports[self._uuid]}"
@@ -66,7 +67,11 @@ class LinuxConsumptionWebHostController:
             method="POST",
             url=f"{url}/admin/instance/assign",
             data=json.dumps(
-                {"encryptedContext": self._get_site_encrypted_context(self._uuid, env)}
+                {
+                    "encryptedContext": self._get_site_encrypted_context(
+                        self._uuid, env
+                    )
+                }
             ),
         )
         response = self.send_request(req)
@@ -97,7 +102,9 @@ class LinuxConsumptionWebHostController:
         return resp
 
     @classmethod
-    def _find_latest_mesh_image(cls, host_major: str, python_version: str) -> str:
+    def _find_latest_mesh_image(
+        cls, host_major: str, python_version: str
+    ) -> str:
         """Find the latest image in https://mcr.microsoft.com/v2/
         azure-functions/mesh/tags/list. Match either (3.1.3, or 3.1.3-python3.x)
         """
@@ -214,7 +221,9 @@ class LinuxConsumptionWebHostController:
         return cls._encrypt_context(_DUMMY_CONT_KEY, f"exp={exp_ns}")
 
     @classmethod
-    def _get_site_encrypted_context(cls, site_name: str, env: Dict[str, str]) -> str:
+    def _get_site_encrypted_context(
+        cls, site_name: str, env: Dict[str, str]
+    ) -> str:
         """Get the encrypted context for placeholder mode specialization"""
         ctx = {"SiteId": 1, "SiteName": site_name, "Environment": env}
 
@@ -243,7 +252,9 @@ class LinuxConsumptionWebHostController:
         return f"{iv_base64}.{encrypted_base64}.{key_sha256_base64}"
 
     def __enter__(self):
-        mesh_image = self._find_latest_mesh_image(self._host_version, self._py_version)
+        mesh_image = self._find_latest_mesh_image(
+            self._host_version, self._py_version
+        )
         self.spawn_container(image=mesh_image)
         return self
 
@@ -253,5 +264,7 @@ class LinuxConsumptionWebHostController:
 
         if traceback:
             print(
-                f"Test failed with container logs: {logs}", file=sys.stderr, flush=True
+                f"Test failed with container logs: {logs}",
+                file=sys.stderr,
+                flush=True,
             )

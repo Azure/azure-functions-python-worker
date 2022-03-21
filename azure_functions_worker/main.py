@@ -7,11 +7,17 @@ import argparse
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Python Azure Functions Worker")
+    parser = argparse.ArgumentParser(
+        description="Python Azure Functions Worker"
+    )
     parser.add_argument("--host", help="host address")
     parser.add_argument("--port", type=int, help="port number")
-    parser.add_argument("--workerId", dest="worker_id", help="id for the worker")
-    parser.add_argument("--requestId", dest="request_id", help="id of the request")
+    parser.add_argument(
+        "--workerId", dest="worker_id", help="id for the worker"
+    )
+    parser.add_argument(
+        "--requestId", dest="request_id", help="id of the request"
+    )
     parser.add_argument(
         "--log-level",
         type=str,
@@ -25,7 +31,9 @@ def parse_args():
         default=None,
         help="log destination: stdout, stderr, " "syslog, or a file path",
     )
-    parser.add_argument("--grpcMaxMessageLength", type=int, dest="grpc_max_msg_len")
+    parser.add_argument(
+        "--grpcMaxMessageLength", type=int, dest="grpc_max_msg_len"
+    )
     return parser.parse_args()
 
 

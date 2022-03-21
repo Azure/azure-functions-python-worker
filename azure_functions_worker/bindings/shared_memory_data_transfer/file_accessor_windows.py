@@ -16,7 +16,10 @@ class FileAccessorWindows(FileAccessor):
     """
 
     def open_mem_map(
-        self, mem_map_name: str, mem_map_size: int, access: int = mmap.ACCESS_READ
+        self,
+        mem_map_name: str,
+        mem_map_size: int,
+        access: int = mmap.ACCESS_READ,
     ) -> Optional[mmap.mmap]:
         """
         Note: mem_map_size = 0 means open the entire mmap.
@@ -54,12 +57,15 @@ class FileAccessorWindows(FileAccessor):
             raise SharedMemoryException(
                 f"Cannot create memory map. Invalid size {mem_map_size}"
             )
-        mem_map = self.open_mem_map(mem_map_name, mem_map_size, mmap.ACCESS_WRITE)
+        mem_map = self.open_mem_map(
+            mem_map_name, mem_map_size, mmap.ACCESS_WRITE
+        )
         if mem_map is None:
             return None
         if self._is_mem_map_initialized(mem_map):
             raise SharedMemoryException(
-                f"Cannot create memory map {mem_map_name} as it " f"already exists"
+                f"Cannot create memory map {mem_map_name} as it "
+                f"already exists"
             )
         self._set_mem_map_initialized(mem_map)
         return mem_map

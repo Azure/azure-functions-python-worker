@@ -96,8 +96,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         #   For 3.[6|7|8] The default value is 1.
         #   For 3.9, we don't set this value by default but we honor incoming
         #     the app setting.
-        self._sync_call_tp: concurrent.futures.Executor = self._create_sync_call_tp(
-            self._get_sync_tp_max_workers()
+        self._sync_call_tp: concurrent.futures.Executor = (
+            self._create_sync_call_tp(self._get_sync_tp_max_workers())
         )
 
         self._grpc_connect_timeout: float = grpc_connect_timeout
@@ -279,7 +279,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             # Don't crash on unknown messages.  Some of them can be ignored;
             # and if something goes really wrong the host can always just
             # kill the worker's process.
-            logger.error(f"unknown StreamingMessage content type " f"{content_type}")
+            logger.error(
+                f"unknown StreamingMessage content type " f"{content_type}"
+            )
             return
 
         resp = await request_handler(request)
@@ -352,7 +354,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                 func_request.metadata.entry_point,
             )
 
-            self._functions.add_function(function_id, func, func_request.metadata)
+            self._functions.add_function(
+                function_id, func, func_request.metadata
+            )
 
             ExtensionManager.function_load_extension(
                 function_name, func_request.metadata.directory
@@ -369,7 +373,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 function_load_response=protos.FunctionLoadResponse(
                     function_id=function_id,
-                    result=protos.StatusResult(status=protos.StatusResult.Success),
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Success
+                    ),
                 ),
             )
 
@@ -397,7 +403,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         current_task.set_azure_invocation_id(invocation_id)
 
         try:
-            fi: functions.FunctionInfo = self._functions.get_function(function_id)
+            fi: functions.FunctionInfo = self._functions.get_function(
+                function_id
+            )
 
             function_invocation_logs: List[str] = [
                 "Received FunctionInvocationRequest",
@@ -409,7 +417,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             ]
             if not fi.is_async:
                 function_invocation_logs.append(
-                    f"sync threadpool max workers: " f"{self.get_sync_tp_workers_set()}"
+                    f"sync threadpool max workers: "
+                    f"{self.get_sync_tp_workers_set()}"
                 )
             logger.info(", ".join(function_invocation_logs))
 
@@ -438,7 +447,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     args[name] = bindings.Out()
 
             if fi.is_async:
-                call_result = await self._run_async_func(fi_context, fi.func, args)
+                call_result = await self._run_async_func(
+                    fi_context, fi.func, args
+                )
             else:
                 call_result = await self._loop.run_in_executor(
                     self._sync_call_tp,
@@ -490,7 +501,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                 invocation_response=protos.InvocationResponse(
                     invocation_id=invocation_id,
                     return_value=return_value,
-                    result=protos.StatusResult(status=protos.StatusResult.Success),
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Success
+                    ),
                     output_data=output_data,
                 ),
             )
@@ -607,7 +620,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     results[map_name] = success
                 except Exception as e:
                     logger.error(
-                        f"Cannot free memory map {map_name} - {e}", exc_info=True
+                        f"Cannot free memory map {map_name} - {e}",
+                        exc_info=True,
                     )
         finally:
             response = protos.CloseSharedMemoryResourcesResponse(
@@ -622,7 +636,8 @@ class Dispatcher(metaclass=DispatcherMeta):
     def _get_context(
         invoc_request: protos.InvocationRequest, name: str, directory: str
     ) -> bindings.Context:
-        """For more information refer: https://aka.ms/azfunc-invocation-context"""
+        """For more information refer: https://aka.ms/azfunc-invocation-context
+        """
         trace_context = bindings.TraceContext(
             invoc_request.trace_context.trace_parent,
             invoc_request.trace_context.trace_state,
@@ -636,7 +651,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         )
 
         return bindings.Context(
-            name, directory, invoc_request.invocation_id, trace_context, retry_context
+            name,
+            directory,
+            invoc_request.invocation_id,
+            trace_context,
+            retry_context,
         )
 
     @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
@@ -693,7 +712,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         )
 
         if sys.version_info.minor <= 7:
-            max_workers = min(int(max_workers), PYTHON_THREADPOOL_THREAD_COUNT_MAX_37)
+            max_workers = min(
+                int(max_workers), PYTHON_THREADPOOL_THREAD_COUNT_MAX_37
+            )
 
         # We can box the app setting as int for earlier python versions.
         return int(max_workers) if max_workers else None
@@ -713,7 +734,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         # invocation_id from ThreadPoolExecutor's threads.
         _invocation_id_local.v = invocation_id
         try:
-            return ExtensionManager.get_sync_invocation_wrapper(context, func)(params)
+            return ExtensionManager.get_sync_invocation_wrapper(context, func)(
+                params
+            )
         finally:
             _invocation_id_local.v = None
 
@@ -725,8 +748,12 @@ class Dispatcher(metaclass=DispatcherMeta):
     def __poll_grpc(self):
         options = []
         if self._grpc_max_msg_len:
-            options.append(("grpc.max_receive_message_length", self._grpc_max_msg_len))
-            options.append(("grpc.max_send_message_length", self._grpc_max_msg_len))
+            options.append(
+                ("grpc.max_receive_message_length", self._grpc_max_msg_len)
+            )
+            options.append(
+                ("grpc.max_send_message_length", self._grpc_max_msg_len)
+            )
 
         channel = grpc.insecure_channel(f"{self._host}:{self._port}", options)
 
@@ -735,10 +762,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                 timeout=self._grpc_connect_timeout
             )
         except Exception as ex:
-            self._loop.call_soon_threadsafe(self._grpc_connected_fut.set_exception, ex)
+            self._loop.call_soon_threadsafe(
+                self._grpc_connected_fut.set_exception, ex
+            )
             return
         else:
-            self._loop.call_soon_threadsafe(self._grpc_connected_fut.set_result, True)
+            self._loop.call_soon_threadsafe(
+                self._grpc_connected_fut.set_result, True
+            )
 
         stub = protos.FunctionRpcStub(channel)
 
@@ -796,7 +827,9 @@ class ContextEnabledTask(asyncio.Task):
 
         current_task = _CURRENT_TASK(loop)
         if current_task is not None:
-            invocation_id = getattr(current_task, self.AZURE_INVOCATION_ID, None)
+            invocation_id = getattr(
+                current_task, self.AZURE_INVOCATION_ID, None
+            )
             if invocation_id is not None:
                 self.set_azure_invocation_id(invocation_id)
 

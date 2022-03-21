@@ -45,7 +45,9 @@ class Registry:
         try:
             return self._functions[function_id]
         except KeyError:
-            raise RuntimeError(f"no function with function_id={function_id}") from None
+            raise RuntimeError(
+                f"no function with function_id={function_id}"
+            ) from None
 
     def add_function(
         self,
@@ -70,12 +72,15 @@ class Registry:
         bound_params = {}
         for name, desc in metadata.bindings.items():
             if desc.direction == protos.BindingInfo.inout:
-                raise FunctionLoadError(func_name, '"inout" bindings are not supported')
+                raise FunctionLoadError(
+                    func_name, '"inout" bindings are not supported'
+                )
 
             if name == "$return":
                 if desc.direction != protos.BindingInfo.out:
                     raise FunctionLoadError(
-                        func_name, '"$return" binding must have direction set to "out"'
+                        func_name,
+                        '"$return" binding must have direction set to "out"',
                     )
 
                 has_explicit_return = True
@@ -97,7 +102,10 @@ class Registry:
             params.pop("context")
             if "context" in annotations:
                 ctx_anno = annotations.get("context")
-                if not isinstance(ctx_anno, type) or ctx_anno.__name__ != "Context":
+                if (
+                    not isinstance(ctx_anno, type)
+                    or ctx_anno.__name__ != "Context"
+                ):
                     raise FunctionLoadError(
                         func_name,
                         'the "context" parameter is expected to be of '
@@ -140,7 +148,8 @@ class Registry:
                         )
                 else:
                     is_param_out = (
-                        isinstance(param_anno, type) and param_anno.__name__ == "Out"
+                        isinstance(param_anno, type)
+                        and param_anno.__name__ == "Out"
                     )
             else:
                 is_param_out = False
@@ -160,9 +169,9 @@ class Registry:
                 # typing_inspect.get_args() returns a flat list,
                 # so if the annotation was func.Out[typing.List[foo]],
                 # we need to reconstruct it.
-                if isinstance(param_py_type, tuple) and typing_inspect.is_generic_type(
-                    param_py_type[0]
-                ):
+                if isinstance(
+                    param_py_type, tuple
+                ) and typing_inspect.is_generic_type(param_py_type[0]):
 
                     param_py_type = operator.getitem(
                         param_py_type[0], *param_py_type[1:]
@@ -248,14 +257,16 @@ class Registry:
                 and typing_inspect.get_origin(return_anno).__name__ == "Out"
             ):
                 raise FunctionLoadError(
-                    func_name, "return annotation should not be azure.functions.Out"
+                    func_name,
+                    "return annotation should not be azure.functions.Out",
                 )
 
             return_pytype = return_anno
             if not isinstance(return_pytype, type):
                 raise FunctionLoadError(
                     func_name,
-                    f"has invalid non-type return " f"annotation {return_pytype!r}",
+                    f"has invalid non-type return "
+                    f"annotation {return_pytype!r}",
                 )
 
             if return_pytype is (str, bytes):

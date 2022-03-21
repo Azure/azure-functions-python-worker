@@ -13,7 +13,9 @@ SDK_LOG_PREFIX = "azure.functions"
 
 
 logger: logging.Logger = logging.getLogger("azure_functions_worker")
-error_logger: logging.Logger = logging.getLogger("azure_functions_worker_errors")
+error_logger: logging.Logger = logging.getLogger(
+    "azure_functions_worker_errors"
+)
 
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
@@ -28,7 +30,9 @@ def setup(log_level, log_destination):
     if log_level == "TRACE":
         log_level = "DEBUG"
 
-    formatter = logging.Formatter(f"{CONSOLE_LOG_PREFIX}" " %(levelname)s: %(message)s")
+    formatter = logging.Formatter(
+        f"{CONSOLE_LOG_PREFIX}" " %(levelname)s: %(message)s"
+    )
 
     if log_destination is None:
         # With no explicit log destination we do split logging,

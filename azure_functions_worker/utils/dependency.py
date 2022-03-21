@@ -360,7 +360,9 @@ class DependencyManager:
 
         # 3. If it fails to find one, try to find one from the parent path
         #    This is used for handling the CI/localdev environment
-        return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        return os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..")
+        )
 
     @staticmethod
     def _remove_module_cache(path: str):

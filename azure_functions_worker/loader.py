@@ -48,10 +48,14 @@ def uninstall() -> None:
 
 
 @attach_message_to_exception(
-    expt_type=ImportError, message=f"Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}"
+    expt_type=ImportError,
+    message=f"Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}",
 )
 def load_function(
-    name: str, directory: str, script_file: str, entry_point: typing.Optional[str]
+    name: str,
+    directory: str,
+    script_file: str,
+    entry_point: typing.Optional[str],
 ):
     dir_path = pathlib.Path(directory)
     script_path = (
@@ -76,7 +80,8 @@ def load_function(
     modname, ext = os.path.splitext(last_part)
     if ext != ".py":
         raise RuntimeError(
-            f"cannot load function {name}: " f"invalid Python filename {script_file}"
+            f"cannot load function {name}: "
+            f"invalid Python filename {script_file}"
         )
 
     modname_parts = [_AZURE_NAMESPACE]

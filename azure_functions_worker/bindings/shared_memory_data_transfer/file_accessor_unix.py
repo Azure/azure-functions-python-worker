@@ -31,7 +31,10 @@ class FileAccessorUnix(FileAccessor):
         del self.valid_dirs
 
     def open_mem_map(
-        self, mem_map_name: str, mem_map_size: int, access: int = mmap.ACCESS_READ
+        self,
+        mem_map_name: str,
+        mem_map_size: int,
+        access: int = mmap.ACCESS_READ,
     ) -> Optional[mmap.mmap]:
         """
         Note: mem_map_size = 0 means open the entire mmap.
@@ -70,7 +73,9 @@ class FileAccessorUnix(FileAccessor):
             file.fileno(), mem_map_size, mmap.MAP_SHARED, mmap.PROT_WRITE
         )
         if self._is_mem_map_initialized(mem_map):
-            raise SharedMemoryException(f"Memory map {mem_map_name} " "already exists")
+            raise SharedMemoryException(
+                f"Memory map {mem_map_name} " "already exists"
+            )
         self._set_mem_map_initialized(mem_map)
         return mem_map
 
@@ -146,7 +151,9 @@ class FileAccessorUnix(FileAccessor):
                         exc_info=True,
                     )
         if len(valid_dirs) == 0:
-            logger.error("No valid directory for memory maps in " f"{allowed_dirs}")
+            logger.error(
+                "No valid directory for memory maps in " f"{allowed_dirs}"
+            )
         return valid_dirs
 
     def _open_mem_map_file(self, mem_map_name: str) -> Optional[BufferedRandom]:
@@ -163,7 +170,9 @@ class FileAccessorUnix(FileAccessor):
                     fd = open(file_path, "r+b")
                     return fd
                 except Exception as e:
-                    logger.error(f"Cannot open file {file_path} - {e}", exc_info=True)
+                    logger.error(
+                        f"Cannot open file {file_path} - {e}", exc_info=True
+                    )
         # The memory map was not found in any of the known directories
         logger.error(
             f"Cannot open memory map {mem_map_name} in any of the "
@@ -183,7 +192,8 @@ class FileAccessorUnix(FileAccessor):
             file_path = os.path.join(temp_dir, mem_map_name)
             if os.path.exists(file_path):
                 raise SharedMemoryException(
-                    f"File {file_path} for memory map {mem_map_name} " f"already exists"
+                    f"File {file_path} for memory map {mem_map_name} "
+                    f"already exists"
                 )
         # Create the file
         for temp_dir in self.valid_dirs:

@@ -13,7 +13,11 @@ from .constants import (
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
 )
 from .logging import SYSTEM_LOG_PREFIX, logger
-from .utils.common import get_sdk_from_sys_path, get_sdk_version, is_python_version
+from .utils.common import (
+    get_sdk_from_sys_path,
+    get_sdk_version,
+    is_python_version,
+)
 from .utils.wrappers import enable_feature_by
 
 # Extension Hooks
@@ -114,14 +118,18 @@ class ExtensionManager:
         funcs = sdk.ExtensionMeta.get_function_hooks(ctx.function_name)
 
         # Invoke function hooks
-        cls._safe_execute_invocation_hooks(funcs, hook_name, ctx, func_args, func_ret)
+        cls._safe_execute_invocation_hooks(
+            funcs, hook_name, ctx, func_args, func_ret
+        )
 
         # Get application hooks from azure.functions.extension.ExtensionMeta
         # The reutnr type is AppExtensionHooks
         apps = sdk.ExtensionMeta.get_application_hooks()
 
         # Invoke application hook
-        cls._safe_execute_invocation_hooks(apps, hook_name, ctx, func_args, func_ret)
+        cls._safe_execute_invocation_hooks(
+            apps, hook_name, ctx, func_args, func_ret
+        )
 
     @classmethod
     def get_sync_invocation_wrapper(cls, ctx, func) -> Callable[[List], Any]:

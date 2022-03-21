@@ -25,11 +25,15 @@ def marshall_exception_trace(exc: Exception) -> str:
 
 def _marshall_module_not_found_error(tbss: StackSummary) -> StackSummary:
     tbss = _remove_frame_from_stack(tbss, "<frozen importlib._bootstrap>")
-    tbss = _remove_frame_from_stack(tbss, "<frozen importlib._bootstrap_external>")
+    tbss = _remove_frame_from_stack(
+        tbss, "<frozen importlib._bootstrap_external>"
+    )
     return tbss
 
 
-def _remove_frame_from_stack(tbss: StackSummary, framename: str) -> StackSummary:
+def _remove_frame_from_stack(
+    tbss: StackSummary, framename: str
+) -> StackSummary:
     filtered_stack_list: List[traceback.FrameSummary] = list(
         filter(lambda frame: getattr(frame, "filename") != framename, tbss)
     )

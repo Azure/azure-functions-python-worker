@@ -33,7 +33,6 @@ import uuid
 
 import grpc
 import requests
-
 from azure_functions_worker import dispatcher
 from azure_functions_worker import protos
 from azure_functions_worker._thirdparty import aio_compat

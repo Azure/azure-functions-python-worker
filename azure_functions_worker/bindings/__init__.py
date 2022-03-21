@@ -1,5 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+from .retrycontext import RetryContext
+from .tracecontext import TraceContext
+
 from .context import Context
 from .meta import (
     check_input_type_annotation,
@@ -11,8 +14,6 @@ from .meta import (
     to_outgoing_proto,
 )
 from .out import Out
-from .retrycontext import RetryContext
-from .tracecontext import TraceContext
 
 __all__ = (
     "Out",

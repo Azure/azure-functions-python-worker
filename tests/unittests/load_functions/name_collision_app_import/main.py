@@ -7,4 +7,4 @@ import __app__.pytest as pt
 
 
 def main(req) -> str:
-    return f'pt.__version__ = {pt.__version__}'
+    return f"pt.__version__ = {pt.__version__}"

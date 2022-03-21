@@ -1,6 +1,7 @@
-import sys
-import os
 import json
+import os
+import sys
+
 import azure.functions as func
 import google.protobuf as proto
 import grpc
@@ -39,11 +40,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         },
         "environments": {
             "PYTHON_ISOLATE_WORKER_DEPENDENCIES": (
-                os.getenv('PYTHON_ISOLATE_WORKER_DEPENDENCIES')
+                os.getenv("PYTHON_ISOLATE_WORKER_DEPENDENCIES")
             ),
-            "AzureWebJobsScriptRoot": os.getenv('AzureWebJobsScriptRoot'),
-            "PYTHONPATH": os.getenv('PYTHONPATH'),
-            "HOST_VERSION": os.getenv('HOST_VERSION')
-        }
+            "AzureWebJobsScriptRoot": os.getenv("AzureWebJobsScriptRoot"),
+            "PYTHONPATH": os.getenv("PYTHONPATH"),
+            "HOST_VERSION": os.getenv("HOST_VERSION"),
+        },
     }
     return func.HttpResponse(json.dumps(result))

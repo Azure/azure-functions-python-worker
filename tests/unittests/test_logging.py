@@ -16,20 +16,18 @@ class TestLogging(unittest.TestCase):
     """
 
     def test_system_log_namespace(self):
-        """Ensure the following list is part of the system's log
-        """
-        self.assertTrue(flog.is_system_log_category('azure_functions_worker'))
+        """Ensure the following list is part of the system's log"""
+        self.assertTrue(flog.is_system_log_category("azure_functions_worker"))
         self.assertTrue(
-            flog.is_system_log_category('azure_functions_worker_error')
+            flog.is_system_log_category("azure_functions_worker_error")
         )
-        self.assertTrue(flog.is_system_log_category('azure.functions'))
-        self.assertTrue(flog.is_system_log_category('azure.functions.module'))
+        self.assertTrue(flog.is_system_log_category("azure.functions"))
+        self.assertTrue(flog.is_system_log_category("azure.functions.module"))
 
     def test_customer_log_namespace(self):
-        """Ensure the following list is part of the customer's log
-        """
-        self.assertFalse(flog.is_system_log_category('customer_logger'))
-        self.assertFalse(flog.is_system_log_category('azure'))
-        self.assertFalse(flog.is_system_log_category('protobuf'))
-        self.assertFalse(flog.is_system_log_category('root'))
-        self.assertFalse(flog.is_system_log_category(''))
+        """Ensure the following list is part of the customer's log"""
+        self.assertFalse(flog.is_system_log_category("customer_logger"))
+        self.assertFalse(flog.is_system_log_category("azure"))
+        self.assertFalse(flog.is_system_log_category("protobuf"))
+        self.assertFalse(flog.is_system_log_category("root"))
+        self.assertFalse(flog.is_system_log_category(""))

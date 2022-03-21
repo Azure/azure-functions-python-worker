@@ -1,8 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import json
 import hashlib
+import json
+
 import azure.functions as azf
 
 
@@ -16,15 +17,10 @@ def main(req: azf.HttpRequest, file: bytes) -> azf.HttpResponse:
     content_size = len(file)
     content_md5 = hashlib.md5(file).hexdigest()
 
-    response_dict = {
-        'content_size': content_size,
-        'content_md5': content_md5
-    }
+    response_dict = {"content_size": content_size, "content_md5": content_md5}
 
     response_body = json.dumps(response_dict, indent=2)
 
     return azf.HttpResponse(
-        body=response_body,
-        mimetype="application/json",
-        status_code=200
+        body=response_body, mimetype="application/json", status_code=200
     )

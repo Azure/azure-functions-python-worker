@@ -2,9 +2,8 @@
 # Licensed under the MIT License.
 import logging
 
-
-logger = logging.getLogger('test')
+logger = logging.getLogger("test")
 
 
 def main(req):
-    logger.error('hi')
+    logger.error("hi")

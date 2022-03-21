@@ -6,10 +6,12 @@ import azure.functions as func
 
 
 def main(event: func.EventGridEvent) -> str:
-    return json.dumps({
-        'id': event.id,
-        'data': event.get_json(),
-        'topic': event.topic,
-        'subject': event.subject,
-        'event_type': event.event_type,
-    })
+    return json.dumps(
+        {
+            "id": event.id,
+            "data": event.get_json(),
+            "topic": event.topic,
+            "subject": event.subject,
+            "event_type": event.event_type,
+        }
+    )

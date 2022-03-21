@@ -5,12 +5,11 @@ import logging
 
 import azure.functions
 
-
-logger = logging.getLogger('my function')
+logger = logging.getLogger("my function")
 
 
 async def main(req: azure.functions.HttpRequest):
-    logger.info('hello %s', 'info')
+    logger.info("hello %s", "info")
 
     await asyncio.sleep(0.1)
 
@@ -20,11 +19,11 @@ async def main(req: azure.functions.HttpRequest):
 
     await asyncio.sleep(0.1)
 
-    return 'OK-async'
+    return "OK-async"
 
 
 async def nested():
     try:
         1 / 0
     except ZeroDivisionError:
-        logger.error('and another error', exc_info=True)
+        logger.error("and another error", exc_info=True)

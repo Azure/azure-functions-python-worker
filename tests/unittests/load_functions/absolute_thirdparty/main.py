@@ -6,4 +6,4 @@ import azure.eventhub as eh
 
 
 def main(req) -> str:
-    return f'eh = {eh.__name__}'
+    return f"eh = {eh.__name__}"

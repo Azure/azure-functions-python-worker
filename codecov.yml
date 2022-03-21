@@ -1,0 +1,3 @@
+ignore:
+  - "azure_functions_worker/testutils.py"
+  - "azure_functions_worker/testutils_*.py"

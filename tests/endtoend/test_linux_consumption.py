@@ -11,7 +11,7 @@ from azure_functions_worker.testutils_lc import (
 )
 from azure_functions_worker.utils.common import is_python_version
 
-_DEFAULT_HOST_VERSION = "4"
+_DEFAULT_HOST_VERSION = "3"
 
 
 @skipIf(is_python_version('3.10'),
@@ -133,7 +133,7 @@ class TestLinuxConsumption(TestCase):
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("NewProtobuf")
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("OldProtobuf")
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)

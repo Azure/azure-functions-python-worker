@@ -1,15 +1,17 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from unittest import TestCase, skipIf
-
 import os
 import sys
+from unittest import TestCase, skipIf
+
 from requests import Request
 
 from azure_functions_worker.testutils_lc import (
     LinuxConsumptionWebHostController
 )
 from azure_functions_worker.utils.common import is_python_version
+
+_DEFAULT_HOST_VERSION = "4"
 
 
 @skipIf(is_python_version('3.10'),
@@ -42,7 +44,8 @@ class TestLinuxConsumption(TestCase):
         """In any circumstances, a placeholder container should returns 200
         even when it is not specialized.
         """
-        with LinuxConsumptionWebHostController("3", self._py_version) as ctrl:
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
             req = Request('GET', ctrl.url)
             resp = ctrl.send_request(req)
             self.assertTrue(resp.ok)
@@ -51,7 +54,8 @@ class TestLinuxConsumption(TestCase):
         """An HttpTrigger function app with 'azure-functions' library
         should return 200.
         """
-        with LinuxConsumptionWebHostController("3", self._py_version) as ctrl:
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url("HttpNoAuth")
@@ -73,7 +77,8 @@ class TestLinuxConsumption(TestCase):
 
         should return 200 after importing all libraries.
         """
-        with LinuxConsumptionWebHostController("3", self._py_version) as ctrl:
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url("CommonLibraries")
@@ -98,7 +103,8 @@ class TestLinuxConsumption(TestCase):
 
         should return 200 after importing all libraries.
         """
-        with LinuxConsumptionWebHostController("3", self._py_version) as ctrl:
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url("NewProtobuf")
@@ -123,7 +129,8 @@ class TestLinuxConsumption(TestCase):
 
         should return 200 after importing all libraries.
         """
-        with LinuxConsumptionWebHostController("3", self._py_version) as ctrl:
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url("NewProtobuf")
@@ -144,7 +151,8 @@ class TestLinuxConsumption(TestCase):
         should return 200 and by default customer debug logging should be
         disabled.
         """
-        with LinuxConsumptionWebHostController("3", self._py_version) as ctrl:
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url("EnableDebugLogging")
@@ -170,7 +178,8 @@ class TestLinuxConsumption(TestCase):
         should return 200 and with customer debug logging enabled, debug logs
         should be written to container logs.
         """
-        with LinuxConsumptionWebHostController("3", self._py_version) as ctrl:
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url(

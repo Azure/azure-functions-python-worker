@@ -46,7 +46,9 @@ def uninstall() -> None:
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
+    message=f'Please check the requirements.txt file for the missing module. '
+            f'For more info, please refer the troubleshooting'
+            f' guide: {MODULE_NOT_FOUND_TS_URL} '
 )
 def load_function(name: str, directory: str, script_file: str,
                   entry_point: typing.Optional[str]):

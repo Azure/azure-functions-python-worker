@@ -1,9 +1,9 @@
 {
-    "description":{
-        "language":"python",
-        "extensions":[".py"],
-        "defaultExecutablePath":"python",
-        "defaultWorkerPath":"worker.py",
-        "workerIndexing": "true"
+    "description": {
+        "language": "python",
+        "extensions": [".py"],
+        "defaultExecutablePath": "python",
+        "defaultWorkerPath": "worker.py",
+        "workerIndexing": "false"
     }
 }

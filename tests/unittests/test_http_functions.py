@@ -347,6 +347,57 @@ class TestHttpFunctions(WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-print-logging')
 
+    def test_multiple_cookie_header_in_response(self):
+        r = self.webhost.request('GET', 'multiple-set-cookie-resp-headers')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers.get(
+            'Set-Cookie'),
+            "foo3=42; expires=Thu, 12 Jan 2017 13:55:08 GMT; "
+            "max-age=10000000; domain=example.com; path=/; secure; httponly, "
+            "foo3=43; expires=Fri, 12 Jan 2018 13:55:08 GMT; "
+            "max-age=10000000; domain=example.com; path=/; secure; httponly")
+
+    def test_set_cookie_header_in_response_empty_value(self):
+        r = self.webhost.request('GET', 'set-cookie-resp-header-empty')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers.get('Set-Cookie'), None)
+
+    def test_set_cookie_header_in_response_default_value(self):
+        r = self.webhost.request('GET',
+                                 'set-cookie-resp-header-default-values')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers.get('Set-Cookie'),
+                         'foo=bar; domain=; path=')
+
+    def test_response_cookie_header_nullable_timestamp_err(self):
+        r = self.webhost.request(
+            'GET',
+            'response_cookie_header_nullable_timestamp_err')
+        self.assertEqual(r.status_code, 500)
+
+    def check_log_response_cookie_header_nullable_timestamp_err(self,
+                                                                  host_out:
+                                                                  typing.List[
+                                                                      str]):
+        self.assertIn(
+            "Can not parse value Dummy of expires in the cookie due to "
+            "invalid format.",
+            host_out)
+
+    def test_response_cookie_header_nullable_bool_err(self):
+        r = self.webhost.request(
+            'GET',
+            'response_cookie_header_nullable_bool_err')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse("Set-Cookie" in r.headers)
+
+    def test_response_cookie_header_nullable_double_err(self):
+        r = self.webhost.request(
+            'GET',
+            'response_cookie_header_nullable_double_err')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse("Set-Cookie" in r.headers)
+
     @pytest.mark.flaky(reruns=3)
     def check_log_print_to_console_stdout(self, host_out: typing.List[str]):
         # System logs stdout should not exist in host_out

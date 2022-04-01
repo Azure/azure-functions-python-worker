@@ -211,12 +211,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         if invocation_id is not None:
             log['invocation_id'] = invocation_id
 
-        # XXX: When an exception field is set in RpcLog, WebHost doesn't
-        # wait for the call result and simply aborts the execution.
-        #
-        # if record.exc_info and record.exc_info[1] is not None:
-        #     log['exception'] = self._serialize_exception(record.exc_info[1])
-
         self._grpc_resp_queue.put_nowait(
             protos.StreamingMessage(
                 request_id=self.request_id,

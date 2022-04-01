@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test_to_run: [ SyncHttpTriggerHelloWorld, SyncHttpTriggerWithSyncRequests, AsyncHttpTriggerWithAsyncRequest, SyncHttpTriggerCPUIntensive ] #, SyncPutBlobAsBytesReturnHttpResponse, SyncGetBlobAsBytesReturnHttpResponse ]
+        test_to_run: [ SyncHttpTriggerHelloWorld ]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ env.PYTHON_VERSION }}

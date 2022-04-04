@@ -18,7 +18,6 @@ from logging import LogRecord
 from typing import List, Optional
 
 import grpc
-from azure.functions import Function
 
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
@@ -309,6 +308,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         if not os.path.exists(function_path):
             # Fallback to legacy model
+            logger.info(f"{SCRIPT_FILE_NAME} does not exist. "
+                        "Switching to host indexing.")
             return protos.StreamingMessage(
                 request_id=request.request_id,
                 function_metadata_response=protos.FunctionMetadataResponse(
@@ -743,7 +744,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             error_logger.exception('unhandled error in gRPC thread')
             raise
 
-    def _process_indexed_function(self, indexed_functions: List[Function]):
+    def _process_indexed_function(self, indexed_functions):
         fx_metadata_results = []
         for indexed_function in indexed_functions:
             function_id = str(uuid.uuid4())

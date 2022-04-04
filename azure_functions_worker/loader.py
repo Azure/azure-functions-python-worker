@@ -101,7 +101,7 @@ def index_function_app(function_path: str) -> typing.List[Function]:
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)
 
-    from azure.functions.decorators import FunctionApp
+    from azure.functions import FunctionApp
 
     app: typing.Optional[FunctionApp] = None
     for i in imported_module.__dir__():

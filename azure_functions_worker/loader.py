@@ -11,7 +11,6 @@ import sys
 import typing
 from os import PathLike, fspath
 
-from azure.functions import FunctionApp
 from azure.functions.decorators import Function
 
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME
@@ -101,6 +100,8 @@ def load_function(name: str, directory: str, script_file: str,
 def index_function_app(function_path: str) -> typing.List[Function]:
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)
+
+    from azure.functions.decorators import FunctionApp
 
     app: typing.Optional[FunctionApp] = None
     for i in imported_module.__dir__():

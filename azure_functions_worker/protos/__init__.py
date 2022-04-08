@@ -29,9 +29,7 @@ from .FunctionRpc_pb2 import (  # NoQA
     RpcSharedMemory,
     RpcDataType,
     CloseSharedMemoryResourcesRequest,
-    CloseSharedMemoryResourcesResponse,
-    FunctionsMetadataRequest,
-    FunctionMetadataResponse)
+    CloseSharedMemoryResourcesResponse)
 
 from .shared.NullableTypes_pb2 import (
     NullableString,

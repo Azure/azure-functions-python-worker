@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test_to_run: [ SyncHttpTriggerHelloWorld, SyncHttpTriggerWithSyncRequests, AsyncHttpTriggerWithAsyncRequest, SyncHttpTriggerCPUIntensive ] #, SyncPutBlobAsBytesReturnHttpResponse, SyncGetBlobAsBytesReturnHttpResponse ]
+        test_to_run: [ SyncHttpTriggerHelloWorld ]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ env.PYTHON_VERSION }}
@@ -27,6 +27,14 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '3.1.405'
+    - name: Set up Dotnet 5.0.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '5.0.x'
+    - name: Set up Dotnet 6.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.x'
     - name: Setup k6 for throughput testing
       run: |
         cd $GITHUB_WORKSPACE

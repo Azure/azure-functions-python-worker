@@ -1,6 +1,6 @@
 ARG PYTHON_VERSION=3.8
 
-FROM mcr.microsoft.com/azure-functions/python:3.0.15418-python$PYTHON_VERSION
+FROM mcr.microsoft.com/azure-functions/python:4-python$PYTHON_VERSION
 
 # Mounting local machines azure-functions-python-worker and azure-functions-python-library onto it
 RUN rm -rf /azure-functions-host/workers/python/${PYTHON_VERSION}/LINUX/X64/azure_functions_worker

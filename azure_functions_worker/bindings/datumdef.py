@@ -5,9 +5,7 @@ from typing import Any, Optional
 import json
 from .. import protos
 from ..logging import logger
-from typing import Union, List
-from datetime import datetime
-from google.protobuf.timestamp_pb2 import Timestamp
+from typing import List
 try:
     from http.cookies import SimpleCookie
 except ImportError:
@@ -203,6 +201,7 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
             'unexpected Datum type: {!r}'.format(datum.type)
         )
 
+
 def parse_to_rpc_http_cookie_list(cookies: Optional[List[SimpleCookie]]):
     if cookies is None:
         return cookies
@@ -217,15 +216,11 @@ def parse_to_rpc_http_cookie_list(cookies: Optional[List[SimpleCookie]]):
                                      domain=to_nullable_string(
                                          cookie_entity['domain'],
                                          'cookie.domain'),
-                                     path=
-                                     to_nullable_string(
-                                         cookie_entity['path'],
-                                         'cookie.path'),
-                                     expires=
-                                     to_nullable_timestamp(
+                                     path=to_nullable_string(
+                                         cookie_entity['path'], 'cookie.path'),
+                                     expires=to_nullable_timestamp(
                                          parse_cookie_attr_expires(
-                                             cookie_entity),
-                                         'cookie.expires'),
+                                             cookie_entity), 'cookie.expires'),
                                      secure=to_nullable_bool(
                                          bool(cookie_entity['secure']),
                                          'cookie.secure'),
@@ -264,13 +259,16 @@ def parse_cookie_attr_expires(cookie_entity):
 
 def parse_cookie_attr_same_site(cookie_entity):
     same_site = getattr(protos.RpcHttpCookie.SameSite, "None")
-    raw_same_site_str = cookie_entity['samesite'].lower()
+    try:
+        raw_same_site_str = cookie_entity['samesite'].lower()
 
-    if raw_same_site_str == 'lax':
-        same_site = protos.RpcHttpCookie.SameSite.Lax
-    elif raw_same_site_str == 'strict':
-        same_site = protos.RpcHttpCookie.SameSite.Strict
-    elif raw_same_site_str == 'none':
-        same_site = protos.RpcHttpCookie.SameSite.ExplicitNone
+        if raw_same_site_str == 'lax':
+            same_site = protos.RpcHttpCookie.SameSite.Lax
+        elif raw_same_site_str == 'strict':
+            same_site = protos.RpcHttpCookie.SameSite.Strict
+        elif raw_same_site_str == 'none':
+            same_site = protos.RpcHttpCookie.SameSite.ExplicitNone
+    except Exception:
+        return same_site
 
     return same_site

@@ -3,8 +3,7 @@ from typing import Optional, Union
 
 from google.protobuf.timestamp_pb2 import Timestamp
 
-from azure_functions_worker import protos, logging
-from azure_functions_worker.logging import logger
+from azure_functions_worker import protos
 
 
 def to_nullable_string(nullable: Optional[str], property_name: str) -> \
@@ -23,14 +22,14 @@ def to_nullable_string(nullable: Optional[str], property_name: str) -> \
 
     if nullable is not None:
         raise TypeError(
-            f"A 'str' type was expected instead of a '${type(nullable)}' "
-            f"type. Cannot parse value {nullable} of '${property_name}'.")
+            f"A 'str' type was expected instead of a '{type(nullable)}' "
+            f"type. Cannot parse value {nullable} of '{property_name}'.")
 
     return None
 
 
-def to_nullable_bool(nullable: Optional[bool], property_name: str) -> Optional[
-    protos.NullableBool]:
+def to_nullable_bool(nullable: Optional[bool], property_name: str) -> \
+        Optional[protos.NullableBool]:
     """Converts boolean input to an 'NullableBool' to be sent through the
     RPC layer. Input that is not a boolean but is also not null or undefined
     logs a function app level warning.
@@ -96,12 +95,11 @@ def to_nullable_timestamp(date_time: Optional[Union[datetime, int]],
     :param property_name The name of the property that the caller will
     assign the output to. Used for debugging.
     """
-    logger.info(date_time)
-    logger.info(type(date_time))
     if date_time is not None:
         try:
-            time_in_seconds = date_time if type(
-                date_time) == 'int' else date_time.timestamp()
+            time_in_seconds = date_time if isinstance(date_time,
+                                                      int) else \
+                date_time.timestamp()
 
             return protos.NullableTimestamp(
                 value=Timestamp(seconds=int(time_in_seconds)))

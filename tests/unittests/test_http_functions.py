@@ -381,9 +381,9 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 500)
 
     def check_log_response_cookie_header_nullable_timestamp_err(self,
-                                                                  host_out:
-                                                                  typing.List[
-                                                                      str]):
+                                                                host_out:
+                                                                typing.List[
+                                                                    str]):
         self.assertIn(
             "Can not parse value Dummy of expires in the cookie due to "
             "invalid format.",

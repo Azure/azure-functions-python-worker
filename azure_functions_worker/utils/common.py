@@ -126,11 +126,3 @@ def get_sdk_from_sys_path() -> ModuleType:
         sys.modules['azure.functions'] = backup_azure_functions
 
     return module
-
-
-def is_pystein_enabled_in_sdk():
-    sdk = get_sdk_from_sys_path()
-    if getattr(sdk, 'FunctionApp', None) is not None:
-        return True
-
-    return False

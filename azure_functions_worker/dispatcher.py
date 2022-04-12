@@ -18,6 +18,7 @@ from logging import LogRecord
 from typing import List, Optional
 
 import grpc
+from azure.functions import Function
 
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
@@ -744,7 +745,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             error_logger.exception('unhandled error in gRPC thread')
             raise
 
-    def _process_indexed_function(self, indexed_functions):
+    def _process_indexed_function(self, indexed_functions: List[Function]):
         fx_metadata_results = []
         for indexed_function in indexed_functions:
             function_id = str(uuid.uuid4())

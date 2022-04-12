@@ -11,8 +11,9 @@ import sys
 import typing
 from os import PathLike, fspath
 
+from azure.functions import Function, FunctionApp
+
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME
-from .utils.common import is_pystein_enabled_in_sdk
 from .utils.wrappers import attach_message_to_exception
 
 _AZURE_NAMESPACE = '__app__'
@@ -96,10 +97,7 @@ def load_function(name: str, directory: str, script_file: str,
     expt_type=ImportError,
     message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
 )
-def index_function_app(function_path: str):
-    if is_pystein_enabled_in_sdk():
-        from azure.functions import FunctionApp
-
+def index_function_app(function_path: str) -> typing.List[Function]:
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)
 

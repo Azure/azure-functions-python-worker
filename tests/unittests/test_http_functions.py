@@ -318,7 +318,9 @@ class TestHttpFunctions(WebHostTestCase):
                                                     host_out: typing.List[str]):
         self.assertIn("Exception: ModuleNotFoundError: "
                       "No module named 'does_not_exist'. "
-                      "Troubleshooting Guide: "
+                      "Please check the requirements.txt file for the "
+                      "missing module. For more info, please refer the "
+                      "troubleshooting guide: "
                       "https://aka.ms/functions-modulenotfound", host_out)
 
     @pytest.mark.flaky(reruns=3)

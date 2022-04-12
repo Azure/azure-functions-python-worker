@@ -571,10 +571,8 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipUnless(
-        is_python_version('3.10'),
-        'Test only available for python 3.10'
-    )
+    @unittest.skip('Skipping since PYTHON_ISOLATE_WORKER_DEPENDENCIES is '
+                   'disabled by default')
     def test_use_worker_dependencies_default_python_310(self):
         # Feature should be enabled in Python 3.10 by default
         # Setup paths
@@ -642,8 +640,8 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipUnless(is_python_version('3.10'),
-                         'Test only available for python 3.10')
+    @unittest.skip('Skipping since PYTHON_ISOLATE_WORKER_DEPENDENCIES is '
+                   'disabled by default')
     def test_prioritize_customer_dependencies_default_python_310(self):
         # Feature should be enabled in Python 3.10 by default
         # Setup paths

@@ -497,6 +497,33 @@ class TestThreadPoolSettingsPython39(TestThreadPoolSettingsPython38):
         self.mock_version_info.stop()
 
 
+@unittest.skipIf(sys.version_info.minor != 10,
+                 "Run the tests only for Python 3.10. In other platforms, "
+                 "as the default passed is None, the cpu_count determines the "
+                 "number of max_workers and we cannot mock the os.cpu_count() "
+                 "in the concurrent.futures.ThreadPoolExecutor")
+class TestThreadPoolSettingsPython310(TestThreadPoolSettingsPython39):
+    def setUp(self):
+        super(TestThreadPoolSettingsPython310, self).setUp()
+
+        self.mock_os_cpu = patch(
+            'os.cpu_count', return_value=2)
+        # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
+        self._default_workers: Optional[int] = 6
+        self.mock_version_info = patch(
+            'azure_functions_worker.dispatcher.sys.version_info',
+            SysVersionInfo(3, 10, 0, 'final', 0))
+
+        self.mock_os_cpu.start()
+        self.mock_version_info.start()
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self._pre_env)
+        self.mock_os_cpu.stop()
+        self.mock_version_info.stop()
+
+
 class TestDispatcherStein(testutils.AsyncTestCase):
 
     def setUp(self):
@@ -551,30 +578,3 @@ class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
             self.assertTrue(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
-
-
-class TestDispatcherSteinException(testutils.AsyncTestCase):
-
-    def setUp(self):
-        self._ctrl = testutils.start_mockhost(
-            script_root=DISPATCHER_STEIN_INVALID_FUNCTIONS_DIR)
-        self._pre_env = dict(os.environ)
-        self.mock_version_info = patch(
-            'azure_functions_worker.dispatcher.sys.version_info',
-            SysVersionInfo(3, 9, 0, 'final', 0))
-        self.mock_version_info.start()
-
-    def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self._pre_env)
-        self.mock_version_info.stop()
-
-    async def test_dispatcher_functions_metadata_request_exception(self):
-        """Test if the functions metadata response will be sent correctly
-        when a functions metadata request is received
-        """
-        async with self._ctrl as host:
-            r = await host.get_functions_metadata()
-            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertEqual(r.response.result.status,
-                             protos.StatusResult.Failure)

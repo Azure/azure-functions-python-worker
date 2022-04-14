@@ -4,11 +4,12 @@ import os
 import sys
 from unittest import TestCase, skipIf
 
+from requests import Request
+
 from azure_functions_worker.testutils_lc import (
     LinuxConsumptionWebHostController
 )
 from azure_functions_worker.utils.common import is_python_version
-from requests import Request
 
 _DEFAULT_HOST_VERSION = "3"
 
@@ -112,14 +113,15 @@ class TestLinuxConsumption(TestCase):
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 200)
+
             content = resp.json()
 
             # Worker always picks up the SDK version bundled with the image
             # Version of the packages are inconsistent due to isolation's bug
-            self.assertIn('azure.functions', content)
-            self.assertIn('google.protobuf', content)
-            self.assertIn('grpc', content)
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(content['azure.functions'], '1.7.0')
+            self.assertEqual(content['google.protobuf'], '3.15.8')
+            self.assertEqual(content['grpc'], '1.33.2')
 
     def test_old_protobuf(self):
         """A function app with the following requirements.txt:
@@ -138,14 +140,15 @@ class TestLinuxConsumption(TestCase):
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 200)
+
             content = resp.json()
 
             # Worker always picks up the SDK version bundled with the image
             # Version of the packages are inconsistent due to isolation's bug
-            self.assertIn('azure.functions', content)
-            self.assertIn('google.protobuf', content)
-            self.assertIn('grpc', content)
-            self.assertEqual(resp.status_code, 200)
+            self.assertIn(content['azure.functions'], '1.5.0')
+            self.assertIn(content['google.protobuf'], '3.8.0')
+            self.assertIn(content['grpc'], '1.27.1')
 
     def test_debug_logging_disabled(self):
         """An HttpTrigger function app with 'azure-functions' library

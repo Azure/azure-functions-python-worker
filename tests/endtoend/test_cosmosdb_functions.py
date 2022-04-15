@@ -35,10 +35,13 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
                 response = r.json()
                 response.pop('_metadata', None)
 
-                self.assertEqual(
-                    response,
-                    doc
-                )
+                self.assertEqual(response['id'], doc['id'])
+                self.assertEqual(response['data'], doc['data'])
+                self.assertTrue('_etag' in response)
+                self.assertTrue('_lsn' in response)
+                self.assertTrue('_rid' in response)
+                self.assertTrue('_self' in response)
+                self.assertTrue('_ts' in response)
             except AssertionError:
                 if try_no == max_retries - 1:
                     raise
@@ -71,6 +74,13 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
                     response,
                     doc
                 )
+                self.assertEqual(response['id'], doc['id'])
+                self.assertEqual(response['data'], doc['data'])
+                self.assertTrue('_etag' in response)
+                self.assertTrue('_lsn' in response)
+                self.assertTrue('_rid' in response)
+                self.assertTrue('_self' in response)
+                self.assertTrue('_ts' in response)
             except AssertionError:
                 if try_no == max_retries - 1:
                     raise

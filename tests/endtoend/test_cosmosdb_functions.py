@@ -70,10 +70,6 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
                 self.assertEqual(r.status_code, 200)
                 response = r.json()
 
-                self.assertEqual(
-                    response,
-                    doc
-                )
                 self.assertEqual(response['id'], doc['id'])
                 self.assertEqual(response['data'], doc['data'])
                 self.assertTrue('_etag' in response)

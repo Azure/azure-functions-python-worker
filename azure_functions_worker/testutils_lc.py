@@ -129,6 +129,8 @@ class LinuxConsumptionWebHostController:
                                f' Status {response.status_code}')
 
         tag_list = response.json().get('tags', [])
+        # Removing images with a -upgrade
+        tag_list = [x.strip("-upgrade") for x in tag_list]
         version = list(filter(regex.match, tag_list))[-1]
 
         image_tag = f'{_MESH_IMAGE_REPO}:{version}'

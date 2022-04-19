@@ -129,7 +129,9 @@ class LinuxConsumptionWebHostController:
                                f' Status {response.status_code}')
 
         tag_list = response.json().get('tags', [])
-        # Removing images with a -upgrade
+        # Removing images with a -upgrade. Upgrade images were temporary
+        # images used to onboard customers from a previous version. These
+        # images are no longer used.
         tag_list = [x.strip("-upgrade") for x in tag_list]
         version = list(filter(regex.match, tag_list))[-1]
 

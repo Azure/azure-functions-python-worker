@@ -294,7 +294,7 @@ class webhost(distutils.cmd.Command):
 
     def _get_webhost_version(self) -> str:
         # Return the latest matched version (e.g. 3.0.15278)
-        github_api_url = f'{WEBHOST_GITHUB_API}/tags?page=1&per_page=10'
+        github_api_url = f'{WEBHOST_GITHUB_API}/tags?page=1&per_page=100'
         print(f'Checking latest webhost version from {github_api_url}')
         github_response = urllib.request.urlopen(github_api_url)
         tags = json.loads(github_response.read())

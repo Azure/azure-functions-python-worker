@@ -215,8 +215,8 @@ jobs:
   - task: ManifestGeneratorTask@0
     displayName: 'SBOM Generation Task'
     inputs:
-      BuildDropPath: '$(Build.ArtifactStagingDirectory)'
-      BuildComponentPath: '$(Build.ArtifactStagingDirectory)'
+      BuildDropPath: '$(Build.SourcesDirectory)'
+      BuildComponentPath: '$(Build.SourcesDirectory)'
       Verbosity: 'Verbose'
   - task: NuGetCommand@2
     inputs:

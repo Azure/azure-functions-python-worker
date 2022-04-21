@@ -1,14 +1,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from unittest import TestCase
-
 import os
 import sys
+from unittest import TestCase, skipIf
+
 from requests import Request
 
 from azure_functions_worker.testutils_lc import (
     LinuxConsumptionWebHostController
 )
+from azure_functions_worker.utils.common import is_python_version
 
 
 class TestLinuxConsumption(TestCase):
@@ -56,6 +57,8 @@ class TestLinuxConsumption(TestCase):
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
 
+    @skipIf(is_python_version('3.7'),
+            "Skip the tests for Python 3.7.")
     def test_common_libraries(self):
         """A function app with the following requirements.txt:
 

@@ -128,6 +128,16 @@ jobs:
         echo "Generating V4 Release Package for $BUILD_SOURCEBRANCHNAME"
         NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
         WKVERSION="$BUILD_SOURCEBRANCHNAME"
+      elif [[ $BUILD_SOURCEBRANCHNAME = 3\.* ]]
+      then
+         echo "Generating V3 Release Package for $BUILD_SOURCEBRANCHNAME"
+         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
+         WKVERSION="$BUILD_SOURCEBRANCHNAME"
+      elif [[ $BUILD_SOURCEBRANCHNAME = 2\.* ]]
+      then
+         echo "Generating V2 Release Package for $BUILD_SOURCEBRANCHNAME"
+         NUSPEC="pack\Microsoft.Azure.Functions.V2.PythonWorker.nuspec"
+         WKVERSION="$BUILD_SOURCEBRANCHNAME"
       elif [[ $BUILD_SOURCEBRANCHNAME = dev ]]
       then
         echo "Generating V4 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
@@ -136,7 +146,7 @@ jobs:
         WKVERSION="$VERSION-$(patchBuildNumberForDev)"
       else
         # this is only to test nuget related workflow because we are setting nuspec here
-        echo "Generating Integration Test Package for $BUILD_SOURCEBRANCHNAME for testing purpose"
+        echo "Generating test Integration Test Package for $BUILD_SOURCEBRANCHNAME for testing purpose"
         LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
         NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
         # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)

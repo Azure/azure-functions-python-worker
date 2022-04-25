@@ -12,13 +12,11 @@ import os
 import queue
 import sys
 import threading
-import uuid
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
 
 import grpc
-from azure.functions import Function
 
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
@@ -26,8 +24,7 @@ from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME,
-                        PYTHON_LANGUAGE_RUNTIME)
+                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import enable_debug_logging_recommendation
@@ -322,7 +319,20 @@ class Dispatcher(metaclass=DispatcherMeta):
             fx_metadata_results = []
             indexed_functions = loader.index_function_app(function_path)
             if indexed_functions:
-                fx_metadata_results = self._process_indexed_function(
+                indexed_function_logs: List[str] = []
+                for func in indexed_functions:
+                    function_log = \
+                        f"Function Name: {func.get_function_name()} " \
+                        "Function Binding: " \
+                        f"{[binding.name for binding in func.get_bindings()]}"
+                    indexed_function_logs.append(function_log)
+
+                logger.info(
+                    f'Successfully processed FunctionMetadataRequest for '
+                    f'functions: {" ".join(indexed_function_logs)}')
+
+                fx_metadata_results = loader.process_indexed_function(
+                    self._functions,
                     indexed_functions)
 
             return protos.StreamingMessage(
@@ -744,49 +754,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                 return
             error_logger.exception('unhandled error in gRPC thread')
             raise
-
-    def _process_indexed_function(self, indexed_functions: List[Function]):
-        fx_metadata_results = []
-        for indexed_function in indexed_functions:
-            function_id = str(uuid.uuid4())
-            function_info = self._functions.add_indexed_function(
-                function_id,
-                function=indexed_function)
-
-            binding_protos = {}
-            for binding in indexed_function.get_bindings():
-                binding_protos[binding.name] = protos.BindingInfo(
-                    type=binding.type,
-                    data_type=binding.data_type,
-                    direction=binding.direction)
-
-            function_metadata = protos.RpcFunctionMetadata(
-                name=function_info.name,
-                function_id=function_id,
-                managed_dependency_enabled=False,  # only enabled for PowerShell
-                directory=function_info.directory,
-                script_file=indexed_function.function_script_file,
-                entry_point=function_info.name,
-                is_proxy=False,  # not supported in V4
-                language=PYTHON_LANGUAGE_RUNTIME,
-                bindings=binding_protos,
-                raw_bindings=indexed_function.get_raw_bindings())
-
-            fx_metadata_results.append(function_metadata)
-
-        indexed_function_logs: List[str] = []
-        for function in indexed_functions:
-            function_log = \
-                f"Function Name: {function.get_function_name()} " \
-                f"Function Binding: " \
-                f"{[binding.name for binding in function.get_bindings()]}"
-            indexed_function_logs.append(function_log)
-
-        logger.info(
-            f'Successfully processed FunctionMetadataRequest for functions: '
-            f'{" ".join(indexed_function_logs)}')
-
-        return fx_metadata_results
 
 
 class AsyncLoggingHandler(logging.Handler):

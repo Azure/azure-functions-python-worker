@@ -89,11 +89,11 @@ class Registry:
                 func_name,
                 '"inout" bindings are not supported')
 
-        if binding_name == '$return':
-            if binding_direction != protos.BindingInfo.out:
-                raise FunctionLoadError(
-                    func_name,
-                    '"$return" binding must have direction set to "out"')
+        if binding_name == '$return' and \
+                binding_direction != protos.BindingInfo.out:
+            raise FunctionLoadError(
+                func_name,
+                '"$return" binding must have direction set to "out"')
 
     @staticmethod
     def is_context_required(params, bound_params: dict,
@@ -240,15 +240,15 @@ class Registry:
         return input_types, output_types
 
     @staticmethod
-    def get_function_return_type(annotations, has_explicit_return,
-                                 has_implicit_return, binding_name,
+    def get_function_return_type(annotations: dict, has_explicit_return: bool,
+                                 has_implicit_return: bool, binding_name: str,
                                  func_name: str):
         return_pytype = None
         if has_explicit_return and 'return' in annotations:
             return_anno = annotations.get('return')
-            if (typing_inspect.is_generic_type(return_anno)
-                    and typing_inspect.get_origin(
-                        return_anno).__name__ == 'Out'):
+            if typing_inspect.is_generic_type(
+                    return_anno) and typing_inspect.get_origin(
+                    return_anno).__name__ == 'Out':
                 raise FunctionLoadError(
                     func_name,
                     'return annotation should not be azure.functions.Out')
@@ -286,9 +286,11 @@ class Registry:
                                                  requires_context: bool,
                                                  has_explicit_return: bool,
                                                  has_implicit_return: bool,
-                                                 input_types,
-                                                 output_types,
-                                                 return_type):
+                                                 input_types: typing.Dict[
+                                                     str, ParamTypeInfo],
+                                                 output_types: typing.Dict[
+                                                     str, ParamTypeInfo],
+                                                 return_type: str):
 
         function_info = FunctionInfo(
             func=function,

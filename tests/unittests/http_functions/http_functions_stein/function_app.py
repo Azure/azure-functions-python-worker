@@ -229,7 +229,7 @@ def return_http_404(req: func.HttpRequest):
     return func.HttpResponse('bye', status_code=404)
 
 
-@app.route(route="return_http_auth_admin", http_auth_level=func.AuthLevel.ADMIN)
+@app.route(route="return_http_auth_admin", auth_level=func.AuthLevel.ADMIN)
 def return_http_auth_admin(req: func.HttpRequest):
     return func.HttpResponse('<h1>Hello World™</h1>',
                              mimetype='text/html')

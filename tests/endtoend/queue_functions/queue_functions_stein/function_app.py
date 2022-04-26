@@ -110,7 +110,7 @@ def put_queue_untyped_return(req: func.HttpRequest,
 
 
 @app.function_name(name="queue_trigger")
-@app.on_queue_change(arg_name="msg",
+@app.queue_trigger(arg_name="msg",
                      queue_name="testqueue",
                      connection="AzureWebJobsStorage")
 @app.write_blob(arg_name="$return",
@@ -134,7 +134,7 @@ def queue_trigger(msg: func.QueueMessage) -> str:
 
 
 @app.function_name(name="queue_trigger_message_return")
-@app.on_queue_change(arg_name="msg",
+@app.queue_trigger(arg_name="msg",
                      queue_name="testqueue-message-return",
                      connection="AzureWebJobsStorage")
 @app.write_blob(arg_name="$return",
@@ -145,7 +145,7 @@ def queue_trigger_message_return(msg: func.QueueMessage) -> bytes:
 
 
 @app.function_name(name="queue_trigger_return")
-@app.on_queue_change(arg_name="msg",
+@app.queue_trigger(arg_name="msg",
                      queue_name="testqueue-return",
                      connection="AzureWebJobsStorage")
 @app.write_blob(arg_name="$return",
@@ -156,7 +156,7 @@ def queue_trigger_return(msg: func.QueueMessage) -> bytes:
 
 
 @app.function_name(name="queue_trigger_return_multiple")
-@app.on_queue_change(arg_name="msg",
+@app.queue_trigger(arg_name="msg",
                      queue_name="testqueue-return-multiple",
                      connection="AzureWebJobsStorage")
 def queue_trigger_return_multiple(msg: func.QueueMessage) -> None:
@@ -164,7 +164,7 @@ def queue_trigger_return_multiple(msg: func.QueueMessage) -> None:
 
 
 @app.function_name(name="queue_trigger_untyped")
-@app.on_queue_change(arg_name="msg",
+@app.queue_trigger(arg_name="msg",
                      queue_name="testqueue-untyped-return",
                      connection="AzureWebJobsStorage")
 @app.write_blob(arg_name="$return",

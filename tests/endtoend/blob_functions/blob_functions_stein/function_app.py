@@ -13,8 +13,8 @@ app = func.FunctionApp()
 
 @app.function_name(name="blob_trigger")
 @app.blob_trigger(arg_name="file",
-                    path="python-worker-tests/test-blob-trigger.txt",
-                    connection="AzureWebJobsStorage")
+                  path="python-worker-tests/test-blob-trigger.txt",
+                  connection="AzureWebJobsStorage")
 @app.write_blob(arg_name="$return",
                 path="python-worker-tests/test-blob-triggered.txt",
                 connection="AzureWebJobsStorage")

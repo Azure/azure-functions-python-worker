@@ -12,7 +12,7 @@ app = func.FunctionApp()
 
 
 @app.function_name(name="blob_trigger")
-@app.on_blob_change(arg_name="file",
+@app.blob_trigger(arg_name="file",
                     path="python-worker-tests/test-blob-trigger.txt",
                     connection="AzureWebJobsStorage")
 @app.write_blob(arg_name="$return",

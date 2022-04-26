@@ -111,8 +111,8 @@ def put_queue_untyped_return(req: func.HttpRequest,
 
 @app.function_name(name="queue_trigger")
 @app.queue_trigger(arg_name="msg",
-                     queue_name="testqueue",
-                     connection="AzureWebJobsStorage")
+                   queue_name="testqueue",
+                   connection="AzureWebJobsStorage")
 @app.write_blob(arg_name="$return",
                 connection="AzureWebJobsStorage",
                 path="python-worker-tests/test-queue-blob.txt")
@@ -135,8 +135,8 @@ def queue_trigger(msg: func.QueueMessage) -> str:
 
 @app.function_name(name="queue_trigger_message_return")
 @app.queue_trigger(arg_name="msg",
-                     queue_name="testqueue-message-return",
-                     connection="AzureWebJobsStorage")
+                   queue_name="testqueue-message-return",
+                   connection="AzureWebJobsStorage")
 @app.write_blob(arg_name="$return",
                 connection="AzureWebJobsStorage",
                 path="python-worker-tests/test-queue-blob-message-return.txt")
@@ -146,8 +146,8 @@ def queue_trigger_message_return(msg: func.QueueMessage) -> bytes:
 
 @app.function_name(name="queue_trigger_return")
 @app.queue_trigger(arg_name="msg",
-                     queue_name="testqueue-return",
-                     connection="AzureWebJobsStorage")
+                   queue_name="testqueue-return",
+                   connection="AzureWebJobsStorage")
 @app.write_blob(arg_name="$return",
                 connection="AzureWebJobsStorage",
                 path="python-worker-tests/test-queue-blob-return.txt")
@@ -157,16 +157,16 @@ def queue_trigger_return(msg: func.QueueMessage) -> bytes:
 
 @app.function_name(name="queue_trigger_return_multiple")
 @app.queue_trigger(arg_name="msg",
-                     queue_name="testqueue-return-multiple",
-                     connection="AzureWebJobsStorage")
+                   queue_name="testqueue-return-multiple",
+                   connection="AzureWebJobsStorage")
 def queue_trigger_return_multiple(msg: func.QueueMessage) -> None:
     logging.info('trigger on message: %s', msg.get_body().decode('utf-8'))
 
 
 @app.function_name(name="queue_trigger_untyped")
 @app.queue_trigger(arg_name="msg",
-                     queue_name="testqueue-untyped-return",
-                     connection="AzureWebJobsStorage")
+                   queue_name="testqueue-untyped-return",
+                   connection="AzureWebJobsStorage")
 @app.write_blob(arg_name="$return",
                 connection="AzureWebJobsStorage",
                 path="python-worker-tests/test-queue-untyped-blob-return.txt")

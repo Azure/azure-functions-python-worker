@@ -35,10 +35,12 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
                 response = r.json()
                 response.pop('_metadata', None)
 
-                self.assertEqual(
-                    response,
-                    doc
-                )
+                self.assertEqual(doc["id"], response["id"])
+                self.assertEqual(doc["data"], response["data"])
+                self.assertIsNotNone(response["_etag"])
+                self.assertIsNotNone(response["_rid"])
+                self.assertIsNotNone(response["_self"])
+                self.assertIsNotNone(response["_ts"])
             except AssertionError:
                 if try_no == max_retries - 1:
                     raise
@@ -67,12 +69,22 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
                 self.assertEqual(r.status_code, 200)
                 response = r.json()
 
-                self.assertEqual(
-                    response,
-                    doc
-                )
+                self.assertEqual(doc["id"], response["id"])
+                self.assertEqual(doc["data"], response["data"])
+                self.assertIsNotNone(response["_etag"])
+                self.assertIsNotNone(response["_rid"])
+                self.assertIsNotNone(response["_self"])
+                self.assertIsNotNone(response["_ts"])
             except AssertionError:
                 if try_no == max_retries - 1:
                     raise
             else:
                 break
+
+
+class TestCosmosDBFunctionsStein(TestCosmosDBFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'cosmosdb_functions' / \
+                                            'cosmosdb_functions_stein'

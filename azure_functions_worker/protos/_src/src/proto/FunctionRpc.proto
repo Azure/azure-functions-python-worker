@@ -67,7 +67,7 @@ message StreamingMessage {
 
     // Worker logs a message back to the host
     RpcLog rpc_log = 2;
-
+    
     FunctionEnvironmentReloadRequest function_environment_reload_request = 25;
 
     FunctionEnvironmentReloadResponse function_environment_reload_response = 26;
@@ -78,14 +78,20 @@ message StreamingMessage {
 
     // Worker indexing message types
     FunctionsMetadataRequest functions_metadata_request = 29;
-    FunctionMetadataResponses function_metadata_responses = 30;
+    FunctionMetadataResponse function_metadata_response = 30;
+
+    // Host sends required metadata to worker to load functions
+    FunctionLoadRequestCollection function_load_request_collection = 31;
+
+    // Host gets the list of function load responses
+    FunctionLoadResponseCollection function_load_response_collection = 32;
   }
 }
 
 // Process.Start required info
 //   connection details
 //   protocol type
-//   protocol version
+//   protocol version 
 
 // Worker sends the host information identifying itself
 message StartStream {
@@ -93,7 +99,7 @@ message StartStream {
   string worker_id = 2;
 }
 
-// Host requests the worker to initialize itself
+// Host requests the worker to initialize itself 
 message WorkerInitRequest {
   // version of the host sending init request
   string host_version = 1;
@@ -107,6 +113,9 @@ message WorkerInitRequest {
 
   // Full path of worker.config.json location
   string worker_directory = 4;
+
+  // base directory for function app
+  string function_app_directory = 5;
 }
 
 // Worker responds with the result of initializing itself
@@ -181,7 +190,7 @@ message WorkerActionResponse {
     Restart = 0;
     Reload = 1;
   }
-
+  
   // action for this response
   Action action = 1;
 
@@ -220,7 +229,17 @@ message CloseSharedMemoryResourcesResponse {
   map<string, bool> close_map_results = 1;
 }
 
-// Host tells the worker to load a Function
+// Host tells the worker to load a list of Functions
+message FunctionLoadRequestCollection {
+  repeated FunctionLoadRequest function_load_requests = 1;
+}
+
+// Host gets the list of function load responses
+message FunctionLoadResponseCollection {
+  repeated FunctionLoadResponse function_load_responses = 1;
+}
+
+// Load request of a single Function
 message FunctionLoadRequest {
   // unique function identifier (avoid name collisions, facilitate reload case)
   string function_id = 1;
@@ -252,7 +271,7 @@ message RpcFunctionMetadata {
 
   // base directory for the Function
   string directory = 1;
-
+  
   // Script file specified
   string script_file = 2;
 
@@ -273,6 +292,12 @@ message RpcFunctionMetadata {
 
   // Raw binding info
   repeated string raw_bindings = 10;
+
+  // unique function identifier (avoid name collisions, facilitate reload case)
+  string function_id = 13;
+
+  // A flag indicating if managed dependency is enabled or not
+  bool managed_dependency_enabled = 14;
 }
 
 // Host tells worker it is ready to receive metadata
@@ -282,12 +307,15 @@ message FunctionsMetadataRequest {
 }
 
 // Worker sends function metadata back to host
-message FunctionMetadataResponses {
+message FunctionMetadataResponse {
   // list of function indexing responses
-  repeated FunctionLoadRequest function_load_requests_results = 1;
+  repeated RpcFunctionMetadata function_metadata_results = 1;
 
   // status of overall metadata request
   StatusResult result = 2;
+
+  // if set to true then host will perform indexing
+  bool use_default_metadata_indexing = 3;
 }
 
 // Host requests worker to invoke a Function
@@ -464,7 +492,7 @@ message BindingInfo {
   DataType data_type = 4;
 }
 
-// Used to send logs back to the Host
+// Used to send logs back to the Host 
 message RpcLog {
   // Matching ILogger semantics
   // https://github.com/aspnet/Logging/blob/9506ccc3f3491488fe88010ef8b9eb64594abf95/src/Microsoft.Extensions.Logging/Logger.cs
@@ -481,8 +509,9 @@ message RpcLog {
 
   // Category of the log. Defaults to User if not specified.
   enum RpcLogCategory {
-	User = 0;
-	System = 1;
+    User = 0;
+    System = 1;
+    CustomMetric = 2;
   }
 
   // Unique id for invocation (if exists)
@@ -504,14 +533,17 @@ message RpcLog {
   // Exception (if exists)
   RpcException exception = 6;
 
-  // json serialized property bag, or could use a type scheme like map<string, TypedData>
+  // json serialized property bag
   string properties = 7;
 
-  // Category of the log. Either user(default) or system.
+  // Category of the log. Either user(default), system, or custom metric.
   RpcLogCategory log_category = 8;
+
+  // strongly-typed (ish) property bag
+  map<string, TypedData> propertiesMap = 9;
 }
 
-// Encapsulates an Exception
+// Encapsulates an Exception 
 message RpcException {
   // Source of the exception
   string source = 3;
@@ -565,7 +597,7 @@ message RpcHttpCookie {
 // TODO - solidify this or remove it
 message RpcHttp {
   string method = 1;
-  string url = 2;
+  string url = 2; 
   map<string,string> headers = 3;
   TypedData body = 4;
   map<string,string> params = 10;

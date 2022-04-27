@@ -18,17 +18,13 @@ from typing import List, Optional
 
 import grpc
 
-from . import bindings
-from . import constants
-from . import functions
-from . import loader
-from . import protos
+from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING)
+                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import enable_debug_logging_recommendation
@@ -39,7 +35,6 @@ from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
 from .version import VERSION
-
 
 _TRUE = "true"
 
@@ -260,13 +255,13 @@ class Dispatcher(metaclass=DispatcherMeta):
         resp = await request_handler(request)
         self._grpc_resp_queue.put_nowait(resp)
 
-    async def _handle__worker_init_request(self, req):
+    async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, worker version %s, request ID %s',
                     sys.version, VERSION, self.request_id)
         enable_debug_logging_recommendation()
 
-        worker_init_request = req.worker_init_request
+        worker_init_request = request.worker_init_request
         host_capabilities = worker_init_request.capabilities
         if constants.FUNCTION_DATA_CACHE in host_capabilities:
             val = host_capabilities[constants.FUNCTION_DATA_CACHE]
@@ -294,42 +289,93 @@ class Dispatcher(metaclass=DispatcherMeta):
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success)))
 
-    async def _handle__worker_status_request(self, req):
+    async def _handle__worker_status_request(self, request):
         # Logging is not necessary in this request since the response is used
         # for host to judge scale decisions of out-of-proc languages.
         # Having log here will reduce the responsiveness of the worker.
         return protos.StreamingMessage(
-            request_id=req.request_id,
+            request_id=request.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
-    async def _handle__function_load_request(self, req):
-        func_request = req.function_load_request
+    async def _handle__functions_metadata_request(self, request):
+        metadata_request = request.functions_metadata_request
+        directory = metadata_request.function_app_directory
+        function_path = os.path.join(directory, SCRIPT_FILE_NAME)
+
+        if not os.path.exists(function_path):
+            # Fallback to legacy model
+            logger.info(f"{SCRIPT_FILE_NAME} does not exist. "
+                        "Switching to host indexing.")
+            return protos.StreamingMessage(
+                request_id=request.request_id,
+                function_metadata_response=protos.FunctionMetadataResponse(
+                    use_default_metadata_indexing=True,
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Success)))
+
+        try:
+            fx_metadata_results = []
+            indexed_functions = loader.index_function_app(function_path)
+            if indexed_functions:
+                indexed_function_logs: List[str] = []
+                for func in indexed_functions:
+                    function_log = \
+                        f"Function Name: {func.get_function_name()} " \
+                        "Function Binding: " \
+                        f"{[binding.name for binding in func.get_bindings()]}"
+                    indexed_function_logs.append(function_log)
+
+                logger.info(
+                    f'Successfully processed FunctionMetadataRequest for '
+                    f'functions: {" ".join(indexed_function_logs)}')
+
+                fx_metadata_results = loader.process_indexed_function(
+                    self._functions,
+                    indexed_functions)
+            else:
+                logger.warning("No functions indexed. Please refer to the "
+                               "documentation.")
+
+            return protos.StreamingMessage(
+                request_id=request.request_id,
+                function_metadata_response=protos.FunctionMetadataResponse(
+                    function_metadata_results=fx_metadata_results,
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Success)))
+
+        except Exception as ex:
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                function_metadata_response=protos.FunctionMetadataResponse(
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Failure,
+                        exception=self._serialize_exception(ex))))
+
+    async def _handle__function_load_request(self, request):
+        func_request = request.function_load_request
         function_id = func_request.function_id
         function_name = func_request.metadata.name
 
-        logger.info(f'Received FunctionLoadRequest, '
-                    f'request ID: {self.request_id}, '
-                    f'function ID: {function_id}'
-                    f'function Name: {function_name}')
         try:
-            func = loader.load_function(
-                func_request.metadata.name,
-                func_request.metadata.directory,
-                func_request.metadata.script_file,
-                func_request.metadata.entry_point)
+            if not self._functions.get_function(function_id):
+                func = loader.load_function(
+                    func_request.metadata.name,
+                    func_request.metadata.directory,
+                    func_request.metadata.script_file,
+                    func_request.metadata.entry_point)
 
-            self._functions.add_function(
-                function_id, func, func_request.metadata)
+                self._functions.add_function(
+                    function_id, func, func_request.metadata)
 
-            ExtensionManager.function_load_extension(
-                function_name,
-                func_request.metadata.directory
-            )
+                ExtensionManager.function_load_extension(
+                    function_name,
+                    func_request.metadata.directory
+                )
 
-            logger.info('Successfully processed FunctionLoadRequest, '
-                        f'request ID: {self.request_id}, '
-                        f'function ID: {function_id},'
-                        f'function Name: {function_name}')
+                logger.info('Successfully processed FunctionLoadRequest, '
+                            f'request ID: {self.request_id}, '
+                            f'function ID: {function_id},'
+                            f'function Name: {function_name}')
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -347,8 +393,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Failure,
                         exception=self._serialize_exception(ex))))
 
-    async def _handle__invocation_request(self, req):
-        invoc_request = req.invocation_request
+    async def _handle__invocation_request(self, request):
+        invoc_request = request.invocation_request
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
 
@@ -361,6 +407,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             fi: functions.FunctionInfo = self._functions.get_function(
                 function_id)
+            assert fi is not None
 
             function_invocation_logs: List[str] = [
                 'Received FunctionInvocationRequest',
@@ -456,7 +503,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Failure,
                         exception=self._serialize_exception(ex))))
 
-    async def _handle__function_environment_reload_request(self, req):
+    async def _handle__function_environment_reload_request(self, request):
         """Only runs on Linux Consumption placeholder specialization.
         """
         try:
@@ -464,7 +511,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                         'request ID: %s', self.request_id)
             enable_debug_logging_recommendation()
 
-            func_env_reload_request = req.function_environment_reload_request
+            func_env_reload_request = \
+                request.function_environment_reload_request
 
             # Import before clearing path cache so that the default
             # azure.functions modules is available in sys.modules for
@@ -523,7 +571,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
 
-    async def _handle__close_shared_memory_resources_request(self, req):
+    async def _handle__close_shared_memory_resources_request(self, request):
         """
         Frees any memory maps that were produced as output for a given
         invocation.
@@ -534,7 +582,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         If the cache is not enabled, the worker should free the resources as at
         this point the host has read the memory maps and does not need them.
         """
-        close_request = req.close_shared_memory_resources_request
+        close_request = request.close_shared_memory_resources_request
         map_names = close_request.map_names
         # Assign default value of False to all result values.
         # If we are successfully able to close a memory map, its result will be

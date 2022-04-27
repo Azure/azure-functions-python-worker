@@ -5,8 +5,7 @@ import sys
 import shutil
 import asyncio
 
-from azure_functions_worker import protos
-from azure_functions_worker import testutils
+from azure_functions_worker import protos, testutils
 
 
 async def verify_path_imports():

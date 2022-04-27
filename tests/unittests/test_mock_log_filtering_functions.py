@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 from unittest.mock import patch, call
 
-from azure_functions_worker import testutils, protos
+from azure_functions_worker import protos, testutils
 from azure_functions_worker.logging import is_system_log_category
 
 

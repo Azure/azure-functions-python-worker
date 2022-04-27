@@ -2,7 +2,8 @@
 # Licensed under the MIT License.
 import json
 
-from azure_functions_worker import protos, testutils
+from azure_functions_worker import protos
+from tests.utils import testutils
 
 
 class TestEventHubMockFunctions(testutils.AsyncTestCase):

@@ -7,7 +7,7 @@ from unittest.case import skipIf
 from unittest.mock import patch
 
 from requests import Response
-from azure_functions_worker import testutils
+from tests.utils import testutils
 from azure_functions_worker.utils.common import is_envvar_true
 from azure_functions_worker.constants import PYAZURE_INTEGRATION_TEST
 

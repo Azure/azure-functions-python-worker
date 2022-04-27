@@ -3,7 +3,7 @@
 import json
 import time
 
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 
 class TestServiceBusFunctions(testutils.WebHostTestCase):

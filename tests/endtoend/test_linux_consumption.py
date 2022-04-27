@@ -6,7 +6,7 @@ from unittest import TestCase, skipIf
 
 from requests import Request
 
-from azure_functions_worker.testutils_lc import (
+from tests.utils.testutils_lc import (
     LinuxConsumptionWebHostController
 )
 from azure_functions_worker.utils.common import is_python_version

@@ -6,7 +6,7 @@ import pathlib
 from datetime import datetime
 from dateutil import parser, tz
 
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 
 class TestEventHubFunctions(testutils.WebHostTestCase):

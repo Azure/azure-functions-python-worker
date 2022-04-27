@@ -25,8 +25,9 @@ def eventhub_output(req: func.HttpRequest, event: func.Out[str]):
 # into a storage blob.
 @app.function_name(name="eventhub_trigger")
 @app.event_hub_message_trigger(arg_name="event",
-                          event_hub_name="python-worker-ci-eventhub-one",
-                          connection="AzureWebJobsEventHubConnectionString")
+                               event_hub_name="python-worker-ci-eventhub-one",
+                               connection="AzureWebJobsEventHubConnectionString"
+                               )
 @app.write_blob(arg_name="$return",
                 path="python-worker-tests/test-eventhub-triggered.txt",
                 connection="AzureWebJobsStorage")

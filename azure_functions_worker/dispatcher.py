@@ -298,8 +298,6 @@ class Dispatcher(metaclass=DispatcherMeta):
             worker_status_response=protos.WorkerStatusResponse())
 
     async def _handle__functions_metadata_request(self, request):
-        logger.info(f"Received FunctionMetadataRequest: {self.request_id}")
-
         metadata_request = request.functions_metadata_request
         directory = metadata_request.function_app_directory
         function_path = os.path.join(directory, SCRIPT_FILE_NAME)
@@ -334,6 +332,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                 fx_metadata_results = loader.process_indexed_function(
                     self._functions,
                     indexed_functions)
+            else:
+                logger.warning("No functions indexed. Please refer to the "
+                               "documentation.")
 
             return protos.StreamingMessage(
                 request_id=request.request_id,
@@ -355,10 +356,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_id = func_request.function_id
         function_name = func_request.metadata.name
 
-        logger.info(f'Received FunctionLoadRequest, '
-                    f'request ID: {self.request_id}, '
-                    f'function ID: {function_id}'
-                    f'function Name: {function_name}')
         try:
             if not self._functions.get_function(function_id):
                 func = loader.load_function(
@@ -379,10 +376,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                             f'request ID: {self.request_id}, '
                             f'function ID: {function_id},'
                             f'function Name: {function_name}')
-            else:
-                logger.info(
-                    f"Function: {function_name} with FunctionId: {function_id} "
-                    f"already exists in the registry")
 
             return protos.StreamingMessage(
                 request_id=self.request_id,

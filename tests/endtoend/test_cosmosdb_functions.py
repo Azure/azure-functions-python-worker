@@ -68,7 +68,7 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
                 r = self.webhost.request('GET', 'cosmosdb_input')
                 self.assertEqual(r.status_code, 200)
                 response = r.json()
-                
+
                 self.assertEqual(doc["id"], response["id"])
                 self.assertEqual(doc["data"], response["data"])
                 self.assertIsNotNone(response["_etag"])

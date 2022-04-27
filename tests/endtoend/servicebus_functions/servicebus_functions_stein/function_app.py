@@ -25,7 +25,7 @@ def get_servicebus_triggered(req: func.HttpRequest,
         file.read().decode('utf-8'), mimetype='application/json')
 
 
-@app.on_service_bus_queue_change(
+@app.service_bus_queue_trigger(
     arg_name="msg",
     connection="AzureWebJobsServiceBusConnectionString",
     queue_name="testqueue")

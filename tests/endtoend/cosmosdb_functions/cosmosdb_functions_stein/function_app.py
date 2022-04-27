@@ -15,7 +15,7 @@ def cosmosdb_input(req: func.HttpRequest, docs: func.DocumentList) -> str:
     return func.HttpResponse(docs[0].to_json(), mimetype='application/json')
 
 
-@app.on_cosmos_db_update(
+@app.cosmos_db_trigger(
     arg_name="docs", database_name="test",
     collection_name="items",
     lease_collection_name="leases",

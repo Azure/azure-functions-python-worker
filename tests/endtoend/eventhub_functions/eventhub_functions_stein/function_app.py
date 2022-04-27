@@ -24,7 +24,7 @@ def eventhub_output(req: func.HttpRequest, event: func.Out[str]):
 # This is an actual EventHub trigger which will convert the event data
 # into a storage blob.
 @app.function_name(name="eventhub_trigger")
-@app.on_event_hub_message(arg_name="event",
+@app.event_hub_message_trigger(arg_name="event",
                           event_hub_name="python-worker-ci-eventhub-one",
                           connection="AzureWebJobsEventHubConnectionString")
 @app.write_blob(arg_name="$return",
@@ -86,7 +86,7 @@ async def metadata_output(req: func.HttpRequest):
 
 
 @app.function_name(name="metadata_trigger")
-@app.on_event_hub_message(
+@app.event_hub_message_trigger(
     arg_name="event",
     event_hub_name="python-worker-ci-eventhub-one-metadata",
     connection="AzureWebJobsEventHubConnectionString")

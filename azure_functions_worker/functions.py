@@ -2,21 +2,23 @@
 # Licensed under the MIT License.
 import inspect
 import operator
+import pathlib
 import typing
 
-from . import bindings
+from azure.functions import DataType, Function
+
+from . import bindings as bindings_utils
 from . import protos
 from ._thirdparty import typing_inspect
+from .protos import BindingInfo
 
 
 class ParamTypeInfo(typing.NamedTuple):
-
     binding_name: str
     pytype: typing.Optional[type]
 
 
 class FunctionInfo(typing.NamedTuple):
-
     func: typing.Callable
 
     name: str
@@ -38,63 +40,66 @@ class FunctionLoadError(RuntimeError):
 
 
 class Registry:
-
     _functions: typing.MutableMapping[str, FunctionInfo]
 
     def __init__(self) -> None:
         self._functions = {}
 
     def get_function(self, function_id: str) -> FunctionInfo:
-        try:
+        if function_id in self._functions:
             return self._functions[function_id]
-        except KeyError:
-            raise RuntimeError(
-                f'no function with function_id={function_id}') from None
 
-    def add_function(self, function_id: str,
-                     func: typing.Callable,
-                     metadata: protos.RpcFunctionMetadata):
-        func_name = metadata.name
-        sig = inspect.signature(func)
-        params = dict(sig.parameters)
-        annotations = typing.get_type_hints(func)
+        return None
 
-        input_types: typing.Dict[str, ParamTypeInfo] = {}
-        output_types: typing.Dict[str, ParamTypeInfo] = {}
-        return_binding_name: typing.Optional[str] = None
-        return_pytype: typing.Optional[type] = None
+    @staticmethod
+    def get_explicit_and_implicit_return(binding_name: str,
+                                         binding: BindingInfo,
+                                         explicit_return: bool,
+                                         implicit_return: bool,
+                                         bound_params: dict) -> \
+            typing.Tuple[bool, bool]:
+        if binding_name == '$return':
+            explicit_return = True
+        elif bindings_utils.has_implicit_output(
+                binding.type):
+            implicit_return = True
+            bound_params[binding_name] = binding
+        else:
+            bound_params[binding_name] = binding
+        return explicit_return, implicit_return
 
+    @staticmethod
+    def get_return_binding(binding_name: str,
+                           binding_type: str,
+                           return_binding_name: str) -> str:
+        if binding_name == "$return":
+            return_binding_name = binding_type
+            assert return_binding_name is not None
+        elif bindings_utils.has_implicit_output(binding_type):
+            return_binding_name = binding_type
+
+        return return_binding_name
+
+    @staticmethod
+    def validate_binding_direction(binding_name: str,
+                                   binding_direction: str,
+                                   func_name: str):
+        if binding_direction == protos.BindingInfo.inout:
+            raise FunctionLoadError(
+                func_name,
+                '"inout" bindings are not supported')
+
+        if binding_name == '$return' and \
+                binding_direction != protos.BindingInfo.out:
+            raise FunctionLoadError(
+                func_name,
+                '"$return" binding must have direction set to "out"')
+
+    @staticmethod
+    def is_context_required(params, bound_params: dict,
+                            annotations: dict,
+                            func_name: str) -> bool:
         requires_context = False
-        has_explicit_return = False
-        has_implicit_return = False
-
-        bound_params = {}
-        for name, desc in metadata.bindings.items():
-            if desc.direction == protos.BindingInfo.inout:
-                raise FunctionLoadError(
-                    func_name,
-                    '"inout" bindings are not supported')
-
-            if name == '$return':
-                if desc.direction != protos.BindingInfo.out:
-                    raise FunctionLoadError(
-                        func_name,
-                        '"$return" binding must have direction set to "out"')
-
-                has_explicit_return = True
-                return_binding_name = desc.type
-                assert return_binding_name is not None
-
-            elif bindings.has_implicit_output(desc.type):
-                # If the binding specify implicit output binding
-                # (e.g. orchestrationTrigger, activityTrigger)
-                # we should enable output even if $return is not specified
-                has_implicit_return = True
-                return_binding_name = desc.type
-                bound_params[name] = desc
-            else:
-                bound_params[name] = desc
-
         if 'context' in params and 'context' not in bound_params:
             requires_context = True
             params.pop('context')
@@ -107,7 +112,11 @@ class Registry:
                         'the "context" parameter is expected to be of '
                         'type azure.functions.Context, got '
                         f'{ctx_anno!r}')
+        return requires_context
 
+    @staticmethod
+    def validate_function_params(params: dict, bound_params: dict,
+                                 annotations: dict, func_name: str):
         if set(params) - set(bound_params):
             raise FunctionLoadError(
                 func_name,
@@ -120,8 +129,11 @@ class Registry:
                 f'the following parameters are declared in function.json but '
                 f'not in Python: {set(bound_params) - set(params)!r}')
 
+        input_types: typing.Dict[str, ParamTypeInfo] = {}
+        output_types: typing.Dict[str, ParamTypeInfo] = {}
+
         for param in params.values():
-            desc = bound_params[param.name]
+            binding = bound_params[param.name]
 
             param_has_anno = param.name in annotations
             param_anno = annotations.get(param.name)
@@ -147,7 +159,7 @@ class Registry:
             else:
                 is_param_out = False
 
-            is_binding_out = desc.direction == protos.BindingInfo.out
+            is_binding_out = binding.direction == protos.BindingInfo.out
 
             if is_param_out:
                 param_anno_args = typing_inspect.get_args(param_anno)
@@ -162,15 +174,14 @@ class Registry:
                 # so if the annotation was func.Out[typing.List[foo]],
                 # we need to reconstruct it.
                 if (isinstance(param_py_type, tuple)
-                   and typing_inspect.is_generic_type(param_py_type[0])):
-
+                        and typing_inspect.is_generic_type(param_py_type[0])):
                     param_py_type = operator.getitem(
                         param_py_type[0], *param_py_type[1:])
             else:
                 param_py_type = param_anno
 
             if (param_has_anno and not isinstance(param_py_type, type)
-               and not typing_inspect.is_generic_type(param_py_type)):
+                    and not typing_inspect.is_generic_type(param_py_type)):
                 raise FunctionLoadError(
                     func_name,
                     f'binding {param.name} has invalid non-type annotation '
@@ -191,33 +202,34 @@ class Registry:
                     'is azure.functions.Out in Python')
 
             if param_has_anno and param_py_type in (str, bytes) and (
-                    not bindings.has_implicit_output(desc.type)):
+                    not bindings_utils.has_implicit_output(binding.type)):
                 param_bind_type = 'generic'
             else:
-                param_bind_type = desc.type
+                param_bind_type = binding.type
 
             if param_has_anno:
                 if is_param_out:
-                    checks_out = bindings.check_output_type_annotation(
+                    checks_out = bindings_utils.check_output_type_annotation(
                         param_bind_type, param_py_type)
                 else:
-                    checks_out = bindings.check_input_type_annotation(
+                    checks_out = bindings_utils.check_input_type_annotation(
                         param_bind_type, param_py_type)
 
                 if not checks_out:
-                    if desc.data_type is not protos.BindingInfo.undefined:
+                    if binding.data_type is not DataType(
+                            protos.BindingInfo.undefined):
                         raise FunctionLoadError(
                             func_name,
-                            f'{param.name!r} binding type "{desc.type}" '
-                            f'and dataType "{desc.data_type}" in function.json'
-                            f' do not match the corresponding function '
-                            f'parameter\'s Python type '
+                            f'{param.name!r} binding type "{binding.type}" '
+                            f'and dataType "{binding.data_type}" in '
+                            f'function.json do not match the corresponding '
+                            f'function parameter\'s Python type '
                             f'annotation "{param_py_type.__name__}"')
                     else:
                         raise FunctionLoadError(
                             func_name,
                             f'type of {param.name} binding in function.json '
-                            f'"{desc.type}" does not match its Python '
+                            f'"{binding.type}" does not match its Python '
                             f'annotation "{param_py_type.__name__}"')
 
             param_type_info = ParamTypeInfo(param_bind_type, param_py_type)
@@ -225,12 +237,18 @@ class Registry:
                 output_types[param.name] = param_type_info
             else:
                 input_types[param.name] = param_type_info
+        return input_types, output_types
 
+    @staticmethod
+    def get_function_return_type(annotations: dict, has_explicit_return: bool,
+                                 has_implicit_return: bool, binding_name: str,
+                                 func_name: str):
         return_pytype = None
         if has_explicit_return and 'return' in annotations:
             return_anno = annotations.get('return')
-            if (typing_inspect.is_generic_type(return_anno)
-               and typing_inspect.get_origin(return_anno).__name__ == 'Out'):
+            if typing_inspect.is_generic_type(
+                    return_anno) and typing_inspect.get_origin(
+                    return_anno).__name__ == 'Out':
                 raise FunctionLoadError(
                     func_name,
                     'return annotation should not be azure.functions.Out')
@@ -243,29 +261,152 @@ class Registry:
                     f'annotation {return_pytype!r}')
 
             if return_pytype is (str, bytes):
-                return_binding_name = 'generic'
+                binding_name = 'generic'
 
-            if not bindings.check_output_type_annotation(
-                    return_binding_name, return_pytype):
+            if not bindings_utils.check_output_type_annotation(
+                    binding_name, return_pytype):
                 raise FunctionLoadError(
                     func_name,
                     f'Python return annotation "{return_pytype.__name__}" '
-                    f'does not match binding type "{return_binding_name}"')
+                    f'does not match binding type "{binding_name}"')
 
         if has_implicit_return and 'return' in annotations:
             return_pytype = annotations.get('return')
 
         return_type = None
         if has_explicit_return or has_implicit_return:
-            return_type = ParamTypeInfo(return_binding_name, return_pytype)
+            return_type = ParamTypeInfo(binding_name, return_pytype)
 
-        self._functions[function_id] = FunctionInfo(
-            func=func,
-            name=func_name,
-            directory=metadata.directory,
+        return return_type
+
+    def add_func_to_registry_and_return_funcinfo(self, function,
+                                                 function_name: str,
+                                                 function_id: str,
+                                                 directory: str,
+                                                 requires_context: bool,
+                                                 has_explicit_return: bool,
+                                                 has_implicit_return: bool,
+                                                 input_types: typing.Dict[
+                                                     str, ParamTypeInfo],
+                                                 output_types: typing.Dict[
+                                                     str, ParamTypeInfo],
+                                                 return_type: str):
+
+        function_info = FunctionInfo(
+            func=function,
+            name=function_name,
+            directory=directory,
             requires_context=requires_context,
-            is_async=inspect.iscoroutinefunction(func),
+            is_async=inspect.iscoroutinefunction(function),
             has_return=has_explicit_return or has_implicit_return,
             input_types=input_types,
             output_types=output_types,
             return_type=return_type)
+
+        self._functions[function_id] = function_info
+        return function_info
+
+    def add_function(self, function_id: str,
+                     func: typing.Callable,
+                     metadata: protos.RpcFunctionMetadata):
+        func_name = metadata.name
+        sig = inspect.signature(func)
+        params = dict(sig.parameters)
+        annotations = typing.get_type_hints(func)
+        return_binding_name: typing.Optional[str] = None
+        has_explicit_return = False
+        has_implicit_return = False
+
+        bound_params = {}
+        for binding_name, binding_info in metadata.bindings.items():
+            self.validate_binding_direction(binding_name,
+                                            binding_info.direction, func_name)
+
+            has_explicit_return, has_implicit_return = \
+                self.get_explicit_and_implicit_return(
+                    binding_name, binding_info, has_explicit_return,
+                    has_explicit_return, bound_params)
+
+            return_binding_name = self.get_return_binding(binding_name,
+                                                          binding_info.type,
+                                                          return_binding_name)
+
+        requires_context = self.is_context_required(params, bound_params,
+                                                    annotations,
+                                                    func_name)
+
+        input_types, output_types = self.validate_function_params(params,
+                                                                  bound_params,
+                                                                  annotations,
+                                                                  func_name)
+
+        return_type = \
+            self.get_function_return_type(annotations,
+                                          has_explicit_return,
+                                          has_implicit_return,
+                                          return_binding_name,
+                                          func_name)
+
+        self.add_func_to_registry_and_return_funcinfo(func, func_name,
+                                                      function_id,
+                                                      metadata.directory,
+                                                      requires_context,
+                                                      has_explicit_return,
+                                                      has_implicit_return,
+                                                      input_types,
+                                                      output_types, return_type)
+
+    def add_indexed_function(self, function_id: str,
+                             function: Function):
+        func = function.get_user_function()
+        func_name = function.get_function_name()
+        return_binding_name: typing.Optional[str] = None
+        has_explicit_return = False
+        has_implicit_return = False
+
+        sig = inspect.signature(func)
+        params = dict(sig.parameters)
+        annotations = typing.get_type_hints(func)
+        func_dir = str(pathlib.Path(inspect.getfile(func)).parent)
+
+        bound_params = {}
+        for binding in function.get_bindings():
+            self.validate_binding_direction(binding.name,
+                                            binding.direction,
+                                            func_name)
+
+            has_explicit_return, has_implicit_return = \
+                self.get_explicit_and_implicit_return(
+                    binding.name, binding, has_explicit_return,
+                    has_implicit_return, bound_params)
+
+            return_binding_name = self.get_return_binding(binding.name,
+                                                          binding.type,
+                                                          return_binding_name)
+
+        requires_context = self.is_context_required(params, bound_params,
+                                                    annotations,
+                                                    func_name)
+
+        input_types, output_types = self.validate_function_params(params,
+                                                                  bound_params,
+                                                                  annotations,
+                                                                  func_name)
+
+        return_type = \
+            self.get_function_return_type(annotations,
+                                          has_explicit_return,
+                                          has_implicit_return,
+                                          return_binding_name,
+                                          func_name)
+
+        return \
+            self.add_func_to_registry_and_return_funcinfo(func, func_name,
+                                                          function_id,
+                                                          func_dir,
+                                                          requires_context,
+                                                          has_explicit_return,
+                                                          has_implicit_return,
+                                                          input_types,
+                                                          output_types,
+                                                          return_type)

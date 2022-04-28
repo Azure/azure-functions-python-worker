@@ -3,6 +3,7 @@
 import json
 import time
 from datetime import datetime
+
 from dateutil import parser, tz
 
 from azure_functions_worker import testutils
@@ -97,3 +98,11 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertIsNone(sys_props['PartitionKey'])
         self.assertGreaterEqual(sys_props['SequenceNumber'], 0)
         self.assertIsNotNone(sys_props['Offset'])
+
+
+class TestEventHubFunctionsStein(TestEventHubFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'eventhub_functions' / \
+                                            'eventhub_functions_stein'

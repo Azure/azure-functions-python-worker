@@ -50,3 +50,8 @@ PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39 = True
 
 # External Site URLs
 MODULE_NOT_FOUND_TS_URL = "https://aka.ms/functions-modulenotfound"
+
+# new programming model script file name
+SCRIPT_FILE_NAME = "function_app.py"
+
+PYTHON_LANGUAGE_RUNTIME = "python"

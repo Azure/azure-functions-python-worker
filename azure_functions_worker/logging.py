@@ -1,10 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from typing import Optional
 import logging
 import logging.handlers
 import sys
+from typing import Optional
 
 # Logging Prefixes
 CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"

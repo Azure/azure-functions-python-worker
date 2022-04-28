@@ -1,8 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """Python functions loader."""
-
-
 import importlib
 import importlib.machinery
 import importlib.util
@@ -10,10 +8,15 @@ import os
 import os.path
 import pathlib
 import sys
-import typing
+import uuid
 from os import PathLike, fspath
+from typing import List, Optional, Dict
 
-from .constants import MODULE_NOT_FOUND_TS_URL
+from azure.functions import Function, FunctionApp
+
+from . import protos, functions
+from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
+    PYTHON_LANGUAGE_RUNTIME
 from .utils.wrappers import attach_message_to_exception
 
 _AZURE_NAMESPACE = '__app__'
@@ -44,6 +47,45 @@ def uninstall() -> None:
     pass
 
 
+def build_binding_protos(indexed_function: List[Function]) -> Dict:
+    binding_protos = {}
+    for binding in indexed_function.get_bindings():
+        binding_protos[binding.name] = protos.BindingInfo(
+            type=binding.type,
+            data_type=binding.data_type,
+            direction=binding.direction)
+
+    return binding_protos
+
+
+def process_indexed_function(functions_registry: functions.Registry,
+                             indexed_functions: List[Function]):
+    fx_metadata_results = []
+    for indexed_function in indexed_functions:
+        function_id = str(uuid.uuid4())
+        function_info = functions_registry.add_indexed_function(
+            function_id,
+            function=indexed_function)
+
+        binding_protos = build_binding_protos(indexed_function)
+
+        function_metadata = protos.RpcFunctionMetadata(
+            name=function_info.name,
+            function_id=function_id,
+            managed_dependency_enabled=False,  # only enabled for PowerShell
+            directory=function_info.directory,
+            script_file=indexed_function.function_script_file,
+            entry_point=function_info.name,
+            is_proxy=False,  # not supported in V4
+            language=PYTHON_LANGUAGE_RUNTIME,
+            bindings=binding_protos,
+            raw_bindings=indexed_function.get_raw_bindings())
+
+        fx_metadata_results.append(function_metadata)
+
+    return fx_metadata_results
+
+
 @attach_message_to_exception(
     expt_type=ImportError,
     message=f'Please check the requirements.txt file for the missing module. '
@@ -51,7 +93,7 @@ def uninstall() -> None:
             f' guide: {MODULE_NOT_FOUND_TS_URL} '
 )
 def load_function(name: str, directory: str, script_file: str,
-                  entry_point: typing.Optional[str]):
+                  entry_point: Optional[str]):
     dir_path = pathlib.Path(directory)
     script_path = pathlib.Path(script_file) if script_file else pathlib.Path(
         _DEFAULT_SCRIPT_FILENAME)
@@ -93,3 +135,27 @@ def load_function(name: str, directory: str, script_file: str,
             f'present in {rel_script_path}')
 
     return func
+
+
+@attach_message_to_exception(
+    expt_type=ImportError,
+    message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
+)
+def index_function_app(function_path: str) -> List[Function]:
+    module_name = pathlib.Path(function_path).stem
+    imported_module = importlib.import_module(module_name)
+
+    app: Optional[FunctionApp] = None
+    for i in imported_module.__dir__():
+        if isinstance(getattr(imported_module, i, None), FunctionApp):
+            if not app:
+                app = getattr(imported_module, i, None)
+            else:
+                raise ValueError(
+                    "Multiple instances of FunctionApp are defined")
+
+    if not app:
+        raise ValueError("Could not find instance of FunctionApp in "
+                         f"{SCRIPT_FILE_NAME}.")
+
+    return app.get_functions()

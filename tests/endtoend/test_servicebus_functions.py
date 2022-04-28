@@ -36,3 +36,11 @@ class TestServiceBusFunctions(testutils.WebHostTestCase):
                     raise
             else:
                 break
+
+
+class TestServiceBusFunctionsStein(TestServiceBusFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'servicebus_functions' / \
+                                            'servicebus_functions_stein'

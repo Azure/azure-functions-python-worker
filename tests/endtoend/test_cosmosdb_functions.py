@@ -16,7 +16,13 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
     def test_cosmosdb_trigger(self):
         time.sleep(5)
         data = str(round(time.time()))
-        doc = {'id': 'cosmosdb-trigger-test', 'data': data}
+        doc = {'id': 'cosmosdb-trigger-test',
+               'data': data,
+               "_rid": "dummy12344",
+               "_self": "7U4=/docs/gpU4AJcm7U4KAAAAAAAAAA==/",
+               "_etag": "000-0500-0000-62598ff00000",
+               "_lsn": "lsn/",
+               "_ts": 1650036720}
         r = self.webhost.request('POST', 'put_document',
                                  data=json.dumps(doc))
         self.assertEqual(r.status_code, 200)
@@ -52,7 +58,13 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
     def test_cosmosdb_input(self):
         time.sleep(5)
         data = str(round(time.time()))
-        doc = {'id': 'cosmosdb-input-test', 'data': data}
+        doc = {'id': 'cosmosdb-input-test',
+               'data': data,
+               "_rid": "dummy12344",
+               "_self": "7U4=/docs/gpU4AJcm7U4KAAAAAAAAAA==/",
+               "_etag": "000-0500-0000-62598ff00000",
+               "_lsn": "lsn/",
+               "_ts": 1650036720}
         r = self.webhost.request('POST', 'put_document',
                                  data=json.dumps(doc))
         self.assertEqual(r.status_code, 200)

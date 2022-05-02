@@ -33,4 +33,4 @@ def raise_http_exception():
 
 
 app = func.FunctionApp(wsgi_app=flask_app.wsgi_app,
-                       auth_level=func.AuthLevel.ANONYMOUS)
+                       http_auth_level=func.AuthLevel.ANONYMOUS)

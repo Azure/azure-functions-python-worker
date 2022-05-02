@@ -7,8 +7,8 @@ import re
 import typing
 from unittest.mock import patch
 
-from tests.stein_tests import testutils
-from tests.stein_tests.constants import UNIT_TESTS_ROOT
+from azure_functions_worker import testutils
+from azure_functions_worker.testutils import UNIT_TESTS_ROOT
 
 HOST_JSON_TEMPLATE = """\
 {
@@ -123,7 +123,7 @@ class ThirdPartyHttpFunctionsTestBase:
             self.assertNotIn('Secret42', host_out)
 
         def test_raw_body_bytes(self):
-            parent_dir = pathlib.Path(__file__).parent.parent.parent
+            parent_dir = pathlib.Path(__file__).parent.parent
             image_file = parent_dir / 'unittests/resources/functions.png'
             with open(image_file, 'rb') as image:
                 img = image.read()
@@ -189,7 +189,8 @@ class TestAsgiHttpFunctions(
         ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
     @classmethod
     def get_script_dir(cls):
-        return UNIT_TESTS_ROOT / 'third_party_http_functions' / 'asgi_function'
+        return UNIT_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
+               'asgi_function'
 
     def test_hijack_current_event_loop(self):
         r = self.webhost.request('GET', 'hijack_current_event_loop',
@@ -218,4 +219,5 @@ class TestWsgiHttpFunctions(
         ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
     @classmethod
     def get_script_dir(cls):
-        return UNIT_TESTS_ROOT / 'third_party_http_functions' / 'wsgi_function'
+        return UNIT_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
+               'wsgi_function'

@@ -172,4 +172,5 @@ async def unhandled_unserializable_error():
     raise UnserializableException('foo')
 
 
-app = func.FunctionApp(asgi_app=fast_app, auth_level=func.AuthLevel.ANONYMOUS)
+app = func.FunctionApp(asgi_app=fast_app,
+                       http_auth_level=func.AuthLevel.ANONYMOUS)

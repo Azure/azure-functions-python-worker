@@ -100,4 +100,4 @@ def unhandled_unserializable_error():
 
 
 app = func.FunctionApp(wsgi_app=flask_app.wsgi_app,
-                       auth_level=func.AuthLevel.ANONYMOUS)
+                       http_auth_level=func.AuthLevel.ANONYMOUS)

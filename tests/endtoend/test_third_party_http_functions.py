@@ -150,16 +150,16 @@ class ThirdPartyHttpFunctionsTestBase:
 
 
 class TestAsgiHttpFunctions(
-    ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
+        ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
     @classmethod
     def get_script_dir(cls):
         return E2E_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
-               'asgi_function'
+            'asgi_function'
 
 
 class TestWsgiHttpFunctions(
-    ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
+        ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
     @classmethod
     def get_script_dir(cls):
         return E2E_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
-               'wsgi_function'
+            'wsgi_function'

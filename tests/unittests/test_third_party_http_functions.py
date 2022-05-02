@@ -190,7 +190,7 @@ class TestAsgiHttpFunctions(
     @classmethod
     def get_script_dir(cls):
         return UNIT_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
-               'asgi_function'
+            'asgi_function'
 
     def test_hijack_current_event_loop(self):
         r = self.webhost.request('GET', 'hijack_current_event_loop',
@@ -220,4 +220,4 @@ class TestWsgiHttpFunctions(
     @classmethod
     def get_script_dir(cls):
         return UNIT_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
-               'wsgi_function'
+            'wsgi_function'

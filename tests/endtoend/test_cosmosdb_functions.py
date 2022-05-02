@@ -17,12 +17,7 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
         time.sleep(5)
         data = str(round(time.time()))
         doc = {'id': 'cosmosdb-trigger-test',
-               'data': data,
-               "_rid": "dummy12344",
-               "_self": "7U4=/docs/gpU4AJcm7U4KAAAAAAAAAA==/",
-               "_etag": "000-0500-0000-62598ff00000",
-               "_lsn": "lsn/",
-               "_ts": 1650036720}
+               'data': data}
         r = self.webhost.request('POST', 'put_document',
                                  data=json.dumps(doc))
         self.assertEqual(r.status_code, 200)
@@ -59,12 +54,7 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
         time.sleep(5)
         data = str(round(time.time()))
         doc = {'id': 'cosmosdb-input-test',
-               'data': data,
-               "_rid": "dummy12344",
-               "_self": "7U4=/docs/gpU4AJcm7U4KAAAAAAAAAA==/",
-               "_etag": "000-0500-0000-62598ff00000",
-               "_lsn": "lsn/",
-               "_ts": 1650036720}
+               'data': data}
         r = self.webhost.request('POST', 'put_document',
                                  data=json.dumps(doc))
         self.assertEqual(r.status_code, 200)
@@ -82,10 +72,11 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
                 self.assertEqual(r.status_code, 200)
                 response = r.json()
 
+                # _lsn is present for cosmosdb change feed only,
+                # ref https://aka.ms/cosmos-change-feed
                 self.assertEqual(response['id'], doc['id'])
                 self.assertEqual(response['data'], doc['data'])
                 self.assertTrue('_etag' in response)
-                self.assertTrue('_lsn' in response)
                 self.assertTrue('_rid' in response)
                 self.assertTrue('_self' in response)
                 self.assertTrue('_ts' in response)

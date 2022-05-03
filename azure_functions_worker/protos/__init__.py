@@ -39,4 +39,3 @@ from .shared.NullableTypes_pb2 import (
     NullableDouble,
     NullableTimestamp
 )
-

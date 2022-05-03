@@ -159,3 +159,11 @@ class TestBlobFunctions(testutils.WebHostTestCase):
             except AssertionError:
                 if try_no == max_retries - 1:
                     raise
+
+
+class TestBlobFunctionsStein(TestBlobFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'blob_functions' / \
+                                            'blob_functions_stein'

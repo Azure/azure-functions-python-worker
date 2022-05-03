@@ -129,11 +129,25 @@ class LinuxConsumptionWebHostController:
                                f' Status {response.status_code}')
 
         tag_list = response.json().get('tags', [])
+        # Removing images with a -upgrade. Upgrade images were temporary
+        # images used to onboard customers from a previous version. These
+        # images are no longer used.
+        tag_list = [x.strip("-upgrade") for x in tag_list]
         version = list(filter(regex.match, tag_list))[-1]
 
         image_tag = f'{_MESH_IMAGE_REPO}:{version}'
         cls._mesh_images[host_major] = image_tag
         return image_tag
+
+    def _delete_init_file_from_azure_dir(self):
+        init_file_path = f"/azure-functions-host/workers/python/" \
+                         f"{self._py_version}/LINUX/X64/azure/__init__.py"
+        run_rm_cmd = [self._docker_cmd, "exec", self._uuid]
+        run_rm_cmd.extend(["rm", init_file_path])
+
+        subprocess.run(args=run_rm_cmd,
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE)
 
     @staticmethod
     def _download_azure_functions() -> str:
@@ -181,10 +195,14 @@ class LinuxConsumptionWebHostController:
         run_process = subprocess.run(args=run_cmd,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE)
+
         if run_process.returncode != 0:
             raise RuntimeError('Failed to spawn docker container for'
                                f' {image} with uuid {self._uuid}.'
                                f' stderr: {run_process.stderr}')
+
+        # Remove once worker version 4.0.0 is released
+        self._delete_init_file_from_azure_dir()
 
         # Wait for three seconds for the port to expose
         time.sleep(3)

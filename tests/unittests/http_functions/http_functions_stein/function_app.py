@@ -393,6 +393,7 @@ def set_cookie_resp_header_default_values(
 
     return resp
 
+
 @app.route(route="set_cookie_resp_header_empty")
 def set_cookie_resp_header_empty(
         req: func.HttpRequest) -> func.HttpResponse:

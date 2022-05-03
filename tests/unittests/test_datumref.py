@@ -16,13 +16,13 @@ from azure_functions_worker.protos import RpcHttpCookie
 
 class TestDatumRef(unittest.TestCase):
     def test_parse_cookie_attr_expires_none(self):
-        self.assertEquals(parse_cookie_attr_expires({"expires": None}), None)
+        self.assertEqual(parse_cookie_attr_expires({"expires": None}), None)
 
     def test_parse_cookie_attr_expires_zero_length(self):
-        self.assertEquals(parse_cookie_attr_expires({"expires": ""}), None)
+        self.assertEqual(parse_cookie_attr_expires({"expires": ""}), None)
 
     def test_parse_cookie_attr_expires_valid(self):
-        self.assertEquals(parse_cookie_attr_expires(
+        self.assertEqual(parse_cookie_attr_expires(
             {"expires": "Thu, 12-Jan-2017 13:55:08 GMT"}),
             parser.parse("Thu, 12-Jan-2017 13:55:08 GMT"))
 
@@ -32,27 +32,27 @@ class TestDatumRef(unittest.TestCase):
                 {"expires": "Thu, 12-Jan-2017 13:550:08 GMT"})
 
     def test_parse_cookie_attr_same_site_default(self):
-        self.assertEquals(parse_cookie_attr_same_site(
+        self.assertEqual(parse_cookie_attr_same_site(
             {}),
             getattr(protos.RpcHttpCookie.SameSite, "None"))
 
     def test_parse_cookie_attr_same_site_lax(self):
-        self.assertEquals(parse_cookie_attr_same_site(
+        self.assertEqual(parse_cookie_attr_same_site(
             {'samesite': 'lax'}),
             getattr(protos.RpcHttpCookie.SameSite, "Lax"))
 
     def test_parse_cookie_attr_same_site_strict(self):
-        self.assertEquals(parse_cookie_attr_same_site(
+        self.assertEqual(parse_cookie_attr_same_site(
             {'samesite': 'strict'}),
             getattr(protos.RpcHttpCookie.SameSite, "Strict"))
 
     def test_parse_cookie_attr_same_site_explicit_none(self):
-        self.assertEquals(parse_cookie_attr_same_site(
+        self.assertEqual(parse_cookie_attr_same_site(
             {'samesite': 'none'}),
             getattr(protos.RpcHttpCookie.SameSite, "ExplicitNone"))
 
     def test_parse_to_rpc_http_cookie_list_none(self):
-        self.assertEquals(parse_to_rpc_http_cookie_list(None), None)
+        self.assertEqual(parse_to_rpc_http_cookie_list(None), None)
 
     def test_parse_to_rpc_http_cookie_list_valid(self):
         headers = [
@@ -116,5 +116,5 @@ class TestDatumRef(unittest.TestCase):
                                     'cookie.maxAge'))
 
         rpc_cookies = parse_to_rpc_http_cookie_list([cookies])
-        self.assertEquals(cookie1, rpc_cookies[0])
-        self.assertEquals(cookie2, rpc_cookies[1])
+        self.assertEqual(cookie1, rpc_cookies[0])
+        self.assertEqual(cookie2, rpc_cookies[1])

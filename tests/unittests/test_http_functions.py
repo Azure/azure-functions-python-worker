@@ -350,7 +350,7 @@ class TestHttpFunctions(WebHostTestCase):
         self.assertEqual(r.text, 'OK-print-logging')
 
     def test_multiple_cookie_header_in_response(self):
-        r = self.webhost.request('GET', 'multiple-set-cookie-resp-headers')
+        r = self.webhost.request('GET', 'multiple_set_cookie_resp_headers')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers.get(
             'Set-Cookie'),
@@ -360,13 +360,13 @@ class TestHttpFunctions(WebHostTestCase):
             "max-age=10000000; domain=example.com; path=/; secure; httponly")
 
     def test_set_cookie_header_in_response_empty_value(self):
-        r = self.webhost.request('GET', 'set-cookie-resp-header-empty')
+        r = self.webhost.request('GET', 'set_cookie_resp_header_empty')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers.get('Set-Cookie'), None)
 
     def test_set_cookie_header_in_response_default_value(self):
         r = self.webhost.request('GET',
-                                 'set-cookie-resp-header-default-values')
+                                 'set_cookie_resp_header_default_values')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers.get('Set-Cookie'),
                          'foo=bar; domain=; path=')

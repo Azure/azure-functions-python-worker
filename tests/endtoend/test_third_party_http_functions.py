@@ -30,6 +30,9 @@ HOST_JSON_TEMPLATE = """\
 
 
 class ThirdPartyHttpFunctionsTestBase:
+    """Base test class containing common asgi/wsgi testcases, 
+    only testcases in classes extending TestThirdPartyHttpFunctions
+    will by run"""
     class TestThirdPartyHttpFunctions(testutils.WebHostTestCase):
         @classmethod
         def setUpClass(cls):

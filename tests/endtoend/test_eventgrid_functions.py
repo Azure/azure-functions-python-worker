@@ -156,3 +156,11 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
                     raise
             else:
                 break
+
+
+class TestEventGridFunctionsStein(TestEventGridFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'eventgrid_functions' / \
+                                            'eventgrid_functions_stein'

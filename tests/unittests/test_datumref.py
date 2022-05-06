@@ -1,5 +1,7 @@
+import sys
 import unittest
 from http.cookies import SimpleCookie
+from unittest import skipIf
 
 from dateutil import parser
 from dateutil.parser import ParserError
@@ -54,6 +56,8 @@ class TestDatumRef(unittest.TestCase):
     def test_parse_to_rpc_http_cookie_list_none(self):
         self.assertEqual(parse_to_rpc_http_cookie_list(None), None)
 
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
     def test_parse_to_rpc_http_cookie_list_valid(self):
         headers = [
             'foo=bar; Path=/some/path; Secure; HttpOnly; Domain=123; '

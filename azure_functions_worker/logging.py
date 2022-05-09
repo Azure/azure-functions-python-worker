@@ -19,8 +19,6 @@ error_logger: logging.Logger = (
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
 
-local_handler = logging.FileHandler('log.txt')
-logging.getLogger().addHandler(local_handler)
 
 def setup(log_level, log_destination):
     # Since handler and error_handler are moved to the global scope,

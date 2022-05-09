@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 import azure.functions as func
 
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+app = func.FunctionApp()
 
 
 @app.route()

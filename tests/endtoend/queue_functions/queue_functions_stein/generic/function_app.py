@@ -56,7 +56,7 @@ def get_queue_blob_return(req: func.HttpRequest,
 @app.function_name(name="get_queue_untyped_blob_return")
 @app.generic_trigger(arg_name="req",
                      type="httpTrigger",
-                     route="get_queue_blob_return")
+                     route="get_queue_untyped_blob_return")
 @app.generic_output_binding(arg_name="$return", type="http")
 @app.generic_input_binding(
     arg_name="file",
@@ -88,7 +88,7 @@ def put_queue(req: func.HttpRequest, msg: func.Out[str]):
 @app.generic_trigger(arg_name="req",
                      type="httpTrigger",
                      route="put_queue_message_return")
-@app.generic_output_binding(arg_name="$return", type="http")
+@app.generic_output_binding(arg_name="resp", type="http")
 @app.generic_output_binding(
     arg_name="$return",
     type="queue",
@@ -102,9 +102,9 @@ def main(req: func.HttpRequest, resp: func.Out[str]) -> bytes:
 @app.generic_trigger(arg_name="req",
                      type="httpTrigger",
                      route="put_queue_multiple_out")
-@app.generic_output_binding(arg_name="$return", type="http")
+@app.generic_output_binding(arg_name="resp", type="http")
 @app.generic_output_binding(
-    arg_name="$return",
+    arg_name="msg",
     type="queue",
     connection="AzureWebJobsStorage",
     queue_name="testqueue-return-multiple-outparam")
@@ -120,7 +120,7 @@ def put_queue_multiple_out(req: func.HttpRequest,
 @app.generic_trigger(arg_name="req",
                      type="httpTrigger",
                      route="put_queue_return")
-@app.generic_output_binding(arg_name="$return", type="http")
+@app.generic_output_binding(arg_name="resp", type="http")
 @app.generic_output_binding(
     arg_name="$return",
     type="queue",
@@ -136,7 +136,7 @@ def put_queue_return(req: func.HttpRequest, resp: func.Out[str]) -> bytes:
                      route="put_queue_multiple_return")
 @app.generic_output_binding(arg_name="$return", type="http")
 @app.generic_output_binding(
-    arg_name="$return",
+    arg_name="msgs",
     type="queue",
     connection="AzureWebJobsStorage",
     queue_name="testqueue-return-multiple")

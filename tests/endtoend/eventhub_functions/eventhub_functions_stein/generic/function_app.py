@@ -32,7 +32,7 @@ def eventhub_output(req: func.HttpRequest, event: func.Out[str]):
                      connection="AzureWebJobsEventHubConnectionString")
 @app.generic_output_binding(
     arg_name="$return",
-    type="eventHub",
+    type="blob",
     path="python-worker-tests/test-eventhub-triggered.txt",
     connection="AzureWebJobsStorage")
 def eventhub_trigger(event: func.EventHubEvent) -> bytes:

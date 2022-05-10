@@ -36,6 +36,7 @@ steps:
     AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
     AzureWebJobsEventHubConnectionString: $(AzureWebJobsEventHubConnectionString)
     AzureWebJobsServiceBusConnectionString: $(AzureWebJobsServiceBusConnectionString)
+    AzureWebJobsSqlConnectionString: $(AzureWebJobsSqlConnectionString)
     AzureWebJobsEventGridTopicUri: $(AzureWebJobsEventGridTopicUri)
     AzureWebJobsEventGridConnectionKey: $(AzureWebJobsEventGridConnectionKey)
     PythonVersion: $(PYTHON_VERSION)

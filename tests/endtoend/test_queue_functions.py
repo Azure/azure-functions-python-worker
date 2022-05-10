@@ -106,4 +106,4 @@ class TestQueueFunctionsSteinGeneric(TestQueueFunctions):
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'queue_functions' / \
-               'queue_functions_stein' / 'generic'
+            'queue_functions_stein' / 'generic'

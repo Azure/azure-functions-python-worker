@@ -113,4 +113,4 @@ class TestEventHubFunctionsSteinGeneric(TestEventHubFunctions):
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_functions' / \
-               'eventhub_functions_stein' / 'generic'
+            'eventhub_functions_stein' / 'generic'

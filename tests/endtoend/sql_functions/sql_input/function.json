@@ -6,16 +6,17 @@
         "direction": "in",
         "name": "req",
         "authLevel": "anonymous",
-        "route": "getproducts/{cost}"
+        "methods": [
+            "get"
+        ]
       },
       {
         "direction": "in",
         "type": "sql",
         "name": "rowList",
-        "commandText": "SELECT * FROM Products WHERE Cost = @Cost",
+        "commandText": "SELECT * FROM Products",
         "commandType": "Text",
-        "parameters": "@Cost={cost}",
-        "connectionStringSetting": "SqlConnectionString"
+        "connectionStringSetting": "AzureWebJobsSqlConnectionString"
       },
       {
         "type": "http",

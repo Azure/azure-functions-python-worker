@@ -105,7 +105,7 @@ INSTALL_REQUIRES = [
     "grpcio~=1.43.0",
     "grpcio-tools~=1.43.0",
     "protobuf~=3.19.3",
-    "azure-functions==1.11.1",
+    'azure-functions==1.11.2',
     "python-dateutil~=2.8.2"
 ]
 

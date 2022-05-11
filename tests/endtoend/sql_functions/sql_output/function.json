@@ -7,10 +7,8 @@
         "direction": "in",
         "type": "httpTrigger",
         "methods": [
-          "get",
-          "post"
-        ],
-        "route": "addproduct"
+          "get"
+        ]
       },
       {
         "name": "$return",
@@ -22,7 +20,7 @@
         "type": "sql",
         "direction": "out",
         "commandText": "[dbo].[Products]",
-        "connectionStringSetting": "SqlConnectionString"
+        "connectionStringSetting": "AzureWebJobsSqlConnectionString"
       }
     ]
   }

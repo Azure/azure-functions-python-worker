@@ -164,3 +164,11 @@ class TestEventGridFunctionsStein(TestEventGridFunctions):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'eventgrid_functions' / \
                                             'eventgrid_functions_stein'
+
+
+class TestEventGridFunctionsGeneric(TestEventGridFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'eventgrid_functions' / \
+            'eventgrid_functions_stein' / 'generic'

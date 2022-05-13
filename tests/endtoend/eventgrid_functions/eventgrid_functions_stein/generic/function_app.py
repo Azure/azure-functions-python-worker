@@ -8,10 +8,12 @@ app = func.FunctionApp()
 
 
 @app.function_name(name="eventGridTrigger")
-@app.event_grid_trigger(arg_name="event")
-@app.write_blob(arg_name="$return",
-                path="python-worker-tests/test-eventgrid-triggered.txt",
-                connection="AzureWebJobsStorage")
+@app.event_grid_trigger(arg_name="event", type="eventGridTrigger")
+@app.generic_output_binding(
+    arg_name="$return",
+    type="blob",
+    connection="AzureWebJobsStorage",
+    path="python-worker-tests/test-eventgrid-triggered.txt")
 def event_grid_trigger(event: func.EventGridEvent) -> str:
     logging.info("Event grid function is triggered!")
     return json.dumps({
@@ -24,9 +26,12 @@ def event_grid_trigger(event: func.EventGridEvent) -> str:
 
 
 @app.function_name(name="eventgrid_output_binding")
-@app.route(route="eventgrid_output_binding")
-@app.write_event_grid(
+@app.generic_trigger(arg_name="req", type="httpTrigger",
+                     route="eventgrid_output_binding")
+@app.generic_output_binding(arg_name="$return", type="http")
+@app.generic_output_binding(
     arg_name="outputEvent",
+    type="eventGrid",
     topic_endpoint_uri="AzureWebJobsEventGridTopicUri",
     topic_key_setting="AzureWebJobsEventGridConnectionKey")
 def eventgrid_output_binding(
@@ -52,31 +57,43 @@ def eventgrid_output_binding(
 
 
 @app.function_name(name="eventgrid_output_binding_message_to_blobstore")
-@app.queue_trigger(arg_name="msg", queue_name="test-event-grid-storage-queue",
-                   connection="AzureWebJobsStorage")
-@app.write_blob(arg_name="$return",
-                path="python-worker-tests/test-eventgrid-output-binding.txt",
-                connection="AzureWebJobsStorage")
+@app.generic_trigger(arg_name="msg",
+                     type="queueTrigger",
+                     queue_name="test-event-grid-storage-queue",
+                     connection="AzureWebJobsStorage")
+@app.generic_output_binding(
+    arg_name="$return",
+    type="blob",
+    connection="AzureWebJobsStorage",
+    path="python-worker-tests/test-eventgrid-output-binding.txt")
 def eventgrid_output_binding_message_to_blobstore(
         msg: func.QueueMessage) -> bytes:
     return msg.get_body()
 
 
 @app.function_name(name="eventgrid_output_binding_success")
-@app.route(route="eventgrid_output_binding_success")
-@app.read_blob(arg_name="file",
-               path="python-worker-tests/test-eventgrid-output-binding.txt",
-               connection="AzureWebJobsStorage")
+@app.generic_trigger(arg_name="req", type="httpTrigger",
+                     route="eventgrid_output_binding_success")
+@app.generic_output_binding(arg_name="$return", type="http")
+@app.generic_input_binding(
+    arg_name="file",
+    type="blob",
+    path="python-worker-tests/test-eventgrid-output-binding.txt",
+    connection="AzureWebJobsStorage")
 def eventgrid_output_binding_success(
         req: func.HttpRequest, file: func.InputStream) -> str:
     return file.read().decode('utf-8')
 
 
 @app.function_name(name="get_eventgrid_triggered")
-@app.route(route="get_eventgrid_triggered")
-@app.read_blob(arg_name="file",
-               path="python-worker-tests/test-eventgrid-triggered.txt",
-               connection="AzureWebJobsStorage")
+@app.generic_trigger(arg_name="req", type="httpTrigger",
+                     route="get_eventgrid_triggered")
+@app.generic_output_binding(arg_name="$return", type="http")
+@app.generic_input_binding(
+    arg_name="file",
+    type="blob",
+    path="python-worker-tests/test-eventgrid-triggered.txt",
+    connection="AzureWebJobsStorage")
 def get_eventgrid_triggered(
         req: func.HttpRequest, file: func.InputStream) -> str:
     return file.read().decode('utf-8')

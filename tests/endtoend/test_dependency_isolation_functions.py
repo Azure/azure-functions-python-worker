@@ -177,6 +177,7 @@ class TestOlderVersionOfAzFuncDependencyIsolationOnDedicated(
         self.assertEqual(
             self.expected_azfunc_version, libraries['func.version'])
 
+
 @skip("Skipping dependency isolation test for dedicated. Needs investigation")
 class TestNewerVersionOfAzFuncDependencyIsolationOnDedicated(
         testutils.WebHostTestCase):

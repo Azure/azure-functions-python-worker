@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import os
 import importlib.util
+from unittest import skip
 from unittest.case import skipIf
 from unittest.mock import patch
 
@@ -128,6 +129,7 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         )
 
 
+@skip("Skipping dependency isolation test for dedicated. Needs investigation")
 class TestOlderVersionOfAzFuncDependencyIsolationOnDedicated(
         testutils.WebHostTestCase):
     """Test the dependency manager E2E scenario via Http Trigger.
@@ -176,6 +178,7 @@ class TestOlderVersionOfAzFuncDependencyIsolationOnDedicated(
             self.expected_azfunc_version, libraries['func.version'])
 
 
+@skip("Skipping dependency isolation test for dedicated. Needs investigation")
 class TestNewerVersionOfAzFuncDependencyIsolationOnDedicated(
         testutils.WebHostTestCase):
     """Test the dependency manager E2E scenario via Http Trigger.

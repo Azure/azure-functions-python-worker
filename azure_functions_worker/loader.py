@@ -47,7 +47,7 @@ def uninstall() -> None:
     pass
 
 
-def build_binding_protos(indexed_function: List[Function]) -> Dict:
+def build_binding_protos(indexed_function: Function) -> Dict:
     binding_protos = {}
     for binding in indexed_function.get_bindings():
         binding_protos[binding.name] = protos.BindingInfo(

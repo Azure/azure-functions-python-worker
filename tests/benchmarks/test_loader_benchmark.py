@@ -1,13 +1,31 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+from pathlib import Path
 import pytest
+from pyinstrument import Profiler
 
 import azure_functions_worker.loader as loader
 from azure_functions_worker.functions import Registry
 from azure_functions_worker.testutils import TESTS_ROOT
 from azure.functions import Function
 from azure.functions.decorators.core import InputBinding
+
+
+@pytest.fixture(autouse=True)
+def profile(request):
+    # Turn profiling on
+    profiler = Profiler()
+    profiler.start()
+
+    yield  # Run test
+
+    profiler.stop()
+    # Uncomment if you want to see on the CLI
+    # profiler.print(show_all=True)
+    (TESTS_ROOT / "benchmarks" / ".profiles").mkdir(exist_ok=True)
+    with open(TESTS_ROOT / "benchmarks" / ".profiles" / f"{request.node.name}.html", "w", encoding="utf-8") as f:
+        f.write(profiler.output_html())
 
 
 def dummy_func():

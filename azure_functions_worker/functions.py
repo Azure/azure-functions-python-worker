@@ -7,7 +7,9 @@ import typing
 
 from azure.functions import DataType, Function
 
-from .bindings import has_implicit_output, check_output_type_annotation
+from .bindings import (has_implicit_output,
+                       check_output_type_annotation,
+                       check_input_type_annotation)
 from . import protos
 from ._thirdparty import typing_inspect
 from .protos import BindingInfo

@@ -5,6 +5,7 @@ import pytest
 
 import azure_functions_worker.loader as loader
 from azure_functions_worker.functions import Registry
+from azure_functions_worker.testutils import TESTS_ROOT
 from azure.functions import Function
 from azure.functions.decorators.core import InputBinding
 
@@ -41,3 +42,22 @@ def test_process_indexed_function(benchmark):
         f.add_binding(FakeInputBinding(f"test_binding{i}"))
     reg = Registry()
     benchmark(loader.process_indexed_function, reg, [f, f, f, f, f])
+
+
+def test_load_function(benchmark):
+    loader.install()
+    benchmark(
+        loader.load_function,
+        "http_functions",
+        TESTS_ROOT / "benchmarks" / "dummy",
+        TESTS_ROOT / "benchmarks" / "dummy" / "__init__.py",
+        "foo"
+    )
+    loader.uninstall()
+
+
+def test_index_function_app(benchmark):
+    benchmark(
+        loader.index_function_app,
+        TESTS_ROOT / "benchmarks" / "dummy",
+    )

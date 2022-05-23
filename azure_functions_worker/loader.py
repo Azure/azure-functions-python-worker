@@ -8,13 +8,14 @@ import os
 import os.path
 import pathlib
 import sys
-import uuid
+from uuid import uuid4
 from os import PathLike, fspath
 from typing import List, Optional, Dict
 
 from azure.functions import Function, FunctionApp
 
-from . import protos, functions
+from . import functions
+from .protos import RpcFunctionMetadata, BindingInfo
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
     PYTHON_LANGUAGE_RUNTIME
 from .utils.wrappers import attach_message_to_exception
@@ -49,7 +50,7 @@ def uninstall() -> None:
 
 def build_binding_protos(indexed_function: List[Function]) -> Dict:
     return {
-        binding.name: protos.BindingInfo(
+        binding.name: BindingInfo(
             type=binding.type,
             data_type=binding.data_type,
             direction=binding.direction)
@@ -61,14 +62,14 @@ def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions: List[Function]):
     fx_metadata_results = []
     for indexed_function in indexed_functions:
-        function_id = str(uuid.uuid4())
+        function_id = str(uuid4())
         function_info = functions_registry.add_indexed_function(
             function_id,
             function=indexed_function)
 
         binding_protos = build_binding_protos(indexed_function)
 
-        function_metadata = protos.RpcFunctionMetadata(
+        function_metadata = RpcFunctionMetadata(
             name=function_info.name,
             function_id=function_id,
             managed_dependency_enabled=False,  # only enabled for PowerShell

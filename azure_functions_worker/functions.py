@@ -7,7 +7,7 @@ import typing
 
 from azure.functions import DataType, Function
 
-from . import bindings as bindings_utils
+from .bindings import has_implicit_output, check_output_type_annotation
 from . import protos
 from ._thirdparty import typing_inspect
 from .protos import BindingInfo
@@ -60,7 +60,7 @@ class Registry:
             typing.Tuple[bool, bool]:
         if binding_name == '$return':
             explicit_return = True
-        elif bindings_utils.has_implicit_output(
+        elif has_implicit_output(
                 binding.type):
             implicit_return = True
             bound_params[binding_name] = binding
@@ -75,7 +75,7 @@ class Registry:
         if binding_name == "$return":
             return_binding_name = binding_type
             assert return_binding_name is not None
-        elif bindings_utils.has_implicit_output(binding_type):
+        elif has_implicit_output(binding_type):
             return_binding_name = binding_type
 
         return return_binding_name
@@ -202,17 +202,17 @@ class Registry:
                     'is azure.functions.Out in Python')
 
             if param_has_anno and param_py_type in (str, bytes) and (
-                    not bindings_utils.has_implicit_output(binding.type)):
+                    not has_implicit_output(binding.type)):
                 param_bind_type = 'generic'
             else:
                 param_bind_type = binding.type
 
             if param_has_anno:
                 if is_param_out:
-                    checks_out = bindings_utils.check_output_type_annotation(
+                    checks_out = check_output_type_annotation(
                         param_bind_type, param_py_type)
                 else:
-                    checks_out = bindings_utils.check_input_type_annotation(
+                    checks_out = check_input_type_annotation(
                         param_bind_type, param_py_type)
 
                 if not checks_out:
@@ -263,7 +263,7 @@ class Registry:
             if return_pytype is (str, bytes):
                 binding_name = 'generic'
 
-            if not bindings_utils.check_output_type_annotation(
+            if not check_output_type_annotation(
                     binding_name, return_pytype):
                 raise FunctionLoadError(
                     func_name,

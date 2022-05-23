@@ -4,6 +4,7 @@
 import pytest
 
 import azure_functions_worker.loader as loader
+from azure_functions_worker.functions import Registry
 from azure.functions import Function
 from azure.functions.decorators.core import InputBinding
 
@@ -28,4 +29,15 @@ def test_build_binding_protos(benchmark, size):
     f = Function(dummy_func, "foo.py")
     for i in range(size):
         f.add_binding(FakeInputBinding(f"test_binding{i}"))
-    r = benchmark(loader.build_binding_protos, f)
+    benchmark(loader.build_binding_protos, f)
+
+
+def test_process_indexed_function(benchmark):
+    def _test_func(test_binding0, test_binding1, test_binding2, test_binding3, test_binding4):
+        pass
+
+    f = Function(_test_func, "foo.py")
+    for i in range(5): # Use 5 bindingss
+        f.add_binding(FakeInputBinding(f"test_binding{i}"))
+    reg = Registry()
+    benchmark(loader.process_indexed_function, reg, [f, f, f, f, f])

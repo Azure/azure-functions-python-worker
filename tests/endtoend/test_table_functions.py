@@ -37,3 +37,30 @@ class TestTableFunctions(testutils.WebHostTestCase):
         self.assertEqual(in_resp.status_code, 200)
         in_row_key = in_resp.headers['rowKey']
         self.assertEqual(in_row_key, row_key)
+
+
+class TestTableFunctionsStein(testutils.WebHostTestCase):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'table_functions' / \
+                                            'table_functions_stein'
+
+    @testutils.retryable_test(3, 5)
+    def test_table_bindings(self):
+        out_resp = self.webhost.request('POST', 'table_out_binding')
+        self.assertEqual(out_resp.status_code, 200)
+        row_key = out_resp.headers['rowKey']
+
+        in_resp = self.webhost.request('GET', f'table_in_binding/{row_key}')
+        self.assertEqual(in_resp.status_code, 200)
+        in_row_key = in_resp.headers['rowKey']
+        self.assertEqual(in_row_key, row_key)
+
+
+class TestTableFunctionsGeneric(TestTableFunctionsStein):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'table_functions' / \
+            'table_functions_stein' / 'generic'

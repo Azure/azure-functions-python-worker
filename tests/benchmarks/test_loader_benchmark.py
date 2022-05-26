@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from pathlib import Path
 import pytest
 from pyinstrument import Profiler
 
@@ -13,19 +12,15 @@ from azure.functions.decorators.core import InputBinding
 
 
 @pytest.fixture(autouse=True)
-def profile(request):
+def profile(save_profile):
     # Turn profiling on
-    profiler = Profiler()
+    profiler = Profiler(async_mode="enabled")
     profiler.start()
 
     yield  # Run test
 
     profiler.stop()
-    # Uncomment if you want to see on the CLI
-    # profiler.print(show_all=True)
-    (TESTS_ROOT / "benchmarks" / ".profiles").mkdir(exist_ok=True)
-    with open(TESTS_ROOT / "benchmarks" / ".profiles" / f"{request.node.name}.html", "w", encoding="utf-8") as f:
-        f.write(profiler.output_html())
+    save_profile(profiler)
 
 
 def dummy_func():
@@ -56,7 +51,7 @@ def test_process_indexed_function(benchmark):
         pass
 
     f = Function(_test_func, "foo.py")
-    for i in range(5): # Use 5 bindingss
+    for i in range(5):  # Use 5 bindings
         f.add_binding(FakeInputBinding(f"test_binding{i}"))
     reg = Registry()
     benchmark(loader.process_indexed_function, reg, [f, f, f, f, f])
@@ -79,3 +74,10 @@ def test_index_function_app(benchmark):
         loader.index_function_app,
         TESTS_ROOT / "benchmarks" / "dummy",
     )
+
+
+def test_str_join(benchmark):
+    def j(_input):
+        return ", ".join([x for x in _input])
+    
+    benchmark(j, ["a", "b", "c", "d"])

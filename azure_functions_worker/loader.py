@@ -12,7 +12,7 @@ import uuid
 from os import PathLike, fspath
 from typing import List, Optional, Dict
 
-from azure.functions import Function, FunctionApp
+from .utils.library_importer import Function, FunctionApp
 
 from . import protos, functions
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \

@@ -5,7 +5,7 @@ import operator
 import pathlib
 import typing
 
-from azure.functions import DataType, Function
+from azure_functions_worker.utils.library_importer import Function
 
 from . import bindings as bindings_utils
 from . import protos
@@ -216,8 +216,7 @@ class Registry:
                         param_bind_type, param_py_type)
 
                 if not checks_out:
-                    if binding.data_type is not DataType(
-                            protos.BindingInfo.undefined):
+                    if binding.data_type is not protos.BindingInfo.undefined:
                         raise FunctionLoadError(
                             func_name,
                             f'{param.name!r} binding type "{binding.type}" '

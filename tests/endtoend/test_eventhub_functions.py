@@ -34,7 +34,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
 
-        # Once the event get generated, allow function host to pool from
+        # Once the event get generated, allow function host to poll from
         # EventHub and wait for eventhub_trigger to execute,
         # converting the event metadata into a blob.
         time.sleep(5)
@@ -106,3 +106,11 @@ class TestEventHubFunctionsStein(TestEventHubFunctions):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_functions' / \
                                             'eventhub_functions_stein'
+
+
+class TestEventHubFunctionsSteinGeneric(TestEventHubFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'eventhub_functions' / \
+            'eventhub_functions_stein' / 'generic'

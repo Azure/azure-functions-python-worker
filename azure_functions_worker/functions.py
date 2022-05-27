@@ -6,7 +6,6 @@ import pathlib
 import typing
 
 from azure_functions_worker.utils.library_importer import Function
-
 from . import bindings as bindings_utils
 from . import protos
 from ._thirdparty import typing_inspect

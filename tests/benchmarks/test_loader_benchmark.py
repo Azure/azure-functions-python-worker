@@ -12,15 +12,19 @@ from azure.functions.decorators.core import InputBinding
 
 
 @pytest.fixture(autouse=True)
-def profile(save_profile):
+def auto_profile(request):
+    PROFILE_ROOT = (TESTS_ROOT / "benchmarks" / ".profiles")
     # Turn profiling on
-    profiler = Profiler(async_mode="enabled")
+    profiler = Profiler()
     profiler.start()
 
     yield  # Run test
 
     profiler.stop()
-    save_profile(profiler)
+    PROFILE_ROOT.mkdir(exist_ok=True)
+    results_file = PROFILE_ROOT / f"{request.node.name}.html"
+    with open(results_file, "w", encoding="utf-8") as f_html:
+        f_html.write(profiler.output_html())
 
 
 def dummy_func():

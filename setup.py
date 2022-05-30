@@ -127,6 +127,9 @@ EXTRA_REQUIRES = {
         "pytest-randomly",
         "pytest-instafail",
         "pytest-rerunfailures",
+        "pytest-benchmark",
+        "pytest-asyncio",
+        "pyinstrument",
         "ptvsd"
     ]
 }

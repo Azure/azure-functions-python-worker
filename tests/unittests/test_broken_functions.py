@@ -235,6 +235,22 @@ class TestMockHost(testutils.AsyncTestCase):
                 r'type of req binding in function.json "httpTrigger" '
                 r'does not match its Python annotation "HttpResponse"')
 
+    async def test_load_broken__invalid_datatype(self):
+        async with testutils.start_mockhost(
+                script_root=self.broken_funcs_dir) as host:
+            func_id, r = await host.load_function('invalid_datatype')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+            self.assertRegex(
+                r.response.result.exception.message,
+                r'.*cannot load the invalid_datatype function: '
+                r'.*binding type "httpTrigger" and dataType "1" in '
+                r'function.json do not match the corresponding function '
+                r'parameter.* Python type annotation "HttpResponse"')
+
     async def test_load_broken__invalid_in_anno_non_type(self):
         async with testutils.start_mockhost(
                 script_root=self.broken_funcs_dir) as host:

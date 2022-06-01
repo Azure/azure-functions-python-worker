@@ -94,7 +94,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             name='grpc-thread', target=self.__poll_grpc)
         self._logging_executor: concurrent.futures.ThreadPoolExecutor \
             = concurrent.futures.ThreadPoolExecutor(
-                max_workers=1, 
+                max_workers=1,
                 thread_name_prefix="dispatch_logging")
 
     def get_sync_tp_workers_set(self):
@@ -376,11 +376,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                     func_request.metadata.directory
                 )
 
-                self._logging_executor.submit(logger.info, 
-                            'Successfully processed FunctionLoadRequest, '
-                            f'request ID: {self.request_id}, '
-                            f'function ID: {function_id},'
-                            f'function Name: {function_name}')
+                self._logging_executor.submit(logger.info,
+                    'Successfully processed FunctionLoadRequest, '
+                    f'request ID: {self.request_id}, '
+                    f'function ID: {function_id},'
+                    f'function Name: {function_name}')
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -429,7 +429,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 )
 
             self._logging_executor.submit(
-                logger.info, 
+                logger.info,
                 ', '.join(function_invocation_logs))
 
             args = {}

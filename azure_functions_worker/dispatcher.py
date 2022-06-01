@@ -92,6 +92,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread: threading.Thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
+        self._logging_executor: concurrent.futures.ThreadPoolExecutor \
+            = concurrent.futures.ThreadPoolExecutor(
+                max_workers=1, 
+                thread_name_prefix="dispatch_logging")
 
     def get_sync_tp_workers_set(self):
         """We don't know the exact value of the threadcount set for the Python
@@ -372,7 +376,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     func_request.metadata.directory
                 )
 
-                logger.info('Successfully processed FunctionLoadRequest, '
+                self._logging_executor.submit(logger.info, 
+                            'Successfully processed FunctionLoadRequest, '
                             f'request ID: {self.request_id}, '
                             f'function ID: {function_id},'
                             f'function Name: {function_name}')
@@ -422,7 +427,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                     f'sync threadpool max workers: '
                     f'{self.get_sync_tp_workers_set()}'
                 )
-            logger.info(', '.join(function_invocation_logs))
+
+            self._logging_executor.submit(
+                logger.info, 
+                ', '.join(function_invocation_logs))
 
             args = {}
             for pb in invoc_request.input_data:

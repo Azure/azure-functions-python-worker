@@ -114,3 +114,12 @@ class TestHttpFunctionsStein(TestHttpFunctions):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
                                             'http_functions_stein'
+
+
+class TestHttpFunctionsSteinGeneric(TestHttpFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
+                                            'http_functions_stein' /\
+                                            'generic'

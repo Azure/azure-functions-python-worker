@@ -92,4 +92,12 @@ class TestCosmosDBFunctionsStein(TestCosmosDBFunctions):
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'cosmosdb_functions' / \
-                                            'cosmosdb_functions_stein'
+            'cosmosdb_functions_stein'
+
+
+class TestCosmosDBFunctionsSteinGeneric(TestCosmosDBFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'cosmosdb_functions' / \
+            'cosmosdb_functions_stein' / 'generic'

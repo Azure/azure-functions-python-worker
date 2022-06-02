@@ -376,7 +376,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     func_request.metadata.directory
                 )
 
-                self._logging_executor.submit(logger.info,
+                self._logging_executor.submit(
+                    logger.info,
                     'Successfully processed FunctionLoadRequest, '
                     f'request ID: {self.request_id}, '
                     f'function ID: {function_id},'

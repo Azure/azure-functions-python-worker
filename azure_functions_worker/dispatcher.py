@@ -92,10 +92,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread: threading.Thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
-        self._logging_executor: concurrent.futures.ThreadPoolExecutor \
-            = concurrent.futures.ThreadPoolExecutor(
-                max_workers=1,
-                thread_name_prefix="dispatch_logging")
 
     def get_sync_tp_workers_set(self):
         """We don't know the exact value of the threadcount set for the Python
@@ -376,12 +372,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                     func_request.metadata.directory
                 )
 
-                self._logging_executor.submit(
-                    logger.info,
-                    'Successfully processed FunctionLoadRequest, '
-                    f'request ID: {self.request_id}, '
-                    f'function ID: {function_id},'
-                    f'function Name: {function_name}')
+                logger.info('Successfully processed FunctionLoadRequest, '
+                            f'request ID: {self.request_id}, '
+                            f'function ID: {function_id},'
+                            f'function Name: {function_name}')
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -429,9 +423,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     f'{self.get_sync_tp_workers_set()}'
                 )
 
-            self._logging_executor.submit(
-                logger.info,
-                ', '.join(function_invocation_logs))
+            logger.info(', '.join(function_invocation_logs))
 
             args = {}
             for pb in invoc_request.input_data:
@@ -760,6 +752,13 @@ class Dispatcher(metaclass=DispatcherMeta):
 
 class AsyncLoggingHandler(logging.Handler):
 
+    def __init__(self, *args, **kwargs):
+        self._logging_tp: concurrent.futures.ThreadPoolExecutor = \
+            concurrent.futures.ThreadPoolExecutor(
+                max_workers=1,
+                thread_name_prefix="logging")
+        super().__init__(*args, **kwargs)
+
     def emit(self, record: LogRecord) -> None:
         # Since we disable console log after gRPC channel is initiated,
         # we should redirect all the messages into dispatcher.
@@ -770,7 +769,10 @@ class AsyncLoggingHandler(logging.Handler):
         # buffered in this handler, not calling the emit yet.
         msg = self.format(record)
         try:
-            Dispatcher.current.on_logging(record, msg)
+            self._logging_tp.submit(
+                Dispatcher.current.on_logging,
+                record,
+                msg)
         except RuntimeError as runtime_error:
             # This will cause 'Dispatcher not found' failure.
             # Logging such of an issue will cause infinite loop of gRPC logging

@@ -38,14 +38,6 @@ from .version import VERSION
 
 _TRUE = "true"
 
-"""In Python 3.6, the current_task method was in the Task class, but got moved
-out in 3.7+ and fully removed in 3.9. Thus, to support 3.6 and 3.9 together, we
-need to switch the implementation of current_task for 3.6.
-"""
-_CURRENT_TASK = asyncio.Task.current_task \
-    if (sys.version_info[0] == 3 and sys.version_info[1] == 6) \
-    else asyncio.current_task
-
 
 class DispatcherMeta(type):
     __current_dispatcher__ = None
@@ -400,7 +392,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
-        current_task = _CURRENT_TASK(self._loop)
+        current_task = asyncio.current_task(self._loop)
         assert isinstance(current_task, ContextEnabledTask)
         current_task.set_azure_invocation_id(invocation_id)
 
@@ -777,7 +769,7 @@ class ContextEnabledTask(asyncio.Task):
     def __init__(self, coro, loop):
         super().__init__(coro, loop=loop)
 
-        current_task = _CURRENT_TASK(loop)
+        current_task = asyncio.current_task(loop)
         if current_task is not None:
             invocation_id = getattr(
                 current_task, self.AZURE_INVOCATION_ID, None)
@@ -791,7 +783,7 @@ class ContextEnabledTask(asyncio.Task):
 def get_current_invocation_id() -> Optional[str]:
     loop = asyncio._get_running_loop()
     if loop is not None:
-        current_task = _CURRENT_TASK(loop)
+        current_task = asyncio.current_task(loop)
         if current_task is not None:
             task_invocation_id = getattr(current_task,
                                          ContextEnabledTask.AZURE_INVOCATION_ID,

@@ -1,13 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import importlib.util
 import os
 import sys
-import importlib.util
 import unittest
 from unittest.mock import patch
 
 from azure_functions_worker import testutils
-from azure_functions_worker.utils.common import is_python_version
 from azure_functions_worker.utils.dependency import DependencyManager
 
 

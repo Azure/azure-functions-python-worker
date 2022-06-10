@@ -44,3 +44,12 @@ class TestServiceBusFunctionsStein(TestServiceBusFunctions):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'servicebus_functions' / \
                                             'servicebus_functions_stein'
+
+
+class TestServiceBusFunctionsSteinGeneric(TestServiceBusFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'servicebus_functions' / \
+                                            'servicebus_functions_stein' / \
+                                            'generic'

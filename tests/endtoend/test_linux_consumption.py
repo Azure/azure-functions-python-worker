@@ -64,8 +64,6 @@ class TestLinuxConsumption(TestCase):
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
 
-    @skipIf(is_python_version('3.7'),
-            "Skip the tests for Python 3.7.")
     def test_common_libraries(self):
         """A function app with the following requirements.txt:
 

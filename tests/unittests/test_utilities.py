@@ -2,12 +2,11 @@
 # Licensed under the MIT License.
 import os
 import sys
+import typing
 import unittest
 from unittest.mock import patch
-import typing
 
-from azure_functions_worker.utils import common, wrappers, library_importer
-
+from azure_functions_worker.utils import common, wrappers
 
 TEST_APP_SETTING_NAME = "TEST_APP_SETTING_NAME"
 TEST_FEATURE_FLAG = "APP_SETTING_FEATURE_FLAG"
@@ -367,14 +366,3 @@ class TestUtilities(unittest.TestCase):
             os.environ.pop(TEST_FEATURE_FLAG)
         except KeyError:
             pass
-
-    def test_library_importer_invalid_import(self):
-        sys.path.clear()
-        sys.modules.pop('azure.functions')
-        sys.path.insert(0, self._dummy_sdk_sys_path)
-        common.get_sdk_from_sys_path()
-        functionapp = library_importer.get_azure_function_app()
-        self.assertIsNone(functionapp)
-
-        function = library_importer.get_azure_function_app()
-        self.assertIsNone(function)

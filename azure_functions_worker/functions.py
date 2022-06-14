@@ -5,7 +5,6 @@ import operator
 import pathlib
 import typing
 
-from azure_functions_worker.utils.library_importer import Function
 from . import bindings as bindings_utils
 from . import protos
 from ._thirdparty import typing_inspect
@@ -355,7 +354,7 @@ class Registry:
                                                       output_types, return_type)
 
     def add_indexed_function(self, function_id: str,
-                             function: Function):
+                             function):
         func = function.get_user_function()
         func_name = function.get_function_name()
         return_binding_name: typing.Optional[str] = None

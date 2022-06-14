@@ -64,8 +64,6 @@ class TestLinuxConsumption(TestCase):
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
 
-    @skipIf(is_python_version('3.7'),
-            "Skip the tests for Python 3.7.")
     def test_common_libraries(self):
         """A function app with the following requirements.txt:
 
@@ -87,6 +85,7 @@ class TestLinuxConsumption(TestCase):
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 200)
             content = resp.json()
             self.assertIn('azure.functions', content)
             self.assertIn('azure.storage.blob', content)
@@ -94,7 +93,6 @@ class TestLinuxConsumption(TestCase):
             self.assertIn('cryptography', content)
             self.assertIn('pyodbc', content)
             self.assertIn('requests', content)
-            self.assertEqual(resp.status_code, 200)
 
     def test_new_protobuf(self):
         """A function app with the following requirements.txt:

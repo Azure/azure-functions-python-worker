@@ -146,8 +146,7 @@ def index_function_app(function_path: str):
     from azure.functions import FunctionApp
     app: Optional[FunctionApp] = None
     for i in imported_module.__dir__():
-        if type(getattr(imported_module, i,
-                        None)).__name__ == FunctionApp.__name__:
+        if isinstance(getattr(imported_module, i, None), FunctionApp):
             if not app:
                 app = getattr(imported_module, i, None)
             else:

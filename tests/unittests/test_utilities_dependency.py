@@ -608,7 +608,7 @@ class TestDependencyManager(unittest.TestCase):
             os.path.join(self._customer_func_path, 'func_specific_module')
         )
 
-    def test_reload_customer_libraries(self):
+    def test_reload_customer_libraries_dependency_isolation_true(self):
         os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
@@ -620,6 +620,23 @@ class TestDependencyManager(unittest.TestCase):
         self.assertEqual(
             common_module.package_location,
             os.path.join(self._customer_deps_path, 'common_module'))
+
+    def test_reload_customer_libraries_dependency_isolation_false(self):
+        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'false'
+        # Setup paths
+        DependencyManager.worker_deps_path = self._worker_deps_path
+        DependencyManager.cx_deps_path = self._customer_deps_path
+        DependencyManager.cx_working_dir = self._customer_func_path
+
+        DependencyManager._add_to_sys_path(self._worker_deps_path, True)
+        import azure.functions  # NoQA
+
+        DependencyManager._add_to_sys_path(self._customer_deps_path, True)
+        DependencyManager.reload_customer_libraries(self._customer_deps_path)
+        # Checking if azure.functions gets reloaded
+        self.assertIn(
+            os.path.join(self._customer_deps_path, 'azure', 'functions'),
+            sys.modules['azure.functions'].__path__)
 
     def test_remove_module_cache(self):
         # First import the common_module and create a sys.modules cache

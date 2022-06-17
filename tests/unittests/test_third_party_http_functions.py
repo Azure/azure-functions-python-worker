@@ -5,11 +5,11 @@ import os
 import pathlib
 import re
 import typing
+import pytest
 from unittest.mock import patch
 
 from azure_functions_worker import testutils
 from azure_functions_worker.testutils import UNIT_TESTS_ROOT
-from tests.unittests.load_functions import pytest
 
 HOST_JSON_TEMPLATE = """\
 {

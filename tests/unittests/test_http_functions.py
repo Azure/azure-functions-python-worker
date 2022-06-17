@@ -4,7 +4,9 @@ import filecmp
 import hashlib
 import os
 import pathlib
+import sys
 import typing
+from unittest import skipIf
 
 import pytest
 
@@ -349,6 +351,8 @@ class TestHttpFunctions(WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-print-logging')
 
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
     def test_multiple_cookie_header_in_response(self):
         r = self.webhost.request('GET', 'multiple_set_cookie_resp_headers')
         self.assertEqual(r.status_code, 200)
@@ -359,11 +363,15 @@ class TestHttpFunctions(WebHostTestCase):
             "foo3=43; expires=Fri, 12 Jan 2018 13:55:08 GMT; "
             "max-age=10000000; domain=example.com; path=/; secure; httponly")
 
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
     def test_set_cookie_header_in_response_empty_value(self):
         r = self.webhost.request('GET', 'set_cookie_resp_header_empty')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers.get('Set-Cookie'), None)
 
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
     def test_set_cookie_header_in_response_default_value(self):
         r = self.webhost.request('GET',
                                  'set_cookie_resp_header_default_values')
@@ -371,6 +379,8 @@ class TestHttpFunctions(WebHostTestCase):
         self.assertEqual(r.headers.get('Set-Cookie'),
                          'foo=bar; domain=; path=')
 
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
     def test_response_cookie_header_nullable_timestamp_err(self):
         r = self.webhost.request(
             'GET',
@@ -386,6 +396,8 @@ class TestHttpFunctions(WebHostTestCase):
             "invalid format.",
             host_out)
 
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
     def test_response_cookie_header_nullable_bool_err(self):
         r = self.webhost.request(
             'GET',
@@ -393,6 +405,8 @@ class TestHttpFunctions(WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertFalse("Set-Cookie" in r.headers)
 
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
     def test_response_cookie_header_nullable_double_err(self):
         r = self.webhost.request(
             'GET',

@@ -5,6 +5,7 @@ import os
 import pathlib
 import re
 import typing
+import pytest
 from unittest.mock import patch
 
 from azure_functions_worker import testutils
@@ -76,6 +77,7 @@ class ThirdPartyHttpFunctionsTestBase:
             self.assertIn('logging debug', host_out)
             self.assertIn('logging error', host_out)
 
+        @pytest.mark.flaky(reruns=3)
         def test_print_logging_no_flush(self):
             r = self.webhost.request('GET', 'print_logging?message=Secret42',
                                      no_prefix=True)
@@ -85,6 +87,7 @@ class ThirdPartyHttpFunctionsTestBase:
         def check_log_print_logging_no_flush(self, host_out: typing.List[str]):
             self.assertIn('Secret42', host_out)
 
+        @pytest.mark.flaky(reruns=3)
         def test_print_logging_with_flush(self):
             r = self.webhost.request('GET',
                                      'print_logging?flush=true&message'
@@ -97,6 +100,7 @@ class ThirdPartyHttpFunctionsTestBase:
                                                host_out: typing.List[str]):
             self.assertIn('Secret42', host_out)
 
+        @pytest.mark.flaky(reruns=3)
         def test_print_to_console_stdout(self):
             r = self.webhost.request('GET',
                                      'print_logging?console=true&message'
@@ -105,6 +109,7 @@ class ThirdPartyHttpFunctionsTestBase:
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.text, 'OK-print-logging')
 
+        @pytest.mark.flaky(reruns=3)
         def check_log_print_to_console_stdout(self,
                                               host_out: typing.List[str]):
             # System logs stdout should not exist in host_out
@@ -192,6 +197,7 @@ class TestAsgiHttpFunctions(
         return UNIT_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
             'asgi_function'
 
+    @pytest.mark.flaky(reruns=3)
     def test_hijack_current_event_loop(self):
         r = self.webhost.request('GET', 'hijack_current_event_loop',
                                  no_prefix=True)

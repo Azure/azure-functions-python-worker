@@ -203,6 +203,25 @@ class TestLinuxConsumption(TestCase):
             self.assertIn('logging error', func_log)
             self.assertIn('logging debug', func_log)
 
+    def test_pinning_functions_to_older_version(self):
+        """An HttpTrigger function app with 'azure-functions==1.11.1' library
+        should return 200 with the azure functions version set to 1.11.1
+        since dependency isolation is enabled by default for all py versions
+        """
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
+
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
+                    "PinningFunctions"),
+            })
+            req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
+            resp = ctrl.send_request(req)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Func Version: 1.11.1", resp.text)
+
     def _get_blob_url(self, scenario_name: str) -> str:
         return (
             f'https://pythonworker{self._py_shortform}sa.blob.core.windows.net/'

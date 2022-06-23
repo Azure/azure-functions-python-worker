@@ -143,18 +143,18 @@ def index_function_app(function_path: str):
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)
 
-    from azure.functions import FunctionApp
-    app: Optional[FunctionApp] = None
+    from azure.functions import FunctionRegister
+    app: Optional[FunctionRegister] = None
     for i in imported_module.__dir__():
-        if isinstance(getattr(imported_module, i, None), FunctionApp):
+        if isinstance(getattr(imported_module, i, None), FunctionRegister):
             if not app:
                 app = getattr(imported_module, i, None)
             else:
                 raise ValueError(
-                    "Multiple instances of FunctionApp are defined")
+                    "Multiple instances of FunctionRegister are defined")
 
     if not app:
-        raise ValueError("Could not find instance of FunctionApp in "
+        raise ValueError("Could not find instance of FunctionRegister in "
                          f"{SCRIPT_FILE_NAME}.")
 
     return app.get_functions()

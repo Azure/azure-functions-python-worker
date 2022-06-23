@@ -79,6 +79,13 @@ class Registry:
         return return_binding_name
 
     @staticmethod
+    def validate_binding_route(func_name: str, binding: BindingInfo):
+        if hasattr(binding, 'route') and binding.route.startswith('/'):
+            raise FunctionLoadError(
+                func_name,
+                f'Invalid route name. {binding.route}')
+
+    @staticmethod
     def validate_binding_direction(binding_name: str,
                                    binding_direction: str,
                                    func_name: str):
@@ -368,6 +375,8 @@ class Registry:
 
         bound_params = {}
         for binding in function.get_bindings():
+            self.validate_binding_route(func_name, binding)
+
             self.validate_binding_direction(binding.name,
                                             binding.direction,
                                             func_name)

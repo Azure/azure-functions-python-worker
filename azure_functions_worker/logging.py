@@ -20,6 +20,12 @@ handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
 
 
+def format_exception(exception):
+    msg = str(exception) + "\n"
+    msg += ''.join(traceback.format_exception(etype=type(exception), value=exception, tb=exception.__traceback__))
+    return msg
+
+
 def setup(log_level, log_destination):
     # Since handler and error_handler are moved to the global scope,
     # before assigning to these handlers, we should define 'global' keyword

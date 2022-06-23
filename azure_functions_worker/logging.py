@@ -4,6 +4,7 @@
 import logging
 import logging.handlers
 import sys
+import traceback
 from typing import Optional
 
 # Logging Prefixes
@@ -22,7 +23,8 @@ error_handler: Optional[logging.Handler] = None
 
 def format_exception(exception):
     msg = str(exception) + "\n"
-    msg += ''.join(traceback.format_exception(etype=type(exception), value=exception, tb=exception.__traceback__))
+    msg += ''.join(traceback.format_exception(
+        etype=type(exception), value=exception, tb=exception.__traceback__))
     return msg
 
 

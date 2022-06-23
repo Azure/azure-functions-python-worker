@@ -22,9 +22,7 @@ class TestFunctionsRegistry(unittest.TestCase):
     def test_add_index_functions_invalid_route(self):
         function_id = '123'
 
-        trigger1 = HttpTrigger(name="req1", methods=None,
-                               data_type=None,
-                               auth_level=None,
+        trigger1 = HttpTrigger(name="req1",
                                route="/")
         self.func.add_trigger(trigger=trigger1)
 

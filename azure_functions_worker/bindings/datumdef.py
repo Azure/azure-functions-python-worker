@@ -133,8 +133,8 @@ class Datum:
 
         if ret_val is not None:
             logger.info(
-                f'Read {count} bytes from memory map {mem_map_name} '
-                f'for data type {data_type}')
+                'Read %s bytes from memory map %s for data type %s', count,
+                mem_map_name, data_type)
             return ret_val
         return None
 
@@ -162,8 +162,8 @@ class Datum:
             )
 
         if shared_mem_meta is None:
-            logger.warning('Cannot write to shared memory for type: '
-                           f'{datum.type}')
+            logger.warning('Cannot write to shared memory for type: %s',
+                           datum.type)
             return None
 
         shmem = protos.RpcSharedMemory(
@@ -173,8 +173,9 @@ class Datum:
             type=data_type)
 
         logger.info(
-            f'Wrote {shared_mem_meta.count_bytes} bytes to memory map '
-            f'{shared_mem_meta.mem_map_name} for data type {data_type}')
+            'Wrote %s bytes to memory map %s for data type %s',
+            shared_mem_meta.count_bytes, shared_mem_meta.mem_map_name,
+            data_type)
         return shmem
 
 

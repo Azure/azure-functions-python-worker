@@ -1,13 +1,14 @@
 # This workflow will install Python dependencies and run end to end tests with single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: CI E2E tests
+name: CI E2E tests for dev branch
 
 on:
   workflow_dispatch:
   push:
   pull_request:
     branches: [ dev, master, main, release/* ]
+    types: [ labeled ]
   schedule:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string
@@ -15,7 +16,8 @@ on:
 
 jobs:
   build:
-    name: "Python E2E CI Run"
+    name: "Python E2E CI Run for dev branch"
+    if: ${{ github.event.*.labels.*.name.contains('dev-branch') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -62,11 +64,11 @@ jobs:
 
           python -m pip install --upgrade pip
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U -e .[dev]
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
+          python -m pip install git+https://github.com/Azure/azure-functions-python-library.git -U --pre
 
           # Retry a couple times to avoid certificate issue
           retry 5 python setup.py build
-          retry 5 python setup.py webhost
+          retry 5 python setup.py webhost --branch-name=dev
           retry 5 python setup.py extension
       - name: Running 3.7 Tests
         if: matrix.python-version == 3.7

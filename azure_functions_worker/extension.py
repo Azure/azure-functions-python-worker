@@ -236,24 +236,24 @@ class ExtensionManager:
     @classmethod
     def _info_extension_is_enabled(cls, sdk):
         logger.info(
-            'Python Worker Extension is enabled in azure.functions '
-            f'({get_sdk_version(sdk)}).'
+            'Python Worker Extension is enabled in azure.functions (%s).',
+            get_sdk_version(sdk)
         )
 
     @classmethod
     def _info_discover_extension_list(cls, function_name, sdk):
         logger.info(
-            f'Python Worker Extension Manager is loading {function_name}, '
-            'current registered extensions: '
-            f'{sdk.ExtensionMeta.get_registered_extensions_json()}'
+            'Python Worker Extension Manager is loading %s, current '
+            'registered extensions: %s',
+            function_name, sdk.ExtensionMeta.get_registered_extensions_json()
         )
 
     @classmethod
     def _warn_sdk_not_support_extension(cls, sdk):
         logger.warning(
-            f'The azure.functions ({get_sdk_version(sdk)}) does not '
-            'support Python worker extensions. If you believe extensions '
-            'are correctly installed, please set the '
-            f'{PYTHON_ISOLATE_WORKER_DEPENDENCIES} and '
-            f'{PYTHON_ENABLE_WORKER_EXTENSIONS} to "true"'
+            'The azure.functions (%s) does not support Python worker '
+            'extensions. If you believe extensions are correctly installed, '
+            'please set the %s and %s to "true"',
+            get_sdk_version(sdk), PYTHON_ISOLATE_WORKER_DEPENDENCIES,
+            PYTHON_ENABLE_WORKER_EXTENSIONS
         )

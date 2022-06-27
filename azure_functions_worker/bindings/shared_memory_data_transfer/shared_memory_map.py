@@ -53,9 +53,9 @@ class SharedMemoryMap:
             content_length_bytes)
         if num_content_length_bytes_written != num_content_length_bytes:
             logger.error(
-                f'Cannot write content size to memory map {self.mem_map_name} '
-                f'({num_content_length_bytes_written} != '
-                f'{num_content_length_bytes})')
+                'Cannot write content size to memory map %s (%s != %s)',
+                self.mem_map_name, num_content_length_bytes_written,
+                num_content_length_bytes)
             return 0
         # Write the content
         num_content_bytes_written = self.mem_map.write(content)

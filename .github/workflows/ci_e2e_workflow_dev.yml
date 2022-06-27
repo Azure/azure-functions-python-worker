@@ -17,7 +17,7 @@ on:
 jobs:
   build:
     name: "Python E2E CI Run for dev branch"
-    if: ${{ github.event.*.labels.*.name.contains('dev-branch') }}
+    if: ${{ contains( github.event.*.labels.*.name, 'dev-branch') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

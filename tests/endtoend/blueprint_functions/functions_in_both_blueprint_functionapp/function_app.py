@@ -1,6 +1,5 @@
 import azure.functions as func
 
-from azure_functions_worker import logging
 from blueprint import bp
 
 app = func.FunctionApp()

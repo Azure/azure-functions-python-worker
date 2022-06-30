@@ -10,9 +10,7 @@ import pathlib
 import sys
 import uuid
 from os import PathLike, fspath
-from typing import List, Optional, Dict
-
-from azure.functions import Function, FunctionApp
+from typing import Optional, Dict
 
 from . import protos, functions
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
@@ -47,7 +45,7 @@ def uninstall() -> None:
     pass
 
 
-def build_binding_protos(indexed_function: Function) -> Dict:
+def build_binding_protos(indexed_function) -> Dict:
     binding_protos = {}
     for binding in indexed_function.get_bindings():
         binding_protos[binding.name] = protos.BindingInfo(
@@ -59,7 +57,7 @@ def build_binding_protos(indexed_function: Function) -> Dict:
 
 
 def process_indexed_function(functions_registry: functions.Registry,
-                             indexed_functions: List[Function]):
+                             indexed_functions):
     fx_metadata_results = []
     for indexed_function in indexed_functions:
         function_id = str(uuid.uuid4())
@@ -141,10 +139,11 @@ def load_function(name: str, directory: str, script_file: str,
     expt_type=ImportError,
     message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
 )
-def index_function_app(function_path: str) -> List[Function]:
+def index_function_app(function_path: str):
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)
 
+    from azure.functions import FunctionApp
     app: Optional[FunctionApp] = None
     for i in imported_module.__dir__():
         if isinstance(getattr(imported_module, i, None), FunctionApp):

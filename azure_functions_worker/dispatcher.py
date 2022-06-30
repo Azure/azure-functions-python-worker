@@ -29,7 +29,7 @@ from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import enable_debug_logging_recommendation
 from .logging import (logger, error_logger, is_system_log_category,
-                      CONSOLE_LOG_PREFIX)
+                      CONSOLE_LOG_PREFIX, format_exception)
 from .utils.common import get_app_setting, is_envvar_true
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
@@ -745,7 +745,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             if ex is grpc_req_stream:
                 # Yes, this is how grpc_req_stream iterator exits.
                 return
-            error_logger.exception('unhandled error in gRPC thread')
+            error_logger.exception(
+                'unhandled error in gRPC thread. Exception: {0}'.format(
+                    format_exception(ex)))
             raise
 
 

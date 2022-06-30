@@ -151,10 +151,11 @@ def index_function_app(function_path: str):
                 app = getattr(imported_module, i, None)
             else:
                 raise ValueError(
-                    "Multiple instances of FunctionRegister are defined")
+                    f"More than one {app.__class__.__name__} or other top "
+                    f"level function app instances are defined.")
 
     if not app:
-        raise ValueError("Could not find instance of FunctionRegister in "
+        raise ValueError("Could not find top level function app instances in "
                          f"{SCRIPT_FILE_NAME}.")
 
     return app.get_functions()

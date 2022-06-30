@@ -9,7 +9,6 @@ from requests import Request
 from azure_functions_worker.testutils_lc import (
     LinuxConsumptionWebHostController
 )
-from azure_functions_worker.utils.common import is_python_version
 
 _DEFAULT_HOST_VERSION = "3"
 

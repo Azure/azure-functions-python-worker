@@ -100,9 +100,8 @@ class TestNullableConverters(unittest.TestCase):
                              value=Timestamp(seconds=int(now.timestamp()))))
 
     def test_to_nullable_timestamp_wrong_type(self):
-        with self.assertRaises(Exception) as e:
+        with self.assertRaises(TypeError):
             to_nullable_timestamp("now", "datetime")
-        self.assertEqual(e.type, TypeError)
 
     def test_to_nullable_timestamp_none(self):
         self.assertEqual(to_nullable_timestamp(None, "timestamp"), None)

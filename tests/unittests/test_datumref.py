@@ -33,6 +33,11 @@ class TestDatumRef(unittest.TestCase):
             parse_cookie_attr_expires(
                 {"expires": "Thu, 12-Jan-2017 13:550:08 GMT"})
 
+    def test_parse_cookie_attr_expires_overflow_error(self):
+        with self.assertRaises(OverflowError):
+            parse_cookie_attr_expires(
+                {"expires": "Thu, 12-Jan-9999999999999999 13:550:08 GMT"})
+
     def test_parse_cookie_attr_same_site_default(self):
         self.assertEqual(parse_cookie_attr_same_site(
             {}),

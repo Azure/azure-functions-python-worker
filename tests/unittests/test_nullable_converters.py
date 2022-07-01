@@ -45,15 +45,27 @@ class TestNullableConverters(unittest.TestCase):
     def test_to_nullable_bool_wrong_type(self):
         with pytest.raises(Exception) as e:
             to_nullable_bool("True", "name")
-            self.assertEqual(
-                "A 'str' type was expected instead of a '<class 'int'>' "
-                "type. Cannot parse value 123 of 'name'.",
-                e.msg)
-            self.assertEqual(type(e), TypeError)
+
+        self.assertEqual(e.type, TypeError)
+        self.assertEqual(e.value.args[0],
+                         "A 'bool' type was expected instead of a '<class "
+                         "'str'>' type. "
+                         "Cannot parse value True of 'name'.")
 
     def test_to_nullable_double_str(self):
         self.assertEqual(to_nullable_double("12", "name"),
                          protos.NullableDouble(value=12))
+
+    def test_to_nullable_double_empty_str(self):
+        self.assertEqual(to_nullable_double("", "name"), None)
+
+    def test_to_nullable_double_invalid_str(self):
+        with pytest.raises(TypeError) as e:
+            to_nullable_double("222d", "name")
+
+        self.assertEqual(e.type, TypeError)
+        self.assertEqual(e.value.args[0],
+                         "Cannot parse value 222d of 'name' to float.")
 
     def test_to_nullable_double_int(self):
         self.assertEqual(to_nullable_double(12, "name"),
@@ -69,9 +81,12 @@ class TestNullableConverters(unittest.TestCase):
     def test_to_nullable_double_wrong_type(self):
         with pytest.raises(Exception) as e:
             to_nullable_double(object(), "name")
-            self.assertIn(
-                "A 'int' or 'float' type was expected instead of a", e.msg)
-            self.assertEqual(type(e), TypeError)
+
+        self.assertIn(
+            "A 'int' or 'float' type was expected instead of a '<class "
+            "'object'>' type",
+            e.value.args[0])
+        self.assertEqual(e.type, TypeError)
 
     def test_to_nullable_timestamp_int(self):
         self.assertEqual(to_nullable_timestamp(1000, "datetime"),
@@ -87,7 +102,7 @@ class TestNullableConverters(unittest.TestCase):
     def test_to_nullable_timestamp_wrong_type(self):
         with self.assertRaises(Exception) as e:
             to_nullable_timestamp("now", "datetime")
-            self.assertEqual(type(e), TypeError)
+        self.assertEqual(e.type, TypeError)
 
     def test_to_nullable_timestamp_none(self):
         self.assertEqual(to_nullable_timestamp(None, "timestamp"), None)

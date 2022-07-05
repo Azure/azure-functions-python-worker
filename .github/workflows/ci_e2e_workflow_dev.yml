@@ -8,7 +8,7 @@ on:
   push:
   pull_request:
     branches: [ dev, master, main, release/* ]
-    types: [ labeled ]
+    types: [ labeled, opened, synchronize, reopened ]
   schedule:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string
@@ -17,7 +17,7 @@ on:
 jobs:
   build:
     name: "Python E2E CI Run for dev branch"
-    if: ${{ contains( github.event.*.labels.*.name, 'dev-branch') }}
+    if: ${{ contains( github.event.pull_request.labels.*.name, 'dev-branch') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

@@ -47,7 +47,7 @@ def main():
     try:
         return aio_compat.run(start_async(
             args.host, args.port, args.worker_id, args.request_id))
-    except Exception:
+    except Exception as ex:
         error_logger.exception(
             'unhandled error in functions worker: {0}'.format(
                 format_exception(ex)))

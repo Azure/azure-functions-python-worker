@@ -36,20 +36,21 @@ def main():
 
     from . import logging
     from ._thirdparty import aio_compat
-    from .logging import error_logger, logger
+    from .logging import error_logger, logger, format_exception
 
     args = parse_args()
     logging.setup(log_level=args.log_level, log_destination=args.log_to)
-
-    logger.info('Starting Azure Functions Python Worker.')
-    logger.info('Worker ID: %s, Request ID: %s, Host Address: %s:%s',
+    logger.info('Starting Azure Functions Python Worker. \n'
+                'Worker ID: %s, Request ID: %s, Host Address: %s:%s',
                 args.worker_id, args.request_id, args.host, args.port)
 
     try:
         return aio_compat.run(start_async(
             args.host, args.port, args.worker_id, args.request_id))
-    except Exception:
-        error_logger.exception('unhandled error in functions worker')
+    except Exception as ex:
+        error_logger.exception(
+            'unhandled error in functions worker: {0}'.format(
+                format_exception(ex)))
         raise
 
 

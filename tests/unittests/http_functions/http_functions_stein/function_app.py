@@ -318,3 +318,89 @@ def user_event_loop(req: func.HttpRequest) -> func.HttpResponse:
     loop.run_until_complete(try_log())
     loop.close()
     return 'OK-user-event-loop'
+
+
+@app.route(route="multiple_set_cookie_resp_headers")
+def multiple_set_cookie_resp_headers(
+        req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+    resp = func.HttpResponse(
+        "This HTTP triggered function executed successfully.")
+
+    resp.headers.add("Set-Cookie",
+                     'foo3=42; Domain=example.com; Expires=Thu, 12-Jan-2017 '
+                     '13:55:08 GMT; Path=/; Max-Age=10000000; Secure; '
+                     'HttpOnly')
+    resp.headers.add("Set-Cookie",
+                     'foo3=43; Domain=example.com; Expires=Thu, 12-Jan-2018 '
+                     '13:55:08 GMT; Path=/; Max-Age=10000000; Secure; '
+                     'HttpOnly')
+    resp.headers.add("HELLO", 'world')
+
+    return resp
+
+
+@app.route(route="response_cookie_header_nullable_bool_err")
+def response_cookie_header_nullable_bool_err(
+        req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+    resp = func.HttpResponse(
+        "This HTTP triggered function executed successfully.")
+
+    resp.headers.add("Set-Cookie",
+                     'foo3=42; Domain=example.com; Expires=Thu, 12-Jan-2017 '
+                     '13:55:08 GMT; Path=/; Max-Age=10000000; SecureFalse; '
+                     'HttpOnly')
+
+    return resp
+
+
+@app.route(route="response_cookie_header_nullable_double_err")
+def response_cookie_header_nullable_double_err(
+        req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+    resp = func.HttpResponse(
+        "This HTTP triggered function executed successfully.")
+
+    resp.headers.add("Set-Cookie",
+                     'foo3=42; Domain=example.com; Expires=Thu, 12-Jan-2017 '
+                     '13:55:08 GMT; Path=/; Max-Age=Dummy; SecureFalse; '
+                     'HttpOnly')
+
+    return resp
+
+
+@app.route(route="response_cookie_header_nullable_timestamp_err")
+def response_cookie_header_nullable_timestamp_err(
+        req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+    resp = func.HttpResponse(
+        "This HTTP triggered function executed successfully.")
+
+    resp.headers.add("Set-Cookie", 'foo=bar; Domain=123; Expires=Dummy')
+
+    return resp
+
+
+@app.route(route="set_cookie_resp_header_default_values")
+def set_cookie_resp_header_default_values(
+        req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+    resp = func.HttpResponse(
+        "This HTTP triggered function executed successfully.")
+
+    resp.headers.add("Set-Cookie", 'foo=bar')
+
+    return resp
+
+
+@app.route(route="set_cookie_resp_header_empty")
+def set_cookie_resp_header_empty(
+        req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+    resp = func.HttpResponse(
+        "This HTTP triggered function executed successfully.")
+
+    resp.headers.add("Set-Cookie", '')
+
+    return resp

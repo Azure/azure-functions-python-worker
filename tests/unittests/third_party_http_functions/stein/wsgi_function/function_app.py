@@ -99,5 +99,5 @@ def unhandled_unserializable_error():
     raise UnserializableException('foo')
 
 
-app = func.FunctionApp(wsgi_app=flask_app.wsgi_app,
-                       http_auth_level=func.AuthLevel.ANONYMOUS)
+app = func.WsgiFunctionApp(app=flask_app.wsgi_app,
+                           http_auth_level=func.AuthLevel.ANONYMOUS)

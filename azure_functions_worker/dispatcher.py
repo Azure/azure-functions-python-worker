@@ -29,7 +29,7 @@ from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import enable_debug_logging_recommendation
 from .logging import (logger, error_logger, is_system_log_category,
-                      CONSOLE_LOG_PREFIX)
+                      CONSOLE_LOG_PREFIX, format_exception)
 from .utils.common import get_app_setting, is_envvar_true
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
@@ -205,12 +205,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         invocation_id = get_current_invocation_id()
         if invocation_id is not None:
             log['invocation_id'] = invocation_id
-
-        # XXX: When an exception field is set in RpcLog, WebHost doesn't
-        # wait for the call result and simply aborts the execution.
-        #
-        # if record.exc_info and record.exc_info[1] is not None:
-        #     log['exception'] = self._serialize_exception(record.exc_info[1])
 
         self._grpc_resp_queue.put_nowait(
             protos.StreamingMessage(
@@ -746,7 +740,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             if ex is grpc_req_stream:
                 # Yes, this is how grpc_req_stream iterator exits.
                 return
-            error_logger.exception('unhandled error in gRPC thread')
+            error_logger.exception(
+                'unhandled error in gRPC thread. Exception: {0}'.format(
+                    format_exception(ex)))
             raise
 
 

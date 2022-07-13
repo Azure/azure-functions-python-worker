@@ -1,10 +1,19 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
+import logging
 from typing import Any, Optional
 import json
 from .. import protos
 from ..logging import logger
+from typing import List
+try:
+    from http.cookies import SimpleCookie
+except ImportError:
+    from Cookie import SimpleCookie
+from dateutil import parser
+from dateutil.parser import ParserError
+from .nullable_converters import to_nullable_bool, to_nullable_string, \
+    to_nullable_double, to_nullable_timestamp
 
 
 class Datum:
@@ -99,8 +108,8 @@ class Datum:
             shmem: protos.RpcSharedMemory,
             shmem_mgr) -> Optional['Datum']:
         """
-        Reads the specified shared memory region and converts the read data into
-        a datum object of the corresponding type.
+        Reads the specified shared memory region and converts the read data
+        into a datum object of the corresponding type.
         """
         if shmem is None:
             logger.warning('Cannot read from shared memory. '
@@ -184,6 +193,7 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
                 k: v.value
                 for k, v in datum.value['headers'].items()
             },
+            cookies=parse_to_rpc_http_cookie_list(datum.value['cookies']),
             enable_content_negotiation=False,
             body=datum_as_proto(datum.value['body']),
         ))
@@ -191,3 +201,75 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
         raise NotImplementedError(
             'unexpected Datum type: {!r}'.format(datum.type)
         )
+
+
+def parse_to_rpc_http_cookie_list(cookies: Optional[List[SimpleCookie]]):
+    if cookies is None:
+        return cookies
+
+    rpc_http_cookies = []
+
+    for cookie in cookies:
+        for name, cookie_entity in cookie.items():
+            rpc_http_cookies.append(
+                protos.RpcHttpCookie(name=name,
+                                     value=cookie_entity.value,
+                                     domain=to_nullable_string(
+                                         cookie_entity['domain'],
+                                         'cookie.domain'),
+                                     path=to_nullable_string(
+                                         cookie_entity['path'], 'cookie.path'),
+                                     expires=to_nullable_timestamp(
+                                         parse_cookie_attr_expires(
+                                             cookie_entity), 'cookie.expires'),
+                                     secure=to_nullable_bool(
+                                         bool(cookie_entity['secure']),
+                                         'cookie.secure'),
+                                     http_only=to_nullable_bool(
+                                         bool(cookie_entity['httponly']),
+                                         'cookie.httpOnly'),
+                                     same_site=parse_cookie_attr_same_site(
+                                         cookie_entity),
+                                     max_age=to_nullable_double(
+                                         cookie_entity['max-age'],
+                                         'cookie.maxAge')))
+
+    return rpc_http_cookies
+
+
+def parse_cookie_attr_expires(cookie_entity):
+    expires = cookie_entity['expires']
+
+    if expires is not None and len(expires) != 0:
+        try:
+            return parser.parse(expires)
+        except ParserError:
+            logging.error(
+                f"Can not parse value {expires} of expires in the cookie "
+                f"due to invalid format.")
+            raise
+        except OverflowError:
+            logging.error(
+                f"Can not parse value {expires} of expires in the cookie "
+                f"because the parsed date exceeds the largest valid C "
+                f"integer on your system.")
+            raise
+
+    return None
+
+
+def parse_cookie_attr_same_site(cookie_entity):
+    same_site = getattr(protos.RpcHttpCookie.SameSite, "None")
+    try:
+        raw_same_site_str = cookie_entity['samesite'].lower()
+
+        if raw_same_site_str == 'lax':
+            same_site = protos.RpcHttpCookie.SameSite.Lax
+        elif raw_same_site_str == 'strict':
+            same_site = protos.RpcHttpCookie.SameSite.Strict
+        elif raw_same_site_str == 'none':
+            same_site = protos.RpcHttpCookie.SameSite.ExplicitNone
+    except Exception:
+        return same_site
+
+    return same_site

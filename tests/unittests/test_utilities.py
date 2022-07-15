@@ -2,12 +2,11 @@
 # Licensed under the MIT License.
 import os
 import sys
+import typing
 import unittest
 from unittest.mock import patch
-import typing
 
 from azure_functions_worker.utils import common, wrappers
-
 
 TEST_APP_SETTING_NAME = "TEST_APP_SETTING_NAME"
 TEST_FEATURE_FLAG = "APP_SETTING_FEATURE_FLAG"

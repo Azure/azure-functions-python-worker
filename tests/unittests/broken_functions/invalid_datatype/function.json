@@ -1,0 +1,11 @@
+{
+  "scriptFile": "main.py",
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "dataType" : "string",
+      "name": "req"
+    }
+  ]
+}

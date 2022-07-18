@@ -164,7 +164,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._default_workers)
             mock_logger.warning.assert_any_call(
-                '%s must be set to a value between %s and sys.maxint. Reverting to default value for max_workers', PYTHON_THREADPOOL_THREAD_COUNT, PYTHON_THREADPOOL_THREAD_COUNT_MIN)
+                '%s must be set to a value between %s and sys.maxint. '
+                'Reverting to default value for max_workers',
+                PYTHON_THREADPOOL_THREAD_COUNT,
+                PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 
     async def test_dispatcher_sync_threadpool_exceed_max_setting(self):
         """Test if the sync threadpool will pick up default max value when the
@@ -248,11 +251,9 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                                       self._default_workers)
 
                 mock_logger.warning.assert_any_call(
-                    f'%s must be set '
-                    f'to a value between '
-                    f'%s and '
-                    'sys.maxint. Reverting to default value for '
-                    'max_workers', PYTHON_THREADPOOL_THREAD_COUNT,
+                    '%s must be set to a value between %s and sys.maxint. '
+                    'Reverting to default value for max_workers',
+                    PYTHON_THREADPOOL_THREAD_COUNT,
                     PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 
     async def test_sync_invocation_request_log(self):

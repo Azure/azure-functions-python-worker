@@ -696,8 +696,8 @@ class TestExtension(unittest.TestCase):
         # Check logs
         self._instance._info_extension_is_enabled(sdk)
         info_mock.assert_called_once_with(
-            'Python Worker Extension is enabled in azure.functions '
-            f'({sdk.__version__}).'
+            'Python Worker Extension is enabled in azure.functions (%s).',
+            '1.11.3b2'
         )
 
     @patch('azure_functions_worker.extension.logger.info')
@@ -717,9 +717,9 @@ class TestExtension(unittest.TestCase):
         # Check logs
         self._instance._info_discover_extension_list(self._mock_func_name, sdk)
         info_mock.assert_called_once_with(
-            'Python Worker Extension Manager is loading HttpTrigger, '
-            'current registered extensions: '
-            r'{"FuncExtension": {"HttpTrigger": ["NewFuncExtension"]}}'
+            'Python Worker Extension Manager is loading %s, '
+            'current registered extensions: %s', 'HttpTrigger',
+            '{"FuncExtension": {"HttpTrigger": ["NewFuncExtension"]}}'
         )
 
     @patch('azure_functions_worker.extension.logger.info')
@@ -733,9 +733,9 @@ class TestExtension(unittest.TestCase):
         # Check logs
         self._instance._info_discover_extension_list(self._mock_func_name, sdk)
         info_mock.assert_called_once_with(
-            'Python Worker Extension Manager is loading HttpTrigger, '
-            'current registered extensions: '
-            r'{"AppExtension": ["NewAppExtension"]}'
+            'Python Worker Extension Manager is loading %s, current '
+            'registered extensions: %s',
+            'HttpTrigger', '{"AppExtension": ["NewAppExtension"]}'
         )
 
     @patch('azure_functions_worker.extension.logger.warning')
@@ -747,11 +747,11 @@ class TestExtension(unittest.TestCase):
         # Check logs
         self._instance._warn_sdk_not_support_extension(sdk)
         warning_mock.assert_called_once_with(
-            'The azure.functions (dummy) does not '
-            'support Python worker extensions. If you believe extensions '
-            'are correctly installed, please set the '
-            'PYTHON_ISOLATE_WORKER_DEPENDENCIES and '
-            'PYTHON_ENABLE_WORKER_EXTENSIONS to "true"'
+            'The azure.functions (%s) does not support Python worker '
+            'extensions. If you believe extensions are correctly installed, '
+            'please set the %s and %s to "true"',
+            'dummy', 'PYTHON_ISOLATE_WORKER_DEPENDENCIES',
+            'PYTHON_ENABLE_WORKER_EXTENSIONS'
         )
 
     def _generate_new_func_extension_class(self, base: type, trigger: str):

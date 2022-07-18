@@ -150,7 +150,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._default_workers)
             mock_logger.warning.assert_any_call(
-                f'{PYTHON_THREADPOOL_THREAD_COUNT} must be an integer')
+                '%s must be an integer', PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_dispatcher_sync_threadpool_below_min_setting(self):
         """Test if the sync threadpool will pick up default value when the
@@ -164,11 +164,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._default_workers)
             mock_logger.warning.assert_any_call(
-                f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
-                f'to a value between '
-                f'{PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
-                'sys.maxint. Reverting to default value for '
-                'max_workers')
+                '%s must be set to a value between %s and sys.maxint. Reverting to default value for max_workers', PYTHON_THREADPOOL_THREAD_COUNT, PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 
     async def test_dispatcher_sync_threadpool_exceed_max_setting(self):
         """Test if the sync threadpool will pick up default max value when the
@@ -216,7 +212,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
                 # Check warning message
                 mock_logger.warning.assert_any_call(
-                    f'{PYTHON_THREADPOOL_THREAD_COUNT} must be an integer')
+                    '%s must be an integer', PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_dispatcher_sync_threadpool_in_placeholder_above_max(self):
         """Test if the sync threadpool will use the default max setting when
@@ -252,11 +248,12 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                                       self._default_workers)
 
                 mock_logger.warning.assert_any_call(
-                    f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
+                    f'%s must be set '
                     f'to a value between '
-                    f'{PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
+                    f'%s and '
                     'sys.maxint. Reverting to default value for '
-                    'max_workers')
+                    'max_workers', PYTHON_THREADPOOL_THREAD_COUNT,
+                    PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 
     async def test_sync_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:

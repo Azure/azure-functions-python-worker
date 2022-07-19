@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ 3.6, 3.7, 3.8, 3.9 ]
+        python-version: [ 3.7, 3.8, 3.9, "3.10" ]
 
     steps:
       - name: Checkout code.
@@ -67,7 +67,7 @@ jobs:
 
           # Retry a couple times to avoid certificate issue
           retry 5 python setup.py build
-          retry 5 python setup.py webhost
+          retry 5 python setup.py webhost --branch-name=dev
           retry 5 python setup.py extension
       - name: Running 3.6 Tests
         if: matrix.python-version == 3.6
@@ -80,7 +80,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString36 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString36 }}
         run: |
-          pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Running 3.7 Tests
         if: matrix.python-version == 3.7
         env:
@@ -92,7 +92,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
         run: |
-          pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Running 3.8 Tests
         if: matrix.python-version == 3.8
         env:
@@ -104,7 +104,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
         run: |
-          pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
         env:
@@ -116,7 +116,18 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
         run: |
-          pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+      - name: Running 3.10 Tests
+        if: matrix.python-version == 3.10
+        env:
+          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
+          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString310 }}
+          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString310 }}
+          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString310 }}
+          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
+          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
+        run: |
+          python -m pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Codecov
         uses: codecov/codecov-action@v1.0.13
         with:

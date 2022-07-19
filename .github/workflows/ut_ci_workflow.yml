@@ -4,12 +4,12 @@
 name: CI Unit tests
 
 on:
+  workflow_dispatch:
   schedule:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string
     - cron: "0 8 * * 1,2,3,4"
   push:
-    branches: [ dev, master, main, release/* ]
   pull_request:
     branches: [ dev, master, main, release/* ]
 
@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: [ 3.6, 3.7, 3.8, 3.9 ]
+        python-version: [ 3.7, 3.8, 3.9, "3.10" ]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -64,11 +64,11 @@ jobs:
 
         # Retry a couple times to avoid certificate issue
         retry 5 python setup.py build
-        retry 5 python setup.py webhost
+        retry 5 python setup.py webhost --branch-name=dev
         retry 5 python setup.py extension
     - name: Test with pytest
       run: |
-        pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
+        python -m pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
     - name: Codecov
       uses: codecov/codecov-action@v1.0.13
       with:

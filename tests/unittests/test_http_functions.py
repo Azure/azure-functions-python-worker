@@ -1,16 +1,20 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import hashlib
-import pathlib
 import filecmp
-import typing
+import hashlib
 import os
+import pathlib
+import sys
+import typing
+from unittest import skipIf
+
 import pytest
 
 from azure_functions_worker import testutils
+from azure_functions_worker.testutils import WebHostTestCase
 
 
-class TestHttpFunctions(testutils.WebHostTestCase):
+class TestHttpFunctions(WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
@@ -137,7 +141,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
         self.assertEqual(data['method'], 'GET')
         self.assertEqual(data['ctx_func_name'], 'return_context')
-        self.assertIn('return_context', data['ctx_func_dir'])
         self.assertIn('ctx_invocation_id', data)
         self.assertIn('ctx_trace_context_Tracestate', data)
         self.assertIn('ctx_trace_context_Traceparent', data)
@@ -313,15 +316,13 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def check_log_user_event_loop_error(self, host_out: typing.List[str]):
         self.assertIn('try_log', host_out)
 
-    def test_import_module_troubleshooting_url(self):
-        r = self.webhost.request('GET', 'missing_module/')
-        self.assertEqual(r.status_code, 500)
-
     def check_log_import_module_troubleshooting_url(self,
                                                     host_out: typing.List[str]):
         self.assertIn("Exception: ModuleNotFoundError: "
                       "No module named 'does_not_exist'. "
-                      "Troubleshooting Guide: "
+                      "Please check the requirements.txt file for the "
+                      "missing module. For more info, please refer the "
+                      "troubleshooting guide: "
                       "https://aka.ms/functions-modulenotfound", host_out)
 
     @pytest.mark.flaky(reruns=3)
@@ -350,6 +351,69 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-print-logging')
 
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
+    def test_multiple_cookie_header_in_response(self):
+        r = self.webhost.request('GET', 'multiple_set_cookie_resp_headers')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers.get(
+            'Set-Cookie'),
+            "foo3=42; expires=Thu, 12 Jan 2017 13:55:08 GMT; "
+            "max-age=10000000; domain=example.com; path=/; secure; httponly, "
+            "foo3=43; expires=Fri, 12 Jan 2018 13:55:08 GMT; "
+            "max-age=10000000; domain=example.com; path=/; secure; httponly")
+
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
+    def test_set_cookie_header_in_response_empty_value(self):
+        r = self.webhost.request('GET', 'set_cookie_resp_header_empty')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers.get('Set-Cookie'), None)
+
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
+    def test_set_cookie_header_in_response_default_value(self):
+        r = self.webhost.request('GET',
+                                 'set_cookie_resp_header_default_values')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers.get('Set-Cookie'),
+                         'foo=bar; domain=; path=')
+
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
+    def test_response_cookie_header_nullable_timestamp_err(self):
+        r = self.webhost.request(
+            'GET',
+            'response_cookie_header_nullable_timestamp_err')
+        self.assertEqual(r.status_code, 500)
+
+    def check_log_response_cookie_header_nullable_timestamp_err(self,
+                                                                host_out:
+                                                                typing.List[
+                                                                    str]):
+        self.assertIn(
+            "Can not parse value Dummy of expires in the cookie due to "
+            "invalid format.",
+            host_out)
+
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
+    def test_response_cookie_header_nullable_bool_err(self):
+        r = self.webhost.request(
+            'GET',
+            'response_cookie_header_nullable_bool_err')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse("Set-Cookie" in r.headers)
+
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
+    def test_response_cookie_header_nullable_double_err(self):
+        r = self.webhost.request(
+            'GET',
+            'response_cookie_header_nullable_double_err')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse("Set-Cookie" in r.headers)
+
     @pytest.mark.flaky(reruns=3)
     def check_log_print_to_console_stdout(self, host_out: typing.List[str]):
         # System logs stdout should not exist in host_out
@@ -357,11 +421,11 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
     def test_print_to_console_stderr(self):
         r = self.webhost.request('GET', 'print_logging?console=true'
-                                 '&message=Secret42&is_stderr=true')
+                                        '&message=Secret42&is_stderr=true')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-print-logging')
 
-    def check_log_print_to_console_stderr(self, host_out: typing.List[str],):
+    def check_log_print_to_console_stderr(self, host_out: typing.List[str], ):
         # System logs stderr should not exist in host_out
         self.assertNotIn('Secret42', host_out)
 
@@ -384,25 +448,18 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # System logs should not exist in host_out
         self.assertNotIn('parallelly_log_system at disguised_logger', host_out)
 
-    def test_retry_context_fixed_delay(self):
-        r = self.webhost.request('GET', 'http_retries_fixed_delay')
+
+class TestHttpFunctionsStein(TestHttpFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.UNIT_TESTS_FOLDER / 'http_functions' / \
+                                             'http_functions_stein'
+
+    def test_no_return(self):
+        r = self.webhost.request('GET', 'no_return')
         self.assertEqual(r.status_code, 500)
 
-    def check_log_retry_context_fixed_delay(self, host_out: typing.List[str]):
-        self.assertIn('Current retry count: 1', host_out)
-        self.assertIn('Current retry count: 2', host_out)
-        self.assertIn('Current retry count: 3', host_out)
-        self.assertNotIn('Current retry count: 4', host_out)
-        self.assertIn('Max retry count: 3', host_out)
-
-    def test_retry_context_exponential_backoff(self):
-        r = self.webhost.request('GET', 'http_retries_exponential_backoff')
-        self.assertEqual(r.status_code, 500)
-
-    def check_log_retry_context_exponential_backoff(self,
-                                                    host_out: typing.List[str]):
-        self.assertIn('Current retry count: 1', host_out)
-        self.assertIn('Current retry count: 2', host_out)
-        self.assertIn('Current retry count: 3', host_out)
-        self.assertNotIn('Current retry count: 4', host_out)
-        self.assertIn('Max retry count: 3', host_out)
+    def test_no_return_returns(self):
+        r = self.webhost.request('GET', 'no_return_returns')
+        self.assertEqual(r.status_code, 200)

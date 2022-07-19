@@ -12,7 +12,8 @@ pool:
 variables:
     DOTNET_VERSION: '3.1.x'
     DOTNET_VERSION_5: '5.0.x'
-    PYTHON_VERSION: '3.8'
+    DOTNET_VERSION_6: '6.x'
+    PYTHON_VERSION: '3.9'
 
 steps:
 - task: UsePythonVersion@0
@@ -21,15 +22,20 @@ steps:
     versionSpec: $(PYTHON_VERSION)
     addToPath: true
 - task: UseDotNet@2
-  displayName: 'Install DotNet'
+  displayName: 'Install DotNet 3'
   inputs:
     packageType: 'sdk'
     version: $(DOTNET_VERSION)
 - task: UseDotNet@2
-  displayName: 'Install DotNet'
+  displayName: 'Install DotNet 5'
   inputs:
     packageType: 'sdk'
     version: $(DOTNET_VERSION_5)
+- task: UseDotNet@2
+  displayName: 'Install DotNet 6'
+  inputs:
+    packageType: 'sdk'
+    version: $(DOTNET_VERSION_6)
 - pwsh: '$(Build.SourcesDirectory)/.ci/e2e_integration_test/start-e2e.ps1'
   env:
     AzureWebJobsStorage: $(AzureWebJobsStorage)

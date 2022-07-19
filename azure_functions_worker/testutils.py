@@ -33,22 +33,21 @@ import uuid
 
 import grpc
 import requests
-
+from azure_functions_worker import dispatcher
+from azure_functions_worker import protos
 from azure_functions_worker._thirdparty import aio_compat
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import FileAccessorFactory
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryConstants as consts
-from . import dispatcher
-from . import protos
-from .constants import (
+from azure_functions_worker.constants import (
     PYAZURE_WEBHOST_DEBUG,
     PYAZURE_WORKER_DIR,
     PYAZURE_INTEGRATION_TEST,
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
     UNIX_SHARED_MEMORY_DIRECTORIES
 )
-from .utils.common import is_envvar_true, get_app_setting
+from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
 TESTS_ROOT = PROJECT_ROOT / 'tests'
@@ -466,7 +465,7 @@ class _MockWebHost:
 
         self._connected_fut = loop.create_future()
         self._in_queue = queue.Queue()
-        self._out_aqueue = asyncio.Queue(loop=self._loop)
+        self._out_aqueue = asyncio.Queue()
         self._threadpool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._server = grpc.server(self._threadpool)
         self._servicer = _MockWebHostServicer(self)
@@ -495,6 +494,18 @@ class _MockWebHost:
                 )
             ),
             wait_for='worker_init_response'
+        )
+
+        return r
+
+    async def get_functions_metadata(self):
+        r = await self.communicate(
+            protos.StreamingMessage(
+                functions_metadata_request=protos.FunctionsMetadataRequest(
+                    function_app_directory=str(self._scripts_dir)
+                )
+            ),
+            wait_for='function_metadata_response'
         )
 
         return r
@@ -714,12 +725,13 @@ class _MockWebHostController:
 
 
 def start_mockhost(*, script_root=FUNCS_PATH):
-    tests_dir = TESTS_ROOT
-    scripts_dir = tests_dir / script_root
+    scripts_dir = TESTS_ROOT / script_root
     if not (scripts_dir.exists() and scripts_dir.is_dir()):
         raise RuntimeError(
             f'invalid script_root argument: '
             f'{scripts_dir} directory does not exist')
+
+    sys.path.append(str(scripts_dir))
 
     return _MockWebHostController(scripts_dir)
 
@@ -733,10 +745,13 @@ class _WebHostProxy:
     def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
         params = dict(kwargs.pop('params', {}))
+        no_prefix = kwargs.pop('no_prefix', False)
         if 'code' not in params:
             params['code'] = 'testFunctionKey'
-        return request_method(self._addr + '/api/' + funcname,
-                              *args, params=params, **kwargs)
+
+        return request_method(
+            self._addr + ('/' if no_prefix else '/api/') + funcname,
+            *args, params=params, **kwargs)
 
     def close(self):
         if self._proc.stdout:
@@ -765,6 +780,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         testconfig.read(WORKER_CONFIG)
 
     hostexe_args = []
+    os.environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
 
     # If we want to use core-tools
     coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')
@@ -836,7 +852,8 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         'languageWorkers:python:workerDirectory': str(worker_path),
         'host:logger:consoleLoggingMode': 'always',
         'AZURE_FUNCTIONS_ENVIRONMENT': 'development',
-        'AzureWebJobsSecretStorageType': 'files'
+        'AzureWebJobsSecretStorageType': 'files',
+        'FUNCTIONS_WORKER_RUNTIME': 'python'
     }
 
     # In E2E Integration mode, we should use the core tools worker
@@ -902,35 +919,6 @@ def start_webhost(*, script_dir=None, stdout=None):
     time.sleep(10)  # Giving host some time to start fully.
 
     addr = f'http://{LOCALHOST}:{port}'
-    health_check_endpoint = f'{addr}/api/ping'
-    host_out = stdout.readlines(100)
-    for _ in range(5):
-        try:
-            r = requests.get(health_check_endpoint,
-                             params={'code': 'testFunctionKey'})
-            # Give the host a bit more time to settle
-            time.sleep(2)
-
-            if 200 <= r.status_code < 300:
-                # Give the host a bit more time to settle
-                time.sleep(1)
-                break
-            else:
-                print(f'Failed to ping {health_check_endpoint}, status code: '
-                      f'{r.status_code}', flush=True)
-        except requests.exceptions.ConnectionError:
-            pass
-        time.sleep(1)
-    else:
-        proc.terminate()
-        try:
-            proc.wait(20)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-        raise RuntimeError('could not start the webworker in time. Please'
-                           f' check the log file for details: {stdout.name} \n'
-                           f' Captured WebHost stdout:\n{host_out}')
-
     return _WebHostProxy(proc, addr)
 
 
@@ -985,7 +973,6 @@ def _symlink_dir(src, dst):
 
 def _setup_func_app(app_root):
     extensions = app_root / 'bin'
-    ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
     extensions_csproj_file = app_root / 'extensions.csproj'
 
@@ -997,18 +984,16 @@ def _setup_func_app(app_root):
         with open(extensions_csproj_file, 'w') as f:
             f.write(EXTENSION_CSPROJ_TEMPLATE)
 
-    _symlink_dir(TESTS_ROOT / 'common' / 'ping', ping_func)
     _symlink_dir(EXTENSIONS_PATH, extensions)
 
 
 def _teardown_func_app(app_root):
     extensions = app_root / 'bin'
-    ping_func = app_root / 'ping'
     host_json = app_root / 'host.json'
     extensions_csproj_file = app_root / 'extensions.csproj'
     extensions_obj_file = app_root / 'obj'
 
-    for path in (extensions, ping_func, host_json, extensions_csproj_file,
+    for path in (extensions, host_json, extensions_csproj_file,
                  extensions_obj_file):
         remove_path(path)
 

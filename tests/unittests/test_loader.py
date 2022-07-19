@@ -128,7 +128,9 @@ class TestLoader(testutils.WebHostTestCase):
     def check_log_loader_module_not_found(self, host_out):
         self.assertIn("Exception: ModuleNotFoundError: "
                       "No module named 'notfound'. "
-                      "Troubleshooting Guide: "
+                      "Please check the requirements.txt file for the "
+                      "missing module. For more info, please refer the "
+                      "troubleshooting guide: "
                       "https://aka.ms/functions-modulenotfound", host_out)
 
 

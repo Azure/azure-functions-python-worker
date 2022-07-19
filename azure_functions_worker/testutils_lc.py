@@ -1,21 +1,24 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
-from typing import Dict
-
 import base64
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
+from io import BytesIO
+from typing import Dict
+from urllib.request import urlopen
+from zipfile import ZipFile
 
+import requests
 from Crypto.Cipher import AES
 from Crypto.Hash.SHA256 import SHA256Hash
 from Crypto.Util.Padding import pad
-import requests
 
 # Linux Consumption Testing Constants
 _DOCKER_PATH = "DOCKER_PATH"
@@ -23,6 +26,9 @@ _DOCKER_DEFAULT_PATH = "docker"
 _MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
 _MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
 _DUMMY_CONT_KEY = "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY="
+_FUNC_GITHUB_ZIP = "https://github.com/Azure/azure-functions-python-library" \
+                   "/archive/refs/heads/dev.zip"
+_FUNC_FILE_NAME = "azure-functions-python-library-dev"
 
 
 class LinuxConsumptionWebHostController:
@@ -80,9 +86,9 @@ class LinuxConsumptionWebHostController:
                                f' stdout: {stdout}')
 
     def send_request(
-        self,
-        req: requests.Request,
-        ses: requests.Session = None
+            self,
+            req: requests.Request,
+            ses: requests.Session = None
     ) -> requests.Response:
         """Send a request with authorization token. Return a Response object"""
         session = ses
@@ -123,11 +129,21 @@ class LinuxConsumptionWebHostController:
                                f' Status {response.status_code}')
 
         tag_list = response.json().get('tags', [])
+        # Removing images with a -upgrade. Upgrade images were temporary
+        # images used to onboard customers from a previous version. These
+        # images are no longer used.
+        tag_list = [x.strip("-upgrade") for x in tag_list]
         version = list(filter(regex.match, tag_list))[-1]
 
         image_tag = f'{_MESH_IMAGE_REPO}:{version}'
         cls._mesh_images[host_major] = image_tag
         return image_tag
+
+    @staticmethod
+    def _download_azure_functions() -> str:
+        with urlopen(_FUNC_GITHUB_ZIP) as zipresp:
+            with ZipFile(BytesIO(zipresp.read())) as zfile:
+                zfile.extractall(tempfile.gettempdir())
 
     def spawn_container(self,
                         image: str,
@@ -137,9 +153,17 @@ class LinuxConsumptionWebHostController:
         """
         # Construct environment variables and start the docker container
         worker_path = os.path.dirname(__file__)
+        library_path = os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME,
+                                    'azure', 'functions')
+        self._download_azure_functions()
+
         container_worker_path = (
             f"/azure-functions-host/workers/python/{self._py_version}/"
             "LINUX/X64/azure_functions_worker"
+        )
+        container_library_path = (
+            f"/azure-functions-host/workers/python/{self._py_version}/"
+            "LINUX/X64/azure/functions"
         )
 
         run_cmd = []
@@ -150,7 +174,9 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["-e", f"CONTAINER_NAME={self._uuid}"])
         run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={_DUMMY_CONT_KEY}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
+        run_cmd.extend(["-e", "PYTHON_ISOLATE_WORKER_DEPENDENCIES=1"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
+        run_cmd.extend(["-v", f'{library_path}:{container_library_path}'])
 
         for key, value in env.items():
             run_cmd.extend(["-e", f"{key}={value}"])
@@ -159,6 +185,7 @@ class LinuxConsumptionWebHostController:
         run_process = subprocess.run(args=run_cmd,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE)
+
         if run_process.returncode != 0:
             raise RuntimeError('Failed to spawn docker container for'
                                f' {image} with uuid {self._uuid}.'
@@ -181,7 +208,7 @@ class LinuxConsumptionWebHostController:
         self._ports[self._uuid] = port_number
 
         # Wait for three seconds for the container to be in ready state
-        time.sleep(3)
+        time.sleep(6)
         return port_number
 
     def get_container_logs(self) -> str:
@@ -259,6 +286,7 @@ class LinuxConsumptionWebHostController:
     def __exit__(self, exc_type, exc_value, traceback):
         logs = self.get_container_logs()
         self.safe_kill_container()
+        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME))
 
         if traceback:
             print(f'Test failed with container logs: {logs}',

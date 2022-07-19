@@ -11,10 +11,5 @@
       "direction": "out",
       "name": "$return"
     }
-  ],
-  "retry": {
-        "strategy": "fixedDelay",
-        "maxRetryCount": 3,
-        "delayInterval": "00:00:01"
-    }
+  ]
 }

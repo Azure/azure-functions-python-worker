@@ -15,12 +15,6 @@ steps:
 - task: CopyFiles@2
   inputs:
     contents: |
-      pack/utils/__init__.py
-    targetFolder: '$(Build.ArtifactStagingDirectory)/azure'
-    flattenFolders: true
-- task: CopyFiles@2
-  inputs:
-    contents: |
       ${{ parameters.workerPath }}
     targetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true

@@ -881,7 +881,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         sql = testconfig['azure'].get('sql_key')
         if sql:
             extra_env['AzureWebJobsSqlConnectionString'] = sql
-            
+
         eventgrid_topic_uri = testconfig['azure'].get('eventgrid_topic_uri')
         if eventgrid_topic_uri:
             extra_env['AzureWebJobsEventGridTopicUri'] = eventgrid_topic_uri

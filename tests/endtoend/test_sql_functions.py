@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import json
-import time
 
 from azure_functions_worker import testutils
 
@@ -14,11 +13,11 @@ class TestSqlFunctions(testutils.WebHostTestCase):
 
     @testutils.retryable_test(3, 5)
     def test_sql_output_and_input(self):
-        row = {'id': '1', 'name': 'test', 'cost': 100}
-        r = self.webhost.request('GET', 'sql_output',
+        row = {"ProductId": 0, "Name": "test", "Cost": 100}
+        r = self.webhost.request('POST', 'sql_output',
                                  data=json.dumps(row))
         self.assertEqual(r.status_code, 201)
 
         r = self.webhost.request('GET', 'sql_input')
-        self.assertEqual(r.status_code, 201)
-        self.assertEqual(r.text, row)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, "[{\"ProductId\": 0, \"Name\": \"test\", \"Cost\": 100}]")

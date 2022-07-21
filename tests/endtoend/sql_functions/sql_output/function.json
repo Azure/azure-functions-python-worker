@@ -1,26 +1,26 @@
 {
-    "scriptFile": "__init__.py",
-    "bindings": [
-      {
-        "authLevel": "anonymous",
-        "name": "req",
-        "direction": "in",
-        "type": "httpTrigger",
-        "methods": [
-          "get"
-        ]
-      },
-      {
-        "name": "$return",
-        "type": "http",
-        "direction": "out"
-      },
-      {
-        "name": "product",
-        "type": "sql",
-        "direction": "out",
-        "commandText": "[dbo].[Products]",
-        "connectionStringSetting": "AzureWebJobsSqlConnectionString"
-      }
-    ]
-  }
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "authLevel": "function",
+      "name": "req",
+      "type": "httpTrigger",
+      "direction": "in",
+      "methods": [
+        "post"
+      ]
+    },
+    {
+      "name": "$return",
+      "type": "http",
+      "direction": "out"
+    },
+    {
+      "name": "product",
+      "type": "sql",
+      "direction": "out",
+      "commandText": "[dbo].[Products]",
+      "connectionStringSetting": "AzureWebJobsSqlConnectionString"
+    }
+  ]
+}

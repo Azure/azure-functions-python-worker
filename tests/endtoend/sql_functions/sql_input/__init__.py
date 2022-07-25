@@ -4,6 +4,7 @@
 import json
 import azure.functions as func
 
+
 def main(req: func.HttpRequest, products: func.SqlRowList) -> func.HttpResponse:
     rows = list(map(lambda r: json.loads(r.to_json()), products))
 

@@ -20,4 +20,5 @@ class TestSqlFunctions(testutils.WebHostTestCase):
 
         r = self.webhost.request('GET', 'sql_input')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, "[{\"ProductId\": 0, \"Name\": \"test\", \"Cost\": 100}]")
+        expectedText = "[{\"ProductId\": 0, \"Name\": \"test\", \"Cost\": 100}]"
+        self.assertEqual(r.text, expectedText)

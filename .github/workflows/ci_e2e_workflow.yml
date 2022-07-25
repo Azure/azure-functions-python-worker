@@ -124,6 +124,7 @@ jobs:
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString310 }}
           AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString310 }}
           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString310 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString310 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
         run: |

@@ -16,7 +16,7 @@
       "direction": "out"
     },
     {
-      "name": "product",
+      "name": "r",
       "type": "sql",
       "direction": "out",
       "commandText": "[dbo].[Products]",

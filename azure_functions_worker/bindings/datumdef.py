@@ -192,7 +192,7 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
                 k: v.value
                 for k, v in datum.value['headers'].items()
             },
-            cookies=parse_to_rpc_http_cookie_list(datum.value['cookies']),
+            cookies=parse_to_rpc_http_cookie_list(datum.value.get('cookies')),
             enable_content_negotiation=False,
             body=datum_as_proto(datum.value['body']),
         ))

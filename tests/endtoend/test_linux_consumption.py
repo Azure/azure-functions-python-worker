@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 import os
 import sys
-from unittest import TestCase, skip
+from unittest import TestCase
 
 from requests import Request
 

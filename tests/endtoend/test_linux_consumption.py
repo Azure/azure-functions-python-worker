@@ -13,7 +13,6 @@ from azure_functions_worker.testutils_lc import (
 _DEFAULT_HOST_VERSION = "4"
 
 
-@skip
 class TestLinuxConsumption(TestCase):
     """Test worker behaviors on specific scenarios.
 

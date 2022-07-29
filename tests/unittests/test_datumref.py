@@ -9,7 +9,7 @@ from dateutil.parser import ParserError
 from azure_functions_worker import protos
 from azure_functions_worker.bindings.datumdef import \
     parse_cookie_attr_expires, \
-    parse_cookie_attr_same_site, parse_to_rpc_http_cookie_list
+    parse_cookie_attr_same_site, parse_to_rpc_http_cookie_list, Datum
 from azure_functions_worker.bindings.nullable_converters import \
     to_nullable_bool, to_nullable_string, to_nullable_double, \
     to_nullable_timestamp
@@ -127,3 +127,16 @@ class TestDatumRef(unittest.TestCase):
         rpc_cookies = parse_to_rpc_http_cookie_list([cookies])
         self.assertEqual(cookie1, rpc_cookies[0])
         self.assertEqual(cookie2, rpc_cookies[1])
+
+    def test_parse_to_rpc_http_cookie_list_no_cookie(self):
+        datum = Datum(
+            type='http',
+            value=dict(
+                status_code=None,
+                headers=None,
+                body=None,
+            )
+        )
+
+        self.assertIsNone(
+            parse_to_rpc_http_cookie_list(datum.value.get('cookies')))

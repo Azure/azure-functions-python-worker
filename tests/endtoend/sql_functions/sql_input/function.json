@@ -1,0 +1,27 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "authLevel": "function",
+      "name": "req",
+      "type": "httpTrigger",
+      "direction": "in",
+      "methods": [
+        "get"
+      ]
+    },
+    {
+      "name": "$return",
+      "type": "http",
+      "direction": "out"
+    },
+    {
+      "name": "products",
+      "type": "sql",
+      "direction": "in",
+      "commandText": "SELECT * FROM Products",
+      "commandType": "Text",
+      "connectionStringSetting": "AzureWebJobsSqlConnectionString"
+    }
+  ]
+}

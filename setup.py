@@ -50,6 +50,8 @@ AZURE_EXTENSIONS = """\
         Version="4.0.5" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
         Version="4.2.1" />
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Sql"
+        Version="0.1.346-preview" />
       <PackageReference
         Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
         Version="1.1.3" />

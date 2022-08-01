@@ -6,7 +6,7 @@ app = func.FunctionApp()
 
 
 @app.route()
-@app.read_cosmos_db_documents(
+@app.cosmos_db_input(
     arg_name="docs", database_name="test",
     collection_name="items",
     id="cosmosdb-input-test",
@@ -21,14 +21,14 @@ def cosmosdb_input(req: func.HttpRequest, docs: func.DocumentList) -> str:
     lease_collection_name="leases",
     connection_string_setting="AzureWebJobsCosmosDBConnectionString",
     create_lease_collection_if_not_exists=True)
-@app.write_blob(arg_name="$return", connection="AzureWebJobsStorage",
+@app.blob_output(arg_name="$return", connection="AzureWebJobsStorage",
                 path="python-worker-tests/test-cosmosdb-triggered.txt")
 def cosmosdb_trigger(docs: func.DocumentList) -> str:
     return docs[0].to_json()
 
 
 @app.route()
-@app.read_blob(arg_name="file", connection="AzureWebJobsStorage",
+@app.blob_input(arg_name="file", connection="AzureWebJobsStorage",
                path="python-worker-tests/test-cosmosdb-triggered.txt")
 def get_cosmosdb_triggered(req: func.HttpRequest,
                            file: func.InputStream) -> str:
@@ -36,7 +36,7 @@ def get_cosmosdb_triggered(req: func.HttpRequest,
 
 
 @app.route()
-@app.write_cosmos_db_documents(
+@app.cosmos_db_output(
     arg_name="doc", database_name="test",
     collection_name="items",
     create_if_not_exists=True,

@@ -18,7 +18,7 @@ app = func.FunctionApp()
     connection="AzureWebJobsEventHubConnectionString",
     data_type="string",
     cardinality="many")
-@app.write_table(arg_name="$return",
+@app.table_output(arg_name="$return",
                  connection="AzureWebJobsStorage",
                  table_name="EventHubBatchTest")
 def eventhub_multiple(events):
@@ -35,7 +35,7 @@ def eventhub_multiple(events):
 
 # An HttpTrigger to generating EventHub event from EventHub Output Binding
 @app.function_name(name="eventhub_output_batch")
-@app.write_event_hub_message(arg_name="$return",
+@app.event_hub_output(arg_name="$return",
                              connection="AzureWebJobsEventHubConnectionString",
                              event_hub_name="python-worker-ci-eventhub-batch")
 @app.route(route="eventhub_output_batch", binding_arg_name="out")
@@ -48,7 +48,7 @@ def eventhub_output_batch(req: func.HttpRequest, out: func.Out[str]) -> str:
 # Retrieve the event data from storage blob and return it as Http response
 @app.function_name(name="get_eventhub_batch_triggered")
 @app.route(route="get_eventhub_batch_triggered/{id}")
-@app.read_table(arg_name="testEntities",
+@app.table_input(arg_name="testEntities",
                 connection="AzureWebJobsStorage",
                 table_name="EventHubBatchTest",
                 partition_key="{id}")
@@ -59,7 +59,7 @@ def get_eventhub_batch_triggered(req: func.HttpRequest, testEntities):
 # Retrieve the event data from storage blob and return it as Http response
 @app.function_name(name="get_metadata_batch_triggered")
 @app.route(route="get_metadata_batch_triggered")
-@app.read_blob(arg_name="file",
+@app.blob_input(arg_name="file",
                path="python-worker-tests/test-metadata-batch-triggered.txt",
                connection="AzureWebJobsStorage")
 def get_metadata_batch_triggered(req: func.HttpRequest,
@@ -78,7 +78,7 @@ def get_metadata_batch_triggered(req: func.HttpRequest,
     connection="AzureWebJobsEventHubConnectionString",
     data_type="binary",
     cardinality="many")
-@app.write_blob(arg_name="$return",
+@app.blob_output(arg_name="$return",
                 path="python-worker-tests/test-metadata-batch-triggered.txt",
                 connection="AzureWebJobsStorage")
 def metadata_multiple(events: typing.List[func.EventHubEvent]) -> bytes:

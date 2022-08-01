@@ -9,7 +9,7 @@ app = func.FunctionApp()
 
 @app.function_name(name="get_queue_blob")
 @app.route(route="get_queue_blob")
-@app.read_blob(arg_name="file",
+@app.blob_input(arg_name="file",
                connection="AzureWebJobsStorage",
                path="python-worker-tests/test-queue-blob.txt")
 def get_queue_blob(req: func.HttpRequest, file: func.InputStream) -> str:
@@ -20,7 +20,7 @@ def get_queue_blob(req: func.HttpRequest, file: func.InputStream) -> str:
 
 @app.function_name(name="get_queue_blob_message_return")
 @app.route(route="get_queue_blob_message_return")
-@app.read_blob(arg_name="file",
+@app.blob_input(arg_name="file",
                connection="AzureWebJobsStorage",
                path="python-worker-tests/test-queue-blob-message-return.txt")
 def get_queue_blob_message_return(req: func.HttpRequest,
@@ -30,7 +30,7 @@ def get_queue_blob_message_return(req: func.HttpRequest,
 
 @app.function_name(name="get_queue_blob_return")
 @app.route(route="get_queue_blob_return")
-@app.read_blob(arg_name="file",
+@app.blob_input(arg_name="file",
                connection="AzureWebJobsStorage",
                path="python-worker-tests/test-queue-blob-return.txt")
 def get_queue_blob_return(req: func.HttpRequest, file: func.InputStream) -> str:
@@ -39,7 +39,7 @@ def get_queue_blob_return(req: func.HttpRequest, file: func.InputStream) -> str:
 
 @app.function_name(name="get_queue_untyped_blob_return")
 @app.route(route="get_queue_untyped_blob_return")
-@app.read_blob(arg_name="file",
+@app.blob_input(arg_name="file",
                connection="AzureWebJobsStorage",
                path="python-worker-tests/test-queue-untyped-blob-return.txt")
 def get_queue_untyped_blob_return(req: func.HttpRequest,
@@ -49,7 +49,7 @@ def get_queue_untyped_blob_return(req: func.HttpRequest,
 
 @app.function_name(name="put_queue")
 @app.route(route="put_queue")
-@app.write_queue(arg_name="msg",
+@app.queue_output(arg_name="msg",
                  connection="AzureWebJobsStorage",
                  queue_name="testqueue")
 def put_queue(req: func.HttpRequest, msg: func.Out[str]):
@@ -60,7 +60,7 @@ def put_queue(req: func.HttpRequest, msg: func.Out[str]):
 
 @app.function_name(name="put_queue_message_return")
 @app.route(route="put_queue_message_return", binding_arg_name="resp")
-@app.write_queue(arg_name="$return",
+@app.queue_output(arg_name="$return",
                  connection="AzureWebJobsStorage",
                  queue_name="testqueue-message-return")
 def main(req: func.HttpRequest, resp: func.Out[str]) -> bytes:
@@ -69,7 +69,7 @@ def main(req: func.HttpRequest, resp: func.Out[str]) -> bytes:
 
 @app.function_name("put_queue_multiple_out")
 @app.route(route="put_queue_multiple_out", binding_arg_name="resp")
-@app.write_queue(arg_name="msg",
+@app.queue_output(arg_name="msg",
                  connection="AzureWebJobsStorage",
                  queue_name="testqueue-return-multiple-outparam")
 def put_queue_multiple_out(req: func.HttpRequest,
@@ -82,7 +82,7 @@ def put_queue_multiple_out(req: func.HttpRequest,
 
 @app.function_name("put_queue_return")
 @app.route(route="put_queue_return", binding_arg_name="resp")
-@app.write_queue(arg_name="$return",
+@app.queue_output(arg_name="$return",
                  connection="AzureWebJobsStorage",
                  queue_name="testqueue-return")
 def put_queue_return(req: func.HttpRequest, resp: func.Out[str]) -> bytes:
@@ -91,7 +91,7 @@ def put_queue_return(req: func.HttpRequest, resp: func.Out[str]) -> bytes:
 
 @app.function_name(name="put_queue_multiple_return")
 @app.route(route="put_queue_multiple_return")
-@app.write_queue(arg_name="msgs",
+@app.queue_output(arg_name="msgs",
                  connection="AzureWebJobsStorage",
                  queue_name="testqueue-return-multiple")
 def put_queue_multiple_return(req: func.HttpRequest,
@@ -101,7 +101,7 @@ def put_queue_multiple_return(req: func.HttpRequest,
 
 @app.function_name(name="put_queue_untyped_return")
 @app.route(route="put_queue_untyped_return", binding_arg_name="resp")
-@app.write_queue(arg_name="$return",
+@app.queue_output(arg_name="$return",
                  connection="AzureWebJobsStorage",
                  queue_name="testqueue-untyped-return")
 def put_queue_untyped_return(req: func.HttpRequest,
@@ -113,7 +113,7 @@ def put_queue_untyped_return(req: func.HttpRequest,
 @app.queue_trigger(arg_name="msg",
                    queue_name="testqueue",
                    connection="AzureWebJobsStorage")
-@app.write_blob(arg_name="$return",
+@app.blob_output(arg_name="$return",
                 connection="AzureWebJobsStorage",
                 path="python-worker-tests/test-queue-blob.txt")
 def queue_trigger(msg: func.QueueMessage) -> str:
@@ -137,7 +137,7 @@ def queue_trigger(msg: func.QueueMessage) -> str:
 @app.queue_trigger(arg_name="msg",
                    queue_name="testqueue-message-return",
                    connection="AzureWebJobsStorage")
-@app.write_blob(arg_name="$return",
+@app.blob_output(arg_name="$return",
                 connection="AzureWebJobsStorage",
                 path="python-worker-tests/test-queue-blob-message-return.txt")
 def queue_trigger_message_return(msg: func.QueueMessage) -> bytes:
@@ -148,7 +148,7 @@ def queue_trigger_message_return(msg: func.QueueMessage) -> bytes:
 @app.queue_trigger(arg_name="msg",
                    queue_name="testqueue-return",
                    connection="AzureWebJobsStorage")
-@app.write_blob(arg_name="$return",
+@app.blob_output(arg_name="$return",
                 connection="AzureWebJobsStorage",
                 path="python-worker-tests/test-queue-blob-return.txt")
 def queue_trigger_return(msg: func.QueueMessage) -> bytes:
@@ -167,7 +167,7 @@ def queue_trigger_return_multiple(msg: func.QueueMessage) -> None:
 @app.queue_trigger(arg_name="msg",
                    queue_name="testqueue-untyped-return",
                    connection="AzureWebJobsStorage")
-@app.write_blob(arg_name="$return",
+@app.blob_output(arg_name="$return",
                 connection="AzureWebJobsStorage",
                 path="python-worker-tests/test-queue-untyped-blob-return.txt")
 def queue_trigger_untyped(msg: str) -> str:
@@ -176,7 +176,7 @@ def queue_trigger_untyped(msg: str) -> str:
 
 @app.function_name(name="put_queue_return_multiple")
 @app.route(route="put_queue_return_multiple", binding_arg_name="resp")
-@app.write_queue(arg_name="msgs",
+@app.queue_output(arg_name="msgs",
                  connection="AzureWebJobsStorage",
                  queue_name="testqueue-return-multiple")
 def put_queue_return_multiple(req: func.HttpRequest,

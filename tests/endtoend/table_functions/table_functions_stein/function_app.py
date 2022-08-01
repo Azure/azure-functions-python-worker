@@ -9,7 +9,7 @@ app = func.FunctionApp()
 
 @app.function_name(name="table_in_binding")
 @app.route(route="table_in_binding/{id}")
-@app.read_table(arg_name="testEntity",
+@app.table_input(arg_name="testEntity",
                 connection="AzureWebJobsStorage",
                 table_name="BindingTestTable",
                 row_key='{id}',
@@ -21,7 +21,7 @@ def table_in_binding(req: func.HttpRequest, testEntity):
 
 @app.function_name(name="table_out_binding")
 @app.route(route="table_out_binding", binding_arg_name="resp")
-@app.write_table(arg_name="$return",
+@app.table_output(arg_name="$return",
                  connection="AzureWebJobsStorage",
                  table_name="BindingTestTable")
 def table_out_binding(req: func.HttpRequest, resp: func.Out[func.HttpResponse]):

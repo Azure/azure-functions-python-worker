@@ -2,8 +2,8 @@
 # Licensed under the MIT License.
 import os
 import sys
-from unittest import TestCase
 
+from unittest import TestCase, skipIf
 from requests import Request
 
 from azure_functions_worker.testutils_lc import (
@@ -13,6 +13,8 @@ from azure_functions_worker.testutils_lc import (
 _DEFAULT_HOST_VERSION = "4"
 
 
+@skipIf(sys.version_info >= (3, 10, 0),
+        "Skip the tests for Python 3.10 and above")
 class TestLinuxConsumption(TestCase):
     """Test worker behaviors on specific scenarios.
 

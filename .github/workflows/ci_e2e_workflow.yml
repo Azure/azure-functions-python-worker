@@ -76,6 +76,7 @@ jobs:
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString36 }}
           AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString36 }}
           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString36 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString36 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString36 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString36 }}
         run: |
@@ -87,6 +88,7 @@ jobs:
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString37 }}
           AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString37 }}
           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString37 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString37 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
         run: |
@@ -98,6 +100,7 @@ jobs:
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString38 }}
           AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString38 }}
           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString38 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString38 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
         run: |
@@ -109,6 +112,7 @@ jobs:
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString39 }}
           AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString39 }}
           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString39 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString39 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
         run: |
@@ -120,6 +124,7 @@ jobs:
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString310 }}
           AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString310 }}
           AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString310 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString310 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
         run: |

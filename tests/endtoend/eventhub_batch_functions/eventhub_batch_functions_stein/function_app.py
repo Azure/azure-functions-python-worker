@@ -19,8 +19,8 @@ app = func.FunctionApp()
     data_type="string",
     cardinality="many")
 @app.table_output(arg_name="$return",
-                 connection="AzureWebJobsStorage",
-                 table_name="EventHubBatchTest")
+                  connection="AzureWebJobsStorage",
+                  table_name="EventHubBatchTest")
 def eventhub_multiple(events):
     table_entries = []
     for event in events:
@@ -36,8 +36,8 @@ def eventhub_multiple(events):
 # An HttpTrigger to generating EventHub event from EventHub Output Binding
 @app.function_name(name="eventhub_output_batch")
 @app.event_hub_output(arg_name="$return",
-                             connection="AzureWebJobsEventHubConnectionString",
-                             event_hub_name="python-worker-ci-eventhub-batch")
+                      connection="AzureWebJobsEventHubConnectionString",
+                      event_hub_name="python-worker-ci-eventhub-batch")
 @app.route(route="eventhub_output_batch", binding_arg_name="out")
 def eventhub_output_batch(req: func.HttpRequest, out: func.Out[str]) -> str:
     events = req.get_body().decode('utf-8')
@@ -49,9 +49,9 @@ def eventhub_output_batch(req: func.HttpRequest, out: func.Out[str]) -> str:
 @app.function_name(name="get_eventhub_batch_triggered")
 @app.route(route="get_eventhub_batch_triggered/{id}")
 @app.table_input(arg_name="testEntities",
-                connection="AzureWebJobsStorage",
-                table_name="EventHubBatchTest",
-                partition_key="{id}")
+                 connection="AzureWebJobsStorage",
+                 table_name="EventHubBatchTest",
+                 partition_key="{id}")
 def get_eventhub_batch_triggered(req: func.HttpRequest, testEntities):
     return func.HttpResponse(status_code=200, body=testEntities)
 
@@ -60,8 +60,8 @@ def get_eventhub_batch_triggered(req: func.HttpRequest, testEntities):
 @app.function_name(name="get_metadata_batch_triggered")
 @app.route(route="get_metadata_batch_triggered")
 @app.blob_input(arg_name="file",
-               path="python-worker-tests/test-metadata-batch-triggered.txt",
-               connection="AzureWebJobsStorage")
+                path="python-worker-tests/test-metadata-batch-triggered.txt",
+                connection="AzureWebJobsStorage")
 def get_metadata_batch_triggered(req: func.HttpRequest,
                                  file: func.InputStream) -> str:
     return func.HttpResponse(body=file.read().decode('utf-8'),
@@ -79,8 +79,8 @@ def get_metadata_batch_triggered(req: func.HttpRequest,
     data_type="binary",
     cardinality="many")
 @app.blob_output(arg_name="$return",
-                path="python-worker-tests/test-metadata-batch-triggered.txt",
-                connection="AzureWebJobsStorage")
+                 path="python-worker-tests/test-metadata-batch-triggered.txt",
+                 connection="AzureWebJobsStorage")
 def metadata_multiple(events: typing.List[func.EventHubEvent]) -> bytes:
     event_list = []
     for event in events:

@@ -14,8 +14,8 @@ app = func.FunctionApp()
 @app.function_name(name="eventhub_output")
 @app.route(route="eventhub_output")
 @app.event_hub_output(arg_name="event",
-                             event_hub_name="python-worker-ci-eventhub-one",
-                             connection="AzureWebJobsEventHubConnectionString")
+                      event_hub_name="python-worker-ci-eventhub-one",
+                      connection="AzureWebJobsEventHubConnectionString")
 def eventhub_output(req: func.HttpRequest, event: func.Out[str]):
     event.set(req.get_body().decode('utf-8'))
     return 'OK'
@@ -29,8 +29,8 @@ def eventhub_output(req: func.HttpRequest, event: func.Out[str]):
                                connection="AzureWebJobsEventHubConnectionString"
                                )
 @app.blob_output(arg_name="$return",
-                path="python-worker-tests/test-eventhub-triggered.txt",
-                connection="AzureWebJobsStorage")
+                 path="python-worker-tests/test-eventhub-triggered.txt",
+                 connection="AzureWebJobsStorage")
 def eventhub_trigger(event: func.EventHubEvent) -> bytes:
     return event.get_body()
 
@@ -39,8 +39,8 @@ def eventhub_trigger(event: func.EventHubEvent) -> bytes:
 @app.function_name(name="get_eventhub_triggered")
 @app.route(route="get_eventhub_triggered")
 @app.blob_input(arg_name="file",
-               path="python-worker-tests/test-eventhub-triggered.txt",
-               connection="AzureWebJobsStorage")
+                path="python-worker-tests/test-eventhub-triggered.txt",
+                connection="AzureWebJobsStorage")
 def get_eventhub_triggered(req: func.HttpRequest,
                            file: func.InputStream) -> str:
     return file.read().decode('utf-8')
@@ -50,8 +50,8 @@ def get_eventhub_triggered(req: func.HttpRequest,
 @app.function_name(name="get_metadata_triggered")
 @app.route(route="get_metadata_triggered")
 @app.blob_input(arg_name="file",
-               path="python-worker-tests/test-metadata-triggered.txt",
-               connection="AzureWebJobsStorage")
+                path="python-worker-tests/test-metadata-triggered.txt",
+                connection="AzureWebJobsStorage")
 async def get_metadata_triggered(req: func.HttpRequest,
                                  file: func.InputStream) -> str:
     return func.HttpResponse(body=file.read().decode('utf-8'),
@@ -92,8 +92,8 @@ async def metadata_output(req: func.HttpRequest):
     event_hub_name="python-worker-ci-eventhub-one-metadata",
     connection="AzureWebJobsEventHubConnectionString")
 @app.blob_output(arg_name="$return",
-                path="python-worker-tests/test-metadata-triggered.txt",
-                connection="AzureWebJobsStorage")
+                 path="python-worker-tests/test-metadata-triggered.txt",
+                 connection="AzureWebJobsStorage")
 async def metadata_trigger(event: func.EventHubEvent) -> bytes:
     event_dict: typing.Mapping[str, typing.Any] = {
         'body': event.get_body().decode('utf-8'),

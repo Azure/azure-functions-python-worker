@@ -2,7 +2,9 @@
 # Licensed under the MIT License.
 
 import unittest
+
 from azure.functions import Function
+from azure.functions.decorators.blob import BlobInput
 from azure.functions.decorators.http import HttpTrigger
 
 from azure_functions_worker import functions
@@ -19,13 +21,29 @@ class TestFunctionsRegistry(unittest.TestCase):
         self.func = Function(self.dummy, "test.py")
         self.function_registry = functions.Registry()
 
-    def test_add_index_functions_invalid_route(self):
-        function_id = '123'
-
-        trigger1 = HttpTrigger(name="req1",
-                               route="/")
+    def test_add_indexed_function_invalid_route(self):
+        trigger1 = HttpTrigger(name="req1", route="/")
         self.func.add_trigger(trigger=trigger1)
 
-        with self.assertRaises(FunctionLoadError):
-            self.function_registry.add_indexed_function(function_id,
-                                                        self.func)
+        with self.assertRaises(FunctionLoadError) as ex:
+            self.function_registry.add_indexed_function(function_id='123',
+                                                        function=self.func)
+
+        self.assertEqual(str(ex.exception),
+                         'cannot load the dummy function: Invalid route name: '
+                         '/. Route name cannot begin with a /')
+
+    def test_add_indexed_function_invalid_direction(self):
+        trigger1 = HttpTrigger(name="req1", route="test")
+        binding = BlobInput(name="$return", path="testpath",
+                            connection="testconnection")
+        self.func.add_trigger(trigger=trigger1)
+        self.func.add_binding(binding=binding)
+
+        with self.assertRaises(FunctionLoadError) as ex:
+            self.function_registry.add_indexed_function(function_id='123',
+                                                        function=self.func)
+
+        self.assertEqual(str(ex.exception),
+                         'cannot load the dummy function: \"$return\" '
+                         'binding must have direction set to \"out\"')

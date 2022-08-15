@@ -85,7 +85,8 @@ class Registry:
                 '/') and func_type == 'function':
             raise FunctionLoadError(
                 func_name,
-                f'Invalid route name. {binding.route}')
+                f'Invalid route name: {binding.route}. Route name cannot begin'
+                f' with a /')
 
     @staticmethod
     def validate_binding_direction(binding_name: str,
@@ -101,6 +102,14 @@ class Registry:
             raise FunctionLoadError(
                 func_name,
                 '"$return" binding must have direction set to "out"')
+
+    def validate_bindings(self, func_name: str, binding: BindingInfo,
+                          func_type: str):
+        self.validate_binding_route(func_name, binding, func_type)
+
+        self.validate_binding_direction(binding.name,
+                                        binding.direction,
+                                        func_name)
 
     @staticmethod
     def is_context_required(params, bound_params: dict,
@@ -378,11 +387,7 @@ class Registry:
 
         bound_params = {}
         for binding in function.get_bindings():
-            self.validate_binding_route(func_name, binding, func_type)
-
-            self.validate_binding_direction(binding.name,
-                                            binding.direction,
-                                            func_name)
+            self.validate_bindings(func_name, binding, func_type)
 
             has_explicit_return, has_implicit_return = \
                 self.get_explicit_and_implicit_return(

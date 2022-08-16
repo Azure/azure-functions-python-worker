@@ -103,8 +103,8 @@ class Registry:
                 func_name,
                 '"$return" binding must have direction set to "out"')
 
-    def validate_bindings(self, func_name: str, binding: BindingInfo,
-                          func_type: str):
+    def validate_binding(self, func_name: str, binding: BindingInfo,
+                         func_type: str):
         self.validate_binding_route(func_name, binding, func_type)
 
         self.validate_binding_direction(binding.name,
@@ -387,7 +387,7 @@ class Registry:
 
         bound_params = {}
         for binding in function.get_bindings():
-            self.validate_bindings(func_name, binding, func_type)
+            self.validate_binding(func_name, binding, func_type)
 
             has_explicit_return, has_implicit_return = \
                 self.get_explicit_and_implicit_return(

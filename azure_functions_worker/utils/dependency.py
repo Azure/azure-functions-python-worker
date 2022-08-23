@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 from azure_functions_worker.utils.common import is_true_like
 from typing import List, Optional
 from types import ModuleType

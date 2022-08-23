@@ -571,6 +571,10 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
+    @unittest.skipUnless(
+        sys.version_info.major == 3 and sys.version_info.minor == 10,
+        'Test only available for Python 3.10'
+    )
     def test_use_worker_dependencies_default_python_310(self):
         # Feature should be enabled in Python 3.10 by default
         # Setup paths
@@ -638,6 +642,10 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
+    @unittest.skipUnless(
+        sys.version_info.major == 3 and sys.version_info.minor == 10,
+        'Test only available for Python 3.10'
+    )
     def test_prioritize_customer_dependencies_default_python_310(self):
         # Feature should be enabled in Python 3.10 by default
         # Setup paths

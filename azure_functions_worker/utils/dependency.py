@@ -1,21 +1,23 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+from azure_functions_worker.utils.common import is_true_like
+from typing import List, Optional
+from types import ModuleType
 import importlib
 import inspect
 import os
 import re
 import sys
-from types import ModuleType
-from typing import List, Optional
 
-from azure_functions_worker.utils.common import is_true_like
+from ..logging import logger
 from ..constants import (
     AZURE_WEBJOBS_SCRIPT_ROOT,
     CONTAINER_NAME,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
+    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT,
+    PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310
 )
-from ..logging import logger
+from ..utils.common import is_python_version
 from ..utils.wrappers import enable_feature_by
 
 
@@ -75,7 +77,12 @@ class DependencyManager:
     @classmethod
     @enable_feature_by(
         flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-        flag_default=PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT)
+        flag_default=(
+            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
+            is_python_version('3.10') else
+            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
+        )
+    )
     def use_worker_dependencies(cls):
         """Switch the sys.path and ensure the worker imports are loaded from
         Worker's dependenciess.
@@ -101,7 +108,12 @@ class DependencyManager:
     @classmethod
     @enable_feature_by(
         flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-        flag_default=PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT)
+        flag_default=(
+            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
+            is_python_version('3.10') else
+            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
+        )
+    )
     def prioritize_customer_dependencies(cls, cx_working_dir=None):
         """Switch the sys.path and ensure the customer's code import are loaded
         from CX's deppendencies.
@@ -170,7 +182,11 @@ class DependencyManager:
         """
         use_new_env = os.getenv(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
         if use_new_env is None:
-            use_new = PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
+            use_new = (
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
+                is_python_version('3.10') else
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
+            )
         else:
             use_new = is_true_like(use_new_env)
 

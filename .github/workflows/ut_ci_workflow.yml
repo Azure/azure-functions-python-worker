@@ -67,6 +67,8 @@ jobs:
         retry 5 python setup.py webhost --branch-name=dev
         retry 5 python setup.py extension
     - name: Test with pytest
+      env:
+        AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
       run: |
         python -m pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
     - name: Codecov

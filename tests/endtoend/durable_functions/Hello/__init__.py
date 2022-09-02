@@ -6,9 +6,6 @@
 # - add azure-functions-durable to requirements.txt
 # - run pip install -r requirements.txt
 
-import logging
-
-
 def main(name: str, blob) -> str:
     blob.set("test-durable")
     return f"Hello {name}!"

@@ -55,7 +55,7 @@ AZURE_EXTENSIONS = """\
       <PackageReference
         Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
         Version="1.1.3" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" 
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask"
         Version="2.7.2" />
    </ItemGroup>
 </Project>

@@ -1,8 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import os
-from unittest.mock import patch
-
 from azure_functions_worker import testutils
 
 

@@ -782,6 +782,9 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
     hostexe_args = []
     os.environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
 
+    # webhook for durable tests
+    os.environ['WEBSITE_HOSTNAME'] = f'localhost:{port}'
+
     # If we want to use core-tools
     coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')
     if coretools_exe:

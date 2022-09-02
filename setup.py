@@ -55,6 +55,8 @@ AZURE_EXTENSIONS = """\
       <PackageReference
         Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
         Version="1.1.3" />
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask"
+        Version="2.7.2" />
    </ItemGroup>
 </Project>
 """
@@ -114,6 +116,7 @@ INSTALL_REQUIRES = [
 EXTRA_REQUIRES = {
     "dev": [
         "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
+        "azure-functions-durable",  # Used for Durable E2E tests
         "flask",
         "fastapi",
         "pydantic",

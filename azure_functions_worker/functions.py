@@ -340,7 +340,7 @@ class Registry:
             has_explicit_return, has_implicit_return = \
                 self.get_explicit_and_implicit_return(
                     binding_name, binding_info, has_explicit_return,
-                    has_explicit_return, bound_params)
+                    has_implicit_return, bound_params)
 
             return_binding_name = self.get_return_binding(binding_name,
                                                           binding_info.type,

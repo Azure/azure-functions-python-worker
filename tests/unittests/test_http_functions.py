@@ -10,8 +10,8 @@ from unittest import skipIf
 
 import pytest
 
-from azure_functions_worker import testutils
-from azure_functions_worker.testutils import WebHostTestCase
+from tests.utils import testutils
+from tests.utils.testutils import WebHostTestCase
 
 
 class TestHttpFunctions(WebHostTestCase):

@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 import json
 
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 
 class TestSqlFunctions(testutils.WebHostTestCase):

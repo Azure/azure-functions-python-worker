@@ -2,8 +2,8 @@
 # Licensed under the MIT License.
 import typing
 
-from azure_functions_worker import testutils
-from azure_functions_worker.testutils import TESTS_ROOT, remove_path
+from tests.utils import testutils
+from tests.utils.testutils import TESTS_ROOT, remove_path
 
 HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
 {

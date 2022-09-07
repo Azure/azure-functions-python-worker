@@ -114,7 +114,8 @@ class TestGRPC(testutils.AsyncTestCase):
                 [path_import_script, result],
                 stderr=subprocess.STDOUT)
             decoded_output = output.decode(sys.stdout.encoding).strip()
-            self.assertTrue(expected_output in decoded_output)
+            self.assertTrue(expected_output in decoded_output,
+                            f"Decoded Output: {decoded_output}")  # DNM
         finally:
             subprocess.run(['chmod -x ' + path_import_script], shell=True)
             self._reset_environ()

@@ -5,6 +5,6 @@
 SCRIPT_DIR="$(dirname $0)"
 export PYTHONPATH="$SCRIPT_DIR/namespace_location_a:$SCRIPT_DIR/namespace_location_b"
 
-python $SCRIPT_DIR/azure_namespace_import.py $1
+python -m $SCRIPT_DIR/azure_namespace_import.py $1
 
 unset PYTHONPATH

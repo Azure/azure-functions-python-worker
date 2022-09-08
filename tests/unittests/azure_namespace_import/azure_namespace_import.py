@@ -6,10 +6,10 @@ import shutil
 import asyncio
 
 from azure_functions_worker import protos
-from ...utils import testutils
+from tests.utils import testutils
 
 
-async def vertify_nested_namespace_import():
+async def verify_nested_namespace_import():
     test_env = {}
     request = protos.FunctionEnvironmentReloadRequest(
         environment_variables=test_env)
@@ -51,5 +51,5 @@ async def vertify_nested_namespace_import():
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(vertify_nested_namespace_import())
+    loop.run_until_complete(verify_nested_namespace_import())
     loop.close()

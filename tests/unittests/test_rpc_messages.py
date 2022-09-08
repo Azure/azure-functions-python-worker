@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
-import pathlib
 import subprocess
 import sys
 import tempfile
@@ -9,8 +8,8 @@ import typing
 import unittest
 
 from azure_functions_worker import protos
-from tests.utils import testutils
 from azure_functions_worker.utils.common import is_python_version
+from tests.utils import testutils
 
 
 class TestGRPC(testutils.AsyncTestCase):

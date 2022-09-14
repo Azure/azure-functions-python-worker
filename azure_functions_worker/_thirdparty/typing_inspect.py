@@ -45,8 +45,9 @@ def _gorg(cls):
 
 
 def is_generic_type(tp):
-    """Test if the given type is a generic type. This includes Generic itself, but
-    excludes special typing constructs such as Union, Tuple, Callable, ClassVar.
+    """Test if the given type is a generic type. This includes Generic itself,
+    but excludes special typing constructs such as Union, Tuple, Callable,
+    ClassVar.
     Examples::
 
         is_generic_type(int) == False
@@ -333,7 +334,8 @@ def get_args(tp, evaluate=None):
 
 
 def get_generic_type(obj):
-    """Get the generic type of an object if possible, or runtime class otherwise.
+    """Get the generic type of an object if possible, or runtime class
+    otherwise.
     Examples::
 
         class Node(Generic[T]):

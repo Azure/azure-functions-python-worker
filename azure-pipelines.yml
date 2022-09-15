@@ -192,7 +192,7 @@ jobs:
         echo "Generating V3 Release Package for $BUILD_SOURCEBRANCHNAME"
         NUSPEC="pack\Microsoft.Azure.Functions.V3.PythonWorker.nuspec"
         WKVERSION="$BUILD_SOURCEBRANCHNAME"
-      elif [[ $BUILD_SOURCEBRANCHNAME = dev ]]
+      elif [[ $BUILD_SOURCEBRANCHNAME = v3.x-dev ]]
       then
         echo "Generating V3 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
         LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)

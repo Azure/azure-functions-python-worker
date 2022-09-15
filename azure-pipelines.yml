@@ -142,7 +142,7 @@ jobs:
 - job: Build_OSX_X64
   dependsOn: 'Tests'
   pool:
-    vmImage: 'macOS-10.15'
+    vmImage: 'macOS-12'
   strategy:
     matrix:
       Python36V2:

@@ -102,7 +102,8 @@ PACKAGES = [
     "azure_functions_worker.bindings",
     "azure_functions_worker.bindings.shared_memory_data_transfer",
     "azure_functions_worker.utils",
-    "azure_functions_worker._thirdparty"
+    "azure_functions_worker._thirdparty",
+    "tests.utils"
 ]
 
 INSTALL_REQUIRES = [

@@ -6,7 +6,7 @@ import shutil
 import asyncio
 
 from azure_functions_worker import protos
-from tests.utils import testutils
+from tests.utils.testutils import create_dummy_dispatcher, UNIT_TESTS_ROOT
 
 
 async def verify_nested_namespace_import():
@@ -18,14 +18,14 @@ async def verify_nested_namespace_import():
         request_id='0',
         function_environment_reload_request=request)
 
-    disp = testutils.create_dummy_dispatcher()
+    disp = create_dummy_dispatcher()
 
     # Mock intepreter starts in placeholder mode
     import azure.module_a as mod_a  # noqa: F401
 
     # Mock function specialization, load customer's libraries and functionapps
     ns_root = os.path.join(
-        testutils.UNIT_TESTS_ROOT,
+        UNIT_TESTS_ROOT,
         'azure_namespace_import',
         'namespace_location_b')
     test_path = os.path.join(ns_root, 'azure', 'namespace_b', 'module_b')

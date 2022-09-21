@@ -6,7 +6,7 @@ import shutil
 import asyncio
 
 from azure_functions_worker import protos
-from tests.utils.testutils import create_dummy_dispatcher, UNIT_TESTS_ROOT
+from ...utils.testutils import create_dummy_dispatcher, UNIT_TESTS_ROOT
 
 
 async def verify_nested_namespace_import():

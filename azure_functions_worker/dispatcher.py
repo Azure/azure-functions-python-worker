@@ -298,6 +298,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         directory = metadata_request.function_app_directory
         function_path = os.path.join(directory, SCRIPT_FILE_NAME)
 
+        logger.info(
+            'Received WorkerMetadataRequest, request ID %s, directory: %s',
+            self.request_id, directory)
+
         if not os.path.exists(function_path):
             # Fallback to legacy model
             logger.info(f"{SCRIPT_FILE_NAME} does not exist. "
@@ -310,6 +314,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         try:
+            logger.info('Starting Worker Indexing')
             fx_metadata_results = []
             indexed_functions = loader.index_function_app(function_path)
             if indexed_functions:
@@ -318,7 +323,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     function_log = \
                         f"Function Name: {func.get_function_name()} " \
                         "Function Binding: " \
-                        f"{[binding.name for binding in func.get_bindings()]}"
+                        f"{[(binding.type, binding.name) for binding in func.get_bindings()]}"
                     indexed_function_logs.append(function_log)
 
                 logger.info(
@@ -331,7 +336,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                         indexed_functions)
             else:
                 logger.warning("No functions indexed. Please refer to the "
-                               "documentation.")
+                               "documentation - "
+                               "https://aka.ms/pythonprogrammingmodel")
 
             return protos.StreamingMessage(
                 request_id=request.request_id,
@@ -354,6 +360,13 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_name = func_request.metadata.name
         function_path = os.path.join(func_request.metadata.directory,
                                      SCRIPT_FILE_NAME)
+        logger.info(
+                'Received WorkerLoadRequest, request ID %s, function_id: %s,'
+                'function_name: %s, worker_indexed: %s',
+                self.request_id,
+                function_id,
+                function_name,
+                request.metadata.Properties.get("worker_indexed", False))
 
         try:
             if not self._functions.get_function(function_id):
@@ -363,28 +376,44 @@ class Dispatcher(metaclass=DispatcherMeta):
                                                   for i_func in
                                                   indexed_functions
                                                   if i_func.name ==
-                                                  request.metadata.Properties[
-                                                      "name"] and
+                                                  request.metadata.Properties.get(
+                                                      "name", None) and
                                                   i_func.directory ==
-                                                  request.metadata.Properties[
-                                                      "directory"] and
+                                                  request.metadata.Properties.get(
+                                                      "directory", None) and
                                                   i_func.script_file ==
-                                                  request.metadata.Properties[
-                                                      "script_file"] and
+                                                  request.metadata.Properties.get(
+                                                      "script_file", None) and
                                                   i_func.entry_point ==
-                                                  request.metadata.Properties[
-                                                      "entry_point"]]
+                                                  request.metadata.Properties.get(
+                                                      "entry_point", None)]
                     if filtered_indexed_functions:
                         loader.process_indexed_function(
                                 self._functions,
-                                indexed_functions, function_id)
+                                filtered_indexed_functions, function_id)
+
+                        indexed_function_logs = []
+                        for func in filtered_indexed_functions:
+                            function_log = "Function Name: %s, Function " \
+                                           "Bindings: %s".format(
+                                func.get_function_name(),
+                                [f"{binding.type},{binding.name}" for binding in
+                                 func.get_bindings()])
+
+                            indexed_function_logs.append(function_log)
 
                         logger.info(
-                            'Successfully processed FunctionLoadRequest, '
-                            f'request ID: {self.request_id}, '
-                            f'function ID: {function_id},'
-                            f'function Name: {function_name}')
+                                'Successfully indexed functions within '
+                                'FunctionsLoadRequest with worker_indexing '
+                                'enabled. '
+                                f'request ID: {self.request_id}, '
+                                f'function ID: {function_id}, '
+                                f'function Name: {function_name}, ' 
+                                f'functions: {" ".join(indexed_function_logs)}'
+
+                        )
                 else:
+                    # Legacy Case
                     func = loader.load_function(
                             func_request.metadata.name,
                             func_request.metadata.directory,

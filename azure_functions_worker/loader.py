@@ -71,12 +71,9 @@ def process_indexed_function(functions_registry: functions.Registry,
             "worker_indexed": True,
             "name": function_info.name,
             "function_id": function_id,
-            "managed_dependency_enabled": False,  # only enabled for PowerShell
             "directory": function_info.directory,
             "script_file": indexed_function.function_script_file,
-            "entry_point": function_info.name,
-            "is_proxy": False,  # not supported in V4
-            "language": PYTHON_LANGUAGE_RUNTIME
+            "entry_point": function_info.name
         }
 
         function_metadata = protos.RpcFunctionMetadata(

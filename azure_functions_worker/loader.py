@@ -15,6 +15,7 @@ from typing import Optional, Dict
 from . import protos, functions
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
     PYTHON_LANGUAGE_RUNTIME
+from .protos import RpcFunctionMetadata
 from .utils.wrappers import attach_message_to_exception
 
 _AZURE_NAMESPACE = '__app__'
@@ -57,15 +58,24 @@ def build_binding_protos(indexed_function) -> Dict:
 
 
 def process_indexed_function(functions_registry: functions.Registry,
-                             indexed_functions):
+                             indexed_functions, func_id: str = None) -> \
+        RpcFunctionMetadata:
     fx_metadata_results = []
     for indexed_function in indexed_functions:
-        function_id = str(uuid.uuid4())
+        function_id = func_id or str(uuid.uuid4())
         function_info = functions_registry.add_indexed_function(
             function_id,
             function=indexed_function)
 
         binding_protos = build_binding_protos(indexed_function)
+        metadata_properties = {
+            "worker_indexed": True,
+            "name": function_info.name,
+            "function_id": function_id,
+            "directory": function_info.directory,
+            "script_file": indexed_function.function_script_file,
+            "entry_point": function_info.name
+        }
 
         function_metadata = protos.RpcFunctionMetadata(
             name=function_info.name,
@@ -77,7 +87,8 @@ def process_indexed_function(functions_registry: functions.Registry,
             is_proxy=False,  # not supported in V4
             language=PYTHON_LANGUAGE_RUNTIME,
             bindings=binding_protos,
-            raw_bindings=indexed_function.get_raw_bindings())
+            raw_bindings=indexed_function.get_raw_bindings(),
+            Properties=metadata_properties)
 
         fx_metadata_results.append(function_metadata)
 

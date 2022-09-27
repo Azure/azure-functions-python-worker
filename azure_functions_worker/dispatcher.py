@@ -26,10 +26,12 @@ from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
                         PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME)
 from .extension import ExtensionManager
+from .functions import FunctionAppLoadError
 from .logging import disable_console_logging, enable_console_logging
 from .logging import enable_debug_logging_recommendation
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
+from .protos import RpcFunctionMetadata
 from .utils.common import get_app_setting, is_envvar_true
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
@@ -283,7 +285,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success)))
 
-    async def _handle__worker_status_request(self, request):
+    @staticmethod
+    async def _handle__worker_status_request(request):
         # Logging is not necessary in this request since the response is used
         # for host to judge scale decisions of out-of-proc languages.
         # Having log here will reduce the responsiveness of the worker.
@@ -295,6 +298,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         metadata_request = request.functions_metadata_request
         directory = metadata_request.function_app_directory
         function_path = os.path.join(directory, SCRIPT_FILE_NAME)
+
+        logger.info(
+            'Received WorkerMetadataRequest, request ID %s, directory: %s',
+            self.request_id, directory)
 
         if not os.path.exists(function_path):
             # Fallback to legacy model
@@ -308,7 +315,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         try:
-            fx_metadata_results = []
+            logger.info('Starting Worker Indexing')
             indexed_functions = loader.index_function_app(function_path)
             if indexed_functions:
                 indexed_function_logs: List[str] = []
@@ -316,26 +323,34 @@ class Dispatcher(metaclass=DispatcherMeta):
                     function_log = \
                         f"Function Name: {func.get_function_name()} " \
                         "Function Binding: " \
-                        f"{[binding.name for binding in func.get_bindings()]}"
+                        f"{[(binding.type, binding.name) for binding in func.get_bindings()]}"  # NoQA
                     indexed_function_logs.append(function_log)
+
+                fx_metadata_results: List[RpcFunctionMetadata] = \
+                    loader.process_indexed_function(
+                    self._functions,
+                    indexed_functions)
 
                 logger.info(
                     f'Successfully processed FunctionMetadataRequest for '
                     f'functions: {" ".join(indexed_function_logs)}')
 
-                fx_metadata_results = loader.process_indexed_function(
-                    self._functions,
-                    indexed_functions)
-            else:
-                logger.warning("No functions indexed. Please refer to the "
-                               "documentation.")
+                return protos.StreamingMessage(
+                    request_id=request.request_id,
+                    function_metadata_response=protos.FunctionMetadataResponse(
+                        function_metadata_results=fx_metadata_results,
+                        result=protos.StatusResult(
+                            status=protos.StatusResult.Success)))
 
-            return protos.StreamingMessage(
-                request_id=request.request_id,
-                function_metadata_response=protos.FunctionMetadataResponse(
-                    function_metadata_results=fx_metadata_results,
-                    result=protos.StatusResult(
-                        status=protos.StatusResult.Success)))
+            # If the code reaches here - we were not able to process the
+            # script_path and index functions from it. Raising a functions
+            # load error
+            # TODO: Need to add what why weren't we able to index the code.
+            raise FunctionAppLoadError(function_path,
+                                       "No functions found. Please refer to the"
+                                       "documentation to see how to define a "
+                                       "function using the new programming "
+                                       "model- aka.ms/pythonprogrammingmodel")
 
         except Exception as ex:
             return protos.StreamingMessage(
@@ -349,27 +364,84 @@ class Dispatcher(metaclass=DispatcherMeta):
         func_request = request.function_load_request
         function_id = func_request.function_id
         function_name = func_request.metadata.name
+        function_path = os.path.join(func_request.metadata.directory,
+                                     SCRIPT_FILE_NAME)
+        logger.info(
+            'Received WorkerLoadRequest, request ID %s, function_id: %s,'
+            'function_name: %s, worker_indexed: %s',
+            self.request_id,
+            function_id,
+            function_name,
+            request.metadata.Properties.get("worker_indexed", False))
 
         try:
             if not self._functions.get_function(function_id):
-                func = loader.load_function(
-                    func_request.metadata.name,
-                    func_request.metadata.directory,
-                    func_request.metadata.script_file,
-                    func_request.metadata.entry_point)
+                if request.metadata.Properties.get("worker_indexed", False):
+                    indexed_functions = loader.index_function_app(function_path)
+                    filtered_indexed_functions = [
+                        indexed_functions for i_func in indexed_functions
+                        if i_func.name
+                        == request.metadata.Properties.get("name")
+                        and i_func.directory
+                        == request.metadata.Properties.get("directory")
+                        and i_func.script_file
+                        == request.metadata.Properties.get("script_file")
+                        and i_func.entry_point
+                        == request.metadata.Properties.get("entry_point")]
+                    if filtered_indexed_functions:
+                        loader.process_indexed_function(
+                            self._functions,
+                            filtered_indexed_functions, function_id)
 
-                self._functions.add_function(
-                    function_id, func, func_request.metadata)
+                        indexed_function_logs = []
+                        for func in filtered_indexed_functions:
+                            function_log = "Function Name: {0}, Function " \
+                                           "Bindings: {1}".format(
+                                               func.get_function_name(),
+                                               [f"{binding.type},"
+                                                f"{binding.name}" for
+                                                binding in
+                                                func.get_bindings()])
 
-                ExtensionManager.function_load_extension(
-                    function_name,
-                    func_request.metadata.directory
-                )
+                            indexed_function_logs.append(function_log)
 
-                logger.info('Successfully processed FunctionLoadRequest, '
+                        logger.info(
+                            'Successfully indexed functions within '
+                            'FunctionsLoadRequest with worker_indexing '
+                            'enabled. '
                             f'request ID: {self.request_id}, '
-                            f'function ID: {function_id},'
-                            f'function Name: {function_name}')
+                            f'function ID: {function_id}, '
+                            f'function Name: {function_name}, '
+                            f'functions: {" ".join(indexed_function_logs)}'
+                        )
+                    else:
+                        # Todo - should it become an exception?
+                        logger.warning(
+                            "Couldn't find the function. Function details: "
+                            "{}, {}, {}, {}".format(
+                                request.metadata.Properties.get("name"),
+                                request.metadata.Properties.get("directory"),
+                                request.metadata.Properties.get("script_file"),
+                                request.metadata.Properties.get("entry_point")))
+                else:  # Legacy Case
+                    func = loader.load_function(
+                        func_request.metadata.name,
+                        func_request.metadata.directory,
+                        func_request.metadata.script_file,
+                        func_request.metadata.entry_point)
+
+                    self._functions.add_function(
+                        function_id, func, func_request.metadata)
+
+                    ExtensionManager.function_load_extension(
+                        function_name,
+                        func_request.metadata.directory
+                    )
+
+                    logger.info('Successfully processed FunctionLoadRequest, '
+                                f'request ID: {self.request_id}, '
+                                f'function ID: {function_id},'
+                                f'function Name: {function_name}')
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -734,7 +806,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             for req in grpc_req_stream:
                 self._loop.call_soon_threadsafe(
-                    self._loop.create_task, self._dispatch_grpc_request(req))
+                    self._loop.create_task,
+                    self._dispatch_grpc_request(req))
         except Exception as ex:
             if ex is grpc_req_stream:
                 # Yes, this is how grpc_req_stream iterator exits.

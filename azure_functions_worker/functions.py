@@ -37,6 +37,14 @@ class FunctionLoadError(RuntimeError):
             f'cannot load the {function_name} function: {msg}')
 
 
+class FunctionAppLoadError(RuntimeError):
+
+    def __init__(self, script_path: str, msg: str) -> None:
+        super().__init__(
+            f'cannot load the functions from {script_path} script. '
+            f'Exception: {msg}')
+
+
 class Registry:
     _functions: typing.MutableMapping[str, FunctionInfo]
 

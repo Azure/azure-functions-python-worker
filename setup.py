@@ -121,7 +121,7 @@ EXTRA_REQUIRES = {
         "fastapi",
         "pydantic",
         "pycryptodome~=3.10.1",
-        "flake8~=4.0.1",
+        "flake8",
         "mypy",
         "pytest",
         "requests==2.*",

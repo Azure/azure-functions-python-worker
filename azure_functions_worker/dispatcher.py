@@ -356,49 +356,53 @@ class Dispatcher(metaclass=DispatcherMeta):
                                      SCRIPT_FILE_NAME)
 
         try:
-            if request.metadata.Properties.get("worker_indexed", None):
-                indexed_functions = loader.index_function_app(function_path)
-                if indexed_functions:
-                    indexed_function_logs: List[str] = []
-                    for func in indexed_functions:
-                        function_log = \
-                            f"Function Name: {func.get_function_name()} " \
-                            "Function Binding: " \
-                            f"{[binding.name for binding in func.get_bindings()]}"
-                        indexed_function_logs.append(function_log)
+            if not self._functions.get_function(function_id):
+                if request.metadata.Properties.get("worker_indexed", False):
+                    indexed_functions = loader.index_function_app(function_path)
+                    filtered_indexed_functions = [indexed_functions
+                                                  for i_func in
+                                                  indexed_functions
+                                                  if i_func.name ==
+                                                  request.metadata.Properties[
+                                                      "name"] and
+                                                  i_func.directory ==
+                                                  request.metadata.Properties[
+                                                      "directory"] and
+                                                  i_func.script_file ==
+                                                  request.metadata.Properties[
+                                                      "script_file"] and
+                                                  i_func.entry_point ==
+                                                  request.metadata.Properties[
+                                                      "entry_point"]]
+                    if filtered_indexed_functions:
+                        loader.process_indexed_function(
+                                self._functions,
+                                indexed_functions, function_id)
 
-                    logger.info('Successfully processed FunctionMetadataRequest'
-                                ' for functions: '
-                                f'{" ".join(indexed_function_logs)}')
+                        logger.info(
+                            'Successfully processed FunctionLoadRequest, '
+                            f'request ID: {self.request_id}, '
+                            f'function ID: {function_id},'
+                            f'function Name: {function_name}')
+                else:
+                    func = loader.load_function(
+                            func_request.metadata.name,
+                            func_request.metadata.directory,
+                            func_request.metadata.script_file,
+                            func_request.metadata.entry_point)
 
-                    loader.process_indexed_function(
-                            self._functions,
-                            indexed_functions)
+                    self._functions.add_function(
+                            function_id, func, func_request.metadata)
+
+                    ExtensionManager.function_load_extension(
+                            function_name,
+                            func_request.metadata.directory
+                    )
 
                     logger.info('Successfully processed FunctionLoadRequest, '
                                 f'request ID: {self.request_id}, '
                                 f'function ID: {function_id},'
                                 f'function Name: {function_name}')
-
-            elif not self._functions.get_function(function_id):
-                func = loader.load_function(
-                    func_request.metadata.name,
-                    func_request.metadata.directory,
-                    func_request.metadata.script_file,
-                    func_request.metadata.entry_point)
-
-                self._functions.add_function(
-                    function_id, func, func_request.metadata)
-
-                ExtensionManager.function_load_extension(
-                    function_name,
-                    func_request.metadata.directory
-                )
-
-                logger.info('Successfully processed FunctionLoadRequest, '
-                            f'request ID: {self.request_id}, '
-                            f'function ID: {function_id},'
-                            f'function Name: {function_name}')
 
             return protos.StreamingMessage(
                 request_id=self.request_id,

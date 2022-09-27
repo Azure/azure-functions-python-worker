@@ -58,7 +58,8 @@ def build_binding_protos(indexed_function) -> Dict:
 
 
 def process_indexed_function(functions_registry: functions.Registry,
-                             indexed_functions, func_id:str = None) -> RpcFunctionMetadata:
+                             indexed_functions, func_id: str = None) -> \
+        RpcFunctionMetadata:
     fx_metadata_results = []
     for indexed_function in indexed_functions:
         function_id = func_id or str(uuid.uuid4())

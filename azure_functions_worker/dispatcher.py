@@ -30,6 +30,7 @@ from .logging import disable_console_logging, enable_console_logging
 from .logging import enable_debug_logging_recommendation
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
+from .protos import RpcFunctionMetadata
 from .utils.common import get_app_setting, is_envvar_true
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
@@ -283,7 +284,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success)))
 
-    async def _handle__worker_status_request(self, request):
+    @staticmethod
+    async def _handle__worker_status_request(request):
         # Logging is not necessary in this request since the response is used
         # for host to judge scale decisions of out-of-proc languages.
         # Having log here will reduce the responsiveness of the worker.
@@ -323,9 +325,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                     f'Successfully processed FunctionMetadataRequest for '
                     f'functions: {" ".join(indexed_function_logs)}')
 
-                fx_metadata_results = loader.process_indexed_function(
-                    self._functions,
-                    indexed_functions)
+                fx_metadata_results: RpcFunctionMetadata = \
+                    loader.process_indexed_function(
+                        self._functions,
+                        indexed_functions)
             else:
                 logger.warning("No functions indexed. Please refer to the "
                                "documentation.")
@@ -349,9 +352,35 @@ class Dispatcher(metaclass=DispatcherMeta):
         func_request = request.function_load_request
         function_id = func_request.function_id
         function_name = func_request.metadata.name
+        function_path = os.path.join(func_request.metadata.directory,
+                                     SCRIPT_FILE_NAME)
 
         try:
-            if not self._functions.get_function(function_id):
+            if request.metadata.Properties.get("worker_indexed", None):
+                indexed_functions = loader.index_function_app(function_path)
+                if indexed_functions:
+                    indexed_function_logs: List[str] = []
+                    for func in indexed_functions:
+                        function_log = \
+                            f"Function Name: {func.get_function_name()} " \
+                            "Function Binding: " \
+                            f"{[binding.name for binding in func.get_bindings()]}"
+                        indexed_function_logs.append(function_log)
+
+                    logger.info('Successfully processed FunctionMetadataRequest'
+                                ' for functions: '
+                                f'{" ".join(indexed_function_logs)}')
+
+                    loader.process_indexed_function(
+                            self._functions,
+                            indexed_functions)
+
+                    logger.info('Successfully processed FunctionLoadRequest, '
+                                f'request ID: {self.request_id}, '
+                                f'function ID: {function_id},'
+                                f'function Name: {function_name}')
+
+            elif not self._functions.get_function(function_id):
                 func = loader.load_function(
                     func_request.metadata.name,
                     func_request.metadata.directory,

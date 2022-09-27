@@ -361,33 +361,38 @@ class Dispatcher(metaclass=DispatcherMeta):
                         exception=self._serialize_exception(ex))))
 
     async def _handle__function_load_request(self, request):
-        func_request = request.function_load_request
-        function_id = func_request.function_id
-        function_name = func_request.metadata.name
-        function_path = os.path.join(func_request.metadata.directory,
-                                     SCRIPT_FILE_NAME)
-        logger.info(
-            'Received WorkerLoadRequest, request ID %s, function_id: %s,'
-            'function_name: %s, worker_indexed: %s',
-            self.request_id,
-            function_id,
-            function_name,
-            request.metadata.Properties.get("worker_indexed", False))
-
         try:
+            func_request = request.function_load_request
+            function_id = func_request.function_id
+            function_name = func_request.metadata.name
+            function_path = os.path.join(func_request.metadata.directory,
+                                         SCRIPT_FILE_NAME)
+            metadata = func_request.metadata
+
+            logger.info(
+                'Received WorkerLoadRequest, request ID %s, function_id: %s,'
+                'function_name: %s, function_path: %s, directory: %s,',
+                self.request_id,
+                function_id,
+                function_name,
+                function_path,
+                func_request.metadata.directory)
+
+            logger.info(f"List dir: {os.listdir(func_request.metadata.directory)}")
+
             if not self._functions.get_function(function_id):
-                if request.metadata.Properties.get("worker_indexed", False):
+                if True: # metadata.Properties.get("worker_indexed", False):
                     indexed_functions = loader.index_function_app(function_path)
                     filtered_indexed_functions = [
                         indexed_functions for i_func in indexed_functions
                         if i_func.name
-                        == request.metadata.Properties.get("name")
+                        == metadata.Properties.get("name")
                         and i_func.directory
-                        == request.metadata.Properties.get("directory")
+                        == metadata.Properties.get("directory")
                         and i_func.script_file
-                        == request.metadata.Properties.get("script_file")
+                        == metadata.Properties.get("script_file")
                         and i_func.entry_point
-                        == request.metadata.Properties.get("entry_point")]
+                        == metadata.Properties.get("entry_point")]
                     if filtered_indexed_functions:
                         loader.process_indexed_function(
                             self._functions,
@@ -419,10 +424,18 @@ class Dispatcher(metaclass=DispatcherMeta):
                         logger.warning(
                             "Couldn't find the function. Function details: "
                             "{}, {}, {}, {}".format(
-                                request.metadata.Properties.get("name"),
-                                request.metadata.Properties.get("directory"),
-                                request.metadata.Properties.get("script_file"),
-                                request.metadata.Properties.get("entry_point")))
+                                metadata.Properties.get("name"),
+                                metadata.Properties.get("directory"),
+                                metadata.Properties.get("script_file"),
+                                metadata.Properties.get("entry_point")))
+
+                    return protos.StreamingMessage(
+                        request_id=self.request_id,
+                        function_load_response=protos.FunctionLoadResponse(
+                            function_id=function_id,
+                            result=protos.StatusResult(
+                                status=protos.StatusResult.Success)))
+
                 else:  # Legacy Case
                     func = loader.load_function(
                         func_request.metadata.name,
@@ -442,6 +455,13 @@ class Dispatcher(metaclass=DispatcherMeta):
                                 f'request ID: {self.request_id}, '
                                 f'function ID: {function_id},'
                                 f'function Name: {function_name}')
+
+                    return protos.StreamingMessage(
+                        request_id=self.request_id,
+                        function_load_response=protos.FunctionLoadResponse(
+                            function_id=function_id,
+                            result=protos.StatusResult(
+                                status=protos.StatusResult.Success)))
 
             return protos.StreamingMessage(
                 request_id=self.request_id,

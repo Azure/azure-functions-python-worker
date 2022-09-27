@@ -69,7 +69,7 @@ def process_indexed_function(functions_registry: functions.Registry,
 
         binding_protos = build_binding_protos(indexed_function)
         metadata_properties = {
-            "worker_indexed": True,
+            "worker_indexed": str(True),
             "name": function_info.name,
             "function_id": function_id,
             "directory": function_info.directory,

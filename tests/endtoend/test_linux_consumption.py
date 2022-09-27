@@ -231,7 +231,6 @@ class TestLinuxConsumption(TestCase):
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
-                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
                     "pystein"),
             })

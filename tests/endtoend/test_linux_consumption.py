@@ -4,6 +4,8 @@ import os
 import sys
 
 from unittest import TestCase, skipIf
+from unittest.mock import patch
+
 from requests import Request
 
 from azure_functions_worker.testutils_lc import (
@@ -219,6 +221,23 @@ class TestLinuxConsumption(TestCase):
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Func Version: 1.11.1", resp.text)
+
+    def test_pystein(self):
+        """ Test Pystein
+        """
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
+
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
+                    "pystein"),
+            })
+            req = Request('GET', f'{ctrl.url}/api/hello')
+            resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 200)
 
     def _get_blob_url(self, scenario_name: str) -> str:
         return (

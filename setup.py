@@ -102,9 +102,7 @@ PACKAGES = [
     "azure_functions_worker.bindings",
     "azure_functions_worker.bindings.shared_memory_data_transfer",
     "azure_functions_worker.utils",
-    "azure_functions_worker._thirdparty",
-    "tests",
-    "tests.utils"
+    "azure_functions_worker._thirdparty"
 ]
 
 INSTALL_REQUIRES = [
@@ -120,7 +118,7 @@ EXTRA_REQUIRES = {
         "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
         "azure-functions-durable",  # Used for Durable E2E tests
         "flask",
-        "fastapi",
+        "fastapi~=0.85.0",
         "pydantic",
         "pycryptodome~=3.10.1",
         "flake8~=4.0.1",

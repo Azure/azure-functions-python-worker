@@ -3,6 +3,7 @@
 import base64
 import json
 import os
+import pathlib
 import re
 import shutil
 import subprocess
@@ -154,7 +155,8 @@ class LinuxConsumptionWebHostController:
         container according to the image name. Return the port of container.
         """
         # Construct environment variables and start the docker container
-        worker_path = os.path.dirname(__file__)
+        PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
+        worker_path = os.path.join(PROJECT_ROOT, 'azure_functions_worker')
         library_path = os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME,
                                     'azure', 'functions')
         self._download_azure_functions()

@@ -1,10 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import json
+from unittest import skip
 
 from tests.utils import testutils
 
 
+@skip("Skipping till library version containing SQL is released.")
 class TestSqlFunctions(testutils.WebHostTestCase):
 
     @classmethod

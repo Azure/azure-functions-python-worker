@@ -133,9 +133,11 @@ class LinuxConsumptionWebHostController:
         # images used to onboard customers from a previous version. These
         # images are no longer used.
         tag_list = [x.strip("-upgrade") for x in tag_list]
-        version = list(filter(regex.match, tag_list))[-1]
+        python_versions = list(filter(regex.match, tag_list))
+        latest_python_version = sorted(python_versions, key=lambda x: float(
+            x.split(host_major + '.')[-1].split("-python")[0]))[-1]
 
-        image_tag = f'{_MESH_IMAGE_REPO}:{version}'
+        image_tag = f'{_MESH_IMAGE_REPO}:{latest_python_version}'
         cls._mesh_images[host_major] = image_tag
         return image_tag
 

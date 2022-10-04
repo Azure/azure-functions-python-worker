@@ -7,7 +7,7 @@ pr: none
 trigger: none
 
 pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-22.04'
 
 variables:
     DOTNET_VERSION: '3.1.x'

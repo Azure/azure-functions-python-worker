@@ -7,7 +7,9 @@ pr: none
 trigger: none
 
 pool:
-    vmImage: 'ubuntu-latest'
+  name: '1ES-Hosted-AzFunc' #MMS2019TLS for Windows2019 or MMSUbuntu20.04TLS for ubuntu
+    demands:
+      - ImageOverride -equals MMSUbuntu20.04TLS
 
 variables:
     DOTNET_VERSION: '3.1.x'

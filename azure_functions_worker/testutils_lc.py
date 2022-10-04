@@ -123,9 +123,11 @@ class LinuxConsumptionWebHostController:
                                f' Status {response.status_code}')
 
         tag_list = response.json().get('tags', [])
-        version = list(filter(regex.match, tag_list))[-1]
+        python_versions = list(filter(regex.match, tag_list))
+        latest_python_version = sorted(python_versions, key=lambda x: float(
+            x.split("-python")[0].split(host_major + '.')[-1]))[-1]
 
-        image_tag = f'{_MESH_IMAGE_REPO}:{version}'
+        image_tag = f'{_MESH_IMAGE_REPO}:{latest_python_version}'
         cls._mesh_images[host_major] = image_tag
         return image_tag
 

@@ -88,7 +88,8 @@ def process_indexed_function(functions_registry: functions.Registry,
     expt_type=ImportError,
     message=f'Please check the requirements.txt file for the missing module. '
             f'For more info, please refer the troubleshooting'
-            f' guide: {MODULE_NOT_FOUND_TS_URL} '
+            f' guide: {MODULE_NOT_FOUND_TS_URL} ',
+    debug_logs=f'Sys Path: {sys.path}, Sys Module: {sys.modules}'
 )
 def load_function(name: str, directory: str, script_file: str,
                   entry_point: Optional[str]):
@@ -137,8 +138,8 @@ def load_function(name: str, directory: str, script_file: str,
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
-)
+    message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}',
+    debug_logs=f'Sys Path: {sys.path}, Sys Module: {sys.modules}')
 def index_function_app(function_path: str):
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)

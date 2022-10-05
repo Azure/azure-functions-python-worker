@@ -296,6 +296,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         directory = metadata_request.function_app_directory
         function_path = os.path.join(directory, SCRIPT_FILE_NAME)
 
+        logger.info(
+            'Received WorkerMetadataRequest, request ID %s, directory: %s',
+            self.request_id, directory)
+
         if not os.path.exists(function_path):
             # Fallback to legacy model
             logger.info(f"{SCRIPT_FILE_NAME} does not exist. "
@@ -308,6 +312,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         try:
+            logger.info('Starting Worker Indexing')
             fx_metadata_results = []
             indexed_functions = loader.index_function_app(function_path)
             if indexed_functions:
@@ -349,6 +354,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         func_request = request.function_load_request
         function_id = func_request.function_id
         function_name = func_request.metadata.name
+
+        logger.info(
+            'Received WorkerLoadRequest, request ID %s, function_id: %s,'
+            'function_name: %s,', self.request_id, function_id, function_name)
 
         try:
             if not self._functions.get_function(function_id):

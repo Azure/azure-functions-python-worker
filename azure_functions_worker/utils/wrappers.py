@@ -18,9 +18,7 @@ def enable_feature_by(flag: str,
             if flag_default and not is_envvar_false(flag):
                 return func(*args, **kwargs)
             return default
-
         return call
-
     return decorate
 
 
@@ -34,9 +32,7 @@ def disable_feature_by(flag: str,
             if flag_default and not is_envvar_false(flag):
                 return default
             return func(*args, **kwargs)
-
         return call
-
     return decorate
 
 
@@ -50,7 +46,5 @@ def attach_message_to_exception(expt_type: Exception, message: str,
                 if debug_logs is not None:
                     logger.error(debug_logs)
                 raise extend_exception_message(e, message)
-
         return call
-
     return decorate

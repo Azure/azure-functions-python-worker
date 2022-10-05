@@ -12,6 +12,7 @@ import os
 import queue
 import sys
 import threading
+from _ctypes_test import func
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
@@ -318,10 +319,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             if indexed_functions:
                 indexed_function_logs: List[str] = []
                 for func in indexed_functions:
-                    function_log = \
-                        f"Function Name: {func.get_function_name()} " \
-                        "Function Binding: " \
-                        f"{[(binding.type, binding.name) for binding in func.get_bindings()]}"  # NoQA
+                    function_log = "Function Name: {}, Function Binding: {}" \
+                        .format(func.get_function_name(),
+                                 [(binding.type, binding.name) for binding in
+                         func.get_bindings()]) 
                     indexed_function_logs.append(function_log)
 
                 logger.info(
@@ -332,8 +333,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self._functions,
                     indexed_functions)
             else:
-                logger.warning("No functions indexed. Please refer to the "
-                               "documentation.")
+                logger.warning("No functions indexed. Please refer to "
+                               "aka.ms/pythonprogrammingmodel for more info.")
 
             return protos.StreamingMessage(
                 request_id=request.request_id,

@@ -320,8 +320,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 for func in indexed_functions:
                     function_log = "Function Name: {}, Function Binding: {}" \
                         .format(func.get_function_name(),
-                                 [(binding.type, binding.name) for binding in
-                         func.get_bindings()])
+                                [(binding.type, binding.name) for binding in
+                                 func.get_bindings()])
                     indexed_function_logs.append(function_log)
 
                 logger.info(

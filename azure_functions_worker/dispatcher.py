@@ -12,7 +12,6 @@ import os
 import queue
 import sys
 import threading
-from _ctypes_test import func
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
@@ -322,7 +321,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     function_log = "Function Name: {}, Function Binding: {}" \
                         .format(func.get_function_name(),
                                  [(binding.type, binding.name) for binding in
-                         func.get_bindings()]) 
+                         func.get_bindings()])
                     indexed_function_logs.append(function_log)
 
                 logger.info(

@@ -321,7 +321,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     function_log = \
                         f"Function Name: {func.get_function_name()} " \
                         "Function Binding: " \
-                        f"{[binding.name for binding in func.get_bindings()]}"
+                        f"{[(binding.type, binding.name) for binding in func.get_bindings()]}"  # NoQA
                     indexed_function_logs.append(function_log)
 
                 logger.info(

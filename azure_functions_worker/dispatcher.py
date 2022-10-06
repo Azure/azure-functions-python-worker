@@ -314,7 +314,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             fx_metadata_results = []
             indexed_functions = loader.index_function_app(function_path)
-            logger.info('Indexed function app and found {} functions', len(indexed_functions))
+            logger.info('Indexed function app and found {} functions',
+                        len(indexed_functions))
             if indexed_functions:
                 indexed_function_logs: List[str] = []
                 for func in indexed_functions:

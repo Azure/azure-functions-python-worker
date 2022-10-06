@@ -312,9 +312,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         try:
-            logger.info('Starting Worker Indexing')
             fx_metadata_results = []
             indexed_functions = loader.index_function_app(function_path)
+            logger.info('Indexed function app and found {} functions', len(indexed_functions))
             if indexed_functions:
                 indexed_function_logs: List[str] = []
                 for func in indexed_functions:

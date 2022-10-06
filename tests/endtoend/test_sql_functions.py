@@ -1,10 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import json
+from unittest import skip
 
 from azure_functions_worker import testutils
 
 
+@skip("Unskip when azure functions with SQL is released.")
 class TestSqlFunctions(testutils.WebHostTestCase):
 
     @classmethod

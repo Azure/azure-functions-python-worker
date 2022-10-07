@@ -1,8 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+
+from typing import Callable, Any
+
 from .common import is_envvar_true, is_envvar_false
 from .tracing import extend_exception_message
-from typing import Callable, Any
+from ..logging import logger
 
 
 def enable_feature_by(flag: str,
@@ -33,12 +36,15 @@ def disable_feature_by(flag: str,
     return decorate
 
 
-def attach_message_to_exception(expt_type: Exception, message: str) -> Callable:
+def attach_message_to_exception(expt_type: Exception, message: str,
+                                debug_logs=None) -> Callable:
     def decorate(func):
         def call(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
             except expt_type as e:
+                if debug_logs is not None:
+                    logger.error(debug_logs)
                 raise extend_exception_message(e, message)
         return call
     return decorate

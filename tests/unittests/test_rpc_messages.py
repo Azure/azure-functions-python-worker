@@ -8,6 +8,7 @@ import typing
 import unittest
 
 from azure_functions_worker import protos
+from azure_functions_worker.utils.common import is_python_version
 from tests.utils import testutils
 
 
@@ -127,14 +128,14 @@ class TestGRPC(testutils.AsyncTestCase):
             'false',
             'module_b fails to import')
 
-    # @unittest.skipIf(sys.platform == 'win32',
-    #                  'Linux .sh script only works on Linux')
-    # @unittest.skipIf(
-    #     is_python_version('3.10'),
-    #     'In Python 3.10, isolate worker dependencies is turned on by default.'
-    #     ' Reloading all customer dependencies on specialization is a must.'
-    #     ' This partially reloading namespace feature is no longer needed.'
-    # )
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Linux .sh script only works on Linux')
+    @unittest.skipIf(
+        is_python_version('3.10'),
+        'In Python 3.10, isolate worker dependencies is turned on by default.'
+        ' Reloading all customer dependencies on specialization is a must.'
+        ' This partially reloading namespace feature is no longer needed.'
+    )
     @unittest.skip("TODO: fix this tests. Failing with ImportError.")
     def test_successful_azure_namespace_import(self):
         self._verify_azure_namespace_import(

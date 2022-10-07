@@ -296,6 +296,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         directory = metadata_request.function_app_directory
         function_path = os.path.join(directory, SCRIPT_FILE_NAME)
 
+        logger.info(
+            'Received WorkerMetadataRequest, request ID %s, directory: %s',
+            self.request_id, directory)
+
         if not os.path.exists(function_path):
             # Fallback to legacy model
             logger.info(f"{SCRIPT_FILE_NAME} does not exist. "
@@ -310,13 +314,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             fx_metadata_results = []
             indexed_functions = loader.index_function_app(function_path)
+            logger.info('Indexed function app and found %s functions',
+                        len(indexed_functions))
             if indexed_functions:
                 indexed_function_logs: List[str] = []
                 for func in indexed_functions:
-                    function_log = \
-                        f"Function Name: {func.get_function_name()} " \
-                        "Function Binding: " \
-                        f"{[binding.name for binding in func.get_bindings()]}"
+                    function_log = "Function Name: {}, Function Binding: {}" \
+                        .format(func.get_function_name(),
+                                [(binding.type, binding.name) for binding in
+                                 func.get_bindings()])
                     indexed_function_logs.append(function_log)
 
                 logger.info(
@@ -327,8 +333,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self._functions,
                     indexed_functions)
             else:
-                logger.warning("No functions indexed. Please refer to the "
-                               "documentation.")
+                logger.warning("No functions indexed. Please refer to "
+                               "aka.ms/pythonprogrammingmodel for more info.")
 
             return protos.StreamingMessage(
                 request_id=request.request_id,
@@ -349,6 +355,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         func_request = request.function_load_request
         function_id = func_request.function_id
         function_name = func_request.metadata.name
+
+        logger.info(
+            'Received WorkerLoadRequest, request ID %s, function_id: %s,'
+            'function_name: %s,', self.request_id, function_id, function_name)
 
         try:
             if not self._functions.get_function(function_id):

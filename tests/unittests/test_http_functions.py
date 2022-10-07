@@ -11,10 +11,9 @@ from unittest import skipIf
 import pytest
 
 from tests.utils import testutils
-from tests.utils.testutils import WebHostTestCase
 
 
-class TestHttpFunctions(WebHostTestCase):
+class TestHttpFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):

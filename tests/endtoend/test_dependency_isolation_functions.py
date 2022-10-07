@@ -1,15 +1,16 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import os
 import importlib.util
+import os
 from unittest import skip
 from unittest.case import skipIf
 from unittest.mock import patch
 
 from requests import Response
-from tests.utils import testutils
+
 from azure_functions_worker.utils.common import is_envvar_true
-from azure_functions_worker.constants import PYAZURE_INTEGRATION_TEST
+from tests.utils import testutils
+from tests.utils.constants import PYAZURE_INTEGRATION_TEST
 
 REQUEST_TIMEOUT_SEC = 5
 

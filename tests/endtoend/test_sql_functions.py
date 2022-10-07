@@ -6,7 +6,7 @@ from unittest import skip
 from tests.utils import testutils
 
 
-@skip("Skipping till library version containing SQL is released.")
+@skip("Unskip when azure functions with SQL is released.")
 class TestSqlFunctions(testutils.WebHostTestCase):
 
     @classmethod

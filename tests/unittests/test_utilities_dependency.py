@@ -1,14 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import importlib.util
 import os
 import sys
-import importlib.util
 import unittest
 from unittest.mock import patch
 
-from tests.utils import testutils
-from azure_functions_worker.utils.common import is_python_version
 from azure_functions_worker.utils.dependency import DependencyManager
+from tests.utils import testutils
 
 
 class TestDependencyManager(unittest.TestCase):
@@ -566,7 +565,6 @@ class TestDependencyManager(unittest.TestCase):
         DependencyManager.use_worker_dependencies()
         with self.assertRaises(ImportError):
             import common_module  # NoQA
-
 
     def test_prioritize_customer_dependencies(self):
         # Setup app settings

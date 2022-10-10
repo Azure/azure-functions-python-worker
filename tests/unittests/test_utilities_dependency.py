@@ -555,12 +555,8 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipUnless(
-        sys.version_info.major == 3 and sys.version_info.minor != 10,
-        'Test only available for Python 3.6, 3.7, 3.8 or 3.9'
-    )
-    def test_use_worker_dependencies_default_python_36_37_38_39(self):
-        # Feature should be disabled in Python 3.6, 3.7, 3.8 and 3.9
+    def test_use_worker_dependencies_default_python_all_versions(self):
+        # Feature should be disabled for all python versions
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
         DependencyManager.cx_deps_path = self._customer_deps_path
@@ -571,24 +567,6 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipUnless(
-        sys.version_info.major == 3 and sys.version_info.minor == 10,
-        'Test only available for Python 3.10'
-    )
-    def test_use_worker_dependencies_default_python_310(self):
-        # Feature should be enabled in Python 3.10 by default
-        # Setup paths
-        DependencyManager.worker_deps_path = self._worker_deps_path
-        DependencyManager.cx_deps_path = self._customer_deps_path
-        DependencyManager.cx_working_dir = self._customer_func_path
-
-        # Ensure the common_module is imported from _worker_deps_path
-        DependencyManager.use_worker_dependencies()
-        import common_module  # NoQA
-        self.assertEqual(
-            common_module.package_location,
-            os.path.join(self._worker_deps_path, 'common_module')
-        )
 
     def test_prioritize_customer_dependencies(self):
         # Setup app settings
@@ -628,10 +606,8 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
-    @unittest.skipIf(is_python_version('3.10'),
-                     'Test not available for python 3.10')
-    def test_prioritize_customer_dependencies_default_python_36_37_38_39(self):
-        # Feature should be disabled in Python 3.6, 3.7, 3.8 and 3.9
+    def test_prioritize_customer_dependencies_default_all_versions(self):
+        # Feature should be disabled in Python for all versions
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
         DependencyManager.cx_deps_path = self._customer_deps_path
@@ -641,25 +617,6 @@ class TestDependencyManager(unittest.TestCase):
         DependencyManager.prioritize_customer_dependencies()
         with self.assertRaises(ImportError):
             import common_module  # NoQA
-
-    @unittest.skipUnless(
-        sys.version_info.major == 3 and sys.version_info.minor == 10,
-        'Test only available for Python 3.10'
-    )
-    def test_prioritize_customer_dependencies_default_python_310(self):
-        # Feature should be enabled in Python 3.10 by default
-        # Setup paths
-        DependencyManager.worker_deps_path = self._worker_deps_path
-        DependencyManager.cx_deps_path = self._customer_deps_path
-        DependencyManager.cx_working_dir = self._customer_func_path
-
-        # Ensure the common_module is imported from _customer_deps_path
-        DependencyManager.prioritize_customer_dependencies()
-        import common_module  # NoQA
-        self.assertEqual(
-            common_module.package_location,
-            os.path.join(self._customer_deps_path, 'common_module')
-        )
 
     def test_prioritize_customer_dependencies_from_working_directory(self):
         self._initialize_scenario()

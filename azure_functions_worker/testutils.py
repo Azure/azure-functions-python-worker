@@ -70,12 +70,37 @@ LOCALHOST = "127.0.0.1"
 HOST_JSON_TEMPLATE = """\
 {
     "version": "2.0",
-    "logging": {"logLevel": {"default": "Trace"}},
-    "extensionBundle": {
-        "id": "Microsoft.Azure.Functions.ExtensionBundle",
-        "version": "[3.*, 4.0.0)"
-    }
+    "logging": {"logLevel": {"default": "Trace"}}
 }
+"""
+
+EXTENSION_CSPROJ_TEMPLATE = """\
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <WarningsAsErrors></WarningsAsErrors>
+    <DefaultItemExcludes>**</DefaultItemExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
+     Version="5.0.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
+     Version="3.1.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
+     Version="3.0.10" />
+     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
+     Version="4.0.5" />
+     <PackageReference
+      Include="Microsoft.Azure.WebJobs.Extensions.Storage.Blobs"
+      Version="5.0.0" />
+     <PackageReference
+      Include="Microsoft.Azure.WebJobs.Extensions.Storage.Queues"
+      Version="5.0.0" />
+    <PackageReference
+     Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
+     Version="1.1.3" />
+  </ItemGroup>
+</Project>
 """
 
 SECRETS_TEMPLATE = """\
@@ -950,18 +975,29 @@ def _symlink_dir(src, dst):
 
 
 def _setup_func_app(app_root):
+    extensions = app_root / 'bin'
     host_json = app_root / 'host.json'
+    extensions_csproj_file = app_root / 'extensions.csproj'
 
     if not os.path.isfile(host_json):
         with open(host_json, 'w') as f:
             f.write(HOST_JSON_TEMPLATE)
 
+    if not os.path.isfile(extensions_csproj_file):
+        with open(extensions_csproj_file, 'w') as f:
+            f.write(EXTENSION_CSPROJ_TEMPLATE)
+
+    _symlink_dir(EXTENSIONS_PATH, extensions)
+
 
 def _teardown_func_app(app_root):
+    extensions = app_root / 'bin'
     host_json = app_root / 'host.json'
+    extensions_csproj_file = app_root / 'extensions.csproj'
     extensions_obj_file = app_root / 'obj'
 
-    for path in (host_json, extensions_obj_file):
+    for path in (extensions, host_json, extensions_csproj_file,
+                 extensions_obj_file):
         remove_path(path)
 
 

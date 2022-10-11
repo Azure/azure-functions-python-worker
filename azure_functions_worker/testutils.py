@@ -73,7 +73,7 @@ HOST_JSON_TEMPLATE = """\
     "logging": {"logLevel": {"default": "Trace"}},
     "extensionBundle": {
         "id": "Microsoft.Azure.Functions.ExtensionBundle",
-        "version": "[3.15.0, 4.0.0)"
+        "version": "[3.*, 4.0.0)"
     }
 }
 """

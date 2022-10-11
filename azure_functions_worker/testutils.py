@@ -230,7 +230,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 test_exception = e
 
             try:
-                self.host_stdout.seek(last_pos)
+                self.host_stdout.seek(0)
                 self.host_out = self.host_stdout.read()
                 self.host_stdout_logger.error(
                     f'Captured WebHost stdout from {self.host_stdout.name} '

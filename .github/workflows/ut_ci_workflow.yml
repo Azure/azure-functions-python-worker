@@ -18,7 +18,7 @@ jobs:
     name: "Python UT CI Run"
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         python-version: [ 3.7, 3.8, 3.9, "3.10" ]
     steps:
@@ -31,10 +31,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '3.1.x'
-    - name: Set up Dotnet 5.0.x
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '5.0.x'
     - name: Set up Dotnet 6.x
       uses: actions/setup-dotnet@v1
       with:

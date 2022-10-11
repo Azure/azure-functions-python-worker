@@ -34,9 +34,9 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
         super().setUpClass()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(cls):
         super().tearDownClass()
-        self._patch_environ.stop()
+        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -71,9 +71,9 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
         super().setUpClass()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(cls):
         super().tearDownClass()
-        self._patch_environ.stop()
+        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -114,12 +114,12 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         super().setUpClass()
 
     @classmethod
-    def tearDownClass(self):
-        host_json = TESTS_ROOT / self.get_script_dir() / 'host.json'
+    def tearDownClass(cls):
+        host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
         remove_path(host_json)
 
         super().tearDownClass()
-        self._patch_environ.stop()
+        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):

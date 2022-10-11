@@ -13,8 +13,8 @@ class TestCodeQuality(unittest.TestCase):
     def test_mypy(self):
         try:
             import mypy  # NoQA
-        except ImportError:
-            raise unittest.SkipTest('mypy module is missing')
+        except ImportError as e:
+            raise unittest.SkipTest('mypy module is missing') from e
 
         try:
             subprocess.run(
@@ -26,7 +26,8 @@ class TestCodeQuality(unittest.TestCase):
         except subprocess.CalledProcessError as ex:
             if (sys.version_info[1] == 7
                     and sys.version_info[2] == 3):
-                raise unittest.SkipTest('Subprocess start failing for 3.7.3')
+                raise unittest.SkipTest('Subprocess start failing for 3.7.3') \
+                    from ex
             output = ex.output.decode()
             raise AssertionError(
                 f'mypy validation failed:\n{output}') from None
@@ -34,8 +35,8 @@ class TestCodeQuality(unittest.TestCase):
     def test_flake8(self):
         try:
             import flake8  # NoQA
-        except ImportError:
-            raise unittest.SkipTest('flake8 moudule is missing')
+        except ImportError as e:
+            raise unittest.SkipTest('flake8 moudule is missing') from e
 
         config_path = ROOT_PATH / '.flake8'
         if not config_path.exists():

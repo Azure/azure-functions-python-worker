@@ -28,170 +28,170 @@ HOST_JSON_TEMPLATE = """\
 }
 """
 
+class TestWsgiHttpFunctions(
+        testutils.WebHostTestCase):
+    @classmethod
+    def setUpClass(cls):
+        script_dir = UNIT_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
+            'wsgi_function'
+        host_json = script_dir / 'host.json'
+        with open(host_json, 'w+') as f:
+            f.write(HOST_JSON_TEMPLATE)
+        os_environ = os.environ.copy()
+        # Turn on feature flag
+        os_environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
+        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ.start()
+        super().setUpClass()
 
-class ThirdPartyHttpFunctionsTestBase:
-    class TestThirdPartyHttpFunctions(testutils.WebHostTestCase):
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        cls._patch_environ.stop()
 
-        @classmethod
-        def setUpClass(cls):
-            host_json = cls.get_script_dir() / 'host.json'
-            with open(host_json, 'w+') as f:
-                f.write(HOST_JSON_TEMPLATE)
-            os_environ = os.environ.copy()
-            # Turn on feature flag
-            os_environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
-            cls._patch_environ = patch.dict('os.environ', os_environ)
-            cls._patch_environ.start()
-            super().setUpClass()
+    @classmethod
+    def get_script_dir(cls):
+        return UNIT_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
+               'wsgi_function'
+    def test_debug_logging(self):
+        r = self.webhost.request('GET', 'debug_logging', no_prefix=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-debug')
 
-        @classmethod
-        def tearDownClass(cls):
-            super().tearDownClass()
-            cls._patch_environ.stop()
+    def check_log_debug_logging(self, host_out: typing.List[str]):
+        self.assertIn('logging info', host_out)
+        self.assertIn('logging warning', host_out)
+        self.assertIn('logging error', host_out)
+        self.assertNotIn('logging debug', host_out)
 
-        @classmethod
-        def get_script_dir(cls):
-            pass
+    def test_debug_with_user_logging(self):
+        r = self.webhost.request('GET', 'debug_user_logging',
+                                 no_prefix=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-user-debug')
 
-        def test_debug_logging(self):
-            r = self.webhost.request('GET', 'debug_logging', no_prefix=True)
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.text, 'OK-debug')
+    def check_log_debug_with_user_logging(self,
+                                          host_out: typing.List[str]):
+        self.assertIn('logging info', host_out)
+        self.assertIn('logging warning', host_out)
+        self.assertIn('logging debug', host_out)
+        self.assertIn('logging error', host_out)
 
-        def check_log_debug_logging(self, host_out: typing.List[str]):
-            self.assertIn('logging info', host_out)
-            self.assertIn('logging warning', host_out)
-            self.assertIn('logging error', host_out)
-            self.assertNotIn('logging debug', host_out)
+    @pytest.mark.flaky(reruns=3)
+    def test_print_logging_no_flush(self):
+        r = self.webhost.request('GET', 'print_logging?message=Secret42',
+                                 no_prefix=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-print-logging')
 
-        def test_debug_with_user_logging(self):
-            r = self.webhost.request('GET', 'debug_user_logging',
+    def check_log_print_logging_no_flush(self, host_out: typing.List[str]):
+        self.assertIn('Secret42', host_out)
+
+    @pytest.mark.flaky(reruns=3)
+    def test_print_logging_with_flush(self):
+        r = self.webhost.request('GET',
+                                 'print_logging?flush=true&message'
+                                 '=Secret42',
+                                 no_prefix=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-print-logging')
+
+    def check_log_print_logging_with_flush(self,
+                                           host_out: typing.List[str]):
+        self.assertIn('Secret42', host_out)
+
+    @pytest.mark.flaky(reruns=3)
+    def test_print_to_console_stdout(self):
+        r = self.webhost.request('GET',
+                                 'print_logging?console=true&message'
+                                 '=Secret42',
+                                 no_prefix=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-print-logging')
+
+    @pytest.mark.flaky(reruns=3)
+    def check_log_print_to_console_stdout(self,
+                                          host_out: typing.List[str]):
+        # System logs stdout should not exist in host_out
+        self.assertNotIn('Secret42', host_out)
+
+    def test_print_to_console_stderr(self):
+        r = self.webhost.request('GET', 'print_logging?console=true'
+                                        '&message=Secret42&is_stderr=true',
+                                 no_prefix=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-print-logging')
+
+    def check_log_print_to_console_stderr(self,
+                                          host_out: typing.List[str], ):
+        # System logs stderr should not exist in host_out
+        self.assertNotIn('Secret42', host_out)
+
+    def test_raw_body_bytes(self):
+        parent_dir = pathlib.Path(__file__).parent.parent
+        image_file = parent_dir / 'unittests/resources/functions.png'
+        with open(image_file, 'rb') as image:
+            img = image.read()
+            img_len = len(img)
+            r = self.webhost.request('POST', 'raw_body_bytes', data=img,
                                      no_prefix=True)
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.text, 'OK-user-debug')
 
-        def check_log_debug_with_user_logging(self,
-                                              host_out: typing.List[str]):
-            self.assertIn('logging info', host_out)
-            self.assertIn('logging warning', host_out)
-            self.assertIn('logging debug', host_out)
-            self.assertIn('logging error', host_out)
+        received_body_len = int(r.headers['body-len'])
+        self.assertEqual(received_body_len, img_len)
 
-        @pytest.mark.flaky(reruns=3)
-        def test_print_logging_no_flush(self):
-            r = self.webhost.request('GET', 'print_logging?message=Secret42',
-                                     no_prefix=True)
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.text, 'OK-print-logging')
+        body = r.content
+        try:
+            received_img_file = parent_dir / 'received_img.png'
+            with open(received_img_file, 'wb') as received_img:
+                received_img.write(body)
+            self.assertTrue(filecmp.cmp(received_img_file, image_file))
+        finally:
+            if (os.path.exists(received_img_file)):
+                os.remove(received_img_file)
 
-        def check_log_print_logging_no_flush(self, host_out: typing.List[str]):
-            self.assertIn('Secret42', host_out)
+    def test_return_http_no_body(self):
+        r = self.webhost.request('GET', 'return_http_no_body',
+                                 no_prefix=True)
+        self.assertEqual(r.text, '')
+        self.assertEqual(r.status_code, 200)
 
-        @pytest.mark.flaky(reruns=3)
-        def test_print_logging_with_flush(self):
-            r = self.webhost.request('GET',
-                                     'print_logging?flush=true&message'
-                                     '=Secret42',
-                                     no_prefix=True)
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.text, 'OK-print-logging')
+    def test_return_http_redirect(self):
+        r = self.webhost.request('GET', 'return_http_redirect',
+                                 no_prefix=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '<h1>Hello World™</h1>')
 
-        def check_log_print_logging_with_flush(self,
-                                               host_out: typing.List[str]):
-            self.assertIn('Secret42', host_out)
+        r = self.webhost.request('GET', 'return_http_redirect',
+                                 allow_redirects=False, no_prefix=True)
+        self.assertEqual(r.status_code, 302)
 
-        @pytest.mark.flaky(reruns=3)
-        def test_print_to_console_stdout(self):
-            r = self.webhost.request('GET',
-                                     'print_logging?console=true&message'
-                                     '=Secret42',
-                                     no_prefix=True)
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.text, 'OK-print-logging')
+    def test_unhandled_error(self):
+        r = self.webhost.request('GET', 'unhandled_error', no_prefix=True)
+        self.assertEqual(r.status_code, 500)
+        # https://github.com/Azure/azure-functions-host/issues/2706
+        # self.assertIn('ZeroDivisionError', r.text)
 
-        @pytest.mark.flaky(reruns=3)
-        def check_log_print_to_console_stdout(self,
-                                              host_out: typing.List[str]):
-            # System logs stdout should not exist in host_out
-            self.assertNotIn('Secret42', host_out)
+    def check_log_unhandled_error(self,
+                                  host_out: typing.List[str]):
+        r = re.compile(".*ZeroDivisionError: division by zero.*")
+        error_log = list(filter(r.match, host_out))
+        self.assertGreaterEqual(len(error_log), 1)
 
-        def test_print_to_console_stderr(self):
-            r = self.webhost.request('GET', 'print_logging?console=true'
-                                            '&message=Secret42&is_stderr=true',
-                                     no_prefix=True)
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.text, 'OK-print-logging')
-
-        def check_log_print_to_console_stderr(self,
-                                              host_out: typing.List[str], ):
-            # System logs stderr should not exist in host_out
-            self.assertNotIn('Secret42', host_out)
-
-        def test_raw_body_bytes(self):
-            parent_dir = pathlib.Path(__file__).parent.parent
-            image_file = parent_dir / 'unittests/resources/functions.png'
-            with open(image_file, 'rb') as image:
-                img = image.read()
-                img_len = len(img)
-                r = self.webhost.request('POST', 'raw_body_bytes', data=img,
-                                         no_prefix=True)
-
-            received_body_len = int(r.headers['body-len'])
-            self.assertEqual(received_body_len, img_len)
-
-            body = r.content
-            try:
-                received_img_file = parent_dir / 'received_img.png'
-                with open(received_img_file, 'wb') as received_img:
-                    received_img.write(body)
-                self.assertTrue(filecmp.cmp(received_img_file, image_file))
-            finally:
-                if (os.path.exists(received_img_file)):
-                    os.remove(received_img_file)
-
-        def test_return_http_no_body(self):
-            r = self.webhost.request('GET', 'return_http_no_body',
-                                     no_prefix=True)
-            self.assertEqual(r.text, '')
-            self.assertEqual(r.status_code, 200)
-
-        def test_return_http_redirect(self):
-            r = self.webhost.request('GET', 'return_http_redirect',
-                                     no_prefix=True)
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.text, '<h1>Hello World™</h1>')
-
-            r = self.webhost.request('GET', 'return_http_redirect',
-                                     allow_redirects=False, no_prefix=True)
-            self.assertEqual(r.status_code, 302)
-
-        def test_unhandled_error(self):
-            r = self.webhost.request('GET', 'unhandled_error', no_prefix=True)
-            self.assertEqual(r.status_code, 500)
-            # https://github.com/Azure/azure-functions-host/issues/2706
-            # self.assertIn('ZeroDivisionError', r.text)
-
-        def check_log_unhandled_error(self,
-                                      host_out: typing.List[str]):
-            r = re.compile(".*ZeroDivisionError: division by zero.*")
-            error_log = list(filter(r.match, host_out))
-            self.assertGreaterEqual(len(error_log), 1)
-
-        def test_unhandled_unserializable_error(self):
-            r = self.webhost.request(
+    def test_unhandled_unserializable_error(self):
+        r = self.webhost.request(
                 'GET', 'unhandled_unserializable_error', no_prefix=True)
-            self.assertEqual(r.status_code, 500)
+        self.assertEqual(r.status_code, 500)
 
-        def test_unhandled_urllib_error(self):
-            r = self.webhost.request(
+    def test_unhandled_urllib_error(self):
+        r = self.webhost.request(
                 'GET', 'unhandled_urllib_error',
                 params={'img': 'http://example.com/nonexistent.jpg'},
                 no_prefix=True)
-            self.assertEqual(r.status_code, 500)
+        self.assertEqual(r.status_code, 500)
 
 
 class TestAsgiHttpFunctions(
-        ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
+        TestWsgiHttpFunctions):
     @classmethod
     def get_script_dir(cls):
         return UNIT_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
@@ -220,10 +220,3 @@ class TestAsgiHttpFunctions(
         self.assertNotIn('parallelly_log_system at disguised_logger',
                          host_out)
 
-
-class TestWsgiHttpFunctions(
-        ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
-    @classmethod
-    def get_script_dir(cls):
-        return UNIT_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
-            'wsgi_function'

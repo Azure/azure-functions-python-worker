@@ -112,14 +112,113 @@ class TestHttpFunctionsStein(TestHttpFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
-                                            'http_functions_stein'
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+               'http_functions_stein'
 
 
 class TestHttpFunctionsSteinGeneric(TestHttpFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
-                                            'http_functions_stein' /\
-                                            'generic'
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+               'http_functions_stein' / \
+               'generic'
+
+
+class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
+    """Test the native Http Trigger in the local webhost.
+
+    This test class will spawn a webhost from your <project_root>/build/webhost
+    folder and replace the built-in Python with azure_functions_worker from
+    your code base. Since the Http Trigger is a native suport from host, we
+    don't need to setup any external resources.
+
+    this file is more focus on testing the E2E flow scenarios.
+    """
+
+    def setUp(self):
+        self._patch_environ = patch.dict('os.environ', os.environ.copy())
+        self._patch_environ.start()
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+        self._patch_environ.stop()
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+               'common_libs_functions'
+
+    @testutils.retryable_test(3, 5)
+    def test_numpy_should_return_ok(self):
+        r = self.webhost.request('GET', 'numpy_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+    @testutils.retryable_test(3, 5)
+    def test_dotenv_should_return_ok(self):
+        r = self.webhost.request('GET', 'dotenv_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+    @testutils.retryable_test(3, 5)
+    def test_requests_should_return_ok(self):
+        r = self.webhost.request('GET', 'requests_func',
+                                 timeout=10)
+
+        self.assertTrue(r.ok)
+        self.assertEqual(r.content, b'req status code: 200')
+
+    @testutils.retryable_test(3, 5)
+    def test_pandas_should_return_ok(self):
+        r = self.webhost.request('GET', 'pandas_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+    @testutils.retryable_test(3, 5)
+    def test_sklearn_should_return_ok(self):
+        r = self.webhost.request('GET', 'sklearn_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+    @testutils.retryable_test(3, 5)
+    def test_tensorflow_should_return_ok(self):
+        r = self.webhost.request('GET', 'tensorflow_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+    @testutils.retryable_test(3, 5)
+    def test_opencv_should_return_ok(self):
+        r = self.webhost.request('GET', 'opencv_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+    @testutils.retryable_test(3, 5)
+    def test_keras_should_return_ok(self):
+        r = self.webhost.request('GET', 'keras_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+    @testutils.retryable_test(3, 5)
+    def test_plotly_should_return_ok(self):
+        r = self.webhost.request('GET', 'plotly_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+
+class TestCommonLibsHttpFunctionsStein(TestCommonLibsHttpFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+               'common_libs_functions' / \
+               "common_libs_functions_stein"

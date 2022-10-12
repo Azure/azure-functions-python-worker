@@ -132,7 +132,15 @@ EXTRA_REQUIRES = {
         "pytest-randomly",
         "pytest-instafail",
         "pytest-rerunfailures",
-        "ptvsd"
+        "ptvsd",
+        "python-dotenv",
+        "plotly",
+        "keras",
+        "sklearn",
+        "opencv-python",
+        "tensorflow",
+        "pandas",
+        "numpy"
     ]
 }
 

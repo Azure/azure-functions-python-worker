@@ -158,13 +158,6 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
         self.assertTrue(r.ok)
 
     @testutils.retryable_test(3, 5)
-    def test_dotenv_should_return_ok(self):
-        r = self.webhost.request('GET', 'dotenv_func',
-                                 timeout=REQUEST_TIMEOUT_SEC)
-
-        self.assertTrue(r.ok)
-
-    @testutils.retryable_test(3, 5)
     def test_requests_should_return_ok(self):
         r = self.webhost.request('GET', 'requests_func',
                                  timeout=10)

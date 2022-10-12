@@ -18,22 +18,6 @@ import keras
 app = func.FunctionApp()
 
 
-@app.route(route="dotenv_func")
-def dotenv_func(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
-
-    load_dotenv()
-    env_path = Path('.') / '.env'
-    load_dotenv(dotenv_path=env_path)
-
-    domain = os.getenv("DOMAIN")
-    email = os.getenv("EMAIL")
-
-    res = "domain: {}, email: {}".format(domain, email)
-
-    return func.HttpResponse(res)
-
-
 @app.route(route="keras_func")
 def keras_func(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')

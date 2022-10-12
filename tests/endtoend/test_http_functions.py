@@ -114,7 +114,7 @@ class TestHttpFunctionsStein(TestHttpFunctions):
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-               'http_functions_stein'
+                                            'http_functions_stein'
 
 
 class TestHttpFunctionsSteinGeneric(TestHttpFunctions):
@@ -122,8 +122,8 @@ class TestHttpFunctionsSteinGeneric(TestHttpFunctions):
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-               'http_functions_stein' / \
-               'generic'
+                                            'http_functions_stein' / \
+                                            'generic'
 
 
 class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
@@ -149,7 +149,7 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-               'common_libs_functions'
+                                            'common_libs_functions'
 
     @testutils.retryable_test(3, 5)
     def test_numpy_should_return_ok(self):
@@ -214,5 +214,5 @@ class TestCommonLibsHttpFunctionsStein(TestCommonLibsHttpFunctions):
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-               'common_libs_functions' / \
-               "common_libs_functions_stein"
+                                            'common_libs_functions' / \
+                                            'common_libs_functions_stein'

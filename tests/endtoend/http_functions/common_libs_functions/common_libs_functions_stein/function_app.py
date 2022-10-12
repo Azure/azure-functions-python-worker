@@ -4,9 +4,6 @@
 import logging
 import azure.functions as func
 import numpy as np
-from dotenv import load_dotenv
-from pathlib import Path
-import os
 import requests
 import cv2
 from pandas import DataFrame

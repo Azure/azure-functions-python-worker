@@ -21,6 +21,11 @@ _AZURE_NAMESPACE = '__app__'
 _DEFAULT_SCRIPT_FILENAME = '__init__.py'
 _DEFAULT_ENTRY_POINT = 'main'
 
+PKGS_PATH = pathlib.Path("site/wwwroot/.python_packages")
+home = pathlib.Path.home()
+pkgs_path = os.path.join(home, PKGS_PATH)
+
+
 _submodule_dirs = []
 
 
@@ -88,8 +93,10 @@ def process_indexed_function(functions_registry: functions.Registry,
     expt_type=ImportError,
     message=f'Please check the requirements.txt file for the missing module. '
             f'For more info, please refer the troubleshooting'
-            f' guide: {MODULE_NOT_FOUND_TS_URL} '
-)
+            f' guide: {MODULE_NOT_FOUND_TS_URL} ',
+    debug_logs='Error in load_function. '
+               f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
+               f'python-packages Path exists: {os.path.exists(pkgs_path)}')
 def load_function(name: str, directory: str, script_file: str,
                   entry_point: Optional[str]):
     dir_path = pathlib.Path(directory)
@@ -137,8 +144,10 @@ def load_function(name: str, directory: str, script_file: str,
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}'
-)
+    message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}',
+    debug_logs='Error in index_function_app. '
+               f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
+               f'python-packages Path exists: {os.path.exists(pkgs_path)}')
 def index_function_app(function_path: str):
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)

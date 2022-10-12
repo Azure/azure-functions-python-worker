@@ -21,6 +21,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     Compared to the unittests/test_http_functions.py, this file is more focus
     on testing the E2E flow scenarios.
     """
+
     def setUp(self):
         self._patch_environ = patch.dict('os.environ', os.environ.copy())
         self._patch_environ.start()

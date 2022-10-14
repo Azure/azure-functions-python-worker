@@ -696,8 +696,8 @@ class TestExtension(unittest.TestCase):
         # Check logs
         self._instance._info_extension_is_enabled(sdk)
         info_mock.assert_called_once_with(
-            'Python Worker Extension is enabled in azure.functions (%s).',
-            '1.11.3b2'
+            'Python Worker Extension is enabled in azure.functions '
+            '(%s).', sdk.__version__
         )
 
     @patch('azure_functions_worker.extension.logger.info')

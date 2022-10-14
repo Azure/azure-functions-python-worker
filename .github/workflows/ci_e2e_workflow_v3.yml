@@ -1,14 +1,9 @@
-# This workflow will install Python dependencies and run end to end tests with single version of Python
+# This workflow will install Python dependencies and schedule end to end tests with version V3 of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: CI E2E tests
+name: CI E2E tests for V3
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [ dev, master, main, release/* ]
-  pull_request:
-    branches: [ dev, master, main, release/* ]
   schedule:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string
@@ -21,11 +16,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ 3.7, 3.8, 3.9, "3.10" ]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
       - name: Checkout code.
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          ref: 'v3.x-dev'
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -34,10 +31,6 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '3.1.x'
-      - name: Set up Dotnet 6.x
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '6.x'
       - name: Install dependencies and the worker
         run: |
           retry() {
@@ -112,18 +105,6 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString39 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
-        run: |
-          python -m pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
-      - name: Running 3.10 Tests
-        if: matrix.python-version == 3.10
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString310 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString310 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString310 }}
-          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString310 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
         run: |
           python -m pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Codecov

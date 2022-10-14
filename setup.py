@@ -50,9 +50,13 @@ AZURE_EXTENSIONS = """\
         Version="4.0.5" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
         Version="4.2.1" />
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Sql"
+        Version="0.1.346-preview" />
       <PackageReference
         Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
         Version="1.1.3" />
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask"
+        Version="2.7.2" />
    </ItemGroup>
 </Project>
 """
@@ -105,15 +109,16 @@ INSTALL_REQUIRES = [
     "grpcio~=1.43.0",
     "grpcio-tools~=1.43.0",
     "protobuf~=3.19.3",
-    "azure-functions==1.11.3b2",
+    'azure-functions==1.12.0',
     "python-dateutil~=2.8.2"
 ]
 
 EXTRA_REQUIRES = {
     "dev": [
         "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
+        "azure-functions-durable",  # Used for Durable E2E tests
         "flask",
-        "fastapi",
+        "fastapi~=0.85.0",  # Used for ASGIMiddleware test
         "pydantic",
         "pycryptodome~=3.10.1",
         "flake8~=4.0.1",

@@ -83,19 +83,19 @@ EXTENSION_CSPROJ_TEMPLATE = """\
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-     Version="5.0.0" />
+     Version="5.1.2.0" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
-     Version="3.1.0" />
+     Version="3.2.0" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
      Version="3.0.10" />
      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
      Version="4.0.5" />
      <PackageReference
       Include="Microsoft.Azure.WebJobs.Extensions.Storage.Blobs"
-      Version="5.0.0" />
+      Version="5.1.0" />
      <PackageReference
       Include="Microsoft.Azure.WebJobs.Extensions.Storage.Queues"
-      Version="5.0.0" />
+      Version="5.1.0" />
     <PackageReference
      Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
      Version="1.1.3" />
@@ -782,6 +782,9 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
     hostexe_args = []
     os.environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
 
+    # webhook for durable tests
+    os.environ['WEBSITE_HOSTNAME'] = f'http://*:{port}'
+
     # If we want to use core-tools
     coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')
     if coretools_exe:
@@ -877,6 +880,10 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         servicebus = testconfig['azure'].get('servicebus_key')
         if servicebus:
             extra_env['AzureWebJobsServiceBusConnectionString'] = servicebus
+
+        sql = testconfig['azure'].get('sql_key')
+        if sql:
+            extra_env['AzureWebJobsSqlConnectionString'] = sql
 
         eventgrid_topic_uri = testconfig['azure'].get('eventgrid_topic_uri')
         if eventgrid_topic_uri:

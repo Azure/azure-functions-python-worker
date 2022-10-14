@@ -228,7 +228,7 @@ class TestDependencyManager(unittest.TestCase):
 
     def test_add_to_sys_path_import_module(self):
         DependencyManager._add_to_sys_path(self._customer_deps_path, True)
-        import common_module  # NoQA
+        import common_module # NoQA
         self.assertEqual(
             common_module.package_location,
             os.path.join(self._customer_deps_path, 'common_module')
@@ -239,7 +239,7 @@ class TestDependencyManager(unittest.TestCase):
         into sys.path
         """
         DependencyManager._add_to_sys_path(self._customer_deps_path, True)
-        import common_namespace  # NoQA
+        import common_namespace # NoQA
         self.assertEqual(len(common_namespace.__path__), 1)
         self.assertEqual(
             common_namespace.__path__[0],
@@ -516,7 +516,7 @@ class TestDependencyManager(unittest.TestCase):
         sys.path.insert(0, self._worker_deps_path)
 
         # Ensure new import is from _worker_deps_path
-        import common_module as worker_mod  # NoQA
+        import common_module as worker_mod # NoQA
         self.assertIn('common_module', sys.modules)
         self.assertEqual(
             worker_mod.package_location,
@@ -544,6 +544,18 @@ class TestDependencyManager(unittest.TestCase):
         # Setup app settings
         os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'false'
 
+        # Setup paths
+        DependencyManager.worker_deps_path = self._worker_deps_path
+        DependencyManager.cx_deps_path = self._customer_deps_path
+        DependencyManager.cx_working_dir = self._customer_func_path
+
+        # The common_module cannot be imported since feature is disabled
+        DependencyManager.use_worker_dependencies()
+        with self.assertRaises(ImportError):
+            import common_module  # NoQA
+
+    def test_use_worker_dependencies_default_python_all_versions(self):
+        # Feature should be disabled for all python versions
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
         DependencyManager.cx_deps_path = self._customer_deps_path
@@ -592,6 +604,18 @@ class TestDependencyManager(unittest.TestCase):
         with self.assertRaises(ImportError):
             import common_module  # NoQA
 
+    def test_prioritize_customer_dependencies_default_all_versions(self):
+        # Feature should be disabled in Python for all versions
+        # Setup paths
+        DependencyManager.worker_deps_path = self._worker_deps_path
+        DependencyManager.cx_deps_path = self._customer_deps_path
+        DependencyManager.cx_working_dir = self._customer_func_path
+
+        # Ensure the common_module is imported from _customer_deps_path
+        DependencyManager.prioritize_customer_dependencies()
+        with self.assertRaises(ImportError):
+            import common_module  # NoQA
+
     def test_prioritize_customer_dependencies_from_working_directory(self):
         self._initialize_scenario()
 
@@ -607,36 +631,6 @@ class TestDependencyManager(unittest.TestCase):
             func_specific_module.package_location,
             os.path.join(self._customer_func_path, 'func_specific_module')
         )
-
-    def test_reload_customer_libraries_dependency_isolation_true(self):
-        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
-        # Setup paths
-        DependencyManager.worker_deps_path = self._worker_deps_path
-        DependencyManager.cx_deps_path = self._customer_deps_path
-        DependencyManager.cx_working_dir = self._customer_func_path
-
-        DependencyManager.reload_customer_libraries(self._customer_deps_path)
-        import common_module  # NoQA
-        self.assertEqual(
-            common_module.package_location,
-            os.path.join(self._customer_deps_path, 'common_module'))
-
-    def test_reload_customer_libraries_dependency_isolation_false(self):
-        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'false'
-        # Setup paths
-        DependencyManager.worker_deps_path = self._worker_deps_path
-        DependencyManager.cx_deps_path = self._customer_deps_path
-        DependencyManager.cx_working_dir = self._customer_func_path
-
-        DependencyManager._add_to_sys_path(self._worker_deps_path, True)
-        import azure.functions  # NoQA
-
-        DependencyManager._add_to_sys_path(self._customer_deps_path, True)
-        DependencyManager.reload_customer_libraries(self._customer_deps_path)
-        # Checking if azure.functions gets reloaded
-        self.assertIn(
-            os.path.join(self._customer_deps_path, 'azure', 'functions'),
-            sys.modules['azure.functions'].__path__)
 
     def test_remove_module_cache(self):
         # First import the common_module and create a sys.modules cache

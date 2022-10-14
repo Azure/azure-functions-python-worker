@@ -79,6 +79,16 @@ class Registry:
         return return_binding_name
 
     @staticmethod
+    def validate_binding_route(func_name: str, binding: BindingInfo,
+                               func_type: str):
+        if hasattr(binding, 'route') and binding.route.startswith(
+                '/') and func_type == 'function':
+            raise FunctionLoadError(
+                func_name,
+                f'Invalid route name: {binding.route}. Route name cannot begin'
+                f' with a /')
+
+    @staticmethod
     def validate_binding_direction(binding_name: str,
                                    binding_direction: str,
                                    func_name: str):
@@ -92,6 +102,14 @@ class Registry:
             raise FunctionLoadError(
                 func_name,
                 '"$return" binding must have direction set to "out"')
+
+    def validate_binding(self, func_name: str, binding: BindingInfo,
+                         func_type: str):
+        self.validate_binding_route(func_name, binding, func_type)
+
+        self.validate_binding_direction(binding.name,
+                                        binding.direction,
+                                        func_name)
 
     @staticmethod
     def is_context_required(params, bound_params: dict,
@@ -322,7 +340,7 @@ class Registry:
             has_explicit_return, has_implicit_return = \
                 self.get_explicit_and_implicit_return(
                     binding_name, binding_info, has_explicit_return,
-                    has_explicit_return, bound_params)
+                    has_implicit_return, bound_params)
 
             return_binding_name = self.get_return_binding(binding_name,
                                                           binding_info.type,
@@ -357,6 +375,7 @@ class Registry:
                              function):
         func = function.get_user_function()
         func_name = function.get_function_name()
+        func_type = function.http_type
         return_binding_name: typing.Optional[str] = None
         has_explicit_return = False
         has_implicit_return = False
@@ -368,9 +387,7 @@ class Registry:
 
         bound_params = {}
         for binding in function.get_bindings():
-            self.validate_binding_direction(binding.name,
-                                            binding.direction,
-                                            func_name)
+            self.validate_binding(func_name, binding, func_type)
 
             has_explicit_return, has_implicit_return = \
                 self.get_explicit_and_implicit_return(

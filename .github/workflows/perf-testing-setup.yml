@@ -27,10 +27,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '3.1.405'
-    - name: Set up Dotnet 5.0.x
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '5.0.x'
     - name: Set up Dotnet 6.x
       uses: actions/setup-dotnet@v1
       with:

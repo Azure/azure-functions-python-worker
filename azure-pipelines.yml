@@ -89,7 +89,7 @@ jobs:
       artifactName: '$(pythonVersion)_LINUX_X64'
 - job: Build_OSX_X64
   pool:
-    vmImage: 'macOS-10.15'
+    vmImage: 'macOS-12'
   strategy:
     matrix:
       Python37V4:

@@ -11,6 +11,8 @@ from sklearn.datasets import load_iris
 import tensorflow as tf
 import plotly
 import keras
+from dotenv import load_dotenv
+import os
 
 app = func.FunctionApp()
 
@@ -29,6 +31,20 @@ def numpy_func(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
     res = "array: {}".format(np.array([1, 2, 3], dtype=complex))
+
+    return func.HttpResponse(res)
+
+
+@app.route(route="dotenv_func")
+def dotenv_func(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+
+    load_dotenv()
+
+    domain = os.getenv("DOMAIN")
+    email = os.getenv("EMAIL")
+
+    res = "domain: {}, email: {}".format(domain, email)
 
     return func.HttpResponse(res)
 

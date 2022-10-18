@@ -3,6 +3,7 @@
 import unittest
 
 from azure_functions_worker import logging as flog
+from azure_functions_worker.logging import format_exception
 
 
 class TestLogging(unittest.TestCase):
@@ -33,3 +34,27 @@ class TestLogging(unittest.TestCase):
         self.assertFalse(flog.is_system_log_category('protobuf'))
         self.assertFalse(flog.is_system_log_category('root'))
         self.assertFalse(flog.is_system_log_category(''))
+
+    def test_format_exception(self):
+        def call0(fn):
+            call1(fn)
+
+        def call1(fn):
+            call2(fn)
+
+        def call2(fn):
+            fn()
+
+        def raising_function():
+            raise ValueError("Value error being raised.", )
+
+        try:
+            call0(raising_function)
+        except ValueError as e:
+            processed_exception = format_exception(e)
+            self.assertIn("call0", processed_exception)
+            self.assertIn("call1", processed_exception)
+            self.assertIn("call2", processed_exception)
+            self.assertIn("f", processed_exception)
+            self.assertIn("tests/unittests/test_logging.py",
+                          processed_exception)

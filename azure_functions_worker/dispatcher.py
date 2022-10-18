@@ -112,7 +112,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Successfully opened gRPC channel to %s:%s ', host, port)
         return disp
 
-    async def dispatch_forever(self):
+    async def dispatch_forever(self):  # sourcery skip: swap-if-expression
         if DispatcherMeta.__current_dispatcher__ is not None:
             raise RuntimeError('there can be only one running dispatcher per '
                                'process')
@@ -312,10 +312,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         try:
-            fx_metadata_results = []
             indexed_functions = loader.index_function_app(function_path)
             logger.info('Indexed function app and found %s functions',
                         len(indexed_functions))
+
+            fx_metadata_results = []
             if indexed_functions:
                 indexed_function_logs: List[str] = []
                 for func in indexed_functions:
@@ -596,8 +597,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             for map_name in map_names:
                 try:
-                    to_delete_resources = \
-                        False if self._function_data_cache_enabled else True
+                    to_delete_resources = not self._function_data_cache_enabled
                     success = self._shmem_mgr.free_mem_map(map_name,
                                                            to_delete_resources)
                     results[map_name] = success

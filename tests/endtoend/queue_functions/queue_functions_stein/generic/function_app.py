@@ -203,7 +203,7 @@ def queue_trigger_message_return(msg: func.QueueMessage) -> bytes:
 @app.function_name(name="queue_trigger_return")
 @app.generic_trigger(arg_name="msg",
                      type="queueTrigger",
-                     queue_name="testqueue-message-return",
+                     queue_name="testqueue-return",
                      connection="AzureWebJobsStorage")
 @app.generic_output_binding(
     arg_name="$return",

@@ -23,8 +23,15 @@ error_handler: Optional[logging.Handler] = None
 
 def format_exception(exception):
     msg = str(exception) + "\n"
-    msg += ''.join(traceback.format_exception(
-        etype=type(exception), value=exception, tb=exception.__traceback__))
+    if sys.version_info.minor < 10:
+        msg += ''.join(traceback.format_exception(
+            etype=type(exception),
+            tb=exception.__traceback__,
+            value=exception))
+    elif sys.version_info.minor == 10:
+        msg += ''.join(traceback.format_exception(exception))
+    else:
+        return exception
     return msg
 
 

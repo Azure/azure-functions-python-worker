@@ -21,7 +21,7 @@ handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
 
 
-def format_exception(exception):
+def format_exception(exception: Exception) -> str:
     msg = str(exception) + "\n"
     if sys.version_info.minor < 10:
         msg += ''.join(traceback.format_exception(
@@ -31,7 +31,7 @@ def format_exception(exception):
     elif sys.version_info.minor == 10:
         msg += ''.join(traceback.format_exception(exception))
     else:
-        return exception
+        msg = str(exception)
     return msg
 
 

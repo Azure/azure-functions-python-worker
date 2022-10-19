@@ -34,8 +34,8 @@ class FileAccessorWindows(FileAccessor):
             return mem_map
         except Exception as e:
             logger.warning(
-                f'Cannot open memory map {mem_map_name} with size '
-                f'{mem_map_size} - {e}')
+                'Cannot open memory map %s with size %s - %s', mem_map_name,
+                mem_map_size, e)
             return None
 
     def create_mem_map(self, mem_map_name: str, mem_map_size: int) \

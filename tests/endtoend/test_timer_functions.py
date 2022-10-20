@@ -18,7 +18,7 @@ class TestTimerFunctions(testutils.WebHostTestCase):
     your code base. Since the Timer Trigger is a native support from host, we
     don't need to setup any external resources.
 
-    Compared to the unittests/test_http_functions.py, this file is more focus
+    Compared to the unittests/test_timer_functions.py, this file is more focus
     on testing the E2E flow scenarios.
     """
 

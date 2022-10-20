@@ -3,7 +3,6 @@
 import base64
 import json
 import os
-import pathlib
 import re
 import shutil
 import subprocess
@@ -20,6 +19,8 @@ import requests
 from Crypto.Cipher import AES
 from Crypto.Hash.SHA256 import SHA256Hash
 from Crypto.Util.Padding import pad
+
+from tests.utils.constants import PROJECT_ROOT
 
 # Linux Consumption Testing Constants
 _DOCKER_PATH = "DOCKER_PATH"
@@ -160,7 +161,6 @@ class LinuxConsumptionWebHostController:
         container according to the image name. Return the port of container.
         """
         # Construct environment variables and start the docker container
-        PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
         worker_path = os.path.join(PROJECT_ROOT, 'azure_functions_worker')
         library_path = os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME,
                                     'azure', 'functions')

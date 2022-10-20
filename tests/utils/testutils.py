@@ -47,7 +47,8 @@ from azure_functions_worker.constants import (
     UNIX_SHARED_MEMORY_DIRECTORIES
 )
 from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
-from tests.utils.constants import PYAZURE_WORKER_DIR, PYAZURE_INTEGRATION_TEST, PROJECT_ROOT
+from tests.utils.constants import PYAZURE_WORKER_DIR, \
+    PYAZURE_INTEGRATION_TEST, PROJECT_ROOT
 
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')

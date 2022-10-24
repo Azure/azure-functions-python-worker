@@ -112,7 +112,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Successfully opened gRPC channel to %s:%s ', host, port)
         return disp
 
-    async def dispatch_forever(self):
+    async def dispatch_forever(self):  # sourcery skip: swap-if-expression
         if DispatcherMeta.__current_dispatcher__ is not None:
             raise RuntimeError('there can be only one running dispatcher per '
                                'process')
@@ -242,8 +242,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             # Don't crash on unknown messages.  Some of them can be ignored;
             # and if something goes really wrong the host can always just
             # kill the worker's process.
-            logger.error(f'unknown StreamingMessage content type '
-                         f'{content_type}')
+            logger.error('unknown StreamingMessage content type %s',
+                         content_type)
             return
 
         resp = await request_handler(request)
@@ -302,8 +302,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         if not os.path.exists(function_path):
             # Fallback to legacy model
-            logger.info(f"{SCRIPT_FILE_NAME} does not exist. "
-                        "Switching to host indexing.")
+            logger.info("%s does not exist. "
+                        "Switching to host indexing.", SCRIPT_FILE_NAME)
             return protos.StreamingMessage(
                 request_id=request.request_id,
                 function_metadata_response=protos.FunctionMetadataResponse(
@@ -312,10 +312,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         try:
-            fx_metadata_results = []
             indexed_functions = loader.index_function_app(function_path)
             logger.info('Indexed function app and found %s functions',
                         len(indexed_functions))
+
+            fx_metadata_results = []
             if indexed_functions:
                 indexed_function_logs: List[str] = []
                 for func in indexed_functions:
@@ -326,8 +327,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     indexed_function_logs.append(function_log)
 
                 logger.info(
-                    f'Successfully processed FunctionMetadataRequest for '
-                    f'functions: {" ".join(indexed_function_logs)}')
+                    'Successfully processed FunctionMetadataRequest for '
+                    'functions: %s', " ".join(indexed_function_logs))
 
                 fx_metadata_results = loader.process_indexed_function(
                     self._functions,
@@ -377,9 +378,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                 )
 
                 logger.info('Successfully processed FunctionLoadRequest, '
-                            f'request ID: {self.request_id}, '
-                            f'function ID: {function_id},'
-                            f'function Name: {function_name}')
+                            'request ID: %s, '
+                            'function ID: %s,'
+                            'function Name: %s', self.request_id, function_id,
+                            function_name)
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -596,13 +598,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             for map_name in map_names:
                 try:
-                    to_delete_resources = \
-                        False if self._function_data_cache_enabled else True
+                    to_delete_resources = not self._function_data_cache_enabled
                     success = self._shmem_mgr.free_mem_map(map_name,
                                                            to_delete_resources)
                     results[map_name] = success
                 except Exception as e:
-                    logger.error(f'Cannot free memory map {map_name} - {e}',
+                    logger.error('Cannot free memory map %s - %s', map_name, e,
                                  exc_info=True)
         finally:
             response = protos.CloseSharedMemoryResourcesResponse(
@@ -653,16 +654,16 @@ class Dispatcher(metaclass=DispatcherMeta):
             try:
                 int_value = int(value)
             except ValueError:
-                logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be an '
-                               'integer')
+                logger.warning('%s must be an integer',
+                               PYTHON_THREADPOOL_THREAD_COUNT)
                 return False
 
             if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN:
-                logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
-                               f'to a value between '
-                               f'{PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
-                               'sys.maxint. Reverting to default value for '
-                               'max_workers')
+                logger.warning(
+                    '%s must be set to a value between %s and sys.maxint. '
+                    'Reverting to default value for max_workers',
+                    PYTHON_THREADPOOL_THREAD_COUNT,
+                    PYTHON_THREADPOOL_THREAD_COUNT_MIN)
                 return False
             return True
 

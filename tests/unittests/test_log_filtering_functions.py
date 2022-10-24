@@ -2,8 +2,7 @@
 # Licensed under the MIT License.
 import typing
 
-from azure_functions_worker import testutils
-from azure_functions_worker.testutils import TESTS_ROOT, remove_path
+from tests.utils import testutils
 
 HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
 {
@@ -31,7 +30,7 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
+        host_json = testutils.TESTS_ROOT / cls.get_script_dir() / 'host.json'
 
         with open(host_json, 'w+') as f:
             f.write(HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO)
@@ -40,8 +39,8 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
-        remove_path(host_json)
+        host_json = testutils.TESTS_ROOT / cls.get_script_dir() / 'host.json'
+        testutils.remove_path(host_json)
 
         super(TestLogFilteringFunctions, cls).tearDownClass()
 

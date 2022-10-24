@@ -6,7 +6,7 @@ import subprocess
 import sys
 import textwrap
 
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 
 class TestLoader(testutils.WebHostTestCase):
@@ -150,7 +150,7 @@ class TestPluginLoader(testutils.AsyncTestCase):
         code = textwrap.dedent('''
 import asyncio
 from azure_functions_worker import protos
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 async def _runner():
     async with testutils.start_mockhost(

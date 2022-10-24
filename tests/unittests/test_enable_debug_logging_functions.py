@@ -4,9 +4,9 @@ import typing
 import os
 from unittest.mock import patch
 
-from azure_functions_worker import testutils
+from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_ENABLE_DEBUG_LOGGING
-from azure_functions_worker.testutils import TESTS_ROOT, remove_path
+from tests.utils.testutils import TESTS_ROOT, remove_path
 
 HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
 {

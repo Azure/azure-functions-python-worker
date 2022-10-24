@@ -10,11 +10,10 @@ from unittest import skipIf
 
 import pytest
 
-from azure_functions_worker import testutils
-from azure_functions_worker.testutils import WebHostTestCase
+from tests.utils import testutils
 
 
-class TestHttpFunctions(WebHostTestCase):
+class TestHttpFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):

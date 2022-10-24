@@ -20,6 +20,8 @@ from Crypto.Cipher import AES
 from Crypto.Hash.SHA256 import SHA256Hash
 from Crypto.Util.Padding import pad
 
+from tests.utils.constants import PROJECT_ROOT
+
 # Linux Consumption Testing Constants
 _DOCKER_PATH = "DOCKER_PATH"
 _DOCKER_DEFAULT_PATH = "docker"
@@ -133,9 +135,16 @@ class LinuxConsumptionWebHostController:
         # images used to onboard customers from a previous version. These
         # images are no longer used.
         tag_list = [x.strip("-upgrade") for x in tag_list]
-        version = list(filter(regex.match, tag_list))[-1]
 
-        image_tag = f'{_MESH_IMAGE_REPO}:{version}'
+        # Listing all the versions from the tags with suffix -python<version>
+        python_versions = list(filter(regex.match, tag_list))
+
+        # sorting all the python versions based on the runtime version and
+        # getting the latest released runtime version for python.
+        latest_version = sorted(python_versions, key=lambda x: float(
+            x.split(host_major + '.')[-1].split("-python")[0]))[-1]
+
+        image_tag = f'{_MESH_IMAGE_REPO}:{latest_version}'
         cls._mesh_images[host_major] = image_tag
         return image_tag
 
@@ -152,7 +161,7 @@ class LinuxConsumptionWebHostController:
         container according to the image name. Return the port of container.
         """
         # Construct environment variables and start the docker container
-        worker_path = os.path.dirname(__file__)
+        worker_path = os.path.join(PROJECT_ROOT, 'azure_functions_worker')
         library_path = os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME,
                                     'azure', 'functions')
         self._download_azure_functions()

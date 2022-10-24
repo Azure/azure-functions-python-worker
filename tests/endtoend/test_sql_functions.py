@@ -3,7 +3,7 @@
 import json
 from unittest import skip
 
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 
 @skip("Unskip when azure functions with SQL is released.")

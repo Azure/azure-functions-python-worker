@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 import time
 
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 
 class TestQueueFunctions(testutils.WebHostTestCase):

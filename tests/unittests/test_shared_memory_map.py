@@ -6,6 +6,8 @@ import sys
 import unittest
 from unittest import skipIf
 
+import pytest
+
 from tests.utils import testutils
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryMap
@@ -18,6 +20,7 @@ from azure_functions_worker.bindings.shared_memory_data_transfer \
 @skipIf(sys.platform == 'darwin', 'MacOS M1 machines do not correctly test the'
                                   'shared memory filesystems and thus skipping'
                                   ' these tests for the time being')
+@pytest.mark.flaky(reruns=3)
 class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
     """
     Tests for SharedMemoryMap.

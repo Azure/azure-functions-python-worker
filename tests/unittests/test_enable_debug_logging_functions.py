@@ -82,6 +82,7 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
 
+    @pytest.mark.flaky(reruns=3)
     def test_debug_logging_disabled(self):
         """
         Verify when cx debug logging is disabled, cx function debug logs
@@ -128,6 +129,7 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
 
+    @pytest.mark.flaky(reruns=3)
     def test_debug_logging_filtered(self):
         """
         Verify when cx debug logging is enabled and host logging level

@@ -38,7 +38,7 @@ class TestLinuxConsumption(TestCase):
             raise RuntimeError('Environment variable AzureWebJobsStorage is '
                                'required before running Linux Consumption test')
 
-    def test_placeholder_mode_root_returns_ok(self):
+    async def test_placeholder_mode_root_returns_ok(self):
         """In any circumstances, a placeholder container should returns 200
         even when it is not specialized.
         """
@@ -48,7 +48,7 @@ class TestLinuxConsumption(TestCase):
             resp = ctrl.send_request(req)
             self.assertTrue(resp.ok)
 
-    def test_http_no_auth(self):
+    async def test_http_no_auth(self):
         """An HttpTrigger function app with 'azure-functions' library
         should return 200.
         """
@@ -62,7 +62,7 @@ class TestLinuxConsumption(TestCase):
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
 
-    def test_common_libraries(self):
+    async def test_common_libraries(self):
         """A function app with the following requirements.txt:
 
         azure-functions
@@ -92,7 +92,7 @@ class TestLinuxConsumption(TestCase):
             self.assertIn('pyodbc', content)
             self.assertIn('requests', content)
 
-    def test_new_protobuf(self):
+    async def test_new_protobuf(self):
         """A function app with the following requirements.txt:
 
         azure-functions==1.7.0
@@ -119,7 +119,7 @@ class TestLinuxConsumption(TestCase):
             self.assertEqual(content['google.protobuf'], '3.15.8')
             self.assertEqual(content['grpc'], '1.33.2')
 
-    def test_old_protobuf(self):
+    async def test_old_protobuf(self):
         """A function app with the following requirements.txt:
 
         azure-functions==1.5.0
@@ -146,7 +146,7 @@ class TestLinuxConsumption(TestCase):
             self.assertIn(content['google.protobuf'], '3.8.0')
             self.assertIn(content['grpc'], '1.27.1')
 
-    def test_debug_logging_disabled(self):
+    async def test_debug_logging_disabled(self):
         """An HttpTrigger function app with 'azure-functions' library
         should return 200 and by default customer debug logging should be
         disabled.
@@ -173,7 +173,7 @@ class TestLinuxConsumption(TestCase):
             self.assertIn('logging error', func_log)
             self.assertNotIn('logging debug', func_log)
 
-    def test_debug_logging_enabled(self):
+    async def test_debug_logging_enabled(self):
         """An HttpTrigger function app with 'azure-functions' library
         should return 200 and with customer debug logging enabled, debug logs
         should be written to container logs.
@@ -201,7 +201,7 @@ class TestLinuxConsumption(TestCase):
             self.assertIn('logging error', func_log)
             self.assertIn('logging debug', func_log)
 
-    def test_pinning_functions_to_older_version(self):
+    async def test_pinning_functions_to_older_version(self):
         """An HttpTrigger function app with 'azure-functions==1.11.1' library
         should return 200 with the azure functions version set to 1.11.1
         since dependency isolation is enabled by default for all py versions

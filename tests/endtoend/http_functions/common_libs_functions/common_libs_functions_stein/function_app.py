@@ -11,8 +11,7 @@ from sklearn.datasets import load_iris
 import tensorflow as tf
 import plotly
 import keras
-from dotenv import load_dotenv
-import os
+
 
 app = func.FunctionApp()
 

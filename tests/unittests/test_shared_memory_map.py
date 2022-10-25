@@ -20,7 +20,6 @@ from azure_functions_worker.bindings.shared_memory_data_transfer \
 @skipIf(sys.platform == 'darwin', 'MacOS M1 machines do not correctly test the'
                                   'shared memory filesystems and thus skipping'
                                   ' these tests for the time being')
-@pytest.mark.flaky(reruns=3)
 class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
     """
     Tests for SharedMemoryMap.
@@ -56,6 +55,7 @@ class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
                                     'Invalid memory map'):
             SharedMemoryMap(self.file_accessor, mem_map_name, None)
 
+    @pytest.mark.flaky(reruns=3)
     def test_put_bytes(self):
         """
         Create a SharedMemoryMap and write bytes to it.
@@ -73,6 +73,7 @@ class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
             dispose_status = shared_mem_map.dispose()
             self.assertTrue(dispose_status)
 
+    @pytest.mark.flaky(reruns=3)
     def test_get_bytes(self):
         """
         Create a SharedMemoryMap, write bytes to it and then read them back.

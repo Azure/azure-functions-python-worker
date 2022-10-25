@@ -174,26 +174,6 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
         self.assertTrue(r.ok)
 
     @testutils.retryable_test(3, 5)
-    def test_dotenv_should_return_ok(self):
-        domain = "test"
-        email_id = "admin@test.com"
-
-        file_path = "http_functions/common_libs_functions/dotenv_func/.env"
-
-        with open(file_path, "w") as file:
-            file.write(f"DOMAIN={domain}\n")
-            file.write(f"EMAIL={email_id}\n")
-
-        r = self.webhost.request('GET', 'dotenv_func',
-                                 timeout=REQUEST_TIMEOUT_SEC)
-
-        os.remove(file_path)
-
-        self.assertTrue(r.ok)
-        self.assertEqual(r.content.decode("utf-8"), f"domain: {domain}, "
-                                                    f"email: {email_id}")
-
-    @testutils.retryable_test(3, 5)
     def test_sklearn_should_return_ok(self):
         r = self.webhost.request('GET', 'sklearn_func',
                                  timeout=REQUEST_TIMEOUT_SEC)

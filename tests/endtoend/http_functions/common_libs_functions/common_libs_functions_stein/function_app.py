@@ -35,20 +35,6 @@ def numpy_func(req: func.HttpRequest) -> func.HttpResponse:
     return func.HttpResponse(res)
 
 
-@app.route(route="dotenv_func")
-def dotenv_func(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
-
-    load_dotenv("../dotenv_func/.env")
-
-    domain = os.getenv("DOMAIN")
-    email = os.getenv("EMAIL")
-
-    res = "domain: {}, email: {}".format(domain, email)
-
-    return func.HttpResponse(res)
-
-
 @app.route(route="opencv_func")
 def opencv_func(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')

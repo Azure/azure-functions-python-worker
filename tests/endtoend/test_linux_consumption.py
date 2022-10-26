@@ -38,7 +38,7 @@ class TestLinuxConsumption(TestCase):
             raise RuntimeError('Environment variable AzureWebJobsStorage is '
                                'required before running Linux Consumption test')
 
-    async def test_placeholder_mode_root_returns_ok(self):
+    def test_placeholder_mode_root_returns_ok(self):
         """In any circumstances, a placeholder container should returns 200
         even when it is not specialized.
         """
@@ -46,9 +46,9 @@ class TestLinuxConsumption(TestCase):
                                                self._py_version) as ctrl:
             req = Request('GET', ctrl.url)
             resp = ctrl.send_request(req)
-            await self.assertTrue(resp.ok)
+            self.assertTrue(resp.ok)
 
-    async def test_http_no_auth(self):
+    def test_http_no_auth(self):
         """An HttpTrigger function app with 'azure-functions' library
         should return 200.
         """
@@ -60,9 +60,9 @@ class TestLinuxConsumption(TestCase):
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
-            await self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 200)
 
-    async def test_common_libraries(self):
+    def test_common_libraries(self):
         """A function app with the following requirements.txt:
 
         azure-functions
@@ -83,16 +83,17 @@ class TestLinuxConsumption(TestCase):
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
-            await self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 200)
             content = resp.json()
-            await self.assertIn('azure.functions', content)
-            await self.assertIn('azure.storage.blob', content)
-            await self.assertIn('numpy', content)
-            await self.assertIn('cryptography', content)
-            await self.assertIn('pyodbc', content)
-            await self.assertIn('requests', content)
+            self.assertIn('azure.functions', content)
+            self.assertIn('azure.storage.blob', content)
+            self.assertIn('numpy', content)
+            self.assertIn('cryptography', content)
+            self.assertIn('pyodbc', content)
+            self.assertIn('requests', content)
 
-    async def test_new_protobuf(self):
+
+    def test_new_protobuf(self):
         """A function app with the following requirements.txt:
 
         azure-functions==1.7.0
@@ -109,17 +110,17 @@ class TestLinuxConsumption(TestCase):
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
-            await self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 2200)
 
             content = resp.json()
 
             # Worker always picks up the SDK version bundled with the image
             # Version of the packages are inconsistent due to isolation's bug
-            await self.assertEqual(content['azure.functions'], '1.7.0')
-            await self.assertEqual(content['google.protobuf'], '3.15.8')
-            await self.assertEqual(content['grpc'], '1.33.2')
+            self.assertEqual(content['azure.functions'], '1.7.0')
+            self.assertEqual(content['google.protobuf'], '3.15.8')
+            self.assertEqual(content['grpc'], '1.33.2')
 
-    async def test_old_protobuf(self):
+    def test_old_protobuf(self):
         """A function app with the following requirements.txt:
 
         azure-functions==1.5.0
@@ -136,17 +137,17 @@ class TestLinuxConsumption(TestCase):
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
-            await self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 200)
 
             content = resp.json()
 
             # Worker always picks up the SDK version bundled with the image
             # Version of the packages are inconsistent due to isolation's bug
-            await self.assertIn(content['azure.functions'], '1.5.0')
-            await self.assertIn(content['google.protobuf'], '3.8.0')
-            await self.assertIn(content['grpc'], '1.27.1')
+            self.assertIn(content['azure.functions'], '1.5.0')
+            self.assertIn(content['google.protobuf'], '3.8.0')
+            self.assertIn(content['grpc'], '1.27.1')
 
-    async def test_debug_logging_disabled(self):
+    def test_debug_logging_disabled(self):
         """An HttpTrigger function app with 'azure-functions' library
         should return 200 and by default customer debug logging should be
         disabled.
@@ -160,20 +161,20 @@ class TestLinuxConsumption(TestCase):
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
             resp = ctrl.send_request(req)
 
-            await self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 200)
             container_log = ctrl.get_container_logs()
             func_start_idx = container_log.find(
                 "Executing 'Functions.HttpTrigger1'")
-            await self.assertTrue(func_start_idx > -1,
+            self.assertTrue(func_start_idx > -1,
                             "HttpTrigger function is not executed.")
             func_log = container_log[func_start_idx:]
 
-            await self.assertIn('logging info', func_log)
-            await self.assertIn('logging warning', func_log)
-            await self.assertIn('logging error', func_log)
-            await self.assertNotIn('logging debug', func_log)
+            self.assertIn('logging info', func_log)
+            self.assertIn('logging warning', func_log)
+            self.assertIn('logging error', func_log)
+            self.assertNotIn('logging debug', func_log)
 
-    async def test_debug_logging_enabled(self):
+    def test_debug_logging_enabled(self):
         """An HttpTrigger function app with 'azure-functions' library
         should return 200 and with customer debug logging enabled, debug logs
         should be written to container logs.
@@ -189,19 +190,19 @@ class TestLinuxConsumption(TestCase):
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
             resp = ctrl.send_request(req)
 
-            await self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 200)
             container_log = ctrl.get_container_logs()
             func_start_idx = container_log.find(
                 "Executing 'Functions.HttpTrigger1'")
-            await self.assertTrue(func_start_idx > -1)
+            self.assertTrue(func_start_idx > -1)
             func_log = container_log[func_start_idx:]
 
-            await self.assertIn('logging info', func_log)
-            await self.assertIn('logging warning', func_log)
-            await self.assertIn('logging error', func_log)
-            await self.assertIn('logging debug', func_log)
+            self.assertIn('logging info', func_log)
+            self.assertIn('logging warning', func_log)
+            self.assertIn('logging error', func_log)
+            self.assertIn('logging debug', func_log)
 
-    async def test_pinning_functions_to_older_version(self):
+    def test_pinning_functions_to_older_version(self):
         """An HttpTrigger function app with 'azure-functions==1.11.1' library
         should return 200 with the azure functions version set to 1.11.1
         since dependency isolation is enabled by default for all py versions
@@ -217,8 +218,8 @@ class TestLinuxConsumption(TestCase):
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
             resp = ctrl.send_request(req)
 
-            await self.assertEqual(resp.status_code, 200)
-            await self.assertIn("Func Version: 1.11.1", resp.text)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Func Version: 1.11.1", resp.text)
 
     def _get_blob_url(self, scenario_name: str) -> str:
         return (

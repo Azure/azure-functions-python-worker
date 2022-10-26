@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 import os
 import sys
-from unittest import TestCase, skipIf
+from unittest import TestCase
 
 from requests import Request
 
@@ -13,8 +13,6 @@ from tests.utils.testutils_lc import (
 _DEFAULT_HOST_VERSION = "4"
 
 
-@skipIf(sys.version_info >= (3, 10, 0),
-        "Skip the tests for Python 3.10 and above")
 class TestLinuxConsumption(TestCase):
     """Test worker behaviors on specific scenarios.
 
@@ -109,7 +107,7 @@ class TestLinuxConsumption(TestCase):
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
-            self.assertEqual(resp.status_code, 2200)
+            self.assertEqual(resp.status_code, 200)
 
             content = resp.json()
 

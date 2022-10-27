@@ -137,76 +137,82 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
     this file is more focus on testing the E2E flow scenarios.
     """
 
-    def setUp(self):
-        self._patch_environ = patch.dict('os.environ', os.environ.copy())
-        self._patch_environ.start()
-        super().setUp()
-
-    def tearDown(self):
-        super().tearDown()
-        self._patch_environ.stop()
-
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'common_libs_functions'
 
     @testutils.retryable_test(3, 5)
-    def test_numpy_should_return_ok(self):
+    def test_numpy(self):
         r = self.webhost.request('GET', 'numpy_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
-        self.assertTrue(r.ok)
+        res = "array: [1.+0.j 2.+0.j]"
+
+        self.assertEqual(r.content.decode("UTF-8"), res)
 
     @testutils.retryable_test(3, 5)
-    def test_requests_should_return_ok(self):
+    def test_requests(self):
         r = self.webhost.request('GET', 'requests_func',
                                  timeout=10)
 
         self.assertTrue(r.ok)
-        self.assertEqual(r.content, b'req status code: 200')
+        self.assertEqual(r.content.decode("UTF-8"), 'req status code: 200')
 
     @testutils.retryable_test(3, 5)
-    def test_pandas_should_return_ok(self):
+    def test_pandas(self):
         r = self.webhost.request('GET', 'pandas_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
-        self.assertTrue(r.ok)
+        self.assertIn("two-dimensional",
+                      r.content.decode("UTF-8"))
 
     @testutils.retryable_test(3, 5)
-    def test_sklearn_should_return_ok(self):
+    def test_sklearn(self):
         r = self.webhost.request('GET', 'sklearn_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
-        self.assertTrue(r.ok)
+        self.assertIn("First 5 records of array:",
+                      r.content.decode("UTF-8"))
 
     @testutils.retryable_test(3, 5)
-    def test_tensorflow_should_return_ok(self):
+    def test_tensorflow(self):
         r = self.webhost.request('GET', 'tensorflow_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
-        self.assertTrue(r.ok)
+        self.assertIn("tensorflow version:",
+                      r.content.decode("UTF-8"))
 
     @testutils.retryable_test(3, 5)
-    def test_opencv_should_return_ok(self):
+    def test_opencv(self):
         r = self.webhost.request('GET', 'opencv_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
-        self.assertTrue(r.ok)
+        self.assertIn("opencv version:",
+                      r.content.decode("UTF-8"))
 
     @testutils.retryable_test(3, 5)
-    def test_keras_should_return_ok(self):
+    def test_keras(self):
         r = self.webhost.request('GET', 'keras_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
-        self.assertTrue(r.ok)
+        self.assertIn("keras version:",
+                      r.content.decode("UTF-8"))
 
     @testutils.retryable_test(3, 5)
-    def test_plotly_should_return_ok(self):
+    def test_dotenv(self):
+        r = self.webhost.request('GET', 'dotenv_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertEqual(r.content.decode("UTF-8"), "found")
+
+    @testutils.retryable_test(3, 5)
+    def test_plotly(self):
         r = self.webhost.request('GET', 'plotly_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
-        self.assertTrue(r.ok)
+        self.assertIn("plotly version:",
+                      r.content.decode("UTF-8"))
 
 
 class TestCommonLibsHttpFunctionsStein(TestCommonLibsHttpFunctions):

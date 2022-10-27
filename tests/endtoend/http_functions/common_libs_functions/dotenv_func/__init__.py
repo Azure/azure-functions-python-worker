@@ -2,13 +2,13 @@
 # Licensed under the MIT License.
 
 import logging
+import dotenv
 import azure.functions as func
-import numpy as np
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
-    res = "array: {}".format(np.array([1, 2], dtype=complex))
+    res = "found" if "load_dotenv" in dotenv.__all__ else "not found"
 
     return func.HttpResponse(res)

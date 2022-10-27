@@ -11,6 +11,7 @@ from sklearn.datasets import load_iris
 import tensorflow as tf
 import plotly
 import keras
+import dotenv
 
 
 app = func.FunctionApp()
@@ -25,11 +26,20 @@ def keras_func(req: func.HttpRequest) -> func.HttpResponse:
     return func.HttpResponse(res)
 
 
+@app.route(route="dotenv_func")
+def dotenv_func(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+
+    res = "found" if "load_dotenv" in dotenv.__all__ else "not found"
+
+    return func.HttpResponse(res)
+
+
 @app.route(route="numpy_func")
 def numpy_func(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
-    res = "array: {}".format(np.array([1, 2, 3], dtype=complex))
+    res = "array: {}".format(np.array([1, 2], dtype=complex))
 
     return func.HttpResponse(res)
 
@@ -38,8 +48,7 @@ def numpy_func(req: func.HttpRequest) -> func.HttpResponse:
 def opencv_func(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
-    img = cv2.imread("test.png", cv2.IMREAD_COLOR)
-    res = "shape of image: {}".format(img.shape)
+    res = "opencv version: {}".format(cv2.__version__)
 
     return func.HttpResponse(res)
 

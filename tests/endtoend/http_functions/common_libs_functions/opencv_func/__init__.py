@@ -9,7 +9,6 @@ import azure.functions as func
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
-    img = cv2.imread("test.png", cv2.IMREAD_COLOR)
-    res = "shape of image: {}".format(img.shape)
+    res = "opencv version: {}".format(cv2.__version__)
 
     return func.HttpResponse(res)

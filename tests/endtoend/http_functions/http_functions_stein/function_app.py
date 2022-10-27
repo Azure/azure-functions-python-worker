@@ -1,7 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+from datetime import datetime
 import logging
+import time
 
 import azure.functions as func
 
@@ -32,3 +34,11 @@ def default_template(req: func.HttpRequest) -> func.HttpResponse:
             " personalized response.",
             status_code=200
         )
+
+
+@app.route(route="http_func")
+def http_func(req: func.HttpRequest) -> func.HttpResponse:
+    time.sleep(2)
+
+    current_time = datetime.now().strftime("%H:%M:%S")
+    return func.HttpResponse(f"{current_time}")

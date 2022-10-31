@@ -135,7 +135,6 @@ EXTRA_REQUIRES = {
         "ptvsd",
         "python-dotenv",
         "plotly",
-        "keras",
         "scikit-learn",
         "opencv-python",
         "pandas",

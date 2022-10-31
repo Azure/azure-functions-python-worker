@@ -9,20 +9,10 @@ import cv2
 from pandas import DataFrame
 from sklearn.datasets import load_iris
 import plotly
-import keras
 import dotenv
 
 
 app = func.FunctionApp()
-
-
-@app.route(route="keras_func")
-def keras_func(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
-
-    res = "keras version: {}".format(keras.__version__)
-
-    return func.HttpResponse(res)
 
 
 @app.route(route="dotenv_func")

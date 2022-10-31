@@ -181,14 +181,6 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
                       r.content.decode("UTF-8"))
 
     @testutils.retryable_test(3, 5)
-    def test_keras(self):
-        r = self.webhost.request('GET', 'keras_func',
-                                 timeout=REQUEST_TIMEOUT_SEC)
-
-        self.assertIn("keras version:",
-                      r.content.decode("UTF-8"))
-
-    @testutils.retryable_test(3, 5)
     def test_dotenv(self):
         r = self.webhost.request('GET', 'dotenv_func',
                                  timeout=REQUEST_TIMEOUT_SEC)

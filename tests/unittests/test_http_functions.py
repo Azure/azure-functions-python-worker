@@ -100,6 +100,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('hello info', host_out)
         self.assertIn('and another error', host_out)
 
+    @pytest.mark.flaky(reruns=3)
     def test_debug_logging(self):
         r = self.webhost.request('GET', 'debug_logging')
         self.assertEqual(r.status_code, 200)

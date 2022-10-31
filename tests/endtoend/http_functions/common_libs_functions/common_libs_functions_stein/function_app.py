@@ -8,7 +8,6 @@ import requests
 import cv2
 from pandas import DataFrame
 from sklearn.datasets import load_iris
-import tensorflow as tf
 import plotly
 import keras
 import dotenv
@@ -91,14 +90,5 @@ def sklearn_func(req: func.HttpRequest) -> func.HttpResponse:
     iris = load_iris()
 
     res = "First 5 records of array: \n {}".format(iris.data[:5])
-
-    return func.HttpResponse(res)
-
-
-@app.route(route="tensorflow_func")
-def tensorflow_func(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
-
-    res = "tensorflow version: {}".format(tf.__version__)
 
     return func.HttpResponse(res)

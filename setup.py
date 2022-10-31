@@ -136,9 +136,8 @@ EXTRA_REQUIRES = {
         "python-dotenv",
         "plotly",
         "keras",
-        "sklearn",
+        "scikit-learn",
         "opencv-python",
-        "tensorflow",
         "pandas",
         "numpy"
     ]

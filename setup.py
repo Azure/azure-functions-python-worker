@@ -106,9 +106,9 @@ PACKAGES = [
 ]
 
 INSTALL_REQUIRES = [
-    "grpcio~=1.43.0",
-    "grpcio-tools~=1.43.0",
-    "protobuf~=3.19.3",
+    "grpcio~=1.50.0",
+    "grpcio-tools~=1.50.0",
+    "protobuf~=3.20.3",
     'azure-functions==1.13.0b1',
     "python-dateutil~=2.8.2"
 ]

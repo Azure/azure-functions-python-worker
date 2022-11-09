@@ -344,10 +344,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             if not self._functions.get_function(function_id):
                 if function_metadata.properties.get("worker_indexed", False):
-                    # This is for the second worker and above where the worker indexing is enabled and load request is
-                    # called without calling the metadata request. In this case we index the function and update the
-                    # workers registry
-                    logger.info(f"Indexing function {function_name} in the load request")
+                    # This is for the second worker and above where the worker
+                    # indexing is enabled and load request is called without
+                    # calling the metadata request. In this case we index the
+                    # function and update the workers registry
+                    logger.info(f"Indexing function {function_name} in the "
+                                f"load request")
                     self.index_functions(function_path)
                 else:
                     # legacy function
@@ -368,7 +370,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     logger.info('Successfully processed FunctionLoadRequest, '
                                 'request ID: %s, '
                                 'function ID: %s,'
-                                'function Name: %s', self.request_id, function_id,
+                                'function Name: %s', self.request_id,
+                                function_id,
                                 function_name)
 
             return protos.StreamingMessage(

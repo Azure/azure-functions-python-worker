@@ -9,8 +9,9 @@ from tests.utils import testutils
 
 class TestWorkerProcessCountStein(testutils.WebHostTestCase):
     """Test the Http Trigger with setting up the python worker process count to 2.
-     This tests will check if worker1 indexes the function in metadata request and worker2 indexes the function
-    in the load request since worker2 does not call metadata request.
+     This tests will check if worker1 indexes the function in metadata request
+     and worker2 indexes the function in the load request since worker2 does not
+     call metadata request.
     """
     @classmethod
     def setUpClass(cls):
@@ -23,7 +24,7 @@ class TestWorkerProcessCountStein(testutils.WebHostTestCase):
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-               'http_functions_stein'
+            'http_functions_stein'
 
     def test_http_func_with_worker_process_count(self):
         """Test if the default template of Http trigger in Python Function app

@@ -378,7 +378,8 @@ class Registry:
         func = function.get_user_function()
         func_name = function.get_function_name()
         func_type = function.http_type
-        function_id = str(uuid.uuid5(namespace=uuid.NAMESPACE_OID, name=func_name))
+        function_id = str(uuid.uuid5(namespace=uuid.NAMESPACE_OID,
+                                     name=func_name))
         return_binding_name: typing.Optional[str] = None
         has_explicit_return = False
         has_implicit_return = False

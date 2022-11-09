@@ -8,7 +8,6 @@ import os
 import os.path
 import pathlib
 import sys
-import uuid
 from os import PathLike, fspath
 from typing import Optional, Dict
 

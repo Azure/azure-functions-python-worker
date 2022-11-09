@@ -343,8 +343,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         try:
             if not self._functions.get_function(function_id):
-                if function_metadata.properties.get("worker_indexed", False) or \
-                       os.path.exists(function_path):
+                if function_metadata.properties.get("worker_indexed", False) \
+                        or os.path.exists(function_path):
                     # This is for the second worker and above where the worker
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the

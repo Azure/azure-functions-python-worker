@@ -118,7 +118,7 @@ class TestWorkerProcessCount2(testutils.WebHostTestCase):
         thread1.join()
         thread2.join()
         '''time returned from both of the HTTP request should be less than
-        1 since both the request should be processed at the
+        2 since both the request should be processed at the
         same time because FUNCTIONS_WORKER_PROCESS_COUNT is 2'''
         time_diff_in_seconds = abs((response[0] - response[1]).total_seconds())
         self.assertTrue(time_diff_in_seconds < 2)

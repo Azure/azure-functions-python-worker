@@ -110,6 +110,29 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_OSX_X64'
+- job: Build_OSX_ARM64
+  pool:
+    vmImage: 'macOS-12'
+  strategy:
+    matrix:
+      Python37V4:
+        pythonVersion: '3.7'
+        workerPath: $(PROD_V4_WORKER_PY)
+      Python38V4:
+        pythonVersion: '3.8'
+        workerPath: $(PROD_V4_WORKER_PY)
+      Python39V4:
+        pythonVersion: '3.9'
+        workerPath: $(PROD_V4_WORKER_PY)
+      Python310V4:
+        pythonVersion: '3.10'
+        workerPath: $(PROD_V4_WORKER_PY)
+  steps:
+  - template: pack/templates/mac_m1_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
+      artifactName: '$(pythonVersion)_OSX_ARM64'
 
 - job: PackageWorkers
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64']

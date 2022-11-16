@@ -312,30 +312,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         try:
-            indexed_functions = loader.index_function_app(function_path)
-            logger.info('Indexed function app and found %s functions',
-                        len(indexed_functions))
-
-            fx_metadata_results = []
-            if indexed_functions:
-                indexed_function_logs: List[str] = []
-                for func in indexed_functions:
-                    function_log = "Function Name: {}, Function Binding: {}" \
-                        .format(func.get_function_name(),
-                                [(binding.type, binding.name) for binding in
-                                 func.get_bindings()])
-                    indexed_function_logs.append(function_log)
-
-                logger.info(
-                    'Successfully processed FunctionMetadataRequest for '
-                    'functions: %s', " ".join(indexed_function_logs))
-
-                fx_metadata_results = loader.process_indexed_function(
-                    self._functions,
-                    indexed_functions)
-            else:
-                logger.warning("No functions indexed. Please refer to "
-                               "aka.ms/pythonprogrammingmodel for more info.")
+            fx_metadata_results = self.index_functions(function_path)
 
             return protos.StreamingMessage(
                 request_id=request.request_id,
@@ -355,7 +332,10 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__function_load_request(self, request):
         func_request = request.function_load_request
         function_id = func_request.function_id
-        function_name = func_request.metadata.name
+        function_metadata = func_request.metadata
+        function_name = function_metadata.name
+        function_path = os.path.join(function_metadata.directory,
+                                     SCRIPT_FILE_NAME)
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
@@ -363,25 +343,37 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         try:
             if not self._functions.get_function(function_id):
-                func = loader.load_function(
-                    func_request.metadata.name,
-                    func_request.metadata.directory,
-                    func_request.metadata.script_file,
-                    func_request.metadata.entry_point)
+                if function_metadata.properties.get("worker_indexed", False) \
+                        or os.path.exists(function_path):
+                    # This is for the second worker and above where the worker
+                    # indexing is enabled and load request is called without
+                    # calling the metadata request. In this case we index the
+                    # function and update the workers registry
+                    logger.info(f"Indexing function {function_name} in the "
+                                f"load request")
+                    _ = self.index_functions(function_path)
+                else:
+                    # legacy function
+                    func = loader.load_function(
+                        func_request.metadata.name,
+                        func_request.metadata.directory,
+                        func_request.metadata.script_file,
+                        func_request.metadata.entry_point)
 
-                self._functions.add_function(
-                    function_id, func, func_request.metadata)
+                    self._functions.add_function(
+                        function_id, func, func_request.metadata)
 
-                ExtensionManager.function_load_extension(
-                    function_name,
-                    func_request.metadata.directory
-                )
+                    ExtensionManager.function_load_extension(
+                        function_name,
+                        func_request.metadata.directory
+                    )
 
-                logger.info('Successfully processed FunctionLoadRequest, '
-                            'request ID: %s, '
-                            'function ID: %s,'
-                            'function Name: %s', self.request_id, function_id,
-                            function_name)
+                    logger.info('Successfully processed FunctionLoadRequest, '
+                                'request ID: %s, '
+                                'function ID: %s,'
+                                'function Name: %s', self.request_id,
+                                function_id,
+                                function_name)
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -576,6 +568,30 @@ class Dispatcher(metaclass=DispatcherMeta):
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
+
+    def index_functions(self, function_path: str):
+        indexed_functions = loader.index_function_app(function_path)
+        logger.info('Indexed function app and found %s functions',
+                    len(indexed_functions))
+
+        if indexed_functions:
+            indexed_function_logs: List[str] = []
+            for func in indexed_functions:
+                function_log = "Function Name: {}, Function Binding: {}" \
+                    .format(func.get_function_name(),
+                            [(binding.type, binding.name) for binding in
+                             func.get_bindings()])
+                indexed_function_logs.append(function_log)
+
+            logger.info(
+                'Successfully processed FunctionMetadataRequest for '
+                'functions: %s', " ".join(indexed_function_logs))
+
+            fx_metadata_results = loader.process_indexed_function(
+                self._functions,
+                indexed_functions)
+
+            return fx_metadata_results
 
     async def _handle__close_shared_memory_resources_request(self, request):
         """

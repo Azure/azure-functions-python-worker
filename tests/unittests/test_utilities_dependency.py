@@ -6,8 +6,8 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from azure_functions_worker import testutils
 from azure_functions_worker.utils.dependency import DependencyManager
+from tests.utils import testutils
 
 
 class TestDependencyManager(unittest.TestCase):

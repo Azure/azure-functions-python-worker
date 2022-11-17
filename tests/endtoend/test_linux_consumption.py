@@ -2,11 +2,11 @@
 # Licensed under the MIT License.
 import os
 import sys
-
 from unittest import TestCase, skipIf
+
 from requests import Request
 
-from azure_functions_worker.testutils_lc import (
+from tests.utils.testutils_lc import (
     LinuxConsumptionWebHostController
 )
 

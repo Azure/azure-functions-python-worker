@@ -92,14 +92,14 @@ class SharedMemoryManager:
         try:
             num_bytes_written = shared_mem_map.put_bytes(content)
         except Exception as e:
-            logger.warning(f'Cannot write {content_length} bytes into shared '
-                           f'memory {mem_map_name} - {e}')
+            logger.warning('Cannot write %s bytes into shared memory %s - %s',
+                           content_length, mem_map_name, e)
             shared_mem_map.dispose()
             return None
         if num_bytes_written != content_length:
             logger.error(
-                f'Cannot write data into shared memory {mem_map_name} '
-                f'({num_bytes_written} != {content_length})')
+                'Cannot write data into shared memory %s (%s != %s)',
+                mem_map_name, num_bytes_written, content_length)
             shared_mem_map.dispose()
             return None
         self.allocated_mem_maps[mem_map_name] = shared_mem_map
@@ -128,8 +128,8 @@ class SharedMemoryManager:
         """
         if offset != 0:
             logger.error(
-                f'Cannot read bytes. Non-zero offset ({offset}) '
-                f'not supported.')
+                'Cannot read bytes. Non-zero offset (%s) not supported.',
+                offset)
             return None
         shared_mem_map = self._open(mem_map_name, count)
         if shared_mem_map is None:
@@ -168,7 +168,8 @@ class SharedMemoryManager:
         """
         if mem_map_name not in self.allocated_mem_maps:
             logger.error(
-                f'Cannot find memory map in list of allocations {mem_map_name}')
+                'Cannot find memory map in list of allocations %s',
+                mem_map_name)
             return False
         shared_mem_map = self.allocated_mem_maps[mem_map_name]
         success = shared_mem_map.dispose(to_delete_backing_resources)

@@ -112,7 +112,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Successfully opened gRPC channel to %s:%s ', host, port)
         return disp
 
-    async def dispatch_forever(self):
+    async def dispatch_forever(self):  # sourcery skip: swap-if-expression
         if DispatcherMeta.__current_dispatcher__ is not None:
             raise RuntimeError('there can be only one running dispatcher per '
                                'process')
@@ -242,8 +242,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             # Don't crash on unknown messages.  Some of them can be ignored;
             # and if something goes really wrong the host can always just
             # kill the worker's process.
-            logger.error(f'unknown StreamingMessage content type '
-                         f'{content_type}')
+            logger.error('unknown StreamingMessage content type %s',
+                         content_type)
             return
 
         resp = await request_handler(request)
@@ -302,8 +302,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         if not os.path.exists(function_path):
             # Fallback to legacy model
-            logger.info(f"{SCRIPT_FILE_NAME} does not exist. "
-                        "Switching to host indexing.")
+            logger.info("%s does not exist. "
+                        "Switching to host indexing.", SCRIPT_FILE_NAME)
             return protos.StreamingMessage(
                 request_id=request.request_id,
                 function_metadata_response=protos.FunctionMetadataResponse(
@@ -312,29 +312,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         try:
-            fx_metadata_results = []
-            indexed_functions = loader.index_function_app(function_path)
-            logger.info('Indexed function app and found %s functions',
-                        len(indexed_functions))
-            if indexed_functions:
-                indexed_function_logs: List[str] = []
-                for func in indexed_functions:
-                    function_log = "Function Name: {}, Function Binding: {}" \
-                        .format(func.get_function_name(),
-                                [(binding.type, binding.name) for binding in
-                                 func.get_bindings()])
-                    indexed_function_logs.append(function_log)
-
-                logger.info(
-                    f'Successfully processed FunctionMetadataRequest for '
-                    f'functions: {" ".join(indexed_function_logs)}')
-
-                fx_metadata_results = loader.process_indexed_function(
-                    self._functions,
-                    indexed_functions)
-            else:
-                logger.warning("No functions indexed. Please refer to "
-                               "aka.ms/pythonprogrammingmodel for more info.")
+            fx_metadata_results = self.index_functions(function_path)
 
             return protos.StreamingMessage(
                 request_id=request.request_id,
@@ -354,7 +332,10 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__function_load_request(self, request):
         func_request = request.function_load_request
         function_id = func_request.function_id
-        function_name = func_request.metadata.name
+        function_metadata = func_request.metadata
+        function_name = function_metadata.name
+        function_path = os.path.join(function_metadata.directory,
+                                     SCRIPT_FILE_NAME)
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
@@ -362,24 +343,37 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         try:
             if not self._functions.get_function(function_id):
-                func = loader.load_function(
-                    func_request.metadata.name,
-                    func_request.metadata.directory,
-                    func_request.metadata.script_file,
-                    func_request.metadata.entry_point)
+                if function_metadata.properties.get("worker_indexed", False) \
+                        or os.path.exists(function_path):
+                    # This is for the second worker and above where the worker
+                    # indexing is enabled and load request is called without
+                    # calling the metadata request. In this case we index the
+                    # function and update the workers registry
+                    logger.info(f"Indexing function {function_name} in the "
+                                f"load request")
+                    _ = self.index_functions(function_path)
+                else:
+                    # legacy function
+                    func = loader.load_function(
+                        func_request.metadata.name,
+                        func_request.metadata.directory,
+                        func_request.metadata.script_file,
+                        func_request.metadata.entry_point)
 
-                self._functions.add_function(
-                    function_id, func, func_request.metadata)
+                    self._functions.add_function(
+                        function_id, func, func_request.metadata)
 
-                ExtensionManager.function_load_extension(
-                    function_name,
-                    func_request.metadata.directory
-                )
+                    ExtensionManager.function_load_extension(
+                        function_name,
+                        func_request.metadata.directory
+                    )
 
-                logger.info('Successfully processed FunctionLoadRequest, '
-                            f'request ID: {self.request_id}, '
-                            f'function ID: {function_id},'
-                            f'function Name: {function_name}')
+                    logger.info('Successfully processed FunctionLoadRequest, '
+                                'request ID: %s, '
+                                'function ID: %s,'
+                                'function Name: %s', self.request_id,
+                                function_id,
+                                function_name)
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -575,6 +569,30 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
 
+    def index_functions(self, function_path: str):
+        indexed_functions = loader.index_function_app(function_path)
+        logger.info('Indexed function app and found %s functions',
+                    len(indexed_functions))
+
+        if indexed_functions:
+            indexed_function_logs: List[str] = []
+            for func in indexed_functions:
+                function_log = "Function Name: {}, Function Binding: {}" \
+                    .format(func.get_function_name(),
+                            [(binding.type, binding.name) for binding in
+                             func.get_bindings()])
+                indexed_function_logs.append(function_log)
+
+            logger.info(
+                'Successfully processed FunctionMetadataRequest for '
+                'functions: %s', " ".join(indexed_function_logs))
+
+            fx_metadata_results = loader.process_indexed_function(
+                self._functions,
+                indexed_functions)
+
+            return fx_metadata_results
+
     async def _handle__close_shared_memory_resources_request(self, request):
         """
         Frees any memory maps that were produced as output for a given
@@ -596,13 +614,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             for map_name in map_names:
                 try:
-                    to_delete_resources = \
-                        False if self._function_data_cache_enabled else True
+                    to_delete_resources = not self._function_data_cache_enabled
                     success = self._shmem_mgr.free_mem_map(map_name,
                                                            to_delete_resources)
                     results[map_name] = success
                 except Exception as e:
-                    logger.error(f'Cannot free memory map {map_name} - {e}',
+                    logger.error('Cannot free memory map %s - %s', map_name, e,
                                  exc_info=True)
         finally:
             response = protos.CloseSharedMemoryResourcesResponse(
@@ -653,16 +670,16 @@ class Dispatcher(metaclass=DispatcherMeta):
             try:
                 int_value = int(value)
             except ValueError:
-                logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be an '
-                               'integer')
+                logger.warning('%s must be an integer',
+                               PYTHON_THREADPOOL_THREAD_COUNT)
                 return False
 
             if int_value < PYTHON_THREADPOOL_THREAD_COUNT_MIN:
-                logger.warning(f'{PYTHON_THREADPOOL_THREAD_COUNT} must be set '
-                               f'to a value between '
-                               f'{PYTHON_THREADPOOL_THREAD_COUNT_MIN} and '
-                               'sys.maxint. Reverting to default value for '
-                               'max_workers')
+                logger.warning(
+                    '%s must be set to a value between %s and sys.maxint. '
+                    'Reverting to default value for max_workers',
+                    PYTHON_THREADPOOL_THREAD_COUNT,
+                    PYTHON_THREADPOOL_THREAD_COUNT_MIN)
                 return False
             return True
 

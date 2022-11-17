@@ -33,6 +33,7 @@ import uuid
 
 import grpc
 import requests
+
 from azure_functions_worker import dispatcher
 from azure_functions_worker import protos
 from azure_functions_worker._thirdparty import aio_compat
@@ -42,14 +43,13 @@ from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryConstants as consts
 from azure_functions_worker.constants import (
     PYAZURE_WEBHOST_DEBUG,
-    PYAZURE_WORKER_DIR,
-    PYAZURE_INTEGRATION_TEST,
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
     UNIX_SHARED_MEMORY_DIRECTORIES
 )
 from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
+from tests.utils.constants import PYAZURE_WORKER_DIR, \
+    PYAZURE_INTEGRATION_TEST, PROJECT_ROOT
 
-PROJECT_ROOT = pathlib.Path(__file__).parent.parent
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')
 E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
@@ -258,8 +258,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 self.host_stdout.seek(last_pos)
                 self.host_out = self.host_stdout.read()
                 self.host_stdout_logger.error(
-                    f'Captured WebHost stdout from {self.host_stdout.name} '
-                    f':\n{self.host_out}')
+                    'Captured WebHost stdout from %s :\n%s',
+                    self.host_stdout.name, self.host_out)
             finally:
                 if test_exception is not None:
                     raise test_exception

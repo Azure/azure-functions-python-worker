@@ -65,18 +65,6 @@ jobs:
           retry 5 python setup.py build
           retry 5 python setup.py webhost --branch-name=dev
           retry 5 python setup.py extension
-      - name: Running 3.6 Tests
-        if: matrix.python-version == 3.6
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString36 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString36 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString36 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString36 }}
-          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString36 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString36 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString36 }}
-        run: |
-          python -m pytest -n auto  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Running 3.7 Tests
         if: matrix.python-version == 3.7
         env:

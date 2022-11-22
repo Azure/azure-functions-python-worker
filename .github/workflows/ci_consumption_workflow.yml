@@ -1,0 +1,46 @@
+# This workflow will run all tests in tests/consumption_tests in Docker using a consumption image
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: CI Consumption tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ dev, master, main, release/* ]
+  pull_request:
+    branches: [ dev, master, main, release/* ]
+
+jobs:
+  build:
+    name: "Python Consumption CI Run"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ 3.7, 3.8, 3.9, "3.10" ]
+
+    steps:
+      - name: Running 3.7 Tests
+        if: matrix.python-version == 3.7
+        env:
+          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
+        run: |
+          python -m pytest -n auto  --instafail tests/consumption_tests
+      - name: Running 3.8 Tests
+        if: matrix.python-version == 3.8
+        env:
+          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
+        run: |
+          python -m pytest -n auto  --instafail tests/consumption_tests
+      - name: Running 3.9 Tests
+        if: matrix.python-version == 3.9
+        env:
+          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString39 }}
+        run: |
+          python -m pytest -n auto  --instafail tests/consumption_tests
+      - name: Running 3.10 Tests
+        if: matrix.python-version == 3.10
+        env:
+          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
+        run: |
+          python -m pytest -n auto  --instafail  tests/consumption_tests

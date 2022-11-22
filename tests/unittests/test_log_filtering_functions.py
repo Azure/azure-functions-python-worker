@@ -2,6 +2,8 @@
 # Licensed under the MIT License.
 import typing
 
+import pytest
+
 from tests.utils import testutils
 
 HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
@@ -60,6 +62,7 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
         # See HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO, debug log is disabled
         self.assertNotIn('logging debug', host_out)
 
+    @pytest.mark.flaky(reruns=3)
     def test_debug_with_user_logging(self):
         r = self.webhost.request('GET', 'debug_user_logging')
         self.assertEqual(r.status_code, 200)

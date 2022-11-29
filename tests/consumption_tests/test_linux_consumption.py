@@ -211,6 +211,7 @@ class TestLinuxConsumption(TestCase):
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
                     "PinningFunctions"),
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
             resp = ctrl.send_request(req)

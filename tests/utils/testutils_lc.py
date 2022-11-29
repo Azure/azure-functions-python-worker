@@ -183,7 +183,6 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["-e", f"CONTAINER_NAME={self._uuid}"])
         run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={_DUMMY_CONT_KEY}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
-        run_cmd.extend(["-e", "PYTHON_ISOLATE_WORKER_DEPENDENCIES=1"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
         run_cmd.extend(["-v", f'{library_path}:{container_library_path}'])
 
@@ -295,7 +294,8 @@ class LinuxConsumptionWebHostController:
     def __exit__(self, exc_type, exc_value, traceback):
         logs = self.get_container_logs()
         self.safe_kill_container()
-        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME))
+        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME), 
+            ignore_errors=True)
 
         if traceback:
             print(f'Test failed with container logs: {logs}',

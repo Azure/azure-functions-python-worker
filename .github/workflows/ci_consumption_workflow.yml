@@ -28,6 +28,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U -e .[dev]
+      - name: who am i
+        run: whoami
+      - name: temp dir permissions
+        run: ls -la /tmp
       - name: Running 3.7 Tests
         if: matrix.python-version == 3.7
         env:

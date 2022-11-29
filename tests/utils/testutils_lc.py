@@ -152,6 +152,7 @@ class LinuxConsumptionWebHostController:
     def _download_azure_functions() -> str:
         with urlopen(_FUNC_GITHUB_ZIP) as zipresp:
             with ZipFile(BytesIO(zipresp.read())) as zfile:
+                os.chmod(tempfile.gettempdir(), 700)
                 zfile.extractall(tempfile.gettempdir())
 
     def spawn_container(self,
@@ -295,7 +296,7 @@ class LinuxConsumptionWebHostController:
     def __exit__(self, exc_type, exc_value, traceback):
         logs = self.get_container_logs()
         self.safe_kill_container()
-        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME), True)
+        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME))
 
         if traceback:
             print(f'Test failed with container logs: {logs}',

@@ -151,7 +151,7 @@ class LinuxConsumptionWebHostController:
     @staticmethod
     def _download_azure_functions() -> str:
         with urlopen(_FUNC_GITHUB_ZIP) as zipresp:
-            with ZipFile(BytesIO(zipresp.read())) as zfile:
+            with ZipFile(BytesIO(zipresp.read()), 'w') as zfile:
                 zfile.extractall(tempfile.gettempdir())
 
     def spawn_container(self,

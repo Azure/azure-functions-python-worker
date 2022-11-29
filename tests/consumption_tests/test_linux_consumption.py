@@ -103,7 +103,8 @@ class TestLinuxConsumption(TestCase):
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("NewProtobuf")
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("NewProtobuf"),
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
@@ -130,7 +131,8 @@ class TestLinuxConsumption(TestCase):
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("OldProtobuf")
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("OldProtobuf"),
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)

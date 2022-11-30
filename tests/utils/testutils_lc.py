@@ -157,7 +157,9 @@ class LinuxConsumptionWebHostController:
                 zfile.extractall(tempfile.gettempdir())
 
         if not os.path.exists(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME)):
-            raise FileNotFoundError
+            raise RuntimeError(
+                f'{_FUNC_FILE_NAME} not found in {tempfile.gettempdir()}' 
+                f'List: {os.listdir(tempfile.gettempdir())}')
 
     def spawn_container(self,
                         image: str,

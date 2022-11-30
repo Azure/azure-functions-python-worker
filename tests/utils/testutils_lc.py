@@ -181,10 +181,10 @@ class LinuxConsumptionWebHostController:
             f"/azure-functions-host/workers/python/{self._py_version}/"
             "LINUX/X64/azure_functions_worker"
         )
-        container_library_path = (
-            f"/azure-functions-host/workers/python/{self._py_version}/"
-            "LINUX/X64/azure/functions"
-        )
+        # container_library_path = (
+        #     f"/azure-functions-host/workers/python/{self._py_version}/"
+        #     "LINUX/X64/azure/functions"
+        # )
 
         run_cmd = []
         run_cmd.extend([self._docker_cmd, "run", "-p", "0:80", "-d"])
@@ -195,7 +195,7 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={_DUMMY_CONT_KEY}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
-        run_cmd.extend(["-v", f'{library_path}:{container_library_path}'])
+        # run_cmd.extend(["-v", f'{library_path}:{container_library_path}'])
 
         for key, value in env.items():
             run_cmd.extend(["-e", f"{key}={value}"])

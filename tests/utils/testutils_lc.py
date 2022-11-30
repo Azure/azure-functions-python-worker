@@ -156,11 +156,15 @@ class LinuxConsumptionWebHostController:
             with ZipFile(BytesIO(zipresp.read())) as zfile:
                 zfile.extractall(tempfile.gettempdir())
 
-        if not os.path.exists(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME)):
+        
+        lib_path = os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME)
+        if not os.path.exists(lib_path):
             raise RuntimeError(
-                f'{_FUNC_FILE_NAME} not found in {tempfile.gettempdir()}' 
-                f'List: {os.listdir(tempfile.gettempdir())}')
+                f'{_FUNC_FILE_NAME} not found in {tempfile.gettempdir()}')
 
+        if not os.listdir(lib_path):
+            raise RuntimeError(f'{_FUNC_FILE_NAME} empty')
+                
     def spawn_container(self,
                         image: str,
                         env: Dict[str, str] = {}) -> int:

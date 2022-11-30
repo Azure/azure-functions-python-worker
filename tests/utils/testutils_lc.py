@@ -150,9 +150,14 @@ class LinuxConsumptionWebHostController:
 
     @staticmethod
     def _download_azure_functions() -> str:
+        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME), 
+            ignore_errors=True)
         with urlopen(_FUNC_GITHUB_ZIP) as zipresp:
             with ZipFile(BytesIO(zipresp.read())) as zfile:
                 zfile.extractall(tempfile.gettempdir())
+
+        if not os.path.exists(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME)):
+            raise FileNotFoundError
 
     def spawn_container(self,
                         image: str,

@@ -164,7 +164,7 @@ class LinuxConsumptionWebHostController:
         worker_path = os.path.join(PROJECT_ROOT, 'azure_functions_worker')
 
         # TODO: Mount library in docker container
-        self._download_azure_functions()
+        # self._download_azure_functions()
 
         container_worker_path = (
             f"/azure-functions-host/workers/python/{self._py_version}/"
@@ -289,7 +289,8 @@ class LinuxConsumptionWebHostController:
     def __exit__(self, exc_type, exc_value, traceback):
         logs = self.get_container_logs()
         self.safe_kill_container()
-        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME))
+        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME),
+                      ignore_errors=True)
 
         if traceback:
             print(f'Test failed with container logs: {logs}',

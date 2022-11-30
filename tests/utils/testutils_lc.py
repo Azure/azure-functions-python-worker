@@ -150,21 +150,10 @@ class LinuxConsumptionWebHostController:
 
     @staticmethod
     def _download_azure_functions() -> str:
-        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME), 
-            ignore_errors=True)
         with urlopen(_FUNC_GITHUB_ZIP) as zipresp:
             with ZipFile(BytesIO(zipresp.read())) as zfile:
                 zfile.extractall(tempfile.gettempdir())
 
-        
-        lib_path = os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME)
-        if not os.path.exists(lib_path):
-            raise RuntimeError(
-                f'{_FUNC_FILE_NAME} not found in {tempfile.gettempdir()}')
-
-        if not os.listdir(lib_path):
-            raise RuntimeError(f'{_FUNC_FILE_NAME} empty')
-                
     def spawn_container(self,
                         image: str,
                         env: Dict[str, str] = {}) -> int:
@@ -173,18 +162,14 @@ class LinuxConsumptionWebHostController:
         """
         # Construct environment variables and start the docker container
         worker_path = os.path.join(PROJECT_ROOT, 'azure_functions_worker')
-        library_path = os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME,
-                                    'azure', 'functions')
+
+        # TODO: Mount library in docker container
         self._download_azure_functions()
 
         container_worker_path = (
             f"/azure-functions-host/workers/python/{self._py_version}/"
             "LINUX/X64/azure_functions_worker"
         )
-        # container_library_path = (
-        #     f"/azure-functions-host/workers/python/{self._py_version}/"
-        #     "LINUX/X64/azure/functions"
-        # )
 
         run_cmd = []
         run_cmd.extend([self._docker_cmd, "run", "-p", "0:80", "-d"])
@@ -195,7 +180,6 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={_DUMMY_CONT_KEY}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
-        # run_cmd.extend(["-v", f'{library_path}:{container_library_path}'])
 
         for key, value in env.items():
             run_cmd.extend(["-e", f"{key}={value}"])
@@ -305,8 +289,7 @@ class LinuxConsumptionWebHostController:
     def __exit__(self, exc_type, exc_value, traceback):
         logs = self.get_container_logs()
         self.safe_kill_container()
-        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME), 
-            ignore_errors=True)
+        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME))
 
         if traceback:
             print(f'Test failed with container logs: {logs}',

@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 import os
 import sys
-from unittest import TestCase
+from unittest import TestCase, skipIf
 
 from requests import Request
 
@@ -90,6 +90,8 @@ class TestLinuxConsumption(TestCase):
             self.assertIn('pyodbc', content)
             self.assertIn('requests', content)
 
+    @skipIf(sys.version_info.minor == 10,
+            "Protobuf pinning fails during remote build")
     def test_new_protobuf(self):
         """A function app with the following requirements.txt:
 
@@ -118,6 +120,8 @@ class TestLinuxConsumption(TestCase):
             self.assertEqual(content['google.protobuf'], '3.15.8')
             self.assertEqual(content['grpc'], '1.33.2')
 
+    @skipIf(sys.version_info.minor == 10,
+            "Protobuf pinning fails during remote build")
     def test_old_protobuf(self):
         """A function app with the following requirements.txt:
 

@@ -51,3 +51,7 @@ MODULE_NOT_FOUND_TS_URL = "https://aka.ms/functions-modulenotfound"
 SCRIPT_FILE_NAME = "function_app.py"
 
 PYTHON_LANGUAGE_RUNTIME = "python"
+
+# CI test constants
+CONSUMPTION_DOCKER_TEST = True
+DEDICATED_DOCKER_TEST = False

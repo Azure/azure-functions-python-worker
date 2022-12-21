@@ -12,9 +12,6 @@ WORKER_STATUS = "WorkerStatus"
 SHARED_MEMORY_DATA_TRANSFER = "SharedMemoryDataTransfer"
 FUNCTION_DATA_CACHE = "FunctionDataCache"
 
-# Debug Flags
-PYAZURE_WEBHOST_DEBUG = "PYAZURE_WEBHOST_DEBUG"
-
 # Platform Environment Variables
 AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
 CONTAINER_NAME = "CONTAINER_NAME"
@@ -51,7 +48,3 @@ MODULE_NOT_FOUND_TS_URL = "https://aka.ms/functions-modulenotfound"
 SCRIPT_FILE_NAME = "function_app.py"
 
 PYTHON_LANGUAGE_RUNTIME = "python"
-
-# CI test constants
-CONSUMPTION_DOCKER_TEST = "false"
-DEDICATED_DOCKER_TEST = "false"

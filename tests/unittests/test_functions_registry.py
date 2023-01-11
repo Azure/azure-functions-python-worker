@@ -26,8 +26,7 @@ class TestFunctionsRegistry(unittest.TestCase):
         self.func.add_trigger(trigger=trigger1)
 
         with self.assertRaises(FunctionLoadError) as ex:
-            self.function_registry.add_indexed_function(function_id='123',
-                                                        function=self.func)
+            self.function_registry.add_indexed_function(function=self.func)
 
         self.assertEqual(str(ex.exception),
                          'cannot load the dummy function: Invalid route name: '
@@ -41,8 +40,7 @@ class TestFunctionsRegistry(unittest.TestCase):
         self.func.add_binding(binding=binding)
 
         with self.assertRaises(FunctionLoadError) as ex:
-            self.function_registry.add_indexed_function(function_id='123',
-                                                        function=self.func)
+            self.function_registry.add_indexed_function(function=self.func)
 
         self.assertEqual(str(ex.exception),
                          'cannot load the dummy function: \"$return\" '

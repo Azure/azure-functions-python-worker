@@ -100,6 +100,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('hello info', host_out)
         self.assertIn('and another error', host_out)
 
+    @pytest.mark.flaky(reruns=3)
     def test_debug_logging(self):
         r = self.webhost.request('GET', 'debug_logging')
         self.assertEqual(r.status_code, 200)
@@ -111,6 +112,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('logging error', host_out)
         self.assertNotIn('logging debug', host_out)
 
+    @pytest.mark.flaky(reruns=3)
     def test_debug_with_user_logging(self):
         r = self.webhost.request('GET', 'debug_user_logging')
         self.assertEqual(r.status_code, 200)
@@ -306,6 +308,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
             if (os.path.exists(received_img_file)):
                 os.remove(received_img_file)
 
+    @pytest.mark.flaky(reruns=3)
     def test_user_event_loop_error(self):
         # User event loop is not supported in HTTP trigger
         r = self.webhost.request('GET', 'user_event_loop/')

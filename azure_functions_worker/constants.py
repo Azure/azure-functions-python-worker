@@ -12,9 +12,6 @@ WORKER_STATUS = "WorkerStatus"
 SHARED_MEMORY_DATA_TRANSFER = "SharedMemoryDataTransfer"
 FUNCTION_DATA_CACHE = "FunctionDataCache"
 
-# Debug Flags
-PYAZURE_WEBHOST_DEBUG = "PYAZURE_WEBHOST_DEBUG"
-
 # Platform Environment Variables
 AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
 CONTAINER_NAME = "CONTAINER_NAME"

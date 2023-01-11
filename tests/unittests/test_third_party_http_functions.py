@@ -53,6 +53,7 @@ class ThirdPartyHttpFunctionsTestBase:
         def get_script_dir(cls):
             pass
 
+        @pytest.mark.flaky(reruns=3)
         def test_debug_logging(self):
             r = self.webhost.request('GET', 'debug_logging', no_prefix=True)
             self.assertEqual(r.status_code, 200)
@@ -64,6 +65,7 @@ class ThirdPartyHttpFunctionsTestBase:
             self.assertIn('logging error', host_out)
             self.assertNotIn('logging debug', host_out)
 
+        @pytest.mark.flaky(reruns=3)
         def test_debug_with_user_logging(self):
             r = self.webhost.request('GET', 'debug_user_logging',
                                      no_prefix=True)

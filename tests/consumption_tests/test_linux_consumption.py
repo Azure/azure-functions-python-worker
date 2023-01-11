@@ -13,8 +13,6 @@ from tests.utils.testutils_lc import (
 _DEFAULT_HOST_VERSION = "4"
 
 
-@skipIf(sys.version_info >= (3, 10, 0),
-        "Skip the tests for Python 3.10 and above")
 class TestLinuxConsumption(TestCase):
     """Test worker behaviors on specific scenarios.
 
@@ -92,6 +90,8 @@ class TestLinuxConsumption(TestCase):
             self.assertIn('pyodbc', content)
             self.assertIn('requests', content)
 
+    @skipIf(sys.version_info.minor == 10,
+            "Protobuf pinning fails during remote build")
     def test_new_protobuf(self):
         """A function app with the following requirements.txt:
 
@@ -105,7 +105,8 @@ class TestLinuxConsumption(TestCase):
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("NewProtobuf")
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("NewProtobuf"),
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
@@ -119,6 +120,8 @@ class TestLinuxConsumption(TestCase):
             self.assertEqual(content['google.protobuf'], '3.15.8')
             self.assertEqual(content['grpc'], '1.33.2')
 
+    @skipIf(sys.version_info.minor == 10,
+            "Protobuf pinning fails during remote build")
     def test_old_protobuf(self):
         """A function app with the following requirements.txt:
 
@@ -132,7 +135,8 @@ class TestLinuxConsumption(TestCase):
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("OldProtobuf")
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("OldProtobuf"),
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
@@ -213,6 +217,7 @@ class TestLinuxConsumption(TestCase):
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
                     "PinningFunctions"),
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
             resp = ctrl.send_request(req)

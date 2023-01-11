@@ -4,6 +4,7 @@ import inspect
 import operator
 import pathlib
 import typing
+import uuid
 
 from . import bindings as bindings_utils
 from . import protos
@@ -21,6 +22,7 @@ class FunctionInfo(typing.NamedTuple):
 
     name: str
     directory: str
+    function_id: str
     requires_context: bool
     is_async: bool
     has_return: bool
@@ -311,6 +313,7 @@ class Registry:
             func=function,
             name=function_name,
             directory=directory,
+            function_id=function_id,
             requires_context=requires_context,
             is_async=inspect.iscoroutinefunction(function),
             has_return=has_explicit_return or has_implicit_return,
@@ -371,11 +374,12 @@ class Registry:
                                                       input_types,
                                                       output_types, return_type)
 
-    def add_indexed_function(self, function_id: str,
-                             function):
+    def add_indexed_function(self, function):
         func = function.get_user_function()
         func_name = function.get_function_name()
         func_type = function.http_type
+        function_id = str(uuid.uuid5(namespace=uuid.NAMESPACE_OID,
+                                     name=func_name))
         return_binding_name: typing.Optional[str] = None
         has_explicit_return = False
         has_implicit_return = False

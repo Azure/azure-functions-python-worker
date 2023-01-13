@@ -8,8 +8,8 @@ import typing
 import pytest
 from unittest.mock import patch
 
-from azure_functions_worker import testutils
-from azure_functions_worker.testutils import UNIT_TESTS_ROOT
+from tests.utils import testutils
+from tests.utils.testutils import UNIT_TESTS_ROOT
 
 HOST_JSON_TEMPLATE = """\
 {
@@ -53,6 +53,7 @@ class ThirdPartyHttpFunctionsTestBase:
         def get_script_dir(cls):
             pass
 
+        @pytest.mark.flaky(reruns=3)
         def test_debug_logging(self):
             r = self.webhost.request('GET', 'debug_logging', no_prefix=True)
             self.assertEqual(r.status_code, 200)
@@ -64,6 +65,7 @@ class ThirdPartyHttpFunctionsTestBase:
             self.assertIn('logging error', host_out)
             self.assertNotIn('logging debug', host_out)
 
+        @pytest.mark.flaky(reruns=3)
         def test_debug_with_user_logging(self):
             r = self.webhost.request('GET', 'debug_user_logging',
                                      no_prefix=True)

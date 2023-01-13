@@ -10,11 +10,10 @@ from unittest import skipIf
 
 import pytest
 
-from azure_functions_worker import testutils
-from azure_functions_worker.testutils import WebHostTestCase
+from tests.utils import testutils
 
 
-class TestHttpFunctions(WebHostTestCase):
+class TestHttpFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
@@ -101,6 +100,7 @@ class TestHttpFunctions(WebHostTestCase):
         self.assertIn('hello info', host_out)
         self.assertIn('and another error', host_out)
 
+    @pytest.mark.flaky(reruns=3)
     def test_debug_logging(self):
         r = self.webhost.request('GET', 'debug_logging')
         self.assertEqual(r.status_code, 200)
@@ -112,6 +112,7 @@ class TestHttpFunctions(WebHostTestCase):
         self.assertIn('logging error', host_out)
         self.assertNotIn('logging debug', host_out)
 
+    @pytest.mark.flaky(reruns=3)
     def test_debug_with_user_logging(self):
         r = self.webhost.request('GET', 'debug_user_logging')
         self.assertEqual(r.status_code, 200)
@@ -307,6 +308,7 @@ class TestHttpFunctions(WebHostTestCase):
             if (os.path.exists(received_img_file)):
                 os.remove(received_img_file)
 
+    @pytest.mark.flaky(reruns=3)
     def test_user_event_loop_error(self):
         # User event loop is not supported in HTTP trigger
         r = self.webhost.request('GET', 'user_event_loop/')

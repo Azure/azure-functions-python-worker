@@ -7,7 +7,7 @@
       "direction": "in",
       "name": "msg",
       "queueName": "testqueue-return",
-      "connection": "AzureWebJobsStorage",
+      "connection": "AzureWebJobsStorage"
     },
     {
       "type": "blob",

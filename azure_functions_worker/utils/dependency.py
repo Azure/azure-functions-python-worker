@@ -95,15 +95,16 @@ class DependencyManager:
         # The following log line will not show up in core tools but should
         # work in kusto since core tools only collects gRPC logs. This function
         # is executed even before the gRPC logging channel is ready.
-        logger.info(f'Applying use_worker_dependencies:'
-                    f' worker_dependencies: {cls.worker_deps_path},'
-                    f' customer_dependencies: {cls.cx_deps_path},'
-                    f' working_directory: {cls.cx_working_dir}')
+        logger.info('Applying use_worker_dependencies:'
+                    ' worker_dependencies: %s,'
+                    ' customer_dependencies: %s,'
+                    ' working_directory: %s', cls.worker_deps_path,
+                    cls.cx_deps_path, cls.cx_working_dir)
 
         cls._remove_from_sys_path(cls.cx_deps_path)
         cls._remove_from_sys_path(cls.cx_working_dir)
         cls._add_to_sys_path(cls.worker_deps_path, True)
-        logger.info(f'Start using worker dependencies {cls.worker_deps_path}')
+        logger.info('Start using worker dependencies %s', cls.worker_deps_path)
 
     @classmethod
     @enable_feature_by(
@@ -145,10 +146,10 @@ class DependencyManager:
         if not cx_deps_path:
             cx_deps_path = cls.cx_deps_path
 
-        logger.info('Applying prioritize_customer_dependencies:'
-                    f' worker_dependencies: {cls.worker_deps_path},'
-                    f' customer_dependencies: {cx_deps_path},'
-                    f' working_directory: {working_directory}')
+        logger.info(
+            'Applying prioritize_customer_dependencies: worker_dependencies: '
+            '%s, customer_dependencies: %s, working_directory: %s',
+            cls.worker_deps_path, cx_deps_path, working_directory)
 
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.cx_deps_path, True)
@@ -211,11 +212,11 @@ class DependencyManager:
         packages_to_reload = ['azure', 'google']
         for p in packages_to_reload:
             try:
-                logger.info(f'Reloading {p} module')
+                logger.info('Reloading %s module', p)
                 importlib.reload(sys.modules[p])
             except Exception as ex:
-                logger.info('Unable to reload {}: \n{}'.format(p, ex))
-            logger.info(f'Reloaded {p} module')
+                logger.info('Unable to reload %s: \n%s', p, ex)
+            logger.info('Reloaded %s module', p)
 
         # Reload azure.functions to give user package precedence
         logger.info('Reloading azure.functions module at %s',
@@ -225,8 +226,9 @@ class DependencyManager:
             logger.info('Reloaded azure.functions module now at %s',
                         inspect.getfile(sys.modules['azure.functions']))
         except Exception as ex:
-            logger.info('Unable to reload azure.functions. '
-                        'Using default. Exception:\n{}'.format(ex))
+            logger.info(
+                'Unable to reload azure.functions. Using default. '
+                'Exception:\n%s', ex)
 
     @classmethod
     def _add_to_sys_path(cls, path: str, add_to_first: bool):
@@ -392,6 +394,6 @@ class DependencyManager:
                     sys.modules.pop(module_name)
             except Exception as e:
                 logger.warning(
-                    f'Attempt to remove module cache for {module_name} but'
-                    f' failed with {e}. Using the original module cache.'
-                )
+                    'Attempt to remove module cache for %s but failed with '
+                    '%s. Using the original module cache.',
+                    module_name, e)

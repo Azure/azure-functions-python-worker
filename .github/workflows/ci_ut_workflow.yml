@@ -18,7 +18,7 @@ jobs:
     name: "Python UT CI Run"
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         python-version: [ 3.7, 3.8, 3.9, "3.10" ]
     steps:
@@ -31,10 +31,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '3.1.x'
-    - name: Set up Dotnet 5.0.x
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '5.0.x'
     - name: Set up Dotnet 6.x
       uses: actions/setup-dotnet@v1
       with:
@@ -68,11 +64,11 @@ jobs:
         retry 5 python setup.py extension
     - name: Test with pytest
       env:
-        AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
+        AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }} # needed for installing azure-functions-durable while running setup.py
       run: |
-        python -m pytest  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
+        python -m pytest -n auto --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
     - name: Codecov
-      uses: codecov/codecov-action@v1.0.13
+      uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml # optional
         flags: unittests # optional

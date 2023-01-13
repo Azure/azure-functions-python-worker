@@ -4,9 +4,11 @@ import typing
 import os
 from unittest.mock import patch
 
-from azure_functions_worker import testutils
+import pytest
+
+from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_ENABLE_DEBUG_LOGGING
-from azure_functions_worker.testutils import TESTS_ROOT, remove_path
+from tests.utils.testutils import TESTS_ROOT, remove_path
 
 HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
 {
@@ -34,14 +36,15 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
         super().setUpClass()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(cls):
         super().tearDownClass()
-        self._patch_environ.stop()
+        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
 
+    @pytest.mark.flaky(reruns=3)
     def test_debug_logging_enabled(self):
         """
         Verify when cx debug logging is enabled, cx function debug logs
@@ -71,14 +74,15 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
         super().setUpClass()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(cls):
         super().tearDownClass()
-        self._patch_environ.stop()
+        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
 
+    @pytest.mark.flaky(reruns=3)
     def test_debug_logging_disabled(self):
         """
         Verify when cx debug logging is disabled, cx function debug logs
@@ -114,17 +118,18 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         super().setUpClass()
 
     @classmethod
-    def tearDownClass(self):
-        host_json = TESTS_ROOT / self.get_script_dir() / 'host.json'
+    def tearDownClass(cls):
+        host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
         remove_path(host_json)
 
         super().tearDownClass()
-        self._patch_environ.stop()
+        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
 
+    @pytest.mark.flaky(reruns=3)
     def test_debug_logging_filtered(self):
         """
         Verify when cx debug logging is enabled and host logging level

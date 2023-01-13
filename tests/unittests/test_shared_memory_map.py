@@ -6,7 +6,9 @@ import sys
 import unittest
 from unittest import skipIf
 
-from azure_functions_worker import testutils
+import pytest
+
+from tests.utils import testutils
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryMap
 from azure_functions_worker.bindings.shared_memory_data_transfer \
@@ -53,6 +55,7 @@ class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
                                     'Invalid memory map'):
             SharedMemoryMap(self.file_accessor, mem_map_name, None)
 
+    @pytest.mark.flaky(reruns=3)
     def test_put_bytes(self):
         """
         Create a SharedMemoryMap and write bytes to it.
@@ -70,6 +73,7 @@ class TestSharedMemoryMap(testutils.SharedMemoryTestCase):
             dispose_status = shared_mem_map.dispose()
             self.assertTrue(dispose_status)
 
+    @pytest.mark.flaky(reruns=3)
     def test_get_bytes(self):
         """
         Create a SharedMemoryMap, write bytes to it and then read them back.

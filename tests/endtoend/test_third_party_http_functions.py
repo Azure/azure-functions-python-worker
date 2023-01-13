@@ -4,12 +4,8 @@ import os
 from unittest.mock import patch
 
 import requests
-
-from azure_functions_worker import testutils as utils, testutils
-
-# from tests.stein_tests import testutils
-# from tests.stein_tests.constants import E2E_TESTS_ROOT
-from azure_functions_worker.testutils import E2E_TESTS_ROOT
+from tests.utils import testutils as utils
+from tests.utils.testutils import E2E_TESTS_ROOT
 
 HOST_JSON_TEMPLATE = """\
 {
@@ -33,7 +29,7 @@ class ThirdPartyHttpFunctionsTestBase:
     """Base test class containing common asgi/wsgi testcases, only testcases
     in classes extending TestThirdPartyHttpFunctions will by run"""
 
-    class TestThirdPartyHttpFunctions(testutils.WebHostTestCase):
+    class TestThirdPartyHttpFunctions(utils.WebHostTestCase):
         @classmethod
         def setUpClass(cls):
             host_json = cls.get_script_dir() / 'host.json'

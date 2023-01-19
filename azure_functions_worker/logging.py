@@ -28,7 +28,7 @@ def format_exception(exception: Exception) -> str:
             etype=type(exception),
             tb=exception.__traceback__,
             value=exception))
-    elif (sys.version_info.major, sys.version_info.minor) == (3, 10):
+    elif (sys.version_info.major, sys.version_info.minor) >= (3, 10):
         msg += ''.join(traceback.format_exception(exception))
     else:
         msg = str(exception)

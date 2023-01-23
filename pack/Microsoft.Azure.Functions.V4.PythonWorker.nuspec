@@ -26,6 +26,10 @@
     <file src="..\3.10_WINDOWS_X86\**" target="tools\3.10\WINDOWS\X86" />
     <file src="..\3.10_LINUX_X64\**" target="tools\3.10\LINUX\X64" />
     <file src="..\3.10_OSX_X64\**" target="tools\3.10\OSX\X64" />
+    <file src="..\3.11_WINDOWS_X64\**" target="tools\3.11\WINDOWS\X64" />
+    <file src="..\3.11_WINDOWS_X86\**" target="tools\3.11\WINDOWS\X86" />
+    <file src="..\3.11_LINUX_X64\**" target="tools\3.11\LINUX\X64" />
+    <file src="..\3.11_OSX_X64\**" target="tools\3.11\OSX\X64" />
     <file src="..\python\prodV4\worker.config.json" target="tools" />
     <file src="Microsoft.Azure.Functions.PythonWorker.targets" target="build" />
     <file src="..\_manifest\manifest.json" target="SBOM\manifest.json" />

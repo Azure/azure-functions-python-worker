@@ -62,6 +62,19 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         async with self._ctrl as host:
             r = await host.init_worker('3.0.12345')
             self.assertIsInstance(r.response, protos.WorkerInitResponse)
+            self.assertIsInstance(r.response.worker_metadata,
+                                  protos.WorkerMetadata)
+
+    async def test_dispatcher_environment_reload(self):
+        """Test function environment reload response
+        """
+        async with self._ctrl as host:
+            # Reload environment variable on specialization
+            r = await host.reload_environment(environment={})
+            self.assertIsInstance(r.response,
+                                  protos.FunctionEnvironmentReloadResponse)
+            self.assertIsInstance(r.response.worker_metadata,
+                                  protos.WorkerMetadata)
 
     async def test_dispatcher_initialize_worker_logging(self):
         """Test if the dispatcher's log can be flushed out during worker

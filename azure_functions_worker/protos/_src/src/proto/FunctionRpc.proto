@@ -238,6 +238,13 @@ message FunctionEnvironmentReloadRequest {
 }
 
 message FunctionEnvironmentReloadResponse {
+  // After specialization, worker sends capabilities & metadata.
+  // Worker metadata captured for telemetry purposes
+  WorkerMetadata worker_metadata = 1;
+
+  // A map of worker supported features/capabilities
+  map<string, string> capabilities = 2;
+
   // Status of the response
   StatusResult result = 3;
 }
@@ -431,6 +438,7 @@ message TypedData {
     CollectionDouble collection_double = 10;
     CollectionSInt64 collection_sint64 = 11;
     ModelBindingData model_binding_data = 12;
+    CollectionModelBindingData collection_model_binding_data = 13;
   }
 }
 
@@ -668,4 +676,9 @@ message ModelBindingData
 
     // The binding data content
     bytes content = 4;
+}
+
+// Used to encapsulate collection model_binding_data
+message CollectionModelBindingData {
+  repeated ModelBindingData model_binding_data = 1;
 }

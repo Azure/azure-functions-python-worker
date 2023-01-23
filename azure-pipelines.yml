@@ -29,6 +29,9 @@ jobs:
       Python310V4:
         pythonVersion: '3.10'
         workerPath: $(PROD_V4_WORKER_PY)
+      Python311V4:
+        pythonVersion: '3.11'
+        workerPath: $(PROD_V4_WORKER_PY)
   steps:
   - template: pack/templates/win_env_gen.yml
     parameters:
@@ -54,6 +57,9 @@ jobs:
         workerPath: $(PROD_V4_WORKER_PY)
       Python310V4:
         pythonVersion: '3.10'
+        workerPath: $(PROD_V4_WORKER_PY)
+      Python311V4:
+        pythonVersion: '3.11'
         workerPath: $(PROD_V4_WORKER_PY)
   steps:
   - template: pack/templates/win_env_gen.yml
@@ -81,6 +87,9 @@ jobs:
       Python310V4:
         pythonVersion: '3.10'
         workerPath: $(PROD_V4_WORKER_PY)
+      Python311V4:
+        pythonVersion: '3.11'
+        workerPath: $(PROD_V4_WORKER_PY)
   steps:
   - template: pack/templates/nix_env_gen.yml
     parameters:
@@ -103,6 +112,9 @@ jobs:
         workerPath: $(PROD_V4_WORKER_PY)
       Python310V4:
         pythonVersion: '3.10'
+        workerPath: $(PROD_V4_WORKER_PY)
+      Python311V4:
+        pythonVersion: '3.11'
         workerPath: $(PROD_V4_WORKER_PY)
   steps:
   - template: pack/templates/nix_env_gen.yml

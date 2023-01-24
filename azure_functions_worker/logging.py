@@ -12,13 +12,20 @@ CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
 SYSTEM_LOG_PREFIX = "azure_functions_worker"
 SDK_LOG_PREFIX = "azure.functions"
 
-
 logger: logging.Logger = logging.getLogger('azure_functions_worker')
 error_logger: logging.Logger = (
     logging.getLogger('azure_functions_worker_errors'))
 
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
+
+
+def enable_dependency_log_filtering(module_names, *args) -> None:
+    class DependencyLoggingFilter(logging.Filter):
+        def filter(self, record):
+            return record.module in module_names
+
+    logging.getLogger().addFilter(DependencyLoggingFilter())
 
 
 def format_exception(exception: Exception) -> str:

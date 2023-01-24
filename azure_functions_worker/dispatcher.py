@@ -318,7 +318,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             # Filter function app dependency logs by root logger if
             # logging filtering setting is specified
-            if os.getenv(PYTHON_ENABLE_DEPENDENCY_LOG_FILTERING_MODULES) is not None:
+            if os.getenv(PYTHON_ENABLE_DEPENDENCY_LOG_FILTERING_MODULES) is \
+                    not None:
                 enable_dependency_log_filtering(
                     os.environ[PYTHON_ENABLE_DEPENDENCY_LOG_FILTERING_MODULES])
 

@@ -42,7 +42,7 @@ class TestDependencyLoggingEnabledFunctions(testutils.WebHostTestCase):
     @classmethod
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions' / \
-               'dependency_logging_filter'
+            'dependency_logging_filter'
 
     def test_dependency_logging_filter_enabled(self):
         """
@@ -82,7 +82,7 @@ class TestDependencyLoggingDisabledFunctions(testutils.WebHostTestCase):
     @classmethod
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions' / \
-               'dependency_logging_filter'
+            'dependency_logging_filter'
 
     def test_dependency_logging_filter_disabled(self):
         """
@@ -101,8 +101,7 @@ class TestDependencyLoggingDisabledFunctions(testutils.WebHostTestCase):
         self.assertIn('logging from external library', host_out)
 
 
-class TestDependencyLoggingEnabledBluePrintFunctions(
-    testutils.WebHostTestCase):
+class TestDependencyLoggingEnabledBluePrintFunctions(testutils.WebHostTestCase):
     """
     Tests for cx dependency logging filtering with blueprint func enabled case.
     """
@@ -126,7 +125,7 @@ class TestDependencyLoggingEnabledBluePrintFunctions(
     @classmethod
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions' / \
-               'dependency_logging_filter'
+            'dependency_logging_filter'
 
     def test_dependency_logging_filter_blueprint_enabled(self):
         """
@@ -148,7 +147,7 @@ class TestDependencyLoggingEnabledBluePrintFunctions(
 
 
 class TestDependencyLoggingDisabledBluePrintFunctions(
-    testutils.WebHostTestCase):
+        testutils.WebHostTestCase):
     """
     Tests for cx dependency logging filtering with blueprint func disabled
     case.
@@ -169,7 +168,7 @@ class TestDependencyLoggingDisabledBluePrintFunctions(
     @classmethod
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions' / \
-               'dependency_logging_filter'
+            'dependency_logging_filter'
 
     def test_dependency_logging_filter_disabled_blueprint(self):
         """

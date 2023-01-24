@@ -40,8 +40,8 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         """The index page of Azure Functions should return OK in any
         circumstances
         """
-        root_url = self.webhost._addr
-        r = requests.get(root_url, timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request('GET', '', no_prefix=True,
+                                 timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
 
     @testutils.retryable_test(3, 5)

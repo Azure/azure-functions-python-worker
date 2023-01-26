@@ -41,7 +41,6 @@ def eventhub_multiple(events):
 @app.route(route="eventhub_output_batch", binding_arg_name="out")
 def eventhub_output_batch(req: func.HttpRequest, out: func.Out[str]) -> str:
     events = req.get_body().decode('utf-8')
-    out.set('hello')
     return events
 
 

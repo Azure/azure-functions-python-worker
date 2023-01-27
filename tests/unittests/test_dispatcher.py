@@ -8,6 +8,7 @@ from typing import Optional, Tuple
 from unittest.mock import patch
 
 from azure_functions_worker import protos
+from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
     PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT, \
@@ -64,6 +65,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             self.assertIsInstance(r.response, protos.WorkerInitResponse)
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
+            self.assertEquals(r.response.worker_metadata.runtime_name,
+                              "python")
+            self.assertEquals(r.response.worker_metadata.worker_version,
+                              VERSION)
 
     async def test_dispatcher_environment_reload(self):
         """Test function environment reload response
@@ -75,6 +80,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                   protos.FunctionEnvironmentReloadResponse)
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
+            self.assertEquals(r.response.worker_metadata.runtime_name,
+                              "python")
+            self.assertEquals(r.response.worker_metadata.worker_version,
+                              VERSION)
 
     async def test_dispatcher_initialize_worker_logging(self):
         """Test if the dispatcher's log can be flushed out during worker

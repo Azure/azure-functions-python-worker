@@ -21,6 +21,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     Compared to the unittests/test_http_functions.py, this file is more focus
     on testing the E2E flow scenarios.
     """
+
     def setUp(self):
         self._patch_environ = patch.dict('os.environ', os.environ.copy())
         self._patch_environ.start()
@@ -39,8 +40,8 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         """The index page of Azure Functions should return OK in any
         circumstances
         """
-        root_url = self.webhost._addr
-        r = requests.get(root_url, timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request('GET', '', no_prefix=True,
+                                 timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
 
     @testutils.retryable_test(3, 5)
@@ -112,7 +113,7 @@ class TestHttpFunctionsStein(TestHttpFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'http_functions_stein'
 
 
@@ -120,6 +121,85 @@ class TestHttpFunctionsSteinGeneric(TestHttpFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
-                                            'http_functions_stein' /\
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+                                            'http_functions_stein' / \
                                             'generic'
+
+
+class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
+    """Test the common libs scenarios in the local webhost.
+
+    This test class will spawn a webhost from your <project_root>/build/webhost
+    folder and replace the built-in Python with azure_functions_worker from
+    your code base. this file is more focus on testing the E2E flow scenarios.
+    """
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+                                            'common_libs_functions'
+
+    @testutils.retryable_test(3, 5)
+    def test_numpy(self):
+        r = self.webhost.request('GET', 'numpy_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        res = "array: [1.+0.j 2.+0.j]"
+
+        self.assertEqual(r.content.decode("UTF-8"), res)
+
+    @testutils.retryable_test(3, 5)
+    def test_requests(self):
+        r = self.webhost.request('GET', 'requests_func',
+                                 timeout=10)
+
+        self.assertTrue(r.ok)
+        self.assertEqual(r.content.decode("UTF-8"), 'req status code: 200')
+
+    @testutils.retryable_test(3, 5)
+    def test_pandas(self):
+        r = self.webhost.request('GET', 'pandas_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertIn("two-dimensional",
+                      r.content.decode("UTF-8"))
+
+    @testutils.retryable_test(3, 5)
+    def test_sklearn(self):
+        r = self.webhost.request('GET', 'sklearn_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertIn("First 5 records of array:",
+                      r.content.decode("UTF-8"))
+
+    @testutils.retryable_test(3, 5)
+    def test_opencv(self):
+        r = self.webhost.request('GET', 'opencv_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertIn("opencv version:",
+                      r.content.decode("UTF-8"))
+
+    @testutils.retryable_test(3, 5)
+    def test_dotenv(self):
+        r = self.webhost.request('GET', 'dotenv_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertEqual(r.content.decode("UTF-8"), "found")
+
+    @testutils.retryable_test(3, 5)
+    def test_plotly(self):
+        r = self.webhost.request('GET', 'plotly_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertIn("plotly version:",
+                      r.content.decode("UTF-8"))
+
+
+class TestCommonLibsHttpFunctionsStein(TestCommonLibsHttpFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+                                            'common_libs_functions' / \
+                                            'common_libs_functions_stein'

@@ -24,9 +24,11 @@ from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME)
+                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME,
+                        PYTHON_ENABLE_DEPENDENCY_LOG_FILTERING_MODULES)
 from .extension import ExtensionManager
-from .logging import disable_console_logging, enable_console_logging
+from .logging import disable_console_logging, enable_console_logging, \
+    enable_dependency_log_filtering
 from .logging import enable_debug_logging_recommendation
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
@@ -98,7 +100,8 @@ class Dispatcher(metaclass=DispatcherMeta):
          3.9 scenarios (as we'll start passing only None by default), and we
          need to get that information.
 
-         Ref: concurrent.futures.thread.ThreadPoolExecutor.__init__._max_workers
+         Ref: concurrent.futures.thread.ThreadPoolExecutor.__init__
+         ._max_workers
         """
         return self._sync_call_tp._max_workers
 
@@ -176,7 +179,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         self._stop_sync_call_tp()
 
-    def on_logging(self, record: logging.LogRecord, formatted_msg: str) -> None:
+    def on_logging(self, record: logging.LogRecord,
+                   formatted_msg: str) -> None:
         if record.levelno >= logging.CRITICAL:
             log_level = protos.RpcLog.Critical
         elif record.levelno >= logging.ERROR:
@@ -312,6 +316,13 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         try:
+            # Filter function app dependency logs by root logger if
+            # logging filtering setting is specified
+            if os.getenv(PYTHON_ENABLE_DEPENDENCY_LOG_FILTERING_MODULES) is \
+                    not None:
+                enable_dependency_log_filtering(
+                    os.environ[PYTHON_ENABLE_DEPENDENCY_LOG_FILTERING_MODULES])
+
             fx_metadata_results = self.index_functions(function_path)
 
             return protos.StreamingMessage(
@@ -367,7 +378,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                         function_name,
                         func_request.metadata.directory
                     )
-
                     logger.info('Successfully processed FunctionLoadRequest, '
                                 'request ID: %s, '
                                 'function ID: %s,'
@@ -436,7 +446,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     pytype=pb_type_info.pytype,
                     shmem_mgr=self._shmem_mgr)
 
-            fi_context = self._get_context(invoc_request, fi.name, fi.directory)
+            fi_context = self._get_context(invoc_request, fi.name,
+                                           fi.directory)
             if fi.requires_context:
                 args['context'] = fi_context
 
@@ -631,7 +642,8 @@ class Dispatcher(metaclass=DispatcherMeta):
     @staticmethod
     def _get_context(invoc_request: protos.InvocationRequest, name: str,
                      directory: str) -> bindings.Context:
-        """ For more information refer: https://aka.ms/azfunc-invocation-context
+        """ For more information refer:
+        https://aka.ms/azfunc-invocation-context
         """
         trace_context = bindings.TraceContext(
             invoc_request.trace_context.trace_parent,

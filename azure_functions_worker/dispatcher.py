@@ -9,6 +9,7 @@ import asyncio
 import concurrent.futures
 import logging
 import os
+import platform
 import queue
 import sys
 import threading
@@ -24,7 +25,8 @@ from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME)
+                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME,
+                        PYTHON_LANGUAGE_RUNTIME)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import enable_debug_logging_recommendation
@@ -92,6 +94,16 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread: threading.Thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
+
+    @staticmethod
+    def get_worker_metadata():
+        return protos.WorkerMetadata(
+            runtime_name=PYTHON_LANGUAGE_RUNTIME,
+            runtime_version=f"{sys.version_info.major}."
+                            f"{sys.version_info.minor}",
+            worker_version=VERSION,
+            worker_bitness=platform.machine(),
+            custom_properties={})
 
     def get_sync_tp_workers_set(self):
         """We don't know the exact value of the threadcount set for the Python
@@ -280,6 +292,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
                 capabilities=capabilities,
+                worker_metadata=self.get_worker_metadata(),
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success)))
 
@@ -552,6 +565,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     func_env_reload_request.function_app_directory)
 
             success_response = protos.FunctionEnvironmentReloadResponse(
+                capabilities={},
+                worker_metadata=self.get_worker_metadata(),
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success))
 

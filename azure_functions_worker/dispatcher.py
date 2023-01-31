@@ -288,6 +288,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         if not DependencyManager.is_in_linux_consumption():
             DependencyManager.prioritize_customer_dependencies()
 
+        if DependencyManager.is_in_linux_consumption():
+            import azure.functions  # NoQA
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
@@ -524,11 +527,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             func_env_reload_request = \
                 request.function_environment_reload_request
-
-            # Import before clearing path cache so that the default
-            # azure.functions modules is available in sys.modules for
-            # customer use
-            import azure.functions  # NoQA
 
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:

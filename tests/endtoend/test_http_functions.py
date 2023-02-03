@@ -203,3 +203,7 @@ class TestCommonLibsHttpFunctionsStein(TestCommonLibsHttpFunctions):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'common_libs_functions' / \
                                             'common_libs_functions_stein'
+
+
+class TestUserThreadingHttpFunctions(testutils.WebHostTestCase):
+    pass

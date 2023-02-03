@@ -453,7 +453,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             # Use local thread storage to store the invocation ID
             # for a customer's threads
-            fi_context.local_thread.invocation_id = invocation_id
+            fi_context.thread_local_storage.invocation_id = invocation_id
             if fi.requires_context:
                 args['context'] = fi_context
 
@@ -732,12 +732,12 @@ class Dispatcher(metaclass=DispatcherMeta):
     def _run_sync_func(self, invocation_id, context, func, params):
         # This helper exists because we need to access the current
         # invocation_id from ThreadPoolExecutor's threads.
-        context.local_thread.invocation_id = invocation_id
+        context.thread_local_storage.invocation_id = invocation_id
         try:
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)
         finally:
-            context.local_thread.invocation_id = None
+            context.thread_local_storage.invocation_id = None
 
     async def _run_async_func(self, context, func, params):
         return await ExtensionManager.get_async_invocation_wrapper(

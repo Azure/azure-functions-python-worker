@@ -12,11 +12,11 @@ def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
     with concurrent.futures.ThreadPoolExecutor() as tpe:
-        tpe.submit(thread_function, (context, "Log success"))
+        tpe.submit(thread_function, context, "TPE success")
 
     return func.HttpResponse("This HTTP triggered function executed successfully.", status_code=200)
 
 
-def thread_function(context: func.Context, message: int):
-    context.local_thread.invocation_id = context.invocation_id
+def thread_function(context: func.Context, message: str):
+    context.thread_local_storage.invocation_id = context.invocation_id
     logging.info(message)

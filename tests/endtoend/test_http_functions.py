@@ -220,16 +220,23 @@ class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):
                                             'user_thread_logging'
 
     @testutils.retryable_test(3, 5)
-    def test_thread(self):
+    def test_http_thread(self):
         r = self.webhost.request('GET', 'thread',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
         self.assertTrue(r.ok)
 
     def check_log_http_thread(self, host_out: typing.List[str]):
-        self.assertEqual(host_out.count("t1 success"), 1)
-        self.assertEqual(host_out.count("t2 success"), 1)
-        self.assertEqual(host_out.count("t3 success"), 1)
+        self.assertEqual(host_out.count("Thread1 success"), 1)
+        self.assertEqual(host_out.count("Thread2 success"), 1)
+        self.assertEqual(host_out.count("Thread3 success"), 1)
+
+    @testutils.retryable_test(3, 5)
+    def test_http_thread_pool_executor(self):
+        r = self.webhost.request('GET', 'thread_pool_executor',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
 
     def check_log_http_thread_pool_executor(self, host_out: typing.List[str]):
-        self.assertEqual(host_out.count("Log success"), 1)
+        self.assertEqual(host_out.count("TPE success"), 1)

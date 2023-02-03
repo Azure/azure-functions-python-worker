@@ -450,6 +450,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                     shmem_mgr=self._shmem_mgr)
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
+
+            # Use local thread storage to store the invocation ID
+            # for a customer's threads
+            fi_context.local_thread.invocation_id = invocation_id
             if fi.requires_context:
                 args['context'] = fi_context
 
@@ -660,7 +664,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         return bindings.Context(
             name, directory, invoc_request.invocation_id,
-            trace_context, retry_context)
+            _invocation_id_local, trace_context, retry_context)
 
     @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):
@@ -728,12 +732,12 @@ class Dispatcher(metaclass=DispatcherMeta):
     def _run_sync_func(self, invocation_id, context, func, params):
         # This helper exists because we need to access the current
         # invocation_id from ThreadPoolExecutor's threads.
-        _invocation_id_local.v = invocation_id
+        context.local_thread.invocation_id = invocation_id
         try:
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)
         finally:
-            _invocation_id_local.v = None
+            context.local_thread.invocation_id = None
 
     async def _run_async_func(self, context, func, params):
         return await ExtensionManager.get_async_invocation_wrapper(
@@ -837,7 +841,7 @@ def get_current_invocation_id() -> Optional[str]:
             if task_invocation_id is not None:
                 return task_invocation_id
 
-    return getattr(_invocation_id_local, 'v', None)
+    return getattr(_invocation_id_local, 'invocation_id', None)
 
 
 _invocation_id_local = threading.local()

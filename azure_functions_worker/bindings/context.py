@@ -1,5 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import threading
+
 from . import TraceContext
 from . import RetryContext
 
@@ -10,17 +12,23 @@ class Context:
                  func_name: str,
                  func_dir: str,
                  invocation_id: str,
+                 local_thread: threading.local(),
                  trace_context: TraceContext,
                  retry_context: RetryContext) -> None:
         self.__func_name = func_name
         self.__func_dir = func_dir
         self.__invocation_id = invocation_id
+        self.__local_thread = local_thread
         self.__trace_context = trace_context
         self.__retry_context = retry_context
 
     @property
     def invocation_id(self) -> str:
         return self.__invocation_id
+
+    @property
+    def local_thread(self) -> threading.local():
+        return self.__local_thread
 
     @property
     def function_name(self) -> str:

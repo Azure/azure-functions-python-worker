@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+import typing
 from unittest.mock import patch
 
 import requests
@@ -205,5 +206,30 @@ class TestCommonLibsHttpFunctionsStein(TestCommonLibsHttpFunctions):
                                             'common_libs_functions_stein'
 
 
-class TestUserThreadingHttpFunctions(testutils.WebHostTestCase):
-    pass
+class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):
+    """Test the Http trigger that contains logging with user threads.
+
+    This test class will spawn a webhost from your <project_root>/build/webhost
+    folder and replace the built-in Python with azure_functions_worker from
+    your code base. this file is more focus on testing the E2E flow scenarios.
+    """
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+                                            'user_thread_logging'
+
+    @testutils.retryable_test(3, 5)
+    def test_thread(self):
+        r = self.webhost.request('GET', 'thread',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+    def check_log_http_thread(self, host_out: typing.List[str]):
+        self.assertEqual(host_out.count("t1 success"), 1)
+        self.assertEqual(host_out.count("t2 success"), 1)
+        self.assertEqual(host_out.count("t3 success"), 1)
+
+    def check_log_http_thread_pool_executor(self, host_out: typing.List[str]):
+        self.assertEqual(host_out.count("Log success"), 1)

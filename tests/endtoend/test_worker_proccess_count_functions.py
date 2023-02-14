@@ -5,21 +5,14 @@ from threading import Thread
 from unittest.mock import patch
 from datetime import datetime
 from tests.utils import testutils
-from unittest import skip
 
 
 class TestWorkerProcessCount1(testutils.WebHostTestCase):
     """Test the Http Trigger with setting up the python worker process count
-    to 2. This test class will spawn a webhost from your
-    <project_root>/build/webhost folder and replace the built-in Python with
-    azure_functions_worker from your code base. this file is more focused
-    on testing the E2E flow scenario for FUNCTIONS_WORKER_PROCESS_COUNT feature.
+    to 2. this test will check if both requests should not be processed at
+    the same time. this file is more focused on testing the E2E flow scenario
+    for FUNCTIONS_WORKER_PROCESS_COUNT feature.
     """
-
-    def setUp(self):
-        self._patch_environ = patch.dict('os.environ', os.environ.copy())
-        self._patch_environ.start()
-        super().setUp()
 
     @classmethod
     def setUpClass(cls):
@@ -55,9 +48,11 @@ class TestWorkerProcessCount1(testutils.WebHostTestCase):
         trd2.start()
         trd1.join()
         trd2.join()
-        '''time returned from both of the HTTP request should be greater than
-        of equal to 1 since both the request should not be processed at the
-        same time because FUNCTIONS_WORKER_PROCESS_COUNT is 1'''
+        """function execution time difference between both HTTP request 
+        should be greater than of equal to 1 since both the request should 
+        not be processed at the same time because 
+        FUNCTIONS_WORKER_PROCESS_COUNT is 1.
+        """
         time_diff_in_seconds = abs((res[0] - res[1]).total_seconds())
         self.assertTrue(time_diff_in_seconds >= 1)
 
@@ -72,16 +67,10 @@ class TestWorkerProcessCount1Stein(TestWorkerProcessCount1):
 
 class TestWorkerProcessCount2(testutils.WebHostTestCase):
     """Test the Http Trigger with setting up the python worker process count
-    to 2. This test class will spawn a webhost from your
-    <project_root>/build/webhost folder and replace the built-in Python with
-    azure_functions_worker from your code base. this file is more focused
-    on testing the E2E flow scenario for FUNCTIONS_WORKER_PROCESS_COUNT feature.
+    to 2. this test will check if both requests should be processed at the
+    same time. this file is more focused on testing the E2E flow scenario for
+    FUNCTIONS_WORKER_PROCESS_COUNT feature.
     """
-
-    def setUp(self):
-        self._patch_environ = patch.dict('os.environ', os.environ.copy())
-        self._patch_environ.start()
-        super().setUp()
 
     @classmethod
     def setUpClass(cls):
@@ -117,14 +106,14 @@ class TestWorkerProcessCount2(testutils.WebHostTestCase):
         thread2.start()
         thread1.join()
         thread2.join()
-        '''time returned from both of the HTTP request should be less than
-        2 since both the request should be processed at the
-        same time because FUNCTIONS_WORKER_PROCESS_COUNT is 2'''
+        '''function execution time difference between both HTTP request 
+        should be less than 1 since both request should be processed at the 
+        same time because FUNCTIONS_WORKER_PROCESS_COUNT is 2.
+        '''
         time_diff_in_seconds = abs((response[0] - response[1]).total_seconds())
-        self.assertTrue(time_diff_in_seconds < 2)
+        self.assertTrue(time_diff_in_seconds < 1)
 
 
-@skip("skipping test for pystein worker process count 2")
 class TestWorkerProcessCount2Stein(TestWorkerProcessCount2):
 
     @classmethod

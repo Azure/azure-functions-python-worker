@@ -47,9 +47,9 @@ class TestPythonThreadpoolThreadCount1(testutils.WebHostTestCase):
         trd2.start()
         trd1.join()
         trd2.join()
-        """function execution time difference between both HTTP request 
-        should be greater than of equal to 1 since both the request should 
-        not be processed at the same time because 
+        """function execution time difference between both HTTP request
+        should be greater than of equal to 1 since both the request should
+        not be processed at the same time because
         PYTHON_THREADPOOL_THREAD_COUNT is 1.
         """
         time_diff_in_seconds = abs((res[0] - res[1]).total_seconds())
@@ -104,8 +104,8 @@ class TestPythonThreadpoolThreadCount2(testutils.WebHostTestCase):
         thread2.start()
         thread1.join()
         thread2.join()
-        """function execution time difference between both HTTP request 
-        should be less than 1 since both the request should be processed at 
+        """function execution time difference between both HTTP request
+        should be less than 1 since both the request should be processed at
         the same time because PYTHON_THREADPOOL_THREAD_COUNT is 2.
         """
         time_diff_in_seconds = abs((response[0] - response[1]).total_seconds())

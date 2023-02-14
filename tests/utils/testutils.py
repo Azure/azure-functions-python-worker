@@ -49,7 +49,7 @@ from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
 from tests.utils.constants import PYAZURE_WORKER_DIR, \
     PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
     CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG
-from tests.utils.testutils_docker import WebHostConsumption
+from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated
 
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')
@@ -224,7 +224,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
             if is_envvar_true(CONSUMPTION_DOCKER_TEST):
                 cls.webhost = WebHostConsumption(script_dir).spawn_container()
             elif is_envvar_true(DEDICATED_DOCKER_TEST):
-                cls.webhost = WebHostConsumption(script_dir).spawn_container()
+                cls.webhost = WebHostDedicated(script_dir).spawn_container()
             else:
                 cls.webhost = start_webhost(script_dir=script_dir,
                                             stdout=cls.host_stdout)

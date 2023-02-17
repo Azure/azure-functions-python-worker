@@ -9,7 +9,7 @@ from tests.utils import testutils
 
 class TestWorkerProcessCount1(testutils.WebHostTestCase):
     """Test the Http Trigger with setting up the python worker process count
-    to 2. this test will check if both requests should not be processed at
+    to 1. this test will check if both requests should not be processed at
     the same time. this file is more focused on testing the E2E flow scenario
     for FUNCTIONS_WORKER_PROCESS_COUNT feature.
     """

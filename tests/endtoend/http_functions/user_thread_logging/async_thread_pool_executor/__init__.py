@@ -8,13 +8,13 @@ import concurrent.futures
 import azure.functions as func
 
 
-def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
-    logging.info('Before TPE.')
+async def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
+    logging.info("Using TPE.")
 
     with concurrent.futures.ThreadPoolExecutor() as tpe:
         tpe.submit(thread_function, context, "Using TPE.")
 
-    logging.info('After TPE.')
+    logging.info("After TPE.")
 
     return func.HttpResponse("This HTTP triggered function executed successfully.", status_code=200)
 

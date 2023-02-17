@@ -8,7 +8,7 @@ import threading
 import azure.functions as func
 
 
-def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
+async def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
     logging.info("Before threads.")
 
     t1 = threading.Thread(target=thread_function, args=(context, "Thread1 used."))

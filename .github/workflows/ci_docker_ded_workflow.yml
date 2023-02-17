@@ -5,11 +5,18 @@ name: CI Docker Dedicated tests
 
 on:
   workflow_dispatch:
+    inputs:
+      image_name:
+        description: 'Dedicated image to test against'
+        required: false
   schedule:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string
     - cron: "0 8 * * 1,2,3,4"
 
+env:
+  DEDICATED_IMAGE_NAME: ${{ github.event.inputs.image_name }}
+  
 jobs:
   build:
     name: "Python Docker CI Run"

@@ -7,7 +7,7 @@ from datetime import datetime
 from tests.utils import testutils
 
 
-class TestPythonThreadpoolThreadCount2(testutils.WebHostTestCase):
+class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
     """ Test the Http Trigger with setting up the python threadpool thread
     count to 2. this test will check if both requests should be processed
     at the same time. this file is more focus on testing the E2E flow
@@ -31,7 +31,7 @@ class TestPythonThreadpoolThreadCount2(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
     @testutils.retryable_test(3, 5)
-    def test_http_func_with_thread_count_2(self):
+    def test_http_func_with_thread_count(self):
         response = [None, None]
 
         def http_req(res_num):
@@ -55,7 +55,7 @@ class TestPythonThreadpoolThreadCount2(testutils.WebHostTestCase):
         self.assertTrue(time_diff_in_seconds < 1)
 
 
-class TestPythonThreadpoolThreadCount2Stein(TestPythonThreadpoolThreadCount2):
+class TestPythonThreadpoolThreadCountStein(TestPythonThreadpoolThreadCount):
 
     @classmethod
     def get_script_dir(cls):

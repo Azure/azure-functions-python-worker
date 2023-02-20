@@ -7,7 +7,7 @@ from datetime import datetime
 from tests.utils import testutils
 
 
-class TestWorkerProcessCount2(testutils.WebHostTestCase):
+class TestWorkerProcessCount(testutils.WebHostTestCase):
     """Test the Http Trigger with setting up the python worker process count
     to 2. this test will check if both requests should be processed at the
     same time. this file is more focused on testing the E2E flow scenario for
@@ -56,7 +56,7 @@ class TestWorkerProcessCount2(testutils.WebHostTestCase):
         self.assertTrue(time_diff_in_seconds < 1)
 
 
-class TestWorkerProcessCount2Stein(TestWorkerProcessCount2):
+class TestWorkerProcessCountStein(TestWorkerProcessCount):
 
     @classmethod
     def get_script_dir(cls):

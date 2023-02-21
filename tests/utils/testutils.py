@@ -219,13 +219,13 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         else:
             cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
 
-        _setup_func_app(TESTS_ROOT / script_dir)
         try:
             if is_envvar_true(CONSUMPTION_DOCKER_TEST):
                 cls.webhost = WebHostConsumption(script_dir).spawn_container()
             elif is_envvar_true(DEDICATED_DOCKER_TEST):
                 cls.webhost = WebHostDedicated(script_dir).spawn_container()
             else:
+                _setup_func_app(TESTS_ROOT / script_dir)
                 cls.webhost = start_webhost(script_dir=script_dir,
                                             stdout=cls.host_stdout)
         except Exception:

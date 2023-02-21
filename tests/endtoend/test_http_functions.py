@@ -266,7 +266,8 @@ class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):
 
         self.assertTrue(r.ok)
 
-    def check_log_http_async_thread_pool_executor(self, host_out: typing.List[str]):
+    def check_log_http_async_thread_pool_executor(self,
+                                                  host_out: typing.List[str]):
         self.assertEqual(host_out.count("Before TPE."), 1)
         self.assertEqual(host_out.count("Using TPE."), 1)
         self.assertEqual(host_out.count("After TPE."), 1)

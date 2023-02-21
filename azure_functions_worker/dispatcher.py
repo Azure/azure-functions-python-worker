@@ -26,7 +26,7 @@ from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
                         PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME,
-                        PYTHON_LANGUAGE_RUNTIME)
+                        PYTHON_LANGUAGE_RUNTIME, PYTHON_LOAD_FUNCTIONS_INIT)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import enable_debug_logging_recommendation
@@ -288,7 +288,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         if not DependencyManager.is_in_linux_consumption():
             DependencyManager.prioritize_customer_dependencies()
 
-        if DependencyManager.is_in_linux_consumption():
+        if DependencyManager.is_in_linux_consumption() \
+                and is_envvar_true(PYTHON_LOAD_FUNCTIONS_INIT):
             import azure.functions  # NoQA
 
         return protos.StreamingMessage(
@@ -527,6 +528,12 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             func_env_reload_request = \
                 request.function_environment_reload_request
+
+            if not is_envvar_true(PYTHON_LOAD_FUNCTIONS_INIT):
+                # Import before clearing path cache so that the default
+                # azure.functions modules is available in sys.modules for
+                # customer use
+                import azure.functions  # NoQA
 
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:

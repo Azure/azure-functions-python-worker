@@ -19,6 +19,10 @@ def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
     t2.start()
     t3.start()
 
+    t1.join()
+    t2.join()
+    t3.join()
+
     logging.info("After threads.")
 
     return func.HttpResponse("This HTTP triggered function executed successfully.", status_code=200)

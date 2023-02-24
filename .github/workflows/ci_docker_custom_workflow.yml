@@ -1,7 +1,7 @@
-# This workflow will run all tests in endtoend/tests in a docker container using the latest dedicated image
+# This workflow will run all tests in endtoend/tests in a docker container using custom dedicated or consumption image
 
 
-name: CI Docker Dedicated tests
+name: CI Docker Custom tests
 
 on:
   workflow_dispatch:

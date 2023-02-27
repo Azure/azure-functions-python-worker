@@ -227,25 +227,25 @@ class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):
         self.assertTrue(r.ok)
 
     def check_log_http_thread(self, host_out: typing.List[str]):
-        self.assertEqual(host_out.count("Before threads."), 1)
-        self.assertEqual(host_out.count("Thread1 used."), 1)
-        self.assertEqual(host_out.count("Thread2 used."), 1)
-        self.assertEqual(host_out.count("Thread3 used."), 1)
-        self.assertEqual(host_out.count("After threads."), 1)
+        self.assertEqual(host_out.count('Before threads.'), 1)
+        self.assertEqual(host_out.count('Thread1 used.'), 1)
+        self.assertEqual(host_out.count('Thread2 used.'), 1)
+        self.assertEqual(host_out.count('Thread3 used.'), 1)
+        self.assertEqual(host_out.count('After threads.'), 1)
 
     @testutils.retryable_test(3, 5)
     def test_http_async_thread(self):
-        r = self.webhost.request('GET', 'thread',
+        r = self.webhost.request('GET', 'async_thread',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
         self.assertTrue(r.ok)
 
     def check_log_http_async_thread(self, host_out: typing.List[str]):
-        self.assertEqual(host_out.count("Before threads."), 1)
-        self.assertEqual(host_out.count("Thread1 used."), 1)
-        self.assertEqual(host_out.count("Thread2 used."), 1)
-        self.assertEqual(host_out.count("Thread3 used."), 1)
-        self.assertEqual(host_out.count("After threads."), 1)
+        self.assertEqual(host_out.count('Before threads.'), 1)
+        self.assertEqual(host_out.count('Thread1 used.'), 1)
+        self.assertEqual(host_out.count('Thread2 used.'), 1)
+        self.assertEqual(host_out.count('Thread3 used.'), 1)
+        self.assertEqual(host_out.count('After threads.'), 1)
 
     @testutils.retryable_test(3, 5)
     def test_http_thread_pool_executor(self):
@@ -255,19 +255,19 @@ class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):
         self.assertTrue(r.ok)
 
     def check_log_http_thread_pool_executor(self, host_out: typing.List[str]):
-        self.assertEqual(host_out.count("Before TPE."), 1)
-        self.assertEqual(host_out.count("Using TPE."), 1)
-        self.assertEqual(host_out.count("After TPE."), 1)
+        self.assertEqual(host_out.count('Before TPE.'), 1)
+        self.assertEqual(host_out.count('Using TPE.'), 1)
+        self.assertEqual(host_out.count('After TPE.'), 1)
 
     @testutils.retryable_test(3, 5)
     def test_http_async_thread_pool_executor(self):
-        r = self.webhost.request('GET', 'thread_pool_executor',
+        r = self.webhost.request('GET', 'async_thread_pool_executor',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
         self.assertTrue(r.ok)
 
     def check_log_http_async_thread_pool_executor(self,
                                                   host_out: typing.List[str]):
-        self.assertEqual(host_out.count("Before TPE."), 1)
-        self.assertEqual(host_out.count("Using TPE."), 1)
-        self.assertEqual(host_out.count("After TPE."), 1)
+        self.assertEqual(host_out.count('Before TPE.'), 1)
+        self.assertEqual(host_out.count('Using TPE.'), 1)
+        self.assertEqual(host_out.count('After TPE.'), 1)

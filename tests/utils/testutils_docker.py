@@ -1,4 +1,3 @@
-import configparser
 import os
 import re
 import subprocess
@@ -9,7 +8,7 @@ from time import sleep
 
 import requests
 
-from tests.utils.constants import PROJECT_ROOT, TESTS_ROOT, WORKER_CONFIG
+from tests.utils.constants import PROJECT_ROOT, TESTS_ROOT
 
 _DOCKER_PATH = "DOCKER_PATH"
 _DOCKER_DEFAULT_PATH = "docker"
@@ -99,39 +98,35 @@ class WebHostDockerContainerBase(unittest.TestCase):
 
         function_path = "/home/site/wwwroot"
 
-        env = {"FUNCTIONS_EXTENSION_VERSION": "4",
-               "FUNCTIONS_WORKER_RUNTIME": "python",
-               "FUNCTIONS_WORKER_RUNTIME_VERSION": _python_version,
-               "WEBSITE_SITE_NAME": _uuid,
-               "WEBSITE_HOSTNAME": f"{_uuid}.azurewebsites.com"}
-
-        testconfig = None
-        storage_key: str = os.getenv("AzureWebJobsStorage")
-        if not storage_key and WORKER_CONFIG.exists():
-            testconfig = configparser.ConfigParser()
-            testconfig.read(WORKER_CONFIG)
-
-        if testconfig and 'azure' in testconfig:
-            storage_key = testconfig['azure'].get('storage_key')
-
-        if not storage_key:
-            raise RuntimeError('Environment variable AzureWebJobsStorage '
-                               'is required before running docker test')
-
         run_cmd = []
         run_cmd.extend([_docker_cmd, "run", "-p", "0:80", "-d"])
         run_cmd.extend(["--name", _uuid, "--privileged"])
         run_cmd.extend(["--cap-add", "SYS_ADMIN"])
         run_cmd.extend(["--device", "/dev/fuse"])
         run_cmd.extend(["-e", f"CONTAINER_NAME={_uuid}"])
-        run_cmd.extend(["-e", f"AzureWebJobsStorage={storage_key}"])
+        run_cmd.extend(["-e", f"AzureWebJobsStorage="
+                              f"{os.getenv('AzureWebJobsStorage')}"])
+        run_cmd.extend(["-e", f"AzureWebJobsEventHubConnectionString="
+                              f"{os.getenv('AzureWebJobsEventHubConnectionString')}"])
+        run_cmd.extend(["-e", f"AzureWebJobsCosmosDBConnectionString="
+                              f"{os.getenv('AzureWebJobsCosmosDBConnectionString')}"])
+        run_cmd.extend(["-e", f"AzureWebJobsServiceBusConnectionString="
+                              f"{os.getenv('AzureWebJobsServiceBusConnectionString')}"])
+        run_cmd.extend(["-e", f"AzureWebJobsEventHubConnectionString="
+                              f"{os.getenv('AzureWebJobsEventHubConnectionString')}"])
+        run_cmd.extend(["-e", f"AzureWebJobsSqlConnectionString="
+                              f"{os.getenv('AzureWebJobsSqlConnectionString')}"])
+        run_cmd.extend(["-e", f"AzureWebJobsEventGridTopicUri="
+                              f"{os.getenv('AzureWebJobsEventGridTopicUri')}"])
+        run_cmd.extend(["-e", f"AzureWebJobsEventGridConnectionKey="
+                              f"{os.getenv('AzureWebJobsEventGridConnectionKey')}"])
+        run_cmd.extend(["-e", f"AzureFunctionsWebHost__hostid={_uuid}"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
         run_cmd.extend(["-v", f'{script_path}:{function_path}'])
 
         run_cmd.append(image)
 
         run_process = subprocess.run(args=run_cmd,
-                                     env=env,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE)
 

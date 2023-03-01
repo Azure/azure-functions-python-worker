@@ -11,6 +11,7 @@ class TestBlobFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'blob_functions'
 
+    @testutils.retryable_test(3, 5)
     def test_blob_io_str(self):
         r = self.webhost.request('POST', 'put_blob_str', data='test-data')
         self.assertEqual(r.status_code, 200)

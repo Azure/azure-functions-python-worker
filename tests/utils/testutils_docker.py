@@ -149,8 +149,21 @@ class WebHostDockerContainerBase(unittest.TestCase):
         port_number = port_process.stdout.decode().strip('\n').split(':')[-1]
 
         # Wait for six seconds for the container to be in ready state
-        sleep(10)
+        sleep(6)
         self._addr = f'http://localhost:{port_number}'
+
+        install_libraries_cmd = [_docker_cmd, "exec", _uuid]
+        install_libraries_cmd.extend(["pip", "install"])
+        install_libraries_cmd.extend(["python-dotenv", "plotly",
+                                      "scikit-learn", "opencv-python",
+                                      "pandas", "numpy", "flask", "fastapi"])
+
+        install_libraries_process = subprocess.run(args=install_libraries_cmd,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
+        if install_libraries_process.returncode != 0:
+            raise RuntimeError('Failed to install libraries')
+
         return WebHostProxy(run_process, self._addr)
 
 

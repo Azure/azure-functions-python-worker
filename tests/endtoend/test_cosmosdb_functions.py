@@ -49,7 +49,6 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
             else:
                 break
 
-    @testutils.retryable_test(3, 5)
     def test_cosmosdb_input(self):
         time.sleep(5)
         data = str(round(time.time()))

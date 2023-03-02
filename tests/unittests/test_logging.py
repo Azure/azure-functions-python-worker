@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import unittest
-import pytest
 
 from azure_functions_worker import logging as flog
 from azure_functions_worker.logging import format_exception
@@ -36,7 +35,6 @@ class TestLogging(unittest.TestCase):
         self.assertFalse(flog.is_system_log_category('root'))
         self.assertFalse(flog.is_system_log_category(''))
 
-    @pytest.mark.flaky(reruns=3)
     def test_format_exception(self):
         def call0(fn):
             call1(fn)

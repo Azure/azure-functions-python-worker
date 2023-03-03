@@ -599,3 +599,36 @@ class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
             self.assertTrue(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+
+
+class TestDispatcherLoadFunctionInInitRequest(testutils.AsyncTestCase):
+
+    def setUp(self):
+        self._ctrl = testutils.start_mockhost(
+            script_root=DISPATCHER_FUNCTIONS_DIR)
+        self._pre_env = dict(os.environ)
+        self.mock_version_info = patch(
+            'azure_functions_worker.dispatcher.sys.version_info',
+            SysVersionInfo(3, 9, 0, 'final', 0))
+        self.mock_version_info.start()
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self._pre_env)
+        self.mock_version_info.stop()
+
+    async def test_dispatcher_load_azfunc_in_init(self):
+        """Test if the dispatcher's log can be flushed out during worker
+        initialization
+        """
+        os.environ.update({"CONTAINER_NAME": 'test',
+                           "PYTHON_LOAD_FUNCTIONS_INIT": "1"})
+        async with self._ctrl as host:
+            r = await host.init_worker('4.15.1')
+            self.assertEqual(
+                len([log for log in r.logs if log.message.startswith(
+                    'Received WorkerInitRequest'
+                )]),
+                1
+            )
+        self.assertIn("azure.functions", sys.modules)

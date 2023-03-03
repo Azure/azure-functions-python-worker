@@ -22,7 +22,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_functions'
 
-    @testutils.retryable_test(3, 5)
     def test_eventhub_trigger(self):
         # Generate a unique event body for the EventHub event
         data = str(round(time.time()))
@@ -47,7 +46,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         # Check if the event body matches the initial data
         self.assertEqual(response, doc)
 
-    @testutils.retryable_test(3, 5)
     def test_eventhub_trigger_with_metadata(self):
         # Generate a unique event body for EventHub event
         # Record the start_time and end_time for checking event enqueue time

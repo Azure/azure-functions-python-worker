@@ -53,13 +53,13 @@ if __name__ == '__main__':
     func_worker_dir = str(Path(__file__).absolute().parent)
     env = os.environ
 
-    if is_azure_environment():
-        user_pkg_paths = determine_user_pkg_paths()
-        joined_pkg_paths = os.pathsep.join(user_pkg_paths)
+    # Setting up python path for all environments to prioritize
+    # third-party user packages over worker packages in PYTHONPATH
+    user_pkg_paths = determine_user_pkg_paths()
+    joined_pkg_paths = os.pathsep.join(user_pkg_paths)
+    env['PYTHONPATH'] = f'{joined_pkg_paths}:{func_worker_dir}'
 
-        # On cloud, we prioritize third-party user packages
-        # over worker packages in PYTHONPATH
-        env['PYTHONPATH'] = f'{joined_pkg_paths}:{func_worker_dir}'
+    if is_azure_environment():
         os.execve(sys.executable,
                   [sys.executable, '-m', 'azure_functions_worker']
                   + sys.argv[1:],

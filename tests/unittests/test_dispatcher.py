@@ -632,4 +632,3 @@ class TestDispatcherLoadFunctionInInitRequest(testutils.AsyncTestCase):
                 1
             )
         self.assertIn("azure.functions", sys.modules)
-

@@ -27,7 +27,6 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
         return request_method(url, *args, params=params, headers=headers,
                               **kwargs)
 
-    @testutils.retryable_test(3, 5)
     @unittest.skip("Run locally. Running on Azure fails with 401/403 as the"
                    "host does not pick up the SecretKey from the"
                    "azure_functions_worker.testutils.py.SECRETS_TEMPLATE and"
@@ -92,7 +91,6 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
             else:
                 break
 
-    @testutils.retryable_test(3, 5)
     def test_eventgrid_output_binding(self):
         """test event_grid output binding
 

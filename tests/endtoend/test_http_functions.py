@@ -140,7 +140,6 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'common_libs_functions'
 
-    @testutils.retryable_test(3, 5)
     def test_numpy(self):
         r = self.webhost.request('GET', 'numpy_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
@@ -149,7 +148,6 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
 
         self.assertEqual(r.content.decode("UTF-8"), res)
 
-    @testutils.retryable_test(3, 5)
     def test_requests(self):
         r = self.webhost.request('GET', 'requests_func',
                                  timeout=10)
@@ -157,7 +155,6 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
         self.assertTrue(r.ok)
         self.assertEqual(r.content.decode("UTF-8"), 'req status code: 200')
 
-    @testutils.retryable_test(3, 5)
     def test_pandas(self):
         r = self.webhost.request('GET', 'pandas_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
@@ -165,7 +162,6 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
         self.assertIn("two-dimensional",
                       r.content.decode("UTF-8"))
 
-    @testutils.retryable_test(3, 5)
     def test_sklearn(self):
         r = self.webhost.request('GET', 'sklearn_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
@@ -173,7 +169,6 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
         self.assertIn("First 5 records of array:",
                       r.content.decode("UTF-8"))
 
-    @testutils.retryable_test(3, 5)
     def test_opencv(self):
         r = self.webhost.request('GET', 'opencv_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
@@ -181,14 +176,12 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
         self.assertIn("opencv version:",
                       r.content.decode("UTF-8"))
 
-    @testutils.retryable_test(3, 5)
     def test_dotenv(self):
         r = self.webhost.request('GET', 'dotenv_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
         self.assertEqual(r.content.decode("UTF-8"), "found")
 
-    @testutils.retryable_test(3, 5)
     def test_plotly(self):
         r = self.webhost.request('GET', 'plotly_func',
                                  timeout=REQUEST_TIMEOUT_SEC)

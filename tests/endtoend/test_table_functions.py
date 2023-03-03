@@ -13,7 +13,6 @@ class TestTableFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'table_functions'
 
-    @testutils.retryable_test(3, 5)
     def test_table_bindings(self):
         out_resp = self.webhost.request('POST', 'table_out_binding')
         self.assertEqual(out_resp.status_code, 200)
@@ -46,7 +45,6 @@ class TestTableFunctionsStein(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'table_functions' / \
                                             'table_functions_stein'
 
-    @testutils.retryable_test(3, 5)
     def test_table_bindings(self):
         out_resp = self.webhost.request('POST', 'table_out_binding')
         self.assertEqual(out_resp.status_code, 200)

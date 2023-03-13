@@ -156,6 +156,10 @@ class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
 class WebHostTestCaseMeta(type(unittest.TestCase)):
 
     def __new__(mcls, name, bases, dct):
+        if is_envvar_true(DEDICATED_DOCKER_TEST) \
+                or is_envvar_true(CONSUMPTION_DOCKER_TEST):
+            return super().__new__(mcls, name, bases, dct)
+
         for attrname, attr in dct.items():
             if attrname.startswith('test_') and callable(attr):
                 test_case = attr

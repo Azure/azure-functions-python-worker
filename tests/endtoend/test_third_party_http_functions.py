@@ -51,6 +51,11 @@ class ThirdPartyHttpFunctionsTestBase:
         def get_script_dir(cls):
             pass
 
+        @classmethod
+        def get_libraries_to_install(cls):
+            libraries_required = ["flask", "fastapi"]
+            return libraries_required
+
         @utils.retryable_test(3, 5)
         def test_function_index_page_should_return_undefined(self):
             root_url = self.webhost._addr

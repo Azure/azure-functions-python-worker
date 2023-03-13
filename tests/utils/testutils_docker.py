@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import sys
+import typing
 import unittest
 import uuid
 from time import sleep
@@ -16,6 +17,7 @@ _HOST_VERSION = "4"
 _docker_cmd = os.getenv(_DOCKER_PATH, _DOCKER_DEFAULT_PATH)
 _addr = ""
 _python_version = f'{sys.version_info.major}.{sys.version_info.minor}'
+_libraries_path = '.python_packages/lib/site-packages'
 _uuid = str(uuid.uuid4())
 _MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
 _MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
@@ -81,7 +83,7 @@ class WebHostDockerContainerBase(unittest.TestCase):
         return image_tag
 
     def create_container(self, image_repo: str, image_url: str,
-                         script_path: str):
+                         script_path: str, libaries_to_install: typing.List):
         """Create a docker container and record its port. Create a docker
         container according to the image name. Return the port of container.
        """
@@ -98,40 +100,62 @@ class WebHostDockerContainerBase(unittest.TestCase):
 
         function_path = "/home/site/wwwroot"
 
+        if libaries_to_install:
+            install_libraries_cmd = []
+            install_libraries_cmd.extend(['pip', 'install'])
+            install_libraries_cmd.extend(libaries_to_install)
+            install_libraries_cmd.extend(['-t',
+                                          f'{script_path}/{_libraries_path}'])
+
+            install_libraries_process = \
+                subprocess.run(args=install_libraries_cmd,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+
+            if install_libraries_process.returncode != 0:
+                raise RuntimeError('Failed to install libraries')
+
         run_cmd = []
         run_cmd.extend([_docker_cmd, "run", "-p", "0:80", "-d"])
         run_cmd.extend(["--name", _uuid, "--privileged"])
         run_cmd.extend(["--cap-add", "SYS_ADMIN"])
         run_cmd.extend(["--device", "/dev/fuse"])
         run_cmd.extend(["-e", f"CONTAINER_NAME={_uuid}"])
-        run_cmd.extend(["-e", f"AzureWebJobsStorage="
-                              f"{os.getenv('AzureWebJobsStorage')}"])
-        run_cmd.extend(["-e", f"AzureWebJobsEventHubConnectionString="
-                              f"{os.getenv('AzureWebJobsEventHubConnectionString')}"])
-        run_cmd.extend(["-e", f"AzureWebJobsCosmosDBConnectionString="
-                              f"{os.getenv('AzureWebJobsCosmosDBConnectionString')}"])
-        run_cmd.extend(["-e", f"AzureWebJobsServiceBusConnectionString="
-                              f"{os.getenv('AzureWebJobsServiceBusConnectionString')}"])
-        run_cmd.extend(["-e", f"AzureWebJobsEventHubConnectionString="
-                              f"{os.getenv('AzureWebJobsEventHubConnectionString')}"])
-        run_cmd.extend(["-e", f"AzureWebJobsSqlConnectionString="
-                              f"{os.getenv('AzureWebJobsSqlConnectionString')}"])
-        run_cmd.extend(["-e", f"AzureWebJobsEventGridTopicUri="
-                              f"{os.getenv('AzureWebJobsEventGridTopicUri')}"])
-        run_cmd.extend(["-e", f"AzureWebJobsEventGridConnectionKey="
-                              f"{os.getenv('AzureWebJobsEventGridConnectionKey')}"])
+        run_cmd.extend(["-e",
+                        "AzureWebJobsStorage="
+                        f"{os.getenv('AzureWebJobsStorage')}"])
+        run_cmd.extend(["-e",
+                        "AzureWebJobsEventHubConnectionString="
+                        f"{os.getenv('AzureWebJobsEventHubConnectionString')}"])
+        run_cmd.extend(["-e",
+                        "AzureWebJobsCosmosDBConnectionString="
+                        f"{os.getenv('AzureWebJobsCosmosDBConnectionString')}"])
+        run_cmd.extend(["-e",
+                        "AzureWebJobsServiceBusConnectionString="
+                        f"{os.getenv('AzureWebJobsServiceBusConnectionString')}"])
+        run_cmd.extend(["-e",
+                        "AzureWebJobsEventHubConnectionString="
+                        f"{os.getenv('AzureWebJobsEventHubConnectionString')}"])
+        run_cmd.extend(["-e",
+                        "AzureWebJobsSqlConnectionString="
+                        f"{os.getenv('AzureWebJobsSqlConnectionString')}"])
+        run_cmd.extend(["-e",
+                        "AzureWebJobsEventGridTopicUri="
+                        f"{os.getenv('AzureWebJobsEventGridTopicUri')}"])
+        run_cmd.extend(["-e",
+                        "AzureWebJobsEventGridConnectionKey="
+                        f"{os.getenv('AzureWebJobsEventGridConnectionKey')}"])
         run_cmd.extend(["-e", f"AzureFunctionsWebHost__hostid={_uuid}"])
-        run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
-        run_cmd.extend(["-v", f'{script_path}:{function_path}'])
+        run_cmd.extend(["-v", f"{worker_path}:{container_worker_path}"])
+        run_cmd.extend(["-v", f"{script_path}:{function_path}"])
 
         run_cmd.append(image)
-
         run_process = subprocess.run(args=run_cmd,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE)
 
         if run_process.returncode != 0:
-            raise RuntimeError('Failed to spawn docker container for'
+            raise RuntimeError('Failed to create docker container for'
                                f' {image} with uuid {_uuid}.'
                                f' stderr: {run_process.stderr}')
 
@@ -152,37 +176,29 @@ class WebHostDockerContainerBase(unittest.TestCase):
         sleep(6)
         self._addr = f'http://localhost:{port_number}'
 
-        install_libraries_cmd = [_docker_cmd, "exec", _uuid]
-        install_libraries_cmd.extend(["pip", "install"])
-        install_libraries_cmd.extend(["python-dotenv", "plotly",
-                                      "scikit-learn", "opencv-python",
-                                      "pandas", "numpy", "flask", "fastapi"])
-
-        install_libraries_process = subprocess.run(args=install_libraries_cmd,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE)
-        if install_libraries_process.returncode != 0:
-            raise RuntimeError('Failed to install libraries')
-
         return WebHostProxy(run_process, self._addr)
 
 
 class WebHostConsumption(WebHostDockerContainerBase):
 
-    def __init__(self, script_path: str):
+    def __init__(self, script_path: str, libraries_to_install=None):
         self.script_path = script_path
+        self.libraries_to_install = libraries_to_install
 
     def spawn_container(self):
         return self.create_container(_MESH_IMAGE_REPO,
                                      _MESH_IMAGE_URL,
-                                     self.script_path)
+                                     self.script_path,
+                                     self.libraries_to_install)
 
 
 class WebHostDedicated(WebHostDockerContainerBase):
 
-    def __init__(self, script_path: str):
+    def __init__(self, script_path: str, libraries_to_install=None):
         self.script_path = script_path
+        self.libraries_to_install = libraries_to_install
 
     def spawn_container(self):
         return self.create_container(_IMAGE_REPO, _IMAGE_URL,
-                                     self.script_path)
+                                     self.script_path,
+                                     self.libraries_to_install)

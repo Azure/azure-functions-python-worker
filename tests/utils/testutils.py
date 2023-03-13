@@ -212,8 +212,13 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         raise NotImplementedError
 
     @classmethod
+    def get_libraries_to_install(cls):
+        pass
+
+    @classmethod
     def setUpClass(cls):
         script_dir = pathlib.Path(cls.get_script_dir())
+        libraries = cls.get_libraries_to_install()
         if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             cls.host_stdout = None
         else:
@@ -221,9 +226,11 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         try:
             if is_envvar_true(CONSUMPTION_DOCKER_TEST):
-                cls.webhost = WebHostConsumption(script_dir).spawn_container()
+                cls.webhost = \
+                    WebHostConsumption(script_dir, libraries).spawn_container()
             elif is_envvar_true(DEDICATED_DOCKER_TEST):
-                cls.webhost = WebHostDedicated(script_dir).spawn_container()
+                cls.webhost = \
+                    WebHostDedicated(script_dir, libraries).spawn_container()
             else:
                 _setup_func_app(TESTS_ROOT / script_dir)
                 cls.webhost = start_webhost(script_dir=script_dir,
@@ -1001,9 +1008,10 @@ def _teardown_func_app(app_root):
     host_json = app_root / 'host.json'
     extensions_csproj_file = app_root / 'extensions.csproj'
     extensions_obj_file = app_root / 'obj'
+    libraries_path = app_root / '.python_packages'
 
     for path in (extensions, host_json, extensions_csproj_file,
-                 extensions_obj_file):
+                 extensions_obj_file, libraries_path):
         remove_path(path)
 
 

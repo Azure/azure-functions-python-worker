@@ -292,6 +292,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                 and is_envvar_true(PYTHON_LOAD_FUNCTIONS_INIT):
             import azure.functions  # NoQA
 
+        # loading bindings registry and saving results to a static
+        # dictionary which will be later used in the invocation request
+        bindings.load_binding_registry()
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(

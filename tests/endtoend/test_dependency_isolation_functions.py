@@ -10,7 +10,7 @@ from requests import Response
 
 from azure_functions_worker.utils.common import is_envvar_true
 from tests.utils import testutils
-from tests.utils.constants import PYAZURE_INTEGRATION_TEST
+from tests.utils.constants import PYAZURE_INTEGRATION_TEST, CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
 REQUEST_TIMEOUT_SEC = 5
 
@@ -82,7 +82,9 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         )
 
     @skipIf(
-        is_envvar_true(PYAZURE_INTEGRATION_TEST),
+        is_envvar_true(PYAZURE_INTEGRATION_TEST) or
+        is_envvar_true(DEDICATED_DOCKER_TEST) or
+        is_envvar_true(CONSUMPTION_DOCKER_TEST),
         'Integration test expects dependencies derived from core tools folder'
     )
     def test_paths_resolution(self):

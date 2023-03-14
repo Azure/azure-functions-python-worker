@@ -25,6 +25,7 @@ def load_binding_registry() -> None:
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()
 
+
 def get_binding(bind_name: str) -> object:
     binding = None
     registry = BINDING_REGISTRY

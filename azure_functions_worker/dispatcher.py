@@ -571,10 +571,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                 func_env_reload_request.function_app_directory
             )
 
-            # loading bindings registry and saving results to a static
-            # dictionary which will be later used in the invocation request
-            bindings.load_binding_registry()
-
             # Change function app directory
             if getattr(func_env_reload_request,
                        'function_app_directory', None):

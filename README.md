@@ -14,7 +14,7 @@ What are the supported Python versions?
 | Azure Functions Runtime          | Python 3.6 | Python 3.7 | Python 3.8 | Python 3.9 | Python 3.10 | Python 3.11 |
 |----------------------------------|------------|------------|------------|------------|-------------|-------------|
 | Azure Functions 2.0 (deprecated) | ✔          | ✔          | -          | -          | -           | -           |
-| Azure Functions 3.0              | ✔          | ✔          | ✔          | ✔          | -           | -           |
+| Azure Functions 3.0 (deprecated)             | ✔          | ✔          | ✔          | ✔          | -           | -           |
 | Azure Functions 4.0              | -          | ✔          | ✔          | ✔          | ✔           | coming soon |
 
 For information about Azure Functions Runtime, please refer to [Azure Functions runtime versions overview](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) page.

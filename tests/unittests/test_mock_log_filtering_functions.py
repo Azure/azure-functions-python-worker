@@ -18,6 +18,7 @@ class TestMockLogFilteringFunctions(testutils.AsyncTestCase):
             'azure_functions_worker.dispatcher.is_system_log_category'
         ) as islc_mock:
             async with testutils.start_mockhost(script_root=self.dir) as host:
+                await host.init_worker("4.17.1")
                 await host.load_function('debug_logging')
                 await self._invoke_function(host, 'debug_logging')
 
@@ -33,6 +34,7 @@ class TestMockLogFilteringFunctions(testutils.AsyncTestCase):
             'azure_functions_worker.dispatcher.is_system_log_category'
         ) as islc_mock:
             async with testutils.start_mockhost(script_root=self.dir) as host:
+                await host.init_worker("4.17.1")
                 await host.load_function('debug_user_logging')
                 await self._invoke_function(host, 'debug_user_logging')
 
@@ -48,6 +50,7 @@ class TestMockLogFilteringFunctions(testutils.AsyncTestCase):
             'azure_functions_worker.dispatcher.is_system_log_category'
         ) as islc_mock:
             async with testutils.start_mockhost(script_root=self.dir) as host:
+                await host.init_worker("4.17.1")
                 await host.load_function('sdk_logging')
                 await self._invoke_function(host, 'sdk_logging')
 
@@ -65,6 +68,7 @@ class TestMockLogFilteringFunctions(testutils.AsyncTestCase):
             'azure_functions_worker.dispatcher.is_system_log_category'
         ) as islc_mock:
             async with testutils.start_mockhost(script_root=self.dir) as host:
+                await host.init_worker("4.17.1")
                 await host.load_function('sdk_submodule_logging')
                 await self._invoke_function(host, 'sdk_submodule_logging')
 

@@ -146,7 +146,7 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
             # This suppose to fail since the event should not be List[str]
 
             await host.init_worker("4.17.1")
-            
+
             func_id, r = await host.load_function(
                 'eventhub_cardinality_many_bad_anno'
             )

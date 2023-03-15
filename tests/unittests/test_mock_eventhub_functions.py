@@ -93,7 +93,7 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
                 script_root=self.mock_funcs_dir) as host:
 
             await host.init_worker("4.17.1")
-             # This suppose to fail since the event should not be int
+            # This suppose to fail since the event should not be int
             func_id, r = await host.load_function(
                 'eventhub_cardinality_one_bad_anno'
             )
@@ -144,9 +144,8 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
                 script_root=self.mock_funcs_dir) as host:
 
             # This suppose to fail since the event should not be List[str]
-
             await host.init_worker("4.17.1")
-            
+
             func_id, r = await host.load_function(
                 'eventhub_cardinality_many_bad_anno'
             )

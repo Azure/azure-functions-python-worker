@@ -11,6 +11,7 @@ class TestDurableFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.durable_functions_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('activity_trigger')
 
             self.assertEqual(r.response.function_id, func_id)
@@ -40,6 +41,7 @@ class TestDurableFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.durable_functions_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('activity_trigger_no_anno')
 
             self.assertEqual(r.response.function_id, func_id)
@@ -69,6 +71,7 @@ class TestDurableFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.durable_functions_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('activity_trigger_dict')
 
             self.assertEqual(r.response.function_id, func_id)
@@ -98,6 +101,7 @@ class TestDurableFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.durable_functions_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function(
                 'activity_trigger_int_to_float')
 
@@ -128,6 +132,7 @@ class TestDurableFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.durable_functions_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('orchestration_trigger')
 
             self.assertEqual(r.response.function_id, func_id)

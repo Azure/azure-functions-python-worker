@@ -13,3 +13,11 @@ class TestDurableFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET',
                                  'orchestrators/DurableFunctionsOrchestrator')
         self.assertEqual(r.status_code, 202)
+
+
+class TestDurableFunctionsStein(TestDurableFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'durable_functions' / \
+                                            'durable_functions_stein'

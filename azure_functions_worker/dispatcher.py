@@ -292,6 +292,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                 and is_envvar_true(PYTHON_LOAD_FUNCTIONS_INIT):
             import azure.functions  # NoQA
 
+        # loading bindings registry and saving results to a static
+        # dictionary which will be later used in the invocation request
+        bindings.load_binding_registry()
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
@@ -566,6 +570,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             DependencyManager.reload_customer_libraries(
                 func_env_reload_request.function_app_directory
             )
+
+            # calling load_binding_registry again since the
+            # reload_customer_libraries call clears the registry
+            bindings.load_binding_registry()
 
             # Change function app directory
             if getattr(func_env_reload_request,

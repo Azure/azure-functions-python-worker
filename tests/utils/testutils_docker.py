@@ -121,6 +121,7 @@ class WebHostDockerContainerBase(unittest.TestCase):
         run_cmd.extend(["--cap-add", "SYS_ADMIN"])
         run_cmd.extend(["--device", "/dev/fuse"])
         run_cmd.extend(["-e", f"CONTAINER_NAME={_uuid}"])
+        run_cmd.extend(["-e", f"AzureWebJobsFeatureFlags=EnableWorkerIndexing"])
         run_cmd.extend(["-e",
                         "AzureWebJobsStorage="
                         f"{os.getenv('AzureWebJobsStorage')}"])

@@ -150,6 +150,9 @@ class WebHostDockerContainerBase(unittest.TestCase):
         run_cmd.extend(["-v", f"{worker_path}:{container_worker_path}"])
         run_cmd.extend(["-v", f"{script_path}:{function_path}"])
 
+        for key, value in os.environ.items():
+            run_cmd.extend(["-e", f"{key}={value}"])
+
         run_cmd.append(image)
         run_process = subprocess.run(args=run_cmd,
                                      stdout=subprocess.PIPE,

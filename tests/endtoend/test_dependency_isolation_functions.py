@@ -68,6 +68,11 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         flag_value = environments['PYTHON_ISOLATE_WORKER_DEPENDENCIES']
         self.assertEqual(flag_value, '1')
 
+    @skipIf(
+        is_envvar_true(DEDICATED_DOCKER_TEST) or
+        is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Docker test expects dependencies derived from agents folder"
+    )
     def test_working_directory_resolution(self):
         """Check from the dependency manager and see if the current working
         directory is resolved correctly

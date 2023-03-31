@@ -14,10 +14,15 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
     scenarios.
     """
 
+    env_variables = {}
+
     @classmethod
     def setUpClass(cls):
+        cls.env_variables['PYTHON_THREADPOOL_THREAD_COUNT'] = '2'
+
         os_environ = os.environ.copy()
-        os_environ['PYTHON_THREADPOOL_THREAD_COUNT'] = '2'
+        os_environ.update(cls.env_variables)
+
         cls._patch_environ = patch.dict('os.environ', os_environ)
         cls._patch_environ.start()
         super().setUpClass()

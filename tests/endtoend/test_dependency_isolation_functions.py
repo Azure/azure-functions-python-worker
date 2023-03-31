@@ -10,7 +10,8 @@ from requests import Response
 
 from azure_functions_worker.utils.common import is_envvar_true
 from tests.utils import testutils
-from tests.utils.constants import PYAZURE_INTEGRATION_TEST, CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
+from tests.utils.constants import PYAZURE_INTEGRATION_TEST, \
+    CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
 REQUEST_TIMEOUT_SEC = 5
 
@@ -29,15 +30,19 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
     package_name = '.python_packages_grpc_protobuf'
     project_root = testutils.E2E_TESTS_ROOT / function_name
     customer_deps = project_root / package_name / 'lib' / 'site-packages'
+    env_variables = {}
 
     @classmethod
     def setUpClass(cls):
-        os_environ = os.environ.copy()
         # Turn on feature flag
-        os_environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = '1'
+        cls.env_variables['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = '1'
+
         # Emulate Python worker in Azure environment.
-        # For how the PYTHONPATH is set in Azure, check prodV3/worker.py.
-        os_environ['PYTHONPATH'] = str(cls.customer_deps)
+        # For how the PYTHONPATH is set in Azure, check prodV4/worker.py.
+        cls.env_variables['PYTHONPATH'] = str(cls.customer_deps)
+
+        os_environ = os.environ.copy()
+        os_environ.update(cls.env_variables)
 
         cls._patch_environ = patch.dict('os.environ', os_environ)
         cls._patch_environ.start()
@@ -51,6 +56,10 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
     @classmethod
     def get_script_dir(cls):
         return cls.project_root
+
+    @classmethod
+    def get_environment_variables(cls):
+        return cls.env_variables
 
     def test_dependency_function_should_return_ok(self):
         """The common scenario of general import should return OK in any
@@ -68,11 +77,10 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         flag_value = environments['PYTHON_ISOLATE_WORKER_DEPENDENCIES']
         self.assertEqual(flag_value, '1')
 
-    @skipIf(
-        is_envvar_true(DEDICATED_DOCKER_TEST) or
-        is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "Docker test expects dependencies derived from agents folder"
-    )
+    @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+            or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+            "Docker test expects dependencies derived from agents folder"
+            )
     def test_working_directory_resolution(self):
         """Check from the dependency manager and see if the current working
         directory is resolved correctly
@@ -86,12 +94,11 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
             os.path.join(dir, 'dependency_isolation_functions').lower()
         )
 
-    @skipIf(
-        is_envvar_true(PYAZURE_INTEGRATION_TEST) or
-        is_envvar_true(DEDICATED_DOCKER_TEST) or
-        is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        'Integration test expects dependencies derived from core tools folder'
-    )
+    @skipIf(is_envvar_true(PYAZURE_INTEGRATION_TEST)
+            or is_envvar_true(DEDICATED_DOCKER_TEST)
+            or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+            'Integration test expects dependencies derived from core '
+            'tools folder')
     def test_paths_resolution(self):
         """Dependency manager requires paths to be resolved correctly before
         switching to customer's modules. This test is to ensure when the app

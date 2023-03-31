@@ -220,9 +220,15 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         pass
 
     @classmethod
+    def get_environment_variables(cls):
+        pass
+
+    @classmethod
     def setUpClass(cls):
         script_dir = pathlib.Path(cls.get_script_dir())
         libraries = cls.get_libraries_to_install()
+        env_variables = cls.get_environment_variables()
+
         if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             cls.host_stdout = None
         else:
@@ -231,10 +237,14 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         try:
             if is_envvar_true(CONSUMPTION_DOCKER_TEST):
                 cls.webhost = \
-                    WebHostConsumption(script_dir, libraries).spawn_container()
+                    WebHostConsumption(script_dir,
+                                       libraries,
+                                       env_variables).spawn_container()
             elif is_envvar_true(DEDICATED_DOCKER_TEST):
                 cls.webhost = \
-                    WebHostDedicated(script_dir, libraries).spawn_container()
+                    WebHostDedicated(script_dir,
+                                     libraries,
+                                     env_variables).spawn_container()
             else:
                 _setup_func_app(TESTS_ROOT / script_dir)
                 cls.webhost = start_webhost(script_dir=script_dir,

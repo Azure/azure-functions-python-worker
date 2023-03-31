@@ -1,9 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
-from unittest.mock import patch
 
 import requests
+
 from tests.utils import testutils as utils
 from tests.utils.testutils import E2E_TESTS_ROOT
 
@@ -35,11 +35,6 @@ class ThirdPartyHttpFunctionsTestBase:
             host_json = cls.get_script_dir() / 'host.json'
             with open(host_json, 'w+') as f:
                 f.write(HOST_JSON_TEMPLATE)
-            os_environ = os.environ.copy()
-            # Turn on feature flag
-            os_environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
-            cls._patch_environ = patch.dict('os.environ', os_environ)
-            cls._patch_environ.start()
             super().setUpClass()
 
         @classmethod

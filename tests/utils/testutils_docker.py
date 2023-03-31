@@ -83,7 +83,8 @@ class WebHostDockerContainerBase(unittest.TestCase):
         return image_tag
 
     def create_container(self, image_repo: str, image_url: str,
-                         script_path: str, libaries_to_install: typing.List):
+                         script_path: str, libaries_to_install: typing.List,
+                         env: typing.Dict):
         """Create a docker container and record its port. Create a docker
         container according to the image name. Return the port of container.
        """
@@ -121,7 +122,7 @@ class WebHostDockerContainerBase(unittest.TestCase):
         run_cmd.extend(["--cap-add", "SYS_ADMIN"])
         run_cmd.extend(["--device", "/dev/fuse"])
         run_cmd.extend(["-e", f"CONTAINER_NAME={_uuid}"])
-        run_cmd.extend(["-e", f"AzureWebJobsFeatureFlags=EnableWorkerIndexing"])
+        run_cmd.extend(["-e", "AzureWebJobsFeatureFlags=EnableWorkerIndexing"])
         run_cmd.extend(["-e",
                         "AzureWebJobsStorage="
                         f"{os.getenv('AzureWebJobsStorage')}"])
@@ -133,7 +134,7 @@ class WebHostDockerContainerBase(unittest.TestCase):
                         f"{os.getenv('AzureWebJobsCosmosDBConnectionString')}"])
         run_cmd.extend(["-e",
                         "AzureWebJobsServiceBusConnectionString="
-                        f"{os.getenv('AzureWebJobsServiceBusConnectionString')}"])
+                        f"{os.getenv('AzureWebJobsServiceBusConnectionString')}"])  # NoQA
         run_cmd.extend(["-e",
                         "AzureWebJobsEventHubConnectionString="
                         f"{os.getenv('AzureWebJobsEventHubConnectionString')}"])
@@ -150,7 +151,7 @@ class WebHostDockerContainerBase(unittest.TestCase):
         run_cmd.extend(["-v", f"{worker_path}:{container_worker_path}"])
         run_cmd.extend(["-v", f"{script_path}:{function_path}"])
 
-        for key, value in os.environ.items():
+        for key, value in env.items():
             run_cmd.extend(["-e", f"{key}={value}"])
 
         run_cmd.append(image)
@@ -185,24 +186,32 @@ class WebHostDockerContainerBase(unittest.TestCase):
 
 class WebHostConsumption(WebHostDockerContainerBase):
 
-    def __init__(self, script_path: str, libraries_to_install=None):
+    def __init__(self, script_path: str,
+                 libraries_to_install: typing.List = None,
+                 env: typing.Dict = None):
         self.script_path = script_path
         self.libraries_to_install = libraries_to_install
+        self.env = env
 
     def spawn_container(self):
         return self.create_container(_MESH_IMAGE_REPO,
                                      _MESH_IMAGE_URL,
                                      self.script_path,
-                                     self.libraries_to_install)
+                                     self.libraries_to_install,
+                                     self.env)
 
 
 class WebHostDedicated(WebHostDockerContainerBase):
 
-    def __init__(self, script_path: str, libraries_to_install=None):
+    def __init__(self, script_path: str,
+                 libraries_to_install: typing.List = None,
+                 env: typing.Dict = None):
         self.script_path = script_path
         self.libraries_to_install = libraries_to_install
+        self.env = env
 
     def spawn_container(self):
         return self.create_container(_IMAGE_REPO, _IMAGE_URL,
                                      self.script_path,
-                                     self.libraries_to_install)
+                                     self.libraries_to_install,
+                                     self.env)

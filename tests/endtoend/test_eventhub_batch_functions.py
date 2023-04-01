@@ -22,6 +22,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_batch_functions'
 
+    @testutils.retryable_test(3, 5)
     def test_eventhub_multiple(self):
         NUM_EVENTS = 3
         all_row_keys_seen = dict([(str(i), True) for i in range(NUM_EVENTS)])
@@ -64,6 +65,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         finally:
             self._cleanup(old_partition_key)
 
+    @testutils.retryable_test(3, 5)
     def test_eventhub_multiple_with_metadata(self):
         # Generate a unique event body for EventHub event
         # Record the start_time and end_time for checking event enqueue time
@@ -163,6 +165,7 @@ class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_batch_functions' / \
             'eventhub_batch_functions_stein'
 
+    @testutils.retryable_test(3, 5)
     def test_eventhub_multiple(self):
         NUM_EVENTS = 3
         all_row_keys_seen = dict([(str(i), True) for i in range(NUM_EVENTS)])
@@ -196,6 +199,7 @@ class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
 
         self.assertDictEqual(all_row_keys_seen, row_keys_seen)
 
+    @testutils.retryable_test(3, 5)
     def test_eventhub_multiple_with_metadata(self):
         # Generate a unique event body for EventHub event
         # Record the start_time and end_time for checking event enqueue time

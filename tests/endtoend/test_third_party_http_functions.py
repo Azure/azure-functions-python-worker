@@ -40,7 +40,6 @@ class ThirdPartyHttpFunctionsTestBase:
         @classmethod
         def tearDownClass(cls):
             super().tearDownClass()
-            cls._patch_environ.stop()
 
         @classmethod
         def get_script_dir(cls):

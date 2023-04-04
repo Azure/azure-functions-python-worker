@@ -49,7 +49,7 @@ from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
 from tests.utils.constants import PYAZURE_WORKER_DIR, \
     PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
     CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG
-from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated
+from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated, DockerConfigs
 
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')
@@ -226,8 +226,11 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     @classmethod
     def setUpClass(cls):
         script_dir = pathlib.Path(cls.get_script_dir())
-        libraries = cls.get_libraries_to_install()
-        env_variables = cls.get_environment_variables()
+
+        docker_configs = DockerConfigs
+        docker_configs.script_path = script_dir
+        docker_configs.libraries = cls.get_libraries_to_install()
+        docker_configs.env = cls.get_environment_variables()
 
         if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             cls.host_stdout = None
@@ -237,14 +240,10 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         try:
             if is_envvar_true(CONSUMPTION_DOCKER_TEST):
                 cls.webhost = \
-                    WebHostConsumption(script_dir,
-                                       libraries,
-                                       env_variables).spawn_container()
+                    WebHostConsumption(docker_configs).spawn_container()
             elif is_envvar_true(DEDICATED_DOCKER_TEST):
                 cls.webhost = \
-                    WebHostDedicated(script_dir,
-                                     libraries,
-                                     env_variables).spawn_container()
+                    WebHostDedicated(docker_configs).spawn_container()
             else:
                 _setup_func_app(TESTS_ROOT / script_dir)
                 cls.webhost = start_webhost(script_dir=script_dir,

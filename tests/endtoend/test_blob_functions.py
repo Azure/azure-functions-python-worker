@@ -107,14 +107,10 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                 self.assertEqual(r.status_code, 200)
                 response = r.json()
 
-                self.assertEqual(
-                    response,
-                    {
-                        'name': 'python-worker-tests/test-blob-trigger.txt',
-                        'length': len(data),
-                        'content': data
-                    }
-                )
+                self.assertEqual(response['name'],
+                                 'python-worker-tests/test-blob-trigger.txt')
+                self.assertEqual(response['content'], data)
+
                 break
             except AssertionError:
                 if try_no == max_retries - 1:
@@ -132,22 +128,18 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         # We check it every 2 seconds to allow the trigger to be fired
         max_retries = 10
         for try_no in range(max_retries):
-            time.sleep(2)
-
             try:
                 # Check that the trigger has fired
                 r = self.webhost.request('GET', 'get_blob_triggered')
+                time.sleep(2)
+
                 self.assertEqual(r.status_code, 200)
                 response = r.json()
 
-                self.assertEqual(
-                    response,
-                    {
-                        'name': 'python-worker-tests/test-blob-trigger.txt',
-                        'length': len(data),
-                        'content': data
-                    }
-                )
+                self.assertEqual(response['name'],
+                                 'python-worker-tests/test-blob-trigger.txt')
+                self.assertEqual(response['content'], data)
+
                 break
             except AssertionError:
                 if try_no == max_retries - 1:

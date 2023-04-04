@@ -122,6 +122,9 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
             ).lower()
         )
 
+    @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+            or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+            'Docker tests do not work with dependency isolation ')
     def test_loading_libraries_from_customers_package(self):
         """Since the Python now loaded the customer's dependencies, the
         libraries version should match the ones in

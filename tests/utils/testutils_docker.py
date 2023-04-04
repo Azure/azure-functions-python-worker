@@ -5,6 +5,7 @@ import sys
 import typing
 import unittest
 import uuid
+from dataclasses import dataclass
 from time import sleep
 
 import requests
@@ -23,6 +24,13 @@ _MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
 _MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
 _IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/python/tags/list"
 _IMAGE_REPO = "mcr.microsoft.com/azure-functions/python"
+
+
+@dataclass
+class DockerConfigs:
+    script_path: str
+    libraries: typing.List = None
+    env: typing.Dict = None
 
 
 class WebHostProxy:
@@ -52,9 +60,9 @@ class WebHostProxy:
 
 class WebHostDockerContainerBase(unittest.TestCase):
 
-    def find_latest_mesh_image(self,
-                               image_repo: str,
-                               image_url: str) -> str:
+    @staticmethod
+    def find_latest_image(image_repo: str,
+                          image_url: str) -> str:
 
         regex = re.compile(_HOST_VERSION + r'.\d+.\d+-python' + _python_version)
 
@@ -83,16 +91,15 @@ class WebHostDockerContainerBase(unittest.TestCase):
         return image_tag
 
     def create_container(self, image_repo: str, image_url: str,
-                         script_path: str, libaries_to_install: typing.List,
-                         env: typing.Dict):
+                         configs: DockerConfigs):
         """Create a docker container and record its port. Create a docker
         container according to the image name. Return the port of container.
        """
 
         worker_path = os.path.join(PROJECT_ROOT, 'azure_functions_worker')
-        script_path = os.path.join(TESTS_ROOT, script_path)
+        script_path = os.path.join(TESTS_ROOT, configs.script_path)
 
-        image = self.find_latest_mesh_image(image_repo, image_url)
+        image = self.find_latest_image(image_repo, image_url)
 
         container_worker_path = (
             f"/azure-functions-host/workers/python/{_python_version}/"
@@ -101,10 +108,10 @@ class WebHostDockerContainerBase(unittest.TestCase):
 
         function_path = "/home/site/wwwroot"
 
-        if libaries_to_install:
+        if configs.libraries:
             install_libraries_cmd = []
             install_libraries_cmd.extend(['pip', 'install'])
-            install_libraries_cmd.extend(libaries_to_install)
+            install_libraries_cmd.extend(configs.libraries)
             install_libraries_cmd.extend(['-t',
                                           f'{script_path}/{_libraries_path}'])
 
@@ -151,8 +158,8 @@ class WebHostDockerContainerBase(unittest.TestCase):
         run_cmd.extend(["-v", f"{worker_path}:{container_worker_path}"])
         run_cmd.extend(["-v", f"{script_path}:{function_path}"])
 
-        if env:
-            for key, value in env.items():
+        if configs.env:
+            for key, value in configs.env.items():
                 run_cmd.extend(["-e", f"{key}={value}"])
 
         run_cmd.append(image)
@@ -204,15 +211,9 @@ class WebHostConsumption(WebHostDockerContainerBase):
 
 class WebHostDedicated(WebHostDockerContainerBase):
 
-    def __init__(self, script_path: str,
-                 libraries_to_install: typing.List = None,
-                 env: typing.Dict = None):
-        self.script_path = script_path
-        self.libraries_to_install = libraries_to_install
-        self.env = env
+    def __init__(self, configs: DockerConfigs):
+        self.configs = configs
 
     def spawn_container(self):
         return self.create_container(_IMAGE_REPO, _IMAGE_URL,
-                                     self.script_path,
-                                     self.libraries_to_install,
-                                     self.env)
+                                     self.configs)

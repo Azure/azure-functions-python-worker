@@ -46,6 +46,10 @@ class TestTableFunctions(testutils.WebHostTestCase):
         self.assertEqual(in_row_key, row_key)
 
 
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Table functions has a bug with the table extension 1.0.0."
+        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
 class TestTableFunctionsStein(testutils.WebHostTestCase):
 
     @classmethod
@@ -73,4 +77,5 @@ class TestTableFunctionsGeneric(TestTableFunctionsStein):
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'table_functions' / \
-            'table_functions_stein' / 'generic'
+                                            'table_functions_stein' /\
+                                            'generic'

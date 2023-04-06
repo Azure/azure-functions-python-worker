@@ -8,11 +8,16 @@ on:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string
     - cron: "0 8 * * 1,2,3,4"
+  issue_comment:
+    types: [ created ]
+  pull_request_review_comment:
+    types: [ created ]
 
 jobs:
   build:
     name: "Python Docker CI Run"
     runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || contains(github.event.issue.body, '/run-docker-tests')
     strategy:
       fail-fast: false
       matrix:

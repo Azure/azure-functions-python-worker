@@ -22,6 +22,10 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_batch_functions'
 
+    @classmethod
+    def get_libraries_to_install(cls):
+        return ['azure-eventhub']
+
     def test_eventhub_multiple(self):
         NUM_EVENTS = 3
         all_row_keys_seen = dict([(str(i), True) for i in range(NUM_EVENTS)])

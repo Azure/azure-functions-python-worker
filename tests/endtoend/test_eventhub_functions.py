@@ -22,6 +22,10 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_functions'
 
+    @classmethod
+    def get_libraries_to_install(cls):
+        return ['azure-eventhub']
+
     def test_eventhub_trigger(self):
         # Generate a unique event body for the EventHub event
         data = str(round(time.time()))

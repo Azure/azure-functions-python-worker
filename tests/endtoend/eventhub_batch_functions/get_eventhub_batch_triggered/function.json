@@ -8,8 +8,8 @@
       "methods": [
         "get"
       ],
-      "name": "req",
-    }",
+      "name": "req"
+    },
     {
       "direction": "in",
       "type": "table",

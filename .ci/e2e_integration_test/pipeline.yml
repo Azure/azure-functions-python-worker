@@ -48,8 +48,11 @@ steps:
     testResultsFiles: 'e2e-integration-test-report.xml'
     testRunTitle: 'Publish Python Worker E2E Test Result'
     failTaskOnFailedTests: true
+- bash: |
+    chmod +x ../linux_devops_code_coverage_generate.sh
+    ../linux_devops_code_coverage_generate.sh
 - task: PublishCodeCoverageResults@1
-  displayName: 'Publish Code Coverage XML Result'
+  displayName: 'Publish Code Coverage Result'
   condition: succeededOrFailed()
   inputs:
     codeCoverageTool: cobertura

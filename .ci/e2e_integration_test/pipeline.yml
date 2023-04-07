@@ -48,8 +48,9 @@ steps:
     testResultsFiles: 'e2e-integration-test-report.xml'
     testRunTitle: 'Publish Python Worker E2E Test Result'
     failTaskOnFailedTests: true
-- task: PublishCodeCoverageResults@2
+- task: PublishCodeCoverageResults@1
   displayName: 'Publish Code Coverage XML Result'
   condition: succeededOrFailed()
   inputs:
+    codeCoverageTool: cobertura
     summaryFileLocation: coverage.xml

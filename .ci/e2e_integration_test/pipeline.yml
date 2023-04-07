@@ -49,6 +49,7 @@ steps:
     testRunTitle: 'Publish Python Worker E2E Test Result'
     failTaskOnFailedTests: true
 - task: PublishCodeCoverageResults@2
-  displayName: 'Generate Code Coverage XML file'
+  displayName: 'Publish Code Coverage XML Result'
+  condition: succeededOrFailed()
   inputs:
     summaryFileLocation: coverage.xml

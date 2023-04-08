@@ -53,7 +53,7 @@ steps:
     $(Build.SourcesDirectory)/.ci/linux_devops_code_coverage_generate.sh
 - task: PublishCodeCoverageResults@1
   displayName: 'Publish Code Coverage Result'
-#  condition: succeededOrFailed()
+  condition: succeededOrFailed()
   inputs:
     codeCoverageTool: cobertura
     summaryFileLocation: coverage.xml

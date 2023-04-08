@@ -55,6 +55,6 @@ steps:
   displayName: 'Publish Code Coverage Result'
   condition: succeededOrFailed()
   inputs:
-    codeCoverageTool: cobertura
-    summaryFileLocation: coverage.xml
-    pathToSources: '$(Build.SourcesDirectory)/azure_functions_worker'
+    codeCoverageTool: 'JaCoCo'
+    summaryFileLocation: 'coverage.xml'
+#    pathToSources: '$(Build.SourcesDirectory)/azure_functions_worker'

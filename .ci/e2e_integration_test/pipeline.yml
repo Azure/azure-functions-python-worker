@@ -57,3 +57,4 @@ steps:
   inputs:
     codeCoverageTool: cobertura
     summaryFileLocation: coverage.xml
+    pathToSources: '$(Build.SourcesDirectory)/azure_functions_worker'

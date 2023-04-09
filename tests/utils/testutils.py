@@ -395,8 +395,9 @@ class SharedMemoryTestCase(unittest.TestCase):
         self._createSharedMemoryDirectories(self.created_directories)
         # Override the AppSetting for the duration of this test so the
         # FileAccessorUnix can use these directories for creating memory maps
-        os.environ.update({UNIX_SHARED_MEMORY_DIRECTORIES:
-                               ','.join(self.created_directories)})
+        os.environ.update(
+            {UNIX_SHARED_MEMORY_DIRECTORIES: ','.join(self.created_directories)}
+        )
 
     def _tearDownDarwin(self):
         # Delete the directories containing shared memory maps

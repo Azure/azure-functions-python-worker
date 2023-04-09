@@ -10,9 +10,9 @@ on:
     # * is a special character in YAML so you have to quote this string
     - cron: "0 8 * * 1,2,3,4"
   issue_comment:
-    types: [ created ]
+    types: [ created, edited]
   pull_request_review_comment:
-    types: [ created ]
+    types: [ created, edited]
 
 jobs:
   build:

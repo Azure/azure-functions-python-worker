@@ -18,7 +18,7 @@ jobs:
   build:
     name: "Python Docker CI Run"
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || contains(github.event.issue.body, '/run-docker-tests')
+    if: github.event_name == 'schedule' || contains(github.event.comment.body, '/run-docker-tests')
     strategy:
       fail-fast: false
       matrix:

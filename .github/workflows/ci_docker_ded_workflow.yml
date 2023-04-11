@@ -1,6 +1,5 @@
 # This workflow will run all tests in endtoend/tests in a docker container using the latest dedicated image
 
-
 name: CI Docker Dedicated tests
 
 on:
@@ -10,15 +9,13 @@ on:
     # * is a special character in YAML so you have to quote this string
     - cron: "0 8 * * 1,2,3,4"
   issue_comment:
-    types: [ created, edited]
-  pull_request_review_comment:
-    types: [ created, edited]
+    types: [created, edited]
 
 jobs:
   build:
     name: "Python Docker CI Run"
+    if: ${{ contains(github.event.comment.body, 'run-docker-tests') || github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || contains(github.event.comment.body, '/run-docker-tests')
     strategy:
       fail-fast: false
       matrix:

@@ -14,7 +14,7 @@ on:
 jobs:
   build:
     name: "Python Docker CI Run"
-    if: ${{ (github.event.issue.pull_request && github.event.comment.body == '/run-docker-tests') || github.event_name == 'schedule' }}
+    if: (github.event.issue.pull_request != '' && contains(github.event.comment.body, '/run-docker-tests to')) || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

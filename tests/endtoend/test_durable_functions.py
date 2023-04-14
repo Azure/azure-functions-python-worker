@@ -15,7 +15,7 @@ class TestDurableFunctions(testutils.WebHostTestCase):
     def setUpClass(cls):
         os_environ = os.environ.copy()
         # Webhook for durable functions
-        os.environ['WEBSITE_HOSTNAME'] = f'http:'
+        os.environ['WEBSITE_HOSTNAME'] = 'http:'
 
         cls._patch_environ = patch.dict('os.environ', os_environ)
         cls._patch_environ.start()

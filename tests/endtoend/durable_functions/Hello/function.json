@@ -5,14 +5,6 @@
       "name": "name",
       "type": "activityTrigger",
       "direction": "in"
-    },
-    {
-      "type": "blob",
-      "direction": "out",
-      "name": "blob",
-      "path": "python-worker-tests/test-return1.txt",
-      "connection": "AzureWebJobsStorage"
     }
-
   ]
 }

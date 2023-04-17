@@ -26,7 +26,7 @@ from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
                         PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME,
-                        PYTHON_LANGUAGE_RUNTIME)
+                        PYTHON_LANGUAGE_RUNTIME, PYTHON_LOAD_FUNCTIONS_INIT)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import enable_debug_logging_recommendation
@@ -288,6 +288,14 @@ class Dispatcher(metaclass=DispatcherMeta):
         if not DependencyManager.is_in_linux_consumption():
             DependencyManager.prioritize_customer_dependencies()
 
+        if DependencyManager.is_in_linux_consumption() \
+                and is_envvar_true(PYTHON_LOAD_FUNCTIONS_INIT):
+            import azure.functions  # NoQA
+
+        # loading bindings registry and saving results to a static
+        # dictionary which will be later used in the invocation request
+        bindings.load_binding_registry()
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
@@ -450,6 +458,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                     shmem_mgr=self._shmem_mgr)
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
+
+            # Use local thread storage to store the invocation ID
+            # for a customer's threads
+            fi_context.thread_local_storage.invocation_id = invocation_id
             if fi.requires_context:
                 args['context'] = fi_context
 
@@ -525,10 +537,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             func_env_reload_request = \
                 request.function_environment_reload_request
 
-            # Import before clearing path cache so that the default
-            # azure.functions modules is available in sys.modules for
-            # customer use
-            import azure.functions  # NoQA
+            if not is_envvar_true(PYTHON_LOAD_FUNCTIONS_INIT):
+                # Import before clearing path cache so that the default
+                # azure.functions modules is available in sys.modules for
+                # customer use
+                import azure.functions  # NoQA
 
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:
@@ -557,6 +570,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             DependencyManager.reload_customer_libraries(
                 func_env_reload_request.function_app_directory
             )
+
+            # calling load_binding_registry again since the
+            # reload_customer_libraries call clears the registry
+            bindings.load_binding_registry()
 
             # Change function app directory
             if getattr(func_env_reload_request,
@@ -660,7 +677,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         return bindings.Context(
             name, directory, invoc_request.invocation_id,
-            trace_context, retry_context)
+            _invocation_id_local, trace_context, retry_context)
 
     @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):
@@ -728,12 +745,12 @@ class Dispatcher(metaclass=DispatcherMeta):
     def _run_sync_func(self, invocation_id, context, func, params):
         # This helper exists because we need to access the current
         # invocation_id from ThreadPoolExecutor's threads.
-        _invocation_id_local.v = invocation_id
+        context.thread_local_storage.invocation_id = invocation_id
         try:
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)
         finally:
-            _invocation_id_local.v = None
+            context.thread_local_storage.invocation_id = None
 
     async def _run_async_func(self, context, func, params):
         return await ExtensionManager.get_async_invocation_wrapper(
@@ -837,7 +854,7 @@ def get_current_invocation_id() -> Optional[str]:
             if task_invocation_id is not None:
                 return task_invocation_id
 
-    return getattr(_invocation_id_local, 'v', None)
+    return getattr(_invocation_id_local, 'invocation_id', None)
 
 
 _invocation_id_local = threading.local()

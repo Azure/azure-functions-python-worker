@@ -11,7 +11,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'blob_functions'
 
-    @testutils.retryable_test(3, 5)
     def test_blob_io_str(self):
         r = self.webhost.request('POST', 'put_blob_str', data='test-data')
         self.assertEqual(r.status_code, 200)
@@ -25,7 +24,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data')
 
-    @testutils.retryable_test(3, 5)
     def test_blob_io_large_str(self):
         large_string = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 
@@ -41,7 +39,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, large_string)
 
-    @testutils.retryable_test(3, 5)
     def test_blob_io_bytes(self):
         r = self.webhost.request('POST', 'put_blob_bytes',
                                  data='test-dată'.encode('utf-8'))
@@ -56,7 +53,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-dată')
 
-    @testutils.retryable_test(3, 5)
     def test_blob_io_large_bytes(self):
         large_string = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 
@@ -73,7 +69,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, large_string)
 
-    @testutils.retryable_test(3, 5)
     def test_blob_io_filelike(self):
         r = self.webhost.request('POST', 'put_blob_filelike')
         self.assertEqual(r.status_code, 200)
@@ -83,7 +78,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'filelike')
 
-    @testutils.retryable_test(3, 5)
     def test_blob_io_return(self):
         r = self.webhost.request('POST', 'put_blob_return')
         self.assertEqual(r.status_code, 200)
@@ -92,7 +86,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'FROM RETURN')
 
-    @testutils.retryable_test(3, 5)
     def test_blob_trigger(self):
         data = "DummyData"
 
@@ -126,7 +119,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                 if try_no == max_retries - 1:
                     raise
 
-    @testutils.retryable_test(3, 5)
     def test_blob_trigger_with_large_content(self):
         data = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 

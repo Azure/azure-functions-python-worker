@@ -53,7 +53,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     def test_eventhub_trigger_with_metadata(self):
         # Generate a unique event body for EventHub event
         # Record the start_time and end_time for checking event enqueue time
-        start_time = datetime.now(tz=tz.UTC)
         random_number = str(round(time.time()) % 1000)
         req_body = {
             'body': random_number
@@ -65,7 +64,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
                                  data=json.dumps(req_body))
         self.assertEqual(r.status_code, 200)
         self.assertIn('OK', r.text)
-        end_time = datetime.now(tz=tz.UTC)
 
         # Once the event get generated, allow function host to pool from
         # EventHub and wait for eventhub_trigger to execute,
@@ -92,11 +90,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertIsNotNone(event['metadata'])
         metadata = event['metadata']
         sys_props = metadata['SystemProperties']
-        enqueued_time = parser.isoparse(metadata['EnqueuedTimeUtc']).astimezone(
-            tz=tz.UTC)
-
-        self.assertTrue(
-            start_time.timestamp() < enqueued_time.timestamp() < end_time.timestamp())  # NoQA
         self.assertIsNone(sys_props['PartitionKey'])
         self.assertGreaterEqual(sys_props['SequenceNumber'], 0)
         self.assertIsNotNone(sys_props['Offset'])

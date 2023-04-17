@@ -98,6 +98,25 @@ class WebHostDockerContainerBase(unittest.TestCase):
 
         worker_path = os.path.join(PROJECT_ROOT, 'azure_functions_worker')
         script_path = os.path.join(TESTS_ROOT, configs.script_path)
+        env = {"AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
+               "AzureWebJobsStorage": f"{os.getenv('AzureWebJobsStorage')}",
+               "AzureWebJobsEventHubConnectionString":
+                   f"{os.getenv('AzureWebJobsEventHubConnectionString')}",
+               "AzureWebJobsCosmosDBConnectionString":
+                   f"{os.getenv('AzureWebJobsCosmosDBConnectionString')}",
+               "AzureWebJobsServiceBusConnectionString":
+                   f"{os.getenv('AzureWebJobsServiceBusConnectionString')}"
+                   "AzureWebJobsEventHubConnectionString"
+                   f"{os.getenv('AzureWebJobsEventHubConnectionString')}",
+               "AzureWebJobsSqlConnectionString":
+                   f"{os.getenv('AzureWebJobsSqlConnectionString')}",
+               "AzureWebJobsEventGridTopicUri":
+                   f"{os.getenv('AzureWebJobsEventGridTopicUri')}",
+               "AzureWebJobsEventGridConnectionKey":
+                   f"{os.getenv('AzureWebJobsEventGridConnectionKey')}"
+               }
+
+        configs.env.update(env)
 
         image = self.find_latest_image(image_repo, image_url)
 
@@ -129,31 +148,6 @@ class WebHostDockerContainerBase(unittest.TestCase):
         run_cmd.extend(["--cap-add", "SYS_ADMIN"])
         run_cmd.extend(["--device", "/dev/fuse"])
         run_cmd.extend(["-e", f"CONTAINER_NAME={_uuid}"])
-        run_cmd.extend(["-e", "AzureWebJobsFeatureFlags=EnableWorkerIndexing"])
-        run_cmd.extend(["-e",
-                        "AzureWebJobsStorage="
-                        f"{os.getenv('AzureWebJobsStorage')}"])
-        run_cmd.extend(["-e",
-                        "AzureWebJobsEventHubConnectionString="
-                        f"{os.getenv('AzureWebJobsEventHubConnectionString')}"])
-        run_cmd.extend(["-e",
-                        "AzureWebJobsCosmosDBConnectionString="
-                        f"{os.getenv('AzureWebJobsCosmosDBConnectionString')}"])
-        run_cmd.extend(["-e",
-                        "AzureWebJobsServiceBusConnectionString="
-                        f"{os.getenv('AzureWebJobsServiceBusConnectionString')}"])  # NoQA
-        run_cmd.extend(["-e",
-                        "AzureWebJobsEventHubConnectionString="
-                        f"{os.getenv('AzureWebJobsEventHubConnectionString')}"])
-        run_cmd.extend(["-e",
-                        "AzureWebJobsSqlConnectionString="
-                        f"{os.getenv('AzureWebJobsSqlConnectionString')}"])
-        run_cmd.extend(["-e",
-                        "AzureWebJobsEventGridTopicUri="
-                        f"{os.getenv('AzureWebJobsEventGridTopicUri')}"])
-        run_cmd.extend(["-e",
-                        "AzureWebJobsEventGridConnectionKey="
-                        f"{os.getenv('AzureWebJobsEventGridConnectionKey')}"])
         run_cmd.extend(["-e", f"AzureFunctionsWebHost__hostid={_uuid}"])
         run_cmd.extend(["-v", f"{worker_path}:{container_worker_path}"])
         run_cmd.extend(["-v", f"{script_path}:{function_path}"])

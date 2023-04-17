@@ -167,6 +167,10 @@ class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_batch_functions' / \
             'eventhub_batch_functions_stein'
 
+    @classmethod
+    def get_libraries_to_install(cls):
+        return ['azure-eventhub']
+
     def test_eventhub_multiple(self):
         NUM_EVENTS = 3
         all_row_keys_seen = dict([(str(i), True) for i in range(NUM_EVENTS)])

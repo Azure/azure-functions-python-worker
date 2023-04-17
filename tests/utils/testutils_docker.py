@@ -194,19 +194,13 @@ class WebHostDockerContainerBase(unittest.TestCase):
 
 class WebHostConsumption(WebHostDockerContainerBase):
 
-    def __init__(self, script_path: str,
-                 libraries_to_install: typing.List = None,
-                 env: typing.Dict = None):
-        self.script_path = script_path
-        self.libraries_to_install = libraries_to_install
-        self.env = env
+    def __init__(self, configs: DockerConfigs):
+        self.configs = configs
 
     def spawn_container(self):
         return self.create_container(_MESH_IMAGE_REPO,
                                      _MESH_IMAGE_URL,
-                                     self.script_path,
-                                     self.libraries_to_install,
-                                     self.env)
+                                     self.configs)
 
 
 class WebHostDedicated(WebHostDockerContainerBase):

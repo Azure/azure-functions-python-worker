@@ -6,6 +6,7 @@ from pathlib import Path
 # User packages
 PKGS_PATH = "site/wwwroot/.python_packages"
 VENV_PKGS_PATH = "site/wwwroot/worker_venv"
+WORKER_DIR = "azure_functions_worker"
 
 PKGS = "lib/site-packages"
 
@@ -51,7 +52,7 @@ def determine_user_pkg_paths():
 if __name__ == '__main__':
     # worker.py lives in the same directory as azure_functions_worker
     current_dir = str(Path(__file__).absolute())
-    worker_path = os.path.join(current_dir, "azure_functions_worker")
+    worker_path = os.path.join(current_dir, WORKER_DIR)
     func_worker_dir = str(Path(__file__).absolute().parent)
     env = os.environ
 
@@ -63,7 +64,7 @@ if __name__ == '__main__':
 
     if is_azure_environment():
         os.execve(sys.executable,
-                  [sys.executable, '-m', 'azure_functions_worker']
+                  [sys.executable, '-m', WORKER_DIR]
                   + sys.argv[1:],
                   env)
     else:

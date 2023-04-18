@@ -33,19 +33,19 @@ jobs:
         if: matrix.python-version == 3.7
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
-        run: python -m pytest -n auto --reruns 4 --instafail tests/consumption_tests
+        run: python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.8 Tests
         if: matrix.python-version == 3.8
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
-        run: python -m pytest -n auto --reruns 4 --instafail tests/consumption_tests
+        run: python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString39 }}
-        run: python -m pytest -n auto --reruns 4 --instafail tests/consumption_tests
+        run: python -m pytest -n auto --dist loadfile -vv --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.10 Tests
         if: matrix.python-version == 3.10
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
-        run: python -m pytest -n auto --reruns 4 --instafail tests/consumption_tests
+        run: python -m pytest -n auto --dist loadfile -vv --reruns 4 --instafail tests/consumption_tests

@@ -12,15 +12,21 @@ on:
       python_version:
         description: 'Python Version'
         required: true
+        type: choice
+        default: '3.11'
+        options: [ '3.7', '3.8', '3.9', '3.10', '3.11' ]
       DEDICATED_DOCKER_TEST:
-        description: 'Is this Dedicated Image? -> bool'
+        description: 'Is this Dedicated Image?'
         required: true
+        type: choice
+        default: 'true'
+        options: [ 'true', 'false' ]
       CONSUMPTION_DOCKER_TEST:
-        description: 'Is this Consumption Image? -> bool'
+        description: 'Is this Consumption Image?'
         required: true
-
-env:
-  IMAGE_NAME: ${{ github.event.inputs.image_name }}
+        type: choice
+        default: 'false'
+        options: [ 'true', 'false' ]
 
 jobs:
   build:
@@ -32,6 +38,7 @@ jobs:
         DEDICATED_DOCKER_TEST: ${{ github.event.inputs.DEDICATED_DOCKER_TEST }}
         CONSUMPTION_DOCKER_TEST: ${{ github.event.inputs.CONSUMPTION_DOCKER_TEST }}
         python_version: ${{ github.event.inputs.python_version }}
+        IMAGE_NAME: ${{ github.event.inputs.image_name }}
     steps:
       - name: Checkout code.
         uses: actions/checkout@v2
@@ -41,7 +48,7 @@ jobs:
           python-version: ${{ env.python_version }}
       - name: Install dependencies
         run: |
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U -e .[dev]
+          python -m pip install -U -e .[dev]
       - name: Running 3.7 Tests
         if: env.python_version == 3.7
         env:
@@ -53,7 +60,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
         run: |
-          python -m pytest -n auto  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest --dist loadfile --reruns 4 -vv --instafail tests/endtoend
       - name: Running 3.8 Tests
         if: env.python_version == 3.8
         env:
@@ -65,7 +72,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
         run: |
-          python -m pytest -n auto  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest --dist loadfile --reruns 4 -vv --instafail tests/endtoend
       - name: Running 3.9 Tests
         if: env.python_version == 3.9
         env:
@@ -77,7 +84,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
         run: |
-          python -m pytest -n auto  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest --dist loadfile --reruns 4 -vv --instafail tests/endtoend
       - name: Running 3.10 Tests
         if: env.python_version == 3.10
         env:
@@ -89,11 +96,16 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
         run: |
-          python -m pytest -n auto  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
-      - name: Codecov
-        uses: codecov/codecov-action@v1.0.13
-        with:
-          file: ./coverage.xml # optional
-          flags: unittests # optional
-          name: codecov # optional
-          fail_ci_if_error: false # optional (default = false)
+          python -m pytest --dist loadfile --reruns 4 -vv --instafail tests/endtoend
+      - name: Running 3.11 Tests
+        if: env.python_version == 3.11
+        env:
+          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString311 }}
+          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString311 }}
+          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString311 }}
+          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString311 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString311 }}
+          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
+          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
+        run: |
+          python -m pytest --dist loadfile --reruns 4 -vv --instafail tests/endtoend

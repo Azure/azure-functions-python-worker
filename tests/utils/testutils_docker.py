@@ -105,9 +105,7 @@ class WebHostDockerContainerBase(unittest.TestCase):
                "AzureWebJobsCosmosDBConnectionString":
                    f"{os.getenv('AzureWebJobsCosmosDBConnectionString')}",
                "AzureWebJobsServiceBusConnectionString":
-                   f"{os.getenv('AzureWebJobsServiceBusConnectionString')}"
-                   "AzureWebJobsEventHubConnectionString"
-                   f"{os.getenv('AzureWebJobsEventHubConnectionString')}",
+                   f"{os.getenv('AzureWebJobsServiceBusConnectionString')}",
                "AzureWebJobsSqlConnectionString":
                    f"{os.getenv('AzureWebJobsSqlConnectionString')}",
                "AzureWebJobsEventGridTopicUri":

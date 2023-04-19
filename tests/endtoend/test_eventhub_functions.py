@@ -2,9 +2,6 @@
 # Licensed under the MIT License.
 import json
 import time
-from datetime import datetime
-
-from dateutil import parser, tz
 
 from tests.utils import testutils
 

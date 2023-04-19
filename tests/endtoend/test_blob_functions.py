@@ -132,6 +132,8 @@ class TestBlobFunctions(testutils.WebHostTestCase):
             try:
                 # Check that the trigger has fired
                 r = self.webhost.request('GET', 'get_blob_triggered')
+
+                # Waiting for blob to get updated
                 time.sleep(2)
 
                 self.assertEqual(r.status_code, 200)

@@ -13,8 +13,6 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
     same time. this file is more focused on testing the E2E flow scenario for
     FUNCTIONS_WORKER_PROCESS_COUNT feature.
     """
-    env_variables = {}
-
     @classmethod
     def setUpClass(cls):
         cls.env_variables['PYTHON_THREADPOOL_THREAD_COUNT'] = '1'

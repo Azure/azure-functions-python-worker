@@ -30,7 +30,6 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
     package_name = '.python_packages_grpc_protobuf'
     project_root = testutils.E2E_TESTS_ROOT / function_name
     customer_deps = project_root / package_name / 'lib' / 'site-packages'
-    env_variables = {}
 
     @classmethod
     def setUpClass(cls):

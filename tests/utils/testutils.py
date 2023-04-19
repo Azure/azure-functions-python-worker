@@ -212,6 +212,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     check_log_ABC - Check logs generated during the execution of test_ABC.
     """
     host_stdout_logger = logging.getLogger('webhosttests')
+    env_variables = {}
 
     @classmethod
     def get_script_dir(cls):

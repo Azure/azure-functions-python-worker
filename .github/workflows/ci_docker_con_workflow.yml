@@ -5,9 +5,9 @@ name: CI Docker Consumption tests
 on:
   workflow_dispatch:
   schedule:
-    # Monday to Thursday 1 AM PDT build
+    # Monday to Thursday 2 AM PDT build
     # * is a special character in YAML so you have to quote this string
-    - cron: "0 8 * * 1,2,3,4"
+    - cron: "0 9 * * *"
 
 jobs:
   build:

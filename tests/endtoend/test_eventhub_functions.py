@@ -40,10 +40,14 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         # Once the event get generated, allow function host to poll from
         # EventHub and wait for eventhub_trigger to execute,
         # converting the event metadata into a blob.
-        time.sleep(5)
+        time.sleep(3)
 
         # Call get_eventhub_triggered to retrieve event metadata from blob.
         r = self.webhost.request('GET', 'get_eventhub_triggered')
+
+        # Sleeping to let the blob get updated with the latest data from the
+        # eventhub output binding
+        time.sleep(2)
         self.assertEqual(r.status_code, 200)
         response = r.json()
 
@@ -68,10 +72,14 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         # Once the event get generated, allow function host to pool from
         # EventHub and wait for eventhub_trigger to execute,
         # converting the event metadata into a blob.
-        time.sleep(5)
+        time.sleep(3)
 
         # Call get_metadata_triggered to retrieve event metadata from blob
         r = self.webhost.request('GET', 'get_metadata_triggered')
+
+        # Sleeping to let the blob get updated with the latest data from the
+        # eventhub output binding
+        time.sleep(2)
         self.assertEqual(r.status_code, 200)
 
         # Check if the event body matches the unique random_number

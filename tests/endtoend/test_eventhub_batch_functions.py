@@ -4,11 +4,20 @@ import json
 import time
 import pathlib
 from datetime import datetime
+from unittest import skipIf
+
 from dateutil import parser, tz
 
+from azure_functions_worker.utils.common import is_envvar_true
 from tests.utils import testutils
+from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
 
 
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Table functions which are used in the bindings in these tests"
+        " has a bug with the table extension 1.0.0. "
+        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
 class TestEventHubFunctions(testutils.WebHostTestCase):
     """Test EventHub Trigger and Output Bindings (cardinality: many).
 
@@ -57,6 +66,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
         try:
             r = self.webhost.request('GET', 'get_eventhub_batch_triggered')
+            time.sleep(2)
             self.assertEqual(r.status_code, 200)
             entries = r.json()
             for entry in entries:
@@ -160,6 +170,11 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         return testutils.TESTS_ROOT / script_dir / json_path
 
 
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Table functions which are used in the bindings has a bug with the"
+        " table extension 1.0.0. "
+        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
 class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
 
     @classmethod

@@ -24,6 +24,7 @@ _MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
 _MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
 _IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/python/tags/list"
 _IMAGE_REPO = "mcr.microsoft.com/azure-functions/python"
+_CUSTOM_IMAGE = os.getenv("IMAGE_NAME")
 
 
 @dataclass
@@ -116,7 +117,10 @@ class WebHostDockerContainerBase(unittest.TestCase):
 
         configs.env.update(env)
 
-        image = self.find_latest_image(image_repo, image_url)
+        if _CUSTOM_IMAGE:
+            image = _CUSTOM_IMAGE
+        else:
+            image = self.find_latest_image(image_repo, image_url)
 
         container_worker_path = (
             f"/azure-functions-host/workers/python/{_python_version}/"

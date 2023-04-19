@@ -1,6 +1,5 @@
 # This workflow will run all tests in endtoend/tests in a docker container using the latest dedicated image
 
-
 name: CI Docker Dedicated tests
 
 on:

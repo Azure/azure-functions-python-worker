@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import time
+from json import JSONDecodeError
 
 from tests.utils import testutils
 
@@ -141,7 +142,7 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                 self.assertEqual(response['content'], data)
 
                 break
-            except AssertionError:
+            except AssertionError or JSONDecodeError:
                 if try_no == max_retries - 1:
                     raise
 

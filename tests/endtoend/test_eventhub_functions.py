@@ -26,6 +26,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     def get_libraries_to_install(cls):
         return ['azure-eventhub']
 
+    @testutils.retryable_test(3, 5)
     def test_eventhub_trigger(self):
         # Generate a unique event body for the EventHub event
         data = str(round(time.time()))
@@ -40,20 +41,21 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         # Once the event get generated, allow function host to poll from
         # EventHub and wait for eventhub_trigger to execute,
         # converting the event metadata into a blob.
-        time.sleep(3)
+        time.sleep(5)
 
         # Call get_eventhub_triggered to retrieve event metadata from blob.
         r = self.webhost.request('GET', 'get_eventhub_triggered')
 
         # Sleeping to let the blob get updated with the latest data from the
         # eventhub output binding
-        time.sleep(2)
+        time.sleep(5)
         self.assertEqual(r.status_code, 200)
         response = r.json()
 
         # Check if the event body matches the initial data
         self.assertEqual(response, doc)
 
+    @testutils.retryable_test(3, 5)
     def test_eventhub_trigger_with_metadata(self):
         # Generate a unique event body for EventHub event
         # Record the start_time and end_time for checking event enqueue time
@@ -72,14 +74,14 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         # Once the event get generated, allow function host to pool from
         # EventHub and wait for eventhub_trigger to execute,
         # converting the event metadata into a blob.
-        time.sleep(3)
+        time.sleep(5)
 
         # Call get_metadata_triggered to retrieve event metadata from blob
         r = self.webhost.request('GET', 'get_metadata_triggered')
 
         # Sleeping to let the blob get updated with the latest data from the
         # eventhub output binding
-        time.sleep(2)
+        time.sleep(5)
         self.assertEqual(r.status_code, 200)
 
         # Check if the event body matches the unique random_number

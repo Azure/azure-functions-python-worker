@@ -14,8 +14,6 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
     scenarios.
     """
 
-    env_variables = {}
-
     @classmethod
     def setUpClass(cls):
         cls.env_variables['PYTHON_THREADPOOL_THREAD_COUNT'] = '2'

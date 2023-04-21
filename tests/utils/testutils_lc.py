@@ -162,17 +162,13 @@ class LinuxConsumptionWebHostController:
         """
         # Construct environment variables and start the docker container
         worker_path = os.path.join(PROJECT_ROOT, 'azure_functions_worker')
-        library_path = os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME,
-                                    'azure', 'functions')
-        self._download_azure_functions()
+
+        # TODO: Mount library in docker container
+        # self._download_azure_functions()
 
         container_worker_path = (
             f"/azure-functions-host/workers/python/{self._py_version}/"
             "LINUX/X64/azure_functions_worker"
-        )
-        container_library_path = (
-            f"/azure-functions-host/workers/python/{self._py_version}/"
-            "LINUX/X64/azure/functions"
         )
 
         run_cmd = []
@@ -183,9 +179,7 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["-e", f"CONTAINER_NAME={self._uuid}"])
         run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={_DUMMY_CONT_KEY}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
-        run_cmd.extend(["-e", "PYTHON_ISOLATE_WORKER_DEPENDENCIES=1"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
-        run_cmd.extend(["-v", f'{library_path}:{container_library_path}'])
 
         for key, value in env.items():
             run_cmd.extend(["-e", f"{key}={value}"])
@@ -295,7 +289,8 @@ class LinuxConsumptionWebHostController:
     def __exit__(self, exc_type, exc_value, traceback):
         logs = self.get_container_logs()
         self.safe_kill_container()
-        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME))
+        shutil.rmtree(os.path.join(tempfile.gettempdir(), _FUNC_FILE_NAME),
+                      ignore_errors=True)
 
         if traceback:
             print(f'Test failed with container logs: {logs}',

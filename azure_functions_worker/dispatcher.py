@@ -9,6 +9,7 @@ import asyncio
 import concurrent.futures
 import logging
 import os
+import platform
 import queue
 import sys
 import threading
@@ -24,7 +25,8 @@ from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME)
+                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME,
+                        PYTHON_LANGUAGE_RUNTIME, PYTHON_LOAD_FUNCTIONS_INIT)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import enable_debug_logging_recommendation
@@ -92,6 +94,16 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread: threading.Thread = threading.Thread(
             name='grpc-thread', target=self.__poll_grpc)
+
+    @staticmethod
+    def get_worker_metadata():
+        return protos.WorkerMetadata(
+            runtime_name=PYTHON_LANGUAGE_RUNTIME,
+            runtime_version=f"{sys.version_info.major}."
+                            f"{sys.version_info.minor}",
+            worker_version=VERSION,
+            worker_bitness=platform.machine(),
+            custom_properties={})
 
     def get_sync_tp_workers_set(self):
         """We don't know the exact value of the threadcount set for the Python
@@ -276,10 +288,19 @@ class Dispatcher(metaclass=DispatcherMeta):
         if not DependencyManager.is_in_linux_consumption():
             DependencyManager.prioritize_customer_dependencies()
 
+        if DependencyManager.is_in_linux_consumption() \
+                and is_envvar_true(PYTHON_LOAD_FUNCTIONS_INIT):
+            import azure.functions  # NoQA
+
+        # loading bindings registry and saving results to a static
+        # dictionary which will be later used in the invocation request
+        bindings.load_binding_registry()
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
                 capabilities=capabilities,
+                worker_metadata=self.get_worker_metadata(),
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success)))
 
@@ -312,30 +333,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         try:
-            indexed_functions = loader.index_function_app(function_path)
-            logger.info('Indexed function app and found %s functions',
-                        len(indexed_functions))
-
-            fx_metadata_results = []
-            if indexed_functions:
-                indexed_function_logs: List[str] = []
-                for func in indexed_functions:
-                    function_log = "Function Name: {}, Function Binding: {}" \
-                        .format(func.get_function_name(),
-                                [(binding.type, binding.name) for binding in
-                                 func.get_bindings()])
-                    indexed_function_logs.append(function_log)
-
-                logger.info(
-                    'Successfully processed FunctionMetadataRequest for '
-                    'functions: %s', " ".join(indexed_function_logs))
-
-                fx_metadata_results = loader.process_indexed_function(
-                    self._functions,
-                    indexed_functions)
-            else:
-                logger.warning("No functions indexed. Please refer to "
-                               "aka.ms/pythonprogrammingmodel for more info.")
+            fx_metadata_results = self.index_functions(function_path)
 
             return protos.StreamingMessage(
                 request_id=request.request_id,
@@ -355,7 +353,10 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__function_load_request(self, request):
         func_request = request.function_load_request
         function_id = func_request.function_id
-        function_name = func_request.metadata.name
+        function_metadata = func_request.metadata
+        function_name = function_metadata.name
+        function_path = os.path.join(function_metadata.directory,
+                                     SCRIPT_FILE_NAME)
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
@@ -363,25 +364,37 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         try:
             if not self._functions.get_function(function_id):
-                func = loader.load_function(
-                    func_request.metadata.name,
-                    func_request.metadata.directory,
-                    func_request.metadata.script_file,
-                    func_request.metadata.entry_point)
+                if function_metadata.properties.get("worker_indexed", False) \
+                        or os.path.exists(function_path):
+                    # This is for the second worker and above where the worker
+                    # indexing is enabled and load request is called without
+                    # calling the metadata request. In this case we index the
+                    # function and update the workers registry
+                    logger.info(f"Indexing function {function_name} in the "
+                                f"load request")
+                    _ = self.index_functions(function_path)
+                else:
+                    # legacy function
+                    func = loader.load_function(
+                        func_request.metadata.name,
+                        func_request.metadata.directory,
+                        func_request.metadata.script_file,
+                        func_request.metadata.entry_point)
 
-                self._functions.add_function(
-                    function_id, func, func_request.metadata)
+                    self._functions.add_function(
+                        function_id, func, func_request.metadata)
 
-                ExtensionManager.function_load_extension(
-                    function_name,
-                    func_request.metadata.directory
-                )
+                    ExtensionManager.function_load_extension(
+                        function_name,
+                        func_request.metadata.directory
+                    )
 
-                logger.info('Successfully processed FunctionLoadRequest, '
-                            'request ID: %s, '
-                            'function ID: %s,'
-                            'function Name: %s', self.request_id, function_id,
-                            function_name)
+                    logger.info('Successfully processed FunctionLoadRequest, '
+                                'request ID: %s, '
+                                'function ID: %s,'
+                                'function Name: %s', self.request_id,
+                                function_id,
+                                function_name)
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -445,6 +458,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                     shmem_mgr=self._shmem_mgr)
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
+
+            # Use local thread storage to store the invocation ID
+            # for a customer's threads
+            fi_context.thread_local_storage.invocation_id = invocation_id
             if fi.requires_context:
                 args['context'] = fi_context
 
@@ -520,10 +537,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             func_env_reload_request = \
                 request.function_environment_reload_request
 
-            # Import before clearing path cache so that the default
-            # azure.functions modules is available in sys.modules for
-            # customer use
-            import azure.functions  # NoQA
+            if not is_envvar_true(PYTHON_LOAD_FUNCTIONS_INIT):
+                # Import before clearing path cache so that the default
+                # azure.functions modules is available in sys.modules for
+                # customer use
+                import azure.functions  # NoQA
 
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:
@@ -553,6 +571,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                 func_env_reload_request.function_app_directory
             )
 
+            # calling load_binding_registry again since the
+            # reload_customer_libraries call clears the registry
+            bindings.load_binding_registry()
+
             # Change function app directory
             if getattr(func_env_reload_request,
                        'function_app_directory', None):
@@ -560,6 +582,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     func_env_reload_request.function_app_directory)
 
             success_response = protos.FunctionEnvironmentReloadResponse(
+                capabilities={},
+                worker_metadata=self.get_worker_metadata(),
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success))
 
@@ -576,6 +600,30 @@ class Dispatcher(metaclass=DispatcherMeta):
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
+
+    def index_functions(self, function_path: str):
+        indexed_functions = loader.index_function_app(function_path)
+        logger.info('Indexed function app and found %s functions',
+                    len(indexed_functions))
+
+        if indexed_functions:
+            indexed_function_logs: List[str] = []
+            for func in indexed_functions:
+                function_log = "Function Name: {}, Function Binding: {}" \
+                    .format(func.get_function_name(),
+                            [(binding.type, binding.name) for binding in
+                             func.get_bindings()])
+                indexed_function_logs.append(function_log)
+
+            logger.info(
+                'Successfully processed FunctionMetadataRequest for '
+                'functions: %s', " ".join(indexed_function_logs))
+
+            fx_metadata_results = loader.process_indexed_function(
+                self._functions,
+                indexed_functions)
+
+            return fx_metadata_results
 
     async def _handle__close_shared_memory_resources_request(self, request):
         """
@@ -629,7 +677,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         return bindings.Context(
             name, directory, invoc_request.invocation_id,
-            trace_context, retry_context)
+            _invocation_id_local, trace_context, retry_context)
 
     @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):
@@ -697,12 +745,12 @@ class Dispatcher(metaclass=DispatcherMeta):
     def _run_sync_func(self, invocation_id, context, func, params):
         # This helper exists because we need to access the current
         # invocation_id from ThreadPoolExecutor's threads.
-        _invocation_id_local.v = invocation_id
+        context.thread_local_storage.invocation_id = invocation_id
         try:
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)
         finally:
-            _invocation_id_local.v = None
+            context.thread_local_storage.invocation_id = None
 
     async def _run_async_func(self, context, func, params):
         return await ExtensionManager.get_async_invocation_wrapper(
@@ -806,7 +854,7 @@ def get_current_invocation_id() -> Optional[str]:
             if task_invocation_id is not None:
                 return task_invocation_id
 
-    return getattr(_invocation_id_local, 'v', None)
+    return getattr(_invocation_id_local, 'invocation_id', None)
 
 
 _invocation_id_local = threading.local()

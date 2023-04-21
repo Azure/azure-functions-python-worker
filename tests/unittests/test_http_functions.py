@@ -8,8 +8,6 @@ import sys
 import typing
 from unittest import skipIf
 
-import pytest
-
 from tests.utils import testutils
 
 
@@ -324,7 +322,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
                       "troubleshooting guide: "
                       "https://aka.ms/functions-modulenotfound", host_out)
 
-    @pytest.mark.flaky(reruns=3)
     def test_print_logging_no_flush(self):
         r = self.webhost.request('GET', 'print_logging?message=Secret42')
         self.assertEqual(r.status_code, 200)
@@ -333,7 +330,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def check_log_print_logging_no_flush(self, host_out: typing.List[str]):
         self.assertIn('Secret42', host_out)
 
-    @pytest.mark.flaky(reruns=3)
     def test_print_logging_with_flush(self):
         r = self.webhost.request('GET',
                                  'print_logging?flush=true&message=Secret42')
@@ -343,7 +339,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def check_log_print_logging_with_flush(self, host_out: typing.List[str]):
         self.assertIn('Secret42', host_out)
 
-    @pytest.mark.flaky(reruns=3)
     def test_print_to_console_stdout(self):
         r = self.webhost.request('GET',
                                  'print_logging?console=true&message=Secret42')
@@ -413,7 +408,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertFalse("Set-Cookie" in r.headers)
 
-    @pytest.mark.flaky(reruns=3)
     def check_log_print_to_console_stdout(self, host_out: typing.List[str]):
         # System logs stdout should not exist in host_out
         self.assertNotIn('Secret42', host_out)
@@ -428,7 +422,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # System logs stderr should not exist in host_out
         self.assertNotIn('Secret42', host_out)
 
-    @pytest.mark.flaky(reruns=3)
     def test_hijack_current_event_loop(self):
         r = self.webhost.request('GET', 'hijack_current_event_loop/')
         self.assertEqual(r.status_code, 200)

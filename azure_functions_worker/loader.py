@@ -8,7 +8,6 @@ import os
 import os.path
 import pathlib
 import sys
-import uuid
 from os import PathLike, fspath
 from typing import Optional, Dict
 
@@ -65,16 +64,14 @@ def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions):
     fx_metadata_results = []
     for indexed_function in indexed_functions:
-        function_id = str(uuid.uuid4())
         function_info = functions_registry.add_indexed_function(
-            function_id,
             function=indexed_function)
 
         binding_protos = build_binding_protos(indexed_function)
 
         function_metadata = protos.RpcFunctionMetadata(
             name=function_info.name,
-            function_id=function_id,
+            function_id=function_info.function_id,
             managed_dependency_enabled=False,  # only enabled for PowerShell
             directory=function_info.directory,
             script_file=indexed_function.function_script_file,
@@ -82,7 +79,8 @@ def process_indexed_function(functions_registry: functions.Registry,
             is_proxy=False,  # not supported in V4
             language=PYTHON_LANGUAGE_RUNTIME,
             bindings=binding_protos,
-            raw_bindings=indexed_function.get_raw_bindings())
+            raw_bindings=indexed_function.get_raw_bindings(),
+            properties={"worker_indexed": "True"})
 
         fx_metadata_results.append(function_metadata)
 

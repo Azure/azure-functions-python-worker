@@ -42,13 +42,14 @@ from azure_functions_worker.bindings.shared_memory_data_transfer \
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryConstants as consts
 from azure_functions_worker.constants import (
-    PYAZURE_WEBHOST_DEBUG,
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
     UNIX_SHARED_MEMORY_DIRECTORIES
 )
 from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
 from tests.utils.constants import PYAZURE_WORKER_DIR, \
-    PYAZURE_INTEGRATION_TEST, PROJECT_ROOT
+    PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
+    CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG
+from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated
 
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')
@@ -62,7 +63,6 @@ DEFAULT_WEBHOST_DLL_PATH = (
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
 WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
-WORKER_CONFIG = PROJECT_ROOT / '.testconfig'
 ON_WINDOWS = platform.system() == 'Windows'
 LOCALHOST = "127.0.0.1"
 
@@ -219,10 +219,15 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         else:
             cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
 
-        _setup_func_app(TESTS_ROOT / script_dir)
         try:
-            cls.webhost = start_webhost(script_dir=script_dir,
-                                        stdout=cls.host_stdout)
+            if is_envvar_true(CONSUMPTION_DOCKER_TEST):
+                cls.webhost = WebHostConsumption(script_dir).spawn_container()
+            elif is_envvar_true(DEDICATED_DOCKER_TEST):
+                cls.webhost = WebHostDedicated(script_dir).spawn_container()
+            else:
+                _setup_func_app(TESTS_ROOT / script_dir)
+                cls.webhost = start_webhost(script_dir=script_dir,
+                                            stdout=cls.host_stdout)
         except Exception:
             _teardown_func_app(TESTS_ROOT / script_dir)
             raise
@@ -917,6 +922,7 @@ def start_webhost(*, script_dir=None, stdout=None):
             stdout = subprocess.DEVNULL
 
     port = _find_open_port()
+
     proc = popen_webhost(stdout=stdout, stderr=subprocess.STDOUT,
                          script_root=script_root, port=port)
     time.sleep(10)  # Giving host some time to start fully.

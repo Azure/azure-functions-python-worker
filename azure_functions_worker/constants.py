@@ -12,9 +12,6 @@ WORKER_STATUS = "WorkerStatus"
 SHARED_MEMORY_DATA_TRANSFER = "SharedMemoryDataTransfer"
 FUNCTION_DATA_CACHE = "FunctionDataCache"
 
-# Debug Flags
-PYAZURE_WEBHOST_DEBUG = "PYAZURE_WEBHOST_DEBUG"
-
 # Platform Environment Variables
 AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
 CONTAINER_NAME = "CONTAINER_NAME"
@@ -32,6 +29,9 @@ Comma-separated list of directories where shared memory maps can be created for
 data transfer between host and worker.
 """
 UNIX_SHARED_MEMORY_DIRECTORIES = "FUNCTIONS_UNIX_SHARED_MEMORY_DIRECTORIES"
+
+# Flag to enable loading functions at init request
+PYTHON_LOAD_FUNCTIONS_INIT = "PYTHON_LOAD_FUNCTIONS_INIT"
 
 # Setting Defaults
 PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT = 1

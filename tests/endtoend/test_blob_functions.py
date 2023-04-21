@@ -143,8 +143,8 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                 self.assertEqual(response['name'],
                                  'python-worker-tests/test-blob-trigger.txt')
                 self.assertEqual(response['content'], data)
-
                 break
+            # JSONDecodeError will be thrown if the response is empty.
             except AssertionError or JSONDecodeError:
                 if try_no == max_retries - 1:
                     raise

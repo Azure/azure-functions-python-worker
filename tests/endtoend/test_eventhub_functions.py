@@ -43,7 +43,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         # Call get_eventhub_triggered to retrieve event metadata from blob.
         r = self.webhost.request('GET', 'get_eventhub_triggered')
 
-        # Sleeping to let the blob get updated with the latest data from the
+        # Waiting for the blob get updated with the latest data from the
         # eventhub output binding
         time.sleep(5)
         self.assertEqual(r.status_code, 200)
@@ -76,7 +76,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         # Call get_metadata_triggered to retrieve event metadata from blob
         r = self.webhost.request('GET', 'get_metadata_triggered')
 
-        # Sleeping to let the blob get updated with the latest data from the
+        # Waiting for the blob get updated with the latest data from the
         # eventhub output binding
         time.sleep(5)
         self.assertEqual(r.status_code, 200)

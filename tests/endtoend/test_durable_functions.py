@@ -9,7 +9,7 @@ from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
         or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "This will be fixed in "
+        "TODO: This will be fixed in "
         "https://github.com/Azure/azure-functions-python-worker/pull/1199")
 class TestDurableFunctions(testutils.WebHostTestCase):
 

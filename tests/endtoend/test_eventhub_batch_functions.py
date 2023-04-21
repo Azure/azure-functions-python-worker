@@ -66,6 +66,9 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
         try:
             r = self.webhost.request('GET', 'get_eventhub_batch_triggered')
+
+            # Waiting for the blob get updated with the latest data from the
+            # eventhub output binding
             time.sleep(2)
             self.assertEqual(r.status_code, 200)
             entries = r.json()

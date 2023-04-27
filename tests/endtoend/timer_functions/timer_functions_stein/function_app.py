@@ -5,7 +5,7 @@ import logging
 
 import azure.functions as func
 
-app = func.FunctionApp()
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
 @app.function_name(name="mytimer")

@@ -2,11 +2,11 @@
 # Licensed under the MIT License.
 import azure.functions as func
 
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+app = func.FunctionApp()
 
 
 @app.route()
-@app.cosmos_db_input(
+@app.cosmos_db_input_v3(
     arg_name="docs", database_name="test",
     collection_name="items",
     id="cosmosdb-input-test",
@@ -15,7 +15,7 @@ def cosmosdb_input(req: func.HttpRequest, docs: func.DocumentList) -> str:
     return func.HttpResponse(docs[0].to_json(), mimetype='application/json')
 
 
-@app.cosmos_db_trigger(
+@app.cosmos_db_trigger_v3(
     arg_name="docs", database_name="test",
     collection_name="items",
     lease_collection_name="leases",
@@ -36,7 +36,7 @@ def get_cosmosdb_triggered(req: func.HttpRequest,
 
 
 @app.route()
-@app.cosmos_db_output(
+@app.cosmos_db_output_v3(
     arg_name="doc", database_name="test",
     collection_name="items",
     create_if_not_exists=True,

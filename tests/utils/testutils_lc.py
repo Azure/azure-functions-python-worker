@@ -281,8 +281,8 @@ class LinuxConsumptionWebHostController:
         return f'{iv_base64}.{encrypted_base64}.{key_sha256_base64}'
 
     def __enter__(self):
-        mesh_image = "mcr.microsoft.com/azure-functions/mesh:4.17.3.1-python3" \
-                     ".10"
+        mesh_image = self._find_latest_mesh_image(self._host_version,
+                                                  self._py_version)
         self.spawn_container(image=mesh_image)
         return self
 

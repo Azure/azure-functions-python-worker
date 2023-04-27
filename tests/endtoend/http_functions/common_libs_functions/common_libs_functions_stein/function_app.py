@@ -12,7 +12,7 @@ import plotly
 import dotenv
 
 
-app = func.FunctionApp()
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
 @app.route(route="dotenv_func")

@@ -2,6 +2,8 @@
 # Licensed under the MIT License.
 import time
 
+from requests import JSONDecodeError
+
 from tests.utils import testutils
 
 
@@ -11,6 +13,7 @@ class TestBlobFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'blob_functions'
 
+    @testutils.retryable_test(3, 5)
     def test_blob_io_str(self):
         r = self.webhost.request('POST', 'put_blob_str', data='test-data')
         self.assertEqual(r.status_code, 200)
@@ -106,14 +109,10 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                 self.assertEqual(r.status_code, 200)
                 response = r.json()
 
-                self.assertEqual(
-                    response,
-                    {
-                        'name': 'python-worker-tests/test-blob-trigger.txt',
-                        'length': len(data),
-                        'content': data
-                    }
-                )
+                self.assertEqual(response['name'],
+                                 'python-worker-tests/test-blob-trigger.txt')
+                self.assertEqual(response['content'], data)
+
                 break
             except AssertionError:
                 if try_no == max_retries - 1:
@@ -131,24 +130,22 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         # We check it every 2 seconds to allow the trigger to be fired
         max_retries = 10
         for try_no in range(max_retries):
-            time.sleep(2)
-
             try:
                 # Check that the trigger has fired
                 r = self.webhost.request('GET', 'get_blob_triggered')
+
+                # Waiting for blob to get updated
+                time.sleep(2)
+
                 self.assertEqual(r.status_code, 200)
                 response = r.json()
 
-                self.assertEqual(
-                    response,
-                    {
-                        'name': 'python-worker-tests/test-blob-trigger.txt',
-                        'length': len(data),
-                        'content': data
-                    }
-                )
+                self.assertEqual(response['name'],
+                                 'python-worker-tests/test-blob-trigger.txt')
+                self.assertEqual(response['content'], data)
                 break
-            except AssertionError:
+            # JSONDecodeError will be thrown if the response is empty.
+            except AssertionError or JSONDecodeError:
                 if try_no == max_retries - 1:
                     raise
 

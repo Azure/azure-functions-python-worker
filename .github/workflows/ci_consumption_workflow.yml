@@ -29,6 +29,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -U -e .[dev]
+          python setup.py build
       - name: Running 3.7 Tests
         if: matrix.python-version == 3.7
         env:

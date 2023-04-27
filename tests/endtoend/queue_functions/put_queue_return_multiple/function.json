@@ -5,7 +5,8 @@
     {
       "type": "httpTrigger",
       "direction": "in",
-      "name": "req"
+      "name": "req",
+      "authLevel": "anonymous"
     },
     {
       "direction": "out",

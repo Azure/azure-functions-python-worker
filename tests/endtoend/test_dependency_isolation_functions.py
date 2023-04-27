@@ -16,6 +16,9 @@ from tests.utils.constants import PYAZURE_INTEGRATION_TEST, \
 REQUEST_TIMEOUT_SEC = 5
 
 
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        'Docker tests do not work with dependency isolation ')
 class TestGRPCandProtobufDependencyIsolationOnDedicated(
         testutils.WebHostTestCase):
     """Test the dependency manager E2E scenario via Http Trigger.
@@ -76,10 +79,6 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         flag_value = environments['PYTHON_ISOLATE_WORKER_DEPENDENCIES']
         self.assertEqual(flag_value, '1')
 
-    @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-            or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-            "Docker test expects dependencies derived from agents folder"
-            )
     def test_working_directory_resolution(self):
         """Check from the dependency manager and see if the current working
         directory is resolved correctly
@@ -93,9 +92,7 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
             os.path.join(dir, 'dependency_isolation_functions').lower()
         )
 
-    @skipIf(is_envvar_true(PYAZURE_INTEGRATION_TEST)
-            or is_envvar_true(DEDICATED_DOCKER_TEST)
-            or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+    @skipIf(is_envvar_true(PYAZURE_INTEGRATION_TEST),
             'Integration test expects dependencies derived from core '
             'tools folder')
     def test_paths_resolution(self):
@@ -121,9 +118,6 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
             ).lower()
         )
 
-    @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-            or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-            'Docker tests do not work with dependency isolation ')
     def test_loading_libraries_from_customers_package(self):
         """Since the Python now loaded the customer's dependencies, the
         libraries version should match the ones in

@@ -41,7 +41,6 @@ class TestDurableFunctions(testutils.WebHostTestCase):
     def get_environment_variables(cls):
         return cls.env_variables
 
-
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'durable_functions'
@@ -49,7 +48,7 @@ class TestDurableFunctions(testutils.WebHostTestCase):
     def test_durable(self):
         r = self.webhost.request('GET',
                                  'orchestrators/DurableFunctionsOrchestrator')
-        time.sleep(4) # wait for the activity to complete
+        time.sleep(4)  # wait for the activity to complete
         self.assertEqual(r.status_code, 202)
         content = json.loads(r.content)
 

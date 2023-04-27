@@ -1,6 +1,5 @@
 # This workflow will run all tests in endtoend/tests in a docker container using the latest dedicated image
 
-
 name: CI Docker Dedicated tests
 
 on:
@@ -8,7 +7,7 @@ on:
   schedule:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string
-    - cron: "0 8 * * 1,2,3,4"
+    - cron: "0 8 * * *"
 
 jobs:
   build:
@@ -31,6 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -U -e .[dev]
+          python setup.py build
       - name: Running 3.7 Tests
         if: matrix.python-version == 3.7
         env:
@@ -42,7 +42,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
         run: |
-          python -m pytest -n auto  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest --reruns 4 -vv --instafail tests/endtoend
       - name: Running 3.8 Tests
         if: matrix.python-version == 3.8
         env:
@@ -54,7 +54,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
         run: |
-          python -m pytest -n auto  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest --reruns 4 -vv --instafail tests/endtoend
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
         env:
@@ -66,7 +66,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
         run: |
-          python -m pytest -n auto  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest --reruns 4 -vv --instafail tests/endtoend
       - name: Running 3.10 Tests
         if: matrix.python-version == 3.10
         env:
@@ -78,11 +78,4 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
         run: |
-          python -m pytest -n auto  --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
-      - name: Codecov
-        uses: codecov/codecov-action@v1.0.13
-        with:
-          file: ./coverage.xml # optional
-          flags: unittests # optional
-          name: codecov # optional
-          fail_ci_if_error: false # optional (default = false)
+          python -m pytest --reruns 4 -vv --instafail tests/endtoend

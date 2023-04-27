@@ -7,17 +7,20 @@ from datetime import datetime
 from tests.utils import testutils
 
 
-class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
-    """ Test the Http Trigger with setting up the python threadpool thread
-    count to 2. this test will check if both requests should be processed
-    at the same time. this file is more focus on testing the E2E flow
-    scenarios.
+class TestWorkerProcessCount(testutils.WebHostTestCase):
+    """Test the Http Trigger with setting up the python worker process count
+    to 2. this test will check if both requests should be processed at the
+    same time. this file is more focused on testing the E2E flow scenario for
+    FUNCTIONS_WORKER_PROCESS_COUNT feature.
     """
-
     @classmethod
     def setUpClass(cls):
+        cls.env_variables['PYTHON_THREADPOOL_THREAD_COUNT'] = '1'
+        cls.env_variables['FUNCTIONS_WORKER_PROCESS_COUNT'] = '2'
+
         os_environ = os.environ.copy()
-        os_environ['PYTHON_THREADPOOL_THREAD_COUNT'] = '2'
+        os_environ.update(cls.env_variables)
+
         cls._patch_environ = patch.dict('os.environ', os_environ)
         cls._patch_environ.start()
         super().setUpClass()
@@ -30,8 +33,12 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
+    @classmethod
+    def get_environment_variables(cls):
+        return cls.env_variables
+
     @testutils.retryable_test(3, 5)
-    def test_http_func_with_thread_count(self):
+    def test_http_func_with_worker_process_count_2(self):
         response = [None, None]
 
         def http_req(res_num):
@@ -47,17 +54,17 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
         thread2.start()
         thread1.join()
         thread2.join()
-        """function execution time difference between both HTTP request
-        should be less than 1 since both the request should be processed at
-        the same time because PYTHON_THREADPOOL_THREAD_COUNT is 2.
-        """
+        '''function execution time difference between both HTTP request
+        should be less than 1 since both request should be processed at the
+        same time because FUNCTIONS_WORKER_PROCESS_COUNT is 2.
+        '''
         time_diff_in_seconds = abs((response[0] - response[1]).total_seconds())
         self.assertTrue(time_diff_in_seconds < 1)
 
 
-class TestPythonThreadpoolThreadCountStein(TestPythonThreadpoolThreadCount):
+class TestWorkerProcessCountStein(TestWorkerProcessCount):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
                                             'http_functions_stein'

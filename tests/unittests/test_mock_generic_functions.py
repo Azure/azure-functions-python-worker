@@ -11,6 +11,7 @@ class TestGenericFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.generic_funcs_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('foobar_as_str')
 
             self.assertEqual(r.response.function_id, func_id)
@@ -38,6 +39,7 @@ class TestGenericFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.generic_funcs_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('foobar_as_bytes')
 
             self.assertEqual(r.response.function_id, func_id)
@@ -65,6 +67,7 @@ class TestGenericFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.generic_funcs_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('foobar_as_str_no_anno')
 
             self.assertEqual(r.response.function_id, func_id)
@@ -92,6 +95,7 @@ class TestGenericFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.generic_funcs_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('foobar_as_bytes_no_anno')
 
             self.assertEqual(r.response.function_id, func_id)
@@ -119,6 +123,7 @@ class TestGenericFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.generic_funcs_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('foobar_implicit_output')
 
             self.assertEqual(r.response.function_id, func_id)
@@ -144,6 +149,7 @@ class TestGenericFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.generic_funcs_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('foobar_with_no_datatype')
 
             self.assertEqual(r.response.function_id, func_id)

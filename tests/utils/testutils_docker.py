@@ -1,15 +1,16 @@
-import configparser
 import os
 import re
 import subprocess
 import sys
+import typing
 import unittest
 import uuid
+from dataclasses import dataclass
 from time import sleep
 
 import requests
 
-from tests.utils.constants import PROJECT_ROOT, TESTS_ROOT, WORKER_CONFIG
+from tests.utils.constants import PROJECT_ROOT, TESTS_ROOT
 
 _DOCKER_PATH = "DOCKER_PATH"
 _DOCKER_DEFAULT_PATH = "docker"
@@ -17,11 +18,20 @@ _HOST_VERSION = "4"
 _docker_cmd = os.getenv(_DOCKER_PATH, _DOCKER_DEFAULT_PATH)
 _addr = ""
 _python_version = f'{sys.version_info.major}.{sys.version_info.minor}'
+_libraries_path = '.python_packages/lib/site-packages'
 _uuid = str(uuid.uuid4())
 _MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
 _MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
 _IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/python/tags/list"
 _IMAGE_REPO = "mcr.microsoft.com/azure-functions/python"
+_CUSTOM_IMAGE = os.getenv("IMAGE_NAME")
+
+
+@dataclass
+class DockerConfigs:
+    script_path: str
+    libraries: typing.List = None
+    env: typing.Dict = None
 
 
 class WebHostProxy:
@@ -51,9 +61,9 @@ class WebHostProxy:
 
 class WebHostDockerContainerBase(unittest.TestCase):
 
-    def find_latest_mesh_image(self,
-                               image_repo: str,
-                               image_url: str) -> str:
+    @staticmethod
+    def find_latest_image(image_repo: str,
+                          image_url: str) -> str:
 
         regex = re.compile(_HOST_VERSION + r'.\d+.\d+-python' + _python_version)
 
@@ -82,15 +92,35 @@ class WebHostDockerContainerBase(unittest.TestCase):
         return image_tag
 
     def create_container(self, image_repo: str, image_url: str,
-                         script_path: str):
+                         configs: DockerConfigs):
         """Create a docker container and record its port. Create a docker
         container according to the image name. Return the port of container.
        """
 
         worker_path = os.path.join(PROJECT_ROOT, 'azure_functions_worker')
-        script_path = os.path.join(TESTS_ROOT, script_path)
+        script_path = os.path.join(TESTS_ROOT, configs.script_path)
+        env = {"AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
+               "AzureWebJobsStorage": f"{os.getenv('AzureWebJobsStorage')}",
+               "AzureWebJobsEventHubConnectionString":
+                   f"{os.getenv('AzureWebJobsEventHubConnectionString')}",
+               "AzureWebJobsCosmosDBConnectionString":
+                   f"{os.getenv('AzureWebJobsCosmosDBConnectionString')}",
+               "AzureWebJobsServiceBusConnectionString":
+                   f"{os.getenv('AzureWebJobsServiceBusConnectionString')}",
+               "AzureWebJobsSqlConnectionString":
+                   f"{os.getenv('AzureWebJobsSqlConnectionString')}",
+               "AzureWebJobsEventGridTopicUri":
+                   f"{os.getenv('AzureWebJobsEventGridTopicUri')}",
+               "AzureWebJobsEventGridConnectionKey":
+                   f"{os.getenv('AzureWebJobsEventGridConnectionKey')}"
+               }
 
-        image = self.find_latest_mesh_image(image_repo, image_url)
+        configs.env.update(env)
+
+        if _CUSTOM_IMAGE:
+            image = _CUSTOM_IMAGE
+        else:
+            image = self.find_latest_image(image_repo, image_url)
 
         container_worker_path = (
             f"/azure-functions-host/workers/python/{_python_version}/"
@@ -99,24 +129,20 @@ class WebHostDockerContainerBase(unittest.TestCase):
 
         function_path = "/home/site/wwwroot"
 
-        env = {"FUNCTIONS_EXTENSION_VERSION": "4",
-               "FUNCTIONS_WORKER_RUNTIME": "python",
-               "FUNCTIONS_WORKER_RUNTIME_VERSION": _python_version,
-               "WEBSITE_SITE_NAME": _uuid,
-               "WEBSITE_HOSTNAME": f"{_uuid}.azurewebsites.com"}
+        if configs.libraries:
+            install_libraries_cmd = []
+            install_libraries_cmd.extend(['pip', 'install'])
+            install_libraries_cmd.extend(configs.libraries)
+            install_libraries_cmd.extend(['-t',
+                                          f'{script_path}/{_libraries_path}'])
 
-        testconfig = None
-        storage_key: str = os.getenv("AzureWebJobsStorage")
-        if not storage_key and WORKER_CONFIG.exists():
-            testconfig = configparser.ConfigParser()
-            testconfig.read(WORKER_CONFIG)
+            install_libraries_process = \
+                subprocess.run(args=install_libraries_cmd,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
 
-        if testconfig and 'azure' in testconfig:
-            storage_key = testconfig['azure'].get('storage_key')
-
-        if not storage_key:
-            raise RuntimeError('Environment variable AzureWebJobsStorage '
-                               'is required before running docker test')
+            if install_libraries_process.returncode != 0:
+                raise RuntimeError('Failed to install libraries')
 
         run_cmd = []
         run_cmd.extend([_docker_cmd, "run", "-p", "0:80", "-d"])
@@ -124,19 +150,21 @@ class WebHostDockerContainerBase(unittest.TestCase):
         run_cmd.extend(["--cap-add", "SYS_ADMIN"])
         run_cmd.extend(["--device", "/dev/fuse"])
         run_cmd.extend(["-e", f"CONTAINER_NAME={_uuid}"])
-        run_cmd.extend(["-e", f"AzureWebJobsStorage={storage_key}"])
-        run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
-        run_cmd.extend(["-v", f'{script_path}:{function_path}'])
+        run_cmd.extend(["-e", f"AzureFunctionsWebHost__hostid={_uuid}"])
+        run_cmd.extend(["-v", f"{worker_path}:{container_worker_path}"])
+        run_cmd.extend(["-v", f"{script_path}:{function_path}"])
+
+        if configs.env:
+            for key, value in configs.env.items():
+                run_cmd.extend(["-e", f"{key}={value}"])
 
         run_cmd.append(image)
-
         run_process = subprocess.run(args=run_cmd,
-                                     env=env,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE)
 
         if run_process.returncode != 0:
-            raise RuntimeError('Failed to spawn docker container for'
+            raise RuntimeError('Failed to create docker container for'
                                f' {image} with uuid {_uuid}.'
                                f' stderr: {run_process.stderr}')
 
@@ -154,27 +182,28 @@ class WebHostDockerContainerBase(unittest.TestCase):
         port_number = port_process.stdout.decode().strip('\n').split(':')[-1]
 
         # Wait for six seconds for the container to be in ready state
-        sleep(10)
+        sleep(6)
         self._addr = f'http://localhost:{port_number}'
+
         return WebHostProxy(run_process, self._addr)
 
 
 class WebHostConsumption(WebHostDockerContainerBase):
 
-    def __init__(self, script_path: str):
-        self.script_path = script_path
+    def __init__(self, configs: DockerConfigs):
+        self.configs = configs
 
     def spawn_container(self):
         return self.create_container(_MESH_IMAGE_REPO,
                                      _MESH_IMAGE_URL,
-                                     self.script_path)
+                                     self.configs)
 
 
 class WebHostDedicated(WebHostDockerContainerBase):
 
-    def __init__(self, script_path: str):
-        self.script_path = script_path
+    def __init__(self, configs: DockerConfigs):
+        self.configs = configs
 
     def spawn_container(self):
         return self.create_container(_IMAGE_REPO, _IMAGE_URL,
-                                     self.script_path)
+                                     self.configs)

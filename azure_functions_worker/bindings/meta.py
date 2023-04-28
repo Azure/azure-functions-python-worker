@@ -12,21 +12,23 @@ from .shared_memory_data_transfer import SharedMemoryManager
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
 PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
+BINDING_REGISTRY = None
 
 
-def get_binding_registry():
+def load_binding_registry() -> None:
     func = sys.modules.get('azure.functions')
 
     # If fails to acquire customer's BYO azure-functions, load the builtin
     if func is None:
         import azure.functions as func
 
-    return func.get_binding_registry()
+    global BINDING_REGISTRY
+    BINDING_REGISTRY = func.get_binding_registry()
 
 
 def get_binding(bind_name: str) -> object:
     binding = None
-    registry = get_binding_registry()
+    registry = BINDING_REGISTRY
     if registry is not None:
         binding = registry.get(bind_name)
     if binding is None:

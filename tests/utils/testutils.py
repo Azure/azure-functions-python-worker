@@ -49,7 +49,8 @@ from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
 from tests.utils.constants import PYAZURE_WORKER_DIR, \
     PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
     CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG
-from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated
+from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated, \
+    DockerConfigs
 
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')
@@ -136,7 +137,7 @@ class AsyncTestCaseMeta(type(unittest.TestCase)):
     def __new__(mcls, name, bases, ns):
         for attrname, attr in ns.items():
             if (attrname.startswith('test_')
-               and inspect.iscoroutinefunction(attr)):
+                    and inspect.iscoroutinefunction(attr)):
                 ns[attrname] = mcls._sync_wrap(attr)
 
         return super().__new__(mcls, name, bases, ns)
@@ -146,6 +147,7 @@ class AsyncTestCaseMeta(type(unittest.TestCase)):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             return aio_compat.run(func(*args, **kwargs))
+
         return wrapper
 
 
@@ -156,6 +158,10 @@ class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
 class WebHostTestCaseMeta(type(unittest.TestCase)):
 
     def __new__(mcls, name, bases, dct):
+        if is_envvar_true(DEDICATED_DOCKER_TEST) \
+                or is_envvar_true(CONSUMPTION_DOCKER_TEST):
+            return super().__new__(mcls, name, bases, dct)
+
         for attrname, attr in dct.items():
             if attrname.startswith('test_') and callable(attr):
                 test_case = attr
@@ -206,14 +212,29 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     check_log_ABC - Check logs generated during the execution of test_ABC.
     """
     host_stdout_logger = logging.getLogger('webhosttests')
+    env_variables = {}
 
     @classmethod
     def get_script_dir(cls):
         raise NotImplementedError
 
     @classmethod
+    def get_libraries_to_install(cls):
+        pass
+
+    @classmethod
+    def get_environment_variables(cls):
+        pass
+
+    @classmethod
     def setUpClass(cls):
         script_dir = pathlib.Path(cls.get_script_dir())
+
+        docker_configs = DockerConfigs
+        docker_configs.script_path = script_dir
+        docker_configs.libraries = cls.get_libraries_to_install()
+        docker_configs.env = cls.get_environment_variables() or {}
+
         if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             cls.host_stdout = None
         else:
@@ -221,9 +242,11 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         try:
             if is_envvar_true(CONSUMPTION_DOCKER_TEST):
-                cls.webhost = WebHostConsumption(script_dir).spawn_container()
+                cls.webhost = \
+                    WebHostConsumption(docker_configs).spawn_container()
             elif is_envvar_true(DEDICATED_DOCKER_TEST):
-                cls.webhost = WebHostDedicated(script_dir).spawn_container()
+                cls.webhost = \
+                    WebHostDedicated(docker_configs).spawn_container()
             else:
                 _setup_func_app(TESTS_ROOT / script_dir)
                 cls.webhost = start_webhost(script_dir=script_dir,
@@ -274,6 +297,7 @@ class SharedMemoryTestCase(unittest.TestCase):
     """
     For tests involving shared memory data transfer usage.
     """
+
     def setUp(self):
         self.was_shmem_env_true = is_envvar_true(
             FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
@@ -373,8 +397,8 @@ class SharedMemoryTestCase(unittest.TestCase):
         # Override the AppSetting for the duration of this test so the
         # FileAccessorUnix can use these directories for creating memory maps
         os.environ.update(
-            {UNIX_SHARED_MEMORY_DIRECTORIES:
-                ','.join(self.created_directories)})
+            {UNIX_SHARED_MEMORY_DIRECTORIES: ','.join(self.created_directories)}
+        )
 
     def _tearDownDarwin(self):
         # Delete the directories containing shared memory maps
@@ -390,7 +414,6 @@ class SharedMemoryTestCase(unittest.TestCase):
 
 
 class _MockWebHostServicer(protos.FunctionRpcServicer):
-
     _STOP = object()
 
     def __init__(self, host):
@@ -600,9 +623,9 @@ class _MockWebHost:
         return r
 
     async def reload_environment(
-        self,
-        environment: typing.Dict[str, str],
-        function_project_path: str = '/home/site/wwwroot'
+            self,
+            environment: typing.Dict[str, str],
+            function_project_path: str = '/home/site/wwwroot'
     ) -> protos.FunctionEnvironmentReloadResponse:
 
         request_content = protos.FunctionEnvironmentReloadRequest(
@@ -687,7 +710,7 @@ class _MockWebHostController:
 
         await self._host.start()
 
-        self._worker = await dispatcher.\
+        self._worker = await dispatcher. \
             Dispatcher.connect(LOCALHOST, self._host._port,
                                self._host.worker_id, self._host.request_id,
                                connect_timeout=5.0)
@@ -786,9 +809,6 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
 
     hostexe_args = []
     os.environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
-
-    # webhook for durable tests
-    os.environ['WEBSITE_HOSTNAME'] = f'http://*:{port}'
 
     # If we want to use core-tools
     coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')
@@ -942,9 +962,9 @@ def create_dummy_dispatcher():
 
 
 def retryable_test(
-    number_of_retries: int,
-    interval_sec: int,
-    expected_exception: type = Exception
+        number_of_retries: int,
+        interval_sec: int,
+        expected_exception: type = Exception
 ):
     def decorate(func):
         def call(*args, **kwargs):
@@ -958,7 +978,9 @@ def retryable_test(
                         raise e
 
                 time.sleep(interval_sec)
+
         return call
+
     return decorate
 
 
@@ -1001,9 +1023,10 @@ def _teardown_func_app(app_root):
     host_json = app_root / 'host.json'
     extensions_csproj_file = app_root / 'extensions.csproj'
     extensions_obj_file = app_root / 'obj'
+    libraries_path = app_root / '.python_packages'
 
     for path in (extensions, host_json, extensions_csproj_file,
-                 extensions_obj_file):
+                 extensions_obj_file, libraries_path):
         remove_path(path)
 
 

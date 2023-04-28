@@ -7,7 +7,7 @@ from azure.eventhub.aio import EventHubProducerClient
 
 import azure.functions as func
 
-app = func.FunctionApp()
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
 # An HttpTrigger to generating EventHub event from EventHub Output Binding

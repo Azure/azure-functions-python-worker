@@ -290,6 +290,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         if DependencyManager.is_in_linux_consumption() \
                 and is_envvar_true(PYTHON_LOAD_FUNCTIONS_INIT):
+            logger.info(
+                "PYTHON_LOAD_FUNCTIONS_INIT enabled. Importing azure functions")
             import azure.functions  # NoQA
 
         # loading bindings registry and saving results to a static

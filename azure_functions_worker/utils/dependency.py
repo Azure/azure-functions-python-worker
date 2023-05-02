@@ -210,17 +210,17 @@ class DependencyManager:
         """
         # Reload package namespaces for customer's libraries
         packages_to_reload = ['azure', 'google']
+        packages_reloaded = []
         for p in packages_to_reload:
             try:
-                logger.info('Reloading %s module', p)
                 importlib.reload(sys.modules[p])
+                packages_reloaded.append(p)
             except Exception as ex:
-                logger.info('Unable to reload %s: \n%s', p, ex)
-            logger.info('Reloaded %s module', p)
+                logger.warning('Unable to reload %s: \n%s', p, ex)
+
+        logger.info(f'Reloaded modules: {",".join(packages_reloaded)}')
 
         # Reload azure.functions to give user package precedence
-        logger.info('Reloading azure.functions module at %s',
-                    inspect.getfile(sys.modules['azure.functions']))
         try:
             importlib.reload(sys.modules['azure.functions'])
             logger.info('Reloaded azure.functions module now at %s',

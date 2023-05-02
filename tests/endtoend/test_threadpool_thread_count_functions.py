@@ -5,6 +5,7 @@ from threading import Thread
 from unittest.mock import patch
 from datetime import datetime
 from tests.utils import testutils
+import time
 
 
 class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
@@ -35,6 +36,7 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
 
     @testutils.retryable_test(3, 5)
     def test_http_func_with_thread_count(self):
+        time.sleep(3)
         response = [None, None]
 
         def http_req(res_num):
@@ -51,11 +53,11 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
         thread1.join()
         thread2.join()
         """function execution time difference between both HTTP request
-        should be less than 2 since both the request should be processed at
+        should be less than 1 since both the request should be processed at
         the same time because PYTHON_THREADPOOL_THREAD_COUNT is 2.
         """
         time_diff_in_seconds = abs((response[0] - response[1]).total_seconds())
-        self.assertTrue(time_diff_in_seconds < 2)
+        self.assertTrue(time_diff_in_seconds < 1)
 
 
 class TestPythonThreadpoolThreadCountStein(TestPythonThreadpoolThreadCount):

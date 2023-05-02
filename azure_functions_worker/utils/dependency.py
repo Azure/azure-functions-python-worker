@@ -216,7 +216,7 @@ class DependencyManager:
                 importlib.reload(sys.modules[p])
                 packages_reloaded.append(p)
             except Exception as ex:
-                logger.info('Unable to reload %s: \n%s', p, ex)
+                logger.warning('Unable to reload %s: \n%s', p, ex)
 
         logger.info(f'Reloaded modules: {",".join(packages_reloaded)}')
 

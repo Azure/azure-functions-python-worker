@@ -7,11 +7,11 @@
       "type": "cosmosDBTrigger",
       "name": "docs",
       "databaseName": "test",
-      "collectionName": "items",
+      "containerName": "items",
       "id": "cosmosdb-trigger-test",
-      "leaseCollectionName": "leases",
-      "connectionStringSetting": "AzureWebJobsCosmosDBConnectionString",
-      "createLeaseCollectionIfNotExists": true
+      "leaseContainerName": "leases",
+      "connection": "AzureWebJobsCosmosDBConnectionString",
+      "createLeaseContainerIfNotExists": true
     },
     {
       "type": "blob",

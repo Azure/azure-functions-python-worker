@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """Python functions loader."""
+import datetime
 import importlib
 import importlib.machinery
 import importlib.util
@@ -10,6 +11,8 @@ import pathlib
 import sys
 from os import PathLike, fspath
 from typing import Optional, Dict
+
+from google.protobuf.duration_pb2 import Duration
 
 from . import protos, functions
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
@@ -62,12 +65,19 @@ def build_binding_protos(indexed_function) -> Dict:
 
 def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions):
+    td = datetime.timedelta(seconds=2)
+    duration = Duration()
+    duration.FromTimedelta(td)
+
     fx_metadata_results = []
     for indexed_function in indexed_functions:
         function_info = functions_registry.add_indexed_function(
             function=indexed_function)
 
         binding_protos = build_binding_protos(indexed_function)
+        retry_options = protos.RetryOptions(retryStrategy="fixedDelay",
+                                            max_retry_count=10,
+                                            delay_interval=duration)
 
         function_metadata = protos.RpcFunctionMetadata(
             name=function_info.name,
@@ -80,6 +90,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             language=PYTHON_LANGUAGE_RUNTIME,
             bindings=binding_protos,
             raw_bindings=indexed_function.get_raw_bindings(),
+            retry=retry_options,
             properties={"worker_indexed": "True"})
 
         fx_metadata_results.append(function_metadata)

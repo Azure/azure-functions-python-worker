@@ -41,7 +41,7 @@ AZURE_EXTENSIONS = """\
       <PackageReference Include="Microsoft.NET.Sdk.Functions"
         Version="4.0.1" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-        Version="3.0.10" />
+        Version="4.2.0" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
         Version="5.0.0" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
@@ -106,7 +106,7 @@ PACKAGES = [
 ]
 
 INSTALL_REQUIRES = [
-    "azure-functions==1.14.0",
+    "azure-functions==1.14.1b1",
     "python-dateutil~=2.8.2"
 ]
 

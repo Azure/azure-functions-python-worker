@@ -61,6 +61,8 @@ AZURE_EXTENSIONS = """\
 </Project>
 """
 
+print(os.environ.keys())
+
 NUGET_CONFIG = """\
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>

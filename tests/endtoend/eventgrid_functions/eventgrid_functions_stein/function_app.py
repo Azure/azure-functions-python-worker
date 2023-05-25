@@ -4,7 +4,7 @@ import azure.functions as func
 
 from azure_functions_worker import logging
 
-app = func.FunctionApp()
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
 @app.function_name(name="eventGridTrigger")

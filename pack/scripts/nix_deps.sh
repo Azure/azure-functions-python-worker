@@ -2,7 +2,7 @@
 
 python -m venv .env
 source .env/bin/activate
-python -m pip install --upgrade pip
+python -m pip install --upgrade pip==23.0
 
 python -m pip install .
 

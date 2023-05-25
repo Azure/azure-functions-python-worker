@@ -2,25 +2,25 @@
 # Licensed under the MIT License.
 import azure.functions as func
 
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+app = func.FunctionApp()
 
 
 @app.route()
-@app.cosmos_db_input(
+@app.cosmos_db_input_v3(
     arg_name="docs", database_name="test",
-    container_name="items",
+    collection_name="items",
     id="cosmosdb-input-test",
-    connection="AzureWebJobsCosmosDBConnectionString")
+    connection_string_setting="AzureWebJobsCosmosDBConnectionString")
 def cosmosdb_input(req: func.HttpRequest, docs: func.DocumentList) -> str:
     return func.HttpResponse(docs[0].to_json(), mimetype='application/json')
 
 
-@app.cosmos_db_trigger(
+@app.cosmos_db_trigger_v3(
     arg_name="docs", database_name="test",
-    container_name="items",
-    lease_container_name="leases",
-    connection="AzureWebJobsCosmosDBConnectionString",
-    create_lease_container_if_not_exists=True)
+    collection_name="items",
+    lease_collection_name="leases",
+    connection_string_setting="AzureWebJobsCosmosDBConnectionString",
+    create_lease_collection_if_not_exists=True)
 @app.blob_output(arg_name="$return", connection="AzureWebJobsStorage",
                  path="python-worker-tests/test-cosmosdb-triggered.txt")
 def cosmosdb_trigger(docs: func.DocumentList) -> str:
@@ -36,11 +36,12 @@ def get_cosmosdb_triggered(req: func.HttpRequest,
 
 
 @app.route()
-@app.cosmos_db_output(
+@app.cosmos_db_output_v3(
     arg_name="doc", database_name="test",
-    container_name="items",
+    collection_name="items",
     create_if_not_exists=True,
-    connection="AzureWebJobsCosmosDBConnectionString")
+    connection_string_setting="AzureWebJobsCosmosDBConnectionString")
 def put_document(req: func.HttpRequest, doc: func.Out[func.Document]):
     doc.set(func.Document.from_json(req.get_body()))
+
     return 'OK'

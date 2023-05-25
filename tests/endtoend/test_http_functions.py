@@ -140,6 +140,12 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'common_libs_functions'
 
+    @classmethod
+    def get_libraries_to_install(cls):
+        return ['requests', 'python-dotenv', "plotly", "scikit-learn",
+                "opencv-python", "pandas", "numpy"]
+
+    @testutils.retryable_test(3, 5)
     def test_numpy(self):
         r = self.webhost.request('GET', 'numpy_func',
                                  timeout=REQUEST_TIMEOUT_SEC)

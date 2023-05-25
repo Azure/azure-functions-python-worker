@@ -6,7 +6,7 @@ import typing
 import azure.functions as func
 from azure.eventhub import EventHubProducerClient, EventData
 
-app = func.FunctionApp()
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
 # This is an actual EventHub trigger which handles Eventhub events in batches.

@@ -33,7 +33,7 @@ from .FunctionRpc_pb2 import (  # NoQA
     FunctionsMetadataRequest,
     FunctionMetadataResponse,
     WorkerMetadata,
-    RetryOptions)
+    RpcRetryOptions)
 
 from .shared.NullableTypes_pb2 import (
     NullableString,

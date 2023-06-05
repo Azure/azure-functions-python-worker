@@ -10,7 +10,6 @@ option go_package ="github.com/Azure/azure-functions-go-worker/internal/rpc";
 package AzureFunctionsRpcMessages;
 
 import "google/protobuf/duration.proto";
-import "google/protobuf/timestamp.proto";
 import "identity/ClaimsIdentityRpc.proto";
 import "shared/NullableTypes.proto";
 
@@ -87,13 +86,13 @@ message StreamingMessage {
 
     // Host gets the list of function load responses
     FunctionLoadResponseCollection function_load_response_collection = 32;
-
+    
     // Host sends required metadata to worker to warmup the worker
     WorkerWarmupRequest worker_warmup_request = 33;
-
+    
     // Worker responds after warming up with the warmup result
     WorkerWarmupResponse worker_warmup_response = 34;
-
+    
   }
 }
 
@@ -339,14 +338,12 @@ message RpcFunctionMetadata {
   bool managed_dependency_enabled = 14;
 
   // The optional function execution retry strategy to use on invocation failures.
-  RetryOptions retry = 15;
+  RpcRetryOptions retry_options = 15;
 
   // Properties for function metadata
   // They're usually specific to a worker and largely passed along to the controller API for use
   // outside the host
    map<string,string> properties = 16;
-
-   string raw_retry_options = 17;
 }
 
 // Host tells worker it is ready to receive metadata
@@ -707,27 +704,27 @@ message CollectionModelBindingData {
 
 // Retry policy which the worker sends the host when the worker indexes
 // a function.
-message RetryOptions
+message RpcRetryOptions
 {
-  // The retry strategy to use. Valid values are fixedDelay or exponentialBackoff.
+  // The retry strategy to use. Valid values are fixed delay or exponential backoff.
   enum RetryStrategy
   {
-      exponentialBackoff = 0;
-      fixedDelay = 1;
+      exponential_backoff = 0;
+      fixed_delay = 1;
   }
 
   // The maximum number of retries allowed per function execution.
   //  -1 means to retry indefinitely.
   int32 max_retry_count = 2;
 
-  // The delay that's used between retries when you're using a fixedDelay strategy.
+  // The delay that's used between retries when you're using a fixed delay strategy.
   google.protobuf.Duration delay_interval = 3;
 
-  // The minimum retry delay when you're using an exponentialBackoff strategy
+  // The minimum retry delay when you're using an exponential backoff strategy
   google.protobuf.Duration minimum_interval = 4;
 
-  // The maximum retry delay when you're using an exponentialBackoff strategy
+  // The maximum retry delay when you're using an exponential backoff strategy
   google.protobuf.Duration maximum_interval = 5;
 
-  RetryStrategy retryStrategy = 6;
+  RetryStrategy retry_strategy = 6;
 }

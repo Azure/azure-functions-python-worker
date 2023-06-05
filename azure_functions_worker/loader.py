@@ -62,22 +62,28 @@ def build_binding_protos(indexed_function) -> Dict:
 
     return binding_protos
 
+def build_retry_protos(indexed_function) -> Dict:
+    retry_protos = {}
+    retry = indexed_function.get_setting("retry_policy")
+    retry_protos = protos.RpcRetryOptions(max_retry_count=int(retry.max_retry_count), 
+                                          retry_strategy=retry.strategy, 
+                                          delay_interval=Duration(seconds=int(retry.delay_interval or 0)), 
+                                          minimum_interval=Duration(seconds=int(retry.minimum_interval or 0)), 
+                                          maximum_interval=Duration(seconds=int(retry.maximum_interval or 0)), 
+                                          )
+
+    return retry_protos 
+
 
 def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions):
-    td = datetime.timedelta(seconds=2)
-    duration = Duration()
-    duration.FromTimedelta(td)
-
     fx_metadata_results = []
     for indexed_function in indexed_functions:
         function_info = functions_registry.add_indexed_function(
             function=indexed_function)
 
         binding_protos = build_binding_protos(indexed_function)
-        retry_options = protos.RetryOptions(retryStrategy="fixedDelay",
-                                            max_retry_count=10,
-                                            delay_interval=duration)
+        retry_protos = build_retry_protos(indexed_function)
 
         function_metadata = protos.RpcFunctionMetadata(
             name=function_info.name,
@@ -90,7 +96,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             language=PYTHON_LANGUAGE_RUNTIME,
             bindings=binding_protos,
             raw_bindings=indexed_function.get_raw_bindings(),
-            retry=retry_options,
+            retry_options=retry_protos,
             properties={"worker_indexed": "True"})
 
         fx_metadata_results.append(function_metadata)

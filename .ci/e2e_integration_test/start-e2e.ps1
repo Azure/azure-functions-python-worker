@@ -97,5 +97,5 @@ Write-Host "--------------------------------------------------------------------
 Write-Host "Running E2E integration tests..." -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 $env:CORE_TOOLS_EXE_PATH = "$funcExePath"
-pytest --junitxml=e2e-integration-test-report.xml --reruns 4 tests/endtoend
+python -m pytest --junitxml=e2e-integration-test-report.xml --reruns 4 tests/endtoend
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green

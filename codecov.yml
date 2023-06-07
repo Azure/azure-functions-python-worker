@@ -1,6 +1,3 @@
 ignore:
-  - "tests/utils/testutils.py"
-  - "tests/utils/testutils_lc.py"
-  - "tests/utils/testutils_docker.py"
-  - "tests/utils/constants.py"
+  - "tests/utils/"
 

@@ -88,7 +88,7 @@ Write-Host "--------------------------------------------------------------------
 Write-Host "Preparing E2E integration tests..." -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 python -m pip install -U pip
-pip install -e -U .[dev]
+python -m pip install -U -e .[dev]
 python setup.py build
 python setup.py extension
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green

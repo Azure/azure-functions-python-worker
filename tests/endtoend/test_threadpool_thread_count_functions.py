@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import logging
 import os
 from threading import Thread
 from unittest.mock import patch
@@ -37,7 +38,7 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
     @testutils.retryable_test(3, 5)
     def test_http_func_with_thread_count(self):
         max_retries = 5
-        interval = 5
+        interval = 8
         retry_count = 0
         while retry_count < max_retries:
             response = [None, None]

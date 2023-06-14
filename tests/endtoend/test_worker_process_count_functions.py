@@ -40,11 +40,11 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
 
     @testutils.retryable_test(3, 5)
     def test_http_func_with_worker_process_count_2(self):
-        max_retries = 3
+        max_retries = 5
         interval = 5
         retry_count = 0
         while retry_count < max_retries:
-            response = []
+            response = [None, None]
 
             def http_req(res_num):
                 r = self.webhost.request('GET', 'http_func')

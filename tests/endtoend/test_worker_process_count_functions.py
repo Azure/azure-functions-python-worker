@@ -39,8 +39,8 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
         return cls.env_variables
 
     def test_http_func_with_worker_process_count_2(self):
-        max_retries = 5
-        interval = 8
+        max_retries = 4
+        interval = 7
         retry_count = 0
         while retry_count < max_retries:
             response = [None, None]

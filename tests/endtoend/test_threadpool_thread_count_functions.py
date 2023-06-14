@@ -36,8 +36,8 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
     def test_http_func_with_thread_count(self):
-        max_retries = 5
-        interval = 8
+        max_retries = 4
+        interval = 7
         retry_count = 0
         while retry_count < max_retries:
             response = [None, None]

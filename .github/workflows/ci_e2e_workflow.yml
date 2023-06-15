@@ -76,7 +76,8 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
         run: |
-          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_worker_process_count_functions.py tests/endtoend/test_threadpool_thread_count_functions.py
+          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append --ignore=tests/endtoend/test_worker_process_count_functions.py --ignore=tests/endtoend/test_threadpool_thread_count_functions.py tests/endtoend
       - name: Running 3.8 Tests
         if: matrix.python-version == 3.8
         env:
@@ -88,7 +89,8 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
         run: |
-          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_worker_process_count_functions.py tests/endtoend/test_threadpool_thread_count_functions.py
+          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append --ignore=tests/endtoend/test_worker_process_count_functions.py --ignore=tests/endtoend/test_threadpool_thread_count_functions.py tests/endtoend
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
         env:
@@ -100,7 +102,8 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
         run: |
-          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_worker_process_count_functions.py tests/endtoend/test_threadpool_thread_count_functions.py
+          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append --ignore=tests/endtoend/test_worker_process_count_functions.py --ignore=tests/endtoend/test_threadpool_thread_count_functions.py tests/endtoend
       - name: Running 3.10 Tests
         if: matrix.python-version == 3.10
         env:
@@ -113,6 +116,7 @@ jobs:
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
         run: |
           python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_worker_process_count_functions.py tests/endtoend/test_threadpool_thread_count_functions.py
+          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append --ignore=tests/endtoend/test_worker_process_count_functions.py --ignore=tests/endtoend/test_threadpool_thread_count_functions.py tests/endtoend
       - name: Running 3.11 Tests
         if: matrix.python-version == 3.11
         env:
@@ -125,6 +129,7 @@ jobs:
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
         run: |
           python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_worker_process_count_functions.py tests/endtoend/test_threadpool_thread_count_functions.py
+          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append --ignore=tests/endtoend/test_worker_process_count_functions.py --ignore=tests/endtoend/test_threadpool_thread_count_functions.py tests/endtoend
       - name: Codecov
         uses: codecov/codecov-action@v1.0.13
         with:

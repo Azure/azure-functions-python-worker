@@ -63,7 +63,8 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
             same time because FUNCTIONS_WORKER_PROCESS_COUNT is 2.
             '''
             if response[0] and response[1]:
-                time_diff_in_seconds = abs((response[0] - response[1]).total_seconds())
+                time_diff_in_seconds =\
+                    abs((response[0] - response[1]).total_seconds())
                 self.assertTrue(time_diff_in_seconds < 1)
                 break
             else:

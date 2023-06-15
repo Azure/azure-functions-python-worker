@@ -138,6 +138,7 @@ EXTRA_REQUIRES = {
         "pytest-randomly",
         "pytest-instafail",
         "pytest-rerunfailures",
+        "pytest-ordering"
         "ptvsd",
         "python-dotenv",
         "plotly",

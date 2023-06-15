@@ -4,10 +4,14 @@ import os
 from threading import Thread
 from unittest.mock import patch
 from datetime import datetime
+
+import pytest
+
 from tests.utils import testutils
 import time
 
 
+@pytest.mark.order(1)
 class TestWorkerProcessCount(testutils.WebHostTestCase):
     """Test the Http Trigger with setting up the python worker process count
     to 2. this test will check if both requests should be processed at the
@@ -73,6 +77,7 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
         self.assertTrue(retry_count < max_retries)
 
 
+@pytest.mark.order(3)
 class TestWorkerProcessCountStein(TestWorkerProcessCount):
 
     @classmethod

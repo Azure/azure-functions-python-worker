@@ -5,10 +5,14 @@ import os
 from threading import Thread
 from unittest.mock import patch
 from datetime import datetime
+
+import pytest
+
 from tests.utils import testutils
 import time
 
 
+@pytest.mark.order(10)
 class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
     """ Test the Http Trigger with setting up the python threadpool thread
     count to 2. this test will check if both requests should be processed
@@ -35,6 +39,7 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
+    @pytest.mark.order(4)
     def test_http_func_with_thread_count(self):
         max_retries = 5
         interval = 8
@@ -72,6 +77,7 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
 
 
 
+@pytest.mark.order(8)
 class TestPythonThreadpoolThreadCountStein(TestPythonThreadpoolThreadCount):
 
     @classmethod

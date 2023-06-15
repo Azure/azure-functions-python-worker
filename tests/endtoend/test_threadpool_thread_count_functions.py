@@ -5,6 +5,7 @@ from threading import Thread
 from unittest.mock import patch
 from datetime import datetime
 from tests.utils import testutils
+import time
 
 
 class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
@@ -33,29 +34,39 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
-    @testutils.retryable_test(3, 5)
-    def test_http_func_with_thread_count(self):
-        response = [None, None]
+    def test_http_func_with_worker_process_count_2(self):
+        max_retries = 5
+        interval = 8
+        retry_count = 0
+        while retry_count < max_retries:
+            response = [None, None]
 
-        def http_req(res_num):
-            r = self.webhost.request('GET', 'http_func')
-            self.assertTrue(r.ok)
-            response[res_num] = datetime.strptime(
-                r.content.decode("utf-8"), "%H:%M:%S")
+            def http_req(res_num):
+                r = self.webhost.request('GET', 'http_func')
+                self.assertTrue(r.ok)
+                response[res_num] = datetime.strptime(
+                    r.content.decode("utf-8"), "%H:%M:%S")
 
-        # creating 2 different threads to send HTTP request
-        thread1 = Thread(target=http_req, args=(0,))
-        thread2 = Thread(target=http_req, args=(1,))
-        thread1.start()
-        thread2.start()
-        thread1.join()
-        thread2.join()
-        """function execution time difference between both HTTP request
-        should be less than 1 since both the request should be processed at
-        the same time because PYTHON_THREADPOOL_THREAD_COUNT is 2.
-        """
-        time_diff_in_seconds = abs((response[0] - response[1]).total_seconds())
-        self.assertTrue(time_diff_in_seconds < 1)
+            # creating 2 different threads to send HTTP request
+            thread1 = Thread(target=http_req, args=(0,))
+            thread2 = Thread(target=http_req, args=(1,))
+            thread1.start()
+            thread2.start()
+            thread1.join()
+            thread2.join()
+            """function execution time difference between both HTTP request
+            should be less than 1 since both the request should be processed at
+            the same time because PYTHON_THREADPOOL_THREAD_COUNT is 2.
+            """
+            if response[0] and response[1]:
+                time_diff_in_seconds = abs((response[0] - response[1]).total_seconds())
+                self.assertTrue(time_diff_in_seconds < 1)
+                break
+            else:
+                retry_count += 1
+                time.sleep(interval)
+
+        self.assertTrue(retry_count < max_retries)
 
 
 class TestPythonThreadpoolThreadCountStein(TestPythonThreadpoolThreadCount):

@@ -11,7 +11,7 @@ import pytest
 from tests.utils import testutils
 import time
 
-@pytest.mark.xdist_group(name="group2")
+@pytest.mark.xdist_group(name="group1")
 class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
     """ Test the Http Trigger with setting up the python threadpool thread
     count to 2. this test will check if both requests should be processed
@@ -75,7 +75,7 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
         self.assertTrue(retry_count < max_retries)
 
 
-@pytest.mark.xdist_group(name="group2")
+@pytest.mark.xdist_group(name="group1")
 class TestPythonThreadpoolThreadCountStein(TestPythonThreadpoolThreadCount):
 
     @classmethod

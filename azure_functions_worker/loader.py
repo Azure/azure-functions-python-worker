@@ -62,15 +62,21 @@ def build_binding_protos(indexed_function) -> Dict:
 
     return binding_protos
 
+
 def build_retry_protos(indexed_function) -> Dict:
-    retry_protos = {}
-    retry = indexed_function.get_setting("retry_policy")
-    retry_protos = protos.RpcRetryOptions(max_retry_count=int(retry.max_retry_count), 
-                                          retry_strategy=retry.strategy, 
-                                          delay_interval=Duration(seconds=int(retry.delay_interval or 0)), 
-                                          minimum_interval=Duration(seconds=int(retry.minimum_interval or 0)), 
-                                          maximum_interval=Duration(seconds=int(retry.maximum_interval or 0)), 
-                                          )
+    retry = indexed_function.get_settings_json("retry_policy")
+    if not retry:
+        return None
+    
+    retry_protos = protos.RpcRetryOptions(
+        max_retry_count=int(retry.get("maxRetryCount")),
+        retry_strategy=retry.get("strategy"),
+        delay_interval=Duration(seconds=int(retry.get("delayInterval") or 0)),
+        minimum_interval=Duration(
+            seconds=int(retry.get("minimumInterval") or 0)),
+        maximum_interval=Duration(
+            seconds=int(retry.get("maximumInterval") or 0)),
+        )
 
     return retry_protos 
 

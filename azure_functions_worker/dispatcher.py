@@ -609,10 +609,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                     len(indexed_functions))
 
         if indexed_functions:
+            fx_metadata_results = loader.process_indexed_function(
+            self._functions,
+            indexed_functions)
+
             indexed_function_logs: List[str] = []
             for func in indexed_functions:
                 function_log = "Function Name: {}, Function Binding: {}" \
-                    .format(func.get_setting("function_name"),
+                    .format(func.get_function_name(),
                             [(binding.type, binding.name) for binding in
                              func.get_bindings()])
                 indexed_function_logs.append(function_log)
@@ -621,10 +625,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 'Successfully processed FunctionMetadataRequest for '
                 'functions: %s', " ".join(indexed_function_logs))
 
-            fx_metadata_results = loader.process_indexed_function(
-                self._functions,
-                indexed_functions)
-
+          
             return fx_metadata_results
 
     async def _handle__close_shared_memory_resources_request(self, request):

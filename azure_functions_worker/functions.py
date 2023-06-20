@@ -380,8 +380,7 @@ class Registry:
 
     def add_indexed_function(self, function):
         func = function.get_user_function()
-        func_name_setting = function.get_setting("function_name")
-        func_name = func_name_setting if func_name_setting else func.__name__
+        func_name = function.get_function_name()
         
         func_type = function.http_type
         function_id = str(uuid.uuid5(namespace=uuid.NAMESPACE_OID,

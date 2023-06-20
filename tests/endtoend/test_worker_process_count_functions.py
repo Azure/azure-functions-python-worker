@@ -11,6 +11,7 @@ from tests.utils import testutils
 import time
 
 
+@pytest.mark.xdist_group(name="group1")
 class TestWorkerProcessCount(testutils.WebHostTestCase):
     """Test the Http Trigger with setting up the python worker process count
     to 2. this test will check if both requests should be processed at the
@@ -76,6 +77,7 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
         self.assertTrue(retry_count < max_retries)
 
 
+@pytest.mark.xdist_group(name="group1")
 class TestWorkerProcessCountStein(TestWorkerProcessCount):
 
     @classmethod

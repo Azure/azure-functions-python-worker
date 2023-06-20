@@ -115,8 +115,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
         run: |
-          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_worker_process_count_functions.py tests/endtoend/test_threadpool_thread_count_functions.py
-          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append --ignore=tests/endtoend/test_worker_process_count_functions.py --ignore=tests/endtoend/test_threadpool_thread_count_functions.py tests/endtoend
+          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Running 3.11 Tests
         if: matrix.python-version == 3.11
         env:
@@ -128,8 +127,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
         run: |
-          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_worker_process_count_functions.py tests/endtoend/test_threadpool_thread_count_functions.py
-          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append --ignore=tests/endtoend/test_worker_process_count_functions.py --ignore=tests/endtoend/test_threadpool_thread_count_functions.py tests/endtoend
+          python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
       - name: Codecov
         uses: codecov/codecov-action@v1.0.13
         with:

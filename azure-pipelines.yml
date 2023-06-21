@@ -7,7 +7,8 @@ trigger:
 
 variables:
     patchBuildNumberForDev: $(Build.BuildNumber)
-    PROD_V4_WORKER_PY : 'python/prodV4/worker.py'
+    PROD_V4_WORKER_PY: 'python/prodV4/worker.py'
+    GeneratePackage: false
 
 jobs:
 - job: Build_WINDOWS_X64
@@ -145,7 +146,7 @@ jobs:
 
 - job: PackageWorkers
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64']
-  condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
+  condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'), GeneratePackage)
   pool:
       name: '1ES-Hosted-AzFunc'
       demands:

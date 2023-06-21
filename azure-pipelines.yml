@@ -98,7 +98,7 @@ jobs:
       artifactName: '$(pythonVersion)_LINUX_X64'
 - job: Build_OSX_X64
   pool:
-    vmImage: 'macOS-12'
+    vmImage: 'macOS-latest'
   strategy:
     matrix:
       Python37V4:
@@ -124,7 +124,7 @@ jobs:
       artifactName: '$(pythonVersion)_OSX_X64'
 - job: Build_OSX_ARM64
   pool:
-    vmImage: 'macOS-12'
+    vmImage: 'macOS-latest'
   strategy:
     matrix:
       Python39V4:

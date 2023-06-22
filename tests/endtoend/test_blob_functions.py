@@ -7,6 +7,7 @@ from requests import JSONDecodeError
 from tests.utils import testutils
 
 
+@pytest.mark.xdist_group(name="group2")
 class TestBlobFunctions(testutils.WebHostTestCase):
 
     @classmethod
@@ -150,6 +151,7 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                     raise
 
 
+@pytest.mark.xdist_group(name="group2")
 class TestBlobFunctionsStein(TestBlobFunctions):
 
     @classmethod
@@ -158,6 +160,7 @@ class TestBlobFunctionsStein(TestBlobFunctions):
                                             'blob_functions_stein'
 
 
+@pytest.mark.xdist_group(name="group2")
 class TestBlobFunctionsSteinGeneric(TestBlobFunctions):
 
     @classmethod

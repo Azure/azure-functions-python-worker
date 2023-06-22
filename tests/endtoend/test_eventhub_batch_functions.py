@@ -6,6 +6,7 @@ import pathlib
 from datetime import datetime
 from unittest import skipIf
 
+import pytest
 from dateutil import parser, tz
 
 from azure_functions_worker.utils.common import is_envvar_true

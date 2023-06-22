@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import os
 
+import pytest
 import requests
 
 from tests.utils import testutils as utils

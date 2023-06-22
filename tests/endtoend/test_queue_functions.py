@@ -2,6 +2,8 @@
 # Licensed under the MIT License.
 import time
 
+import pytest
+
 from tests.utils import testutils
 
 @pytest.mark.xdist_group(name="group2")

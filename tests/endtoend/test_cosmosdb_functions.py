@@ -3,6 +3,8 @@
 import json
 import time
 
+import pytest
+
 from tests.utils import testutils
 
 

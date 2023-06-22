@@ -6,6 +6,7 @@ import time
 from unittest import skipIf
 from unittest.mock import patch
 
+import pytest
 import requests
 
 from azure_functions_worker.utils.common import is_envvar_true

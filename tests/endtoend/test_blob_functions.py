@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import time
 
+import pytest
 from requests import JSONDecodeError
 
 from tests.utils import testutils

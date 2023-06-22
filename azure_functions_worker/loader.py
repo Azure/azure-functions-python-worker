@@ -69,14 +69,14 @@ def build_retry_protos(indexed_function) -> Dict:
         return None
 
     retry_protos = protos.RpcRetryOptions(
-        max_retry_count=int(retry.get(RetryPolicy.MAX_RETRY_COUNT)),
+        max_retry_count=int(retry.get(RetryPolicy.MAX_RETRY_COUNT.value)),
         retry_strategy=retry.get(RetryPolicy.STRATEGY),
         delay_interval=Duration(
-            seconds=int(retry.get(RetryPolicy.DELAY_INTERVAL) or 0)),
+            seconds=int(retry.get(RetryPolicy.DELAY_INTERVAL.value) or 0)),
         minimum_interval=Duration(
-            seconds=int(retry.get(RetryPolicy.MINIMUM_INTERVAL) or 0)),
+            seconds=int(retry.get(RetryPolicy.MINIMUM_INTERVAL.value) or 0)),
         maximum_interval=Duration(
-            seconds=int(retry.get(RetryPolicy.MAXIMUM_INTERVAL) or 0)),
+            seconds=int(retry.get(RetryPolicy.MAXIMUM_INTERVAL.value) or 0)),
     )
 
     return retry_protos 

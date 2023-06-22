@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """Python functions loader."""
-import datetime
 import importlib
 import importlib.machinery
 import importlib.util
@@ -15,6 +14,7 @@ from typing import Optional, Dict
 from google.protobuf.duration_pb2 import Duration
 
 from . import protos, functions
+from .bindings.retrycontext import RetryPolicy
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
     PYTHON_LANGUAGE_RUNTIME
 from .utils.wrappers import attach_message_to_exception
@@ -67,16 +67,17 @@ def build_retry_protos(indexed_function) -> Dict:
     retry = indexed_function.get_settings_json("retry_policy")
     if not retry:
         return None
-    
+
     retry_protos = protos.RpcRetryOptions(
-        max_retry_count=int(retry.get("maxRetryCount")),
-        retry_strategy=retry.get("strategy"),
-        delay_interval=Duration(seconds=int(retry.get("delayInterval") or 0)),
+        max_retry_count=int(retry.get(RetryPolicy.MAX_RETRY_COUNT)),
+        retry_strategy=retry.get(RetryPolicy.STRATEGY),
+        delay_interval=Duration(
+            seconds=int(retry.get(RetryPolicy.DELAY_INTERVAL) or 0)),
         minimum_interval=Duration(
-            seconds=int(retry.get("minimumInterval") or 0)),
+            seconds=int(retry.get(RetryPolicy.MINIMUM_INTERVAL) or 0)),
         maximum_interval=Duration(
-            seconds=int(retry.get("maximumInterval") or 0)),
-        )
+            seconds=int(retry.get(RetryPolicy.MAXIMUM_INTERVAL) or 0)),
+    )
 
     return retry_protos 
 

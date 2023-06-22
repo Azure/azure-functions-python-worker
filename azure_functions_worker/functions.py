@@ -255,10 +255,6 @@ class Registry:
             else:
                 input_types[param.name] = param_type_info
         return input_types, output_types
-    
-    @staticmethod
-    def get_retry_polies(binding):
-        pass
 
     @staticmethod
     def get_function_return_type(annotations: dict, has_explicit_return: bool,
@@ -402,8 +398,6 @@ class Registry:
                 self.get_explicit_and_implicit_return(
                     binding.name, binding, has_explicit_return,
                     has_implicit_return, bound_params)
-            
-            retry_policy = self.get_retry_polies(binding)
 
             return_binding_name = self.get_return_binding(binding.name,
                                                           binding.type,

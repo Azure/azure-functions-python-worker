@@ -1,8 +1,20 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+
 from dataclasses import dataclass
+from enum import Enum
 
 from . import rpcexception
+
+
+class RetryPolicy(Enum):
+    """Retry policy for the function invocation"""
+
+    MAX_RETRY_COUNT = "maxRetryCount"
+    STRATEGY = "retryStrategy"
+    DELAY_INTERVAL = "delayInterval"
+    MINIMUM_INTERVAL = "minimumInterval"
+    MAXIMUM_INTERVAL = "maximumInterval"
 
 
 @dataclass

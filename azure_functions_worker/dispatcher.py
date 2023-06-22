@@ -625,7 +625,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                 'Successfully processed FunctionMetadataRequest for '
                 'functions: %s', " ".join(indexed_function_logs))
 
-          
             return fx_metadata_results
 
     async def _handle__close_shared_memory_resources_request(self, request):

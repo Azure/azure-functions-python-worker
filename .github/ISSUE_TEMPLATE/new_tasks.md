@@ -1,3 +1,9 @@
+---
+name: New Task
+about: Create a new task
+title: "[Task title]"
+---
+
 ## Task Description
 
 [Provide a brief description of the task.]

@@ -108,7 +108,8 @@ PACKAGES = [
 
 INSTALL_REQUIRES = [
     "azure-functions==1.15.0",
-    "python-dateutil~=2.8.2"
+    "python-dateutil~=2.8.2",
+    "requests"
 ]
 
 if sys.version_info[:3] < (3, 11, 0):
@@ -122,6 +123,7 @@ else:
 
 EXTRA_REQUIRES = {
     "dev": [
+        "requests",
         "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
         "azure-functions-durable",  # Used for Durable E2E tests
         "flask",

@@ -6,7 +6,6 @@ import pytest
 
 from tests.utils import testutils
 
-@pytest.mark.xdist_group(name="group2")
 class TestQueueFunctions(testutils.WebHostTestCase):
 
     @classmethod
@@ -89,7 +88,6 @@ class TestQueueFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.text, 'HTTP response: foo')
 
 
-@pytest.mark.xdist_group(name="group2")
 class TestQueueFunctionsStein(TestQueueFunctions):
 
     @classmethod
@@ -98,7 +96,6 @@ class TestQueueFunctionsStein(TestQueueFunctions):
                                             'queue_functions_stein'
 
 
-@pytest.mark.xdist_group(name="group2")
 class TestQueueFunctionsSteinGeneric(TestQueueFunctions):
 
     @classmethod

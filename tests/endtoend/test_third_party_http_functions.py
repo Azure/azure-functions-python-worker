@@ -26,7 +26,6 @@ HOST_JSON_TEMPLATE = """\
 """
 
 
-@pytest.mark.xdist_group(name="group2")
 class ThirdPartyHttpFunctionsTestBase:
     """Base test class containing common asgi/wsgi testcases, only testcases
     in classes extending TestThirdPartyHttpFunctions will by run"""
@@ -149,7 +148,6 @@ class ThirdPartyHttpFunctionsTestBase:
             self.assertEqual(r.json(), {"detail": "Item not found"})
 
 
-@pytest.mark.xdist_group(name="group2")
 class TestAsgiHttpFunctions(
         ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
     @classmethod
@@ -158,7 +156,6 @@ class TestAsgiHttpFunctions(
             'asgi_function'
 
 
-@pytest.mark.xdist_group(name="group2")
 class TestWsgiHttpFunctions(
         ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
     @classmethod

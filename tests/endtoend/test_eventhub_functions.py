@@ -8,7 +8,6 @@ import pytest
 from tests.utils import testutils
 
 
-@pytest.mark.xdist_group(name="group1")
 class TestEventHubFunctions(testutils.WebHostTestCase):
     """Test EventHub Trigger and Output Bindings (cardinality: one).
 
@@ -105,7 +104,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertIsNotNone(sys_props['Offset'])
 
 
-@pytest.mark.xdist_group(name="group1")
 class TestEventHubFunctionsStein(TestEventHubFunctions):
 
     @classmethod
@@ -114,7 +112,6 @@ class TestEventHubFunctionsStein(TestEventHubFunctions):
                                             'eventhub_functions_stein'
 
 
-@pytest.mark.xdist_group(name="group1")
 class TestEventHubFunctionsSteinGeneric(TestEventHubFunctions):
 
     @classmethod

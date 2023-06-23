@@ -14,7 +14,6 @@ from tests.utils import testutils
 from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
 
 
-@pytest.mark.xdist_group(name="group1")
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
         or is_envvar_true(CONSUMPTION_DOCKER_TEST),
         "Table functions which are used in the bindings in these tests"
@@ -175,7 +174,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         return testutils.TESTS_ROOT / script_dir / json_path
 
 
-@pytest.mark.xdist_group(name="group1")
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
         or is_envvar_true(CONSUMPTION_DOCKER_TEST),
         "Table functions which are used in the bindings has a bug with the"

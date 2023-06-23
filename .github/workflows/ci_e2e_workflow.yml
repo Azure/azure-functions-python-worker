@@ -65,6 +65,8 @@ jobs:
           retry 5 python setup.py build
           retry 5 python setup.py webhost --branch-name=dev
           retry 5 python setup.py extension
+      - name: Grant execute permission
+        run: chmod +x .github/Scripts/e2e-tests.sh
       - name: Running 3.7 Tests
         if: matrix.python-version == 3.7
         env:

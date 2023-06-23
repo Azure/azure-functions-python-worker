@@ -4,8 +4,10 @@ import json
 import time
 
 from tests.utils import testutils
+import pytest
 
 
+@pytest.mark.xdist_group(name="group2")
 class TestCosmosDBFunctions(testutils.WebHostTestCase):
 
     @classmethod
@@ -86,6 +88,7 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
                 break
 
 
+@pytest.mark.xdist_group(name="group2")
 class TestCosmosDBFunctionsStein(TestCosmosDBFunctions):
 
     @classmethod
@@ -94,6 +97,7 @@ class TestCosmosDBFunctionsStein(TestCosmosDBFunctions):
             'cosmosdb_functions_stein'
 
 
+@pytest.mark.xdist_group(name="group2")
 class TestCosmosDBFunctionsSteinGeneric(TestCosmosDBFunctions):
 
     @classmethod

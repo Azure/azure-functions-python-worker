@@ -5,8 +5,10 @@ import time
 from requests import JSONDecodeError
 
 from tests.utils import testutils
+import pytest
 
 
+@pytest.mark.xdist_group(name="group4")
 class TestBlobFunctions(testutils.WebHostTestCase):
 
     @classmethod
@@ -150,6 +152,7 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                     raise
 
 
+@pytest.mark.xdist_group(name="group4")
 class TestBlobFunctionsStein(TestBlobFunctions):
 
     @classmethod
@@ -158,9 +161,10 @@ class TestBlobFunctionsStein(TestBlobFunctions):
                                             'blob_functions_stein'
 
 
+@pytest.mark.xdist_group(name="group4")
 class TestBlobFunctionsSteinGeneric(TestBlobFunctions):
 
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'blob_functions' / \
-            'blob_functions_stein' / 'generic'
+                                            'blob_functions_stein' / 'generic'

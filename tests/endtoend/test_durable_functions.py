@@ -11,8 +11,10 @@ import requests
 from azure_functions_worker.utils.common import is_envvar_true
 from tests.utils import testutils
 from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
+import pytest
 
 
+@pytest.mark.xdist_group(name="group3")
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
         or is_envvar_true(CONSUMPTION_DOCKER_TEST),
         "Docker tests cannot retrieve port needed for a webhook")
@@ -61,6 +63,7 @@ class TestDurableFunctions(testutils.WebHostTestCase):
                          ['Hello Tokyo!', 'Hello Seattle!', 'Hello London!'])
 
 
+@pytest.mark.xdist_group(name="group3")
 class TestDurableFunctionsStein(TestDurableFunctions):
 
     @classmethod

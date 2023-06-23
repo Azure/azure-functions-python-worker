@@ -4,9 +4,11 @@ import os
 from threading import Thread
 from unittest.mock import patch
 from datetime import datetime
+import pytest
 from tests.utils import testutils
 
 
+@pytest.mark.xdist_group(name="group1")
 class TestWorkerProcessCount(testutils.WebHostTestCase):
     """Test the Http Trigger with setting up the python worker process count
     to 2. this test will check if both requests should be processed at the
@@ -62,6 +64,7 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
         self.assertTrue(time_diff_in_seconds < 1)
 
 
+@pytest.mark.xdist_group(name="group1")
 class TestWorkerProcessCountStein(TestWorkerProcessCount):
 
     @classmethod

@@ -137,6 +137,7 @@ EXTRA_REQUIRES = {
         "pytest-xdist",
         "pytest-randomly",
         "pytest-instafail",
+        "pytest-order",
         "pytest-rerunfailures",
         "ptvsd",
         "python-dotenv",

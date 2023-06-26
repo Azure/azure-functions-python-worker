@@ -1,18 +1,23 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+from datetime import datetime
 from threading import Thread
 from unittest.mock import patch
-from datetime import datetime
+
+import pytest
+
 from tests.utils import testutils
 
 
+@pytest.mark.serial
 class TestWorkerProcessCount(testutils.WebHostTestCase):
     """Test the Http Trigger with setting up the python worker process count
     to 2. this test will check if both requests should be processed at the
     same time. this file is more focused on testing the E2E flow scenario for
     FUNCTIONS_WORKER_PROCESS_COUNT feature.
     """
+
     @classmethod
     def setUpClass(cls):
         cls.env_variables['PYTHON_THREADPOOL_THREAD_COUNT'] = '1'
@@ -62,9 +67,10 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
         self.assertTrue(time_diff_in_seconds < 1)
 
 
+@pytest.mark.serial
 class TestWorkerProcessCountStein(TestWorkerProcessCount):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'http_functions_stein'

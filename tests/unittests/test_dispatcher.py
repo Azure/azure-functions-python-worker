@@ -621,8 +621,6 @@ class TestDispatcherLoadFunctionInInitRequest(testutils.AsyncTestCase):
         """Test if the dispatcher's log can be flushed out during worker
         initialization
         """
-        os.environ.update({"CONTAINER_NAME": 'test',
-                           "PYTHON_LOAD_FUNCTIONS_INIT": "1"})
         async with self._ctrl as host:
             r = await host.init_worker('4.15.1')
             self.assertEqual(

@@ -16,7 +16,7 @@ from google.protobuf.duration_pb2 import Duration
 from . import protos, functions
 from .bindings.retrycontext import RetryPolicy
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
-    PYTHON_LANGUAGE_RUNTIME
+    PYTHON_LANGUAGE_RUNTIME, RETRY_POLICY
 from .utils.wrappers import attach_message_to_exception
 
 _AZURE_NAMESPACE = '__app__'
@@ -64,7 +64,7 @@ def build_binding_protos(indexed_function) -> Dict:
 
 
 def build_retry_protos(indexed_function) -> Dict:
-    retry = indexed_function.get_settings_json("retry_policy")
+    retry = indexed_function.get_settings_dict(RETRY_POLICY)
     if not retry:
         return None
 

@@ -10,11 +10,11 @@ from . import rpcexception
 class RetryPolicy(Enum):
     """Retry policy for the function invocation"""
 
-    MAX_RETRY_COUNT = "maxRetryCount"
-    STRATEGY = "retryStrategy"
-    DELAY_INTERVAL = "delayInterval"
-    MINIMUM_INTERVAL = "minimumInterval"
-    MAXIMUM_INTERVAL = "maximumInterval"
+    MAX_RETRY_COUNT = "max_retry_count"
+    STRATEGY = "strategy"
+    DELAY_INTERVAL = "delay_interval"
+    MINIMUM_INTERVAL = "minimum_interval"
+    MAXIMUM_INTERVAL = "maximum_interval"
 
 
 @dataclass

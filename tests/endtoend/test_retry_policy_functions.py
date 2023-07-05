@@ -10,7 +10,8 @@ class TestRetryPolicyFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'retry_policy_functions'
+        return testutils.E2E_TESTS_FOLDER / 'retry_policy_functions' \
+                                         / 'fixed_strategy'
 
     def test_retry_policy(self):
         # Checking webhost status.
@@ -24,4 +25,3 @@ class TestRetryPolicyFunctions(testutils.WebHostTestCase):
         self.assertEqual(host_out.count("Current retry count: 1"), 1)
         self.assertEqual(host_out.count(f"Max retries of 1 for function mytimer"
                                         f" has been reached"), 1)
-

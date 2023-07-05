@@ -79,7 +79,7 @@ def build_retry_protos(indexed_function) -> Dict:
             seconds=int(retry.get(RetryPolicy.MAXIMUM_INTERVAL.value) or 0)),
     )
 
-    return retry_protos 
+    return retry_protos
 
 
 def process_indexed_function(functions_registry: functions.Registry,

@@ -610,8 +610,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         if indexed_functions:
             fx_metadata_results = loader.process_indexed_function(
-            self._functions,
-            indexed_functions)
+                self._functions,
+                indexed_functions)
 
             indexed_function_logs: List[str] = []
             for func in indexed_functions:

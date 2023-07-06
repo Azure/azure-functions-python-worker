@@ -6,10 +6,54 @@ import subprocess
 import sys
 import textwrap
 
+from azure.functions import Function
+from azure.functions.decorators.retry_policy import RetryPolicy
+from azure.functions.decorators.timer import TimerTrigger
+
+from azure_functions_worker import functions
+from azure_functions_worker.loader import build_retry_protos
 from tests.utils import testutils
 
 
 class TestLoader(testutils.WebHostTestCase):
+
+    def setUp(self) -> None:
+        def test_function():
+            return "Test"
+
+        self.test_function = test_function
+        self.func = Function(self.test_function, script_file="test.py")
+        self.function_registry = functions.Registry()
+
+    def test_building_fixed_retry_protos(self):
+        trigger = TimerTrigger(schedule="*/1 * * * * *", arg_name="mytimer",
+                               name="mytimer")
+        self.func.add_trigger(trigger=trigger)
+        setting = RetryPolicy(strategy="fixed_delay", max_retry_count="1",
+                              delay_interval="00:02:00")
+        self.func.add_setting(setting=setting)
+
+        protos = build_retry_protos(self.func)
+        self.assertEqual(protos.max_retry_count, 1)
+        self.assertEqual(protos.retry_strategy, 1)  # 1 enum for fixed delay
+        self.assertEqual(protos.delay_interval.seconds, 120)
+
+    def test_building_exponential_retry_protos(self):
+        trigger = TimerTrigger(schedule="*/1 * * * * *", arg_name="mytimer",
+                               name="mytimer")
+        self.func.add_trigger(trigger=trigger)
+        setting = RetryPolicy(strategy="exponential_backoff",
+                              max_retry_count="1",
+                              minimum_interval="00:01:00",
+                              maximum_interval="00:02:00")
+        self.func.add_setting(setting=setting)
+
+        protos = build_retry_protos(self.func)
+        self.assertEqual(protos.max_retry_count, 1)
+        self.assertEqual(protos.retry_strategy,
+                         0)  # 0 enum for exponential backoff
+        self.assertEqual(protos.minimum_interval.seconds, 60)
+        self.assertEqual(protos.maximum_interval.seconds, 120)
 
     @classmethod
     def get_script_dir(cls):

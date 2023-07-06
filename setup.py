@@ -106,18 +106,18 @@ PACKAGES = [
 ]
 
 INSTALL_REQUIRES = [
-    "azure-functions==1.14.1b3",
+    "azure-functions==1.15.1b1",
     "python-dateutil~=2.8.2"
 ]
 
-if sys.version_info[:3] < (3, 11, 0):
-    INSTALL_REQUIRES.append("protobuf~=3.19.3")
-    INSTALL_REQUIRES.append("grpcio-tools~=1.43.0")
-    INSTALL_REQUIRES.append("grpcio~=1.43.0")
+if sys.version_info[:3] < (3, 9, 0):
+    INSTALL_REQUIRES.extend(
+        ("protobuf~=3.19.3", "grpcio-tools~=1.43.0", "grpcio~=1.43.0")
+    )
 else:
-    INSTALL_REQUIRES.append("protobuf~=4.22.0")
-    INSTALL_REQUIRES.append("grpcio-tools~=1.51.3")
-    INSTALL_REQUIRES.append("grpcio~=1.51.3")
+    INSTALL_REQUIRES.extend(
+        ("protobuf~=4.22.0", "grpcio-tools~=1.54.2", "grpcio~=1.54.2")
+    )
 
 EXTRA_REQUIRES = {
     "dev": [

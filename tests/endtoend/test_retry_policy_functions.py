@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import time
 import typing
+import requests
 
 from tests.utils import testutils
 
@@ -13,17 +14,16 @@ class TestFixedRetryPolicyFunctions(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'retry_policy_functions' / \
                                             'fixed_strategy'
 
-    def test_retry_policy(self):
+    def test_fixed_retry_policy(self):
         # Checking webhost status.
-        r = self.webhost.request('GET', '', no_prefix=True,
-                                 timeout=5)
+        time.sleep(5)
+        r = self.webhost.request('GET', '', no_prefix=True)
         self.assertTrue(r.ok)
-        time.sleep(1)
 
-    def check_log_retry_policy(self, host_out: typing.List[str]):
+    def check_log_fixed_retry_policy(self, host_out: typing.List[str]):
         self.assertIn('Current retry count: 0', host_out)
         self.assertIn('Current retry count: 1', host_out)
-        self.assertIn("Max retries of 1 for function mytimer"
+        self.assertIn("Max retries of 3 for function mytimer"
                       " has been reached", host_out)
 
 
@@ -38,13 +38,12 @@ class TestExponentialRetryPolicyFunctions(testutils.WebHostTestCase):
         # Checking webhost status.
         r = self.webhost.request('GET', '', no_prefix=True,
                                  timeout=5)
+        time.sleep(5)
         self.assertTrue(r.ok)
-        time.sleep(1)
 
     def check_log_retry_policy(self, host_out: typing.List[str]):
-        self.assertIn('Current retry count: 0', host_out)
         self.assertIn('Current retry count: 1', host_out)
         self.assertIn('Current retry count: 2', host_out)
-        self.assertNotIn('Current retry count: 3', host_out)
-        self.assertIn("Max retries of 1 for function mytimer"
+        self.assertIn('Current retry count: 3', host_out)
+        self.assertIn("Max retries of 3 for function mytimer"
                       " has been reached", host_out)

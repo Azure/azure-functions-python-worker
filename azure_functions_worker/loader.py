@@ -53,7 +53,7 @@ def install() -> None:
 def convert_to_seconds(timestr: str):
     x = time.strptime(timestr, '%H:%M:%S')
     return int(timedelta(hours=x.tm_hour, minutes=x.tm_min,
-                     seconds=x.tm_sec).total_seconds())
+                         seconds=x.tm_sec).total_seconds())
 
 
 def uninstall() -> None:

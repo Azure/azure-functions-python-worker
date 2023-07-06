@@ -815,7 +815,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
     if coretools_exe:
         coretools_exe = coretools_exe.strip()
         if pathlib.Path(coretools_exe).exists():
-            hostexe_args = [str(coretools_exe), 'host', 'start']
+            hostexe_args = [str(coretools_exe), 'host', 'start', '--verbose']
             if port is not None:
                 hostexe_args.extend(['--port', str(port)])
 

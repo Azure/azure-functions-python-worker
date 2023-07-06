@@ -7,7 +7,7 @@ trigger:
 
 variables:
     patchBuildNumberForDev: $(Build.BuildNumber)
-    PROD_V4_WORKER_PY : 'python/prodV4/worker.py'
+    PROD_V4_WORKER_PY: 'python/prodV4/worker.py'
 
 jobs:
 - job: Build_WINDOWS_X64
@@ -98,7 +98,7 @@ jobs:
       artifactName: '$(pythonVersion)_LINUX_X64'
 - job: Build_OSX_X64
   pool:
-    vmImage: 'macOS-12'
+    vmImage: 'macOS-latest'
   strategy:
     matrix:
       Python37V4:
@@ -122,10 +122,30 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_OSX_X64'
+- job: Build_OSX_ARM64
+  pool:
+    vmImage: 'macOS-latest'
+  strategy:
+    matrix:
+      Python39V4:
+        pythonVersion: '3.9'
+        workerPath: $(PROD_V4_WORKER_PY)
+      Python310V4:
+        pythonVersion: '3.10'
+        workerPath: $(PROD_V4_WORKER_PY)
+      Python311V4:
+        pythonVersion: '3.11'
+        workerPath: $(PROD_V4_WORKER_PY)
+  steps:
+  - template: pack/templates/macos_64_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
+      artifactName: '$(pythonVersion)_OSX_ARM64'
 
 - job: PackageWorkers
-  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64']
-  condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
+  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64']
+  condition: or(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'), eq(variables['GeneratePackage'], True))
   pool:
       name: '1ES-Hosted-AzFunc'
       demands:

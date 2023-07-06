@@ -8,6 +8,8 @@ import os
 import os.path
 import pathlib
 import sys
+import time
+from datetime import timedelta
 from os import PathLike, fspath
 from typing import Optional, Dict
 
@@ -48,6 +50,12 @@ def install() -> None:
         sys.modules[_AZURE_NAMESPACE] = ns_pkg
 
 
+def convert_to_seconds(timestr: str):
+    x = time.strptime(timestr, '%H:%M:%S')
+    return int(timedelta(hours=x.tm_hour, minutes=x.tm_min,
+                     seconds=x.tm_sec).total_seconds())
+
+
 def uninstall() -> None:
     pass
 
@@ -68,16 +76,30 @@ def build_retry_protos(indexed_function) -> Dict:
     if not retry:
         return None
 
-    retry_protos = protos.RpcRetryOptions(
-        max_retry_count=int(retry.get(RetryPolicy.MAX_RETRY_COUNT.value)),
-        retry_strategy=retry.get(RetryPolicy.STRATEGY.value),
-        delay_interval=Duration(
-            seconds=int(retry.get(RetryPolicy.DELAY_INTERVAL.value) or 0)),
-        minimum_interval=Duration(
-            seconds=int(retry.get(RetryPolicy.MINIMUM_INTERVAL.value) or 0)),
-        maximum_interval=Duration(
-            seconds=int(retry.get(RetryPolicy.MAXIMUM_INTERVAL.value) or 0)),
-    )
+    strategy = retry.get(RetryPolicy.STRATEGY.value)
+    if strategy == "fixed_delay":
+        delay_interval = Duration(
+            seconds=convert_to_seconds(
+                retry.get(RetryPolicy.DELAY_INTERVAL.value)))
+        retry_protos = protos.RpcRetryOptions(
+            max_retry_count=int(retry.get(RetryPolicy.MAX_RETRY_COUNT.value)),
+            retry_strategy=retry.get(RetryPolicy.STRATEGY.value),
+            delay_interval=delay_interval,
+        )
+    else:
+        minimum_interval = Duration(
+            seconds=convert_to_seconds(
+                retry.get(RetryPolicy.MINIMUM_INTERVAL.value)))
+        maximum_interval = Duration(
+            seconds=convert_to_seconds(
+                retry.get(RetryPolicy.MAXIMUM_INTERVAL.value)))
+
+        retry_protos = protos.RpcRetryOptions(
+            max_retry_count=int(retry.get(RetryPolicy.MAX_RETRY_COUNT.value)),
+            retry_strategy=retry.get(RetryPolicy.STRATEGY.value),
+            minimum_interval=minimum_interval,
+            maximum_interval=maximum_interval
+        )
 
     return retry_protos
 

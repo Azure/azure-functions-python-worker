@@ -8,7 +8,7 @@ app = FunctionApp(http_auth_level=AuthLevel.ANONYMOUS)
                    run_on_startup=False,
                    use_monitor=False)
 @app.retry(strategy="fixed_delay", max_retry_count="3",
-           delay_interval="1")
+           delay_interval="00:00:01")
 def mytimer(mytimer: TimerRequest, context: Context) -> None:
     logging.info(f'Current retry count: {context.retry_context.retry_count}')
 

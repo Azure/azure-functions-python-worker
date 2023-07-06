@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import unittest
+from unittest import skip
 
 from azure.functions import Function
 from azure.functions.decorators.blob import BlobInput
@@ -21,6 +22,7 @@ class TestFunctionsRegistry(unittest.TestCase):
         self.func = Function(self.dummy, "test.py")
         self.function_registry = functions.Registry()
 
+    @skip("Unskip when validation is added in the library")
     def test_add_indexed_function_invalid_route(self):
         trigger1 = HttpTrigger(name="req1", route="/")
         self.func.add_trigger(trigger=trigger1)

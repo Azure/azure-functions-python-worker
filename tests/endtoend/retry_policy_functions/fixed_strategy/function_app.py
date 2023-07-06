@@ -17,6 +17,5 @@ def mytimer(mytimer: TimerRequest, context: Context) -> None:
         logging.info(
             f"Max retries of {context.retry_context.max_retry_count} for "
             f"function {context.function_name} has been reached")
-        return
     else:
         raise Exception("This is a retryable exception")

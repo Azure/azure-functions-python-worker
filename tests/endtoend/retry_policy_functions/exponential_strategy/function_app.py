@@ -7,7 +7,8 @@ app = FunctionApp(http_auth_level=AuthLevel.ANONYMOUS)
 @app.timer_trigger(schedule="*/1 * * * * *", arg_name="mytimer",
                    run_on_startup=False,
                    use_monitor=False)
-@app.retry(strategy="fixed_delay", max_retry_count="3", minimum_interval="1",
+@app.retry(strategy="exponential_backoff", max_retry_count="3",
+           minimum_interval="1",
            maximum_interval="2")
 def mytimer(mytimer: TimerRequest, context: Context) -> None:
     logging.info(f'Current retry count: {context.retry_context.retry_count}')

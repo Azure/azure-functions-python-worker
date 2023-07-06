@@ -70,7 +70,7 @@ def build_retry_protos(indexed_function) -> Dict:
 
     retry_protos = protos.RpcRetryOptions(
         max_retry_count=int(retry.get(RetryPolicy.MAX_RETRY_COUNT.value)),
-        retry_strategy=retry.get(RetryPolicy.STRATEGY),
+        retry_strategy=retry.get(RetryPolicy.STRATEGY.value),
         delay_interval=Duration(
             seconds=int(retry.get(RetryPolicy.DELAY_INTERVAL.value) or 0)),
         minimum_interval=Duration(

@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 import time
 import typing
-import requests
 
 from tests.utils import testutils
 

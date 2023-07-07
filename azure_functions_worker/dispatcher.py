@@ -609,6 +609,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                     len(indexed_functions))
 
         if indexed_functions:
+            fx_metadata_results = loader.process_indexed_function(
+                self._functions,
+                indexed_functions)
+
             indexed_function_logs: List[str] = []
             for func in indexed_functions:
                 function_log = "Function Name: {}, Function Binding: {}" \
@@ -620,10 +624,6 @@ class Dispatcher(metaclass=DispatcherMeta):
             logger.info(
                 'Successfully processed FunctionMetadataRequest for '
                 'functions: %s', " ".join(indexed_function_logs))
-
-            fx_metadata_results = loader.process_indexed_function(
-                self._functions,
-                indexed_functions)
 
             return fx_metadata_results
 

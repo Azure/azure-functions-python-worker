@@ -51,3 +51,6 @@ MODULE_NOT_FOUND_TS_URL = "https://aka.ms/functions-modulenotfound"
 SCRIPT_FILE_NAME = "function_app.py"
 
 PYTHON_LANGUAGE_RUNTIME = "python"
+
+# Settings for V2 programming model
+RETRY_POLICY = "retry_policy"

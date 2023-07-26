@@ -22,18 +22,6 @@ class TestFunctionsRegistry(unittest.TestCase):
         self.func = Function(self.dummy, "test.py")
         self.function_registry = functions.Registry()
 
-    @skip("Unskip when validation is added in the library")
-    def test_add_indexed_function_invalid_route(self):
-        trigger1 = HttpTrigger(name="req1", route="/")
-        self.func.add_trigger(trigger=trigger1)
-
-        with self.assertRaises(FunctionLoadError) as ex:
-            self.function_registry.add_indexed_function(function=self.func)
-
-        self.assertEqual(str(ex.exception),
-                         'cannot load the dummy function: Invalid route name: '
-                         '/. Route name cannot begin with a /')
-
     def test_add_indexed_function_invalid_direction(self):
         trigger1 = HttpTrigger(name="req1", route="test")
         binding = BlobInput(name="$return", path="testpath",

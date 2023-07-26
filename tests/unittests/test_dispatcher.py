@@ -572,6 +572,17 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
 
+    async def test_dispatcher_functions_metadata_request_with_retry(self):
+        """Test if the functions metadata response will be sent correctly
+        when a functions metadata request is received
+        """
+        async with self._ctrl as host:
+            r = await host.get_functions_metadata()
+            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
+            self.assertFalse(r.response.use_default_metadata_indexing)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
 

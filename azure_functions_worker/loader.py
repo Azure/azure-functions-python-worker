@@ -8,12 +8,17 @@ import os
 import os.path
 import pathlib
 import sys
+import time
+from datetime import timedelta
 from os import PathLike, fspath
 from typing import Optional, Dict
 
+from google.protobuf.duration_pb2 import Duration
+
 from . import protos, functions
+from .bindings.retrycontext import RetryPolicy
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
-    PYTHON_LANGUAGE_RUNTIME
+    PYTHON_LANGUAGE_RUNTIME, RETRY_POLICY
 from .utils.wrappers import attach_message_to_exception
 
 _AZURE_NAMESPACE = '__app__'
@@ -45,6 +50,12 @@ def install() -> None:
         sys.modules[_AZURE_NAMESPACE] = ns_pkg
 
 
+def convert_to_seconds(timestr: str):
+    x = time.strptime(timestr, '%H:%M:%S')
+    return int(timedelta(hours=x.tm_hour, minutes=x.tm_min,
+                         seconds=x.tm_sec).total_seconds())
+
+
 def uninstall() -> None:
     pass
 
@@ -60,6 +71,39 @@ def build_binding_protos(indexed_function) -> Dict:
     return binding_protos
 
 
+def build_retry_protos(indexed_function) -> Dict:
+    retry = indexed_function.get_settings_dict(RETRY_POLICY)
+    if not retry:
+        return None
+
+    strategy = retry.get(RetryPolicy.STRATEGY.value)
+    if strategy == "fixed_delay":
+        delay_interval = Duration(
+            seconds=convert_to_seconds(
+                retry.get(RetryPolicy.DELAY_INTERVAL.value)))
+        retry_protos = protos.RpcRetryOptions(
+            max_retry_count=int(retry.get(RetryPolicy.MAX_RETRY_COUNT.value)),
+            retry_strategy=retry.get(RetryPolicy.STRATEGY.value),
+            delay_interval=delay_interval,
+        )
+    else:
+        minimum_interval = Duration(
+            seconds=convert_to_seconds(
+                retry.get(RetryPolicy.MINIMUM_INTERVAL.value)))
+        maximum_interval = Duration(
+            seconds=convert_to_seconds(
+                retry.get(RetryPolicy.MAXIMUM_INTERVAL.value)))
+
+        retry_protos = protos.RpcRetryOptions(
+            max_retry_count=int(retry.get(RetryPolicy.MAX_RETRY_COUNT.value)),
+            retry_strategy=retry.get(RetryPolicy.STRATEGY.value),
+            minimum_interval=minimum_interval,
+            maximum_interval=maximum_interval
+        )
+
+    return retry_protos
+
+
 def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions):
     fx_metadata_results = []
@@ -68,6 +112,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             function=indexed_function)
 
         binding_protos = build_binding_protos(indexed_function)
+        retry_protos = build_retry_protos(indexed_function)
 
         function_metadata = protos.RpcFunctionMetadata(
             name=function_info.name,
@@ -80,6 +125,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             language=PYTHON_LANGUAGE_RUNTIME,
             bindings=binding_protos,
             raw_bindings=indexed_function.get_raw_bindings(),
+            retry_options=retry_protos,
             properties={"worker_indexed": "True"})
 
         fx_metadata_results.append(function_metadata)

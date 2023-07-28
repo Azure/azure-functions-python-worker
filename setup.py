@@ -112,7 +112,7 @@ INSTALL_REQUIRES = [
 
 if sys.version_info[:2] == (3, 7):
     INSTALL_REQUIRES.extend(
-        ("protobuf~=4.22.0", "grpcio-tools~=1.53.0rc2", "grpcio~=1.53.0rc2")
+        ("protobuf~=3.19.3", "grpcio-tools~=1.43.0", "grpcio~=1.43.0")
     )
 else:
     INSTALL_REQUIRES.extend(

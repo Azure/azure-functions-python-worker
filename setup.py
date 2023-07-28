@@ -110,9 +110,9 @@ INSTALL_REQUIRES = [
     "python-dateutil~=2.8.2"
 ]
 
-if sys.version_info[:3] < (3, 9, 0):
+if sys.version_info[:3] == (3, 7, 0):
     INSTALL_REQUIRES.extend(
-        ("protobuf~=3.19.3", "grpcio-tools~=1.43.0", "grpcio~=1.43.0")
+        ("protobuf~=4.22.0", "grpcio-tools~=1.53.0rc2", "grpcio~=1.53.0rc2")
     )
 else:
     INSTALL_REQUIRES.extend(

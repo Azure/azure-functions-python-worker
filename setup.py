@@ -106,11 +106,11 @@ PACKAGES = [
 ]
 
 INSTALL_REQUIRES = [
-    "azure-functions==1.15.1b1",
+    "azure-functions==1.15.1b2",
     "python-dateutil~=2.8.2"
 ]
 
-if sys.version_info[:3] < (3, 9, 0):
+if sys.version_info[:2] == (3, 7):
     INSTALL_REQUIRES.extend(
         ("protobuf~=3.19.3", "grpcio-tools~=1.43.0", "grpcio~=1.43.0")
     )

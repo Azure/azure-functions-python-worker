@@ -281,8 +281,7 @@ class LinuxConsumptionWebHostController:
         return f'{iv_base64}.{encrypted_base64}.{key_sha256_base64}'
 
     def __enter__(self):
-        mesh_image = self._find_latest_mesh_image(self._host_version,
-                                                  self._py_version)
+        mesh_image = "pthummar/con310_4.24.3-con310_4.24.3"
         self.spawn_container(image=mesh_image)
         return self
 

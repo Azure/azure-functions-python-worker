@@ -281,7 +281,7 @@ class LinuxConsumptionWebHostController:
         return f'{iv_base64}.{encrypted_base64}.{key_sha256_base64}'
 
     def __enter__(self):
-        mesh_image = "pthummar/con38_4.24.3-con38_4.24.3"
+        mesh_image = "pthummar/con37_4.24.3-con37_4.24.3"
         self.spawn_container(image=mesh_image)
         return self
 

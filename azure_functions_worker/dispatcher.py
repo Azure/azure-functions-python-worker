@@ -29,7 +29,6 @@ from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_LANGUAGE_RUNTIME)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
-from .logging import enable_debug_logging_recommendation
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
 from .utils.common import get_app_setting, is_envvar_true
@@ -263,9 +262,11 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '
-                    'python version %s, worker version %s, request ID %s',
-                    sys.version, VERSION, self.request_id)
-        enable_debug_logging_recommendation()
+                    f'python version {sys.version}, '
+                    f'worker version {VERSION}, '
+                    f'request ID {self.request_id}.'
+                    f' To enable debug level logging, please refer to '
+                    'https://aka.ms/python-enable-debug-logging')
 
         worker_init_request = request.worker_init_request
         host_capabilities = worker_init_request.capabilities
@@ -363,6 +364,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
             'function_name: %s,', self.request_id, function_id, function_name)
 
+        programming_model = "V1"
         try:
             if not self._functions.get_function(function_id):
                 if function_metadata.properties.get("worker_indexed", False) \
@@ -371,8 +373,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the
                     # function and update the workers registry
-                    logger.info(f"Indexing function {function_name} in the "
-                                f"load request")
+                    programming_model = "V2"
                     _ = self.index_functions(function_path)
                 else:
                     # legacy function
@@ -385,17 +386,18 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self._functions.add_function(
                         function_id, func, func_request.metadata)
 
-                    ExtensionManager.function_load_extension(
-                        function_name,
-                        func_request.metadata.directory
-                    )
+            ExtensionManager.function_load_extension(
+                function_name,
+                func_request.metadata.directory
+            )
 
-                    logger.info('Successfully processed FunctionLoadRequest, '
-                                'request ID: %s, '
-                                'function ID: %s,'
-                                'function Name: %s', self.request_id,
-                                function_id,
-                                function_name)
+            logger.info('Successfully processed FunctionLoadRequest, '
+                        f'for {programming_model} programming model'
+                        'request ID: %s, '
+                        'function ID: %s,'
+                        'function Name: %s', self.request_id,
+                        function_id,
+                        function_name)
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -533,7 +535,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
                         'request ID: %s', self.request_id)
-            enable_debug_logging_recommendation()
 
             func_env_reload_request = \
                 request.function_environment_reload_request

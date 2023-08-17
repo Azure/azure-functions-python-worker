@@ -1,10 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from typing import Optional, Callable
-from types import ModuleType
+import importlib
 import os
 import sys
-import importlib
+from types import ModuleType
+from typing import Optional, Callable
+
+from azure_functions_worker.constants import CUSTOMER_PACKAGES_PATH
 
 
 def is_true_like(setting: str) -> bool:
@@ -110,19 +112,8 @@ def get_sdk_from_sys_path() -> ModuleType:
     ModuleType
         The azure.functions that is loaded from the first sys.path entry
     """
-    backup_azure_functions = None
-    backup_azure = None
 
-    if 'azure.functions' in sys.modules:
-        backup_azure_functions = sys.modules.pop('azure.functions')
-    if 'azure' in sys.modules:
-        backup_azure = sys.modules.pop('azure')
+    if CUSTOMER_PACKAGES_PATH not in sys.path:
+        sys.path.insert(0, CUSTOMER_PACKAGES_PATH)
 
-    module = importlib.import_module('azure.functions')
-
-    if backup_azure:
-        sys.modules['azure'] = backup_azure
-    if backup_azure_functions:
-        sys.modules['azure.functions'] = backup_azure_functions
-
-    return module
+    return importlib.import_module('azure.functions')

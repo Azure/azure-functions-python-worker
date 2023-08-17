@@ -18,18 +18,12 @@ from google.protobuf.duration_pb2 import Duration
 from . import protos, functions
 from .bindings.retrycontext import RetryPolicy
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
-    PYTHON_LANGUAGE_RUNTIME, RETRY_POLICY
+    PYTHON_LANGUAGE_RUNTIME, RETRY_POLICY, CUSTOMER_PACKAGES_PATH
 from .utils.wrappers import attach_message_to_exception
 
 _AZURE_NAMESPACE = '__app__'
 _DEFAULT_SCRIPT_FILENAME = '__init__.py'
 _DEFAULT_ENTRY_POINT = 'main'
-
-PKGS_PATH = pathlib.Path("site/wwwroot/.python_packages")
-home = pathlib.Path.home()
-pkgs_path = os.path.join(home, PKGS_PATH)
-
-
 _submodule_dirs = []
 
 
@@ -140,7 +134,8 @@ def process_indexed_function(functions_registry: functions.Registry,
             f' guide: {MODULE_NOT_FOUND_TS_URL} ',
     debug_logs='Error in load_function. '
                f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
-               f'python-packages Path exists: {os.path.exists(pkgs_path)}')
+               'python-packages Path exists: '
+               f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}')
 def load_function(name: str, directory: str, script_file: str,
                   entry_point: Optional[str]):
     dir_path = pathlib.Path(directory)
@@ -191,7 +186,7 @@ def load_function(name: str, directory: str, script_file: str,
     message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}',
     debug_logs='Error in index_function_app. '
                f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
-               f'python-packages Path exists: {os.path.exists(pkgs_path)}')
+               f'python-packages Path exists: {os.path.exists(CUSTOMER_PACKAGES_PATH)}')
 def index_function_app(function_path: str):
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)

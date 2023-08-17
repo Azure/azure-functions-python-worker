@@ -5,9 +5,12 @@ import logging
 import os
 import sys
 import unittest
-from unittest.mock import patch, Mock, call
 from importlib import import_module
+from unittest.mock import patch, Mock, call
+
 from azure_functions_worker._thirdparty import aio_compat
+from azure_functions_worker.constants import PYTHON_ENABLE_WORKER_EXTENSIONS, \
+    CUSTOMER_PACKAGES_PATH
 from azure_functions_worker.extension import (
     ExtensionManager,
     APP_EXT_POST_FUNCTION_LOAD, FUNC_EXT_POST_FUNCTION_LOAD,
@@ -15,7 +18,6 @@ from azure_functions_worker.extension import (
     APP_EXT_POST_INVOCATION, FUNC_EXT_POST_INVOCATION
 )
 from azure_functions_worker.utils.common import get_sdk_from_sys_path
-from azure_functions_worker.constants import PYTHON_ENABLE_WORKER_EXTENSIONS
 
 
 class MockContext:
@@ -90,6 +92,17 @@ class TestExtension(unittest.TestCase):
         module = get_sdk_from_sys_path()
         sdk_enabled = self._instance._is_extension_enabled_in_sdk(module)
         self.assertFalse(sdk_enabled)
+
+    def test_extension_if_sdk_not_in_path(self):
+        """Test if the detection works when an azure.functions SDK does not
+        support extension management.
+        """
+
+        self.assertNotIn(CUSTOMER_PACKAGES_PATH, sys.path)
+        module = get_sdk_from_sys_path()
+        self.assertIn(CUSTOMER_PACKAGES_PATH, sys.path)
+        sdk_enabled = self._instance._is_extension_enabled_in_sdk(module)
+        self.assertTrue(sdk_enabled)
 
     @patch('azure_functions_worker.extension.get_sdk_from_sys_path')
     def test_function_load_extension_enable_when_feature_flag_is_on(

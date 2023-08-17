@@ -217,13 +217,35 @@ class TestLinuxConsumption(TestCase):
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
                     "PinningFunctions"),
-                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
             })
-            req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
+            req = Request('GET', f'{ctrl.url}/api/hello')
             resp = ctrl.send_request(req)
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Func Version: 1.11.1", resp.text)
+
+    def test_common_libraries_with_extensions_enabled(self):
+        """A function app with extensions enabled containing the
+         following libraries:
+
+        azure-functions, azure-eventhub, azure-storage-blob, numpy,
+        cryptography, pyodbc, requests
+
+        should return 200 after importing all libraries.
+        """
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("CommonLibraries"),
+                "PYTHON_ENABLE_WORKER_EXTENSIONS": "1"
+            })
+            req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
+            resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 200)
+            content = resp.json()
+            self.assertIn('azure.functions', content)
 
     def _get_blob_url(self, scenario_name: str) -> str:
         return (

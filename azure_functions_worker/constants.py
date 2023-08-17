@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
+import os
+import pathlib
 import sys
 
 # Capabilities
@@ -46,8 +47,13 @@ MODULE_NOT_FOUND_TS_URL = "https://aka.ms/functions-modulenotfound"
 
 # new programming model script file name
 SCRIPT_FILE_NAME = "function_app.py"
-
 PYTHON_LANGUAGE_RUNTIME = "python"
 
 # Settings for V2 programming model
 RETRY_POLICY = "retry_policy"
+
+# Paths
+CUSTOMER_PACKAGES_PATH = os.path.join(pathlib.Path.home(),
+                                      pathlib.Path(
+                                          "site/wwwroot/.python_packages"))
+

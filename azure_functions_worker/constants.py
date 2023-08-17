@@ -56,4 +56,3 @@ RETRY_POLICY = "retry_policy"
 CUSTOMER_PACKAGES_PATH = os.path.join(pathlib.Path.home(),
                                       pathlib.Path(
                                           "site/wwwroot/.python_packages"))
-

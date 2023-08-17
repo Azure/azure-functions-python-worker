@@ -186,7 +186,8 @@ def load_function(name: str, directory: str, script_file: str,
     message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}',
     debug_logs='Error in index_function_app. '
                f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
-               f'python-packages Path exists: {os.path.exists(CUSTOMER_PACKAGES_PATH)}')
+               'python-packages Path exists: '
+               f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}')
 def index_function_app(function_path: str):
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)

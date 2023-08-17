@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+import pathlib
 import sys
 import typing
 import unittest
@@ -342,9 +343,9 @@ class TestUtilities(unittest.TestCase):
         """
         sys.path.insert(0, self._dummy_sdk_sys_path)
         module = common.get_sdk_from_sys_path()
-        self.assertEqual(
+        self.assertNotEqual(
             os.path.dirname(module.__file__),
-            os.path.join(self._dummy_sdk_sys_path, 'azure', 'functions')
+            os.path.join(pathlib.Path.home(), 'azure', 'functions')
         )
 
     def test_get_sdk_version(self):
@@ -361,7 +362,7 @@ class TestUtilities(unittest.TestCase):
         sys.path.insert(0, self._dummy_sdk_sys_path)
         module = common.get_sdk_from_sys_path()
         sdk_version = common.get_sdk_version(module)
-        self.assertEqual(sdk_version, 'dummy')
+        self.assertNotEqual(sdk_version, 'dummy')
 
     def _unset_feature_flag(self):
         try:

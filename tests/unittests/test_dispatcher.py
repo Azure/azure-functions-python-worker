@@ -443,6 +443,11 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         return func_id, invoke_id, function_name
 
 
+@unittest.skipIf(sys.version_info.minor != 8,
+                 "Run the tests only for Python 3.8. In other platforms, "
+                 "as the default passed is None, the cpu_count determines the "
+                 "number of max_workers and we cannot mock the os.cpu_count() "
+                 "in the concurrent.futures.ThreadPoolExecutor")
 class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):
     def setUp(self):
         super(TestThreadPoolSettingsPython38, self).setUp()

@@ -405,7 +405,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             logger.info('Successfully processed FunctionLoadRequest, '
                         'request ID: %s, '
                         'function ID: %s,'
-                        'function Name: %s',
+                        'function Name: %s,' 
                         'programming model: %s',
                         self.request_id,
                         function_id,

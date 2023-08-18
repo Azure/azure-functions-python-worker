@@ -535,6 +535,7 @@ class TestThreadPoolSettingsPython310(TestThreadPoolSettingsPython39):
         self.mock_os_cpu.stop()
         self.mock_version_info.stop()
 
+
 @unittest.skipIf(sys.version_info.minor != 11,
                  "Run the tests only for Python 3.11. In other platforms, "
                  "as the default passed is None, the cpu_count determines the "

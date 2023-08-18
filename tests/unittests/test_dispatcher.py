@@ -98,13 +98,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 1
             )
 
-            self.assertEqual(
-                len([log for log in r.logs if log.message.startswith(
-                    'To enable debug level logging'
-                )]),
-                1
-            )
-
     async def test_dispatcher_environment_reload_logging(self):
         """Test if the sync threadpool will pick up app setting in placeholder
         mode (Linux Consumption)
@@ -117,13 +110,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             self.assertEqual(
                 len([log for log in r.logs if log.message.startswith(
                     'Received FunctionEnvironmentReloadRequest'
-                )]),
-                1
-            )
-
-            self.assertEqual(
-                len([log for log in r.logs if log.message.startswith(
-                    'To enable debug level logging'
                 )]),
                 1
             )

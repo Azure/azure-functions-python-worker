@@ -1,8 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
+import importlib
 import logging
 import os
+import pathlib
 import sys
 import unittest
 from importlib import import_module
@@ -92,6 +93,14 @@ class TestExtension(unittest.TestCase):
         module = get_sdk_from_sys_path()
         sdk_enabled = self._instance._is_extension_enabled_in_sdk(module)
         self.assertFalse(sdk_enabled)
+
+    def test_extension_in_worker(self):
+        """Test if worker contains support for extensions
+        """
+        sys.path.insert(0, pathlib.Path.home())
+        module = importlib.import_module('azure.functions')
+        sdk_enabled = self._instance._is_extension_enabled_in_sdk(module)
+        self.assertTrue(sdk_enabled)
 
     def test_extension_if_sdk_not_in_path(self):
         """Test if the detection works when an azure.functions SDK does not

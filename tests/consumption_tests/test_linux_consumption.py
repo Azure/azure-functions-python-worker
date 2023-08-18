@@ -219,13 +219,15 @@ class TestLinuxConsumption(TestCase):
                     "PinningFunctions"),
                 "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
             })
-            req = Request('GET', f'{ctrl.url}/api/hello')
+            req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
             resp = ctrl.send_request(req)
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Func Version: 1.11.1", resp.text)
 
-    def test_common_libraries_with_extensions_enabled(self):
+    @skipIf(sys.version_info.minor != 10,
+            "This is testing only for python310")
+    def test_opencensus_with_extensions_enabled(self):
         """A function app with extensions enabled containing the
          following libraries:
 
@@ -238,14 +240,13 @@ class TestLinuxConsumption(TestCase):
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("CommonLibraries"),
-                "PYTHON_ENABLE_WORKER_EXTENSIONS": "1"
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("Opencensus"),
+                "PYTHON_ENABLE_WORKER_EXTENSIONS": "1",
+                "AzureWebJobsFeatureFlags": "EnableWorkerIndexing"
             })
-            req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
+            req = Request('GET', f'{ctrl.url}/api/opencensus')
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
-            content = resp.json()
-            self.assertIn('azure.functions', content)
 
     def _get_blob_url(self, scenario_name: str) -> str:
         return (

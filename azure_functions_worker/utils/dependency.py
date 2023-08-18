@@ -226,7 +226,7 @@ class DependencyManager:
             logger.info('Reloaded azure.functions module now at %s',
                         inspect.getfile(sys.modules['azure.functions']))
         except Exception as ex:
-            logger.info(
+            logger.warning(
                 'Unable to reload azure.functions. Using default. '
                 'Exception:\n%s', ex)
 

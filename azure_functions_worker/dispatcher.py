@@ -547,7 +547,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         """
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
-                        'request ID: %s',
+                        'request ID: %s,'
                         ' To enable debug level logging, please refer to '
                         'https://aka.ms/python-enable-debug-logging',
                         self.request_id)

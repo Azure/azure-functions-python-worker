@@ -16,9 +16,6 @@ class TestGRPC(testutils.AsyncTestCase):
     pre_test_env = os.environ.copy()
     pre_test_cwd = os.getcwd()
 
-    def setUp(self) -> None:
-        os.environ.clear()
-
     def _reset_environ(self):
         for key, value in self.pre_test_env.items():
             os.environ[key] = value
@@ -41,12 +38,13 @@ class TestGRPC(testutils.AsyncTestCase):
         try:
             r = await disp._handle__function_environment_reload_request(
                 request_msg)
+            status = r.function_environment_reload_response.result.status
+            self.assertEqual(status, protos.StatusResult.Success)
 
             environ_dict = os.environ.copy()
             self.assertDictEqual(environ_dict, test_env)
             self.assertEqual(os.getcwd(), test_cwd)
-            status = r.function_environment_reload_response.result.status
-            self.assertEqual(status, protos.StatusResult.Success)
+
         finally:
             self._reset_environ()
 

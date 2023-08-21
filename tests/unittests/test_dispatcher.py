@@ -39,7 +39,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
     NEW_TYPING = sys.version_info[:3] >= (3, 7, 0)  # PEP 560
     """
 
-    def setUp(self, version = SysVersionInfo(3, 7, 0, 'final', 0)):
+    def setUp(self, version=SysVersionInfo(3, 7, 0, 'final', 0)):
         self._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_FUNCTIONS_DIR)
         self._default_workers: Optional[
@@ -449,7 +449,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                  "number of max_workers and we cannot mock the os.cpu_count() "
                  "in the concurrent.futures.ThreadPoolExecutor")
 class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):
-    def setUp(self, version = SysVersionInfo(3, 8, 0, 'final', 0)):
+    def setUp(self, version=SysVersionInfo(3, 8, 0, 'final', 0)):
         super(TestThreadPoolSettingsPython38, self).setUp(version)
         self._allowed_max_workers: int = self._over_max_workers
 
@@ -493,6 +493,7 @@ class TestThreadPoolSettingsPython39(TestThreadPoolSettingsPython38):
     def tearDown(self):
         self.mock_os_cpu.stop()
         super(TestThreadPoolSettingsPython39, self).tearDown()
+
 
 @unittest.skipIf(sys.version_info.minor != 10,
                  "Run the tests only for Python 3.10. In other platforms, "

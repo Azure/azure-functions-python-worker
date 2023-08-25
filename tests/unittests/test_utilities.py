@@ -364,6 +364,7 @@ class TestUtilities(unittest.TestCase):
         module = common.get_sdk_from_sys_path()
         sdk_version = common.get_sdk_version(module)
         self.assertNotEqual(sdk_version, 'dummy')
+
     def test_get_sdk_dummy_version_with_flag_enabled(self):
         """Test if sdk version can get dummy sdk version
         """

@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
+import os
+import pathlib
 import sys
 
 # Capabilities
@@ -40,14 +41,19 @@ PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT = False
 PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 = False
 PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT = False
 PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39 = True
+PYTHON_EXTENSIONS_RELOAD_FUNCTIONS = "PYTHON_EXTENSIONS_RELOAD_FUNCTIONS"
 
 # External Site URLs
 MODULE_NOT_FOUND_TS_URL = "https://aka.ms/functions-modulenotfound"
 
 # new programming model script file name
 SCRIPT_FILE_NAME = "function_app.py"
-
 PYTHON_LANGUAGE_RUNTIME = "python"
 
 # Settings for V2 programming model
 RETRY_POLICY = "retry_policy"
+
+# Paths
+CUSTOMER_PACKAGES_PATH = os.path.join(pathlib.Path.home(),
+                                      pathlib.Path(
+                                          "site/wwwroot/.python_packages"))

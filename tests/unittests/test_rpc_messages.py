@@ -38,12 +38,15 @@ class TestGRPC(testutils.AsyncTestCase):
         try:
             r = await disp._handle__function_environment_reload_request(
                 request_msg)
+            status = r.function_environment_reload_response.result.status
+            exp = r.function_environment_reload_response.result.exception
+            self.assertEqual(status, protos.StatusResult.Success,
+                             f"Exception in Reload request: {exp}")
 
             environ_dict = os.environ.copy()
             self.assertDictEqual(environ_dict, test_env)
             self.assertEqual(os.getcwd(), test_cwd)
-            status = r.function_environment_reload_response.result.status
-            self.assertEqual(status, protos.StatusResult.Success)
+
         finally:
             self._reset_environ()
 

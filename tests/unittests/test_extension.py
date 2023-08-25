@@ -1,13 +1,17 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
+import importlib
 import logging
 import os
+import pathlib
 import sys
 import unittest
-from unittest.mock import patch, Mock, call
 from importlib import import_module
+from unittest.mock import patch, Mock, call
+
 from azure_functions_worker._thirdparty import aio_compat
+from azure_functions_worker.constants import PYTHON_ENABLE_WORKER_EXTENSIONS, \
+    CUSTOMER_PACKAGES_PATH
 from azure_functions_worker.extension import (
     ExtensionManager,
     APP_EXT_POST_FUNCTION_LOAD, FUNC_EXT_POST_FUNCTION_LOAD,
@@ -15,7 +19,6 @@ from azure_functions_worker.extension import (
     APP_EXT_POST_INVOCATION, FUNC_EXT_POST_INVOCATION
 )
 from azure_functions_worker.utils.common import get_sdk_from_sys_path
-from azure_functions_worker.constants import PYTHON_ENABLE_WORKER_EXTENSIONS
 
 
 class MockContext:
@@ -54,6 +57,7 @@ class TestExtension(unittest.TestCase):
             'resources',
             'mock_azure_functions'
         )
+        self._dummy_sdk = Mock(__file__="test")
 
         # Initialize mock context
         self._mock_arguments = {'req': 'request'}
@@ -91,7 +95,26 @@ class TestExtension(unittest.TestCase):
         sdk_enabled = self._instance._is_extension_enabled_in_sdk(module)
         self.assertFalse(sdk_enabled)
 
-    @patch('azure_functions_worker.extension.get_sdk_from_sys_path')
+    def test_extension_in_worker(self):
+        """Test if worker contains support for extensions
+        """
+        sys.path.insert(0, pathlib.Path.home())
+        module = importlib.import_module('azure.functions')
+        sdk_enabled = self._instance._is_extension_enabled_in_sdk(module)
+        self.assertTrue(sdk_enabled)
+
+    def test_extension_if_sdk_not_in_path(self):
+        """Test if the detection works when an azure.functions SDK does not
+        support extension management.
+        """
+
+        module = get_sdk_from_sys_path()
+        self.assertIn(CUSTOMER_PACKAGES_PATH, sys.path)
+        sdk_enabled = self._instance._is_extension_enabled_in_sdk(module)
+        self.assertTrue(sdk_enabled)
+
+    @patch('azure_functions_worker.extension.get_sdk_from_sys_path',
+           return_value=importlib.import_module('azure.functions'))
     def test_function_load_extension_enable_when_feature_flag_is_on(
         self,
         get_sdk_from_sys_path_mock: Mock
@@ -163,7 +186,8 @@ class TestExtension(unittest.TestCase):
             any_order=True
         )
 
-    @patch('azure_functions_worker.extension.get_sdk_from_sys_path')
+    @patch('azure_functions_worker.extension.get_sdk_from_sys_path',
+           return_value=importlib.import_module('azure.functions'))
     def test_invocation_extension_enable_when_feature_flag_is_on(
         self,
         get_sdk_from_sys_path_mock: Mock
@@ -697,7 +721,7 @@ class TestExtension(unittest.TestCase):
         self._instance._info_extension_is_enabled(sdk)
         info_mock.assert_called_once_with(
             'Python Worker Extension is enabled in azure.functions '
-            '(%s).', sdk.__version__
+            '(%s). Sdk path: %s', sdk.__version__, sdk.__file__
         )
 
     @patch('azure_functions_worker.extension.logger.info')

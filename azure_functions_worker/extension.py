@@ -236,9 +236,8 @@ class ExtensionManager:
     @classmethod
     def _info_extension_is_enabled(cls, sdk):
         logger.info(
-            'Python Worker Extension is enabled in azure.functions (%s).',
-            get_sdk_version(sdk)
-        )
+            'Python Worker Extension is enabled in azure.functions (%s). '
+            'Sdk path: %s', get_sdk_version(sdk), sdk.__file__)
 
     @classmethod
     def _info_discover_extension_list(cls, function_name, sdk):

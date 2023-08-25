@@ -65,7 +65,7 @@ class ExtensionManager:
         sdk = cls._try_get_sdk_with_extension_enabled()
         if sdk is None:
             return
-
+        logger.info("Sdk path: %s", sdk.__file__)
         # Reports application & function extensions installed on customer's app
         cls._info_discover_extension_list(func_name, sdk)
 

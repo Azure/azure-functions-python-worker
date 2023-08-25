@@ -7,7 +7,7 @@ from types import ModuleType
 from typing import Optional, Callable
 
 from azure_functions_worker.constants import CUSTOMER_PACKAGES_PATH, \
-    PYTHON_RELOAD_FUNCTIONS
+    PYTHON_EXTENSIONS_RELOAD_FUNCTIONS
 
 
 def is_true_like(setting: str) -> bool:
@@ -114,7 +114,7 @@ def get_sdk_from_sys_path() -> ModuleType:
         The azure.functions that is loaded from the first sys.path entry
     """
 
-    if is_envvar_true(PYTHON_RELOAD_FUNCTIONS):
+    if is_envvar_true(PYTHON_EXTENSIONS_RELOAD_FUNCTIONS):
         backup_azure_functions = None
         backup_azure = None
 

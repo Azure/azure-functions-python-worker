@@ -7,6 +7,7 @@ import typing
 import unittest
 from unittest.mock import patch
 
+from azure_functions_worker.constants import PYTHON_EXTENSIONS_RELOAD_FUNCTIONS
 from azure_functions_worker.utils import common, wrappers
 
 TEST_APP_SETTING_NAME = "TEST_APP_SETTING_NAME"
@@ -363,6 +364,14 @@ class TestUtilities(unittest.TestCase):
         module = common.get_sdk_from_sys_path()
         sdk_version = common.get_sdk_version(module)
         self.assertNotEqual(sdk_version, 'dummy')
+    def test_get_sdk_dummy_version_with_flag_enabled(self):
+        """Test if sdk version can get dummy sdk version
+        """
+        os.environ[PYTHON_EXTENSIONS_RELOAD_FUNCTIONS] = '1'
+        sys.path.insert(0, self._dummy_sdk_sys_path)
+        module = common.get_sdk_from_sys_path()
+        sdk_version = common.get_sdk_version(module)
+        self.assertEqual(sdk_version, 'dummy')
 
     def _unset_feature_flag(self):
         try:

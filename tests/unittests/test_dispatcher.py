@@ -44,7 +44,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             script_root=DISPATCHER_FUNCTIONS_DIR)
         self._default_workers: Optional[
             int] = PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT
-        self._over_max_workers: int = 10000
         self._allowed_max_workers: int = PYTHON_THREADPOOL_THREAD_COUNT_MAX_37
         self._pre_env = dict(os.environ)
         self.mock_version_info = patch(
@@ -395,8 +394,9 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         function_name = "show_context"
         func_id, load_r = await host.load_function(function_name)
         self.assertEqual(load_r.response.function_id, func_id)
+        ex = load_r.response.result.exception
         self.assertEqual(load_r.response.result.status,
-                         protos.StatusResult.Success)
+                         protos.StatusResult.Success, msg=ex)
 
         # Ensure the function can be properly invoked
         invoke_id, call_r = await host.invoke_function(
@@ -451,6 +451,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):
     def setUp(self, version=SysVersionInfo(3, 8, 0, 'final', 0)):
         super(TestThreadPoolSettingsPython38, self).setUp(version)
+        self._over_max_workers: int = 10000
         self._allowed_max_workers: int = self._over_max_workers
 
     def tearDown(self):

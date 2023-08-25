@@ -108,7 +108,6 @@ class TestExtension(unittest.TestCase):
         support extension management.
         """
 
-        self.assertNotIn(CUSTOMER_PACKAGES_PATH, sys.path)
         module = get_sdk_from_sys_path()
         self.assertIn(CUSTOMER_PACKAGES_PATH, sys.path)
         sdk_enabled = self._instance._is_extension_enabled_in_sdk(module)

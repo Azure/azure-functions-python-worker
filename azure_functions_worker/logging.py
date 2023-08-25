@@ -91,11 +91,6 @@ def enable_console_logging() -> None:
         logger.addHandler(handler)
 
 
-def enable_debug_logging_recommendation():
-    logging.info("To enable debug level logging, please refer to "
-                 "https://aka.ms/python-enable-debug-logging")
-
-
 def is_system_log_category(ctg: str) -> bool:
     """Check if the logging namespace belongs to system logs. Category starts
     with the following name will be treated as system logs.

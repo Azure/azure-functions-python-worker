@@ -217,13 +217,36 @@ class TestLinuxConsumption(TestCase):
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
                     "PinningFunctions"),
-                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
             resp = ctrl.send_request(req)
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Func Version: 1.11.1", resp.text)
+
+    @skipIf(sys.version_info.minor != 10,
+            "This is testing only for python310")
+    def test_opencensus_with_extensions_enabled(self):
+        """A function app with extensions enabled containing the
+         following libraries:
+
+        azure-functions, azure-eventhub, azure-storage-blob, numpy,
+        cryptography, pyodbc, requests
+
+        should return 200 after importing all libraries.
+        """
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("Opencensus"),
+                "PYTHON_ENABLE_WORKER_EXTENSIONS": "1",
+                "AzureWebJobsFeatureFlags": "EnableWorkerIndexing"
+            })
+            req = Request('GET', f'{ctrl.url}/api/opencensus')
+            resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 200)
 
     def _get_blob_url(self, scenario_name: str) -> str:
         return (

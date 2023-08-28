@@ -26,9 +26,9 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Pytest
+      - name: Install Dependencies
         run: |
-          python -m pip install pytest pytest-instafail pytest-rerunfailures pytest-cov pytest-xdist
+          python -m pip install pytest pytest-instafail pytest-rerunfailures pytest-xdist requests
       - name: Running 3.7 Tests
         if: matrix.python-version == 3.7
         env:

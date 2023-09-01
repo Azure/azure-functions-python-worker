@@ -106,7 +106,7 @@ PACKAGES = [
 ]
 
 INSTALL_REQUIRES = [
-    "azure-functions==$newLibraryVersion",
+    "azure-functions==1.18.0b2",
     "python-dateutil~=2.8.2"
 ]
 

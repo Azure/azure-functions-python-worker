@@ -63,7 +63,7 @@ jobs:
           
           # Retry a couple times to avoid certificate issue
           retry 5 python setup.py build
-          retry 5 python setup.py webhost --branch-name=dev
+          retry 5 python setup.py webhost --branch-name=shkr/wrkr_1547_new_cmdnline_args
           retry 5 python setup.py extension
       - name: Grant execute permission
         run: chmod +x .github/Scripts/e2e-tests.sh

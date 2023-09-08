@@ -8,10 +8,11 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 @app.route()
 @app.sql_input(arg_name="products",
-                command_text="SELECT * FROM Products",
-                command_type="Text",
-                connection_string_setting="AzureWebJobsSqlConnectionString")
-def sql_input(req: func.HttpRequest, products: func.SqlRowList) -> func.HttpResponse:
+               command_text="SELECT * FROM Products",
+               command_type="Text",
+               connection_string_setting="AzureWebJobsSqlConnectionString")
+def sql_input(req: func.HttpRequest,
+              products: func.SqlRowList) -> func.HttpResponse:
     rows = list(map(lambda r: json.loads(r.to_json()), products))
 
     return func.HttpResponse(
@@ -20,11 +21,13 @@ def sql_input(req: func.HttpRequest, products: func.SqlRowList) -> func.HttpResp
         mimetype="application/json"
     )
 
+
 @app.route()
 @app.sql_output(arg_name="product",
                 command_text="[dbo].[Products]",
                 connection_string_setting="AzureWebJobsSqlConnectionString")
-def sql_output(req: func.HttpRequest, product: func.Out[func.SqlRow]) -> func.HttpResponse:
+def sql_output(req: func.HttpRequest,
+               product: func.Out[func.SqlRow]) -> func.HttpResponse:
     body = json.loads(req.get_body())
     row = func.SqlRow.from_dict(body)
     product.set(row)
@@ -35,6 +38,7 @@ def sql_output(req: func.HttpRequest, product: func.Out[func.SqlRow]) -> func.Ht
         mimetype="application/json"
     )
 
+
 @app.sql_trigger(arg_name="products",
                  table_name="[dbo].[Products]",
                  connection_string_setting="AzureWebJobsSqlConnectionString")
@@ -42,6 +46,7 @@ def sql_output(req: func.HttpRequest, product: func.Out[func.SqlRow]) -> func.Ht
                  path="python-worker-tests/test-sql-triggered.txt")
 def sql_trigger(changes: any) -> str:
     return changes
+
 
 @app.route()
 @app.blob_input(arg_name="file", connection="AzureWebJobsStorage",

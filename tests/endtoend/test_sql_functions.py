@@ -44,7 +44,8 @@ class TestSqlFunctions(testutils.WebHostTestCase):
                 r = self.webhost.request('GET', 'get_sql_triggered')
                 self.assertEqual(r.status_code, 200)
                 actualText = ''.join(r.text.split())
-                expectedText = "[{\"Operation\":0,\"Item\":{\"ProductId\":" + id + ",\"Name\":\"test\",\"Cost\":100}}]"
+                expectedText = "[{\"Operation\":0,\"Item\":{\"ProductId\":" + id + \
+                    ",\"Name\":\"test\",\"Cost\":100}}]"
                 self.assertEqual(actualText, expectedText)
 
             except AssertionError:

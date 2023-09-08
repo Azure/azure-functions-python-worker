@@ -35,3 +35,17 @@ def sql_output(req: func.HttpRequest, product: func.Out[func.SqlRow]) -> func.Ht
         mimetype="application/json"
     )
 
+@app.sql_trigger(arg_name="products",
+                 table_name="[dbo].[Products]",
+                 connection_string_setting="AzureWebJobsSqlConnectionString")
+@app.blob_output(arg_name="$return", connection="AzureWebJobsStorage",
+                 path="python-worker-tests/test-sql-triggered.txt")
+def sql_trigger(changes: any) -> str:
+    return changes
+
+@app.route()
+@app.blob_input(arg_name="file", connection="AzureWebJobsStorage",
+                path="python-worker-tests/test-sql-triggered.txt")
+def get_sql_triggered_file(req: func.HttpRequest,
+                           file: func.InputStream) -> str:
+    return file.read().decode("utf-8")

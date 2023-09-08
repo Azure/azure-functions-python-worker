@@ -1,0 +1,20 @@
+{
+  "scriptFile": "__init__.py",
+  "disabled": false,
+  "bindings": [
+    {
+      "name": "changes",
+      "type": "sqlTrigger",
+      "direction": "in",
+      "tableName": "dbo.Products",
+      "connectionStringSetting": "AzureWebJobsSqlConnectionString"
+    },
+    {
+      "type": "blob",
+      "direction": "out",
+      "name": "$return",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/test-sql-triggered.txt"
+    }
+  ]
+}

@@ -36,3 +36,23 @@ def sql_output(req: func.HttpRequest, product: func.Out[func.SqlRow]) -> func.Ht
         status_code=201,
         mimetype="application/json"
     )
+
+
+@app.generic_trigger(arg_name="products",
+                     type="sqlTrigger",
+                     table_name="[dbo].[Products]",
+                     connection_string_setting="AzureWebJobsSqlConnectionString")
+@app.generic_output_binding(arg_name="$return", type="blob",
+                            connection="AzureWebJobsStorage",
+                            path="python-worker-tests/test-sql-triggered.txt")
+def sql_trigger(changes: any) -> str:
+    return changes
+
+@app.generic_trigger(arg_name="req", type="httpTrigger")
+@app.generic_output_binding(arg_name="$return", type="http")
+@app.generic_input_binding(arg_name="file", type="blob",
+                            connection="AzureWebJobsStorage",
+                            path="python-worker-tests/test-sql-triggered.txt")
+def get_sql_triggered_file(req: func.HttpRequest,
+                           file: func.InputStream) -> str:
+    return file.read().decode("utf-8")

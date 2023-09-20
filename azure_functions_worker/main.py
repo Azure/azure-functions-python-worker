@@ -5,7 +5,7 @@
 import argparse
 
 
-def create_args_parser():
+def parse_args():
     parser = argparse.ArgumentParser(
         description='Python Azure Functions Worker')
     parser.add_argument('--host',
@@ -37,7 +37,7 @@ def create_args_parser():
     parser.add_argument('--functions-grpc-max-message-length', type=int,
                         dest='functions_grpc_max_msg_len',
                         help='Max grpc message length for Functions')
-    return parser
+    return parser.parse_args()
 
 
 def main():
@@ -49,8 +49,7 @@ def main():
     from ._thirdparty import aio_compat
     from .logging import error_logger, logger, format_exception
 
-    parser = create_args_parser()
-    args = parser.parse_args()
+    args = parse_args()
     logging.setup(log_level=args.log_level, log_destination=args.log_to)
 
     logger.info('Starting Azure Functions Python Worker.')

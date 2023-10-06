@@ -66,36 +66,53 @@ def build_binding_protos(indexed_function) -> Dict:
 
 
 def build_retry_protos(indexed_function) -> Dict:
-    retry = indexed_function.get_settings_dict(RETRY_POLICY)
+    retry = get_retry_settings(indexed_function)
+
     if not retry:
         return None
 
     strategy = retry.get(RetryPolicy.STRATEGY.value)
+    max_retry_count = int(retry.get(RetryPolicy.MAX_RETRY_COUNT.value))
+    retry_strategy = retry.get(RetryPolicy.STRATEGY.value)
+
     if strategy == "fixed_delay":
-        delay_interval = Duration(
-            seconds=convert_to_seconds(
-                retry.get(RetryPolicy.DELAY_INTERVAL.value)))
-        retry_protos = protos.RpcRetryOptions(
-            max_retry_count=int(retry.get(RetryPolicy.MAX_RETRY_COUNT.value)),
-            retry_strategy=retry.get(RetryPolicy.STRATEGY.value),
-            delay_interval=delay_interval,
-        )
+        return build_fixed_delay_retry(retry, max_retry_count, retry_strategy)
     else:
-        minimum_interval = Duration(
-            seconds=convert_to_seconds(
-                retry.get(RetryPolicy.MINIMUM_INTERVAL.value)))
-        maximum_interval = Duration(
-            seconds=convert_to_seconds(
-                retry.get(RetryPolicy.MAXIMUM_INTERVAL.value)))
+        return build_variable_interval_retry(retry, max_retry_count,
+                                             retry_strategy)
 
-        retry_protos = protos.RpcRetryOptions(
-            max_retry_count=int(retry.get(RetryPolicy.MAX_RETRY_COUNT.value)),
-            retry_strategy=retry.get(RetryPolicy.STRATEGY.value),
-            minimum_interval=minimum_interval,
-            maximum_interval=maximum_interval
-        )
 
-    return retry_protos
+def get_retry_settings(indexed_function):
+    try:
+        return indexed_function.get_settings_dict(RETRY_POLICY)
+    except ModuleNotFoundError:
+        return None
+
+
+def build_fixed_delay_retry(retry, max_retry_count, retry_strategy):
+    delay_interval = Duration(
+        seconds=convert_to_seconds(retry.get(RetryPolicy.DELAY_INTERVAL.value))
+    )
+    return protos.RpcRetryOptions(
+        max_retry_count=max_retry_count,
+        retry_strategy=retry_strategy,
+        delay_interval=delay_interval,
+    )
+
+
+def build_variable_interval_retry(retry, max_retry_count, retry_strategy):
+    minimum_interval = Duration(
+        seconds=convert_to_seconds(retry.get(RetryPolicy.MINIMUM_INTERVAL.value))
+    )
+    maximum_interval = Duration(
+        seconds=convert_to_seconds(retry.get(RetryPolicy.MAXIMUM_INTERVAL.value))
+    )
+    return protos.RpcRetryOptions(
+        max_retry_count=max_retry_count,
+        retry_strategy=retry_strategy,
+        minimum_interval=minimum_interval,
+        maximum_interval=maximum_interval
+    )
 
 
 def process_indexed_function(functions_registry: functions.Registry,

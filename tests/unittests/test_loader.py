@@ -5,6 +5,7 @@ import pathlib
 import subprocess
 import sys
 import textwrap
+from unittest.mock import Mock
 
 from azure.functions import Function
 from azure.functions.decorators.retry_policy import RetryPolicy
@@ -54,6 +55,13 @@ class TestLoader(testutils.WebHostTestCase):
                          0)  # 0 enum for exponential backoff
         self.assertEqual(protos.minimum_interval.seconds, 60)
         self.assertEqual(protos.maximum_interval.seconds, 120)
+
+    def test_retry_module_not_found(self):
+        self.func = Mock()
+        self.func.get_settings_dict.side_effect = ModuleNotFoundError
+
+        result = build_retry_protos(self.func)
+        self.assertIsNone(result)
 
     @classmethod
     def get_script_dir(cls):

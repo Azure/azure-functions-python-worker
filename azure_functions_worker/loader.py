@@ -102,10 +102,12 @@ def build_fixed_delay_retry(retry, max_retry_count, retry_strategy):
 
 def build_variable_interval_retry(retry, max_retry_count, retry_strategy):
     minimum_interval = Duration(
-        seconds=convert_to_seconds(retry.get(RetryPolicy.MINIMUM_INTERVAL.value))
+        seconds=convert_to_seconds(
+            retry.get(RetryPolicy.MINIMUM_INTERVAL.value))
     )
     maximum_interval = Duration(
-        seconds=convert_to_seconds(retry.get(RetryPolicy.MAXIMUM_INTERVAL.value))
+        seconds=convert_to_seconds(
+            retry.get(RetryPolicy.MAXIMUM_INTERVAL.value))
     )
     return protos.RpcRetryOptions(
         max_retry_count=max_retry_count,

@@ -184,12 +184,13 @@ jobs:
       buildType: 'current'
       downloadType: 'specific'
       downloadPath: '$(Build.SourcesDirectory)'
-  - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+  - task: ManifestGeneratorTask@0
     displayName: 'SBOM Generation Task'
     inputs:
       BuildDropPath: '$(Build.SourcesDirectory)'
       BuildComponentPath: '$(Build.SourcesDirectory)'
       Verbosity: 'Verbose'
+      PackageVersion: '0.197.79'
   - task: NuGetCommand@2
     inputs:
       command: pack

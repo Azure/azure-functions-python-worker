@@ -190,7 +190,6 @@ jobs:
       BuildDropPath: '$(Build.SourcesDirectory)'
       BuildComponentPath: '$(Build.SourcesDirectory)'
       Verbosity: 'Verbose'
-      PackageVersion: '0.197.79'
   - task: NuGetCommand@2
     inputs:
       command: pack

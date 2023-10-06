@@ -184,12 +184,13 @@ jobs:
       buildType: 'current'
       downloadType: 'specific'
       downloadPath: '$(Build.SourcesDirectory)'
-  - task: ManifestGeneratorTask@0
-    displayName: 'SBOM Generation Task'
-    inputs:
-      BuildDropPath: '$(Build.SourcesDirectory)'
-      BuildComponentPath: '$(Build.SourcesDirectory)'
-      Verbosity: 'Verbose'
+  
+  - script: |
+    curl -Lo $(Agent.TempDirectory)/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
+    chmod +x $(Agent.TempDirectory)/sbom-tool
+    $(Agent.TempDirectory)/sbom-tool generate -b $(Build.SourcesDirectory) -bc $(Build.SourcesDirectory) -pn Microsoft.Azure.Functions.PythonWorker -pv 1.1.0 -ps Microsoft -V Verbose
+  displayName: Generate SBOM
+
   - task: NuGetCommand@2
     inputs:
       command: pack

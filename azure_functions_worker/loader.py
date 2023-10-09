@@ -19,6 +19,7 @@ from . import protos, functions
 from .bindings.retrycontext import RetryPolicy
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
     PYTHON_LANGUAGE_RUNTIME, RETRY_POLICY, CUSTOMER_PACKAGES_PATH
+from .logging import logger
 from .utils.wrappers import attach_message_to_exception
 
 _AZURE_NAMESPACE = '__app__'
@@ -85,7 +86,8 @@ def build_retry_protos(indexed_function) -> Dict:
 def get_retry_settings(indexed_function):
     try:
         return indexed_function.get_settings_dict(RETRY_POLICY)
-    except ModuleNotFoundError:
+    except AttributeError as e:
+        logger.warning("AttributeError while loading retry policy. %s", e)
         return None
 
 

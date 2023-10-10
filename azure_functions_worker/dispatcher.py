@@ -26,6 +26,7 @@ from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
                         PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME,
+                        SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, CUSTOMER_PACKAGES_PATH)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
@@ -324,7 +325,9 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__functions_metadata_request(self, request):
         metadata_request = request.functions_metadata_request
         directory = metadata_request.function_app_directory
-        function_path = os.path.join(directory, SCRIPT_FILE_NAME)
+        script_file_name = get_app_setting(setting=SCRIPT_FILE_NAME,
+                                           default_value=SCRIPT_FILE_NAME_DEFAULT)
+        function_path = os.path.join(directory, script_file_name)
 
         logger.info(
             'Received WorkerMetadataRequest, request ID %s, directory: %s',
@@ -333,7 +336,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         if not os.path.exists(function_path):
             # Fallback to legacy model
             logger.info("%s does not exist. "
-                        "Switching to host indexing.", SCRIPT_FILE_NAME)
+                        "Switching to host indexing.", script_file_name)
             return protos.StreamingMessage(
                 request_id=request.request_id,
                 function_metadata_response=protos.FunctionMetadataResponse(
@@ -364,8 +367,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_id = func_request.function_id
         function_metadata = func_request.metadata
         function_name = function_metadata.name
+
+        script_file_name = get_app_setting(setting=SCRIPT_FILE_NAME,
+                                           default_value=SCRIPT_FILE_NAME_DEFAULT)
+
         function_path = os.path.join(function_metadata.directory,
-                                     SCRIPT_FILE_NAME)
+                                     script_file_name)
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'

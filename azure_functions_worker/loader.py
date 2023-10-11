@@ -20,8 +20,7 @@ from .bindings.retrycontext import RetryPolicy
 from .utils.common import get_app_setting
 from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
     SCRIPT_FILE_NAME_DEFAULT, PYTHON_LANGUAGE_RUNTIME, \
-    CUSTOMER_PACKAGES_PATH, PYTHON_LANGUAGE_RUNTIME, RETRY_POLICY, \
-    CUSTOMER_PACKAGES_PATH
+    CUSTOMER_PACKAGES_PATH, RETRY_POLICY
 from .logging import logger
 from .utils.wrappers import attach_message_to_exception
 

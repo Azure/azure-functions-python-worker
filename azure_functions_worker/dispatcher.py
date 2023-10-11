@@ -325,8 +325,9 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__functions_metadata_request(self, request):
         metadata_request = request.functions_metadata_request
         directory = metadata_request.function_app_directory
-        script_file_name = get_app_setting(setting=SCRIPT_FILE_NAME,
-                                           default_value=SCRIPT_FILE_NAME_DEFAULT)
+        script_file_name = get_app_setting(
+            setting=SCRIPT_FILE_NAME,
+            default_value=SCRIPT_FILE_NAME_DEFAULT)
         function_path = os.path.join(directory, script_file_name)
 
         logger.info(
@@ -368,8 +369,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_metadata = func_request.metadata
         function_name = function_metadata.name
 
-        script_file_name = get_app_setting(setting=SCRIPT_FILE_NAME,
-                                           default_value=SCRIPT_FILE_NAME_DEFAULT)
+        script_file_name = get_app_setting(
+            setting=SCRIPT_FILE_NAME,
+            default_value=SCRIPT_FILE_NAME_DEFAULT)
 
         function_path = os.path.join(function_metadata.directory,
                                      script_file_name)

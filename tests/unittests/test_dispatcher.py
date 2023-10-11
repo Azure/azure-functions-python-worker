@@ -12,7 +12,8 @@ from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
     PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT, \
-    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37, PYTHON_THREADPOOL_THREAD_COUNT_MIN,  \
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37, \
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN,  \
     SCRIPT_FILE_NAME, SCRIPT_FILE_NAME_DEFAULT
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
@@ -641,8 +642,9 @@ class TestConfigurableFileName(testutils.AsyncTestCase):
 
     async def test_dispatcher_default_file_name(self):
         """
-        Test if the default file name is set correctly
+        Test the default file name
         """
+        os.environ.update({SCRIPT_FILE_NAME: self._default_file_name})
         self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))
         self.assertEqual(os.environ.get(SCRIPT_FILE_NAME),
                          self._default_file_name)
@@ -650,7 +652,7 @@ class TestConfigurableFileName(testutils.AsyncTestCase):
     # test changing value
     async def test_dispatcher_new_file_name(self):
         """
-        Test if the updated file name is set correctly
+        Test the updated file name
         """
         os.environ.update({SCRIPT_FILE_NAME: self._new_file_name})
         self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))

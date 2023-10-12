@@ -8,6 +8,7 @@ import sys
 import typing
 from unittest import skipIf
 
+from azure_functions_worker.constants import SCRIPT_FILE_NAME
 from tests.utils import testutils
 
 
@@ -455,3 +456,18 @@ class TestHttpFunctionsStein(TestHttpFunctions):
     def test_no_return_returns(self):
         r = self.webhost.request('GET', 'no_return_returns')
         self.assertEqual(r.status_code, 200)
+
+class TestHttpFunctionsFileName(TestHttpFunctions):
+
+    os.environ.update({SCRIPT_FILE_NAME: 'test.py'})
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.UNIT_TESTS_FOLDER / 'http_functions' / \
+                                             'http_functions_stein' / \
+                                             'file_name'
+
+    def test_correct_file_name(self):
+        self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))
+        self.assertEqual(os.environ.get(SCRIPT_FILE_NAME),
+                         'test.py')

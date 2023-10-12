@@ -459,7 +459,7 @@ class TestHttpFunctionsStein(TestHttpFunctions):
 
 
 class TestHttpFunctionsFileName(TestHttpFunctions):
-    
+
     @classmethod
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'http_functions' / \

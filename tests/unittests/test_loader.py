@@ -256,9 +256,13 @@ class TestConfigurableFileName(testutils.WebHostTestCase):
         self.func = Function(self.test_function, script_file="test.py")
         self.function_registry = functions.Registry()
 
+    def get_script_dir(cls):
+        return testutils.UNIT_TESTS_FOLDER / 'http_functions' / \
+                                             'http_functions_stein' / \
+                                             'file_name'
+
     def test_correct_file_name(self):
         os.environ.update({SCRIPT_FILE_NAME: self.file_name})
         self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))
         self.assertEqual(os.environ.get(SCRIPT_FILE_NAME),
                          'test.py')
-

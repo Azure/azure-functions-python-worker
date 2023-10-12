@@ -244,6 +244,7 @@ asyncio.get_event_loop().run_until_complete(_runner())
                 'uninstall', '-y', '--quiet', 'foo-binding'
             ], check=True)
 
+
 class TestConfigurableFileName(testutils.WebHostTestCase):
 
     def setUp(self) -> None:
@@ -260,4 +261,4 @@ class TestConfigurableFileName(testutils.WebHostTestCase):
         self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))
         self.assertEqual(os.environ.get(SCRIPT_FILE_NAME),
                          'test.py')
-    
+

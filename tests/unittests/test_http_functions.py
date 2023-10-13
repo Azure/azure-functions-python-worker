@@ -455,4 +455,3 @@ class TestHttpFunctionsStein(TestHttpFunctions):
     def test_no_return_returns(self):
         r = self.webhost.request('GET', 'no_return_returns')
         self.assertEqual(r.status_code, 200)
-

@@ -135,8 +135,8 @@ class TestHttpFunctionsFileName(TestHttpFunctions):
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-                                             'http_functions_stein' / \
-                                             'file_name'
+                                            'http_functions_stein' / \
+                                            'file_name'
 
     def test_correct_file_name(self):
         self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))

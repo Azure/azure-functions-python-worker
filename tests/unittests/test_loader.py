@@ -13,7 +13,8 @@ from azure.functions.decorators.retry_policy import RetryPolicy
 from azure.functions.decorators.timer import TimerTrigger
 
 from azure_functions_worker import functions
-from azure_functions_worker.constants import SCRIPT_FILE_NAME
+from azure_functions_worker.constants import SCRIPT_FILE_NAME, \
+    SCRIPT_FILE_NAME_DEFAULT
 from azure_functions_worker.loader import build_retry_protos
 from tests.utils import testutils
 
@@ -251,18 +252,18 @@ class TestConfigurableFileName(testutils.WebHostTestCase):
         def test_function():
             return "Test"
 
-        self.file_name = 'test.py'
+        self.file_name = SCRIPT_FILE_NAME_DEFAULT
         self.test_function = test_function
-        self.func = Function(self.test_function, script_file="test.py")
+        self.func = Function(self.test_function, script_file="function_app.py")
         self.function_registry = functions.Registry()
 
+    @classmethod
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'http_functions' / \
-                                             'http_functions_stein' / \
-                                             'file_name'
+                                             'http_functions_stein'
 
     def test_correct_file_name(self):
         os.environ.update({SCRIPT_FILE_NAME: self.file_name})
         self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))
         self.assertEqual(os.environ.get(SCRIPT_FILE_NAME),
-                         'test.py')
+                         'function_app.py')

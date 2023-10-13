@@ -121,7 +121,7 @@ class TestBlobFunctions(testutils.WebHostTestCase):
     def test_blob_trigger_with_large_content(self):
         data = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 
-        r = self.webhost.request('POST', 'put_blob_trigger',
+        r = self.webhost.request('POST', 'put_blob_trigger_large_data',
                                  data=data.encode('utf-8'))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
@@ -132,7 +132,7 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         for try_no in range(max_retries):
             try:
                 # Check that the trigger has fired
-                r = self.webhost.request('GET', 'get_blob_triggered')
+                r = self.webhost.request('GET', 'get_blob_triggered_large_data')
 
                 # Waiting for blob to get updated
                 time.sleep(2)
@@ -141,11 +141,11 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                 response = r.json()
 
                 self.assertEqual(response['name'],
-                                 'python-worker-tests/test-blob-trigger.txt')
+                                 'python-worker-tests/test-blob-trigger-large-data.txt')
                 self.assertEqual(response['content'], data)
                 break
             # JSONDecodeError will be thrown if the response is empty.
-            except AssertionError or JSONDecodeError:
+            except (AssertionError, JSONDecodeError):
                 if try_no == max_retries - 1:
                     raise
 

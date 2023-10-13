@@ -140,8 +140,8 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                 self.assertEqual(r.status_code, 200)
                 response = r.json()
 
-                self.assertEqual(response['name'],
-                                 'python-worker-tests/test-blob-trigger-large-data.txt')
+                self.assertEqual(response['name'], 
+                    'python-worker-tests/test-blob-trigger-large-data.txt')
                 self.assertEqual(response['content'], data)
                 break
             # JSONDecodeError will be thrown if the response is empty.

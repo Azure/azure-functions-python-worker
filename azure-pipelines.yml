@@ -136,6 +136,9 @@ jobs:
       Python311V4:
         pythonVersion: '3.11'
         workerPath: $(PROD_V4_WORKER_PY)
+      Python312V4:
+        pythonVersion: '3.12'
+        workerPath: $(PROD_V4_WORKER_PY)
   steps:
   - template: pack/templates/macos_64_env_gen.yml
     parameters:

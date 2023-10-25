@@ -13,12 +13,14 @@ import platform
 import queue
 import sys
 import threading
+from aiohttp import web
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
+import time
 
 import grpc
-
+import socket
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
@@ -59,13 +61,109 @@ class DispatcherMeta(type):
         return disp
 
 
+class HttpCoordinator:
+    def __init__(self):
+        if not self._initialized:
+            self._http_requests = {}
+            self._http_responses = {}
+            self._http_request_modified_event = threading.Event()
+            self._http_response_modified_event = threading.Event()
+            self._initialized = True
+
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(HttpCoordinator, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def add_http_invoc_request(self, invoc_id, http_request):
+        self._http_requests[invoc_id] = http_request
+        self._http_request_modified_event.set()
+
+    def wait_and_get_http_invoc_request(self, invoc_id):
+        while True:
+            self._http_request_modified_event.wait()
+            if invoc_id in self._http_requests:
+                self._http_request_modified_event.clear()
+                request = self._http_requests[invoc_id]
+                del self._http_requests[invoc_id]
+                return request
+
+    def add_http_invoc_response(self, invoc_id, http_response):
+        self._http_responses[invoc_id] = http_response
+        self._http_response_modified_event.set()
+
+    def wait_and_get_http_invoc_response(self, invoc_id):
+        while True:
+            self._http_response_modified_event.wait()
+            if invoc_id in self._http_responses:
+                self._http_response_modified_event.clear()
+                response = self._http_responses[invoc_id]
+                del self._http_responses[invoc_id]
+                return response
+
+
+http_coordinator = None
+
+def get_unused_tcp_port():
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.bind(("", 0))
+    port = tcp_socket.getsockname()[1]
+    tcp_socket.close()
+    return port
+
+
+async def handle_request_get(request):
+    http_coordinator = HttpCoordinator()
+
+    req_headers = {}
+    for key, value in request.headers.items():
+        req_headers[key] = value
+
+    invoc_id = req_headers["x-ms-invocation-id"]
+
+    http_coordinator.add_http_invoc_request(invoc_id, request)
+    response = http_coordinator.wait_and_get_http_invoc_response(
+        invoc_id
+    )
+
+    res_headers = {}
+    for key, value in response.headers.items():
+        res_headers[key] = value
+
+    return web.Response(
+        body=response.get_body(),
+        status=response.status_code,
+        headers=res_headers
+    )
+
+def create_server(port):
+    host_name = "localhost"
+    app = web.Application()
+    app.add_routes([web.get("/{path:.*}", handle_request_get)])
+    try:
+        web.run_app(app, host=host_name, port=port)
+        # web_server = HTTPServer((host_name, port), MyServer)
+        # web_server.serve_forever()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
 class Dispatcher(metaclass=DispatcherMeta):
     _GRPC_STOP_RESPONSE = object()
 
-    def __init__(self, loop: BaseEventLoop, host: str, port: int,
-                 worker_id: str, request_id: str,
-                 grpc_connect_timeout: float,
-                 grpc_max_msg_len: int = -1) -> None:
+    def __init__(
+            self,
+            loop: BaseEventLoop,
+            host: str,
+            port: int,
+            worker_id: str,
+            request_id: str,
+            grpc_connect_timeout: float,
+            grpc_max_msg_len: int = -1,
+    ) -> None:
         self._loop = loop
         self._host = host
         self._port = port
@@ -92,7 +190,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_resp_queue: queue.Queue = queue.Queue()
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread: threading.Thread = threading.Thread(
-            name='grpc-thread', target=self.__poll_grpc)
+            name="grpc-thread", target=self.__poll_grpc
+        )
+        self._http_coordinator = HttpCoordinator()
 
     @staticmethod
     def get_worker_metadata():
@@ -277,6 +377,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             val = host_capabilities[constants.FUNCTION_DATA_CACHE]
             self._function_data_cache_enabled = val == _TRUE
 
+        unused_port = get_unused_tcp_port()
+        thread = threading.Thread(target=create_server, args=(unused_port,))
+        thread.start()
+
         capabilities = {
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
             constants.TYPED_DATA_COLLECTION: _TRUE,
@@ -284,6 +388,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.WORKER_STATUS: _TRUE,
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
+            constants.HTTP_URI: f"http://localhost:{unused_port}",
         }
 
         # Can detech worker packages only when customer's code is present
@@ -471,7 +576,19 @@ class Dispatcher(metaclass=DispatcherMeta):
                     pb_type_info.binding_name, pb,
                     trigger_metadata=trigger_metadata,
                     pytype=pb_type_info.pytype,
-                    shmem_mgr=self._shmem_mgr)
+                    shmem_mgr=self._shmem_mgr,
+                )
+
+            is_http_trigger = False
+            for input_type in fi.input_types:
+                if fi.input_types[input_type].binding_name == "httpTrigger":
+                    is_http_trigger = True
+
+            if is_http_trigger:
+                http_request = self._http_coordinator.wait_and_get_http_invoc_request(
+                    invocation_id
+                )
+                args["req"] = http_request
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
 
@@ -479,7 +596,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             # for a customer's threads
             fi_context.thread_local_storage.invocation_id = invocation_id
             if fi.requires_context:
-                args['context'] = fi_context
+                args["context"] = fi_context
 
             if fi.output_types:
                 for name in fi.output_types:
@@ -495,8 +612,13 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self._run_sync_func,
                     invocation_id, fi_context, fi.func, args)
             if call_result is not None and not fi.has_return:
-                raise RuntimeError(f'function {fi.name!r} without a $return '
-                                   'binding returned a non-None value')
+                raise RuntimeError(
+                    f"function {fi.name!r} without a $return "
+                    "binding returned a non-None value"
+                )
+
+            if is_http_trigger:
+                self._http_coordinator.add_http_invoc_response(invocation_id, call_result)
 
             output_data = []
             cache_enabled = self._function_data_cache_enabled
@@ -516,10 +638,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data.append(param_binding)
 
             return_value = None
-            if fi.return_type is not None:
-                return_value = bindings.to_outgoing_proto(
-                    fi.return_type.binding_name, call_result,
-                    pytype=fi.return_type.pytype)
+            # if fi.return_type is not None:
+            #     return_value = bindings.to_outgoing_proto(
+            #         fi.return_type.binding_name,
+            #         call_result,
+            #         pytype=fi.return_type.pytype,
+            #     )
 
             # Actively flush customer print() function to console
             sys.stdout.flush()

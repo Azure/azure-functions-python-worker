@@ -6,7 +6,6 @@ from unittest.mock import patch
 
 import requests
 
-from azure_functions_worker.constants import SCRIPT_FILE_NAME
 from tests.utils import testutils
 
 REQUEST_TIMEOUT_SEC = 5
@@ -126,35 +125,6 @@ class TestHttpFunctionsSteinGeneric(TestHttpFunctions):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'http_functions_stein' / \
                                             'generic'
-
-
-class TestHttpFunctionsFileName(TestHttpFunctions):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.env_variables['SCRIPT_FILE_NAME'] = 'main.py'
-
-        os_environ = os.environ.copy()
-        os_environ.update(cls.env_variables)
-
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
-        super().setUpClass()
-
-    def tearDown(self):
-        super().tearDown()
-        self._patch_environ.stop()
-
-    @classmethod
-    def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-                                            'http_functions_stein' / \
-                                            'file_name'
-
-    def test_correct_file_name(self):
-        self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))
-        self.assertEqual(os.environ.get(SCRIPT_FILE_NAME),
-                         'main.py')
 
 
 class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):

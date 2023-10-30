@@ -118,6 +118,7 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
         self.assertTrue(r.ok)
 
     def test_correct_file_name(self):
+        os.environ.update({SCRIPT_FILE_NAME: "main.py"})
         self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))
         self.assertEqual(os.environ.get(SCRIPT_FILE_NAME),
                          'main.py')

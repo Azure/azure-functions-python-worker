@@ -130,7 +130,20 @@ class TestHttpFunctionsSteinGeneric(TestHttpFunctions):
 
 class TestHttpFunctionsFileName(TestHttpFunctions):
 
-    os.environ.update({SCRIPT_FILE_NAME: 'test.py'})
+    @classmethod
+    def setUpClass(cls):
+        cls.env_variables['SCRIPT_FILE_NAME'] = 'main.py'
+
+        os_environ = os.environ.copy()
+        os_environ.update(cls.env_variables)
+
+        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ.start()
+        super().setUpClass()
+
+    def tearDown(self):
+        super().tearDown()
+        self._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -141,7 +154,7 @@ class TestHttpFunctionsFileName(TestHttpFunctions):
     def test_correct_file_name(self):
         self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))
         self.assertEqual(os.environ.get(SCRIPT_FILE_NAME),
-                         'test.py')
+                         'main.py')
 
 
 class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):

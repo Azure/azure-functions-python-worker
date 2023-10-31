@@ -606,8 +606,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         self.mock_version_info.stop()
 
     async def test_dispatcher_load_azfunc_in_init(self):
-        """Test if the dispatcher's log can be flushed out during worker
-        initialization
+        """Test if azure functions is loaded during init
         """
         async with self._ctrl as host:
             r = await host.init_worker('4.15.1')
@@ -620,8 +619,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         self.assertIn("azure.functions", sys.modules)
 
     async def test_dispatcher_load_modules(self):
-        """Test if the dispatcher's log can be flushed out during worker
-        initialization
+        """Test modules are loaded in placeholder mode
         """
         os.environ["CONTAINER_NAME"] = "test"
         async with self._ctrl as host:

@@ -286,10 +286,16 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
-        # Can detech worker packages only when customer's code is present
-        # This only works in dedicated and premium sku.
-        # The consumption sku will switch on environment_reload request.
-        if not DependencyManager.is_in_linux_consumption():
+        # Can detect worker packages only when customer's code is present
+        # This only works in dedicated and premium sku or if not in placeholder
+        # mode in case of linux consumption,=.
+        # The consumption sku will switch on environment_reload request while
+        # getting specialized from placeholder mode.
+        if not (DependencyManager.is_in_linux_consumption()
+                and is_envvar_true("WEBSITE_PLACEHOLDER_MODE")):
+            if not is_envvar_true("WEBSITE_PLACEHOLDER_MODE"):
+                logger.info(f"Not a placeholder. Loading customers"
+                            " dependencies")
             DependencyManager.prioritize_customer_dependencies()
 
         if DependencyManager.is_in_linux_consumption():

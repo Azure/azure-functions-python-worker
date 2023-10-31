@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import os
 import sys
+from time import sleep
 from unittest import TestCase, skipIf
 
 from requests import Request
@@ -247,6 +248,33 @@ class TestLinuxConsumption(TestCase):
             req = Request('GET', f'{ctrl.url}/api/opencensus')
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
+
+    @skipIf(sys.version_info.minor != 9,
+            "This is testing only for python39 where extensions"
+            "enabled by default")
+    def test_reload_variables_after_timeout_error(self):
+        """
+        A function app with HTTPtrigger which has a function timeout of
+        20s. The app as a sleep of 30s which should trigger a timeout
+        """
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
+                    "TimeoutError"),
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
+                "AzureWebJobsFeatureFlags": "EnableWorkerIndexing"
+            })
+            req = Request('GET', f'{ctrl.url}/api/hello')
+            resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 500)
+
+            sleep(2)
+            logs = ctrl.get_container_logs()
+            self.assertIn('WEBSITE_PLACEHOLDER_MODE: 0', logs)
+            self.assertNotIn("Failure Exception: ModuleNotFoundError",
+                             logs)
 
     def _get_blob_url(self, scenario_name: str) -> str:
         return (

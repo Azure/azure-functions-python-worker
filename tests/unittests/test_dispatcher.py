@@ -589,7 +589,7 @@ class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
 
 
-class TestDispatcherLoadFunctionInInitRequest(testutils.AsyncTestCase):
+class TestDispatcherInitRequest(testutils.AsyncTestCase):
 
     def setUp(self):
         self._ctrl = testutils.start_mockhost(
@@ -618,3 +618,27 @@ class TestDispatcherLoadFunctionInInitRequest(testutils.AsyncTestCase):
                 1
             )
         self.assertIn("azure.functions", sys.modules)
+
+    async def test_dispatcher_load_modules(self):
+        """Test if the dispatcher's log can be flushed out during worker
+        initialization
+        """
+        os.environ["CONTAINER_NAME"] = "test"
+        async with self._ctrl as host:
+            r = await host.init_worker('4.15.1')
+            self.assertEqual(
+                len([log for log in r.logs if log.message.startswith(
+                    'Not a placeholder. Loading customer dependencies'
+                )]),
+                1
+            )
+
+        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "1"
+        async with self._ctrl as host:
+            r = await host.init_worker('4.15.1')
+            self.assertEqual(
+                len([log for log in r.logs if log.message.startswith(
+                    'Not a placeholder. Loading customer dependencies'
+                )]),
+                0
+            )

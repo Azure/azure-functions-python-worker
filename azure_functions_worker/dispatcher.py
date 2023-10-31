@@ -293,7 +293,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # getting specialized from placeholder mode.
         if not (DependencyManager.is_in_linux_consumption()
                 and is_envvar_true("WEBSITE_PLACEHOLDER_MODE")):
-            if not is_envvar_true("WEBSITE_PLACEHOLDER_MODE"):
+            if DependencyManager.is_in_linux_consumption():
                 logger.info("Not a placeholder. Loading customer dependencies")
             DependencyManager.prioritize_customer_dependencies()
 

@@ -294,7 +294,7 @@ class TestLinuxConsumption(TestCase):
             })
             req = Request('GET', f'{ctrl.url}/api/httptrigger')
             resp = ctrl.send_request(req)
-            self.assertEqual(resp.status_code, 502)
+            self.assertEqual(resp.status_code, 500)
 
             sleep(2)
             logs = ctrl.get_container_logs()

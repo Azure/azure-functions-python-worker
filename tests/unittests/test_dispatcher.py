@@ -626,14 +626,15 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         # Dedicated Apps where placeholder mode is not set
         async with self._ctrl as host:
             r = await host.init_worker('4.15.1')
-            self.assertEqual(
-                len([log for log in r.logs if log.message.startswith(
-                    'Applying prioritize_customer_dependencies:'
-                )]),
-                1
+            l = [log.message for log in r.logs]
+            self.assertIn(
+                "Applying prioritize_customer_dependencies: "
+                "worker_dependencies_path: , customer_dependencies_path: , "
+                "working_directory: , Linux Consumption: False,"
+                " Placeholder: False", l
             )
 
-    async def test_dispatcher_load_modules_con_app_placeholder_enabled(self):
+    async def test_dispatcher_load_modules_con_placeholder_enabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
         enabled.
         """
@@ -643,11 +644,12 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         os.environ["WEBSITE_PLACEHOLDER_MODE"] = "1"
         async with self._ctrl as host:
             r = await host.init_worker('4.15.1')
-            self.assertEqual(
-                len([log for log in r.logs if log.message.startswith(
-                    'Applying prioritize_customer_dependencies:'
-                )]),
-                0
+            l = [log.message for log in r.logs]
+            self.assertNotIn(
+                "Applying prioritize_customer_dependencies: "
+                "worker_dependencies_path: , customer_dependencies_path: , "
+                "working_directory: , Linux Consumption: True,"
+                " Placeholder: True", l
             )
 
     async def test_dispatcher_load_modules_con_app_placeholder_disabled(self):
@@ -661,9 +663,10 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         os.environ["CONTAINER_NAME"] = "test"
         async with self._ctrl as host:
             r = await host.init_worker('4.15.1')
-            self.assertEqual(
-                len([log for log in r.logs if log.message.startswith(
-                    'Applying prioritize_customer_dependencies:'
-                )]),
-                1
-            )
+            l = [log.message for log in r.logs]
+            self.assertIn(
+                "Applying prioritize_customer_dependencies: "
+                "worker_dependencies_path: , customer_dependencies_path: , "
+                "working_directory: , Linux Consumption: True,"
+                " Placeholder: False", l
+                )

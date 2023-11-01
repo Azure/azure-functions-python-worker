@@ -272,7 +272,15 @@ class TestLinuxConsumption(TestCase):
 
             sleep(2)
             logs = ctrl.get_container_logs()
-            self.assertIn('WEBSITE_PLACEHOLDER_MODE: 0', logs)
+            self.assertRegex(
+                logs,
+                r"Applying prioritize_customer_dependencies: "
+                r"worker_dependencies_path: \/azure-functions-host\/"
+                r"workers\/python\/.*?\/LINUX\/X64,"
+                r" customer_dependencies_path: \/home\/site\/wwwroot\/"
+                r"\.python_packages\/lib\/site-packages, working_directory:"
+                r" \/home\/site\/wwwroot, Linux Consumption: True,"
+                r" Placeholder: False")
             self.assertNotIn("Failure Exception: ModuleNotFoundError",
                              logs)
 
@@ -298,6 +306,16 @@ class TestLinuxConsumption(TestCase):
 
             sleep(2)
             logs = ctrl.get_container_logs()
+            self.assertRegex(
+                logs,
+                r"Applying prioritize_customer_dependencies: "
+                r"worker_dependencies_path: \/azure-functions-host\/"
+                r"workers\/python\/.*?\/LINUX\/X64,"
+                r" customer_dependencies_path: \/home\/site\/wwwroot\/"
+                r"\.python_packages\/lib\/site-packages, working_directory:"
+                r" \/home\/site\/wwwroot, Linux Consumption: True,"
+                r" Placeholder: False")
+
             self.assertNotIn("Failure Exception: ModuleNotFoundError",
                              logs)
 

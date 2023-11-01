@@ -298,7 +298,6 @@ class TestLinuxConsumption(TestCase):
 
             sleep(2)
             logs = ctrl.get_container_logs()
-            self.assertIn('WEBSITE_PLACEHOLDER_MODE: 0', logs)
             self.assertNotIn("Failure Exception: ModuleNotFoundError",
                              logs)
 

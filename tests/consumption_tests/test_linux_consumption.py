@@ -4,7 +4,6 @@ import os
 import sys
 from time import sleep
 from unittest import TestCase, skipIf
-from unittest.mock import patch
 
 from requests import Request
 

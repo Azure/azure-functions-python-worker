@@ -286,15 +286,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
-        # Can detect worker packages only when customer's code is present
-        # This only works in dedicated and premium sku or if not in placeholder
-        # mode in case of linux consumption,=.
-        # The consumption sku will switch on environment_reload request while
-        # getting specialized from placeholder mode.
-        if not (DependencyManager.is_in_linux_consumption()
-                and is_envvar_true("WEBSITE_PLACEHOLDER_MODE")):
-            if DependencyManager.is_in_linux_consumption():
-                logger.info("Not a placeholder. Loading customer dependencies")
+        if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
 
         if DependencyManager.is_in_linux_consumption():
@@ -549,6 +541,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def _handle__function_environment_reload_request(self, request):
         """Only runs on Linux Consumption placeholder specialization.
+        This is called only when placeholder mode is true. On worker restarts
+        worker init request will be called directly.
         """
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '

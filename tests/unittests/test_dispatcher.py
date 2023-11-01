@@ -618,25 +618,52 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
             )
         self.assertIn("azure.functions", sys.modules)
 
-    async def test_dispatcher_load_modules(self):
-        """Test modules are loaded in placeholder mode
+    async def test_dispatcher_load_modules_dedicated_app(self):
+        """Test modules are loaded in dedicated apps
         """
-        os.environ["CONTAINER_NAME"] = "test"
+        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
+
+        # Dedicated Apps where placeholder mode is not set
         async with self._ctrl as host:
             r = await host.init_worker('4.15.1')
             self.assertEqual(
                 len([log for log in r.logs if log.message.startswith(
-                    'Not a placeholder. Loading customer dependencies'
+                    'Applying prioritize_customer_dependencies:'
                 )]),
                 1
             )
 
+    async def test_dispatcher_load_modules_con_app_placeholder_enabled(self):
+        """Test modules are loaded in consumption apps with placeholder mode
+        enabled.
+        """
+        # Consumption apps with placeholder mode enabled
+        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
+        os.environ["CONTAINER_NAME"] = "test"
         os.environ["WEBSITE_PLACEHOLDER_MODE"] = "1"
         async with self._ctrl as host:
             r = await host.init_worker('4.15.1')
             self.assertEqual(
                 len([log for log in r.logs if log.message.startswith(
-                    'Not a placeholder. Loading customer dependencies'
+                    'Applying prioritize_customer_dependencies:'
                 )]),
                 0
+            )
+
+    async def test_dispatcher_load_modules_con_app_placeholder_disabled(self):
+        """Test modules are loaded in consumption apps with placeholder mode
+        disabled.
+        """
+        # Consumption apps with placeholder mode disabled  i.e. worker
+        # is specialized
+        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
+        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "0"
+        os.environ["CONTAINER_NAME"] = "test"
+        async with self._ctrl as host:
+            r = await host.init_worker('4.15.1')
+            self.assertEqual(
+                len([log for log in r.logs if log.message.startswith(
+                    'Applying prioritize_customer_dependencies:'
+                )]),
+                1
             )

@@ -286,10 +286,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
-        # Can detech worker packages only when customer's code is present
-        # This only works in dedicated and premium sku.
-        # The consumption sku will switch on environment_reload request.
-        if not DependencyManager.is_in_linux_consumption():
+        if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
 
         if DependencyManager.is_in_linux_consumption():
@@ -544,6 +541,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def _handle__function_environment_reload_request(self, request):
         """Only runs on Linux Consumption placeholder specialization.
+        This is called only when placeholder mode is true. On worker restarts
+        worker init request will be called directly.
         """
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '

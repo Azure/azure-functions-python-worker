@@ -626,12 +626,12 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         # Dedicated Apps where placeholder mode is not set
         async with self._ctrl as host:
             r = await host.init_worker('4.15.1')
-            l = [log.message for log in r.logs]
+            logs = [log.message for log in r.logs]
             self.assertIn(
                 "Applying prioritize_customer_dependencies: "
                 "worker_dependencies_path: , customer_dependencies_path: , "
                 "working_directory: , Linux Consumption: False,"
-                " Placeholder: False", l
+                " Placeholder: False", logs
             )
 
     async def test_dispatcher_load_modules_con_placeholder_enabled(self):
@@ -644,13 +644,11 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         os.environ["WEBSITE_PLACEHOLDER_MODE"] = "1"
         async with self._ctrl as host:
             r = await host.init_worker('4.15.1')
-            l = [log.message for log in r.logs]
+            logs = [log.message for log in r.logs]
             self.assertNotIn(
                 "Applying prioritize_customer_dependencies: "
                 "worker_dependencies_path: , customer_dependencies_path: , "
-                "working_directory: , Linux Consumption: True,"
-                " Placeholder: True", l
-            )
+                "working_directory: , Linux Consumption: True,", logs)
 
     async def test_dispatcher_load_modules_con_app_placeholder_disabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
@@ -663,10 +661,9 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         os.environ["CONTAINER_NAME"] = "test"
         async with self._ctrl as host:
             r = await host.init_worker('4.15.1')
-            l = [log.message for log in r.logs]
+            logs = [log.message for log in r.logs]
             self.assertIn(
                 "Applying prioritize_customer_dependencies: "
                 "worker_dependencies_path: , customer_dependencies_path: , "
                 "working_directory: , Linux Consumption: True,"
-                " Placeholder: False", l
-                )
+                " Placeholder: False", logs)

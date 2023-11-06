@@ -13,12 +13,14 @@ import platform
 import queue
 import sys
 import threading
+from aiohttp import web
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
+import time
 
 import grpc
-
+import socket
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
@@ -59,6 +61,116 @@ class DispatcherMeta(type):
         return disp
 
 
+class HttpCoordinator:
+    def __init__(self):
+        if not self._initialized:
+            self._http_requests = {}
+            self._http_responses = {}
+            self._http_requests_invoc_event = {}
+            self._http_responses_invoc_event = {}
+            self._initialized = True
+            self._loop = None
+
+    # making this class singleton
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(HttpCoordinator, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def set_loop(self, loop):
+        self._loop = loop
+
+    def get_loop(self):
+        return self._loop
+
+    def get_request_event(self, invoc_id):
+        if invoc_id not in self._http_requests_invoc_event:
+            self._http_requests_invoc_event[invoc_id] = asyncio.Event()
+        return self._http_requests_invoc_event[invoc_id]
+
+    async def add_http_invoc_request(self, invoc_id, http_request):
+        logger.info("-----> http adding invoc req %s", invoc_id)
+        self._http_requests[invoc_id] = http_request
+        event = self.get_request_event(invoc_id)
+        event.set()
+
+    async def wait_and_get_http_invoc_request(self, invoc_id):
+        logger.info("-----> grpc wating for invoc req %s", invoc_id)
+        event = self.get_request_event(invoc_id)
+        await event.wait()
+        request = self._http_requests[invoc_id]
+        del self._http_requests[invoc_id]
+        del self._http_requests_invoc_event[invoc_id]
+        logger.info("-----> grpc got invoc req %s", invoc_id)
+        return request
+
+    def get_response_event(self, invoc_id):
+        if invoc_id not in self._http_responses_invoc_event:
+            self._http_responses_invoc_event[invoc_id] = asyncio.Event()
+        return self._http_responses_invoc_event[invoc_id]
+
+    async def add_http_invoc_response(self, invoc_id, http_response):
+        logger.info("-----> grpc adding invoc res %s", invoc_id)
+        self._http_responses[invoc_id] = http_response
+        event = self.get_response_event(invoc_id)
+        event.set()
+
+    async def wait_and_get_http_invoc_response(self, invoc_id):
+        logger.info("-----> http waiting for invoc res %s", invoc_id)
+        event = self.get_response_event(invoc_id)
+        await event.wait()
+        response = self._http_responses[invoc_id]
+        del self._http_responses[invoc_id]
+        del self._http_responses_invoc_event[invoc_id]
+        logger.info("-----> got invoc res %s", invoc_id)
+        return response
+
+
+http_coordinator = None
+
+
+def get_unused_tcp_port():
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.bind(("", 0))
+    port = tcp_socket.getsockname()[1]
+    tcp_socket.close()
+    return port
+
+
+async def handle_request_get(request):
+    http_coordinator = HttpCoordinator()
+    loop = http_coordinator.get_loop()
+
+    req_headers = {}
+    for key, value in request.headers.items():
+        req_headers[key] = value
+
+    invoc_id = req_headers["x-ms-invocation-id"]
+
+    asyncio.run_coroutine_threadsafe(
+        http_coordinator.add_http_invoc_request(invoc_id, request), loop
+    ).result()
+
+    response = asyncio.run_coroutine_threadsafe(
+        http_coordinator.wait_and_get_http_invoc_response(invoc_id), loop
+    ).result()
+
+    return response
+
+
+def create_server(port):
+    host_name = "localhost"
+    app = web.Application()
+    app.add_routes([web.get("/{path:.*}", handle_request_get)])
+    try:
+        web.run_app(app, host=host_name, port=port)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
 class Dispatcher(metaclass=DispatcherMeta):
     _GRPC_STOP_RESPONSE = object()
 
@@ -92,7 +204,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_resp_queue: queue.Queue = queue.Queue()
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread: threading.Thread = threading.Thread(
-            name='grpc-thread', target=self.__poll_grpc)
+            name="grpc-thread", target=self.__poll_grpc
+        )
+
+        self._http_coordinator = HttpCoordinator()
+        self._http_coordinator.set_loop(loop)
 
     @staticmethod
     def get_worker_metadata():
@@ -277,6 +393,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             val = host_capabilities[constants.FUNCTION_DATA_CACHE]
             self._function_data_cache_enabled = val == _TRUE
 
+        unused_port = get_unused_tcp_port()
+        thread = threading.Thread(target=create_server, args=(unused_port,))
+        thread.start()
+
         capabilities = {
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
             constants.TYPED_DATA_COLLECTION: _TRUE,
@@ -284,6 +404,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.WORKER_STATUS: _TRUE,
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
+            constants.HTTP_URI: f"http://localhost:{unused_port}",
         }
 
         if DependencyManager.should_load_cx_dependencies():
@@ -468,7 +589,18 @@ class Dispatcher(metaclass=DispatcherMeta):
                     pb_type_info.binding_name, pb,
                     trigger_metadata=trigger_metadata,
                     pytype=pb_type_info.pytype,
-                    shmem_mgr=self._shmem_mgr)
+                    shmem_mgr=self._shmem_mgr,
+                )
+
+            is_http_trigger = False
+            for input_type in fi.input_types:
+                if fi.input_types[input_type].binding_name == "httpTrigger":
+                    is_http_trigger = True
+
+            if is_http_trigger:
+                http_request = await self._http_coordinator.wait_and_get_http_invoc_request(
+                    invocation_id)
+                args["req"] = http_request
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
 
@@ -492,8 +624,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self._run_sync_func,
                     invocation_id, fi_context, fi.func, args)
             if call_result is not None and not fi.has_return:
-                raise RuntimeError(f'function {fi.name!r} without a $return '
-                                   'binding returned a non-None value')
+                raise RuntimeError(
+                    f"function {fi.name!r} without a $return "
+                    "binding returned a non-None value"
+                )
+
+            if is_http_trigger:
+                await self._http_coordinator.add_http_invoc_response(
+                    invocation_id, call_result)
 
             output_data = []
             cache_enabled = self._function_data_cache_enabled
@@ -513,10 +651,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data.append(param_binding)
 
             return_value = None
-            if fi.return_type is not None:
-                return_value = bindings.to_outgoing_proto(
-                    fi.return_type.binding_name, call_result,
-                    pytype=fi.return_type.pytype)
+            # if fi.return_type is not None:
+            #     return_value = bindings.to_outgoing_proto(
+            #         fi.return_type.binding_name,
+            #         call_result,
+            #         pytype=fi.return_type.pytype,
+            #     )
 
             # Actively flush customer print() function to console
             sys.stdout.flush()
@@ -528,7 +668,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     return_value=return_value,
                     result=protos.StatusResult(
                         status=protos.StatusResult.Success),
-                    output_data=output_data))
+                    output_data=output_data,
+                ),
+            )
 
         except Exception as ex:
             return protos.StreamingMessage(
@@ -537,7 +679,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                     invocation_id=invocation_id,
                     result=protos.StatusResult(
                         status=protos.StatusResult.Failure,
-                        exception=self._serialize_exception(ex))))
+                        exception=self._serialize_exception(ex),
+                    ),
+                ),
+            )
 
     async def _handle__function_environment_reload_request(self, request):
         """Only runs on Linux Consumption placeholder specialization.

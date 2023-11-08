@@ -12,6 +12,7 @@ RPC_HTTP_TRIGGER_METADATA_REMOVED = "RpcHttpTriggerMetadataRemoved"
 WORKER_STATUS = "WorkerStatus"
 SHARED_MEMORY_DATA_TRANSFER = "SharedMemoryDataTransfer"
 FUNCTION_DATA_CACHE = "FunctionDataCache"
+HTTP_URI= "HttpUri"
 
 # Platform Environment Variables
 AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"

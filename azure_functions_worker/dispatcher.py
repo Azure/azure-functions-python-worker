@@ -295,8 +295,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             import azure.functions  # NoQA
 
         if CUSTOMER_PACKAGES_PATH not in sys.path:
-            logger.warning("Customer packages not in sys path. "
-                           "This should never happen! ")
+            logger.warning("Customer packages not in sys path.")
 
         # loading bindings registry and saving results to a static
         # dictionary which will be later used in the invocation request

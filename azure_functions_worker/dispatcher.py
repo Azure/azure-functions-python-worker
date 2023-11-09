@@ -7,6 +7,7 @@ Implements loading and execution of Python workers.
 
 import asyncio
 import concurrent.futures
+import importlib
 import logging
 import os
 import platform
@@ -19,10 +20,10 @@ from typing import List, Optional
 from datetime import datetime
 
 import grpc
-
+import socket
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
-from .constants import (PYTHON_ROLLBACK_CWD_PATH,
+from .constants import (HTTP_TRIGGER, PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
@@ -31,8 +32,10 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
+                        X_MS_INVOCATION_ID, LOCAL_HOST,
                         METADATA_PROPERTIES_WORKER_INDEXED)
 from .extension import ExtensionManager
+from .http_proxy import http_coordinator
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
@@ -58,6 +61,19 @@ class DispatcherMeta(type):
         return disp
 
 
+def get_unused_tcp_port():
+    # Create a TCP socket
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # Bind it to a free port provided by the OS
+    tcp_socket.bind(("", 0))
+    # Get the port number
+    port = tcp_socket.getsockname()[1]
+    # Close the socket
+    tcp_socket.close()
+    # Return the port number
+    return port
+
+
 class Dispatcher(metaclass=DispatcherMeta):
     _GRPC_STOP_RESPONSE = object()
 
@@ -74,6 +90,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._functions = functions.Registry()
         self._shmem_mgr = SharedMemoryManager()
         self._old_task_factory = None
+        self.function_metadata_result = None
 
         # Used to store metadata returns
         self._function_metadata_result = None
@@ -128,7 +145,7 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def dispatch_forever(self):  # sourcery skip: swap-if-expression
         if DispatcherMeta.__current_dispatcher__ is not None:
             raise RuntimeError('there can be only one running dispatcher per '
-                               'process')
+                                    'process')
 
         self._old_task_factory = self._loop.get_task_factory()
 
@@ -156,8 +173,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             logging_handler = AsyncLoggingHandler()
             root_logger = logging.getLogger()
 
+
             log_level = logging.INFO if not is_envvar_true(
                 PYTHON_ENABLE_DEBUG_LOGGING) else logging.DEBUG
+            
             root_logger.setLevel(log_level)
             root_logger.addHandler(logging_handler)
             logger.info('Switched to gRPC logging.')
@@ -263,59 +282,77 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_resp_queue.put_nowait(resp)
 
     async def _handle__worker_init_request(self, request):
-        logger.info('Received WorkerInitRequest, '
-                    'python version %s, '
-                    'worker version %s, '
-                    'request ID %s. '
-                    'App Settings state: %s. '
-                    'To enable debug level logging, please refer to '
-                    'https://aka.ms/python-enable-debug-logging',
-                    sys.version,
-                    VERSION,
-                    self.request_id,
-                    get_python_appsetting_state()
-                    )
+        try:
+            logger.info('Received WorkerInitRequest, '
+                                'python version %s, '
+                                'worker version %s, '
+                                'request ID %s. '
+                                'App Settings state: %s. '
+                                'To enable debug level logging, please refer to '
+                                'https://aka.ms/python-enable-debug-logging',
+                                sys.version,
+                                VERSION,
+                                self.request_id,
+                                get_python_appsetting_state()
+                                )
 
-        worker_init_request = request.worker_init_request
-        host_capabilities = worker_init_request.capabilities
-        if constants.FUNCTION_DATA_CACHE in host_capabilities:
-            val = host_capabilities[constants.FUNCTION_DATA_CACHE]
-            self._function_data_cache_enabled = val == _TRUE
+            worker_init_request = request.worker_init_request
+            directory = worker_init_request.function_app_directory
+            host_capabilities = worker_init_request.capabilities
+            if constants.FUNCTION_DATA_CACHE in host_capabilities:
+                val = host_capabilities[constants.FUNCTION_DATA_CACHE]
+                self._function_data_cache_enabled = val == _TRUE
 
-        capabilities = {
-            constants.RAW_HTTP_BODY_BYTES: _TRUE,
-            constants.TYPED_DATA_COLLECTION: _TRUE,
-            constants.RPC_HTTP_BODY_ONLY: _TRUE,
-            constants.WORKER_STATUS: _TRUE,
-            constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
-            constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
-        }
+            capabilities = {
+                constants.RAW_HTTP_BODY_BYTES: _TRUE,
+                constants.TYPED_DATA_COLLECTION: _TRUE,
+                constants.RPC_HTTP_BODY_ONLY: _TRUE,
+                constants.WORKER_STATUS: _TRUE,
+                constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
+                constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
+            }
 
-        if DependencyManager.should_load_cx_dependencies():
-            DependencyManager.prioritize_customer_dependencies()
+            if DependencyManager.should_load_cx_dependencies():
+                DependencyManager.prioritize_customer_dependencies()
 
-        if DependencyManager.is_in_linux_consumption():
-            import azure.functions  # NoQA
+            if DependencyManager.is_in_linux_consumption():
+                import azure.functions  # NoQA
 
-        # loading bindings registry and saving results to a static
-        # dictionary which will be later used in the invocation request
-        bindings.load_binding_registry()
+            # loading bindings registry and saving results to a static
+            # dictionary which will be later used in the invocation request
+            bindings.load_binding_registry()
 
-        if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
-            try:
-                self.load_function_metadata(
-                    worker_init_request.function_app_directory,
-                    caller_info="worker_init_request")
-            except Exception as ex:
-                self._function_metadata_exception = ex
+            if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
+                try:
+                    self.load_function_metadata(
+                        worker_init_request.function_app_directory,
+                        caller_info="worker_init_request")
+                except Exception as ex:
+                    self._function_metadata_exception = ex
 
-        return protos.StreamingMessage(
-            request_id=self.request_id,
-            worker_init_response=protos.WorkerInitResponse(
-                capabilities=capabilities,
-                worker_metadata=self.get_worker_metadata(),
-                result=protos.StatusResult(
-                    status=protos.StatusResult.Success)))
+                if self._has_http_func:
+                    from azure.functions.extension.base import HttpV2FeatureChecker 
+
+                    if HttpV2FeatureChecker.http_v2_enabled():
+                        capabilities[constants.HTTP_URI] = await self._initialize_http_server()
+
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                worker_init_response=protos.WorkerInitResponse(
+                    capabilities=capabilities,
+                    worker_metadata=self.get_worker_metadata(),
+                    result=protos.StatusResult(status=protos.StatusResult.Success),
+                ),
+            )
+        except Exception as e:
+            logger.error("Error handling WorkerInitRequest: %s", str(e))
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                worker_init_response=protos.WorkerInitResponse(
+                    result=protos.StatusResult(status=protos.StatusResult.Failure,
+                                               exception=self._serialize_exception(e))
+                ),
+            )
 
     async def _handle__worker_status_request(self, request):
         # Logging is not necessary in this request since the response is used
@@ -347,6 +384,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._function_metadata_result = (
             self.index_functions(function_path)) \
             if os.path.exists(function_path) else None
+
 
     async def _handle__functions_metadata_request(self, request):
         metadata_request = request.functions_metadata_request
@@ -466,6 +504,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         except Exception as ex:
+            logging.error(ex)
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 function_load_response=protos.FunctionLoadResponse(
@@ -508,18 +547,27 @@ class Dispatcher(metaclass=DispatcherMeta):
             logger.info(', '.join(function_invocation_logs))
 
             args = {}
+
             for pb in invoc_request.input_data:
                 pb_type_info = fi.input_types[pb.name]
+                trigger_metadata = None
                 if bindings.is_trigger_binding(pb_type_info.binding_name):
                     trigger_metadata = invoc_request.trigger_metadata
-                else:
-                    trigger_metadata = None
-
+                
                 args[pb.name] = bindings.from_incoming_proto(
                     pb_type_info.binding_name, pb,
                     trigger_metadata=trigger_metadata,
                     pytype=pb_type_info.pytype,
                     shmem_mgr=self._shmem_mgr)
+
+            if fi.trigger_metadata.get('type') == HTTP_TRIGGER:
+                from azure.functions.extension.base import HttpV2FeatureChecker
+                http_v2_enabled = HttpV2FeatureChecker.http_v2_enabled()
+
+            if http_v2_enabled:
+                http_request = await http_coordinator.get_http_request_async(
+                    invocation_id)
+                args[fi.trigger_metadata.get('param_name')] = http_request
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
 
@@ -537,14 +585,19 @@ class Dispatcher(metaclass=DispatcherMeta):
                 call_result = await self._run_async_func(
                     fi_context, fi.func, args
                 )
+
             else:
                 call_result = await self._loop.run_in_executor(
                     self._sync_call_tp,
                     self._run_sync_func,
                     invocation_id, fi_context, fi.func, args)
+
             if call_result is not None and not fi.has_return:
                 raise RuntimeError(f'function {fi.name!r} without a $return '
                                    'binding returned a non-None value')
+            
+            if http_v2_enabled:
+                http_coordinator.set_http_response(invocation_id, call_result)
 
             output_data = []
             cache_enabled = self._function_data_cache_enabled
@@ -564,10 +617,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data.append(param_binding)
 
             return_value = None
-            if fi.return_type is not None:
+            if fi.return_type is not None and not http_v2_enabled:
                 return_value = bindings.to_outgoing_proto(
-                    fi.return_type.binding_name, call_result,
-                    pytype=fi.return_type.pytype)
+                    fi.return_type.binding_name,
+                    call_result,
+                    pytype=fi.return_type.pytype,
+                )
 
             # Actively flush customer print() function to console
             sys.stdout.flush()
@@ -589,6 +644,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     result=protos.StatusResult(
                         status=protos.StatusResult.Failure,
                         exception=self._serialize_exception(ex))))
+
 
     async def _handle__function_environment_reload_request(self, request):
         """Only runs on Linux Consumption placeholder specialization.
@@ -638,6 +694,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             # reload_customer_libraries call clears the registry
             bindings.load_binding_registry()
 
+            capabilities = {}
             if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
                 try:
                     self.load_function_metadata(
@@ -645,6 +702,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                         caller_info="environment_reload_request")
                 except Exception as ex:
                     self._function_metadata_exception = ex
+                
+                if self._has_http_func:
+                    from azure.functions.extension.base import HttpV2FeatureChecker
+
+                    if HttpV2FeatureChecker.http_v2_enabled():
+                        capabilities[constants.HTTP_URI] = await self._initialize_http_server()
 
             # Change function app directory
             if getattr(func_env_reload_request,
@@ -653,7 +716,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     func_env_reload_request.function_app_directory)
 
             success_response = protos.FunctionEnvironmentReloadResponse(
-                capabilities={},
+                capabilities=capabilities,
                 worker_metadata=self.get_worker_metadata(),
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success))
@@ -672,10 +735,43 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
 
+    async def _initialize_http_server(self):
+        from azure.functions.extension.base import ModuleTrackerMeta, RequestTrackerMeta
+        
+        web_extension_mod_name = ModuleTrackerMeta.get_module()
+        extension_module = importlib.import_module(web_extension_mod_name)
+        web_app_class = extension_module.WebApp
+        web_server_class = extension_module.WebServer
+
+        unused_port = get_unused_tcp_port()
+
+        app = web_app_class()
+        request_type = RequestTrackerMeta.get_request_type()
+
+        @app.route
+        async def catch_all(request: request_type): # type: ignore
+            invoc_id = request.headers.get(X_MS_INVOCATION_ID)
+            if invoc_id is None:
+                raise ValueError(f"Header {X_MS_INVOCATION_ID} not found")
+
+            http_coordinator.set_http_request(invoc_id, request)
+            http_resp = await http_coordinator.await_http_response_async(invoc_id)
+            return http_resp
+
+        web_server = web_server_class(LOCAL_HOST, unused_port, app)
+        web_server_run_task = web_server.serve()
+
+        loop = asyncio.get_event_loop()
+        loop.create_task(web_server_run_task)
+
+        return f"http://{LOCAL_HOST}:{unused_port}"
+
     def index_functions(self, function_path: str):
         indexed_functions = loader.index_function_app(function_path)
-        logger.info('Indexed function app and found %s functions',
-                    len(indexed_functions))
+        logger.info(
+            "Indexed function app and found %s functions",
+            len(indexed_functions)
+        )
 
         if indexed_functions:
             fx_metadata_results = loader.process_indexed_function(
@@ -683,7 +779,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                 indexed_functions)
 
             indexed_function_logs: List[str] = []
+            self._has_http_func = False
             for func in indexed_functions:
+                self._has_http_func = self._has_http_func or func.is_http_function()
                 function_log = "Function Name: {}, Function Binding: {}" \
                     .format(func.get_function_name(),
                             [(binding.type, binding.name) for binding in
@@ -876,7 +974,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
 
 class AsyncLoggingHandler(logging.Handler):
-
     def emit(self, record: LogRecord) -> None:
         # Since we disable console log after gRPC channel is initiated,
         # we should redirect all the messages into dispatcher.

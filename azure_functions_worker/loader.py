@@ -122,31 +122,34 @@ def build_variable_interval_retry(retry, max_retry_count, retry_strategy):
 
 def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions):
-    fx_metadata_results = []
-    for indexed_function in indexed_functions:
-        function_info = functions_registry.add_indexed_function(
-            function=indexed_function)
+    try:
+        fx_metadata_results = []
+        for indexed_function in indexed_functions:
+            function_info = functions_registry.add_indexed_function(
+                function=indexed_function)
 
-        binding_protos = build_binding_protos(indexed_function)
-        retry_protos = build_retry_protos(indexed_function)
+            binding_protos = build_binding_protos(indexed_function)
+            retry_protos = build_retry_protos(indexed_function)
 
-        function_metadata = protos.RpcFunctionMetadata(
-            name=function_info.name,
-            function_id=function_info.function_id,
-            managed_dependency_enabled=False,  # only enabled for PowerShell
-            directory=function_info.directory,
-            script_file=indexed_function.function_script_file,
-            entry_point=function_info.name,
-            is_proxy=False,  # not supported in V4
-            language=PYTHON_LANGUAGE_RUNTIME,
-            bindings=binding_protos,
-            raw_bindings=indexed_function.get_raw_bindings(),
-            retry_options=retry_protos,
-            properties={METADATA_PROPERTIES_WORKER_INDEXED: "True"})
+            function_metadata = protos.RpcFunctionMetadata(
+                name=function_info.name,
+                function_id=function_info.function_id,
+                managed_dependency_enabled=False,  # only enabled for PowerShell
+                directory=function_info.directory,
+                script_file=indexed_function.function_script_file,
+                entry_point=function_info.name,
+                is_proxy=False,  # not supported in V4
+                language=PYTHON_LANGUAGE_RUNTIME,
+                bindings=binding_protos,
+                raw_bindings=indexed_function.get_raw_bindings(),
+                retry_options=retry_protos,
+                properties={METADATA_PROPERTIES_WORKER_INDEXED: "True"})
 
-        fx_metadata_results.append(function_metadata)
-
-    return fx_metadata_results
+            fx_metadata_results.append(function_metadata)
+            return fx_metadata_results
+    except Exception as e:
+        logger.error(f'Error in process_indexed_function. {e}', exc_info=True)
+        raise e
 
 
 @attach_message_to_exception(

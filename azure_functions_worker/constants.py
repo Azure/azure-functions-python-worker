@@ -1,7 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import os
-import pathlib
 import sys
 
 # Capabilities
@@ -56,6 +54,4 @@ PYTHON_LANGUAGE_RUNTIME = "python"
 RETRY_POLICY = "retry_policy"
 
 # Paths
-CUSTOMER_PACKAGES_PATH = os.path.join(pathlib.Path.home(),
-                                      pathlib.Path(
-                                          "site/wwwroot/.python_packages"))
+CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site-packages"

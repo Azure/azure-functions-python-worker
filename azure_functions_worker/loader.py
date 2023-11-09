@@ -123,6 +123,8 @@ def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions):
     fx_metadata_results = []
     for indexed_function in indexed_functions:
+        if indexed_function.is_http_function():
+            has_http_func = True
         function_info = functions_registry.add_indexed_function(
             function=indexed_function)
 
@@ -215,10 +217,10 @@ def index_function_app(function_path: str):
 
     from azure.functions import FunctionRegister
     app: Optional[FunctionRegister] = None
-    for i in imported_module.__dir__():
-        if isinstance(getattr(imported_module, i, None), FunctionRegister):
+    for attribute_name in imported_module.__dir__():
+        if isinstance(getattr(imported_module, attribute_name, None), FunctionRegister):
             if not app:
-                app = getattr(imported_module, i, None)
+                app = getattr(imported_module, attribute_name, None)
             else:
                 raise ValueError(
                     f"More than one {app.__class__.__name__} or other top "

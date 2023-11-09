@@ -4,7 +4,7 @@ import sys
 import typing
 
 from .. import protos
-
+from azfuncextbase import RequestTrackerMeta, ResponseTrackerMeta, http_v2_enabled
 from . import datumdef
 from . import generic
 from .shared_memory_data_transfer import SharedMemoryManager
@@ -14,6 +14,28 @@ PB_TYPE_DATA = 'data'
 PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 BINDING_REGISTRY = None
 
+def _check_http_input_type_annotation(bind_name: str, pytype: type) -> bool:
+    if http_v2_enabled():
+        return RequestTrackerMeta.check_type(pytype)
+        
+    binding = get_binding(bind_name)
+    return binding.check_input_type_annotation(pytype)
+
+def _check_http_output_type_annotation(bind_name: str, pytype: type) -> bool:
+    if http_v2_enabled():
+        return ResponseTrackerMeta.check_type(pytype)
+    
+    binding = get_binding(bind_name)
+    return binding.check_output_type_annotation(pytype)
+
+
+INPUT_TYPE_CHECK_OVERRIDE_MAP = {
+    'httpTrigger': _check_http_input_type_annotation
+}
+
+OUTPUT_TYPE_CHECK_OVERRIDE_MAP = {
+    'http': _check_http_output_type_annotation
+}
 
 def load_binding_registry() -> None:
     func = sys.modules.get('azure.functions')
@@ -43,11 +65,18 @@ def is_trigger_binding(bind_name: str) -> bool:
 
 
 def check_input_type_annotation(bind_name: str, pytype: type) -> bool:
+    global INPUT_TYPE_CHECK_OVERRIDE_MAP
+    if bind_name in INPUT_TYPE_CHECK_OVERRIDE_MAP:
+        return INPUT_TYPE_CHECK_OVERRIDE_MAP[bind_name](bind_name, pytype)
+    
     binding = get_binding(bind_name)
     return binding.check_input_type_annotation(pytype)
 
-
 def check_output_type_annotation(bind_name: str, pytype: type) -> bool:
+    global OUTPUT_TYPE_CHECK_OVERRIDE_MAP
+    if bind_name in OUTPUT_TYPE_CHECK_OVERRIDE_MAP:
+        return OUTPUT_TYPE_CHECK_OVERRIDE_MAP[bind_name](bind_name, pytype)
+    
     binding = get_binding(bind_name)
     return binding.check_output_type_annotation(pytype)
 

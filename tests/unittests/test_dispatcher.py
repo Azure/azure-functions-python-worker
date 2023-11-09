@@ -14,7 +14,7 @@ from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
     PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT, \
     PYTHON_THREADPOOL_THREAD_COUNT_MAX_37, \
     PYTHON_THREADPOOL_THREAD_COUNT_MIN,  \
-    SCRIPT_FILE_NAME, SCRIPT_FILE_NAME_DEFAULT
+    PYTHON_SCRIPT_FILE_NAME, PYTHON_SCRIPT_FILE_NAME_DEFAULT
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
@@ -676,7 +676,7 @@ class TestConfigurableFileName(testutils.AsyncTestCase):
     def setUp(self):
         self._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_FUNCTIONS_DIR)
-        self._default_file_name: Optional[str] = SCRIPT_FILE_NAME_DEFAULT
+        self._default_file_name: Optional[str] = PYTHON_SCRIPT_FILE_NAME_DEFAULT
         self._new_file_name: str = 'test.py'
         self._pre_env = dict(os.environ)
         self.mock_version_info = patch(
@@ -693,9 +693,9 @@ class TestConfigurableFileName(testutils.AsyncTestCase):
         """
         Test the default file name
         """
-        os.environ.update({SCRIPT_FILE_NAME: self._default_file_name})
-        self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))
-        self.assertEqual(os.environ.get(SCRIPT_FILE_NAME),
+        os.environ.update({PYTHON_SCRIPT_FILE_NAME: self._default_file_name})
+        self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
+        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
                          self._default_file_name)
 
     # test changing value
@@ -703,7 +703,7 @@ class TestConfigurableFileName(testutils.AsyncTestCase):
         """
         Test the updated file name
         """
-        os.environ.update({SCRIPT_FILE_NAME: self._new_file_name})
-        self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))
-        self.assertEqual(os.environ.get(SCRIPT_FILE_NAME),
+        os.environ.update({PYTHON_SCRIPT_FILE_NAME: self._new_file_name})
+        self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
+        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
                          self._new_file_name)

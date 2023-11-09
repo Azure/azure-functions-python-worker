@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import requests
 
-from azure_functions_worker.constants import SCRIPT_FILE_NAME
+from azure_functions_worker.constants import PYTHON_SCRIPT_FILE_NAME
 from tests.utils import testutils
 
 REQUEST_TIMEOUT_SEC = 5
@@ -25,7 +25,7 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.env_variables['SCRIPT_FILE_NAME'] = 'main.py'
+        cls.env_variables['PYTHON_SCRIPT_FILE_NAME'] = 'main.py'
 
         os_environ = os.environ.copy()
         os_environ.update(cls.env_variables)
@@ -118,7 +118,7 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
         self.assertTrue(r.ok)
 
     def test_correct_file_name(self):
-        os.environ.update({SCRIPT_FILE_NAME: "main.py"})
-        self.assertIsNotNone(os.environ.get(SCRIPT_FILE_NAME))
-        self.assertEqual(os.environ.get(SCRIPT_FILE_NAME),
+        os.environ.update({PYTHON_SCRIPT_FILE_NAME: "main.py"})
+        self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
+        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
                          'main.py')

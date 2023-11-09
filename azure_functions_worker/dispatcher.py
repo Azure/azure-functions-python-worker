@@ -25,8 +25,8 @@ from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME,
-                        SCRIPT_FILE_NAME_DEFAULT,
+                        PYTHON_ENABLE_DEBUG_LOGGING, PYTHON_SCRIPT_FILE_NAME,
+                        PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, CUSTOMER_PACKAGES_PATH)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
@@ -322,8 +322,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         metadata_request = request.functions_metadata_request
         directory = metadata_request.function_app_directory
         script_file_name = get_app_setting(
-            setting=SCRIPT_FILE_NAME,
-            default_value=SCRIPT_FILE_NAME_DEFAULT)
+            setting=PYTHON_SCRIPT_FILE_NAME,
+            default_value=PYTHON_SCRIPT_FILE_NAME_DEFAULT)
         function_path = os.path.join(directory, script_file_name)
 
         logger.info(
@@ -365,12 +365,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_metadata = func_request.metadata
         function_name = function_metadata.name
 
-        script_file_name = get_app_setting(
-            setting=SCRIPT_FILE_NAME,
-            default_value=SCRIPT_FILE_NAME_DEFAULT)
-
-        function_path = os.path.join(function_metadata.directory,
-                                     script_file_name)
+        function_path = os.path.join(
+            function_metadata.directory,
+            get_app_setting(
+                setting=PYTHON_SCRIPT_FILE_NAME,
+                default_value=PYTHON_SCRIPT_FILE_NAME_DEFAULT))
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'

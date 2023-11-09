@@ -6,6 +6,8 @@ import pathlib
 import typing
 import uuid
 
+from azure_functions_worker.constants import HTTP_TRIGGER
+
 from . import bindings as bindings_utils
 from . import protos
 from ._thirdparty import typing_inspect
@@ -31,6 +33,7 @@ class FunctionInfo(typing.NamedTuple):
     output_types: typing.Mapping[str, ParamTypeInfo]
     return_type: typing.Optional[ParamTypeInfo]
 
+    trigger_metadata: typing.Dict[str, typing.Any]
 
 class FunctionLoadError(RuntimeError):
 
@@ -297,6 +300,17 @@ class Registry:
                                                      str, ParamTypeInfo],
                                                  return_type: str):
 
+        http_trigger_param_name = next(
+            (input_type for input_type, type_info in input_types.items() if type_info.binding_name == HTTP_TRIGGER),
+            None
+        )
+
+        if http_trigger_param_name is not None:
+            trigger_metadata = {
+                "type": HTTP_TRIGGER,
+                "param_name": http_trigger_param_name
+            }
+
         function_info = FunctionInfo(
             func=function,
             name=function_name,
@@ -307,7 +321,9 @@ class Registry:
             has_return=has_explicit_return or has_implicit_return,
             input_types=input_types,
             output_types=output_types,
-            return_type=return_type)
+            return_type=return_type,
+            trigger_metadata=trigger_metadata)
+        
 
         self._functions[function_id] = function_info
         return function_info

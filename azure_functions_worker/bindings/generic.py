@@ -42,6 +42,8 @@ class GenericBinding:
             result = data.value
         elif data_type == 'json':
             result = data.value
+        elif data_type == 'model_binding_data':
+            result = data.value
         else:
             raise ValueError(
                 f'unexpected type of data received for the "generic" binding '

@@ -58,10 +58,18 @@ def uninstall() -> None:
 def build_binding_protos(indexed_function) -> Dict:
     binding_protos = {}
     for binding in indexed_function.get_bindings():
-        binding_protos[binding.name] = protos.BindingInfo(
-            type=binding.type,
-            data_type=binding.data_type,
-            direction=binding.direction)
+        if binding.type == "blob":
+            binding_protos[binding.name] = protos.BindingInfo(
+                type=binding.type,
+                data_type=binding.data_type,
+                direction=binding.direction,
+                properties={"SupportsDeferredBinding": "true"})
+        else:
+            binding_protos[binding.name] = protos.BindingInfo(
+                type=binding.type,
+                data_type=binding.data_type,
+                direction=binding.direction,
+                properties={"SupportsDeferredBinding": "false"})
 
     return binding_protos
 

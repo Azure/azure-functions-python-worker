@@ -21,11 +21,18 @@ import grpc
 
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
-from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
+from .constants import (PYTHON_ROLLBACK_CWD_PATH,
+                        PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME,
+                        PYTHON_ISOLATE_WORKER_DEPENDENCIES,
+                        PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT,
+                        PYTHON_ENABLE_WORKER_EXTENSIONS,
+                        PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT,
+                        PYTHON_ENABLE_DEBUG_LOGGING, 
+                        FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
+                        SCRIPT_FILE_NAME,
                         PYTHON_LANGUAGE_RUNTIME, CUSTOMER_PACKAGES_PATH)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
@@ -265,11 +272,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                     'python version %s, '
                     'worker version %s, '
                     'request ID %s.'
+                    'App Settings state: %s.'
                     ' To enable debug level logging, please refer to '
                     'https://aka.ms/python-enable-debug-logging',
                     sys.version,
                     VERSION,
-                    self.request_id)
+                    self.request_id,
+                    self.get_python_appsetting_state()
+                    )
 
         worker_init_request = request.worker_init_request
         host_capabilities = worker_init_request.capabilities
@@ -546,9 +556,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
                         'request ID: %s,'
+                        'App Settings state: %s.',
                         ' To enable debug level logging, please refer to '
                         'https://aka.ms/python-enable-debug-logging',
-                        self.request_id)
+                        self.request_id,
+                        self.get_python_appsetting_state())
 
             func_env_reload_request = \
                 request.function_environment_reload_request
@@ -689,7 +701,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             name, directory, invoc_request.invocation_id,
             _invocation_id_local, trace_context, retry_context)
 
-    @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
+    @disable_feature_by(PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):
         if os.path.exists(new_cwd):
             os.chdir(new_cwd)
@@ -813,6 +825,34 @@ class Dispatcher(metaclass=DispatcherMeta):
                     format_exception(ex)))
             raise
 
+    def get_python_appsetting_state(self):
+        app_settings = {"PYTHON_ROLLBACK_CWD_PATH":
+                get_app_setting(
+                setting=PYTHON_ROLLBACK_CWD_PATH,
+                default_value='false'),
+                "PYTHON_THREADPOOL_THREAD_COUNT":
+                get_app_setting(
+                setting=PYTHON_THREADPOOL_THREAD_COUNT,
+                default_value=PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT),
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES":
+                get_app_setting(
+                setting=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
+                default_value=PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT),
+                "PYTHON_ENABLE_WORKER_EXTENSIONS":
+                get_app_setting(
+                setting=PYTHON_ENABLE_WORKER_EXTENSIONS,
+                default_value=PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT),
+                "PYTHON_ENABLE_DEBUG_LOGGING":
+                get_app_setting(
+                setting=PYTHON_ENABLE_DEBUG_LOGGING,
+                default_value='false'),
+                "FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED":
+                get_app_setting(
+                setting=FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
+                default_value='false'),
+        }
+
+        return str(app_settings)
 
 class AsyncLoggingHandler(logging.Handler):
 

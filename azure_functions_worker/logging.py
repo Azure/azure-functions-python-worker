@@ -20,7 +20,8 @@ error_logger: logging.Logger = (
 
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
-
+local_handler = logging.FileHandler("C:/workprojects/samplefunc/streaming/memory_usage_log.txt")
+logger.addHandler(local_handler)
 
 def format_exception(exception: Exception) -> str:
     msg = str(exception) + "\n"

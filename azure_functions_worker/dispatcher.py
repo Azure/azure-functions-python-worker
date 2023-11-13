@@ -48,6 +48,8 @@ from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
 from .version import VERSION
+# import psutil
+import time
 
 _TRUE = "true"
 
@@ -375,6 +377,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         loop = asyncio.get_event_loop()
         loop.create_task(create_server(unused_port))
 
+        # process = psutil.Process(os.getpid())
+        # def memory():
+        #     while True:
+        #         logger.error(f"Memory Usage: {process.memory_info().rss / 1024 ** 2:.2f} MB")
+        #         time.sleep(1)  # Pause for 1 second to avoid too many writes
+        #
+        # threading.Thread(target=memory).start()
+
+
         capabilities = {
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
             constants.TYPED_DATA_COLLECTION: _TRUE,
@@ -661,7 +672,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data.append(param_binding)
 
             return_value = None
-            if fi.return_type is not None and bool(http_trigger_param_name):
+            if fi.return_type is not None and not bool(http_trigger_param_name):
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name,
                     call_result,

@@ -30,7 +30,7 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT,
                         PYTHON_ENABLE_WORKER_EXTENSIONS,
                         PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT,
-                        PYTHON_ENABLE_DEBUG_LOGGING, 
+                        PYTHON_ENABLE_DEBUG_LOGGING,
                         FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
                         SCRIPT_FILE_NAME,
                         PYTHON_LANGUAGE_RUNTIME, CUSTOMER_PACKAGES_PATH)
@@ -826,33 +826,35 @@ class Dispatcher(metaclass=DispatcherMeta):
             raise
 
     def get_python_appsetting_state(self):
-        app_settings = {"PYTHON_ROLLBACK_CWD_PATH":
-                get_app_setting(
+        app_settings = {
+            "PYTHON_ROLLBACK_CWD_PATH":
+            get_app_setting(
                 setting=PYTHON_ROLLBACK_CWD_PATH,
                 default_value='false'),
-                "PYTHON_THREADPOOL_THREAD_COUNT":
-                get_app_setting(
+            "PYTHON_THREADPOOL_THREAD_COUNT":
+            get_app_setting(
                 setting=PYTHON_THREADPOOL_THREAD_COUNT,
                 default_value=PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT),
-                "PYTHON_ISOLATE_WORKER_DEPENDENCIES":
-                get_app_setting(
+            "PYTHON_ISOLATE_WORKER_DEPENDENCIES":
+            get_app_setting(
                 setting=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
                 default_value=PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT),
-                "PYTHON_ENABLE_WORKER_EXTENSIONS":
-                get_app_setting(
+            "PYTHON_ENABLE_WORKER_EXTENSIONS":
+            get_app_setting(
                 setting=PYTHON_ENABLE_WORKER_EXTENSIONS,
                 default_value=PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT),
                 "PYTHON_ENABLE_DEBUG_LOGGING":
-                get_app_setting(
+            get_app_setting(
                 setting=PYTHON_ENABLE_DEBUG_LOGGING,
                 default_value='false'),
-                "FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED":
-                get_app_setting(
+            "FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED":
+            get_app_setting(
                 setting=FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
                 default_value='false'),
         }
 
         return str(app_settings)
+
 
 class AsyncLoggingHandler(logging.Handler):
 

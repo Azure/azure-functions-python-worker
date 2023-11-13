@@ -115,6 +115,11 @@ async def handle_request(request):
 
 async def create_server(port):
     host_name = "localhost"
+    # get server object
+    # add route
+    # can specify host name and port
+    # start server
+    
     app = web.Application()
     app.router.add_route('*', '/{path:.*}', handle_request)
     runner = web.AppRunner(app)
@@ -367,8 +372,6 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._function_data_cache_enabled = val == _TRUE
 
         unused_port = get_unused_tcp_port()
-        # thread = threading.Thread(target=create_server, args=(unused_port,))
-        # thread.start()
         loop = asyncio.get_event_loop()
         loop.create_task(create_server(unused_port))
 

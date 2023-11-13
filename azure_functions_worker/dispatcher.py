@@ -13,7 +13,7 @@ import platform
 import queue
 import sys
 import threading
-from aiohttp import web
+from flask import Flask, request
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
@@ -50,6 +50,7 @@ from .utils.wrappers import disable_feature_by
 from .version import VERSION
 
 _TRUE = "true"
+flask_app = Flask(__name__)
 
 """In Python 3.6, the current_task method was in the Task class, but got moved
 out in 3.7+ and fully removed in 3.9. Thus, to support 3.6 and 3.9 together, we
@@ -86,41 +87,27 @@ def get_unused_tcp_port():
     return port
 
 
-async def handle_request(request):
-    req_headers = {}
-    for key, value in request.headers.items():
-        req_headers[key] = value
+def handle_request():
+    req_headers = dict(request.headers)
+    invoc_id = req_headers.get("x-ms-invocation-id")
 
-    invoc_id = req_headers["x-ms-invocation-id"]
+    http_coordinator.add_http_invoc_request(invoc_id, request)
+    http_resp = http_coordinator.wait_and_get_http_invoc_response_async(invoc_id)
 
-    await http_coordinator.add_http_invoc_request(invoc_id, request)
-    http_resp = await http_coordinator.wait_and_get_http_invoc_response(invoc_id)
+    logger.info("response:-- %s", type(http_resp))
 
-    logger.info("response:-- %s", print(type(http_resp)))
     return http_resp
-    # TODO: can we support existing response types? only if the server framework send resp we set instead of auto converting to their server resp types? For request we can since we are the one who sets the request
-    # if isinstance(http_resp, web.Response):
-    #     return http_resp
-    # elif isinstance(http_resp, str):
-    #     return web.Response(text=http_resp)
-    # elif isinstance(http_resp, azure.functions.HttpResponse):
-    #     # Create an aiohttp response with the same body, status, and headers
-    #     return web.Response(body=http_resp.get_body(),
-    #                         status=http_resp.status_code,
-    #                         headers=http_resp.headers)
-    # else:
-    #     # Handle other types or raise an exception if unexpected type
-    #     return web.Response(status=500, text="Internal Server Error")
 
 
-async def create_server(port):
+@flask_app.route('/', defaults={'path': ''})
+@flask_app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+def catch_all(path):
+    return handle_request()
+
+
+def create_server(port):
     host_name = "localhost"
-    app = web.Application()
-    app.router.add_route('*', '/{path:.*}', handle_request)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, host=host_name, port=port)
-    await site.start()
+    flask_app.run(host=host_name, port=port)
 
 
 class Dispatcher(metaclass=DispatcherMeta):
@@ -599,7 +586,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             http_trigger_param_name = await self.get_http_trigger_param_name(fi)
 
             if bool(http_trigger_param_name):
-                http_request = await http_coordinator.wait_and_get_http_invoc_request(
+                http_request = await http_coordinator.wait_and_get_http_invoc_request_async(
                     invocation_id)
                 args[http_trigger_param_name] = http_request
 
@@ -635,7 +622,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 )
 
             if bool(http_trigger_param_name):
-                await http_coordinator.add_http_invoc_response(invocation_id, call_result)
+                http_coordinator.add_http_invoc_response(invocation_id, call_result)
 
             output_data = []
             cache_enabled = self._function_data_cache_enabled

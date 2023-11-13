@@ -11,6 +11,7 @@ from concurrent.futures import Future
 class HttpCoordinator:
     def __init__(self):
         # TODO: too many dictionaries, create a contextreferene like object to wrap these details in one object
+        #  diff req/resp interface
         if not self._initialized:
             self._http_requests = {}
             self._http_responses = {}
@@ -32,13 +33,13 @@ class HttpCoordinator:
             self._http_requests_invoc_event[invoc_id] = asyncio.Event()
         return self._http_requests_invoc_event[invoc_id]
 
-    async def add_http_invoc_request(self, invoc_id, http_request):
+    def add_http_invoc_request(self, invoc_id, http_request):
         logger.info("-----> http adding invoc req %s", invoc_id)
         self._http_requests[invoc_id] = http_request
         event = self.get_request_event(invoc_id)
         event.set()
 
-    async def wait_and_get_http_invoc_request(self, invoc_id):
+    async def wait_and_get_http_invoc_request_async(self, invoc_id):
         logger.info("-----> grpc wating for invoc req %s", invoc_id)
         event = self.get_request_event(invoc_id)
         await event.wait()
@@ -53,13 +54,13 @@ class HttpCoordinator:
             self._http_responses_invoc_event[invoc_id] = asyncio.Event()
         return self._http_responses_invoc_event[invoc_id]
 
-    async def add_http_invoc_response(self, invoc_id, http_response):
+    def add_http_invoc_response(self, invoc_id, http_response):
         logger.info("-----> grpc adding invoc res %s", invoc_id)
         self._http_responses[invoc_id] = http_response
         event = self.get_response_event(invoc_id)
         event.set()
 
-    async def wait_and_get_http_invoc_response(self, invoc_id):
+    async def wait_and_get_http_invoc_response_async(self, invoc_id):
         logger.info("-----> http waiting for invoc res %s", invoc_id)
         event = self.get_response_event(invoc_id)
         await event.wait()

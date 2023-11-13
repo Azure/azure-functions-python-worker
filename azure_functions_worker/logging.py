@@ -11,11 +11,12 @@ from typing import Optional
 CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
 SYSTEM_LOG_PREFIX = "azure_functions_worker"
 SDK_LOG_PREFIX = "azure.functions"
+SYSTEM_ERROR_LOG_PREFIX = "azure_functions_worker_errors"
 
 
-logger: logging.Logger = logging.getLogger('azure_functions_worker')
+logger: logging.Logger = logging.getLogger(SYSTEM_LOG_PREFIX)
 error_logger: logging.Logger = (
-    logging.getLogger('azure_functions_worker_errors'))
+    logging.getLogger(SYSTEM_ERROR_LOG_PREFIX))
 
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None

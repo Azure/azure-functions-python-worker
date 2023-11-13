@@ -589,7 +589,7 @@ class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
 
 
-class TestDispatcherLoadFunctionInInitRequest(testutils.AsyncTestCase):
+class TestDispatcherInitRequest(testutils.AsyncTestCase):
 
     def setUp(self):
         self._ctrl = testutils.start_mockhost(
@@ -606,8 +606,7 @@ class TestDispatcherLoadFunctionInInitRequest(testutils.AsyncTestCase):
         self.mock_version_info.stop()
 
     async def test_dispatcher_load_azfunc_in_init(self):
-        """Test if the dispatcher's log can be flushed out during worker
-        initialization
+        """Test if azure functions is loaded during init
         """
         async with self._ctrl as host:
             r = await host.init_worker('4.15.1')
@@ -618,3 +617,53 @@ class TestDispatcherLoadFunctionInInitRequest(testutils.AsyncTestCase):
                 1
             )
         self.assertIn("azure.functions", sys.modules)
+
+    async def test_dispatcher_load_modules_dedicated_app(self):
+        """Test modules are loaded in dedicated apps
+        """
+        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
+
+        # Dedicated Apps where placeholder mode is not set
+        async with self._ctrl as host:
+            r = await host.init_worker('4.15.1')
+            logs = [log.message for log in r.logs]
+            self.assertIn(
+                "Applying prioritize_customer_dependencies: "
+                "worker_dependencies_path: , customer_dependencies_path: , "
+                "working_directory: , Linux Consumption: False,"
+                " Placeholder: False", logs
+            )
+
+    async def test_dispatcher_load_modules_con_placeholder_enabled(self):
+        """Test modules are loaded in consumption apps with placeholder mode
+        enabled.
+        """
+        # Consumption apps with placeholder mode enabled
+        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
+        os.environ["CONTAINER_NAME"] = "test"
+        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "1"
+        async with self._ctrl as host:
+            r = await host.init_worker('4.15.1')
+            logs = [log.message for log in r.logs]
+            self.assertNotIn(
+                "Applying prioritize_customer_dependencies: "
+                "worker_dependencies_path: , customer_dependencies_path: , "
+                "working_directory: , Linux Consumption: True,", logs)
+
+    async def test_dispatcher_load_modules_con_app_placeholder_disabled(self):
+        """Test modules are loaded in consumption apps with placeholder mode
+        disabled.
+        """
+        # Consumption apps with placeholder mode disabled  i.e. worker
+        # is specialized
+        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
+        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "0"
+        os.environ["CONTAINER_NAME"] = "test"
+        async with self._ctrl as host:
+            r = await host.init_worker('4.15.1')
+            logs = [log.message for log in r.logs]
+            self.assertIn(
+                "Applying prioritize_customer_dependencies: "
+                "worker_dependencies_path: , customer_dependencies_path: , "
+                "working_directory: , Linux Consumption: True,"
+                " Placeholder: False", logs)

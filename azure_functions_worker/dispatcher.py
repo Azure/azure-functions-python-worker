@@ -34,6 +34,7 @@ from .constants import (
     CUSTOMER_PACKAGES_PATH,
 )
 from .extension import ExtensionManager
+from .http_proxy import http_coordinator
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (
     logger,
@@ -45,7 +46,7 @@ from .logging import (
 from .utils.common import get_app_setting, is_envvar_true
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
-from .utils.wrappers import disable_feature_by
+from .utils.wrappers import disable_feature_by, handle_invocation_before_and_after
 from .version import VERSION
 
 _TRUE = "true"
@@ -72,70 +73,6 @@ class DispatcherMeta(type):
         return disp
 
 
-class HttpCoordinator:
-    def __init__(self):
-        if not self._initialized:
-            self._http_requests = {}
-            self._http_responses = {}
-            self._http_requests_invoc_event = {}
-            self._http_responses_invoc_event = {}
-            self._initialized = True
-
-    # making this class singleton
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(HttpCoordinator, cls).__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
-
-    def get_request_event(self, invoc_id):
-        if invoc_id not in self._http_requests_invoc_event:
-            self._http_requests_invoc_event[invoc_id] = asyncio.Event()
-        return self._http_requests_invoc_event[invoc_id]
-
-    async def add_http_invoc_request(self, invoc_id, http_request):
-        logger.info("-----> http adding invoc req %s", invoc_id)
-        self._http_requests[invoc_id] = http_request
-        event = self.get_request_event(invoc_id)
-        event.set()
-
-    async def wait_and_get_http_invoc_request(self, invoc_id):
-        logger.info("-----> grpc wating for invoc req %s", invoc_id)
-        event = self.get_request_event(invoc_id)
-        await event.wait()
-        request = self._http_requests[invoc_id]
-        del self._http_requests[invoc_id]
-        del self._http_requests_invoc_event[invoc_id]
-        logger.info("-----> grpc got invoc req %s", invoc_id)
-        return request
-
-    def get_response_event(self, invoc_id):
-        if invoc_id not in self._http_responses_invoc_event:
-            self._http_responses_invoc_event[invoc_id] = asyncio.Event()
-        return self._http_responses_invoc_event[invoc_id]
-
-    async def add_http_invoc_response(self, invoc_id, http_response):
-        logger.info("-----> grpc adding invoc res %s", invoc_id)
-        self._http_responses[invoc_id] = http_response
-        event = self.get_response_event(invoc_id)
-        event.set()
-
-    async def wait_and_get_http_invoc_response(self, invoc_id):
-        logger.info("-----> http waiting for invoc res %s", invoc_id)
-        event = self.get_response_event(invoc_id)
-        await event.wait()
-        response = self._http_responses[invoc_id]
-        del self._http_responses[invoc_id]
-        del self._http_responses_invoc_event[invoc_id]
-        logger.info("-----> got invoc res %s", invoc_id)
-        return response
-
-
-http_coordinator = None
-
-
 def get_unused_tcp_port():
     # Create a TCP socket
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -150,7 +87,6 @@ def get_unused_tcp_port():
 
 
 async def handle_request(request):
-    http_coordinator = HttpCoordinator()
     req_headers = {}
     for key, value in request.headers.items():
         req_headers[key] = value
@@ -158,10 +94,11 @@ async def handle_request(request):
     invoc_id = req_headers["x-ms-invocation-id"]
 
     await http_coordinator.add_http_invoc_request(invoc_id, request)
-    http_resp= await http_coordinator.wait_and_get_http_invoc_response(invoc_id)
+    http_resp = await http_coordinator.wait_and_get_http_invoc_response(invoc_id)
 
     logger.info("response:-- %s", print(type(http_resp)))
     return http_resp
+    # TODO: can we support existing response types? only if the server framework send resp we set instead of auto converting to their server resp types? For request we can since we are the one who sets the request
     # if isinstance(http_resp, web.Response):
     #     return http_resp
     # elif isinstance(http_resp, str):
@@ -227,8 +164,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_thread: threading.Thread = threading.Thread(
             name="grpc-thread", target=self.__poll_grpc
         )
-
-        self._http_coordinator = HttpCoordinator()
 
     @staticmethod
     def get_worker_metadata():
@@ -615,6 +550,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 ),
             )
 
+    @handle_invocation_before_and_after()
     async def _handle__invocation_request(self, request):
         invoc_request = request.invocation_request
         invocation_id = invoc_request.invocation_id
@@ -661,15 +597,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                     shmem_mgr=self._shmem_mgr,
                 )
 
-            is_http_trigger = False
-            for input_type in fi.input_types:
-                if fi.input_types[input_type].binding_name == "httpTrigger":
-                    is_http_trigger = True
+            is_http_trigger_func = await self.is_http_trigger_func(fi)
 
-            if is_http_trigger:
-                # why req is http request? we need to go through the params to know which one is http request arg
-                # and we need to convert this to cx specified type unless they dont specify anything otherwise they will get not found exception
-                http_request = await self._http_coordinator.wait_and_get_http_invoc_request(
+            if is_http_trigger_func:
+                # TODO: why req is http request? we need to go through the params to know which one is http request arg and we need to convert this to cx specified type unless they dont specify anything otherwise they will get not found exception
+                http_request = await http_coordinator.wait_and_get_http_invoc_request(
                     invocation_id)
                 args["req"] = http_request
 
@@ -704,8 +636,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     "binding returned a non-None value"
                 )
 
-            if is_http_trigger:
-                await self._http_coordinator.add_http_invoc_response(invocation_id, call_result)
+            if is_http_trigger_func:
+                await http_coordinator.add_http_invoc_response(invocation_id, call_result)
 
             output_data = []
             cache_enabled = self._function_data_cache_enabled
@@ -728,7 +660,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data.append(param_binding)
 
             return_value = None
-            if fi.return_type is not None and not is_http_trigger:
+            if fi.return_type is not None and not is_http_trigger_func:
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name,
                     call_result,
@@ -760,6 +692,13 @@ class Dispatcher(metaclass=DispatcherMeta):
                     ),
                 ),
             )
+
+    async def is_http_trigger_func(self, fi):
+        is_http_trigger = False
+        for input_type in fi.input_types:
+            if fi.input_types[input_type].binding_name == "httpTrigger":
+                is_http_trigger = True
+        return is_http_trigger
 
     async def _handle__function_environment_reload_request(self, request):
         """Only runs on Linux Consumption placeholder specialization."""
@@ -851,7 +790,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 function_log = "Function Name: {}, Function Binding: {}".format(
                     func.get_function_name(),
                     [(binding.type, binding.name) for binding in
-                        func.get_bindings()],
+                     func.get_bindings()],
                 )
                 indexed_function_logs.append(function_log)
 

@@ -46,7 +46,7 @@ from .logging import (
 from .utils.common import get_app_setting, is_envvar_true
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
-from .utils.wrappers import disable_feature_by, handle_invocation_before_and_after
+from .utils.wrappers import disable_feature_by
 from .version import VERSION
 
 _TRUE = "true"
@@ -550,7 +550,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                 ),
             )
 
-    @handle_invocation_before_and_after()
     async def _handle__invocation_request(self, request):
         invoc_request = request.invocation_request
         invocation_id = invoc_request.invocation_id
@@ -597,13 +596,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     shmem_mgr=self._shmem_mgr,
                 )
 
-            is_http_trigger_func = await self.is_http_trigger_func(fi)
+            http_trigger_param_name = await self.get_http_trigger_param_name(fi)
 
-            if is_http_trigger_func:
-                # TODO: why req is http request? we need to go through the params to know which one is http request arg and we need to convert this to cx specified type unless they dont specify anything otherwise they will get not found exception
+            if bool(http_trigger_param_name):
                 http_request = await http_coordinator.wait_and_get_http_invoc_request(
                     invocation_id)
-                args["req"] = http_request
+                args[http_trigger_param_name] = http_request
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
 
@@ -636,7 +634,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     "binding returned a non-None value"
                 )
 
-            if is_http_trigger_func:
+            if bool(http_trigger_param_name):
                 await http_coordinator.add_http_invoc_response(invocation_id, call_result)
 
             output_data = []
@@ -660,7 +658,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data.append(param_binding)
 
             return_value = None
-            if fi.return_type is not None and not is_http_trigger_func:
+            if fi.return_type is not None and bool(http_trigger_param_name):
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name,
                     call_result,
@@ -693,12 +691,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                 ),
             )
 
-    async def is_http_trigger_func(self, fi):
-        is_http_trigger = False
-        for input_type in fi.input_types:
-            if fi.input_types[input_type].binding_name == "httpTrigger":
-                is_http_trigger = True
-        return is_http_trigger
+    async def get_http_trigger_param_name(self, fi):
+        return next(
+            (input_type for input_type, type_info in fi.input_types.items() if type_info.binding_name == "httpTrigger"),
+            None
+        )
 
     async def _handle__function_environment_reload_request(self, request):
         """Only runs on Linux Consumption placeholder specialization."""

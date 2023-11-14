@@ -33,7 +33,7 @@ from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
-from .utils.app_settings_logs import get_python_appsetting_state
+from .utils.app_setting_manager import get_python_appsetting_state
 from .utils.common import get_app_setting, is_envvar_true
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace

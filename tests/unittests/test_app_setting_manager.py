@@ -6,6 +6,8 @@ import os
 from unittest.mock import patch
 
 from tests.utils import testutils
+from azure_functions_worker.utils.app_setting_manager import \
+    get_python_appsetting_state
 from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
     PYTHON_ENABLE_DEBUG_LOGGING
 
@@ -59,6 +61,11 @@ class TestDefaultAppSettingsLogs(testutils.AsyncTestCase):
                 )]), 0
             )
 
+    def test_get_python_appsetting_state(self):
+        app_setting_state = get_python_appsetting_state()
+        expected_string = "PYTHON_ENABLE_WORKER_EXTENSIONS: "
+        self.assertEqual(app_setting_state, expected_string)
+
 
 class TestNonDefaultAppSettingsLogs(testutils.AsyncTestCase):
     """Tests for non-default app settings logs."""
@@ -100,3 +107,9 @@ class TestNonDefaultAppSettingsLogs(testutils.AsyncTestCase):
                     'PYTHON_ENABLE_DEBUG_LOGGING:'
                 )]), 1
             )
+
+    def test_get_python_appsetting_state(self):
+        app_setting_state = get_python_appsetting_state()
+        expected_string = "PYTHON_THREADPOOL_THREAD_COUNT: 20 PYTHON_ENABLE_DEBUG_LOGGING: \
+            1 PYTHON_ENABLE_WORKER_EXTENSIONS: "
+        self.assertEqual(app_setting_state, expected_string)

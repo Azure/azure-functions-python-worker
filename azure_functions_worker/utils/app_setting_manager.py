@@ -1,9 +1,13 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 import os
 
 from ..constants import (PYTHON_ROLLBACK_CWD_PATH,
                          PYTHON_THREADPOOL_THREAD_COUNT,
                          PYTHON_ISOLATE_WORKER_DEPENDENCIES,
                          PYTHON_ENABLE_WORKER_EXTENSIONS,
+                         PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT,
+                         PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39,
                          PYTHON_ENABLE_DEBUG_LOGGING,
                          FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
 
@@ -27,8 +31,12 @@ def get_python_appsetting_state():
     # Special case for extensions
     python_version = current_vars['FUNCTIONS_WORKER_RUNTIME_VERSION']
     if python_version == '3.9':
-        app_setting_states += PYTHON_ENABLE_WORKER_EXTENSIONS + ": True "
+        app_setting_states += (PYTHON_ENABLE_WORKER_EXTENSIONS + ": "
+                               + str(PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39)
+                               + " ")
     else:
-        app_setting_states += PYTHON_ENABLE_WORKER_EXTENSIONS + ": False "
+        app_setting_states += (PYTHON_ENABLE_WORKER_EXTENSIONS + ": "
+                               + str(PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT)
+                               + " ")
 
     return app_setting_states

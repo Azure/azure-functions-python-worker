@@ -140,8 +140,8 @@ class TestGenericFunctions(testutils.AsyncTestCase):
                     )
                 ]
             )
-            # It should fail here, since generic binding requires
-            # $return statement in function.json to pass output
+            # It passes now as we are enabling generic binding to return output
+            # implicitly
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
 
@@ -166,7 +166,7 @@ class TestGenericFunctions(testutils.AsyncTestCase):
                     )
                 ]
             )
-            # It should fail here, since the generic binding requires datatype
-            # to be defined in function.json
+            # It passes now as we are enabling generic binding to return output
+            # implicitly
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)

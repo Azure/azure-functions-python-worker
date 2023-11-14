@@ -89,10 +89,11 @@ def get_unused_tcp_port():
 
 def handle_request():
     req_headers = dict(request.headers)
-    invoc_id = req_headers.get("x-ms-invocation-id")
+    invoc_id = req_headers.get("X-Ms-Invocation-Id")
 
     http_coordinator.add_http_invoc_request(invoc_id, request)
-    http_resp = http_coordinator.wait_and_get_http_invoc_response_async(invoc_id)
+    # get and run grpc function here using self._loop.run_in_executor
+    http_resp = http_coordinator.wait_and_get_http_invoc_response_sync(invoc_id)
 
     logger.info("response:-- %s", type(http_resp))
 
@@ -354,10 +355,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._function_data_cache_enabled = val == _TRUE
 
         unused_port = get_unused_tcp_port()
+        self._loop.run_in_executor(self._sync_call_tp, create_server, unused_port)
         # thread = threading.Thread(target=create_server, args=(unused_port,))
         # thread.start()
-        loop = asyncio.get_event_loop()
-        loop.create_task(create_server(unused_port))
+        # loop = asyncio.get_event_loop()
+        # loop.create_task(create_server(unused_port))
 
         capabilities = {
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
@@ -586,7 +588,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             http_trigger_param_name = await self.get_http_trigger_param_name(fi)
 
             if bool(http_trigger_param_name):
-                http_request = await http_coordinator.wait_and_get_http_invoc_request_async(
+                http_request = http_coordinator.wait_and_get_http_invoc_request_sync(
                     invocation_id)
                 args[http_trigger_param_name] = http_request
 

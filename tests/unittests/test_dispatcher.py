@@ -98,6 +98,19 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 1
             )
 
+    async def test_dispatcher_initialize_worker_settings_logs(self):
+        """Test if the dispatcher's log can be flushed out during worker
+        initialization
+        """
+        async with self._ctrl as host:
+            r = await host.init_worker('3.0.12345')
+            self.assertEqual(
+                len([log for log in r.logs if log.message.contains(
+                    'PYTHON_ENABLE_WORKER_EXTENSIONS:'
+                )]),
+                1
+            )
+
     async def test_dispatcher_environment_reload_logging(self):
         """Test if the sync threadpool will pick up app setting in placeholder
         mode (Linux Consumption)
@@ -111,6 +124,23 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             self.assertEqual(
                 len([log for log in r.logs if log.message.startswith(
                     'Received FunctionEnvironmentReloadRequest'
+                )]),
+                1
+            )
+
+    async def test_dispatcher_environment_reload_settings_logs(self):
+        """Test if the sync threadpool will pick up app setting in placeholder
+        mode (Linux Consumption)
+        """
+        async with self._ctrl as host:
+            await host.init_worker()
+            await self._check_if_function_is_ok(host)
+
+            # Reload environment variable on specialization
+            r = await host.reload_environment(environment={})
+            self.assertEqual(
+                len([log for log in r.logs if log.message.contains(
+                    'PYTHON_ENABLE_WORKER_EXTENSIONS:'
                 )]),
                 1
             )

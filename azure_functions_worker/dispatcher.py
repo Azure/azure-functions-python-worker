@@ -552,11 +552,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
                         'request ID: %s,'
-                        'App Settings state: %s.',
+                        'App Settings state: %s.'
                         ' To enable debug level logging, please refer to '
                         'https://aka.ms/python-enable-debug-logging',
                         self.request_id,
-                        "test")
+                        get_python_appsetting_state())
 
             func_env_reload_request = \
                 request.function_environment_reload_request

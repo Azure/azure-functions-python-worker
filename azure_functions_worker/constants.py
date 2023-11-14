@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import os
 import sys
 
 # Capabilities
@@ -54,45 +53,3 @@ RETRY_POLICY = "retry_policy"
 
 # Paths
 CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site-packages"
-
-
-def get_python_appsetting_state():
-    app_settings = {
-        "PYTHON_ROLLBACK_CWD_PATH":
-        get_statement(PYTHON_ROLLBACK_CWD_PATH,
-                      ""),
-        "PYTHON_THREADPOOL_THREAD_COUNT":
-        get_statement(PYTHON_THREADPOOL_THREAD_COUNT,
-                      PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT),
-        "PYTHON_ISOLATE_WORKER_DEPENDENCIES":
-        get_statement(PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-                      PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT),
-        "PYTHON_ENABLE_WORKER_EXTENSIONS":
-        get_statement(PYTHON_ENABLE_WORKER_EXTENSIONS,
-                      PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT),
-            "PYTHON_ENABLE_DEBUG_LOGGING":
-        get_statement(PYTHON_ENABLE_DEBUG_LOGGING,
-                      "0"),
-        "FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED":
-        get_statement(FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
-                      "0")
-    }
-
-    # convert to string
-    app_settings_string = ""
-    for item in app_settings:
-        app_settings_string += item + ": " + app_settings[item] + " "
-
-    return app_settings_string
-
-
-def get_statement(app_setting, default_value):
-    app_setting_state = os.getenv(app_setting)
-
-    if app_setting_state is None:
-        app_setting_state = str(default_value)
-
-    if app_setting in os.environ:
-        return "set to " + app_setting_state + " by customer"
-    else:
-        return "set to " + app_setting_state + " by default"

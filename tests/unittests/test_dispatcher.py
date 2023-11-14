@@ -105,6 +105,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         mode (Linux Consumption)
         """
         async with self._ctrl as host:
+            await host.init_worker()
             await self._check_if_function_is_ok(host)
 
             # Reload environment variable on specialization
@@ -157,6 +158,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: 'invalid'})
 
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._default_workers)
@@ -171,6 +173,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             # Configure thread pool max worker to an invalid value
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '0'})
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._default_workers)
@@ -189,6 +192,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT:
                                f'{self._over_max_workers}'})
             async with self._ctrl as host:
+                await host.init_worker('4.15.1')
                 await self._check_if_function_is_ok(host)
 
                 # Ensure the dispatcher sync threadpool should fallback to max
@@ -200,6 +204,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         mode (Linux Consumption)
         """
         async with self._ctrl as host:
+            await host.init_worker()
             await self._check_if_function_is_ok(host)
 
             # Reload environment variable on specialization
@@ -215,6 +220,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
 
                 # Reload environment variable on specialization
@@ -236,6 +242,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """
         with patch('azure_functions_worker.dispatcher.logger'):
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
 
                 # Reload environment variable on specialization
@@ -251,6 +258,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
 
                 # Reload environment variable on specialization
@@ -270,6 +278,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
     async def test_sync_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
+                await host.init_worker()
                 request_id: str = self._ctrl._worker._request_id
                 func_id, invoke_id, func_name = (
                     await self._check_if_function_is_ok(host)
@@ -288,6 +297,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
     async def test_async_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
+                await host.init_worker()
                 request_id: str = self._ctrl._worker._request_id
                 func_id, invoke_id, func_name = (
                     await self._check_if_async_function_is_ok(host)
@@ -545,6 +555,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
         when a functions metadata request is received
         """
         async with self._ctrl as host:
+            await host.init_worker()
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertFalse(r.response.use_default_metadata_indexing)
@@ -556,6 +567,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
         when a functions metadata request is received
         """
         async with self._ctrl as host:
+            await host.init_worker()
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertFalse(r.response.use_default_metadata_indexing)
@@ -611,7 +623,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         """Test if azure functions is loaded during init
         """
         async with self._ctrl as host:
-            r = await host.init_worker('4.15.1')
+            r = await host.init_worker()
             self.assertEqual(
                 len([log for log in r.logs if log.message.startswith(
                     'Received WorkerInitRequest'
@@ -627,7 +639,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
 
         # Dedicated Apps where placeholder mode is not set
         async with self._ctrl as host:
-            r = await host.init_worker('4.15.1')
+            r = await host.init_worker()
             logs = [log.message for log in r.logs]
             self.assertIn(
                 "Applying prioritize_customer_dependencies: "
@@ -645,7 +657,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         os.environ["CONTAINER_NAME"] = "test"
         os.environ["WEBSITE_PLACEHOLDER_MODE"] = "1"
         async with self._ctrl as host:
-            r = await host.init_worker('4.15.1')
+            r = await host.init_worker()
             logs = [log.message for log in r.logs]
             self.assertNotIn(
                 "Applying prioritize_customer_dependencies: "
@@ -662,7 +674,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         os.environ["WEBSITE_PLACEHOLDER_MODE"] = "0"
         os.environ["CONTAINER_NAME"] = "test"
         async with self._ctrl as host:
-            r = await host.init_worker('4.15.1')
+            r = await host.init_worker()
             logs = [log.message for log in r.logs]
             self.assertIn(
                 "Applying prioritize_customer_dependencies: "

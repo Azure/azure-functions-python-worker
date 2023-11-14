@@ -20,6 +20,7 @@ def get_python_appsetting_state():
          PYTHON_THREADPOOL_THREAD_COUNT,
          PYTHON_ISOLATE_WORKER_DEPENDENCIES,
          PYTHON_ENABLE_DEBUG_LOGGING,
+         PYTHON_ENABLE_WORKER_EXTENSIONS,
          FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED]
 
     app_setting_states = "".join(

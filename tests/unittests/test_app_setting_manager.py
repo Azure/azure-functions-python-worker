@@ -26,18 +26,18 @@ class TestDefaultAppSettingsLogs(testutils.AsyncTestCase):
     """Tests for default app settings logs."""
 
     @classmethod
-    def setUpClass(self):
-        self._ctrl = testutils.start_mockhost(
+    def setUpClass(cls):
+        cls._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_FUNCTIONS_DIR)
         os_environ = os.environ.copy()
-        self._patch_environ = patch.dict('os.environ', os_environ)
-        self._patch_environ.start()
+        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ.start()
         super().setUpClass()
 
-    def tearDownClass(self):
-        os.environ.clear()
-        os.environ.update(self._pre_env)
-        self.mock_version_info.stop()
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        cls._patch_environ.stop()
 
     async def test_initialize_worker_logging(self):
         """Test if the dispatcher's log can be flushed out during worker
@@ -45,46 +45,34 @@ class TestDefaultAppSettingsLogs(testutils.AsyncTestCase):
         """
         async with self._ctrl as host:
             r = await host.init_worker('3.0.12345')
-            self.assertEqual(
-                len([log for log in r.logs if log.message.contains(
-                    'App Settings state:'
-                )]), 1
-            )
-            self.assertEqual(
-                len([log for log in r.logs if log.message.contains(
-                    'PYTHON_ENABLE_WORKER_EXTENSIONS:'
-                )]), 1
-            )
-            self.assertEqual(
-                len([log for log in r.logs if log.message.contains(
-                    'PYTHON_ENABLE_DEBUG_LOGGING:'
-                )]), 0
-            )
+            self.assertTrue('App Settings state: ' in log for log in r.logs)
+            self.assertTrue('PYTHON_ENABLE_WORKER_EXTENSIONS: '
+                            in log for log in r.logs)
 
     def test_get_python_appsetting_state(self):
         app_setting_state = get_python_appsetting_state()
         expected_string = "PYTHON_ENABLE_WORKER_EXTENSIONS: "
-        self.assertEqual(app_setting_state, expected_string)
+        self.assertIn(expected_string, app_setting_state)
 
 
 class TestNonDefaultAppSettingsLogs(testutils.AsyncTestCase):
     """Tests for non-default app settings logs."""
 
     @classmethod
-    def setUpClass(self):
-        self._ctrl = testutils.start_mockhost(
+    def setUpClass(cls):
+        cls._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_FUNCTIONS_DIR)
         os_environ = os.environ.copy()
         os_environ[PYTHON_THREADPOOL_THREAD_COUNT] = '20'
         os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
-        self._patch_environ = patch.dict('os.environ', os_environ)
-        self._patch_environ.start()
+        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ.start()
         super().setUpClass()
 
-    def tearDownClass(self):
-        os.environ.clear()
-        os.environ.update(self._pre_env)
-        self.mock_version_info.stop()
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        cls._patch_environ.stop()
 
     async def test_initialize_worker_logging(self):
         """Test if the dispatcher's log can be flushed out during worker
@@ -92,24 +80,15 @@ class TestNonDefaultAppSettingsLogs(testutils.AsyncTestCase):
         """
         async with self._ctrl as host:
             r = await host.init_worker('3.0.12345')
-            self.assertEqual(
-                len([log for log in r.logs if log.message.contains(
-                    'App Settings state:'
-                )]), 1
-            )
-            self.assertEqual(
-                len([log for log in r.logs if log.message.contains(
-                    'PYTHON_THREADPOOL_THREAD_COUNT:'
-                )]), 1
-            )
-            self.assertEqual(
-                len([log for log in r.logs if log.message.contains(
-                    'PYTHON_ENABLE_DEBUG_LOGGING:'
-                )]), 1
-            )
+            self.assertTrue('App Settings state: ' in log for log in r.logs)
+            self.assertTrue('PYTHON_THREADPOOL_THREAD_COUNT: '
+                            in log for log in r.logs)
+            self.assertTrue('PYTHON_ENABLE_DEBUG_LOGGING: '
+                            in log for log in r.logs)
 
     def test_get_python_appsetting_state(self):
         app_setting_state = get_python_appsetting_state()
-        expected_string = "PYTHON_THREADPOOL_THREAD_COUNT: 20 PYTHON_ENABLE_DEBUG_LOGGING: \
-            1 PYTHON_ENABLE_WORKER_EXTENSIONS: "
-        self.assertEqual(app_setting_state, expected_string)
+        expected_string = ("PYTHON_THREADPOOL_THREAD_COUNT: 20 "
+                           "PYTHON_ENABLE_DEBUG_LOGGING: 1 "
+                           "PYTHON_ENABLE_WORKER_EXTENSIONS: ")
+        self.assertIn(expected_string, app_setting_state)

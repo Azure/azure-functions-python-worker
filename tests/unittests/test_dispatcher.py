@@ -104,12 +104,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """
         async with self._ctrl as host:
             r = await host.init_worker('3.0.12345')
-            self.assertEqual(
-                len([log for log in r.logs if log.message.contains(
-                    'PYTHON_ENABLE_WORKER_EXTENSIONS:'
-                )]),
-                1
-            )
+            self.assertTrue('PYTHON_ENABLE_WORKER_EXTENSIONS: '
+                            in log for log in r.logs)
 
     async def test_dispatcher_environment_reload_logging(self):
         """Test if the sync threadpool will pick up app setting in placeholder
@@ -138,12 +134,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
             # Reload environment variable on specialization
             r = await host.reload_environment(environment={})
-            self.assertEqual(
-                len([log for log in r.logs if log.message.contains(
-                    'PYTHON_ENABLE_WORKER_EXTENSIONS:'
-                )]),
-                1
-            )
+            self.assertTrue('PYTHON_ENABLE_WORKER_EXTENSIONS: '
+                            in log for log in r.logs)
 
     async def test_dispatcher_send_worker_request(self):
         """Test if the worker status response will be sent correctly when

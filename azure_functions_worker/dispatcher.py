@@ -556,7 +556,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         ' To enable debug level logging, please refer to '
                         'https://aka.ms/python-enable-debug-logging',
                         self.request_id,
-                        get_python_appsetting_state())
+                        "test")
 
             func_env_reload_request = \
                 request.function_environment_reload_request

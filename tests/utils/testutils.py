@@ -514,7 +514,7 @@ class _MockWebHost:
     def request_id(self):
         return self._request_id
 
-    async def init_worker(self, host_version: str):
+    async def init_worker(self, host_version: str = '4.28.0'):
         r = await self.communicate(
             protos.StreamingMessage(
                 worker_init_request=protos.WorkerInitRequest(

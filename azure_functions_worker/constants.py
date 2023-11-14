@@ -78,7 +78,12 @@ def get_python_appsetting_state():
                       "0")
     }
 
-    return str(app_settings)
+    # convert to string
+    app_settings_string = ""
+    for item in app_settings:
+        app_settings_string += item + ": " + app_settings[item] + " "
+
+    return app_settings_string
 
 
 def get_statement(app_setting, default_value):

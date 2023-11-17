@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import json
 import os
+import sys
 import time
 from unittest import skipIf
 from unittest.mock import patch
@@ -14,7 +15,8 @@ from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST)
+        or sys.version_info.minor == 12,
         "Docker tests cannot retrieve port needed for a webhook")
 class TestDurableFunctions(testutils.WebHostTestCase):
 

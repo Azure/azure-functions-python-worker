@@ -106,8 +106,7 @@ PACKAGES = [
 ]
 
 INSTALL_REQUIRES = [
-    "azure-functions==1.18.0b4",
-    "python-dateutil~=2.8.2"
+    "azure-functions==1.18.0b4"
 ]
 
 if sys.version_info[:2] == (3, 7):
@@ -121,11 +120,7 @@ else:
 
 EXTRA_REQUIRES = {
     "dev": [
-        "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
-        "azure-functions-durable",  # Used for Durable E2E tests
         "flask",
-        "fastapi~=0.85.0",  # Used for ASGIMiddleware test
-        "pydantic",
         "pycryptodome~=3.10.1",
         "flake8~=4.0.1",
         "mypy",
@@ -144,8 +139,14 @@ EXTRA_REQUIRES = {
         "scikit-learn",
         "opencv-python",
         "pandas",
-        "numpy"
-    ]
+        "numpy",
+        "python-dateutil~=2.8.2"
+    ],
+    "e2etests": ["azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
+                 # "azure-functions-durable",  # Used for Durable E2E tests
+                 "fastapi~=0.85.0",  # Used for ASGIMiddleware test
+                 "pydantic"
+                 ]
 }
 
 

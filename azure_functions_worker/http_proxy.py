@@ -63,6 +63,22 @@ class HttpCoordinator:
         self._wait_for_event_sync(invoc_id, is_request=False)
         return self._retrieve_and_clean_response(invoc_id)
 
+    def set_http_trigger_func(self, func, args):
+        logger.info("----> run http trigger func")
+        self.func = func
+        self.args = args
+
+    def set_call_result(self):
+        if not hasattr(self, 'call_result_event'):
+            self.call_result_event = threading.Event()
+        self.call_result_event.set()
+
+    def wait_call_result(self):
+        if not hasattr(self, 'call_result_event'):
+            self.call_result_event = threading.Event()
+        self.call_result_event.wait()
+
+
     async def _wait_for_event_async(self, invoc_id, is_request=True):
         event = self.get_request_event(invoc_id) if is_request else self.get_response_event(invoc_id)
         await event.wait()

@@ -88,16 +88,23 @@ def get_unused_tcp_port():
 
 
 def handle_request():
-    req_headers = dict(request.headers)
-    invoc_id = req_headers.get("X-Ms-Invocation-Id")
+    try:
+        req_headers = dict(request.headers)
+        invoc_id = req_headers.get("X-Ms-Invocation-Id")
 
-    http_coordinator.add_http_invoc_request(invoc_id, request)
-    # get and run grpc function here using self._loop.run_in_executor
-    http_resp = http_coordinator.wait_and_get_http_invoc_response_sync(invoc_id)
+        http_coordinator.add_http_invoc_request(invoc_id, request)
+        # get and run grpc function here using self._loop.run_in_executor
+        http_coordinator.wait_call_result()
+        http_resp = http_coordinator.func(http_coordinator.args)
+        # http_coordinator.set_call_result()
+        # http_resp = http_coordinator.wait_and_get_http_invoc_response_sync(invoc_id)
 
-    logger.info("response:-- %s", type(http_resp))
+        logger.info("response:-- %s", type(http_resp))
 
-    return http_resp
+        return http_resp
+    except Exception as e:
+        logger.exception("An error occurred while handling the request")
+        return {"error": str(e)}, 500
 
 
 @flask_app.route('/', defaults={'path': ''})
@@ -354,7 +361,20 @@ class Dispatcher(metaclass=DispatcherMeta):
             val = host_capabilities[constants.FUNCTION_DATA_CACHE]
             self._function_data_cache_enabled = val == _TRUE
 
+        # index cx code
+        # if its function code
+        # check if there is httptrigger or generic http, set advanced mode if so
+        # and if so, also validate req/resp types used to choose server implementation dynamically
+        # we dynamically import server specific lib
+        # else if its flask code
+        # we get the flask app, and run that instead
+        # we index the flask differently, there is no function app with with func bindings
+        # we need to run cx flask app on http proxy port
+        # we need to get all routes of flask and return one function per route
+        # each func invoc will hit a flask endpoint, how about other bindings?!
+        #
         unused_port = get_unused_tcp_port()
+        # this should run in managed tpe, but this is customer facing, we shall add one more thread to account for this
         self._loop.run_in_executor(self._sync_call_tp, create_server, unused_port)
         # thread = threading.Thread(target=create_server, args=(unused_port,))
         # thread.start()
@@ -604,18 +624,24 @@ class Dispatcher(metaclass=DispatcherMeta):
                 for name in fi.output_types:
                     args[name] = bindings.Out()
 
-            if fi.is_async:
-                call_result = await self._run_async_func(fi_context, fi.func, args)
-                # call_result = None
+            if bool(http_trigger_param_name):
+                http_coordinator.set_http_trigger_func(fi.func, args)
+                call_result = None
+                http_coordinator.set_call_result()
+                # call_result = http_coordinator.wait_call_result()
             else:
-                call_result = await self._loop.run_in_executor(
-                    self._sync_call_tp,
-                    self._run_sync_func,
-                    invocation_id,
-                    fi_context,
-                    fi.func,
-                    args,
-                )
+                if fi.is_async:
+                    call_result = await self._run_async_func(fi_context, fi.func, args)
+                    # call_result = None
+                else:
+                    call_result = await self._loop.run_in_executor(
+                        self._sync_call_tp,
+                        self._run_sync_func,
+                        invocation_id,
+                        fi_context,
+                        fi.func,
+                        args,
+                    )
 
             if call_result is not None and not fi.has_return:
                 raise RuntimeError(
@@ -623,8 +649,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     "binding returned a non-None value"
                 )
 
-            if bool(http_trigger_param_name):
-                http_coordinator.add_http_invoc_response(invocation_id, call_result)
+            # if bool(http_trigger_param_name):
+            #     http_coordinator.add_http_invoc_response(invocation_id, call_result)
 
             output_data = []
             cache_enabled = self._function_data_cache_enabled
@@ -647,7 +673,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data.append(param_binding)
 
             return_value = None
-            if fi.return_type is not None and bool(http_trigger_param_name):
+            if fi.return_type is not None and not bool(http_trigger_param_name):
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name,
                     call_result,

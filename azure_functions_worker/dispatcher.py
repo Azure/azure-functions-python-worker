@@ -14,6 +14,7 @@ import queue
 import sys
 import threading
 from flask import Flask, request
+from waitress import serve
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
@@ -95,7 +96,8 @@ def handle_request():
         http_coordinator.add_http_invoc_request(invoc_id, request)
         # get and run grpc function here using self._loop.run_in_executor
         http_coordinator.wait_call_result()
-        http_resp = http_coordinator.func(http_coordinator.args)
+        # http_resp = http_coordinator.func(http_coordinator.args)
+        http_resp = http_coordinator.func()
         # http_coordinator.set_call_result()
         # http_resp = http_coordinator.wait_and_get_http_invoc_response_sync(invoc_id)
 
@@ -115,8 +117,7 @@ def catch_all(path):
 
 def create_server(port):
     host_name = "localhost"
-    flask_app.run(host=host_name, port=port)
-
+    serve(flask_app, host=host_name, port=port)
 
 class Dispatcher(metaclass=DispatcherMeta):
     _GRPC_STOP_RESPONSE = object()
@@ -375,9 +376,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         #
         unused_port = get_unused_tcp_port()
         # this should run in managed tpe, but this is customer facing, we shall add one more thread to account for this
-        self._loop.run_in_executor(self._sync_call_tp, create_server, unused_port)
-        # thread = threading.Thread(target=create_server, args=(unused_port,))
-        # thread.start()
+        # self._loop.run_in_executor(self._sync_call_tp, create_server, unused_port)
+        thread = threading.Thread(target=create_server, args=(unused_port,))
+        thread.start()
         # loop = asyncio.get_event_loop()
         # loop.create_task(create_server(unused_port))
 
@@ -591,6 +592,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             args = {}
             for pb in invoc_request.input_data:
+                if pb.name == 'req':
+                    continue
                 pb_type_info = fi.input_types[pb.name]
                 if bindings.is_trigger_binding(pb_type_info.binding_name):
                     trigger_metadata = invoc_request.trigger_metadata
@@ -610,7 +613,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             if bool(http_trigger_param_name):
                 http_request = http_coordinator.wait_and_get_http_invoc_request_sync(
                     invocation_id)
-                args[http_trigger_param_name] = http_request
+                # args[http_trigger_param_name] = http_request
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
 
@@ -624,7 +627,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 for name in fi.output_types:
                     args[name] = bindings.Out()
 
-            if bool(http_trigger_param_name):
+            # if bool(http_trigger_param_name):
+            if True:    
                 http_coordinator.set_http_trigger_func(fi.func, args)
                 call_result = None
                 http_coordinator.set_call_result()
@@ -673,7 +677,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data.append(param_binding)
 
             return_value = None
-            if fi.return_type is not None and not bool(http_trigger_param_name):
+            # if fi.return_type is not None and not bool(http_trigger_param_name):
+            if fi.return_type is not None and False:
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name,
                     call_result,

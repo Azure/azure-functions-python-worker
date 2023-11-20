@@ -22,6 +22,9 @@ DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'
 DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
     'dispatcher_functions_stein'
+DISPATCHER_STEIN_INVALID_APP_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
+    'broken_functions' / \
+    'invalid_app_stein'
 DISPATCHER_STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'broken_functions' / \
     'invalid_stein'
@@ -589,6 +592,62 @@ class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
             self.assertTrue(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+
+
+class TestDispatcherInvalidAppStein(testutils.AsyncTestCase):
+
+    def setUp(self):
+        self._ctrl = testutils.start_mockhost(
+            script_root=DISPATCHER_STEIN_INVALID_APP_FUNCTIONS_DIR)
+        self._pre_env = dict(os.environ)
+        self.mock_version_info = patch(
+            'azure_functions_worker.dispatcher.sys.version_info',
+            SysVersionInfo(3, 9, 0, 'final', 0))
+        self.mock_version_info.start()
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self._pre_env)
+        self.mock_version_info.stop()
+
+    async def test_dispatcher_indexing_not_app(self):
+        """Test if the functions metadata response will be 0
+            when an invalid app is provided
+                """
+        async with self._ctrl as host:
+            r = await host.get_functions_metadata()
+            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
+            self.assertFalse(r.response.use_default_metadata_indexing)
+            self.assertEqual(r.response.result.status,
+                             0)
+
+
+class TestDispatcherInvalidStein(testutils.AsyncTestCase):
+
+    def setUp(self):
+        self._ctrl = testutils.start_mockhost(
+            script_root=DISPATCHER_STEIN_INVALID_FUNCTIONS_DIR)
+        self._pre_env = dict(os.environ)
+        self.mock_version_info = patch(
+            'azure_functions_worker.dispatcher.sys.version_info',
+            SysVersionInfo(3, 9, 0, 'final', 0))
+        self.mock_version_info.start()
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self._pre_env)
+        self.mock_version_info.stop()
+
+    async def test_dispatcher_indexing_not_app(self):
+        """Test if the functions metadata response will be 0
+            when an invalid app is provided
+                """
+        async with self._ctrl as host:
+            r = await host.get_functions_metadata()
+            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
+            self.assertFalse(r.response.use_default_metadata_indexing)
+            self.assertEqual(r.response.result.status,
+                             0)
 
 
 class TestDispatcherInitRequest(testutils.AsyncTestCase):

@@ -20,7 +20,7 @@ Participate in this survey to offer feedback for improvements we can make to the
 
 ###### What are the use cases and scenarios in which you use Azure Functions today?
 
-###### What are the pain points you have experienced using Azure Functions today?
+###### What are the pain points you have experienced using Azure Functions?
 
 ###### Please share any suggestions for product improvements.
 

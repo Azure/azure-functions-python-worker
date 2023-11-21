@@ -9,7 +9,7 @@ Participate in this survey to offer feedback for improvements we can make to the
 -->
 
 ### Survey
-###### What stack do primarily use?
+###### What stack do you primarily use?
 [] Python
 [] Node
 [] PowerShell

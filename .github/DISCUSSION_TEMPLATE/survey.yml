@@ -13,33 +13,57 @@ body:
         - label: Go
         - label: Other (Please specify below)
   - type: textarea
+    id: role
     attributes:
       label: What is your current role in which you use Azure Functions?
       description: Software Developer, Machine Learning Engineer, Full Stack Engineer, etc.
+      render: bash
+    validations:
+      required: false
   - type: textarea
+    id: scenarios
     attributes:
       label: What are the use cases and scenarios in which you use Azure Functions today?
       description: Describe how you are using Azure Functions, and expected end goals. 
+      render: bash
+    validations:
+      required: false
   - type: textarea
+    id: pain points
     attributes:
       label: What are the pain points you have experienced using Azure Functions?
+      render: bash
+    validations:
+      required: false
   - type: textarea
+    id: improvements
     attributes:
       label: Please share any suggestions for product improvements.
+      render: bash
+    validations:
+      required: false
   - type: textarea
+    id: tooling
     attributes:
       label: What developer tools do you use? 
       description: Visual Studio Code, Command Line, etc.
+      render: bash
+    validations:
+      required: false
   - type: checkboxes
     attributes:
       label: Would you be interested in meeting with the Azure Functions team to provide additional feedback?
-      description: If you select "Yes", the team may reach out with follow up questions on your responses.
       options:
         - label: Yes
         - label: No
   - type: textarea
+    id: tooling
     attributes:
       label: Please provide any other comments or feedback here, as well as your email if you indicated 'Yes' to being contacted from the Azure Functions team.
+      render: bash
+    validations:
+      required: false
   - type: markdown
     attributes:
-      value: "Thank you for your feedback! For any specific questions or bugs, please create an issue here: https://github.com/Azure/azure-functions-python-worker/issues"
+      value: |
+        "Thank you for your feedback! For any specific questions or to report a bug, please create an issue [here](https://github.com/Azure/azure-functions-python-worker/issues)."

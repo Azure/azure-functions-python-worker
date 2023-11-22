@@ -1,58 +1,61 @@
-- type: checkboxes
-  attributes:
-    label: Stack
-    description: What stack do you primarily use?
-    options:
-      - label: Python
-      - label: Node
-      - label: PowerShell
-      - label: .NET
-      - label: Java
-      - label: Go
-      - label: Other
-        required: true
-- type: textarea
-  attributes:
-    label: Role
-    description: What is your current role in which you use Azure Functions?
-    value: role
-  validations:
-    required: true
-- type: textarea
-  attributes:
-    label: scenarios
-    description: What are the use cases and scenarios in which you use Azure Functions today?
-    value: scenarios
-  validations:
-    required: true
-- type: textarea
-  attributes:
-    label: improvements
-    description: What are the pain points you have experienced using Azure Functions?
-    value: improvements
-  validations:
-    required: true
-- type: textarea
-  attributes:
-    label: suggestions
-    description: Please share any suggestions for product improvements.
-    value: suggestions
-  validations:
-    required: true
-- type: textarea
-  attributes:
-    label: tools
-    description: What developer tools do you use? (For example, Visual Studio Code, Command Line, etc.)
-    value: tools
-  validations:
-    required: true
-- type: textarea
-  attributes:
-    label: contact
-    description: Please provide any other comments or feedback here, as well as your email if you indicated 'Yes' to being contacted from the Azure Functions team.
-    value: contact
-  validations:
-    required: true
-- type: markdown
-  attributes:
-    value: "Thank you for your feedback! For any specific questions or bugs, please create an issue here: https://github.com/Azure/azure-functions-python-worker/issues"
+title: "[Survey] "
+labels: ["Survey"]
+body:
+  - type: checkboxes
+    attributes:
+      label: Stack
+      description: What stack do you primarily use?
+      options:
+        - label: Python
+        - label: Node
+        - label: PowerShell
+        - label: .NET
+        - label: Java
+        - label: Go
+        - label: Other
+          required: true
+  - type: textarea
+    attributes:
+      label: Role
+      description: What is your current role in which you use Azure Functions?
+      value: role
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: scenarios
+      description: What are the use cases and scenarios in which you use Azure Functions today?
+      value: scenarios
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: improvements
+      description: What are the pain points you have experienced using Azure Functions?
+      value: improvements
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: suggestions
+      description: Please share any suggestions for product improvements.
+      value: suggestions
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: tools
+      description: What developer tools do you use? (For example, Visual Studio Code, Command Line, etc.)
+      value: tools
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: contact
+      description: Please provide any other comments or feedback here, as well as your email if you indicated 'Yes' to being contacted from the Azure Functions team.
+      value: contact
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "Thank you for your feedback! For any specific questions or bugs, please create an issue here: https://github.com/Azure/azure-functions-python-worker/issues"

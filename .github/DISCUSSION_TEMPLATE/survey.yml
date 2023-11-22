@@ -29,11 +29,11 @@ body:
       label: What developer tools do you use? 
       description: Visual Studio Code, Command Line, etc.
   - type: checkboxes
-  attributes:
-    label: Would you be interested in meeting with the Azure Functions team to provide additional feedback?
-    options:
-      - label: Yes
-      - label: No
+    attributes:
+      label: Would you be interested in meeting with the Azure Functions team to provide additional feedback?
+      options:
+        - label: Yes
+        - label: No
   - type: textarea
     attributes:
       label: Please provide any other comments or feedback here, as well as your email if you indicated 'Yes' to being contacted from the Azure Functions team.

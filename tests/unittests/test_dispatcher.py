@@ -651,8 +651,9 @@ class TestDispatcherInvalidAppStein(testutils.AsyncTestCase):
         async with self._ctrl as host:
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertEqual(r.response.result.status,
-                             0)
+            self.assertEqual(r.response.result.exception.message,
+                             'ValueError: Could not find top level '
+                             'function app instances in function_app.py.')
 
 
 class TestDispatcherInvalidStein(testutils.AsyncTestCase):
@@ -678,8 +679,8 @@ class TestDispatcherInvalidStein(testutils.AsyncTestCase):
         async with self._ctrl as host:
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertEqual(r.response.result.status,
-                             0)
+            self.assertIn('FunctionLoadError: cannot load the main function',
+                          r.response.result.exception.message)
 
 
 class TestDispatcherInitRequest(testutils.AsyncTestCase):

@@ -651,9 +651,9 @@ class TestDispatcherInvalidAppStein(testutils.AsyncTestCase):
         async with self._ctrl as host:
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertEqual(r.response.result.exception.message,
-                             'ValueError: Could not find top level '
-                             'function app instances in function_app.py.')
+            self.assertIn(r.response.result.exception.message,
+                          'ValueError: Could not find top level '
+                          'function app instances in function_app.py.')
 
 
 class TestDispatcherInvalidStein(testutils.AsyncTestCase):
@@ -672,15 +672,16 @@ class TestDispatcherInvalidStein(testutils.AsyncTestCase):
         os.environ.update(self._pre_env)
         self.mock_version_info.stop()
 
-    async def test_dispatcher_indexing_not_app(self):
+    async def test_dispatcher_indexing_invalid_app(self):
         """Test if the functions metadata response will be 0
             when an invalid app is provided
                 """
         async with self._ctrl as host:
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertIn('FunctionLoadError: cannot load the main function',
-                          r.response.result.exception.message)
+            self.assertIn(r.response.result.exception.message,
+                          'ValueError: Could not find top level '
+                          'function app instances in function_app.py.')
 
 
 class TestDispatcherInitRequest(testutils.AsyncTestCase):

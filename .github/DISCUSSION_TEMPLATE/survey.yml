@@ -29,7 +29,7 @@ body:
     validations:
       required: false
   - type: textarea
-    id: pain points
+    id: pain-points
     attributes:
       label: What are the pain points you have experienced using Azure Functions?
       render: bash
@@ -54,10 +54,10 @@ body:
     attributes:
       label: Would you be interested in meeting with the Azure Functions team to provide additional feedback?
       options:
-        - label: Yes
-        - label: No
+        - label: "Yes"
+        - label: "No"
   - type: textarea
-    id: tooling
+    id: comments
     attributes:
       label: Please provide any other comments or feedback here, as well as your email if you indicated 'Yes' to being contacted from the Azure Functions team.
       render: bash

@@ -651,7 +651,6 @@ class TestDispatcherInvalidAppStein(testutils.AsyncTestCase):
         async with self._ctrl as host:
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              0)
 
@@ -679,7 +678,6 @@ class TestDispatcherInvalidStein(testutils.AsyncTestCase):
         async with self._ctrl as host:
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              0)
 

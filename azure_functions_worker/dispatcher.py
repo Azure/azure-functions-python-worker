@@ -13,8 +13,6 @@ import platform
 import queue
 import sys
 import threading
-from flask import Flask, request
-from waitress import serve
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
@@ -51,7 +49,7 @@ from .utils.wrappers import disable_feature_by
 from .version import VERSION
 
 _TRUE = "true"
-flask_app = Flask(__name__)
+
 
 """In Python 3.6, the current_task method was in the Task class, but got moved
 out in 3.7+ and fully removed in 3.9. Thus, to support 3.6 and 3.9 together, we
@@ -87,19 +85,24 @@ def get_unused_tcp_port():
     # Return the port number
     return port
 
+import uvicorn
+# from flask import Flask, request
+# from hypercorn import Config
+from quart import Quart, request
+# from hypercorn.asyncio import serve
 
-def handle_request():
+app = Quart(__name__)
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+async def catch_all(path):
     try:
         req_headers = dict(request.headers)
         invoc_id = req_headers.get("X-Ms-Invocation-Id")
 
-        http_coordinator.add_http_invoc_request(invoc_id, request)
-        # get and run grpc function here using self._loop.run_in_executor
-        http_coordinator.wait_call_result()
-        # http_resp = http_coordinator.func(http_coordinator.args)
-        http_resp = http_coordinator.func()
-        # http_coordinator.set_call_result()
-        # http_resp = http_coordinator.wait_and_get_http_invoc_response_sync(invoc_id)
+        http_coordinator.set_http_request(invoc_id, request)
+
+        http_resp = await http_coordinator.await_http_response_async(invoc_id)
 
         logger.info("response:-- %s", type(http_resp))
 
@@ -107,17 +110,18 @@ def handle_request():
     except Exception as e:
         logger.exception("An error occurred while handling the request")
         return {"error": str(e)}, 500
+        
+async def create_server(port):
+    # host_name = "localhost"
+    # config = Config()
+    # config.bind = [f"{host_name}:{port}"]
+    
+    # serve(flask_app, config=config)
 
+    uvicorn_config = uvicorn.Config(app, host="localhost", port=port)
+    server = uvicorn.Server(uvicorn_config)
 
-@flask_app.route('/', defaults={'path': ''})
-@flask_app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
-def catch_all(path):
-    return handle_request()
-
-
-def create_server(port):
-    host_name = "localhost"
-    serve(flask_app, host=host_name, port=port)
+    await server.serve()
 
 class Dispatcher(metaclass=DispatcherMeta):
     _GRPC_STOP_RESPONSE = object()
@@ -367,20 +371,16 @@ class Dispatcher(metaclass=DispatcherMeta):
         # check if there is httptrigger or generic http, set advanced mode if so
         # and if so, also validate req/resp types used to choose server implementation dynamically
         # we dynamically import server specific lib
-        # else if its flask code
-        # we get the flask app, and run that instead
-        # we index the flask differently, there is no function app with with func bindings
-        # we need to run cx flask app on http proxy port
-        # we need to get all routes of flask and return one function per route
-        # each func invoc will hit a flask endpoint, how about other bindings?!
+        #
         #
         unused_port = get_unused_tcp_port()
         # this should run in managed tpe, but this is customer facing, we shall add one more thread to account for this
         # self._loop.run_in_executor(self._sync_call_tp, create_server, unused_port)
-        thread = threading.Thread(target=create_server, args=(unused_port,))
-        thread.start()
-        # loop = asyncio.get_event_loop()
-        # loop.create_task(create_server(unused_port))
+        # thread = threading.Thread(target=create_server, args=(unused_port,))
+        # thread.start()
+
+        loop = asyncio.get_event_loop()
+        loop.create_task(create_server(unused_port))
 
         capabilities = {
             constants.RAW_HTTP_BODY_BYTES: _TRUE,
@@ -608,12 +608,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     shmem_mgr=self._shmem_mgr,
                 )
 
-            http_trigger_param_name = await self.get_http_trigger_param_name(fi)
+            is_http_trigger, http_trigger_param_name = await self.get_http_trigger_details(fi)
 
-            if bool(http_trigger_param_name):
-                http_request = http_coordinator.wait_and_get_http_invoc_request_sync(
+            if is_http_trigger:
+                http_request = await http_coordinator.await_http_request_async(
                     invocation_id)
-                # args[http_trigger_param_name] = http_request
+                args[http_trigger_param_name] = http_request
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
 
@@ -627,34 +627,27 @@ class Dispatcher(metaclass=DispatcherMeta):
                 for name in fi.output_types:
                     args[name] = bindings.Out()
 
-            # if bool(http_trigger_param_name):
-            if True:    
-                http_coordinator.set_http_trigger_func(fi.func, args)
-                call_result = None
-                http_coordinator.set_call_result()
-                # call_result = http_coordinator.wait_call_result()
+            if fi.is_async:
+                call_result = await self._run_async_func(fi_context, fi.func, args)
+
             else:
-                if fi.is_async:
-                    call_result = await self._run_async_func(fi_context, fi.func, args)
-                    # call_result = None
-                else:
-                    call_result = await self._loop.run_in_executor(
-                        self._sync_call_tp,
-                        self._run_sync_func,
-                        invocation_id,
-                        fi_context,
-                        fi.func,
-                        args,
-                    )
+                call_result = await self._loop.run_in_executor(
+                    self._sync_call_tp,
+                    self._run_sync_func,
+                    invocation_id,
+                    fi_context,
+                    fi.func,
+                    args,
+                )
 
             if call_result is not None and not fi.has_return:
                 raise RuntimeError(
                     f"function {fi.name!r} without a $return "
                     "binding returned a non-None value"
                 )
-
-            # if bool(http_trigger_param_name):
-            #     http_coordinator.add_http_invoc_response(invocation_id, call_result)
+            
+            if is_http_trigger:
+                http_coordinator.set_http_response(invocation_id, call_result)
 
             output_data = []
             cache_enabled = self._function_data_cache_enabled
@@ -677,8 +670,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data.append(param_binding)
 
             return_value = None
-            # if fi.return_type is not None and not bool(http_trigger_param_name):
-            if fi.return_type is not None and False:
+            if fi.return_type is not None and not is_http_trigger:
                 return_value = bindings.to_outgoing_proto(
                     fi.return_type.binding_name,
                     call_result,
@@ -711,11 +703,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                 ),
             )
 
-    async def get_http_trigger_param_name(self, fi):
-        return next(
+    async def get_http_trigger_details(self, fi):
+        http_trigger_param_name = next(
             (input_type for input_type, type_info in fi.input_types.items() if type_info.binding_name == "httpTrigger"),
             None
         )
+        is_http_trigger = http_trigger_param_name is not None
+        return is_http_trigger, http_trigger_param_name
+
 
     async def _handle__function_environment_reload_request(self, request):
         """Only runs on Linux Consumption placeholder specialization."""

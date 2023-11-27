@@ -16,6 +16,7 @@ DISPATCHER_STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'broken_functions' / \
     'invalid_stein'
 
+
 class TestDispatcherInvalidAppStein(testutils.AsyncTestCase):
 
     def setUp(self):

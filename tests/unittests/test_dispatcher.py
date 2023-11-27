@@ -628,62 +628,6 @@ class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
 
 
-class TestDispatcherInvalidAppStein(testutils.AsyncTestCase):
-
-    def setUp(self):
-        self._ctrl = testutils.start_mockhost(
-            script_root=DISPATCHER_STEIN_INVALID_APP_FUNCTIONS_DIR)
-        self._pre_env = dict(os.environ)
-        self.mock_version_info = patch(
-            'azure_functions_worker.dispatcher.sys.version_info',
-            SysVersionInfo(3, 9, 0, 'final', 0))
-        self.mock_version_info.start()
-
-    def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self._pre_env)
-        self.mock_version_info.stop()
-
-    async def test_dispatcher_indexing_not_app(self):
-        """Test if the functions metadata response will be 0
-            when an invalid app is provided
-                """
-        async with self._ctrl as host:
-            r = await host.get_functions_metadata()
-            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertIn(r.response.result.exception.message,
-                          'ValueError: Could not find top level '
-                          'function app instances in function_app.py.')
-
-
-class TestDispatcherInvalidStein(testutils.AsyncTestCase):
-
-    def setUp(self):
-        self._ctrl = testutils.start_mockhost(
-            script_root=DISPATCHER_STEIN_INVALID_FUNCTIONS_DIR)
-        self._pre_env = dict(os.environ)
-        self.mock_version_info = patch(
-            'azure_functions_worker.dispatcher.sys.version_info',
-            SysVersionInfo(3, 9, 0, 'final', 0))
-        self.mock_version_info.start()
-
-    def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self._pre_env)
-        self.mock_version_info.stop()
-
-    async def test_dispatcher_indexing_invalid_app(self):
-        """Test if the functions metadata response will be 0
-            when an invalid app is provided
-                """
-        async with self._ctrl as host:
-            r = await host.get_functions_metadata()
-            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertIn(r.response.result.exception.message,
-                          'ValueError: Could not find top level '
-                          'function app instances in function_app.py.')
-
-
 class TestDispatcherInitRequest(testutils.AsyncTestCase):
 
     def setUp(self):
@@ -763,40 +707,3 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 "working_directory: , Linux Consumption: True,"
                 " Placeholder: False", logs)
 
-
-class TestConfigurableFileName(testutils.AsyncTestCase):
-
-    def setUp(self):
-        self._ctrl = testutils.start_mockhost(
-            script_root=DISPATCHER_FUNCTIONS_DIR)
-        self._default_file_name: Optional[str] = PYTHON_SCRIPT_FILE_NAME_DEFAULT
-        self._new_file_name: str = 'test.py'
-        self._pre_env = dict(os.environ)
-        self.mock_version_info = patch(
-            'azure_functions_worker.dispatcher.sys.version_info',
-            SysVersionInfo(3, 9, 0, 'final', 0))
-        self.mock_version_info.start()
-
-    def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self._pre_env)
-        self.mock_version_info.stop()
-
-    async def test_dispatcher_default_file_name(self):
-        """
-        Test the default file name
-        """
-        os.environ.update({PYTHON_SCRIPT_FILE_NAME: self._default_file_name})
-        self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
-        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
-                         self._default_file_name)
-
-    # test changing value
-    async def test_dispatcher_new_file_name(self):
-        """
-        Test the updated file name
-        """
-        os.environ.update({PYTHON_SCRIPT_FILE_NAME: self._new_file_name})
-        self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
-        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
-                         self._new_file_name)

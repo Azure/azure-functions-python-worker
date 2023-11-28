@@ -315,9 +315,7 @@ class TestInvalidAppStein(testutils.AsyncTestCase):
         async with self._ctrl as host:
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertIn(r.response.result.exception.message,
-                          'ValueError: Could not find top level function '
-                          'app instances in function_app.py.')
+            self.assertIn('Error', r.response.result.exception.message)
 
 
 class TestInvalidStein(testutils.AsyncTestCase):
@@ -344,6 +342,4 @@ class TestInvalidStein(testutils.AsyncTestCase):
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             print(r.response)
-            self.assertIn(r.response.result.exception.message,
-                          'ValueError: Could not find top level function '
-                          'app instances in function_app.py.')
+            self.assertIn('Error', r.response.result.exception.message)

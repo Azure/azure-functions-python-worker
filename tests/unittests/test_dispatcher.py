@@ -21,12 +21,6 @@ DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'
 DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
     'dispatcher_functions_stein'
-DISPATCHER_STEIN_INVALID_APP_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'broken_functions' / \
-    'invalid_app_stein'
-DISPATCHER_STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'broken_functions' / \
-    'invalid_stein'
 
 
 class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):

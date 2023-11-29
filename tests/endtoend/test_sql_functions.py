@@ -29,7 +29,8 @@ class TestSqlFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.text, expectedText)
 
         # Check that the sql_trigger function has been triggered and
-        # the row has been inserted into Products2 table using sql_input2 function
+        # the row has been inserted into Products2 table using sql_input2
+        # function
         max_retries = 10
 
         for try_no in range(max_retries):

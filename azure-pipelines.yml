@@ -187,13 +187,19 @@ jobs:
   - task: ManifestGeneratorTask@0
     displayName: 'SBOM Generation Task'
     inputs:
-      BuildDropPath: '$(Build.SourcesDirectory)'
+      BuildDropPath: '$(Build.ArtifactStagingDirectory)'
       BuildComponentPath: '$(Build.SourcesDirectory)'
       Verbosity: 'Verbose'
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.ArtifactStagingDirectory)'
+      Contents: '**'
+      TargetFolder: '$(Build.SourcesDirectory)'
   - task: NuGetCommand@2
     inputs:
       command: pack
       packagesToPack: '$(nuspec_path)'
+      packDestination: $(Build.ArtifactStagingDirectory) 
       versioningScheme: 'byEnvVar'
       versionEnvVar: WORKER_VERSION
   - task: PublishBuildArtifacts@1

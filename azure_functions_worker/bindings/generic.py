@@ -52,4 +52,4 @@ class GenericBinding:
 
     @classmethod
     def has_implicit_output(cls) -> bool:
-        return False
+        return True

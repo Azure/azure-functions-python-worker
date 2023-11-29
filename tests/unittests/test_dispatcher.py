@@ -98,11 +98,21 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 1
             )
 
+    async def test_dispatcher_initialize_worker_settings_logs(self):
+        """Test if the dispatcher's log can be flushed out during worker
+        initialization
+        """
+        async with self._ctrl as host:
+            r = await host.init_worker('3.0.12345')
+            self.assertTrue('PYTHON_ENABLE_WORKER_EXTENSIONS: '
+                            in log for log in r.logs)
+
     async def test_dispatcher_environment_reload_logging(self):
         """Test if the sync threadpool will pick up app setting in placeholder
         mode (Linux Consumption)
         """
         async with self._ctrl as host:
+            await host.init_worker()
             await self._check_if_function_is_ok(host)
 
             # Reload environment variable on specialization
@@ -113,6 +123,19 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 )]),
                 1
             )
+
+    async def test_dispatcher_environment_reload_settings_logs(self):
+        """Test if the sync threadpool will pick up app setting in placeholder
+        mode (Linux Consumption)
+        """
+        async with self._ctrl as host:
+            await host.init_worker()
+            await self._check_if_function_is_ok(host)
+
+            # Reload environment variable on specialization
+            r = await host.reload_environment(environment={})
+            self.assertTrue('PYTHON_ENABLE_WORKER_EXTENSIONS: '
+                            in log for log in r.logs)
 
     async def test_dispatcher_send_worker_request(self):
         """Test if the worker status response will be sent correctly when
@@ -155,6 +178,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: 'invalid'})
 
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._default_workers)
@@ -169,6 +193,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             # Configure thread pool max worker to an invalid value
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '0'})
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._default_workers)
@@ -187,6 +212,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT:
                                f'{self._over_max_workers}'})
             async with self._ctrl as host:
+                await host.init_worker('4.15.1')
                 await self._check_if_function_is_ok(host)
 
                 # Ensure the dispatcher sync threadpool should fallback to max
@@ -198,6 +224,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         mode (Linux Consumption)
         """
         async with self._ctrl as host:
+            await host.init_worker()
             await self._check_if_function_is_ok(host)
 
             # Reload environment variable on specialization
@@ -213,6 +240,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
 
                 # Reload environment variable on specialization
@@ -234,6 +262,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """
         with patch('azure_functions_worker.dispatcher.logger'):
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
 
                 # Reload environment variable on specialization
@@ -249,6 +278,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
 
                 # Reload environment variable on specialization
@@ -268,6 +298,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
     async def test_sync_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
+                await host.init_worker()
                 request_id: str = self._ctrl._worker._request_id
                 func_id, invoke_id, func_name = (
                     await self._check_if_function_is_ok(host)
@@ -286,6 +317,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
     async def test_async_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
+                await host.init_worker()
                 request_id: str = self._ctrl._worker._request_id
                 func_id, invoke_id, func_name = (
                     await self._check_if_async_function_is_ok(host)
@@ -543,6 +575,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
         when a functions metadata request is received
         """
         async with self._ctrl as host:
+            await host.init_worker()
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertFalse(r.response.use_default_metadata_indexing)
@@ -554,6 +587,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
         when a functions metadata request is received
         """
         async with self._ctrl as host:
+            await host.init_worker()
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertFalse(r.response.use_default_metadata_indexing)
@@ -589,7 +623,7 @@ class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
 
 
-class TestDispatcherLoadFunctionInInitRequest(testutils.AsyncTestCase):
+class TestDispatcherInitRequest(testutils.AsyncTestCase):
 
     def setUp(self):
         self._ctrl = testutils.start_mockhost(
@@ -606,11 +640,10 @@ class TestDispatcherLoadFunctionInInitRequest(testutils.AsyncTestCase):
         self.mock_version_info.stop()
 
     async def test_dispatcher_load_azfunc_in_init(self):
-        """Test if the dispatcher's log can be flushed out during worker
-        initialization
+        """Test if azure functions is loaded during init
         """
         async with self._ctrl as host:
-            r = await host.init_worker('4.15.1')
+            r = await host.init_worker()
             self.assertEqual(
                 len([log for log in r.logs if log.message.startswith(
                     'Received WorkerInitRequest'
@@ -618,3 +651,53 @@ class TestDispatcherLoadFunctionInInitRequest(testutils.AsyncTestCase):
                 1
             )
         self.assertIn("azure.functions", sys.modules)
+
+    async def test_dispatcher_load_modules_dedicated_app(self):
+        """Test modules are loaded in dedicated apps
+        """
+        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
+
+        # Dedicated Apps where placeholder mode is not set
+        async with self._ctrl as host:
+            r = await host.init_worker()
+            logs = [log.message for log in r.logs]
+            self.assertIn(
+                "Applying prioritize_customer_dependencies: "
+                "worker_dependencies_path: , customer_dependencies_path: , "
+                "working_directory: , Linux Consumption: False,"
+                " Placeholder: False", logs
+            )
+
+    async def test_dispatcher_load_modules_con_placeholder_enabled(self):
+        """Test modules are loaded in consumption apps with placeholder mode
+        enabled.
+        """
+        # Consumption apps with placeholder mode enabled
+        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
+        os.environ["CONTAINER_NAME"] = "test"
+        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "1"
+        async with self._ctrl as host:
+            r = await host.init_worker()
+            logs = [log.message for log in r.logs]
+            self.assertNotIn(
+                "Applying prioritize_customer_dependencies: "
+                "worker_dependencies_path: , customer_dependencies_path: , "
+                "working_directory: , Linux Consumption: True,", logs)
+
+    async def test_dispatcher_load_modules_con_app_placeholder_disabled(self):
+        """Test modules are loaded in consumption apps with placeholder mode
+        disabled.
+        """
+        # Consumption apps with placeholder mode disabled  i.e. worker
+        # is specialized
+        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
+        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "0"
+        os.environ["CONTAINER_NAME"] = "test"
+        async with self._ctrl as host:
+            r = await host.init_worker()
+            logs = [log.message for log in r.logs]
+            self.assertIn(
+                "Applying prioritize_customer_dependencies: "
+                "worker_dependencies_path: , customer_dependencies_path: , "
+                "working_directory: , Linux Consumption: True,"
+                " Placeholder: False", logs)

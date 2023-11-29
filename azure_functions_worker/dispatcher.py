@@ -21,16 +21,19 @@ import grpc
 
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
-from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
+from .constants import (PYTHON_ROLLBACK_CWD_PATH,
+                        PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME,
+                        PYTHON_ENABLE_DEBUG_LOGGING,
+                        SCRIPT_FILE_NAME,
                         PYTHON_LANGUAGE_RUNTIME, CUSTOMER_PACKAGES_PATH)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
+from .utils.app_setting_manager import get_python_appsetting_state
 from .utils.common import get_app_setting, is_envvar_true
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
@@ -265,11 +268,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                     'python version %s, '
                     'worker version %s, '
                     'request ID %s.'
+                    'App Settings state: %s.'
                     ' To enable debug level logging, please refer to '
                     'https://aka.ms/python-enable-debug-logging',
                     sys.version,
                     VERSION,
-                    self.request_id)
+                    self.request_id,
+                    get_python_appsetting_state()
+                    )
 
         worker_init_request = request.worker_init_request
         host_capabilities = worker_init_request.capabilities
@@ -286,10 +292,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
-        # Can detech worker packages only when customer's code is present
-        # This only works in dedicated and premium sku.
-        # The consumption sku will switch on environment_reload request.
-        if not DependencyManager.is_in_linux_consumption():
+        if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
 
         if DependencyManager.is_in_linux_consumption():
@@ -298,8 +301,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             import azure.functions  # NoQA
 
         if CUSTOMER_PACKAGES_PATH not in sys.path:
-            logger.warning("Customer packages not in sys path. "
-                           "This should never happen! ")
+            logger.warning("Customer packages not in sys path.")
 
         # loading bindings registry and saving results to a static
         # dictionary which will be later used in the invocation request
@@ -544,13 +546,17 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def _handle__function_environment_reload_request(self, request):
         """Only runs on Linux Consumption placeholder specialization.
+        This is called only when placeholder mode is true. On worker restarts
+        worker init request will be called directly.
         """
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
                         'request ID: %s,'
+                        'App Settings state: %s.'
                         ' To enable debug level logging, please refer to '
                         'https://aka.ms/python-enable-debug-logging',
-                        self.request_id)
+                        self.request_id,
+                        get_python_appsetting_state())
 
             func_env_reload_request = \
                 request.function_environment_reload_request
@@ -691,7 +697,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             name, directory, invoc_request.invocation_id,
             _invocation_id_local, trace_context, retry_context)
 
-    @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
+    @disable_feature_by(PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):
         if os.path.exists(new_cwd):
             os.chdir(new_cwd)

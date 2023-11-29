@@ -5,6 +5,7 @@ import pathlib
 import subprocess
 import sys
 import textwrap
+from unittest.mock import Mock, patch
 
 from azure.functions import Function
 from azure.functions.decorators.retry_policy import RetryPolicy
@@ -25,7 +26,11 @@ class TestLoader(testutils.WebHostTestCase):
         self.func = Function(self.test_function, script_file="test.py")
         self.function_registry = functions.Registry()
 
-    def test_building_fixed_retry_protos(self):
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.UNIT_TESTS_FOLDER / 'load_functions'
+
+    def test_loader_building_fixed_retry_protos(self):
         trigger = TimerTrigger(schedule="*/1 * * * * *", arg_name="mytimer",
                                name="mytimer")
         self.func.add_trigger(trigger=trigger)
@@ -38,7 +43,7 @@ class TestLoader(testutils.WebHostTestCase):
         self.assertEqual(protos.retry_strategy, 1)  # 1 enum for fixed delay
         self.assertEqual(protos.delay_interval.seconds, 120)
 
-    def test_building_exponential_retry_protos(self):
+    def test_loader_building_exponential_retry_protos(self):
         trigger = TimerTrigger(schedule="*/1 * * * * *", arg_name="mytimer",
                                name="mytimer")
         self.func.add_trigger(trigger=trigger)
@@ -55,9 +60,19 @@ class TestLoader(testutils.WebHostTestCase):
         self.assertEqual(protos.minimum_interval.seconds, 60)
         self.assertEqual(protos.maximum_interval.seconds, 120)
 
-    @classmethod
-    def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'load_functions'
+    @patch('azure_functions_worker.logging.logger.warning')
+    def test_loader_retry_policy_attribute_error(self, mock_logger):
+        self.func = Mock()
+        self.func.get_settings_dict.side_effect = AttributeError('DummyError')
+
+        result = build_retry_protos(self.func)
+        self.assertIsNone(result)
+
+        # Check if the logged message starts with the expected string
+        logged_message = mock_logger.call_args[0][
+            0]  # Get the first argument of the logger.warning call
+        self.assertTrue(logged_message.startswith(
+            'AttributeError while loading retry policy.'))
 
     def test_loader_simple(self):
         r = self.webhost.request('GET', 'simple')

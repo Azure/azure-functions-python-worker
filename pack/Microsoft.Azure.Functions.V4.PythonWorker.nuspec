@@ -35,7 +35,6 @@
     <file src="..\3.11_OSX_X64\**" target="tools\3.11\OSX\Arm64" />
     <file src="..\python\prodV4\worker.config.json" target="tools" />
     <file src="Microsoft.Azure.Functions.PythonWorker.targets" target="build" />
-    <file src="..\_manifest\manifest.json" target="SBOM\manifest.json" />
     <file src="..\_manifest\spdx_2.2\manifest.spdx.json" target="SBOM\manifest.spdx.json" />
   </files>
 </package>

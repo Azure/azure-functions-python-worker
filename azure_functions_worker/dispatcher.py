@@ -333,8 +333,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_path = os.path.join(directory, script_file_name)
 
         logger.info(
-            'Received WorkerMetadataRequest, request ID %s, directory: %s',
-            self.request_id, directory)
+            'Received WorkerMetadataRequest, request ID %s, function_path: %s',
+            self.request_id, function_path)
 
         if not os.path.exists(function_path):
             # Fallback to legacy model

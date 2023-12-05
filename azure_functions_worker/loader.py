@@ -229,7 +229,7 @@ def index_function_app(function_path: str):
     if not app:
         script_file_name = get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
-            default_value=PYTHON_SCRIPT_FILE_NAME_DEFAULT)
+            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
         raise ValueError("Could not find top level function app instances in "
                          f"{script_file_name}.")
 

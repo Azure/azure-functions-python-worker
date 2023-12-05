@@ -329,7 +329,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         directory = metadata_request.function_app_directory
         script_file_name = get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
-            default_value=PYTHON_SCRIPT_FILE_NAME_DEFAULT)
+            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
         function_path = os.path.join(directory, script_file_name)
 
         logger.info(
@@ -375,7 +375,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             function_metadata.directory,
             get_app_setting(
                 setting=PYTHON_SCRIPT_FILE_NAME,
-                default_value=PYTHON_SCRIPT_FILE_NAME_DEFAULT))
+                default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}'))
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'

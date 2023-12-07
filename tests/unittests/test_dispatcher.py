@@ -303,7 +303,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 func_id, invoke_id, func_name = (
                     await self._check_if_function_is_ok(host)
                 )
-                logs = mock_logger.info.call_args.args
+
+                logs, _ = mock_logger.info.call_args
                 func_info = ('Received FunctionInvocationRequest, '
                              f'request ID: {request_id}, '
                              f'function ID: {func_id}, '
@@ -327,7 +328,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_async_function_is_ok(host)
                 )
 
-                logs = mock_logger.info.call_args.args
+                logs, _ = mock_logger.info.call_args
                 func_info = ('Received FunctionInvocationRequest, '
                              f'request ID: {request_id}, '
                              f'function ID: {func_id}, '
@@ -349,7 +350,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_function_is_ok(host)
                 )
 
-                logs = mock_logger.info.call_args.args
+                logs, _ = mock_logger.info.call_args
                 func_info = ('Received FunctionInvocationRequest, '
                              f'request ID: {request_id}, '
                              f'function ID: {func_id}, '
@@ -373,7 +374,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_async_function_is_ok(host)
                 )
 
-                logs = mock_logger.info.call_args.args
+                logs, _ = mock_logger.info.call_args
                 func_info = ('Received FunctionInvocationRequest, '
                              f'request ID: {request_id}, '
                              f'function ID: {func_id}, '
@@ -397,7 +398,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_function_is_ok(host)
                 )
 
-                logs = mock_logger.info.call_args.args
+                logs, _ = mock_logger.info.call_args
                 func_info = ('Received FunctionInvocationRequest, '
                              f'request ID: {request_id}, '
                              f'function ID: {func_id}, '
@@ -423,7 +424,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_async_function_is_ok(host)
                 )
 
-                logs = mock_logger.info.call_args.args
+                logs, _ = mock_logger.info.call_args
                 func_info = ('Received FunctionInvocationRequest, '
                              f'request ID: {request_id}, '
                              f'function ID: {func_id}, '

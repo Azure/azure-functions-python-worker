@@ -34,6 +34,8 @@ class GenericBinding:
 
     @classmethod
     def decode(cls, data: datumdef.Datum, *, trigger_metadata) -> typing.Any:
+        if data is None:
+            return None
         data_type = data.type
 
         if data_type == 'string':

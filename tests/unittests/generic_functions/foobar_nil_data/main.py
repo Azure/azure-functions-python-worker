@@ -2,5 +2,6 @@
 # Licensed under the MIT License.
 import logging
 
+
 def main(input) -> None:
     logging.info("Hello World")

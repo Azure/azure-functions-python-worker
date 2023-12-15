@@ -371,8 +371,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                                      SCRIPT_FILE_NAME)
 
         logger.info(
-            'Received WorkerLoadRequest, request ID %s, function_id: %s,'
-            'function_name: %s,', self.request_id, function_id, function_name)
+            'Received WorkerLoadRequest, request_id: %s, function_id: %s, '
+            'function_name: %s', self.request_id, function_id, function_name)
 
         programming_model = "V1"
         try:
@@ -407,8 +407,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             logger.info('Successfully processed FunctionLoadRequest, '
                         'request ID: %s, '
-                        'function ID: %s,'
-                        'function Name: %s,'
+                        'function ID: %s, '
+                        'function Name: %s, '
                         'programming model: %s',
                         self.request_id,
                         function_id,

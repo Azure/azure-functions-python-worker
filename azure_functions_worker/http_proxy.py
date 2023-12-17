@@ -1,10 +1,6 @@
 import abc
-import threading
 import asyncio
 from typing import Dict
-from azure_functions_worker.extension import ExtensionManager
-
-from azure_functions_worker.functions import FunctionInfo
 from .logging import logger
 
 
@@ -83,28 +79,11 @@ class BaseContextReference(abc.ABC):
         return self._rpc_invocation_ready_event
 
 
-# The ContextReference subclass with a threading.Event
-class ContextReference(BaseContextReference):
+class AsyncContextReference(BaseContextReference):
     def __init__(self, http_request=None, http_response=None, function=None, fi_context=None, args=None):
-        super().__init__(event_class=threading.Event, http_request=http_request, http_response=http_response,
+        super().__init__(event_class=asyncio.Event, http_request=http_request, http_response=http_response,
                          function=function, fi_context=fi_context, args=args)
-        self.is_async = False
-
-# The AsyncContextReference subclass with an asyncio.Event
-# class AsyncContextReference(BaseContextReference):
-#     def __init__(self, http_request=None, http_response=None, function=None, fi_context=None, args=None):
-#         super().__init__(event_class=asyncio.Event, http_request=http_request, http_response=http_response,
-#                          function=function, fi_context=fi_context, args=args)
-#         self.is_async = True
-
-
-# class ContextReferenceFactory:
-#     @staticmethod
-#     def create(is_async: bool, function=None):
-#         if is_async:
-#             return AsyncContextReference(function=function)
-#         else:
-#             return ContextReference(function=function)
+        self.is_async = True
 
 
 class HttpCoordinator:
@@ -120,59 +99,10 @@ class HttpCoordinator:
         if not self._initialized:
             self._context_references: Dict[str, BaseContextReference] = {}
             self._initialized = True
-
-    # def _run_sync_func(self, invocation_id, context, func, params):
-    #     # This helper exists because we need to access the current
-    #     # invocation_id from ThreadPoolExecutor's threads.
-    #     context.thread_local_storage.invocation_id = invocation_id
-    #     try:
-    #         return ExtensionManager.get_sync_invocation_wrapper(context, func)(
-    #             params)
-    #     finally:
-    #         context.thread_local_storage.invocation_id = None
-
-    # async def _run_async_func(self, context, func, params):
-    #     return await ExtensionManager.get_async_invocation_wrapper(
-    #         context, func, params
-    #     )
-
-    # async def wait_rpc_invocation_ready_async(self, invoc_id):
-    #     await self._context_references.get(invoc_id).rpc_invocation_ready_event.wait()
-    #     del self._context_references[invoc_id]
-
-    # def wait_rpc_invocation_ready_sync(self, invoc_id):
-    #     self._context_references.get(invoc_id).rpc_invocation_ready_event.wait()
-    #     del self._context_references[invoc_id]
-
-    # def prepare_http_trigger_func(self, invoc_id, fi_context, func, args, http_trigger_param_name):
-    #     context_ref = self._context_references.get(invoc_id)
-    #     context_ref.fi_context = fi_context
-    #     context_ref.function = func
-    #     context_ref.args = args
-    #     context_ref.http_trigger_param_name = http_trigger_param_name
-    #     context_ref.rpc_invocation_ready_event.set()
-    
-    # def set_http_invoc_request(self, invoc_id, http_request):
-    #     context_ref = self._context_references.get(invoc_id)
-    #     context_ref.args[context_ref.http_trigger_param_name] = http_request
-
-    # async def run_rpc_function_async(self, invoc_id):
-    #     context_ref = self._context_references.get(invoc_id)
-    #     func = context_ref.function
-    #     args = context_ref.args
-    #     fi_context = context_ref.fi_context
-
-    #     return await self._run_async_func(fi_context, func, args)
-    
-    # def run_rpc_function_sync(self, invoc_id):
-    #     context_ref = self._context_references.get(invoc_id)
-    #     func = context_ref.function
-    #     args = context_ref.args
-    #     fi_context = context_ref.fi_context
-    #     return self._run_sync_func(invoc_id, fi_context, func, args)
         
     def set_http_request(self, invoc_id, http_request):
-        self._context_references.setdefault(invoc_id, ContextReference())
+        if invoc_id not in self._context_references:
+            self._context_references[invoc_id] = AsyncContextReference()
         context_ref = self._context_references.get(invoc_id)
         context_ref.http_request = http_request
         context_ref.http_request_available_event.set()
@@ -183,7 +113,8 @@ class HttpCoordinator:
         context_ref.http_response_available_event.set()
 
     async def await_http_request_async(self, invoc_id):
-        self._context_references.setdefault(invoc_id, ContextReference())
+        if invoc_id not in self._context_references:
+            self._context_references[invoc_id] = AsyncContextReference()
         await self._context_references.get(invoc_id).http_request_available_event.wait()
         return self._pop_http_request(invoc_id)
 

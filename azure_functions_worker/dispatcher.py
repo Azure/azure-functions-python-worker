@@ -88,18 +88,20 @@ def get_unused_tcp_port():
 import uvicorn
 # from flask import Flask, request
 # from hypercorn import Config
-from quart import Quart, request
-# from hypercorn.asyncio import serve
+# from quart import Quart, request
+from fastapi import FastAPI, Request
+from starlette.responses import JSONResponse
+import logging
 
-app = Quart(__name__)
+app = FastAPI()
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-async def catch_all(path):
+@app.api_route("/{path:path}")
+async def catch_all(request: Request, path: str):
     try:
         req_headers = dict(request.headers)
         invoc_id = req_headers.get("X-Ms-Invocation-Id")
 
+        # Assuming http_coordinator is a predefined object
         http_coordinator.set_http_request(invoc_id, request)
 
         http_resp = await http_coordinator.await_http_response_async(invoc_id)
@@ -109,7 +111,8 @@ async def catch_all(path):
         return http_resp
     except Exception as e:
         logger.exception("An error occurred while handling the request")
-        return {"error": str(e)}, 500
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
         
 async def create_server(port):
     # host_name = "localhost"
@@ -397,8 +400,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # The consumption sku will switch on environment_reload request.
         if not DependencyManager.is_in_linux_consumption():
             DependencyManager.prioritize_customer_dependencies()
-
-        if DependencyManager.is_in_linux_consumption():
+        else:
             logger.info("Importing azure functions in WorkerInitRequest")
             import azure.functions  # NoQA
 

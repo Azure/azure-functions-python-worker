@@ -115,11 +115,14 @@ class HttpCoordinator:
     async def await_http_request_async(self, invoc_id):
         if invoc_id not in self._context_references:
             self._context_references[invoc_id] = AsyncContextReference()
+        
+        await asyncio.sleep(0)
         await self._context_references.get(invoc_id).http_request_available_event.wait()
         return self._pop_http_request(invoc_id)
 
     async def await_http_response_async(self, invoc_id):
         logger.info("-----> http waiting for invoc res %s", invoc_id)
+        await asyncio.sleep(0)
         await self._context_references.get(invoc_id).http_response_available_event.wait()
         return self._pop_http_response(invoc_id)
     

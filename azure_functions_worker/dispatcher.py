@@ -95,13 +95,16 @@ import logging
 
 app = FastAPI()
 
-@app.api_route("/{path:path}")
-async def catch_all(request: Request, path: str):
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"])
+async def catch_all(request: Request):
     try:
-        req_headers = dict(request.headers)
-        invoc_id = req_headers.get("X-Ms-Invocation-Id")
+        # Access the header directly. It's case-insensitive.
+        invoc_id = request.headers.get("x-ms-invocation-id")
 
-        # Assuming http_coordinator is a predefined object
+        # Raise an error if the header is not found
+        if invoc_id is None:
+            raise Exception(status_code=400, detail="x-ms-invocation-id header not found")
+
         http_coordinator.set_http_request(invoc_id, request)
 
         http_resp = await http_coordinator.await_http_response_async(invoc_id)

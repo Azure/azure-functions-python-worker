@@ -215,10 +215,10 @@ def index_function_app(function_path: str):
 
     from azure.functions import FunctionRegister
     app: Optional[FunctionRegister] = None
-    for i in imported_module.__dir__():
-        if isinstance(getattr(imported_module, i, None), FunctionRegister):
+    for attribute_name in imported_module.__dir__():
+        if isinstance(getattr(imported_module, attribute_name, None), FunctionRegister):
             if not app:
-                app = getattr(imported_module, i, None)
+                app = getattr(imported_module, attribute_name, None)
             else:
                 raise ValueError(
                     f"More than one {app.__class__.__name__} or other top "

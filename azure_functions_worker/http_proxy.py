@@ -86,19 +86,18 @@ class AsyncContextReference(BaseContextReference):
         self.is_async = True
 
 
-class HttpCoordinator:
-    _instance = None
-    _initialized = False
+class SingletonMeta(type):
+    _instances = {}
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(HttpCoordinator, cls).__new__(cls)
-        return cls._instance
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
 
+
+class HttpCoordinator(metaclass=SingletonMeta):
     def __init__(self):
-        if not self._initialized:
-            self._context_references: Dict[str, BaseContextReference] = {}
-            self._initialized = True
+        self._context_references: Dict[str, BaseContextReference] = {}
         
     def set_http_request(self, invoc_id, http_request):
         if invoc_id not in self._context_references:

@@ -152,6 +152,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._shmem_mgr = SharedMemoryManager()
 
         self._old_task_factory = None
+        self._fx_metadata_results = None
 
         # We allow the customer to change synchronous thread pool max worker
         # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
@@ -368,17 +369,12 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         worker_init_request = request.worker_init_request
         host_capabilities = worker_init_request.capabilities
+
         if constants.FUNCTION_DATA_CACHE in host_capabilities:
             val = host_capabilities[constants.FUNCTION_DATA_CACHE]
             self._function_data_cache_enabled = val == _TRUE
 
-        # index cx code
-        # if its function code
-        # check if there is httptrigger or generic http, set advanced mode if so
-        # and if so, also validate req/resp types used to choose server implementation dynamically
-        # we dynamically import server specific lib
-        #
-        #
+        
         unused_port = get_unused_tcp_port()
         # this should run in managed tpe, but this is customer facing, we shall add one more thread to account for this
         # self._loop.run_in_executor(self._sync_call_tp, create_server, unused_port)
@@ -398,7 +394,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.HTTP_URI: f"http://localhost:{unused_port}",
         }
 
-        # Can detech worker packages only when customer's code is present
+        # Can detach worker packages only when customer's code is present
         # This only works in dedicated and premium sku.
         # The consumption sku will switch on environment_reload request.
         if not DependencyManager.is_in_linux_consumption():
@@ -596,15 +592,19 @@ class Dispatcher(metaclass=DispatcherMeta):
             logger.info(", ".join(function_invocation_logs))
 
             args = {}
+            is_http_trigger = None
+            http_trigger_param_name = None
+
             for pb in invoc_request.input_data:
-                if pb.name == 'req':
-                    continue
                 pb_type_info = fi.input_types[pb.name]
+                trigger_metadata = None
                 if bindings.is_trigger_binding(pb_type_info.binding_name):
                     trigger_metadata = invoc_request.trigger_metadata
-                else:
-                    trigger_metadata = None
-
+                    if pb_type_info.binding_name == "httpTrigger":
+                        is_http_trigger = True
+                        http_trigger_param_name = pb.name
+                        continue
+                
                 args[pb.name] = bindings.from_incoming_proto(
                     pb_type_info.binding_name,
                     pb,
@@ -612,8 +612,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                     pytype=pb_type_info.pytype,
                     shmem_mgr=self._shmem_mgr,
                 )
-
-            is_http_trigger, http_trigger_param_name = await self.get_http_trigger_details(fi)
 
             if is_http_trigger:
                 http_request = await http_coordinator.await_http_request_async(

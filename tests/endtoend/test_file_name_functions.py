@@ -39,6 +39,10 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
         self._patch_environ.stop()
 
     @classmethod
+    def get_environment_variables(cls):
+        return cls.env_variables
+
+    @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'http_functions_stein' / \

@@ -7,6 +7,7 @@ Implements loading and execution of Python workers.
 
 import asyncio
 import concurrent.futures
+import importlib
 import logging
 import os
 import platform
@@ -85,49 +86,40 @@ def get_unused_tcp_port():
     # Return the port number
     return port
 
-import uvicorn
-# from flask import Flask, request
-# from hypercorn import Config
-# from quart import Quart, request
-from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
-import logging
+# import uvicorn
+# from fastapi import FastAPI, Request
+# from starlette.responses import JSONResponse
+# import logging
 
-app = FastAPI()
+# app = FastAPI()
 
-@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"])
-async def catch_all(request: Request):
-    try:
-        # Access the header directly. It's case-insensitive.
-        invoc_id = request.headers.get("x-ms-invocation-id")
+# @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"])
+# async def catch_all(request: Request):
+#     try:
+#         # Access the header directly. It's case-insensitive.
+#         invoc_id = request.headers.get("x-ms-invocation-id")
 
-        # Raise an error if the header is not found
-        if invoc_id is None:
-            raise Exception(status_code=400, detail="x-ms-invocation-id header not found")
+#         # Raise an error if the header is not found
+#         if invoc_id is None:
+#             raise Exception(status_code=400, detail="x-ms-invocation-id header not found")
 
-        http_coordinator.set_http_request(invoc_id, request)
+#         http_coordinator.set_http_request(invoc_id, request)
 
-        http_resp = await http_coordinator.await_http_response_async(invoc_id)
+#         http_resp = await http_coordinator.await_http_response_async(invoc_id)
 
-        logger.info("response:-- %s", type(http_resp))
+#         logger.info("response:-- %s", type(http_resp))
 
-        return http_resp
-    except Exception as e:
-        logger.exception("An error occurred while handling the request")
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+#         return http_resp
+#     except Exception as e:
+#         logger.exception("An error occurred while handling the request")
+#         return JSONResponse(content={"error": str(e)}, status_code=500)
 
-        
-async def create_server(port):
-    # host_name = "localhost"
-    # config = Config()
-    # config.bind = [f"{host_name}:{port}"]
-    
-    # serve(flask_app, config=config)
 
-    uvicorn_config = uvicorn.Config(app, host="localhost", port=port)
-    server = uvicorn.Server(uvicorn_config)
+# async def create_server(port):
+#     uvicorn_config = uvicorn.Config(app, host="localhost", port=port)
+#     server = uvicorn.Server(uvicorn_config)
 
-    await server.serve()
+#     await server.serve()
 
 class Dispatcher(metaclass=DispatcherMeta):
     _GRPC_STOP_RESPONSE = object()
@@ -355,71 +347,125 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_resp_queue.put_nowait(resp)
 
     async def _handle__worker_init_request(self, request):
-        logger.info(
-            "Received WorkerInitRequest, "
-            "python version %s, "
-            "worker version %s, "
-            "request ID %s."
-            " To enable debug level logging, please refer to "
-            "https://aka.ms/python-enable-debug-logging",
-            sys.version,
-            VERSION,
-            self.request_id,
-        )
-
-        worker_init_request = request.worker_init_request
-        host_capabilities = worker_init_request.capabilities
-
-        if constants.FUNCTION_DATA_CACHE in host_capabilities:
-            val = host_capabilities[constants.FUNCTION_DATA_CACHE]
-            self._function_data_cache_enabled = val == _TRUE
-
-        
-        unused_port = get_unused_tcp_port()
-        # this should run in managed tpe, but this is customer facing, we shall add one more thread to account for this
-        # self._loop.run_in_executor(self._sync_call_tp, create_server, unused_port)
-        # thread = threading.Thread(target=create_server, args=(unused_port,))
-        # thread.start()
-
-        loop = asyncio.get_event_loop()
-        loop.create_task(create_server(unused_port))
-
-        capabilities = {
-            constants.RAW_HTTP_BODY_BYTES: _TRUE,
-            constants.TYPED_DATA_COLLECTION: _TRUE,
-            constants.RPC_HTTP_BODY_ONLY: _TRUE,
-            constants.WORKER_STATUS: _TRUE,
-            constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
-            constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
-            constants.HTTP_URI: f"http://localhost:{unused_port}",
-        }
-
-        # Can detach worker packages only when customer's code is present
-        # This only works in dedicated and premium sku.
-        # The consumption sku will switch on environment_reload request.
-        if not DependencyManager.is_in_linux_consumption():
-            DependencyManager.prioritize_customer_dependencies()
-        else:
-            logger.info("Importing azure functions in WorkerInitRequest")
-            import azure.functions  # NoQA
-
-        if CUSTOMER_PACKAGES_PATH not in sys.path:
-            logger.warning(
-                "Customer packages not in sys path. " "This should never happen! "
+        try:
+            logger.info(
+                "Received WorkerInitRequest, "
+                "python version %s, "
+                "worker version %s, "
+                "request ID %s."
+                " To enable debug level logging, please refer to "
+                "https://aka.ms/python-enable-debug-logging",
+                sys.version,
+                VERSION,
+                self.request_id,
             )
 
-        # loading bindings registry and saving results to a static
-        # dictionary which will be later used in the invocation request
-        bindings.load_binding_registry()
+            worker_init_request = request.worker_init_request
+            host_capabilities = worker_init_request.capabilities
 
-        return protos.StreamingMessage(
-            request_id=self.request_id,
-            worker_init_response=protos.WorkerInitResponse(
-                capabilities=capabilities,
-                worker_metadata=self.get_worker_metadata(),
-                result=protos.StatusResult(status=protos.StatusResult.Success),
-            ),
-        )
+            if constants.FUNCTION_DATA_CACHE in host_capabilities:
+                val = host_capabilities[constants.FUNCTION_DATA_CACHE]
+                self._function_data_cache_enabled = val == _TRUE
+
+
+            # Can detach worker packages only when customer's code is present
+            # This only works in dedicated and premium sku.
+            # The consumption sku will switch on environment_reload request.
+            if not DependencyManager.is_in_linux_consumption():
+                DependencyManager.prioritize_customer_dependencies()
+            else:
+                logger.info("Importing azure functions in WorkerInitRequest")
+                import azure.functions  # NoQA
+
+            if CUSTOMER_PACKAGES_PATH not in sys.path:
+                logger.warning(
+                    "Customer packages not in sys path. " "This should never happen! "
+                )
+
+            # loading bindings registry and saving results to a static
+            # dictionary which will be later used in the invocation request
+            bindings.load_binding_registry()
+
+            if worker_init_request.function_app_directory:
+                function_path = os.path.join(worker_init_request.function_app_directory, SCRIPT_FILE_NAME)
+
+                if os.path.exists(function_path):
+                    self._fx_metadata_results, has_http_func = self.index_functions(function_path)
+
+            full_http_enabled = False
+
+            if has_http_func:
+                from azfuncextbase import PackageTrackerMeta, RequestTrackerMeta
+
+                if PackageTrackerMeta.package_imported():
+                    full_http_enabled = True    
+
+            if full_http_enabled:
+                ext_web_mod_name = PackageTrackerMeta.get_class_package()
+
+                ext_mod = importlib.import_module(ext_web_mod_name)
+                class_web_app = ext_mod.WebApp
+                class_web_server = ext_mod.WebServer
+
+                unused_port = get_unused_tcp_port()
+
+                app = class_web_app()
+
+                class_request = RequestTrackerMeta.get_request_type()
+
+                @app.route
+                async def catch_all(request: class_request):
+                    # Access the header directly. It's case-insensitive.
+                    invoc_id = request.headers.get("x-ms-invocation-id")
+
+                    # Raise an error if the header is not found
+                    if invoc_id is None:
+                        raise Exception(status_code=400, detail="x-ms-invocation-id header not found")
+
+                    http_coordinator.set_http_request(invoc_id, request)
+
+                    http_resp = await http_coordinator.await_http_response_async(invoc_id)
+
+                    logger.info("response:-- %s", type(http_resp))
+
+                    return http_resp
+
+                web_server_run_task = class_web_server("localhost", unused_port, app).serve()
+
+
+
+                loop = asyncio.get_event_loop()
+                loop.create_task(web_server_run_task)
+
+            capabilities = {
+                constants.RAW_HTTP_BODY_BYTES: _TRUE,
+                constants.TYPED_DATA_COLLECTION: _TRUE,
+                constants.RPC_HTTP_BODY_ONLY: _TRUE,
+                constants.WORKER_STATUS: _TRUE,
+                constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
+                constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
+            }
+
+            if full_http_enabled:
+                capabilities[constants.HTTP_URI] = f"http://localhost:{unused_port}"
+
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                worker_init_response=protos.WorkerInitResponse(
+                    capabilities=capabilities,
+                    worker_metadata=self.get_worker_metadata(),
+                    result=protos.StatusResult(status=protos.StatusResult.Success),
+                ),
+            )
+        except Exception as e:
+            logger.error("Error handling WorkerInitRequest: %s", str(e))
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                worker_init_response=protos.WorkerInitResponse(
+                    result=protos.StatusResult(status=protos.StatusResult.Failure,
+                                               exception=self._serialize_exception(e))
+                ),
+            )
 
     async def _handle__worker_status_request(self, request):
         # Logging is not necessary in this request since the response is used
@@ -457,7 +503,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             )
 
         try:
-            fx_metadata_results = self.index_functions(function_path)
+            fx_metadata_results, _ = self.index_functions(function_path)
 
             return protos.StreamingMessage(
                 request_id=request.request_id,
@@ -801,7 +847,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             )
 
             indexed_function_logs: List[str] = []
+            has_http_func = False
             for func in indexed_functions:
+                if func.is_http_function():
+                    has_http_func = True
                 function_log = "Function Name: {}, Function Binding: {}".format(
                     func.get_function_name(),
                     [(binding.type, binding.name) for binding in
@@ -814,7 +863,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 " ".join(indexed_function_logs),
             )
 
-            return fx_metadata_results
+            return fx_metadata_results, has_http_func
 
     async def _handle__close_shared_memory_resources_request(self, request):
         """

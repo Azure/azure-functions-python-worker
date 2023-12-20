@@ -123,6 +123,8 @@ def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions):
     fx_metadata_results = []
     for indexed_function in indexed_functions:
+        if indexed_function.is_http_function():
+            has_http_func = True
         function_info = functions_registry.add_indexed_function(
             function=indexed_function)
 

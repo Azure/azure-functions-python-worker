@@ -8,7 +8,7 @@ import requests
 from azure_functions_worker.constants import PYTHON_SCRIPT_FILE_NAME
 from tests.utils import testutils
 
-REQUEST_TIMEOUT_SEC = 5
+REQUEST_TIMEOUT_SEC = 10
 
 
 class TestHttpFunctionsFileName(testutils.WebHostTestCase):

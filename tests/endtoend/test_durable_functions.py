@@ -48,10 +48,13 @@ class TestDurableFunctions(testutils.WebHostTestCase):
     def test_durable(self):
         r = self.webhost.request('GET',
                                  'orchestrators/DurableFunctionsOrchestrator',
-                                 timeout=5)
+                                 timeout=10)
         time.sleep(4)  # wait for the activity to complete
-        self.assertEqual(r.status_code, 202)
-        content = json.loads(r.content)
+        status_code = r.status_code
+        content = r.content
+        r.close()
+        self.assertEqual(status_code, 202)
+        content = json.loads(content)
 
         status = requests.get(content['statusQueryGetUri'])
         self.assertEqual(status.status_code, 200)

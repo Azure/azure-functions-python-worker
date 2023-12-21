@@ -35,9 +35,9 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
         super().setUpClass()
 
     @classmethod
-    def tearDown(cls):
+    def tearDown(self):
         super().tearDown()
-        cls._patch_environ.stop()
+        self._patch_environ.stop()
 
     @classmethod
     def get_environment_variables(cls):

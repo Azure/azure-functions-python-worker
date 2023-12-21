@@ -36,7 +36,6 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
 
     @classmethod
     def setUpClass(cls):
-        cls.env_variables['PYTHON_SCRIPT_FILE_NAME'] = 'function_app.py'
         # Turn on feature flag
         cls.env_variables['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = '1'
 

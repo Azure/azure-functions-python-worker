@@ -35,6 +35,7 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
         super().setUpClass()
 
     def tearDown(self):
+        self.env_variables['PYTHON_SCRIPT_FILE_NAME'] = 'function_app.py'
         super().tearDown()
         self._patch_environ.stop()
 

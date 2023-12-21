@@ -20,7 +20,6 @@ class TestDurableFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.env_variables['PYTHON_SCRIPT_FILE_NAME'] = 'function_app.py'
         cls.env_variables['WEBSITE_HOSTNAME'] = "http:"
         os_environ = os.environ.copy()
         os_environ.update(cls.env_variables)

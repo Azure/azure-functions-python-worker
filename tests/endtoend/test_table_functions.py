@@ -20,21 +20,6 @@ from tests.utils.constants import DEDICATED_DOCKER_TEST, \
 class TestTableFunctions(testutils.WebHostTestCase):
 
     @classmethod
-    def setUpClass(cls):
-        cls.env_variables['PYTHON_SCRIPT_FILE_NAME'] = 'function_app.py'
-
-        os_environ = os.environ.copy()
-        os_environ.update(cls.env_variables)
-
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
-        super().setUpClass()
-
-    def tearDown(self):
-        super().tearDown()
-        self._patch_environ.stop()
-
-    @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'table_functions'
 

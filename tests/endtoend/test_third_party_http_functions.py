@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 import os
 import requests
-from unittest.mock import patch
 
 from tests.utils import testutils as utils
 from tests.utils.testutils import E2E_TESTS_ROOT
@@ -36,19 +35,10 @@ class ThirdPartyHttpFunctionsTestBase:
             with open(host_json, 'w+') as f:
                 f.write(HOST_JSON_TEMPLATE)
 
-            cls.env_variables['PYTHON_SCRIPT_FILE_NAME'] = 'function_app.py'
-
-            os_environ = os.environ.copy()
-            os_environ.update(cls.env_variables)
-
-            cls._patch_environ = patch.dict('os.environ', os_environ)
-            cls._patch_environ.start()
-
             super().setUpClass()
 
         def tearDownClass(self):
             super().tearDownClass()
-            self._patch_environ.stop()
 
         @classmethod
         def get_script_dir(cls):

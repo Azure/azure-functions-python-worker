@@ -1,12 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import json
-import os
 import time
 import pathlib
 from datetime import datetime
 from unittest import skipIf
-from unittest.mock import patch
 
 from dateutil import parser, tz
 
@@ -28,20 +26,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     2. An eventhub_multiple EventHub trigger for converting event into blob
     3. A get_eventhub_batch_triggered HTTP trigger for the event body
     """
-    @classmethod
-    def setUpClass(cls):
-        cls.env_variables['PYTHON_SCRIPT_FILE_NAME'] = 'function_app.py'
-
-        os_environ = os.environ.copy()
-        os_environ.update(cls.env_variables)
-
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
-        super().setUpClass()
-
-    def tearDown(self):
-        super().tearDown()
-        self._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):

@@ -50,6 +50,7 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         cls._patch_environ.start()
         super().setUpClass()
 
+    @classmethod
     def tearDownClass(self):
         super().tearDownClass()
         self._patch_environ.stop()

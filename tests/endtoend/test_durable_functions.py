@@ -28,6 +28,7 @@ class TestDurableFunctions(testutils.WebHostTestCase):
         cls._patch_environ.start()
         super().setUpClass()
 
+    @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
         cls._patch_environ.stop()

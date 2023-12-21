@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import os
 import typing
+from unittest.mock import patch
 
 import requests
 
@@ -21,6 +22,15 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     Compared to the unittests/test_http_functions.py, this file is more focus
     on testing the E2E flow scenarios.
     """
+
+    def setUp(self):
+        self._patch_environ = patch.dict('os.environ', os.environ.copy())
+        self._patch_environ.start()
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+        self._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):

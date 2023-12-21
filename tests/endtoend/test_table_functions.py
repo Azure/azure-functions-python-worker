@@ -2,10 +2,8 @@
 # Licensed under the MIT License.
 import json
 import pathlib
-import os
 import time
 from unittest import skipIf
-from unittest.mock import patch
 
 from azure_functions_worker.utils.common import is_envvar_true
 from tests.utils import testutils

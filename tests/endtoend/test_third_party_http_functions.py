@@ -37,7 +37,8 @@ class ThirdPartyHttpFunctionsTestBase:
 
             super().setUpClass()
 
-        def tearDownClass(self):
+        @classmethod
+        def tearDownClass(cls):
             super().tearDownClass()
 
         @classmethod

@@ -5,7 +5,6 @@ from tests.utils import testutils
 
 
 class TestFunctionInBluePrintOnly(testutils.WebHostTestCase):
-
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'blueprint_functions' / \

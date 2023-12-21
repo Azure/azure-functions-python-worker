@@ -23,10 +23,16 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     on testing the E2E flow scenarios.
     """
 
-    def setUp(self):
-        self._patch_environ = patch.dict('os.environ', os.environ.copy())
-        self._patch_environ.start()
-        super().setUp()
+    @classmethod
+    def setUpClass(cls):
+        cls.env_variables['PYTHON_SCRIPT_FILE_NAME'] = 'function_app.py'
+
+        os_environ = os.environ.copy()
+        os_environ.update(cls.env_variables)
+
+        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ.start()
+        super().setUpClass()
 
     def tearDown(self):
         super().tearDown()

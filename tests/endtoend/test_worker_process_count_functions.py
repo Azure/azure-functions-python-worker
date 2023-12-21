@@ -17,6 +17,7 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
     def setUpClass(cls):
         cls.env_variables['PYTHON_THREADPOOL_THREAD_COUNT'] = '1'
         cls.env_variables['FUNCTIONS_WORKER_PROCESS_COUNT'] = '2'
+        cls.env_variables['PYTHON_SCRIPT_FILE_NAME'] = 'function_app.py'
 
         os_environ = os.environ.copy()
         os_environ.update(cls.env_variables)

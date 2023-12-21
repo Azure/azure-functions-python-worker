@@ -2,8 +2,10 @@
 # Licensed under the MIT License.
 import json
 import pathlib
+import os
 import time
 from unittest import skipIf
+from unittest.mock import patch
 
 from azure_functions_worker.utils.common import is_envvar_true
 from tests.utils import testutils
@@ -16,6 +18,21 @@ from tests.utils.constants import DEDICATED_DOCKER_TEST, \
         "Table functions has a bug with the table extension 1.0.0."
         "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
 class TestTableFunctions(testutils.WebHostTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.env_variables['PYTHON_SCRIPT_FILE_NAME'] = 'function_app.py'
+
+        os_environ = os.environ.copy()
+        os_environ.update(cls.env_variables)
+
+        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ.start()
+        super().setUpClass()
+
+    def tearDown(self):
+        super().tearDown()
+        self._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):

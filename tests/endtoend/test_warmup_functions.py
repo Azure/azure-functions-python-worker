@@ -1,7 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
+import os
 import typing
+from unittest.mock import patch
 
 from tests.utils import testutils
 
@@ -15,6 +16,20 @@ class TestWarmupFunctions(testutils.WebHostTestCase):
     warmup trigger function.
 
     """
+    @classmethod
+    def setUpClass(cls):
+        cls.env_variables['PYTHON_SCRIPT_FILE_NAME'] = 'function_app.py'
+
+        os_environ = os.environ.copy()
+        os_environ.update(cls.env_variables)
+
+        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ.start()
+        super().setUpClass()
+
+    def tearDown(self):
+        super().tearDown()
+        self._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):

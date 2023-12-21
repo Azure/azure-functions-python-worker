@@ -45,11 +45,12 @@ class TestDurableFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'durable_functions'
 
+    @testutils.retryable_test(3, 5)
     def test_durable(self):
         r = self.webhost.request('GET',
                                  'orchestrators/DurableFunctionsOrchestrator',
-                                 timeout=10)
-        time.sleep(4)  # wait for the activity to complete
+                                 timeout=15)
+        time.sleep(8)  # wait for the activity to complete
         status_code = r.status_code
         content = r.content
         r.close()

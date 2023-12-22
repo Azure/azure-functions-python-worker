@@ -20,6 +20,8 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
     Compared to the unittests/test_http_functions.py, this file is more focus
     on testing the E2E flow scenarios.
     """
+    os.environ['PYTHON_SCRIPT_FILE_NAME'] = 'main.py'
+
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
@@ -31,7 +33,6 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
         """The index page of Azure Functions should return OK in any
         circumstances
         """
-        os.environ['PYTHON_SCRIPT_FILE_NAME'] = 'main.py'
         r = self.webhost.request('GET', '', no_prefix=True,
                                  timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
@@ -41,7 +42,6 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
         """Test if the default template of Http trigger in Python Function app
         will return OK
         """
-        os.environ['PYTHON_SCRIPT_FILE_NAME'] = 'main.py'
         r = self.webhost.request('GET', 'default_template',
                                  timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
@@ -51,7 +51,6 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
         """Test if the azure.functions SDK is able to deserialize query
         parameter from the default template
         """
-        os.environ['PYTHON_SCRIPT_FILE_NAME'] = 'main.py'
         r = self.webhost.request('GET', 'default_template',
                                  params={'name': 'query'},
                                  timeout=REQUEST_TIMEOUT_SEC)
@@ -66,7 +65,6 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
         """Test if the azure.functions SDK is able to deserialize http body
         and pass it to default template
         """
-        os.environ['PYTHON_SCRIPT_FILE_NAME'] = 'main.py'
         r = self.webhost.request('POST', 'default_template',
                                  data='{ "name": "body" }'.encode('utf-8'),
                                  timeout=REQUEST_TIMEOUT_SEC)
@@ -82,7 +80,6 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
         _handle__worker_status_request and sends a worker status response back
         to host
         """
-        os.environ['PYTHON_SCRIPT_FILE_NAME'] = 'main.py'
         root_url = self.webhost._addr
         health_check_url = f'{root_url}/admin/host/ping'
         r = requests.post(health_check_url,
@@ -96,7 +93,6 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
         _handle__worker_status_request and sends a worker status response back
         to host
         """
-        os.environ['PYTHON_SCRIPT_FILE_NAME'] = 'main.py'
         os.environ['WEBSITE_PING_METRICS_SCALE_ENABLED'] = '0'
         root_url = self.webhost._addr
         health_check_url = f'{root_url}/admin/host/ping'
@@ -106,7 +102,6 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
         self.assertTrue(r.ok)
 
     def test_correct_file_name(self):
-        os.environ['PYTHON_SCRIPT_FILE_NAME'] = 'main.py'
         self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
         self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
                          'main.py')

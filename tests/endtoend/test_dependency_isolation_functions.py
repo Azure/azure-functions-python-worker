@@ -60,7 +60,7 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         return cls.project_root
 
     @classmethod
-    def get_environment_variables(cls):
+    def get_docker_env_variables(cls):
         return cls.env_variables
 
     def test_dependency_function_should_return_ok(self):

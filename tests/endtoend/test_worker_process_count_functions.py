@@ -34,7 +34,7 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
     @classmethod
-    def get_environment_variables(cls):
+    def get_docker_env_variables(cls):
         return cls.env_variables
 
     @testutils.retryable_test(3, 5)

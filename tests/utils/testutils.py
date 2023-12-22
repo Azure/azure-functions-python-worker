@@ -227,13 +227,19 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         pass
 
     @classmethod
+    def get_docker_env_variables(cls):
+        pass
+
+    @classmethod
     def setUpClass(cls):
         script_dir = pathlib.Path(cls.get_script_dir())
 
         docker_configs = DockerConfigs
         docker_configs.script_path = script_dir
         docker_configs.libraries = cls.get_libraries_to_install()
-        docker_configs.env = cls.get_environment_variables() or {}
+        docker_configs.env = cls.get_docker_env_variables() or {}
+
+        cls.env_variables = cls.get_environment_variables() or {}
 
         if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             cls.host_stdout = None

@@ -4,7 +4,6 @@ import json
 import os
 import time
 from unittest import skipIf
-from unittest.mock import patch
 
 import requests
 
@@ -19,27 +18,8 @@ from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
 class TestDurableFunctions(testutils.WebHostTestCase):
 
     @classmethod
-    def setUpClass(cls):
-        cls.env_variables['WEBSITE_HOSTNAME'] = "http:"
-        os_environ = os.environ.copy()
-        os_environ.update(cls.env_variables)
-
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
-        super().setUpClass()
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        cls._patch_environ.stop()
-
-    @classmethod
     def get_libraries_to_install(cls):
         return ['azure-functions-durable']
-
-    @classmethod
-    def get_environment_variables(cls):
-        return cls.env_variables
 
     @classmethod
     def get_script_dir(cls):
@@ -47,15 +27,12 @@ class TestDurableFunctions(testutils.WebHostTestCase):
 
     @testutils.retryable_test(3, 5)
     def test_durable(self):
+        os.environ['WEBSITE_HOSTNAME'] = 'http:'
         r = self.webhost.request('GET',
-                                 'orchestrators/DurableFunctionsOrchestrator',
-                                 timeout=15)
-        time.sleep(8)  # wait for the activity to complete
-        status_code = r.status_code
-        content = r.content
-        r.close()
-        self.assertEqual(status_code, 202)
-        content = json.loads(content)
+                                 'orchestrators/DurableFunctionsOrchestrator')
+        time.sleep(4)  # wait for the activity to complete
+        self.assertEqual(r.status_code, 202)
+        content = json.loads(r.content)
 
         status = requests.get(content['statusQueryGetUri'])
         self.assertEqual(status.status_code, 200)

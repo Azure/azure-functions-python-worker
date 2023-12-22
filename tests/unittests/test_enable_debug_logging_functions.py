@@ -5,7 +5,6 @@ import os
 from unittest.mock import patch
 
 from tests.utils import testutils
-from azure_functions_worker.constants import PYTHON_ENABLE_DEBUG_LOGGING
 from tests.utils.testutils import TESTS_ROOT, remove_path
 
 HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
@@ -28,7 +27,7 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
     @classmethod
     def setUpClass(cls):
         os_environ = os.environ.copy()
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
+        os_environ["PYTHON_ENABLE_DEBUG_LOGGING"] = '1'
         cls._patch_environ = patch.dict('os.environ', os_environ)
         cls._patch_environ.start()
         super().setUpClass()
@@ -65,7 +64,7 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
     @classmethod
     def setUpClass(cls):
         os_environ = os.environ.copy()
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '0'
+        os_environ["PYTHON_ENABLE_DEBUG_LOGGING"] = '0'
         cls._patch_environ = patch.dict('os.environ', os_environ)
         cls._patch_environ.start()
         super().setUpClass()
@@ -108,7 +107,7 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
             f.write(HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO)
 
         os_environ = os.environ.copy()
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
+        os_environ["PYTHON_ENABLE_DEBUG_LOGGING"] = '1'
         cls._patch_environ = patch.dict('os.environ', os_environ)
         cls._patch_environ.start()
         super().setUpClass()

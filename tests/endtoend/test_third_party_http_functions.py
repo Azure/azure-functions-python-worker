@@ -34,7 +34,6 @@ class ThirdPartyHttpFunctionsTestBase:
             host_json = cls.get_script_dir() / 'host.json'
             with open(host_json, 'w+') as f:
                 f.write(HOST_JSON_TEMPLATE)
-
             super().setUpClass()
 
         @classmethod

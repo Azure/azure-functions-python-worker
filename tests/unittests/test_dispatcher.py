@@ -12,8 +12,7 @@ from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
     PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT, \
-    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37, \
-    PYTHON_THREADPOOL_THREAD_COUNT_MIN
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37, PYTHON_THREADPOOL_THREAD_COUNT_MIN
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])

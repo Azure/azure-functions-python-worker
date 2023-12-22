@@ -16,6 +16,7 @@ from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
         or is_envvar_true(CONSUMPTION_DOCKER_TEST),
         "Docker tests cannot retrieve port needed for a webhook")
 class TestDurableFunctions(testutils.WebHostTestCase):
+    os.environ['WEBSITE_HOSTNAME'] = 'http:'
 
     @classmethod
     def get_libraries_to_install(cls):
@@ -27,7 +28,6 @@ class TestDurableFunctions(testutils.WebHostTestCase):
 
     @testutils.retryable_test(3, 5)
     def test_durable(self):
-        os.environ['WEBSITE_HOSTNAME'] = 'http:'
         r = self.webhost.request('GET',
                                  'orchestrators/DurableFunctionsOrchestrator')
         time.sleep(4)  # wait for the activity to complete

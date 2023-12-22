@@ -16,7 +16,9 @@ from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
         or is_envvar_true(CONSUMPTION_DOCKER_TEST),
         "Docker tests cannot retrieve port needed for a webhook")
 class TestDurableFunctions(testutils.WebHostTestCase):
-    os.environ['WEBSITE_HOSTNAME'] = 'http:'
+    @classmethod
+    def get_website_hostname(cls):
+        return 'http:'
 
     @classmethod
     def get_libraries_to_install(cls):

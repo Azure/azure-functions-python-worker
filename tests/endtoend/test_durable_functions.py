@@ -21,7 +21,7 @@ class TestDurableFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_environment_variables(cls):
-        return {'WEBSITE_HOSTNAME': 'http:'}
+        return "http:"
 
     @classmethod
     def get_libraries_to_install(cls):

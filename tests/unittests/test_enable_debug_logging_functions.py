@@ -122,10 +122,6 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         cls._patch_environ.stop()
 
     @classmethod
-    def get_environment_variables(cls):
-        return {'PYTHON_ENABLE_DEBUG_LOGGING': '1'}
-
-    @classmethod
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
 

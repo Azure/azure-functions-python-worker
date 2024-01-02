@@ -227,6 +227,10 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         pass
 
     @classmethod
+    def get_durable_webhooks(cls):
+        pass
+
+    @classmethod
     def setUpClass(cls):
         script_dir = pathlib.Path(cls.get_script_dir())
 
@@ -234,8 +238,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         docker_configs.script_path = script_dir
         docker_configs.libraries = cls.get_libraries_to_install()
         docker_configs.env = cls.get_environment_variables() or {}
-
-        cls.env_variables = cls.get_environment_variables() or {}
+        os.environ["WEBSITE_HOSTNAME"] = (cls.get_durable_webhooks()
+                                          or "")
 
         if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             cls.host_stdout = None

@@ -17,11 +17,11 @@ from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
 class TestDurableFunctions(testutils.WebHostTestCase):
     @classmethod
     def get_durable_webhooks(cls):
-        return {'WEBSITE_HOSTNAME': 'http:'}
+        return "http:"
 
     @classmethod
     def get_environment_variables(cls):
-        return "http:"
+        return {'WEBSITE_HOSTNAME': 'http:'}
 
     @classmethod
     def get_libraries_to_install(cls):

@@ -21,6 +21,10 @@ error_logger: logging.Logger = (
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
 
+console_logger: logging.Logger = logging.getLogger(CONSOLE_LOG_PREFIX)
+console_handler = logging.StreamHandler()
+console_logger.addHandler(console_handler)
+console_logger.setLevel(logging.ERROR)
 
 def format_exception(exception: Exception) -> str:
     msg = str(exception) + "\n"

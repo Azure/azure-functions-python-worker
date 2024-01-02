@@ -12,6 +12,7 @@ CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
 SYSTEM_LOG_PREFIX = "azure_functions_worker"
 SDK_LOG_PREFIX = "azure.functions"
 SYSTEM_ERROR_LOG_PREFIX = "azure_functions_worker_errors"
+STDERR_LOG_PREFIX = "azure_functions_worker_stderr"
 
 
 logger: logging.Logger = logging.getLogger(SYSTEM_LOG_PREFIX)
@@ -21,10 +22,11 @@ error_logger: logging.Logger = (
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
 
-console_logger: logging.Logger = logging.getLogger(CONSOLE_LOG_PREFIX)
-console_handler = logging.StreamHandler()
-console_logger.addHandler(console_handler)
-console_logger.setLevel(logging.ERROR)
+stderr_logger = logging.getLogger(STDERR_LOG_PREFIX)
+stderr_handler = logging.StreamHandler(stream=sys.stderr)
+stderr_logger.addHandler(stderr_handler)
+stderr_logger.setLevel(logging.ERROR)
+
 
 def format_exception(exception: Exception) -> str:
     msg = str(exception) + "\n"

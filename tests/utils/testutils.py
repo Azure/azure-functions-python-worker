@@ -239,7 +239,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         docker_configs.libraries = cls.get_libraries_to_install()
         docker_configs.env = cls.get_environment_variables() or {}
         os.environ["WEBSITE_HOSTNAME"] = (cls.get_durable_webhooks()
-                                          or "")
+                                          or "http:")
 
         if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             cls.host_stdout = None

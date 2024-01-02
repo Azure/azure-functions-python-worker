@@ -88,6 +88,6 @@ class TestNonDefaultAppSettingsLogs(testutils.AsyncTestCase):
 
     def test_get_python_appsetting_state(self):
         app_setting_state = get_python_appsetting_state()
-        self.assertIn("PYTHON_THREADPOOL_THREAD_COUNT: 20 ", app_setting_state)
-        self.assertIn("PYTHON_ENABLE_DEBUG_LOGGING: 1 ", app_setting_state)
-        self.assertIn("PYTHON_ENABLE_WORKER_EXTENSIONS: ", app_setting_state)
+        self.assertIn("PYTHON_THREADPOOL_THREAD_COUNT: 20 | "
+                      "PYTHON_ENABLE_DEBUG_LOGGING: 1 | "
+                      "PYTHON_ENABLE_WORKER_EXTENSIONS: False", app_setting_state)

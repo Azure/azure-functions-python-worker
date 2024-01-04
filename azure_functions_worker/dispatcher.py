@@ -29,7 +29,7 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
                         PYTHON_ENABLE_DEBUG_LOGGING,
                         SCRIPT_FILE_NAME,
-                        PYTHON_LANGUAGE_RUNTIME, CUSTOMER_PACKAGES_PATH)
+                        PYTHON_LANGUAGE_RUNTIME)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,

@@ -22,11 +22,6 @@ error_logger: logging.Logger = (
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
 
-stderr_logger = logging.getLogger(STDERR_LOG_PREFIX)
-stderr_handler = logging.StreamHandler(stream=sys.stderr)
-stderr_logger.addHandler(stderr_handler)
-stderr_logger.setLevel(logging.ERROR)
-
 
 def format_exception(exception: Exception) -> str:
     msg = str(exception) + "\n"

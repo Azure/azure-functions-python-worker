@@ -64,7 +64,7 @@ jobs:
     
         echo "Running Docker container..."
         # docker run -d --shm-size="2g" --env FUNCTIONS_WORKER_RUNTIME_VERSION=${{ env.PYTHON_VERSION }} --env AzureWebJobsStorage=${{ secrets.PERFTESTSTORAGE }} -p ${{ env.PORT }}:80 -v $GITHUB_WORKSPACE/azure_functions_worker:/azure-functions-host/workers/python/${{ env.PYTHON_VERSION }}/LINUX/X64/azure_functions_worker perfimage:latest
-        docker run -d --shm-size="2g" --env FUNCTIONS_WORKER_RUNTIME_VERSION=${{ env.PYTHON_VERSION }} --env AzureWebJobsStorage=${AzureWebJobsStorage} -p ${PORT}:80 -v $GITHUB_WORKSPACE/azure_functions_worker:/azure-functions-host/workers/python/${{ env.PYTHON_VERSION }}/LINUX/X64/azure_functions_worker perfimage:latest
+        container_id=$(docker run -d --shm-size="2g" --env FUNCTIONS_WORKER_RUNTIME_VERSION=${{ env.PYTHON_VERSION }} --env AzureWebJobsStorage=${AzureWebJobsStorage} -p ${PORT}:80 -v $GITHUB_WORKSPACE/azure_functions_worker:/azure-functions-host/workers/python/${{ env.PYTHON_VERSION }}/LINUX/X64/azure_functions_worker perfimage:latest)
         sleep 10  # host needs some time to start.
         echo "Container ID is $container_id"
         echo "Fetching Docker container logs..."

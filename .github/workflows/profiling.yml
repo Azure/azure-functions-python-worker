@@ -1,4 +1,4 @@
-name: Throughput testing workflow
+name: Profiling
 
 on:
   workflow_dispatch:

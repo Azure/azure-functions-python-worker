@@ -53,7 +53,7 @@ jobs:
     
         echo "Checking environment variables..."
         echo "PYTHON_VERSION: ${{ env.PYTHON_VERSION }}"
-        echo "PERFTESTSTORAGE: ${{ secrets.PERFTESTSTORAGE }}"
+        echo "PERFTESTSTORAGE: ${AzureWebJobsStorage}"
         echo "PORT: ${{ env.PORT }}"
         echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
     

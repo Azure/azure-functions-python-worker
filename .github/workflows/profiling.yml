@@ -40,7 +40,7 @@ jobs:
         python setup.py build
         python setup.py webhost --branch-name=dev
         python setup.py extension
-        python install py-spy
+        pip install py-spy
     - name: Build and Run the Docker image
       run: |
         docker build --build-arg PYTHON_VERSION=${{ env.PYTHON_VERSION }} --file .ci/perf_tests/dockerfiles/perf_tests.Dockerfile --tag perfimage:latest .

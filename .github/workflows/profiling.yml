@@ -45,9 +45,12 @@ jobs:
       run: |
         docker build --build-arg PYTHON_VERSION=${{ env.PYTHON_VERSION }} --file .ci/perf_tests/dockerfiles/perf_tests.Dockerfile --tag perfimage:latest .
         container_id=$(docker run -d --shm-size="2g" --env FUNCTIONS_WORKER_RUNTIME_VERSION=${{ env.PYTHON_VERSION }} -p ${PORT}:80 -v $GITHUB_WORKSPACE/azure_functions_worker:/azure-functions-host/workers/python/${{ env.PYTHON_VERSION }}/LINUX/X64/azure_functions_worker perfimage:latest)
+        echo "Container ID is: $container_id"
         sleep 10  # host needs some time to start.
         echo "Listing Python processes in the Docker container..."
-        docker exec $container_id ps aux | grep python
+        docker ps
+        docker exec $container_id ps aux | grep '[p]ython' || true
+
 
     # - name: Generate Worker Performance Summary
     #   run: |

@@ -123,11 +123,11 @@ class Registry:
                 'the following parameters are declared in Python but '
                 f'not in function.json: {set(params) - set(bound_params)!r}')
 
-        # if set(bound_params) - set(params):
-        #     raise FunctionLoadError(
-        #         func_name,
-        #         f'the following parameters are declared in function.json but '
-        #         f'not in Python: {set(bound_params) - set(params)!r}')
+        if set(bound_params) - set(params):
+            raise FunctionLoadError(
+                func_name,
+                f'the following parameters are declared in function.json but '
+                f'not in Python: {set(bound_params) - set(params)!r}')
 
         input_types: typing.Dict[str, ParamTypeInfo] = {}
         output_types: typing.Dict[str, ParamTypeInfo] = {}

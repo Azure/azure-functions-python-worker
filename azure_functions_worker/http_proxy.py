@@ -111,7 +111,7 @@ class HttpCoordinator(metaclass=SingletonMeta):
         context_ref.http_response = http_response
         context_ref.http_response_available_event.set()
 
-    async def await_http_request_async(self, invoc_id):
+    async def get_http_request_async(self, invoc_id):
         if invoc_id not in self._context_references:
             self._context_references[invoc_id] = AsyncContextReference()
         

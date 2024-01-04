@@ -392,6 +392,15 @@ class Dispatcher(metaclass=DispatcherMeta):
                 if os.path.exists(function_path):
                     self._fx_metadata_results, has_http_func = self.index_functions(function_path)
 
+            capabilities = {
+                constants.RAW_HTTP_BODY_BYTES: _TRUE,
+                constants.TYPED_DATA_COLLECTION: _TRUE,
+                constants.RPC_HTTP_BODY_ONLY: _TRUE,
+                constants.WORKER_STATUS: _TRUE,
+                constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
+                constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
+            }
+                    
             full_http_enabled = False
 
             if has_http_func:
@@ -437,16 +446,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 loop = asyncio.get_event_loop()
                 loop.create_task(web_server_run_task)
 
-            capabilities = {
-                constants.RAW_HTTP_BODY_BYTES: _TRUE,
-                constants.TYPED_DATA_COLLECTION: _TRUE,
-                constants.RPC_HTTP_BODY_ONLY: _TRUE,
-                constants.WORKER_STATUS: _TRUE,
-                constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
-                constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
-            }
 
-            if full_http_enabled:
                 capabilities[constants.HTTP_URI] = f"http://localhost:{unused_port}"
 
             return protos.StreamingMessage(
@@ -641,6 +641,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             is_http_trigger = None
             http_trigger_param_name = None
 
+# TODO: move is_http_trigger to functioninfo
             for pb in invoc_request.input_data:
                 pb_type_info = fi.input_types[pb.name]
                 trigger_metadata = None
@@ -660,7 +661,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 )
 
             if is_http_trigger:
-                http_request = await http_coordinator.await_http_request_async(
+                http_request = await http_coordinator.get_http_request_async(
                     invocation_id)
                 args[http_trigger_param_name] = http_request
 

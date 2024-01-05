@@ -15,6 +15,14 @@ ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED=1 \
     AzureWebJobsStorage=None
 
+# Validate and print out AzureWebJobsStorage
+RUN if [ "$AzureWebJobsStorage" = "None" ]; then \
+        echo "Error: AzureWebJobsStorage is not set properly."; \
+        exit 1; \
+    else \
+        echo "AzureWebJobsStorage is set to $AzureWebJobsStorage."; \
+    fi
+
 RUN apt-get --quiet update && \
     apt-get install --quiet -y git && \
     cd /home && \

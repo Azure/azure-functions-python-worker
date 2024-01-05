@@ -17,7 +17,7 @@ ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
 
 RUN apt-get --quiet update && \
     apt-get install --quiet -y git && \
-    apt-get install procps && \
+    apt-get install -y procps && \
     cd /home && \
     git clone https://github.com/vrdmr/AzFunctionsPythonPerformance.git && \
     mkdir -p /home/site/wwwroot/ && \

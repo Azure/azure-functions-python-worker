@@ -69,7 +69,7 @@ jobs:
         echo "Container ID is $container_id"
         echo "Fetching Docker container logs..."
         docker logs $container_id
-        worker_pid=$(docker exec $container_id sh -c "ps aux | grep '[p]ython' | awk '{print $2}'")
+        worker_pid=$(docker exec $container_id sh -c "ps aux | grep '[p]ython'" | awk '{print $2}')
         echo "Python worker process id is $worker_pid"
         
         

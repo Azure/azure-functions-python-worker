@@ -12,7 +12,8 @@ ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
     FUNCTIONS_WORKER_PROCESS_COUNT=1 \
     AZURE_FUNCTIONS_ENVIRONMENT=Development \
-    FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED=1
+    FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED=1 \
+    AzureWebJobsStorage=None
 
 RUN apt-get --quiet update && \
     apt-get install --quiet -y git && \
@@ -20,7 +21,6 @@ RUN apt-get --quiet update && \
     git clone https://github.com/vrdmr/AzFunctionsPythonPerformance.git && \
     mkdir -p /home/site/wwwroot/ && \
     cp -r AzFunctionsPythonPerformance/* /home/site/wwwroot/ && \
-    pip install -q -r /home/site/wwwroot/requirements.txt && \
-    echo $AzureWebJobsStorage
+    pip install -q -r /home/site/wwwroot/requirements.txt
 
 CMD [ "/azure-functions-host/Microsoft.Azure.WebJobs.Script.WebHost" ]

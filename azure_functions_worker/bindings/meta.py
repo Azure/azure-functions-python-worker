@@ -55,9 +55,15 @@ def check_output_type_annotation(bind_name: str, pytype: type) -> bool:
 def has_implicit_output(bind_name: str) -> bool:
     binding = get_binding(bind_name)
 
-    # If the binding does not have metaclass of meta.InConverter
-    # The implicit_output does not exist
-    return getattr(binding, 'has_implicit_output', lambda: False)()
+    if binding is generic.GenericBinding:
+        properties = generic.GenericBindingProperties(bind_name=bind_name)
+        return (getattr(binding, 'has_implicit_output', lambda: False)
+                (properties))
+
+    else:
+        # If the binding does not have metaclass of meta.InConverter
+        # The implicit_output does not exist
+        return getattr(binding, 'has_implicit_output', lambda: False)()
 
 
 def from_incoming_proto(

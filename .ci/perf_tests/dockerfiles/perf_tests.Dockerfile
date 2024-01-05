@@ -12,16 +12,7 @@ ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
     FUNCTIONS_WORKER_PROCESS_COUNT=1 \
     AZURE_FUNCTIONS_ENVIRONMENT=Development \
-    FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED=1 \
-    AzureWebJobsStorage=None
-
-# Validate and print out AzureWebJobsStorage
-RUN if [ "$AzureWebJobsStorage" = "None" ]; then \
-        echo "Error: AzureWebJobsStorage is not set properly."; \
-        exit 1; \
-    else \
-        echo "AzureWebJobsStorage is set to $AzureWebJobsStorage."; \
-    fi
+    FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED=1
 
 RUN apt-get --quiet update && \
     apt-get install --quiet -y git && \

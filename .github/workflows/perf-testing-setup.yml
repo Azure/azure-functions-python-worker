@@ -71,6 +71,8 @@ jobs:
         docker logs $container_id
         worker_pid=$(docker exec $container_id sh -c "ps aux | grep '[p]ython'" | awk '{print $2}')
         echo "Python worker process id is $worker_pid"
+        echo "container_id=$container_id" >> $GITHUB_ENV
+        echo "worker_pid=$worker_pid" >> $GITHUB_ENV
         
     - name: Validate if the functions are now running
       run: |
@@ -82,6 +84,7 @@ jobs:
         docker exec -it $container_id sh -c "pip install py-spy"
         spy_pid=$(docker exec -it $container_id sh -c "py-spy record -p $worker_pid -o helloperf.svg -f flamegraph --idle --nonblocking --rate 1500")
         echo "Py-spy process id is $spy_pid"
+        echo "spy_pid=$spy_pid" >> $GITHUB_ENV
         
     - name: Run Throughput tests
       run: |

@@ -71,8 +71,6 @@ jobs:
         docker logs $container_id
         worker_pid=$(docker exec $container_id sh -c "ps aux | grep '[p]ython'" | awk '{print $2}')
         echo "Python worker process id is $worker_pid"
-        pip install py-spy
-        py-spy record -p $container_id -o helloperf.svg -f flamegraph --idle --nonblocking --rate 1500
         
     - name: Validate if the functions are now running
       run: |
@@ -81,16 +79,18 @@ jobs:
     - name: Start py-spy in the background
       run: |
         echo "Starting py-spy in background..."
-        py-spy record -p $container_id -o helloperf.svg -f flamegraph --idle --nonblocking --rate 1500
-        spy_pid=$!
+        docker exec -it $container_id sh -c "pip install py-spy"
+        spy_pid=$(docker exec -it $container_id sh -c "py-spy record -p $worker_pid -o helloperf.svg -f flamegraph --idle --nonblocking --rate 1500")
+        echo "Py-spy process id is $spy_pid"
         
     - name: Run Throughput tests
       run: |
         chmod 755 .ci/perf_tests/run-perftests.sh
         .ci/perf_tests/run-perftests.sh localhost $PORT ${{ env.TESTS_DIR_PATH }} ${{ matrix.test_to_run }}
         echo "Tests completed, terminating py-spy..."
-        kill $spy_pid
-
+        docker exec -it $container_id sh -c "kill $spy_pid"
+        docker cp $container_id:helloperf.svg .
+        
     - name: Upload profiling result to artifact
       uses: actions/upload-artifact@v2
       with:

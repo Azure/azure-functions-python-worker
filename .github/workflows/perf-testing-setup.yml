@@ -9,11 +9,12 @@ env:
   TESTS_DIR_PATH: ".ci/perf_tests/k6scripts/"
   PYTHON_VERSION: "3.8"
   PORT: 8000
-  AzureWebJobsStorage: ${{ secrets.PERFTESTSTORAGE }}
+  # AzureWebJobsStorage: ${{ secrets.PERFTESTSTORAGE }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: dev
     strategy:
       fail-fast: false
       matrix:

@@ -95,8 +95,9 @@ jobs:
         echo "Tests completed, terminating py-spy..."
         echo "Py-Spy pid is $py_spy_id"
         docker exec $container_id sh -c "kill -2 $py_spy_id"
+        docker exec $container_id sh -c "ls -ltr /home/site/wwwroot"
+        docker exec $container_id sh -c "ls -ltr"
         docker cp $container_id:/home/site/wwwroot/helloperf.svg .
-        ls -ltr
         
     - name: Upload profiling result to artifact
       uses: actions/upload-artifact@v2

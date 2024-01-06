@@ -93,7 +93,7 @@ jobs:
         chmod 755 .ci/perf_tests/run-perftests.sh
         .ci/perf_tests/run-perftests.sh localhost $PORT ${{ env.TESTS_DIR_PATH }} ${{ matrix.test_to_run }}
         echo "Tests completed, terminating py-spy..."
-        docker exec $container_id sh -c "kill -SIGINT $spy_pid"
+        docker exec $container_id sh -c "kill -2 $spy_pid"
         docker cp $container_id:helloperf.svg .
         
     - name: Upload profiling result to artifact

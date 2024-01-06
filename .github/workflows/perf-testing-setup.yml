@@ -85,16 +85,16 @@ jobs:
         docker exec $container_id sh -c "pip install py-spy"
         docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 &"
         sleep 2  # Give it a moment to start
-        py_spy_id=$(docker exec $container_id sh -c "ps aux | grep 'py-spy record'" | awk '{print $2}')
-        echo "spy_pid=$spy_pid" >> $GITHUB_ENV
+        py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
+        echo "py_spy_id=$py_spy_id" >> $GITHUB_ENV
         
     - name: Run Throughput tests
       run: |
         chmod 755 .ci/perf_tests/run-perftests.sh
         .ci/perf_tests/run-perftests.sh localhost $PORT ${{ env.TESTS_DIR_PATH }} ${{ matrix.test_to_run }}
         echo "Tests completed, terminating py-spy..."
-        echo "Py-Spy pid is $spy_pid"
-        docker exec $container_id sh -c "kill -2 $spy_pid"
+        echo "Py-Spy pid is $py_spy_id"
+        docker exec $container_id sh -c "kill -2 $py_spy_id"
         docker cp $container_id:helloperf.svg .
         
     - name: Upload profiling result to artifact

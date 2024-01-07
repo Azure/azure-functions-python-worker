@@ -83,8 +83,9 @@ jobs:
         echo "Starting py-spy in background..."
         echo "Container id is $container_id"
         docker exec $container_id sh -c "pip install py-spy"
-        docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 --duration 5 &"
-        docker exec $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 --duration 5"
+        # docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 --duration 5 &"
+        docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 --duration 5 > /home/site/wwwroot/py-spy.log 2>&1 &"
+        # docker exec $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 --duration 5"
         sleep 2  # Give it a moment to start
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
         echo "py_spy_id=$py_spy_id" >> $GITHUB_ENV
@@ -94,6 +95,7 @@ jobs:
         chmod 755 .ci/perf_tests/run-perftests.sh
         .ci/perf_tests/run-perftests.sh localhost $PORT ${{ env.TESTS_DIR_PATH }} ${{ matrix.test_to_run }}
         echo "Tests completed, terminating py-spy..."
+        docker exec $container_id cat /home/site/wwwroot/py-spy.log
         echo "Py-Spy pid is $py_spy_id"
         # docker exec $container_id sh -c "kill -2 $py_spy_id"
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')

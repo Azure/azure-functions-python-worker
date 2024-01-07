@@ -98,7 +98,7 @@ jobs:
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
         echo "Py-Spy pid is $py_spy_id"
         docker exec $container_id sh -c "ls -ltr /home/site/wwwroot"
-        docker exec $container_id sh -c "find / -name helloperf.svg -not -path '/proc/*' -not -path '/sys/*' -not -path '/dev/*'"
+        # docker exec $container_id sh -c "find / -name helloperf.svg -not -path '/proc/*' -not -path '/sys/*' -not -path '/dev/*'"
         docker cp $container_id:/home/site/wwwroot/helloperf.svg .
         
     - name: Upload profiling result to artifact

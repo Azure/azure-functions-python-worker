@@ -97,7 +97,7 @@ jobs:
         # docker exec $container_id sh -c "kill -2 $py_spy_id"
         docker exec $container_id sh -c "ls -ltr /home/site/wwwroot"
         docker exec $container_id sh -c "ls -ltr"
-        sleep 2
+        sleep 40
         docker cp $container_id:/home/site/wwwroot/helloperf.svg .
         
     - name: Upload profiling result to artifact

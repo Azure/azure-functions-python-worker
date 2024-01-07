@@ -95,6 +95,8 @@ jobs:
         echo "Tests completed, terminating py-spy..."
         echo "Py-Spy pid is $py_spy_id"
         # docker exec $container_id sh -c "kill -2 $py_spy_id"
+        py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
+        echo "Py-Spy pid is $py_spy_id"
         docker exec $container_id sh -c "ls -ltr /home/site/wwwroot"
         docker exec $container_id sh -c "ls -ltr"
         sleep 40

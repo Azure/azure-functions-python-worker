@@ -83,7 +83,7 @@ jobs:
         echo "Starting py-spy in background..."
         echo "Container id is $container_id"
         docker exec $container_id sh -c "pip install py-spy"
-        docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 --duration 60 &"
+        docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 --duration 40 &"
         sleep 2  # Give it a moment to start
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
         echo "py_spy_id=$py_spy_id" >> $GITHUB_ENV

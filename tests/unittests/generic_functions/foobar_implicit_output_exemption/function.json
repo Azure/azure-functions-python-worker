@@ -3,7 +3,13 @@
     "bindings": [
       {
         "type": "durableClient",
-        "name": "input",
+        "name": "input1",
+        "direction": "in",
+        "dataType": "string"
+      },
+      {
+        "type": "table",
+        "name": "input2",
         "direction": "in",
         "dataType": "string"
       }

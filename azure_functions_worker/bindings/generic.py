@@ -69,8 +69,9 @@ class GenericBinding:
     def has_implicit_output(cls,
                             properties:
                             Optional[GenericBindingProperties] = None) -> bool:
-        if (properties and properties.get_bind_name in
-                properties.special_case_bind_names):
-            return False
-        else:
-            return True
+        # if (properties and properties.get_bind_name in
+        #         properties.special_case_bind_names):
+        #     return False
+        # else:
+        #     return True
+        return True

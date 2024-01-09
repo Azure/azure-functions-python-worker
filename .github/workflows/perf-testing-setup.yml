@@ -98,7 +98,7 @@ jobs:
       with:
         azcliversion: latest
         inlineScript: |
-          end=`date -u -d "30 minutes" '+%Y-%m-%dT%H:%MZ'`
+          end=$(date -u -d "30 minutes" '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -v+30M '+%Y-%m-%dT%H:%MZ')
           sas=$(az storage blob generate-sas \
             --container-name 'profiling' \
             --name $report_name \

@@ -76,10 +76,12 @@ jobs:
         docker exec $container_id cat /home/site/wwwroot/py-spy.log
         echo "Py-Spy pid is $py_spy_id"
         docker exec $container_id sh -c "kill -2 $py_spy_id"
+        sleep 2
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
         echo "Py-Spy pid is $py_spy_id"
-        # docker exec $container_id sh -c "ls -ltr /profiling_reports"
-        docker cp $container_id:/profiling_reports/helloperf.svg .
+        mkdir /profiling_reports
+        docker cp $container_id:/profiling_reports/helloperf.svg /profiling_reports
+        ls -ltr /profiling_reports
         
     - name: Upload SVG to Azure Blob Storage
       uses: bacongobbler/azure-blob-storage-upload@v3.0.0
@@ -87,7 +89,7 @@ jobs:
         source_dir: 'profiling_reports'  # Directory containing the helloperf.svg file
         container_name: 'profiling'
         connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
-
+        sync: 'false'
     # - name: Upload profiling result to artifact
     #   uses: actions/upload-artifact@v2
     #   with:

@@ -6,6 +6,7 @@ on:
 env:
   TESTS_DIR_PATH: ".ci/perf_tests/k6scripts/"
   PYTHON_VERSION: "3.8"
+  PYTHON_FUNCTION_PROFILING_STORAGE_ACCT: "azpyfuncpipelinestorage"
   PORT: 8000
 
 jobs:
@@ -94,9 +95,10 @@ jobs:
         connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
         sync: 'false'
 
-    - name: Output SVG SAS URL
+    - name: Output Blob URL
       run: |
-        echo "You can view the SVG image at: ${{ env.sas_url }}"
+        blob_url="https://${{ env.PYTHON_FUNCTION_PROFILING_STORAGE_ACCT }}.blob.core.windows.net/profiling/${{ env.report_name }}"
+        echo "You can view the Blob at: $blob_url"
 
     # - name: Upload profiling result to artifact
     #   uses: actions/upload-artifact@v2

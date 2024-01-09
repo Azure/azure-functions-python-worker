@@ -87,7 +87,6 @@ jobs:
         source_dir: 'profiling_reports'  # Directory containing the helloperf.svg file
         container_name: 'profiling'
         connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
-        sync: false
 
     # - name: Upload profiling result to artifact
     #   uses: actions/upload-artifact@v2

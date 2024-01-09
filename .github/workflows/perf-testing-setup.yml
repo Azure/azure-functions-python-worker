@@ -61,8 +61,9 @@ jobs:
         echo "Starting py-spy in background..."
         echo "Container id is $container_id"
         docker exec $container_id sh -c "pip install py-spy"
-        # docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 --duration 5 &"
-        docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 > /home/site/wwwroot/py-spy.log 2>&1 &"
+        docker exec $container_id sh -c "mkdir /profiling_reports"
+        # docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 > /home/site/wwwroot/py-spy.log 2>&1 &"
+        docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /profiling_reports/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 > /home/site/wwwroot/py-spy.log 2>&1 &"
         sleep 2  # Give it a moment to start
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
         echo "py_spy_id=$py_spy_id" >> $GITHUB_ENV
@@ -77,17 +78,25 @@ jobs:
         docker exec $container_id sh -c "kill -2 $py_spy_id"
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
         echo "Py-Spy pid is $py_spy_id"
-        # docker exec $container_id sh -c "ls -ltr /home/site/wwwroot"
-        docker cp $container_id:/home/site/wwwroot/helloperf.svg .
+        # docker exec $container_id sh -c "ls -ltr /profiling_reports"
+        docker cp $container_id:/profiling_reports/helloperf.svg .
         
-    - name: Upload profiling result to artifact
-      uses: actions/upload-artifact@v2
+    - name: Upload SVG to Azure Blob Storage
+      uses: bacongobbler/azure-blob-storage-upload@v3.0.0
       with:
-        name: py-spy-output
-        path: helloperf.svg
+        source_dir: 'profiling_reports'  # Directory containing the helloperf.svg file
+        container_name: 'profiling'
+        connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+        sync: false
 
-    - name: Create Artifact Link
-      run: |
-        echo "You can download the SVG artifact from the Actions run page."
-        echo "Link to the Actions run page: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+    # - name: Upload profiling result to artifact
+    #   uses: actions/upload-artifact@v2
+    #   with:
+    #     name: py-spy-output
+    #     path: helloperf.svg
+
+    # - name: Create Artifact Link
+    #   run: |
+    #     echo "You can download the SVG artifact from the Actions run page."
+    #     echo "Link to the Actions run page: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         

@@ -37,14 +37,14 @@ jobs:
             --name 'azpyfuncpprofiling_7465148537.svg' \
             --permissions r \
             --output tsv \
-            --connection-string ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }})
+            --connection-string ${{ secrets.AZURE_FUNCTION_PROFILING_BLOB_SAS_CONN }})
           echo "$sas"
           echo "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}"
           url=$(az storage blob url \
             --container-name 'profiling' \
             --name 'azpyfuncpprofiling_7465148537.svg' \
             --output tsv \
-            --connection-string ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }})
+            --connection-string ${{ secrets.AZURE_FUNCTION_PROFILING_BLOB_SAS_CONN }})
           sas_url="$url?$sas"
           echo "SVG SAS URL: $sas_url"
           echo "sas_url=$sas_url" >> $GITHUB_ENV

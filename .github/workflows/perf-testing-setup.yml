@@ -39,6 +39,7 @@ jobs:
             --output tsv \
             --connection-string ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }})
           echo "$sas"
+          echo "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}"
           url=$(az storage blob url \
             --container-name 'profiling' \
             --name 'azpyfuncpprofiling_7465148537.svg' \

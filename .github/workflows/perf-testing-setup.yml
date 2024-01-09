@@ -84,6 +84,11 @@ jobs:
         chmod 777 profiling_reports
         docker cp $container_id:/home/profiling_reports/$report_name profiling_reports
         ls -ltr profiling_reports
+
+        # calculate sas report end time
+        current_time=$(date -u '+%Y-%m-%dT%H:%MZ')
+        end_time=$(date -u -d "$current_time 30 minutes" '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -D '%Y-%m-%dT%H:%MZ' -d "+30 minutes" '+%Y-%m-%dT%H:%MZ')
+        echo "end_time=$end_time" >> $GITHUB_ENV
         
     - name: Upload SVG to Azure Blob Storage
       uses: bacongobbler/azure-blob-storage-upload@v3.0.0
@@ -98,13 +103,11 @@ jobs:
       with:
         azcliversion: latest
         inlineScript: |
-          current_time=$(date -u '+%Y-%m-%dT%H:%MZ')
-          end=$(date -u -d "$current_time 30 minutes" '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -D '%Y-%m-%dT%H:%MZ' -d "+30 minutes" '+%Y-%m-%dT%H:%MZ')
           sas=$(az storage blob generate-sas \
             --container-name 'profiling' \
             --name $report_name \
             --permissions r \
-            --expiry $end \
+            --expiry $end_time \
             --output tsv \
             --connection-string ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }})
           url=$(az storage blob url \

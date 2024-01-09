@@ -34,13 +34,14 @@ jobs:
         inlineScript: |
           sas=$(az storage blob generate-sas \
             --container-name 'profiling' \
-            --name $report_name \
+            --name 'azpyfuncpprofiling_7465148537.svg' \
             --permissions r \
             --output tsv \
             --connection-string ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }})
+          echo "$sas"
           url=$(az storage blob url \
             --container-name 'profiling' \
-            --name $report_name \
+            --name 'azpyfuncpprofiling_7465148537.svg' \
             --output tsv \
             --connection-string ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }})
           sas_url="$url?$sas"

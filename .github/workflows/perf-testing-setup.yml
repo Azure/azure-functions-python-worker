@@ -45,10 +45,12 @@ jobs:
         container_id=$(docker run -d --privileged --shm-size="2g" --env FUNCTIONS_WORKER_RUNTIME_VERSION=${{ env.PYTHON_VERSION }} -p ${PORT}:80 -v $GITHUB_WORKSPACE/azure_functions_worker:/azure-functions-host/workers/python/${{ env.PYTHON_VERSION }}/LINUX/X64/azure_functions_worker perfimage:latest)
         sleep 10  # host needs some time to start.
         echo "Container ID is $container_id"
+        
         echo "Fetching Docker container logs..."
         docker logs $container_id
         worker_pid=$(docker exec $container_id sh -c "ps aux | grep '[p]ython'" | awk '{print $2}')
         echo "Python worker process id is $worker_pid"
+        
         echo "container_id=$container_id" >> $GITHUB_ENV
         echo "worker_pid=$worker_pid" >> $GITHUB_ENV
         
@@ -58,15 +60,13 @@ jobs:
         
     - name: Start py-spy in the background
       run: |
-        echo "Starting py-spy in background..."
-        echo "Container id is $container_id"
         docker exec $container_id sh -c "pip install py-spy"
         docker exec $container_id sh -c "mkdir /home/profiling_reports"
         report_name="azpyfuncpprofiling_${{ github.run_id }}.svg"
-        # docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/$report_name -f flamegraph --idle --nonblocking --rate 1500 > /home/site/wwwroot/py-spy.log 2>&1 &"
         docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/profiling_reports/$report_name -f flamegraph --idle --nonblocking --rate 1500 > /home/site/wwwroot/py-spy.log 2>&1 &"
         sleep 2  # Give it a moment to start
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
+        
         echo "py_spy_id=$py_spy_id" >> $GITHUB_ENV
         echo "report_name=$report_name" >> $GITHUB_ENV
         
@@ -74,19 +74,20 @@ jobs:
       run: |
         chmod 755 .ci/perf_tests/run-perftests.sh
         .ci/perf_tests/run-perftests.sh localhost $PORT ${{ env.TESTS_DIR_PATH }} ${{ matrix.test_to_run }}
+    
+    - name: Stop profiling and generate report
+      run: |
         echo "Tests completed, terminating py-spy..."
         docker exec $container_id cat /home/site/wwwroot/py-spy.log
-        echo "Py-Spy pid is $py_spy_id"
+        # echo "Py-Spy pid is $py_spy_id"
         docker exec $container_id sh -c "kill -2 $py_spy_id"
         sleep 2
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
-        echo "Py-Spy pid is $py_spy_id"
+        # echo "Py-Spy pid is $py_spy_id"
         mkdir profiling_reports
         chmod 777 profiling_reports
         docker cp $container_id:/home/profiling_reports/$report_name profiling_reports
-        ls -ltr profiling_reports
 
-        
     - name: Upload SVG to Azure Blob Storage
       uses: bacongobbler/azure-blob-storage-upload@v3.0.0
       with:
@@ -99,15 +100,3 @@ jobs:
       run: |
         blob_url="https://${{ env.PYTHON_FUNCTION_PROFILING_STORAGE_ACCT }}.blob.core.windows.net/profiling/${{ env.report_name }}"
         echo "You can view the Blob at: $blob_url"
-
-    # - name: Upload profiling result to artifact
-    #   uses: actions/upload-artifact@v2
-    #   with:
-    #     name: py-spy-output
-    #     path: helloperf.svg
-
-    # - name: Create Artifact Link
-    #   run: |
-    #     echo "You can download the SVG artifact from the Actions run page."
-    #     echo "Link to the Actions run page: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        

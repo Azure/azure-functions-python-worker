@@ -23,8 +23,6 @@ jobs:
         python-version: ${{ env.PYTHON_VERSION }}
     - name: Setup k6 for throughput testing
       run: |
-        current_time=$(date -u '+%Y-%m-%dT%H:%MZ')
-        end=$(date -u -d "$current_time 30 minutes" '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -D '%Y-%m-%dT%H:%MZ' -d "+30 minutes" '+%Y-%m-%dT%H:%MZ')
         cd $GITHUB_WORKSPACE
         curl https://github.com/loadimpact/k6/releases/download/v0.28.0/k6-v0.28.0-linux64.tar.gz -L | tar xvz --strip-components 1
         chmod 755 ./k6
@@ -100,7 +98,8 @@ jobs:
       with:
         azcliversion: latest
         inlineScript: |
-          end=$(date -u -d "30 minutes" '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -v+30M '+%Y-%m-%dT%H:%MZ')
+          current_time=$(date -u '+%Y-%m-%dT%H:%MZ')
+          end=$(date -u -d "$current_time 30 minutes" '+%Y-%m-%dT%H:%MZ' 2>/dev/null || date -u -D '%Y-%m-%dT%H:%MZ' -d "+30 minutes" '+%Y-%m-%dT%H:%MZ')
           sas=$(az storage blob generate-sas \
             --container-name 'profiling' \
             --name $report_name \

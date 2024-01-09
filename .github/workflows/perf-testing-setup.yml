@@ -11,7 +11,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: test
     strategy:
       fail-fast: false
       matrix:
@@ -62,11 +61,13 @@ jobs:
         echo "Container id is $container_id"
         docker exec $container_id sh -c "pip install py-spy"
         docker exec $container_id sh -c "mkdir /home/profiling_reports"
-        # docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 > /home/site/wwwroot/py-spy.log 2>&1 &"
-        docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/profiling_reports/helloperf.svg -f flamegraph --idle --nonblocking --rate 1500 > /home/site/wwwroot/py-spy.log 2>&1 &"
+        report_name="azpyfuncpprofiling_${{ github.run_id }}.svg"
+        # docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/site/wwwroot/$report_name -f flamegraph --idle --nonblocking --rate 1500 > /home/site/wwwroot/py-spy.log 2>&1 &"
+        docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/profiling_reports/$report_name -f flamegraph --idle --nonblocking --rate 1500 > /home/site/wwwroot/py-spy.log 2>&1 &"
         sleep 2  # Give it a moment to start
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
         echo "py_spy_id=$py_spy_id" >> $GITHUB_ENV
+        echo "report_name=$report_name" >> $GITHUB_ENV
         
     - name: Run Throughput tests
       run: |
@@ -81,13 +82,13 @@ jobs:
         echo "Py-Spy pid is $py_spy_id"
         mkdir profiling_reports
         chmod 777 profiling_reports
-        docker cp $container_id:/home/profiling_reports/helloperf.svg profiling_reports
+        docker cp $container_id:/home/profiling_reports/$report_name profiling_reports
         ls -ltr profiling_reports
         
     - name: Upload SVG to Azure Blob Storage
       uses: bacongobbler/azure-blob-storage-upload@v3.0.0
       with:
-        source_dir: 'profiling_reports'  # Directory containing the helloperf.svg file
+        source_dir: 'profiling_reports'  # Directory containing the $report_name file
         container_name: 'profiling'
         connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
         sync: 'false'
@@ -100,14 +101,14 @@ jobs:
           end=`date -u -d "30 minutes" '+%Y-%m-%dT%H:%MZ'`
           sas=$(az storage blob generate-sas \
             --container-name 'profiling' \
-            --name helloperf.svg \
+            --name $report_name \
             --permissions r \
             --expiry $end \
             --output tsv \
             --connection-string ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }})
           url=$(az storage blob url \
             --container-name 'profiling' \
-            --name helloperf.svg \
+            --name $report_name \
             --output tsv \
             --connection-string ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }})
           sas_url="$url?$sas"

@@ -79,10 +79,10 @@ jobs:
         sleep 2
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
         echo "Py-Spy pid is $py_spy_id"
-        mkdir -p $GITHUB_WORKSPACE/profiling_reports
-        chmod 777 $GITHUB_WORKSPACE/profiling_reports
-        docker cp $container_id:/home/profiling_reports/helloperf.svg /profiling_reports
-        ls -ltr /profiling_reports
+        mkdir profiling_reports
+        chmod 777 profiling_reports
+        docker cp $container_id:/home/profiling_reports/helloperf.svg profiling_reports
+        ls -ltr profiling_reports
         
     - name: Upload SVG to Azure Blob Storage
       uses: bacongobbler/azure-blob-storage-upload@v3.0.0

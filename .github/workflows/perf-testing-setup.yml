@@ -79,7 +79,8 @@ jobs:
         sleep 2
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
         echo "Py-Spy pid is $py_spy_id"
-        mkdir -p $GITHUB_WORKSPACE/profiling_reports
+        chmod 777 $GITHUB_WORKSPACE/home
+        mkdir -p $GITHUB_WORKSPACE/home/profiling_reports
         docker cp $container_id:/home/profiling_reports/helloperf.svg /home/profiling_reports
         ls -ltr /home/profiling_reports
         

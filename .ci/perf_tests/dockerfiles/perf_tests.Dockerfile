@@ -11,13 +11,11 @@ VOLUME ["/azure-functions-host/workers/python/${PYTHON_VERSION}/LINUX/X64/azure_
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
     FUNCTIONS_WORKER_PROCESS_COUNT=1 \
-    CONTAINER_NAME=perfcontainer \
     AZURE_FUNCTIONS_ENVIRONMENT=Development \
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED=1
 
 RUN apt-get --quiet update && \
-    apt-get install --quiet -y git && \
-    apt-get install -y procps && \
+    apt-get install --quiet -y git procps && \
     cd /home && \
     git clone https://github.com/vrdmr/AzFunctionsPythonPerformance.git && \
     mkdir -p /home/site/wwwroot/ && \

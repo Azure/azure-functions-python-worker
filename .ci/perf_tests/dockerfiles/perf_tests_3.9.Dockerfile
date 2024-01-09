@@ -194,7 +194,7 @@ VOLUME ["/azure-functions-host/workers/python/3.8/LINUX/X64/azure_functions_work
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61 && \
     echo "deb https://dl.bintray.com/loadimpact/deb stable main" | tee -a /etc/apt/sources.list  && \
     apt-get update && \
-    apt-get install -y git k6 && \
+    apt-get install -y git k6 procps && \
     cd /home && \
     git clone https://github.com/vrdmr/AzFunctionsPythonPerformance.git && \
     mkdir -p /home/site/wwwroot/ && \

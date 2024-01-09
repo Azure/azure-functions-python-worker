@@ -91,6 +91,33 @@ jobs:
         container_name: 'profiling'
         connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
         sync: 'false'
+
+    - name: Generate Blob SAS URL
+      uses: Azure/cli@v1
+      with:
+        azcliversion: latest
+        inlineScript: |
+          end=`date -u -d "30 minutes" '+%Y-%m-%dT%H:%MZ'`
+          sas=$(az storage blob generate-sas \
+            --container-name 'profiling' \
+            --name helloperf.svg \
+            --permissions r \
+            --expiry $end \
+            --output tsv \
+            --connection-string ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }})
+          url=$(az storage blob url \
+            --container-name 'profiling' \
+            --name helloperf.svg \
+            --output tsv \
+            --connection-string ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }})
+          sas_url="$url?$sas"
+          echo "SVG SAS URL: $sas_url"
+          echo "sas_url=$sas_url" >> $GITHUB_ENV
+
+    - name: Output SVG SAS URL
+      run: |
+        echo "You can view the SVG image at: ${{ env.sas_url }}"
+
     # - name: Upload profiling result to artifact
     #   uses: actions/upload-artifact@v2
     #   with:

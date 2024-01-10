@@ -12,7 +12,6 @@ CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
 SYSTEM_LOG_PREFIX = "azure_functions_worker"
 SDK_LOG_PREFIX = "azure.functions"
 SYSTEM_ERROR_LOG_PREFIX = "azure_functions_worker_errors"
-STDERR_LOG_PREFIX = "azure_functions_worker_stderr"
 
 
 logger: logging.Logger = logging.getLogger(SYSTEM_LOG_PREFIX)

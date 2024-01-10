@@ -16,21 +16,25 @@ import threading
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
+from datetime import datetime
 
 import grpc
 
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
-from .constants import (PYTHON_THREADPOOL_THREAD_COUNT,
+from .constants import (PYTHON_ROLLBACK_CWD_PATH,
+                        PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING, SCRIPT_FILE_NAME,
+                        PYTHON_ENABLE_DEBUG_LOGGING,
+                        SCRIPT_FILE_NAME,
                         PYTHON_LANGUAGE_RUNTIME, CUSTOMER_PACKAGES_PATH)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
+from .utils.app_setting_manager import get_python_appsetting_state
 from .utils.common import get_app_setting, is_envvar_true
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
@@ -264,12 +268,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, '
                     'worker version %s, '
-                    'request ID %s.'
-                    ' To enable debug level logging, please refer to '
+                    'request ID %s. '
+                    'App Settings state: %s. '
+                    'To enable debug level logging, please refer to '
                     'https://aka.ms/python-enable-debug-logging',
                     sys.version,
                     VERSION,
-                    self.request_id)
+                    self.request_id,
+                    get_python_appsetting_state()
+                    )
 
         worker_init_request = request.worker_init_request
         host_capabilities = worker_init_request.capabilities
@@ -425,6 +432,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         exception=self._serialize_exception(ex))))
 
     async def _handle__invocation_request(self, request):
+        invocation_time = datetime.utcnow()
         invoc_request = request.invocation_request
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
@@ -446,7 +454,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 f'function ID: {function_id}',
                 f'function name: {fi.name}',
                 f'invocation ID: {invocation_id}',
-                f'function type: {"async" if fi.is_async else "sync"}'
+                f'function type: {"async" if fi.is_async else "sync"}',
+                f'timestamp (UTC): {invocation_time}'
             ]
             if not fi.is_async:
                 function_invocation_logs.append(
@@ -545,10 +554,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         """
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
-                        'request ID: %s,'
-                        ' To enable debug level logging, please refer to '
+                        'request ID: %s, '
+                        'App Settings state: %s. '
+                        'To enable debug level logging, please refer to '
                         'https://aka.ms/python-enable-debug-logging',
-                        self.request_id)
+                        self.request_id,
+                        get_python_appsetting_state())
 
             func_env_reload_request = \
                 request.function_environment_reload_request
@@ -689,7 +700,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             name, directory, invoc_request.invocation_id,
             _invocation_id_local, trace_context, retry_context)
 
-    @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
+    @disable_feature_by(PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):
         if os.path.exists(new_cwd):
             os.chdir(new_cwd)

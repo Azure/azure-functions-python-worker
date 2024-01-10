@@ -58,18 +58,10 @@ def uninstall() -> None:
 def build_binding_protos(indexed_function) -> Dict:
     binding_protos = {}
     for binding in indexed_function.get_bindings():
-        if binding.type == "blob":
-            binding_protos[binding.name] = protos.BindingInfo(
-                type=binding.type,
-                data_type=binding.data_type,
-                direction=binding.direction,
-                properties={"SupportsDeferredBinding": "true"})
-        else:
-            binding_protos[binding.name] = protos.BindingInfo(
-                type=binding.type,
-                data_type=binding.data_type,
-                direction=binding.direction,
-                properties={"SupportsDeferredBinding": "false"})
+        binding_protos[binding.name] = protos.BindingInfo(
+            type=binding.type,
+            data_type=binding.data_type,
+            direction=binding.direction)
 
     return binding_protos
 
@@ -136,6 +128,20 @@ def process_indexed_function(functions_registry: functions.Registry,
 
         binding_protos = build_binding_protos(indexed_function)
         retry_protos = build_retry_protos(indexed_function)
+
+        # Check if deferred bindings is enabled
+        # if deferred_bindings_enabled:
+        #     raw_bindings=indexed_function.get_raw_bindings()
+        #     # Loop through all the bindings and add the appropriate flag
+        #     for i, entry in enumerate(raw_bindings):
+        #         if entry.direction == "IN" and entry.type == "BlobTrigger":
+        #             entry = entry + ', "properties":{"SupportsDeferredBinding":true}}'
+        #             raw_bindings[i] = entry
+        #         else:
+        #             entry = entry + ', "properties":{"SupportsDeferredBinding":false}}'
+        #             raw_bindings[i] = entry
+
+
 
         function_metadata = protos.RpcFunctionMetadata(
             name=function_info.name,

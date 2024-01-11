@@ -24,7 +24,7 @@ def get_python_appsetting_state():
          FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED]
 
     app_setting_states = "".join(
-        f"{app_setting}: {current_vars[app_setting]} "
+        f"{app_setting}: {current_vars[app_setting]} | "
         for app_setting in python_specific_settings
         if app_setting in current_vars
     )
@@ -38,6 +38,6 @@ def get_python_appsetting_state():
         else:
             app_setting_states += \
                 (f"{PYTHON_ENABLE_WORKER_EXTENSIONS}: "
-                 f"{str(PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT)} ")
+                 f"{str(PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT)}")
 
     return app_setting_states

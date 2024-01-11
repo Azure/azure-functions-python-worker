@@ -16,6 +16,7 @@ import threading
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
+from datetime import datetime
 
 import grpc
 
@@ -267,9 +268,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, '
                     'worker version %s, '
-                    'request ID %s.'
-                    'App Settings state: %s.'
-                    ' To enable debug level logging, please refer to '
+                    'request ID %s. '
+                    'App Settings state: %s. '
+                    'To enable debug level logging, please refer to '
                     'https://aka.ms/python-enable-debug-logging',
                     sys.version,
                     VERSION,
@@ -431,6 +432,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         exception=self._serialize_exception(ex))))
 
     async def _handle__invocation_request(self, request):
+        invocation_time = datetime.utcnow()
         invoc_request = request.invocation_request
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
@@ -452,7 +454,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 f'function ID: {function_id}',
                 f'function name: {fi.name}',
                 f'invocation ID: {invocation_id}',
-                f'function type: {"async" if fi.is_async else "sync"}'
+                f'function type: {"async" if fi.is_async else "sync"}',
+                f'timestamp (UTC): {invocation_time}'
             ]
             if not fi.is_async:
                 function_invocation_logs.append(
@@ -551,9 +554,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         """
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
-                        'request ID: %s,'
-                        'App Settings state: %s.'
-                        ' To enable debug level logging, please refer to '
+                        'request ID: %s, '
+                        'App Settings state: %s. '
+                        'To enable debug level logging, please refer to '
                         'https://aka.ms/python-enable-debug-logging',
                         self.request_id,
                         get_python_appsetting_state())

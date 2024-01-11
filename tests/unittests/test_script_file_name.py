@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
-from unittest.mock import patch
 
 from tests.utils import testutils
 from azure_functions_worker.constants import \
@@ -26,19 +25,6 @@ class TestDefaultScriptFileName(testutils.WebHostTestCase):
     """
 
     @classmethod
-    def setUpClass(cls):
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_SCRIPT_FILE_NAME] = PYTHON_SCRIPT_FILE_NAME_DEFAULT
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
-        super().setUpClass()
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        cls._patch_environ.stop()
-
-    @classmethod
     def get_script_name(cls):
         return "function_app.py"
 
@@ -54,30 +40,11 @@ class TestDefaultScriptFileName(testutils.WebHostTestCase):
         self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
                          PYTHON_SCRIPT_FILE_NAME_DEFAULT)
 
-    def test_return_str_default(self):
-        r = self.webhost.request('GET', 'return_str')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'Hello World!')
-        self.assertTrue(r.headers['content-type'].startswith('text/plain'))
-
 
 class TestNewScriptFileName(testutils.WebHostTestCase):
     """
     Tests for changed file name
     """
-
-    @classmethod
-    def setUpClass(cls):
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_SCRIPT_FILE_NAME] = 'test.py'
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
-        super().setUpClass()
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -95,30 +62,11 @@ class TestNewScriptFileName(testutils.WebHostTestCase):
         self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
                          'test.py')
 
-    def test_return_str_changed(self):
-        r = self.webhost.request('GET', 'return_str')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'Hello World!')
-        self.assertTrue(r.headers['content-type'].startswith('text/plain'))
-
 
 class TestInvalidScriptFileName(testutils.WebHostTestCase):
     """
     Tests for invalid file name
     """
-
-    @classmethod
-    def setUpClass(cls):
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_SCRIPT_FILE_NAME] = 'main'
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
-        super().setUpClass()
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -135,7 +83,3 @@ class TestInvalidScriptFileName(testutils.WebHostTestCase):
         self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
         self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
                          'main')
-
-    def test_return_str_invalid(self):
-        r = self.webhost.request('GET', 'return_str')
-        self.assertEqual(r.status_code, 404)

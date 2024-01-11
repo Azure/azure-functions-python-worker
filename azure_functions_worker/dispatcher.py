@@ -270,9 +270,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, '
                     'worker version %s, '
-                    'request ID %s.'
-                    'App Settings state: %s.'
-                    ' To enable debug level logging, please refer to '
+                    'request ID %s. '
+                    'App Settings state: %s. '
+                    'To enable debug level logging, please refer to '
                     'https://aka.ms/python-enable-debug-logging',
                     sys.version,
                     VERSION,
@@ -567,9 +567,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         """
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
-                        'request ID: %s,'
-                        'App Settings state: %s.'
-                        ' To enable debug level logging, please refer to '
+                        'request ID: %s, '
+                        'App Settings state: %s. '
+                        'To enable debug level logging, please refer to '
                         'https://aka.ms/python-enable-debug-logging',
                         self.request_id,
                         get_python_appsetting_state())

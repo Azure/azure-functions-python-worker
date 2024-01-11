@@ -5,7 +5,7 @@ import os
 import sys
 import re
 from types import ModuleType
-from typing import Optional, Callable
+from typing import Optional, Callable, Union
 
 from azure_functions_worker.constants import CUSTOMER_PACKAGES_PATH, \
     PYTHON_EXTENSIONS_RELOAD_FUNCTIONS
@@ -146,11 +146,15 @@ class InvalidFileNameError(Exception):
             f'Invalid file name: {file_name}')
 
 
-def validate_script_file_name(file_name: str):
-    # First character can be a letter, number, or underscore
-    # Following characters can be a letter, number, underscore, hyphen, or dash
-    # Ending must be .py
+def validate_script_file(function_path: Union[str, os.PathLike],
+                         file_name: str) -> (bool, bool):
+    """ Validate the script file name.
+    Returns:
+    T, T : V2 programming model
+    T, F : V2 programming model but with invalid file name
+    F, T : File path does not exist but filename is valid.
+           V1 programming model
+    F, F : Invalid function
+    """
     pattern = re.compile(r'^[a-zA-Z0-9_][a-zA-Z0-9_\-]*\.py$')
-    if not pattern.match(file_name):
-        raise InvalidFileNameError(file_name)
-    return True
+    return os.path.exists(function_path), pattern.match(file_name)

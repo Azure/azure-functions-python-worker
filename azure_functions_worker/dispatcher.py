@@ -37,7 +37,7 @@ from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
 from .utils.app_setting_manager import get_python_appsetting_state
 from .utils.common import (get_app_setting, is_envvar_true,
-                           validate_script_file_name)
+                           validate_script_file)
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
@@ -329,33 +329,54 @@ class Dispatcher(metaclass=DispatcherMeta):
             default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
         function_path = os.path.join(directory, script_file_name)
 
+        v2_file_exist, file_name_valid = validate_script_file(function_path,
+                                                              script_file_name)
         logger.info(
-            'Received WorkerMetadataRequest, request ID %s, function_path: %s',
-            self.request_id, function_path)
-
+            'Received WorkerMetadataRequest, request_ID %s, function_path: %s, '
+            'File_exists_and_correctly_named: %s',
+            self.request_id, function_path, v2_file_exist)
         try:
-            validate_script_file_name(script_file_name)
-
-            if not os.path.exists(function_path):
-                # Fallback to legacy model
-                logger.info("%s does not exist. "
-                            "Switching to host indexing.", script_file_name)
+            if v2_file_exist and file_name_valid:
+                # V2 programming model
+                fx_metadata_results = self.index_functions(function_path)
+                return protos.StreamingMessage(
+                    request_id=request.request_id,
+                    function_metadata_response=protos.FunctionMetadataResponse(
+                        function_metadata_results=fx_metadata_results,
+                        result=protos.StatusResult(
+                            status=protos.StatusResult.Success)))
+            elif not v2_file_exist and file_name_valid:
+                # V1 programming model
                 return protos.StreamingMessage(
                     request_id=request.request_id,
                     function_metadata_response=protos.FunctionMetadataResponse(
                         use_default_metadata_indexing=True,
                         result=protos.StatusResult(
                             status=protos.StatusResult.Success)))
-
-            fx_metadata_results = self.index_functions(function_path)
-
-            return protos.StreamingMessage(
-                request_id=request.request_id,
-                function_metadata_response=protos.FunctionMetadataResponse(
-                    function_metadata_results=fx_metadata_results,
-                    result=protos.StatusResult(
-                        status=protos.StatusResult.Success)))
-
+            elif v2_file_exist and not file_name_valid:
+                # V2 programming model but with invalid file name
+                error_logger.error('Invalid script file name.'
+                                   'Script File Name %s:', script_file_name)
+                return protos.StreamingMessage(
+                    request_id=request.request_id,
+                    function_metadata_response=protos.FunctionMetadataResponse(
+                        result=protos.StatusResult(
+                            status=protos.StatusResult.Failure,
+                            exception=self._serialize_exception(
+                                Exception('Invalid Script file name %s',
+                                          script_file_name)))))
+            else:
+                logger.error('App setting %s detected but file path %s does '
+                             'not exist. Invalid function.', 
+                             PYTHON_SCRIPT_FILE_NAME, function_path )
+                return protos.StreamingMessage(
+                    request_id=request.request_id,
+                    function_metadata_response=protos.FunctionMetadataResponse(
+                        result=protos.StatusResult(
+                            status=protos.StatusResult.Failure,
+                            exception=self._serialize_exception(
+                                Exception('Invalid Script file name %s',
+                                          script_file_name)))))
         except Exception as ex:
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -380,13 +401,15 @@ class Dispatcher(metaclass=DispatcherMeta):
                 script_file_name = get_app_setting(
                     setting=PYTHON_SCRIPT_FILE_NAME,
                     default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
-                validate_script_file_name(script_file_name)
+
                 function_path = os.path.join(
                     function_metadata.directory,
                     script_file_name)
+                is_file_valid = validate_script_file(function_path,
+                                                     script_file_name)
 
                 if function_metadata.properties.get("worker_indexed", False) \
-                        or os.path.exists(function_path):
+                        or is_file_valid:
                     # This is for the second worker and above where the worker
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the

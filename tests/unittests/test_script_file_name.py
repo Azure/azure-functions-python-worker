@@ -39,6 +39,10 @@ class TestDefaultScriptFileName(testutils.WebHostTestCase):
         cls._patch_environ.stop()
 
     @classmethod
+    def get_script_name(cls):
+        return "function_app.py"
+
+    @classmethod
     def get_script_dir(cls):
         return DEFAULT_SCRIPT_FILE_NAME_DIR
 
@@ -79,6 +83,10 @@ class TestNewScriptFileName(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return NEW_SCRIPT_FILE_NAME_DIR
 
+    @classmethod
+    def get_script_name(cls):
+        return "test.py"
+
     def test_new_file_name(self):
         """
         Test the new file name
@@ -116,6 +124,10 @@ class TestInvalidScriptFileName(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return INVALID_SCRIPT_FILE_NAME_DIR
 
+    @classmethod
+    def get_script_name(cls):
+        return "main"
+
     def test_invalid_file_name(self):
         """
         Test the invalid file name
@@ -126,4 +138,4 @@ class TestInvalidScriptFileName(testutils.WebHostTestCase):
 
     def test_return_str_invalid(self):
         r = self.webhost.request('GET', 'return_str')
-        self.assertEqual(r.status_code, 500)
+        self.assertEqual(r.status_code, 404)

@@ -292,10 +292,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 self.host_stdout.seek(last_pos)
                 self.host_out = self.host_stdout.read()
                 self.host_stdout_logger.error(
-                    'Captured WebHost stdout from %s :\n'
-                    "Env variables: %s\n"
-                    '%s',
-                    self.host_stdout.name, self.env_variables, self.host_out)
+                    'Captured WebHost stdout from %s :\n%s',
+                    self.host_stdout.name, self.host_out)
             finally:
                 if test_exception is not None:
                     raise test_exception

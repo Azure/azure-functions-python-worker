@@ -8,7 +8,6 @@ from typing import Optional, Tuple
 from unittest.mock import patch
 
 from azure_functions_worker import protos
-from azure_functions_worker.utils import common
 from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
@@ -604,7 +603,6 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
- 
 
     async def test_dispatcher_functions_metadata_request_with_retry(self):
         """Test if the functions metadata response will be sent correctly
@@ -617,9 +615,10 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
-            
+
     @patch('azure_functions_worker.dispatcher.validate_script_file')
-    async def test_functions_metadata_valid_file(self, mock_validate_script_file):
+    async def test_dispatcher_metadata_valid_file(self,
+                                                  mock_validate_script_file):
         """Test response when script file exists and name is valid."""
         mock_validate_script_file.return_value = (True, True)
 
@@ -629,10 +628,12 @@ class TestDispatcherStein(testutils.AsyncTestCase):
 
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertFalse(r.response.use_default_metadata_indexing)
-            self.assertEqual(r.response.result.status, protos.StatusResult.Success)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
 
     @patch('azure_functions_worker.dispatcher.validate_script_file')
-    async def test_functions_metadata_invalid_function(self, mock_validate_script_file):
+    async def test_dispatcher_metadata_invalid_func(self,
+                                                    mock_validate_script_file):
         """Test response when script file does not exist and name is invalid."""
         mock_validate_script_file.return_value = (False, False)
 
@@ -641,10 +642,14 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             r = await host.get_functions_metadata()
 
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertEqual(r.response.result.status, protos.StatusResult.Failure)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
 
     @patch('azure_functions_worker.dispatcher.validate_script_file')
-    async def test_functions_metadata_valid_file_invalid_name(self, mock_validate_script_file):
+    async def test_dispatcher_metadata_valid_file_invalid_name(
+            self,
+            mock_validate_script_file
+    ):
         """Test response when script file exists but name is invalid."""
         mock_validate_script_file.return_value = (True, False)
 
@@ -652,22 +657,25 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             await host.init_worker()
             r = await host.get_functions_metadata()
 
-            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertEqual(r.response.result.status, protos.StatusResult.Failure)
-    
+        self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
+        self.assertEqual(r.response.result.status, protos.StatusResult.Failure)
+
     @patch('azure_functions_worker.dispatcher.validate_script_file')
-    async def test_functions_metadata_V1_programming_model(self, mock_validate_script_file):
-        """Test response when script file exists but name is invalid."""
+    async def test_dispatcher_metadata_V1_programming_model(
+            self,
+            mock_validate_script_file
+    ):
+        """Test response when script file exists but name is valid.
+        This is the case for v1 programming model."""
         mock_validate_script_file.return_value = (False, True)
 
         async with self._ctrl as host:
             await host.init_worker()
             r = await host.get_functions_metadata()
 
-            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertTrue(r.response.use_default_metadata_indexing)
-            self.assertEqual(r.response.result.status, protos.StatusResult.Success)
-
+        self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
+        self.assertTrue(r.response.use_default_metadata_indexing)
+        self.assertEqual(r.response.result.status, protos.StatusResult.Success)
 
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):

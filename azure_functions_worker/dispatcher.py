@@ -367,8 +367,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                                           script_file_name)))))
             else:
                 logger.error('App setting %s detected but file path %s does '
-                             'not exist. Invalid function.', 
-                             PYTHON_SCRIPT_FILE_NAME, function_path )
+                             'not exist. Invalid function.',
+                             PYTHON_SCRIPT_FILE_NAME, function_path)
                 return protos.StreamingMessage(
                     request_id=request.request_id,
                     function_metadata_response=protos.FunctionMetadataResponse(

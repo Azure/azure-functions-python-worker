@@ -30,7 +30,7 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_ENABLE_DEBUG_LOGGING,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
-                        PYTHON_LANGUAGE_RUNTIME, CUSTOMER_PACKAGES_PATH)
+                        PYTHON_LANGUAGE_RUNTIME)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
@@ -299,12 +299,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             DependencyManager.prioritize_customer_dependencies()
 
         if DependencyManager.is_in_linux_consumption():
-            logger.info(
-                "Importing azure functions in WorkerInitRequest")
             import azure.functions  # NoQA
-
-        if CUSTOMER_PACKAGES_PATH not in sys.path:
-            logger.warning("Customer packages not in sys path.")
 
         # loading bindings registry and saving results to a static
         # dictionary which will be later used in the invocation request
@@ -343,8 +338,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             if not os.path.exists(function_path):
                 # Fallback to legacy model
-                logger.info("%s does not exist. "
-                            "Switching to host indexing.", script_file_name)
                 return protos.StreamingMessage(
                     request_id=request.request_id,
                     function_metadata_response=protos.FunctionMetadataResponse(
@@ -379,7 +372,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
             'function_name: %s,', self.request_id, function_id, function_name)
 
-        programming_model = "V1"
+        programming_model = "V2"
         try:
             if not self._functions.get_function(function_id):
                 script_file_name = get_app_setting(
@@ -396,10 +389,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the
                     # function and update the workers registry
-                    programming_model = "V2"
                     _ = self.index_functions(function_path)
                 else:
                     # legacy function
+                    programming_model = "V1"
+
                     func = loader.load_function(
                         func_request.metadata.name,
                         func_request.metadata.directory,

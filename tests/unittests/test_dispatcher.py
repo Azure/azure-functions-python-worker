@@ -20,9 +20,6 @@ DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'
 DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
     'dispatcher_functions_stein'
-DISPATCHER_STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'broken_functions' / \
-    'invalid_stein'
 
 
 class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
@@ -304,15 +301,20 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_function_is_ok(host)
                 )
 
-                mock_logger.info.assert_any_call(
-                    'Received FunctionInvocationRequest, '
-                    f'request ID: {request_id}, '
-                    f'function ID: {func_id}, '
-                    f'function name: {func_name}, '
-                    f'invocation ID: {invoke_id}, '
-                    'function type: sync, '
-                    f'sync threadpool max workers: {self._default_workers}'
-                )
+                logs, _ = mock_logger.info.call_args
+                self.assertRegex(logs[0],
+                                 'Received FunctionInvocationRequest, '
+                                 f'request ID: {request_id}, '
+                                 f'function ID: {func_id}, '
+                                 f'function name: {func_name}, '
+                                 f'invocation ID: {invoke_id}, '
+                                 'function type: sync, '
+                                 r'timestamp \(UTC\): '
+                                 r'(\d{4}-\d{2}-\d{2} '
+                                 r'\d{2}:\d{2}:\d{2}.\d{6}), '
+                                 'sync threadpool max workers: '
+                                 f'{self._default_workers}'
+                                 )
 
     async def test_async_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
@@ -323,14 +325,18 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_async_function_is_ok(host)
                 )
 
-                mock_logger.info.assert_any_call(
-                    'Received FunctionInvocationRequest, '
-                    f'request ID: {request_id}, '
-                    f'function ID: {func_id}, '
-                    f'function name: {func_name}, '
-                    f'invocation ID: {invoke_id}, '
-                    'function type: async'
-                )
+                logs, _ = mock_logger.info.call_args
+                self.assertRegex(logs[0],
+                                 'Received FunctionInvocationRequest, '
+                                 f'request ID: {request_id}, '
+                                 f'function ID: {func_id}, '
+                                 f'function name: {func_name}, '
+                                 f'invocation ID: {invoke_id}, '
+                                 'function type: async, '
+                                 r'timestamp \(UTC\): '
+                                 r'(\d{4}-\d{2}-\d{2} '
+                                 r'\d{2}:\d{2}:\d{2}.\d{6})'
+                                 )
 
     async def test_sync_invocation_request_log_threads(self):
         os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
@@ -342,15 +348,19 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_function_is_ok(host)
                 )
 
-                mock_logger.info.assert_any_call(
-                    'Received FunctionInvocationRequest, '
-                    f'request ID: {request_id}, '
-                    f'function ID: {func_id}, '
-                    f'function name: {func_name}, '
-                    f'invocation ID: {invoke_id}, '
-                    'function type: sync, '
-                    'sync threadpool max workers: 5'
-                )
+                logs, _ = mock_logger.info.call_args
+                self.assertRegex(logs[0],
+                                 'Received FunctionInvocationRequest, '
+                                 f'request ID: {request_id}, '
+                                 f'function ID: {func_id}, '
+                                 f'function name: {func_name}, '
+                                 f'invocation ID: {invoke_id}, '
+                                 'function type: sync, '
+                                 r'timestamp \(UTC\): '
+                                 r'(\d{4}-\d{2}-\d{2} '
+                                 r'\d{2}:\d{2}:\d{2}.\d{6}), '
+                                 'sync threadpool max workers: 5'
+                                 )
 
     async def test_async_invocation_request_log_threads(self):
         os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
@@ -362,14 +372,18 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_async_function_is_ok(host)
                 )
 
-                mock_logger.info.assert_any_call(
-                    'Received FunctionInvocationRequest, '
-                    f'request ID: {request_id}, '
-                    f'function ID: {func_id}, '
-                    f'function name: {func_name}, '
-                    f'invocation ID: {invoke_id}, '
-                    'function type: async'
-                )
+                logs, _ = mock_logger.info.call_args
+                self.assertRegex(logs[0],
+                                 'Received FunctionInvocationRequest, '
+                                 f'request ID: {request_id}, '
+                                 f'function ID: {func_id}, '
+                                 f'function name: {func_name}, '
+                                 f'invocation ID: {invoke_id}, '
+                                 'function type: async, '
+                                 r'timestamp \(UTC\): '
+                                 r'(\d{4}-\d{2}-\d{2} '
+                                 r'\d{2}:\d{2}:\d{2}.\d{6})'
+                                 )
 
     async def test_sync_invocation_request_log_in_placeholder_threads(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
@@ -383,15 +397,19 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_function_is_ok(host)
                 )
 
-                mock_logger.info.assert_any_call(
-                    'Received FunctionInvocationRequest, '
-                    f'request ID: {request_id}, '
-                    f'function ID: {func_id}, '
-                    f'function name: {func_name}, '
-                    f'invocation ID: {invoke_id}, '
-                    'function type: sync, '
-                    'sync threadpool max workers: 5'
-                )
+                logs, _ = mock_logger.info.call_args
+                self.assertRegex(logs[0],
+                                 'Received FunctionInvocationRequest, '
+                                 f'request ID: {request_id}, '
+                                 f'function ID: {func_id}, '
+                                 f'function name: {func_name}, '
+                                 f'invocation ID: {invoke_id}, '
+                                 'function type: sync, '
+                                 r'timestamp \(UTC\): '
+                                 r'(\d{4}-\d{2}-\d{2} '
+                                 r'\d{2}:\d{2}:\d{2}.\d{6}), '
+                                 'sync threadpool max workers: 5'
+                                 )
 
     async def test_async_invocation_request_log_in_placeholder_threads(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
@@ -405,14 +423,18 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_async_function_is_ok(host)
                 )
 
-                mock_logger.info.assert_any_call(
-                    'Received FunctionInvocationRequest, '
-                    f'request ID: {request_id}, '
-                    f'function ID: {func_id}, '
-                    f'function name: {func_name}, '
-                    f'invocation ID: {invoke_id}, '
-                    'function type: async'
-                )
+                logs, _ = mock_logger.info.call_args
+                self.assertRegex(logs[0],
+                                 'Received FunctionInvocationRequest, '
+                                 f'request ID: {request_id}, '
+                                 f'function ID: {func_id}, '
+                                 f'function name: {func_name}, '
+                                 f'invocation ID: {invoke_id}, '
+                                 'function type: async, '
+                                 r'timestamp \(UTC\): '
+                                 r'(\d{4}-\d{2}-\d{2} '
+                                 r'\d{2}:\d{2}:\d{2}.\d{6})'
+                                 )
 
     async def _assert_workers_threadpool(self, ctrl, host,
                                          expected_worker_count):

@@ -131,7 +131,7 @@ class TestGenericFunctions(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
 
             _, r = await host.invoke_function(
-                'foobar_implicit_output', [
+                'foobar_as_bytes_no_anno', [
                     protos.ParameterBinding(
                         name='input',
                         data=protos.TypedData(
@@ -140,10 +140,10 @@ class TestGenericFunctions(testutils.AsyncTestCase):
                     )
                 ]
             )
-            # It passes now as we are enabling generic binding to return output
-            # implicitly
+            # It should fail here, since generic binding requires
+            # $return statement in function.json to pass output
             self.assertEqual(r.response.result.status,
-                             protos.StatusResult.Success)
+                             protos.StatusResult.Failure)
 
     async def test_mock_generic_should_support_without_datatype(self):
         async with testutils.start_mockhost(
@@ -166,7 +166,7 @@ class TestGenericFunctions(testutils.AsyncTestCase):
                     )
                 ]
             )
-            # It passes now as we are enabling generic binding to return output
-            # implicitly
+            # It should fail here, since the generic binding requires datatype
+            # to be defined in function.json
             self.assertEqual(r.response.result.status,
-                             protos.StatusResult.Success)
+                             protos.StatusResult.Failure)

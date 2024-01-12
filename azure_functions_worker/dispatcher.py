@@ -338,8 +338,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             if not os.path.exists(function_path):
                 # Fallback to legacy model
-                logger.info("%s does not exist. "
-                            "Switching to host indexing.", script_file_name)
                 return protos.StreamingMessage(
                     request_id=request.request_id,
                     function_metadata_response=protos.FunctionMetadataResponse(

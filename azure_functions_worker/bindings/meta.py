@@ -43,6 +43,8 @@ def is_trigger_binding(bind_name: str) -> bool:
 
 
 def check_input_type_annotation(bind_name: str, pytype: type) -> bool:
+    if pytype is int:
+        return True
     binding = get_binding(bind_name)
     return binding.check_input_type_annotation(pytype)
 

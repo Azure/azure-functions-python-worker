@@ -17,8 +17,10 @@ from google.protobuf.duration_pb2 import Duration
 
 from . import protos, functions
 from .bindings.retrycontext import RetryPolicy
-from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
-    PYTHON_LANGUAGE_RUNTIME, RETRY_POLICY, CUSTOMER_PACKAGES_PATH
+from .utils.common import get_app_setting
+from .constants import MODULE_NOT_FOUND_TS_URL, PYTHON_SCRIPT_FILE_NAME, \
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT, PYTHON_LANGUAGE_RUNTIME, \
+    CUSTOMER_PACKAGES_PATH, RETRY_POLICY
 from .logging import logger
 from .utils.wrappers import attach_message_to_exception
 
@@ -239,7 +241,10 @@ def index_function_app(function_path: str):
                     f"level function app instances are defined.")
 
     if not app:
+        script_file_name = get_app_setting(
+            setting=PYTHON_SCRIPT_FILE_NAME,
+            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
         raise ValueError("Could not find top level function app instances in "
-                         f"{SCRIPT_FILE_NAME}.")
+                         f"{script_file_name}.")
 
     return app.get_functions()

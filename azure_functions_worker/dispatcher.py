@@ -333,11 +333,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                                                               script_file_name)
         logger.info(
             'Received WorkerMetadataRequest, request_ID %s, function_path: %s, '
-            'File_exists_and_correctly_named: %s',
-            self.request_id, function_path, v2_file_exist)
+            'file_exists: %s, file_name_valid: %s',
+            self.request_id, function_path, v2_file_exist, file_name_valid)
         try:
             if v2_file_exist and file_name_valid:
-                # V2 programming model
+                # valid V2 programming model
                 fx_metadata_results = self.index_functions(function_path)
                 return protos.StreamingMessage(
                     request_id=request.request_id,
@@ -346,7 +346,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         result=protos.StatusResult(
                             status=protos.StatusResult.Success)))
             elif not v2_file_exist and file_name_valid:
-                # V1 programming model
+                # valid V1 programming model
                 return protos.StreamingMessage(
                     request_id=request.request_id,
                     function_metadata_response=protos.FunctionMetadataResponse(
@@ -354,8 +354,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                         result=protos.StatusResult(
                             status=protos.StatusResult.Success)))
             elif v2_file_exist and not file_name_valid:
-                # V2 programming model but with invalid file name
-                error_logger.error('Invalid script file name.'
+                # invalid V2 programming model
+                error_logger.error('Invalid file path.'
+                                   'File path: %s,', function_path,
                                    'Script File Name %s:', script_file_name)
                 return protos.StreamingMessage(
                     request_id=request.request_id,
@@ -363,12 +364,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                         result=protos.StatusResult(
                             status=protos.StatusResult.Failure,
                             exception=self._serialize_exception(
-                                Exception('Invalid Script file name %s',
+                                Exception('Invalid script file name %s',
                                           script_file_name)))))
             else:
-                logger.error('App setting %s detected but file path %s does '
-                             'not exist. Invalid function.',
-                             PYTHON_SCRIPT_FILE_NAME, function_path)
+                # invalid app
+                error_logger.error('App setting %s detected '
+                                   'but file path %s does not exist. '
+                                   'Invalid function.',
+                                   PYTHON_SCRIPT_FILE_NAME, function_path)
                 return protos.StreamingMessage(
                     request_id=request.request_id,
                     function_metadata_response=protos.FunctionMetadataResponse(
@@ -405,11 +408,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                 function_path = os.path.join(
                     function_metadata.directory,
                     script_file_name)
-                is_file_valid = validate_script_file(function_path,
-                                                     script_file_name)
+                is_path_valid, _ = validate_script_file(function_path,
+                                                        script_file_name)
 
                 if function_metadata.properties.get("worker_indexed", False) \
-                        or is_file_valid:
+                        or is_path_valid:
                     # This is for the second worker and above where the worker
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the

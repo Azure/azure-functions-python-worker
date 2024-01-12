@@ -8,7 +8,7 @@ from types import ModuleType
 from typing import Optional, Callable, Union
 
 from azure_functions_worker.constants import CUSTOMER_PACKAGES_PATH, \
-    PYTHON_EXTENSIONS_RELOAD_FUNCTIONS
+    PYTHON_EXTENSIONS_RELOAD_FUNCTIONS, PYTHON_SCRIPT_FILE_NAME
 
 
 def is_true_like(setting: str) -> bool:
@@ -153,8 +153,19 @@ def validate_script_file(function_path: Union[str, os.PathLike],
     T, T : V2 programming model
     T, F : V2 programming model but with invalid file name
     F, T : File path does not exist but filename is valid.
-           V1 programming model
+           Case 1: V1 programming model
+           Case 2: V2 programming model but with invalid file path
+                If V2, return T, F
     F, F : Invalid function
     """
     pattern = re.compile(r'^[a-zA-Z0-9_][a-zA-Z0-9_\-]*\.py$')
-    return os.path.exists(function_path), pattern.match(file_name)
+    path_exists = os.path.exists(function_path)
+    valid_file_name = pattern.match(file_name)
+    app_setting_set = PYTHON_SCRIPT_FILE_NAME in os.environ.copy()
+
+    # Handles special case where App Setting is set to incorrect file name
+    # for V2 programming model
+    if app_setting_set and not path_exists and valid_file_name:
+        return True, False
+
+    return path_exists, valid_file_name

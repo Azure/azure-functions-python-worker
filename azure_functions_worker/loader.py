@@ -152,10 +152,11 @@ def process_indexed_function(functions_registry: functions.Registry,
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message='Please check the requirements.txt file for the missing module. '
-            'For more info, please refer the troubleshooting'
-            f' guide: {MODULE_NOT_FOUND_TS_URL}. '
-            'Cannot find module in sys.path: {sys.path}',
+    message='Cannot find module. Please check the requirements.txt '
+             'file for the missing module. For more info, '
+            'please refer the troubleshooting '
+            f'guide: {MODULE_NOT_FOUND_TS_URL}. '
+            f'Current sys.path: {sys.path}',
     debug_logs='Error in load_function. '
                f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
                'python-packages Path exists: '
@@ -207,10 +208,11 @@ def load_function(name: str, directory: str, script_file: str,
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message='Please check the requirements.txt file for the missing module. '
-            'For more info, please refer the troubleshooting'
-            f' guide: {MODULE_NOT_FOUND_TS_URL}. '
-            'Cannot find module in sys.path: {sys.path}',
+    message='Cannot find module. Please check the requirements.txt '
+            'file for the missing module. For more info, '
+            'please refer the troubleshooting '
+            f'guide: {MODULE_NOT_FOUND_TS_URL}. '
+            f'Current sys.path: {sys.path}',
     debug_logs='Error in index_function_app. '
                f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
                'python-packages Path exists: '

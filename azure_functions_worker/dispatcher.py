@@ -355,7 +355,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                             status=protos.StatusResult.Success)))
             elif v2_file_exist and not file_name_valid:
                 # invalid V2 programming model
-                error_logger.error('Invalid file path.'
+                error_logger.error('Invalid app. Please ensure the path and '
+                                   'file name are correct.'
                                    'File path: %s,', function_path,
                                    'Script File Name %s:', script_file_name)
                 return protos.StreamingMessage(

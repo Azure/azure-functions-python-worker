@@ -44,8 +44,6 @@ def attach_message_to_exception(expt_type: Exception, message: str,
                 return func(*args, **kwargs)
             except expt_type as e:
                 if debug_logs is not None:
-                    global debug_logs
-                    debug_logs = debug_logs + " Error: %s, %s" % (e, message)
                     logger.error(debug_logs)
                 error_logger.exception("Error: %s, %s", e, message)
                 raise extend_exception_message(e, message)

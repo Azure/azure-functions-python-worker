@@ -153,7 +153,7 @@ def process_indexed_function(functions_registry: functions.Registry,
 @attach_message_to_exception(
     expt_type=ImportError,
     message='Cannot find module. Please check the requirements.txt '
-             'file for the missing module. For more info, '
+            'file for the missing module. For more info, '
             'please refer the troubleshooting '
             f'guide: {MODULE_NOT_FOUND_TS_URL}. '
             f'Current sys.path: {sys.path}',

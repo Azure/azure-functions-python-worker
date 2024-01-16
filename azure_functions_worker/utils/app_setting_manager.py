@@ -10,7 +10,8 @@ from ..constants import (PYTHON_ROLLBACK_CWD_PATH,
                          PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT,
                          PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39,
                          PYTHON_ENABLE_DEBUG_LOGGING,
-                         FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
+                         FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
+                         PYTHON_SCRIPT_FILE_NAME)
 
 
 def get_python_appsetting_state():
@@ -21,10 +22,11 @@ def get_python_appsetting_state():
          PYTHON_ISOLATE_WORKER_DEPENDENCIES,
          PYTHON_ENABLE_DEBUG_LOGGING,
          PYTHON_ENABLE_WORKER_EXTENSIONS,
-         FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED]
+         FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
+         PYTHON_SCRIPT_FILE_NAME]
 
     app_setting_states = "".join(
-        f"{app_setting}: {current_vars[app_setting]} "
+        f"{app_setting}: {current_vars[app_setting]} | "
         for app_setting in python_specific_settings
         if app_setting in current_vars
     )
@@ -38,6 +40,6 @@ def get_python_appsetting_state():
         else:
             app_setting_states += \
                 (f"{PYTHON_ENABLE_WORKER_EXTENSIONS}: "
-                 f"{str(PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT)} ")
+                 f"{str(PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT)}")
 
     return app_setting_states

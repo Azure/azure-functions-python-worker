@@ -98,3 +98,4 @@ jobs:
       run: |
         blob_url="https://${{ env.PYTHON_FUNCTION_PROFILING_STORAGE_ACCT }}.blob.core.windows.net/profiling/${{ env.report_name }}"
         echo "You can view the Blob at: $blob_url"
+  

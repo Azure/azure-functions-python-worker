@@ -16,6 +16,7 @@ ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
 
 RUN apt-get --quiet update && \
     apt-get install --quiet -y git procps && \
+    # Procps is required for displaying worker and profiling processes info
     cd /home && \
     git clone https://github.com/vrdmr/AzFunctionsPythonPerformance.git && \
     mkdir -p /home/site/wwwroot/ && \

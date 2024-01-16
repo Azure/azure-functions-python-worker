@@ -15,7 +15,7 @@ ENV FUNCTIONS_WORKER_RUNTIME_VERSION=3.6 \
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61 && \
     echo "deb https://dl.bintray.com/loadimpact/deb stable main" | tee -a /etc/apt/sources.list  && \
     apt-get update && \
-    apt-get install -y git k6 procps && \
+    apt-get install -y git k6 && \
     cd /home && \
     git clone https://github.com/vrdmr/AzFunctionsPythonPerformance.git && \
     mkdir -p /home/site/wwwroot/ && \

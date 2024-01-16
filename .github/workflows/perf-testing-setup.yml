@@ -2,7 +2,8 @@ name: Throughput testing workflow
 
 on:
   workflow_dispatch:
-
+  issue_comment:                                     
+    types: [created]
 env:
   TESTS_DIR_PATH: ".ci/perf_tests/k6scripts/"
   PYTHON_VERSION: "3.11"
@@ -11,6 +12,7 @@ env:
 
 jobs:
   build:
+    if: ${{ github.event.issue.pull_request & contains(github.event.comment.body, '/profile') }} 
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

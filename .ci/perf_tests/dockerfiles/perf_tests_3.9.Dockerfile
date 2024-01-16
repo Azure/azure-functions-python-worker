@@ -195,6 +195,7 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D4
     echo "deb https://dl.bintray.com/loadimpact/deb stable main" | tee -a /etc/apt/sources.list  && \
     apt-get update && \
     apt-get install -y git k6 procps && \
+    # Procps is required for displaying worker and profiling processes info
     cd /home && \
     git clone https://github.com/vrdmr/AzFunctionsPythonPerformance.git && \
     mkdir -p /home/site/wwwroot/ && \

@@ -93,6 +93,7 @@ jobs:
         mkdir profiling_reports
         chmod 777 profiling_reports
         docker cp $container_id:/home/profiling_reports/$report_name profiling_reports
+        docker cp $container_id:/home/profiling_reports/$report_name .
 
     - name: Upload SVG to Azure Blob Storage
       uses: bacongobbler/azure-blob-storage-upload@v3.0.0
@@ -111,7 +112,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: py-spy-output
-        path: profiling_reports/*
+        path: profiling_reports/
 
     - name: Create Artifact Link
       run: |

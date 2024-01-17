@@ -10,7 +10,7 @@ on:
       test_to_run:
         description: 'List of perf tests to run'
         required: false
-        default: 'SyncHelloWorld'
+        default: SyncHelloWorld
   issue_comment:                                     
     types: [created]
 env:

@@ -111,7 +111,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: py-spy-output
-        path: profiling_reports/$(report_name)
+        path: profiling_reports/${{ report_name }}
 
     - name: Create Artifact Link
       run: |

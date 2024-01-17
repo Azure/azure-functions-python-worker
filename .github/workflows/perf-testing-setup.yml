@@ -5,8 +5,8 @@ on:
     inputs:
       profiling_sampling_rate:
         description: 'Profiling sampling rate (tps)'
-        required: true
-        default: 1500
+        required: false
+        default: '500'
   issue_comment:                                     
     types: [created]
 env:

@@ -49,7 +49,7 @@ jobs:
         docker build --build-arg PYTHON_VERSION=${{ env.PYTHON_VERSION }} --file .ci/perf_tests/dockerfiles/perf_tests.Dockerfile --tag perfimage:latest .
     
         echo "Running Docker container..."
-        container_id=$(docker run -d --privileged --shm-size="2g" --env FUNCTIONS_WORKER_RUNTIME_VERSION=${{ env.PYTHON_VERSION }} -p ${PORT}:80 -v $GITHUB_WORKSPACE/azure_functions_worker:/azure-functions-host/workers/python/${{ env.PYTHON_VERSION }}/LINUX/X64/azure_functions_worker perfimage:latest)
+        container_id=$(docker run -d --privileged --env FUNCTIONS_WORKER_RUNTIME_VERSION=${{ env.PYTHON_VERSION }} -p ${PORT}:80 -v $GITHUB_WORKSPACE/azure_functions_worker:/azure-functions-host/workers/python/${{ env.PYTHON_VERSION }}/LINUX/X64/azure_functions_worker perfimage:latest)
         sleep 10  # host needs some time to start.
         echo "Container ID is $container_id"
         

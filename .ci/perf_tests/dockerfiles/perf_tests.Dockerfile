@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.8
+ARG PYTHON_VERSION=3.11
 
 FROM mcr.microsoft.com/azure-functions/python:4-python$PYTHON_VERSION
 

@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test_to_run: [${{ github.event.inputs.test_to_run || 800 }}]
+        test_to_run: ['${{ github.event.inputs.test_to_run || SyncHelloWorld }}']
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ env.PYTHON_VERSION }}

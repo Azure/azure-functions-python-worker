@@ -132,16 +132,10 @@ def process_indexed_function(functions_registry: functions.Registry,
         retry_protos = build_retry_protos(indexed_function)
 
         # Check if deferred bindings is enabled
-        # if deferred_bindings_enabled:
-        #     raw_bindings=indexed_function.get_raw_bindings()
-        #     # Loop through all the bindings and add the appropriate flag
-        #     for i, entry in enumerate(raw_bindings):
-        #         if entry.direction == "IN" and entry.type == "BlobTrigger":
-        #             entry = entry + ', "properties":{"SupportsDeferredBinding":true}}'
-        #             raw_bindings[i] = entry
-        #         else:
-        #             entry = entry + ', "properties":{"SupportsDeferredBinding":false}}'
-        #             raw_bindings[i] = entry
+        if deferred_bindings_enabled:
+            raw_bindings=CLIENT_BINDING_REGISTRY.get_raw_bindings()
+        else:
+            raw_bindings = indexed_function.get_raw_bindings()
 
 
 

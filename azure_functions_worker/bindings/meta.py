@@ -13,9 +13,18 @@ PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
 PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 BINDING_REGISTRY = None
+CLIENT_BINDING_REGISTRY = None
 
 
 def load_binding_registry() -> None:
+    # Check if cx is using deferred bindings
+    # This will return None if they aren't
+    clients = sys.modules.get('az.func.client.base')
+
+    if clients is not None:
+        global CLIENT_BINDING_REGISTRY
+        CLIENT_BINDING_REGISTRY = clients.get_binding_registry()
+
     func = sys.modules.get('azure.functions')
 
     # If fails to acquire customer's BYO azure-functions, load the builtin
@@ -28,7 +37,14 @@ def load_binding_registry() -> None:
 
 def get_binding(bind_name: str) -> object:
     binding = None
+
+
     registry = BINDING_REGISTRY
+    client_registry = CLIENT_BINDING_REGISTRY
+    if client_registry is not None and bind_name in client_registry:
+        binding = client_registry.get(bind_name)
+
+
     if registry is not None:
         binding = registry.get(bind_name)
     if binding is None:

@@ -7,6 +7,10 @@ on:
         description: 'Profiling sampling rate (tps)'
         required: false
         default: '500'
+      tests_to_run:
+        description: 'List of perf tests to run'
+        required: false
+        default: '[ SyncHelloWorld ]'
   issue_comment:                                     
     types: [created]
 env:
@@ -22,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test_to_run: [ SyncHelloWorld ]
+        test_to_run: ${{ github.event.inputs.tests_to_run || [ SyncHelloWorld ] }}
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ env.PYTHON_VERSION }}

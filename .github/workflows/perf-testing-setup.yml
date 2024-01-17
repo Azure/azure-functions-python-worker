@@ -70,7 +70,7 @@ jobs:
         docker exec $container_id sh -c "pip install py-spy"
         docker exec $container_id sh -c "mkdir /home/profiling_reports"
         profiling_sampling_rate=${{ github.event.inputs.profiling_sampling_rate || 800 }}
-        report_name="azpyfuncpprofiling_${{ github.run_id }}.svg"
+        report_name="${ GITHUB_REF##*/ }_${{ github.run_id }}.svg"
         docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/profiling_reports/$report_name -f flamegraph --idle --nonblocking --rate $profiling_sampling_rate > /home/site/wwwroot/py-spy.log 2>&1 &"
         sleep 2  # Give it a moment to start
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')

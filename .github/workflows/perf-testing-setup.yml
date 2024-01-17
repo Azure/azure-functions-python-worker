@@ -69,7 +69,7 @@ jobs:
       run: |
         docker exec $container_id sh -c "pip install py-spy"
         docker exec $container_id sh -c "mkdir /home/profiling_reports"
-        profiling_sampling_rate=${{ github.event.inputs.profiling_sampling_rate || 1500 }}
+        profiling_sampling_rate=${{ github.event.inputs.profiling_sampling_rate || 800 }}
         report_name="azpyfuncpprofiling_${{ github.run_id }}.svg"
         docker exec -d $container_id sh -c "py-spy record -p $worker_pid -o /home/profiling_reports/$report_name -f flamegraph --idle --nonblocking --rate $profiling_sampling_rate > /home/site/wwwroot/py-spy.log 2>&1 &"
         sleep 2  # Give it a moment to start
@@ -93,7 +93,6 @@ jobs:
         mkdir profiling_reports
         chmod 777 profiling_reports
         docker cp $container_id:/home/profiling_reports/$report_name profiling_reports
-        docker cp $container_id:/home/profiling_reports/$report_name .
 
     - name: Upload SVG to Azure Blob Storage
       uses: bacongobbler/azure-blob-storage-upload@v3.0.0
@@ -112,7 +111,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: py-spy-output
-        path: profiling_reports/
+        path: 'profiling_reports/${{ env.report_name }}'
 
     - name: Create Artifact Link
       run: |

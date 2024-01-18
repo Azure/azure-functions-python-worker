@@ -5,11 +5,12 @@ from typing import Optional, Callable
 
 config_data = {}
 
-def read_config() -> dict:
-    with open("az-config.yml", "r") as stream:
+def read_config(function_path: str) -> dict:
+    with open(function_path, "r") as stream:
         try:
+            global config_data
             config_data = yaml.safe_load(stream)
-            config_data = dict((k.lower(), v) for k,v in config_data.items())
+            config_data = dict((k, v) for k,v in config_data.items())
         except yaml.YAMLError as exc:
             print(exc)
     return config_data
@@ -22,6 +23,8 @@ def write_config(config_data: dict):
         except yaml.YAMLError as exc:
             print(exc)
 
+def config_exists() -> bool:
+    return config_data is not {}
 
 def is_true_like(setting: str) -> bool:
     if setting is None:
@@ -38,17 +41,17 @@ def is_false_like(setting: str) -> bool:
 
 
 def is_envvar_true(key: str) -> bool:
-    if config_data.get(key.lower) is None:
+    if config_data.get(key) is None:
         return False
     
-    return is_true_like(config_data.get(key.lower))
+    return is_true_like(config_data.get(key))
 
 
 def is_envvar_false(key: str) -> bool:
-    if config_data.get(key.lower) is None:
+    if config_data.get(key) is None:
         return False
     
-    return is_false_like(config_data.get(key.lower))
+    return is_false_like(config_data.get(key))
 
 
 def get_env_var(
@@ -56,7 +59,7 @@ def get_env_var(
     default_value: Optional[str] = None,
     validator: Optional[Callable[[str], bool]] = None
 ) -> Optional[str]:
-    app_setting_value = config_data.get(setting.lower)
+    app_setting_value = config_data.get(setting)
 
     if app_setting_value is None:
         return default_value

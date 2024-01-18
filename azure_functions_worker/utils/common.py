@@ -5,6 +5,7 @@ import os
 import sys
 from types import ModuleType
 from typing import Optional, Callable
+import azure_functions_worker.utils.config_manager as config_manager
 
 from azure_functions_worker.constants import CUSTOMER_PACKAGES_PATH, \
     PYTHON_EXTENSIONS_RELOAD_FUNCTIONS
@@ -25,6 +26,8 @@ def is_false_like(setting: str) -> bool:
 
 
 def is_envvar_true(env_key: str) -> bool:
+    if config_manager.config_exists() and config_manager.is_envvar_true(env_key):
+        return True
     if os.getenv(env_key) is None:
         return False
 

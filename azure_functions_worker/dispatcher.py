@@ -32,6 +32,7 @@ from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
 from .utils.common import get_app_setting, is_envvar_true
+from .utils.config_manager import read_config
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
@@ -286,6 +287,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
+        read_config(os.path.join(worker_init_request.function_app_directory,"az-config.yml"))
         # Can detech worker packages only when customer's code is present
         # This only works in dedicated and premium sku.
         # The consumption sku will switch on environment_reload request.

@@ -8,7 +8,7 @@ from .file_accessor import DummyFileAccessor
 from .file_accessor_unix import FileAccessorUnix
 from .file_accessor_windows import FileAccessorWindows
 from ...constants import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
-from ...utils.common import is_envvar_true
+from ...utils.config_manager import is_envvar_true
 
 
 class FileAccessorFactory:

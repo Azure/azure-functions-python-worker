@@ -45,7 +45,8 @@ from azure_functions_worker.constants import (
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
     UNIX_SHARED_MEMORY_DIRECTORIES
 )
-from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
+from azure_functions_worker.utils.config_manager import (is_envvar_true,
+                                                         get_app_setting)
 from tests.utils.constants import PYAZURE_WORKER_DIR, \
     PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
     CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG

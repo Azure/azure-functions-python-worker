@@ -7,7 +7,7 @@ import json
 import sys
 from unittest import skipIf
 from unittest.mock import patch
-from azure_functions_worker.utils.common import is_envvar_true
+from azure_functions_worker.utils.config_manager import is_envvar_true
 from azure.functions import meta as bind_meta
 from tests.utils import testutils
 from azure_functions_worker.bindings.shared_memory_data_transfer \

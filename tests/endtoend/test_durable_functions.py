@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import requests
 
-from azure_functions_worker.utils.common import is_envvar_true
+from azure_functions_worker.utils.config_manager import is_envvar_true
 from tests.utils import testutils
 from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
 

@@ -3,7 +3,7 @@
 
 from typing import Callable, Any
 
-from .common import is_envvar_true, is_envvar_false
+from .config_manager import is_envvar_true, is_envvar_false
 from .tracing import extend_exception_message
 from ..logging import logger
 

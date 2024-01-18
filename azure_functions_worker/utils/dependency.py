@@ -8,7 +8,7 @@ import sys
 from types import ModuleType
 from typing import List, Optional
 
-from azure_functions_worker.utils.common import is_true_like
+from azure_functions_worker.utils.config_manager import is_true_like
 from ..constants import (
     AZURE_WEBJOBS_SCRIPT_ROOT,
     CONTAINER_NAME,

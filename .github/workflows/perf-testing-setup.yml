@@ -15,7 +15,7 @@ on:
     types: [created]
 env:
   TESTS_DIR_PATH: ".ci/perf_tests/k6scripts/"
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: "3.10"
   PYTHON_FUNCTION_PROFILING_STORAGE_ACCT: "azpyfuncpipelinestorage"
   PORT: 8000
 

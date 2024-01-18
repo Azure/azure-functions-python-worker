@@ -35,6 +35,8 @@ def is_envvar_true(env_key: str) -> bool:
 
 
 def is_envvar_false(env_key: str) -> bool:
+    if config_manager.config_exists() and config_manager.is_envvar_false(env_key):
+        return False
     if os.getenv(env_key) is None:
         return False
 
@@ -71,6 +73,16 @@ def get_app_setting(
     Optional[str]
         A string value that is set in the application setting
     """
+    value_to_return = default_value
+
+    # Check first if setting is in config file
+    if config_manager.config_exists():
+        value_to_return = config_manager.get_env_var(setting, value_to_return, validator)
+        # If the value is not the default value, we should return it -- has been set in the config file
+        if value_to_return is not default_value:
+            return value_to_return
+
+    # Now checking from env variables
     app_setting_value = os.getenv(setting)
 
     # If an app setting is not configured, we return the default value

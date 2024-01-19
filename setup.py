@@ -106,7 +106,7 @@ PACKAGES = [
 ]
 
 INSTALL_REQUIRES = [
-    "azure-functions==1.18.0b4",
+    "azure-functions==1.18.0",
     "python-dateutil~=2.8.2"
 ]
 
@@ -144,8 +144,7 @@ EXTRA_REQUIRES = {
         "scikit-learn",
         "opencv-python",
         "pandas",
-        "numpy",
-        "uvicorn"
+        "numpy"
     ]
 }
 

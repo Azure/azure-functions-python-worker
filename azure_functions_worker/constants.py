@@ -42,11 +42,13 @@ PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT = False
 PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39 = True
 PYTHON_EXTENSIONS_RELOAD_FUNCTIONS = "PYTHON_EXTENSIONS_RELOAD_FUNCTIONS"
 
+# new programming model default script file name
+PYTHON_SCRIPT_FILE_NAME = "PYTHON_SCRIPT_FILE_NAME"
+PYTHON_SCRIPT_FILE_NAME_DEFAULT = "function_app.py"
+
 # External Site URLs
 MODULE_NOT_FOUND_TS_URL = "https://aka.ms/functions-modulenotfound"
 
-# new programming model script file name
-SCRIPT_FILE_NAME = "function_app.py"
 PYTHON_LANGUAGE_RUNTIME = "python"
 
 # Settings for V2 programming model

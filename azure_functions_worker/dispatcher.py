@@ -18,32 +18,29 @@ from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
 import time
+from datetime import datetime
 
 import grpc
 import socket
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
-from .constants import (
-    PYTHON_THREADPOOL_THREAD_COUNT,
-    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
-    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-    PYTHON_ENABLE_DEBUG_LOGGING,
-    SCRIPT_FILE_NAME,
-    PYTHON_LANGUAGE_RUNTIME,
-    CUSTOMER_PACKAGES_PATH,
-)
+from .constants import (PYTHON_ROLLBACK_CWD_PATH,
+                        PYTHON_THREADPOOL_THREAD_COUNT,
+                        PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+                        PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
+                        PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+                        PYTHON_ENABLE_DEBUG_LOGGING,
+                        PYTHON_SCRIPT_FILE_NAME,
+                        PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+                        PYTHON_LANGUAGE_RUNTIME)
 from .extension import ExtensionManager
 from .http_proxy import http_coordinator
 from .logging import disable_console_logging, enable_console_logging
-from .logging import (
-    logger,
-    error_logger,
-    is_system_log_category,
-    CONSOLE_LOG_PREFIX,
-    format_exception,
-)
-from .utils.common import get_app_setting, is_envvar_true
+from .logging import (logger, error_logger, is_system_log_category,
+                      CONSOLE_LOG_PREFIX, format_exception)
+from .utils.app_setting_manager import get_python_appsetting_state
+from .utils.common import (get_app_setting, is_envvar_true,
+                           validate_script_file_name)
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
@@ -479,7 +476,10 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__functions_metadata_request(self, request):
         metadata_request = request.functions_metadata_request
         directory = metadata_request.function_app_directory
-        function_path = os.path.join(directory, SCRIPT_FILE_NAME)
+        script_file_name = get_app_setting(
+            setting=PYTHON_SCRIPT_FILE_NAME,
+            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
+        function_path = os.path.join(directory, script_file_name)
 
         logger.info(
             "Received WorkerMetadataRequest, request ID %s, directory: %s",
@@ -530,8 +530,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_id = func_request.function_id
         function_metadata = func_request.metadata
         function_name = function_metadata.name
-        function_path = os.path.join(function_metadata.directory,
-                                     SCRIPT_FILE_NAME)
 
         logger.info(
             "Received WorkerLoadRequest, request ID %s, function_id: %s,"
@@ -541,20 +539,28 @@ class Dispatcher(metaclass=DispatcherMeta):
             function_name,
         )
 
-        programming_model = "V1"
+        programming_model = "V2"
         try:
             if not self._functions.get_function(function_id):
-                if function_metadata.properties.get(
-                        "worker_indexed", False
-                ) or os.path.exists(function_path):
+                script_file_name = get_app_setting(
+                    setting=PYTHON_SCRIPT_FILE_NAME,
+                    default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
+                validate_script_file_name(script_file_name)
+                function_path = os.path.join(
+                    function_metadata.directory,
+                    script_file_name)
+
+                if function_metadata.properties.get("worker_indexed", False) \
+                        or os.path.exists(function_path):
                     # This is for the second worker and above where the worker
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the
                     # function and update the workers registry
-                    programming_model = "V2"
                     _ = self.index_functions(function_path)
                 else:
                     # legacy function
+                    programming_model = "V1"
+
                     func = loader.load_function(
                         func_request.metadata.name,
                         func_request.metadata.directory,
@@ -608,6 +614,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             )
 
     async def _handle__invocation_request(self, request):
+        invocation_time = datetime.utcnow()
         invoc_request = request.invocation_request
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
@@ -624,12 +631,13 @@ class Dispatcher(metaclass=DispatcherMeta):
             assert fi is not None
 
             function_invocation_logs: List[str] = [
-                "Received FunctionInvocationRequest",
-                f"request ID: {self.request_id}",
-                f"function ID: {function_id}",
-                f"function name: {fi.name}",
-                f"invocation ID: {invocation_id}",
+                'Received FunctionInvocationRequest',
+                f'request ID: {self.request_id}',
+                f'function ID: {function_id}',
+                f'function name: {fi.name}',
+                f'invocation ID: {invocation_id}',
                 f'function type: {"async" if fi.is_async else "sync"}',
+                f'timestamp (UTC): {invocation_time}'
             ]
             if not fi.is_async:
                 function_invocation_logs.append(
@@ -765,13 +773,13 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__function_environment_reload_request(self, request):
         """Only runs on Linux Consumption placeholder specialization."""
         try:
-            logger.info(
-                "Received FunctionEnvironmentReloadRequest, "
-                "request ID: %s,"
-                " To enable debug level logging, please refer to "
-                "https://aka.ms/python-enable-debug-logging",
-                self.request_id,
-            )
+            logger.info('Received FunctionEnvironmentReloadRequest, '
+                        'request ID: %s, '
+                        'App Settings state: %s. '
+                        'To enable debug level logging, please refer to '
+                        'https://aka.ms/python-enable-debug-logging',
+                        self.request_id,
+                        get_python_appsetting_state())
 
             func_env_reload_request = request.function_environment_reload_request
 
@@ -932,7 +940,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             retry_context,
         )
 
-    @disable_feature_by(constants.PYTHON_ROLLBACK_CWD_PATH)
+    @disable_feature_by(PYTHON_ROLLBACK_CWD_PATH)
     def _change_cwd(self, new_cwd: str):
         if os.path.exists(new_cwd):
             os.chdir(new_cwd)

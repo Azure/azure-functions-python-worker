@@ -17,8 +17,10 @@ from google.protobuf.duration_pb2 import Duration
 
 from . import protos, functions
 from .bindings.retrycontext import RetryPolicy
-from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
-    PYTHON_LANGUAGE_RUNTIME, RETRY_POLICY, CUSTOMER_PACKAGES_PATH
+from .utils.common import get_app_setting
+from .constants import MODULE_NOT_FOUND_TS_URL, PYTHON_SCRIPT_FILE_NAME, \
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT, PYTHON_LANGUAGE_RUNTIME, \
+    CUSTOMER_PACKAGES_PATH, RETRY_POLICY
 from .logging import logger
 from .utils.wrappers import attach_message_to_exception
 
@@ -152,9 +154,11 @@ def process_indexed_function(functions_registry: functions.Registry,
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message=f'Please check the requirements.txt file for the missing module. '
-            f'For more info, please refer the troubleshooting'
-            f' guide: {MODULE_NOT_FOUND_TS_URL} ',
+    message='Cannot find module. Please check the requirements.txt '
+            'file for the missing module. For more info, '
+            'please refer the troubleshooting '
+            f'guide: {MODULE_NOT_FOUND_TS_URL}. '
+            f'Current sys.path: {sys.path}',
     debug_logs='Error in load_function. '
                f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
                'python-packages Path exists: '
@@ -206,7 +210,11 @@ def load_function(name: str, directory: str, script_file: str,
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}',
+    message='Cannot find module. Please check the requirements.txt '
+            'file for the missing module. For more info, '
+            'please refer the troubleshooting '
+            f'guide: {MODULE_NOT_FOUND_TS_URL}. '
+            f'Current sys.path: {sys.path}',
     debug_logs='Error in index_function_app. '
                f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
                'python-packages Path exists: '
@@ -227,7 +235,10 @@ def index_function_app(function_path: str):
                     f"level function app instances are defined.")
 
     if not app:
+        script_file_name = get_app_setting(
+            setting=PYTHON_SCRIPT_FILE_NAME,
+            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
         raise ValueError("Could not find top level function app instances in "
-                         f"{SCRIPT_FILE_NAME}.")
+                         f"{script_file_name}.")
 
     return app.get_functions()

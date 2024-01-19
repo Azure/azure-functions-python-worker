@@ -20,9 +20,6 @@ DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'
 DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
     'dispatcher_functions_stein'
-DISPATCHER_STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'broken_functions' / \
-    'invalid_stein'
 
 
 class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
@@ -98,11 +95,21 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 1
             )
 
+    async def test_dispatcher_initialize_worker_settings_logs(self):
+        """Test if the dispatcher's log can be flushed out during worker
+        initialization
+        """
+        async with self._ctrl as host:
+            r = await host.init_worker('3.0.12345')
+            self.assertTrue('PYTHON_ENABLE_WORKER_EXTENSIONS: '
+                            in log for log in r.logs)
+
     async def test_dispatcher_environment_reload_logging(self):
         """Test if the sync threadpool will pick up app setting in placeholder
         mode (Linux Consumption)
         """
         async with self._ctrl as host:
+            await host.init_worker()
             await self._check_if_function_is_ok(host)
 
             # Reload environment variable on specialization
@@ -113,6 +120,19 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 )]),
                 1
             )
+
+    async def test_dispatcher_environment_reload_settings_logs(self):
+        """Test if the sync threadpool will pick up app setting in placeholder
+        mode (Linux Consumption)
+        """
+        async with self._ctrl as host:
+            await host.init_worker()
+            await self._check_if_function_is_ok(host)
+
+            # Reload environment variable on specialization
+            r = await host.reload_environment(environment={})
+            self.assertTrue('PYTHON_ENABLE_WORKER_EXTENSIONS: '
+                            in log for log in r.logs)
 
     async def test_dispatcher_send_worker_request(self):
         """Test if the worker status response will be sent correctly when
@@ -155,6 +175,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: 'invalid'})
 
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._default_workers)
@@ -169,6 +190,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             # Configure thread pool max worker to an invalid value
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '0'})
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._default_workers)
@@ -187,6 +209,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT:
                                f'{self._over_max_workers}'})
             async with self._ctrl as host:
+                await host.init_worker('4.15.1')
                 await self._check_if_function_is_ok(host)
 
                 # Ensure the dispatcher sync threadpool should fallback to max
@@ -198,6 +221,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         mode (Linux Consumption)
         """
         async with self._ctrl as host:
+            await host.init_worker()
             await self._check_if_function_is_ok(host)
 
             # Reload environment variable on specialization
@@ -213,6 +237,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
 
                 # Reload environment variable on specialization
@@ -234,6 +259,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """
         with patch('azure_functions_worker.dispatcher.logger'):
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
 
                 # Reload environment variable on specialization
@@ -249,6 +275,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
+                await host.init_worker()
                 await self._check_if_function_is_ok(host)
 
                 # Reload environment variable on specialization
@@ -268,37 +295,48 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
     async def test_sync_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
+                await host.init_worker()
                 request_id: str = self._ctrl._worker._request_id
                 func_id, invoke_id, func_name = (
                     await self._check_if_function_is_ok(host)
                 )
 
-                mock_logger.info.assert_any_call(
-                    'Received FunctionInvocationRequest, '
-                    f'request ID: {request_id}, '
-                    f'function ID: {func_id}, '
-                    f'function name: {func_name}, '
-                    f'invocation ID: {invoke_id}, '
-                    'function type: sync, '
-                    f'sync threadpool max workers: {self._default_workers}'
-                )
+                logs, _ = mock_logger.info.call_args
+                self.assertRegex(logs[0],
+                                 'Received FunctionInvocationRequest, '
+                                 f'request ID: {request_id}, '
+                                 f'function ID: {func_id}, '
+                                 f'function name: {func_name}, '
+                                 f'invocation ID: {invoke_id}, '
+                                 'function type: sync, '
+                                 r'timestamp \(UTC\): '
+                                 r'(\d{4}-\d{2}-\d{2} '
+                                 r'\d{2}:\d{2}:\d{2}.\d{6}), '
+                                 'sync threadpool max workers: '
+                                 f'{self._default_workers}'
+                                 )
 
     async def test_async_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
+                await host.init_worker()
                 request_id: str = self._ctrl._worker._request_id
                 func_id, invoke_id, func_name = (
                     await self._check_if_async_function_is_ok(host)
                 )
 
-                mock_logger.info.assert_any_call(
-                    'Received FunctionInvocationRequest, '
-                    f'request ID: {request_id}, '
-                    f'function ID: {func_id}, '
-                    f'function name: {func_name}, '
-                    f'invocation ID: {invoke_id}, '
-                    'function type: async'
-                )
+                logs, _ = mock_logger.info.call_args
+                self.assertRegex(logs[0],
+                                 'Received FunctionInvocationRequest, '
+                                 f'request ID: {request_id}, '
+                                 f'function ID: {func_id}, '
+                                 f'function name: {func_name}, '
+                                 f'invocation ID: {invoke_id}, '
+                                 'function type: async, '
+                                 r'timestamp \(UTC\): '
+                                 r'(\d{4}-\d{2}-\d{2} '
+                                 r'\d{2}:\d{2}:\d{2}.\d{6})'
+                                 )
 
     async def test_sync_invocation_request_log_threads(self):
         os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
@@ -310,15 +348,19 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_function_is_ok(host)
                 )
 
-                mock_logger.info.assert_any_call(
-                    'Received FunctionInvocationRequest, '
-                    f'request ID: {request_id}, '
-                    f'function ID: {func_id}, '
-                    f'function name: {func_name}, '
-                    f'invocation ID: {invoke_id}, '
-                    'function type: sync, '
-                    'sync threadpool max workers: 5'
-                )
+                logs, _ = mock_logger.info.call_args
+                self.assertRegex(logs[0],
+                                 'Received FunctionInvocationRequest, '
+                                 f'request ID: {request_id}, '
+                                 f'function ID: {func_id}, '
+                                 f'function name: {func_name}, '
+                                 f'invocation ID: {invoke_id}, '
+                                 'function type: sync, '
+                                 r'timestamp \(UTC\): '
+                                 r'(\d{4}-\d{2}-\d{2} '
+                                 r'\d{2}:\d{2}:\d{2}.\d{6}), '
+                                 'sync threadpool max workers: 5'
+                                 )
 
     async def test_async_invocation_request_log_threads(self):
         os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
@@ -330,14 +372,18 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_async_function_is_ok(host)
                 )
 
-                mock_logger.info.assert_any_call(
-                    'Received FunctionInvocationRequest, '
-                    f'request ID: {request_id}, '
-                    f'function ID: {func_id}, '
-                    f'function name: {func_name}, '
-                    f'invocation ID: {invoke_id}, '
-                    'function type: async'
-                )
+                logs, _ = mock_logger.info.call_args
+                self.assertRegex(logs[0],
+                                 'Received FunctionInvocationRequest, '
+                                 f'request ID: {request_id}, '
+                                 f'function ID: {func_id}, '
+                                 f'function name: {func_name}, '
+                                 f'invocation ID: {invoke_id}, '
+                                 'function type: async, '
+                                 r'timestamp \(UTC\): '
+                                 r'(\d{4}-\d{2}-\d{2} '
+                                 r'\d{2}:\d{2}:\d{2}.\d{6})'
+                                 )
 
     async def test_sync_invocation_request_log_in_placeholder_threads(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
@@ -351,15 +397,19 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_function_is_ok(host)
                 )
 
-                mock_logger.info.assert_any_call(
-                    'Received FunctionInvocationRequest, '
-                    f'request ID: {request_id}, '
-                    f'function ID: {func_id}, '
-                    f'function name: {func_name}, '
-                    f'invocation ID: {invoke_id}, '
-                    'function type: sync, '
-                    'sync threadpool max workers: 5'
-                )
+                logs, _ = mock_logger.info.call_args
+                self.assertRegex(logs[0],
+                                 'Received FunctionInvocationRequest, '
+                                 f'request ID: {request_id}, '
+                                 f'function ID: {func_id}, '
+                                 f'function name: {func_name}, '
+                                 f'invocation ID: {invoke_id}, '
+                                 'function type: sync, '
+                                 r'timestamp \(UTC\): '
+                                 r'(\d{4}-\d{2}-\d{2} '
+                                 r'\d{2}:\d{2}:\d{2}.\d{6}), '
+                                 'sync threadpool max workers: 5'
+                                 )
 
     async def test_async_invocation_request_log_in_placeholder_threads(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
@@ -373,14 +423,18 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     await self._check_if_async_function_is_ok(host)
                 )
 
-                mock_logger.info.assert_any_call(
-                    'Received FunctionInvocationRequest, '
-                    f'request ID: {request_id}, '
-                    f'function ID: {func_id}, '
-                    f'function name: {func_name}, '
-                    f'invocation ID: {invoke_id}, '
-                    'function type: async'
-                )
+                logs, _ = mock_logger.info.call_args
+                self.assertRegex(logs[0],
+                                 'Received FunctionInvocationRequest, '
+                                 f'request ID: {request_id}, '
+                                 f'function ID: {func_id}, '
+                                 f'function name: {func_name}, '
+                                 f'invocation ID: {invoke_id}, '
+                                 'function type: async, '
+                                 r'timestamp \(UTC\): '
+                                 r'(\d{4}-\d{2}-\d{2} '
+                                 r'\d{2}:\d{2}:\d{2}.\d{6})'
+                                 )
 
     async def _assert_workers_threadpool(self, ctrl, host,
                                          expected_worker_count):
@@ -543,6 +597,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
         when a functions metadata request is received
         """
         async with self._ctrl as host:
+            await host.init_worker()
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertFalse(r.response.use_default_metadata_indexing)
@@ -554,6 +609,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
         when a functions metadata request is received
         """
         async with self._ctrl as host:
+            await host.init_worker()
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertFalse(r.response.use_default_metadata_indexing)
@@ -609,7 +665,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         """Test if azure functions is loaded during init
         """
         async with self._ctrl as host:
-            r = await host.init_worker('4.15.1')
+            r = await host.init_worker()
             self.assertEqual(
                 len([log for log in r.logs if log.message.startswith(
                     'Received WorkerInitRequest'
@@ -625,7 +681,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
 
         # Dedicated Apps where placeholder mode is not set
         async with self._ctrl as host:
-            r = await host.init_worker('4.15.1')
+            r = await host.init_worker()
             logs = [log.message for log in r.logs]
             self.assertIn(
                 "Applying prioritize_customer_dependencies: "
@@ -643,7 +699,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         os.environ["CONTAINER_NAME"] = "test"
         os.environ["WEBSITE_PLACEHOLDER_MODE"] = "1"
         async with self._ctrl as host:
-            r = await host.init_worker('4.15.1')
+            r = await host.init_worker()
             logs = [log.message for log in r.logs]
             self.assertNotIn(
                 "Applying prioritize_customer_dependencies: "
@@ -660,7 +716,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         os.environ["WEBSITE_PLACEHOLDER_MODE"] = "0"
         os.environ["CONTAINER_NAME"] = "test"
         async with self._ctrl as host:
-            r = await host.init_worker('4.15.1')
+            r = await host.init_worker()
             logs = [log.message for log in r.logs]
             self.assertIn(
                 "Applying prioritize_customer_dependencies: "

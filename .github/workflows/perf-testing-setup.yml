@@ -23,6 +23,7 @@ jobs:
   build:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.issue.pull_request && contains(github.event.comment.body, '/profile') }} 
     runs-on: ubuntu-latest
+    permissions: read-all
     strategy:
       fail-fast: false
       matrix:

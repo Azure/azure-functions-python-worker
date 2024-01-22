@@ -18,7 +18,7 @@ class GenericBindingProperties:
 
     @property
     def special_case_bind_names(self) -> list:
-        return ["durableClient", "table"]
+        return ["tokenize"]
 
 
 class GenericBinding:
@@ -69,8 +69,9 @@ class GenericBinding:
     def has_implicit_output(cls,
                             properties:
                             Optional[GenericBindingProperties] = None) -> bool:
+        # If the binding is a special case (Logic Apps), return True
         if (properties and properties.get_bind_name in
                 properties.special_case_bind_names):
-            return False
-        else:
             return True
+        else:
+            return False

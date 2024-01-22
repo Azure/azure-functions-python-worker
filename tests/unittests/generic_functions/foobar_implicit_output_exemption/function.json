@@ -2,14 +2,8 @@
     "scriptFile": "main.py",
     "bindings": [
       {
-        "type": "durableClient",
-        "name": "input1",
-        "direction": "in",
-        "dataType": "string"
-      },
-      {
-        "type": "table",
-        "name": "input2",
+        "type": "tokenize",
+        "name": "input",
         "direction": "in",
         "dataType": "string"
       }

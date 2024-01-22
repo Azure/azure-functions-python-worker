@@ -3,5 +3,5 @@
 # Input as string, without annotation
 
 
-def main(input1: str, input2: str):
-    return input1 + input2
+def main(input: str):
+    return input

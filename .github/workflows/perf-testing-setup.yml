@@ -11,6 +11,14 @@ on:
         description: 'List of perf tests to run'
         required: false
         default: SyncHelloWorld
+      report_format:
+        description: 'Format of profiling report'
+        type: choice
+        required: true
+        options:
+        - speedscope
+        - flamegraph
+        default: flamegraph
   issue_comment:                                     
     types: [created]
 env:
@@ -75,9 +83,16 @@ jobs:
         docker exec $container_id sh -c "pip install py-spy"
         docker exec $container_id sh -c "mkdir /home/profiling_reports"
         profiling_sampling_rate=${{ github.event.inputs.profiling_sampling_rate }}
-        # report_name="${GITHUB_REF#refs/heads/}_${{ github.run_id }}.svg"
-        report_name="${{ github.run_id }}.svg"
-        docker exec -d $container_id sh -c "RUST_BACKTRACE=1 py-spy record -p $worker_pid -o /home/profiling_reports/$report_name -f flamegraph --idle --nonblocking --rate $profiling_sampling_rate > /home/site/wwwroot/py-spy.log 2>&1 &"
+        report_format=${{ github.event.inputs.report_format }}
+        if [ "$report_format" == "flamegraph" ]; then
+          report_name="${{ github.run_id }}.svg"
+        elif [ "$report_format" == "speedscope" ]; then
+          report_name="${{ github.run_id }}.speedscope.json"
+        else
+          echo "Unsupported report format: $report_format"
+          exit 1
+        fi
+        docker exec -d $container_id sh -c "RUST_BACKTRACE=1 py-spy record -p $worker_pid -o /home/profiling_reports/$report_name -f ${github.event.inputs.report_format} --idle --nonblocking --rate $profiling_sampling_rate > /home/site/wwwroot/py-spy.log 2>&1 &"
         sleep 2  # Give it a moment to start
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
         

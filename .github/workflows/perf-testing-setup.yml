@@ -125,8 +125,8 @@ jobs:
           echo "You can view the Blob at: $blob_url"
     
     - name: Setup Node.js and Speedscope
-      if: ${{ github.event.inputs.report_format == 'speedscope' }}
-      uses: actions/setup-node@v3
+    - uses: actions/setup-node@v3
+    - if: ${{ github.event.inputs.report_format == 'speedscope' }}
       run: |
         npm install -g speedscope
         speedscope profiling_reports/${{ env.report_name }}

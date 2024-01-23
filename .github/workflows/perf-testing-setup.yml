@@ -87,10 +87,6 @@ jobs:
           report_name="${{ github.run_id }}.svg"
         elif [ "$report_format" == "speedscope" ]; then
           report_name="${{ github.run_id }}.speedscope.json"
-        else
-          echo "Unsupported report format: $report_format"
-          exit 1
-        fi
         docker exec -d $container_id sh -c "RUST_BACKTRACE=1 py-spy record -p $worker_pid -o /home/profiling_reports/$report_name -f $report_format --idle --nonblocking --rate $profiling_sampling_rate > /home/site/wwwroot/py-spy.log 2>&1 &"
         sleep 2  # Give it a moment to start
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
@@ -122,10 +118,19 @@ jobs:
         connection_string: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
         sync: 'false'
 
-    - name: Output Blob URL
+    - name: Output Blob URL - Flamegraph
+      if: ${{ github.event.inputs.report_format == 'flamegraph' }}
       run: |
-        blob_url="https://${{ env.PYTHON_FUNCTION_PROFILING_STORAGE_ACCT }}.blob.core.windows.net/profiling/${{ env.report_name }}"
-        echo "You can view the Blob at: $blob_url"
+          blob_url="https://${{ env.PYTHON_FUNCTION_PROFILING_STORAGE_ACCT }}.blob.core.windows.net/profiling/${{ env.report_name }}"
+          echo "You can view the Blob at: $blob_url"
+    
+    - name: Setup Node.js and Speedscope
+      if: ${{ github.event.inputs.report_format == 'speedscope' }}
+      uses: actions/setup-node@v3
+      run: |
+        npm install -g speedscope
+        speedscope profiling_reports/${{ env.report_name }}
+
   
     - name: Upload profiling result to artifact
       uses: actions/upload-artifact@v2

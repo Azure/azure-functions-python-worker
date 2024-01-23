@@ -79,7 +79,7 @@ jobs:
         
     - name: Start py-spy in the background
       run: |
-        docker exec $container_id sh -c "pip install py-spy"
+        # docker exec $container_id sh -c "pip install py-spy"
         docker exec $container_id sh -c "mkdir /home/profiling_reports"
         profiling_sampling_rate=${{ github.event.inputs.profiling_sampling_rate }}
         report_format=${{ github.event.inputs.report_format }}

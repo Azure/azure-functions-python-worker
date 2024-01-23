@@ -18,7 +18,6 @@ on:
         options:
         - speedscope
         - flamegraph
-        default: flamegraph
   issue_comment:                                     
     types: [created]
 env:
@@ -92,7 +91,7 @@ jobs:
           echo "Unsupported report format: $report_format"
           exit 1
         fi
-        docker exec -d $container_id sh -c "RUST_BACKTRACE=1 py-spy record -p $worker_pid -o /home/profiling_reports/$report_name -f ${github.event.inputs.report_format} --idle --nonblocking --rate $profiling_sampling_rate > /home/site/wwwroot/py-spy.log 2>&1 &"
+        docker exec -d $container_id sh -c "RUST_BACKTRACE=1 py-spy record -p $worker_pid -o /home/profiling_reports/$report_name -f $report_format --idle --nonblocking --rate $profiling_sampling_rate > /home/site/wwwroot/py-spy.log 2>&1 &"
         sleep 2  # Give it a moment to start
         py_spy_id=$(docker exec $container_id sh -c "ps aux | grep '[p]y-spy record'" | awk '{print $2}')
         

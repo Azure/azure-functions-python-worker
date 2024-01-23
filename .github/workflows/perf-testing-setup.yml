@@ -124,13 +124,7 @@ jobs:
       run: |
         blob_url="https://${{ env.PYTHON_FUNCTION_PROFILING_STORAGE_ACCT }}.blob.core.windows.net/profiling/${{ env.report_name }}"
         echo "You can view the Blob at: $blob_url"
-    - name: Output SpeedScope
-      uses: actions/setup-node@v4.0.1
-    - run: |
-        npm install -g speedscope
-        report_format=${{ github.event.inputs.report_format }}
-        if [ "$report_format" == "speedscope" ]; then
-          speedscope profiling_reports/${{ env.report_name }}
+        
     - name: Upload profiling result to artifact
       uses: actions/upload-artifact@v2
       with:

@@ -79,7 +79,7 @@ jobs:
         
     - name: Start py-spy in the background
       run: |
-        # docker exec $container_id sh -c "pip install py-spy"
+        docker exec $container_id sh -c "pip install py-spy"
         docker exec $container_id sh -c "mkdir /home/profiling_reports"
         profiling_sampling_rate=${{ github.event.inputs.profiling_sampling_rate }}
         report_format=${{ github.event.inputs.report_format }}
@@ -124,12 +124,12 @@ jobs:
           blob_url="https://${{ env.PYTHON_FUNCTION_PROFILING_STORAGE_ACCT }}.blob.core.windows.net/profiling/${{ env.report_name }}"
           echo "You can view the Blob at: $blob_url"
     
-    - name: Setup Node.js and Speedscope
-      uses: actions/setup-node@v3
-    - if: ${{ github.event.inputs.report_format == 'speedscope' }}
-      run: |
-        npm install -g speedscope
-        speedscope profiling_reports/${{ env.report_name }}
+    # - name: Setup Node.js and Speedscope
+    #   uses: actions/setup-node@v3
+    # - if: ${{ github.event.inputs.report_format == 'speedscope' }}
+    #   run: |
+    #     npm install -g speedscope
+    #     speedscope profiling_reports/${{ env.report_name }}
 
   
     - name: Upload profiling result to artifact

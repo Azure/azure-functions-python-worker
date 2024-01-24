@@ -17,14 +17,12 @@ from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
 from datetime import datetime
-from datetime import datetime
 
 import grpc
 
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (PYTHON_ROLLBACK_CWD_PATH,
-                        PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,

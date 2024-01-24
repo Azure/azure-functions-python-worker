@@ -13,18 +13,11 @@ PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
 PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 BINDING_REGISTRY = None
-CLIENT_BINDING_REGISTRY = None
+SDK_BINDING_REGISTRY = None
+deferred_bindings_enabled = False
 
 
 def load_binding_registry() -> None:
-    # Check if cx is using deferred bindings
-    # This will return None if they aren't
-    clients = sys.modules.get('az.func.client.base')
-
-    if clients is not None:
-        global CLIENT_BINDING_REGISTRY
-        CLIENT_BINDING_REGISTRY = clients.get_binding_registry()
-
     func = sys.modules.get('azure.functions')
 
     # If fails to acquire customer's BYO azure-functions, load the builtin
@@ -34,18 +27,29 @@ def load_binding_registry() -> None:
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()
 
+    # Check if cx has imported sdk bindings library
+    clients = sys.modules.get('az.func.binding.base')
 
-def get_binding(bind_name: str) -> object:
+    # this will be none if the library is not imported
+    # if it is not none, we want to set and use the registry
+    if clients is not None:
+        global SDK_BINDING_REGISTRY
+        SDK_BINDING_REGISTRY = clients.get_binding_registry()
+
+
+def get_binding(bind_name: str, pytype: Optional[type]) -> object:
     binding = None
 
-
     registry = BINDING_REGISTRY
-    client_registry = CLIENT_BINDING_REGISTRY
-    if client_registry is not None and bind_name in client_registry:
+    client_registry = SDK_BINDING_REGISTRY
+    # checks first if registry exists (library is imported)
+    # then checks if pytype is a supported type (cx is using sdk type)
+    # is second check correct? 
+    if client_registry is not None and pytype in client_registry._types:
+        deferred_bindings_enabled = True
         binding = client_registry.get(bind_name)
-
-
-    if registry is not None:
+    # either cx didn't import library or didn't define sdk type
+    elif registry is not None:
         binding = registry.get(bind_name)
     if binding is None:
         binding = generic.GenericBinding
@@ -59,9 +63,11 @@ def is_trigger_binding(bind_name: str) -> bool:
 
 
 def check_input_type_annotation(bind_name: str, pytype: type) -> bool:
-    if pytype is int:
-        return True
-    binding = get_binding(bind_name)
+    # hacky check for testing
+    # if pytype is int:
+    #     return True
+    # check that needs to pass for sdk bindings -- pass in pytype
+    binding = get_binding(bind_name, pytype)
     return binding.check_input_type_annotation(pytype)
 
 
@@ -105,6 +111,7 @@ def from_incoming_proto(
         raise TypeError(f'Unknown ParameterBindingType: {pb_type}')
 
     try:
+        # will eventually have to change decode() to take in pytype
         return binding.decode(datum, trigger_metadata=metadata)
     except NotImplementedError:
         # Binding does not support the data.

@@ -17,6 +17,7 @@ from google.protobuf.duration_pb2 import Duration
 
 from . import protos, functions
 from .bindings.retrycontext import RetryPolicy
+from .bindings.meta import deferred_bindings_enabled, SDK_BINDING_REGISTRY
 from .utils.common import get_app_setting
 from .constants import MODULE_NOT_FOUND_TS_URL, PYTHON_SCRIPT_FILE_NAME, \
     PYTHON_SCRIPT_FILE_NAME_DEFAULT, PYTHON_LANGUAGE_RUNTIME, \
@@ -133,11 +134,9 @@ def process_indexed_function(functions_registry: functions.Registry,
 
         # Check if deferred bindings is enabled
         if deferred_bindings_enabled:
-            raw_bindings=CLIENT_BINDING_REGISTRY.get_raw_bindings()
+            raw_bindings=SDK_BINDING_REGISTRY.get_raw_bindings()
         else:
             raw_bindings = indexed_function.get_raw_bindings()
-
-
 
         function_metadata = protos.RpcFunctionMetadata(
             name=function_info.name,
@@ -149,7 +148,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             is_proxy=False,  # not supported in V4
             language=PYTHON_LANGUAGE_RUNTIME,
             bindings=binding_protos,
-            raw_bindings=indexed_function.get_raw_bindings(),
+            raw_bindings=raw_bindings,
             retry_options=retry_protos,
             properties={"worker_indexed": "True"})
 

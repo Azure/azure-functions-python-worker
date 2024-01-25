@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import asyncio
+import os
 import pathlib
 import subprocess
 import sys
@@ -12,6 +13,8 @@ from azure.functions.decorators.retry_policy import RetryPolicy
 from azure.functions.decorators.timer import TimerTrigger
 
 from azure_functions_worker import functions
+from azure_functions_worker.constants import PYTHON_SCRIPT_FILE_NAME, \
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT
 from azure_functions_worker.loader import build_retry_protos
 from tests.utils import testutils
 
@@ -185,12 +188,19 @@ class TestLoader(testutils.WebHostTestCase):
         self.assertEqual(r.text, 'OK')
 
     def check_log_loader_module_not_found(self, host_out):
-        self.assertIn("Exception: ModuleNotFoundError: "
-                      "No module named 'notfound'. "
-                      "Please check the requirements.txt file for the "
-                      "missing module. For more info, please refer the "
-                      "troubleshooting guide: "
-                      "https://aka.ms/functions-modulenotfound", host_out)
+        passed = False
+        exception_message = "Exception: ModuleNotFoundError: "\
+                            "No module named 'notfound'. "\
+                            "Cannot find module. "\
+                            "Please check the requirements.txt file for the "\
+                            "missing module. For more info, please refer the "\
+                            "troubleshooting guide: "\
+                            "https://aka.ms/functions-modulenotfound. "\
+                            "Current sys.path: "
+        for log in host_out:
+            if exception_message in log:
+                passed = True
+        self.assertTrue(passed)
 
 
 class TestPluginLoader(testutils.AsyncTestCase):
@@ -241,3 +251,26 @@ asyncio.get_event_loop().run_until_complete(_runner())
                 '--disable-pip-version-check',
                 'uninstall', '-y', '--quiet', 'foo-binding'
             ], check=True)
+
+
+class TestConfigurableFileName(testutils.WebHostTestCase):
+
+    def setUp(self) -> None:
+        def test_function():
+            return "Test"
+
+        self.file_name = PYTHON_SCRIPT_FILE_NAME_DEFAULT
+        self.test_function = test_function
+        self.func = Function(self.test_function, script_file="function_app.py")
+        self.function_registry = functions.Registry()
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.UNIT_TESTS_FOLDER / 'http_functions' / \
+                                             'http_functions_stein'
+
+    def test_correct_file_name(self):
+        os.environ.update({PYTHON_SCRIPT_FILE_NAME: self.file_name})
+        self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
+        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
+                         'function_app.py')

@@ -374,6 +374,16 @@ class TestUtilities(unittest.TestCase):
         sdk_version = common.get_sdk_version(module)
         self.assertEqual(sdk_version, 'dummy')
 
+    def test_valid_script_file_name(self):
+        file_name = 'test.py'
+        valid_name = common.validate_script_file_name(file_name)
+        self.assertTrue(valid_name)
+
+    def test_invalid_script_file_name(self):
+        file_name = 'test'
+        with self.assertRaises(common.InvalidFileNameError):
+            common.validate_script_file_name(file_name)
+
     def _unset_feature_flag(self):
         try:
             os.environ.pop(TEST_FEATURE_FLAG)

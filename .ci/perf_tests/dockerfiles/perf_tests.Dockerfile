@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.8
+ARG PYTHON_VERSION=3.11
 
 FROM mcr.microsoft.com/azure-functions/python:4-python$PYTHON_VERSION
 
@@ -15,7 +15,8 @@ ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED=1
 
 RUN apt-get --quiet update && \
-    apt-get install --quiet -y git && \
+    apt-get install --quiet -y git procps && \
+    # Procps is required for displaying worker and profiling processes info
     cd /home && \
     git clone https://github.com/vrdmr/AzFunctionsPythonPerformance.git && \
     mkdir -p /home/site/wwwroot/ && \

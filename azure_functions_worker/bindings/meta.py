@@ -28,24 +28,28 @@ def load_binding_registry() -> None:
     BINDING_REGISTRY = func.get_binding_registry()
 
     # Check if cx has imported sdk bindings library
-    clients = sys.modules.get('az.func.binding.base')
+    clients = sys.modules.get('azfuncbindingbase')
 
     # this will be none if the library is not imported
     # if it is not none, we want to set and use the registry
-    if clients is not None:
+    # if clients is not None:
+    if clients is None:
+        import azfuncbindingbase as clients
         global SDK_BINDING_REGISTRY
         SDK_BINDING_REGISTRY = clients.get_binding_registry()
+    test = "hello"
 
 
-def get_binding(bind_name: str, pytype: Optional[type]) -> object:
+def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
     binding = None
 
     registry = BINDING_REGISTRY
     client_registry = SDK_BINDING_REGISTRY
     # checks first if registry exists (library is imported)
     # then checks if pytype is a supported type (cx is using sdk type)
-    # is second check correct? 
-    if client_registry is not None and pytype in client_registry._types:
+    # TODO: move pytype check to base library
+    if client_registry is not None and pytype is not None and client_registry.check_supported_type(pytype):
+        global deferred_bindings_enabled
         deferred_bindings_enabled = True
         binding = client_registry.get(bind_name)
     # either cx didn't import library or didn't define sdk type

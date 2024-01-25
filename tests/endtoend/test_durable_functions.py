@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import json
+import os
 import time
 from unittest import skipIf
 
@@ -15,13 +16,23 @@ from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
         or is_envvar_true(CONSUMPTION_DOCKER_TEST),
         "Docker tests cannot retrieve port needed for a webhook")
 class TestDurableFunctions(testutils.WebHostTestCase):
+
     @classmethod
-    def get_durable_webhooks(cls):
-        return "http:"
+    def setUpClass(cls):
+        cls.env_variables['WEBSITE_HOSTNAME'] = "http:"
+        os_environ = os.environ.copy()
+        os_environ.update(cls.env_variables)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Remove the WEBSITE_HOSTNAME environment variable
+        os.environ.pop('WEBSITE_HOSTNAME')
+        cls.env_variables.pop('WEBSITE_HOSTNAME')
+        super().tearDownClass()
 
     @classmethod
     def get_environment_variables(cls):
-        return {'WEBSITE_HOSTNAME': 'http:'}
+        return cls.env_variables
 
     @classmethod
     def get_libraries_to_install(cls):

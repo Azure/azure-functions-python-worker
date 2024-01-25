@@ -227,10 +227,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         pass
 
     @classmethod
-    def get_durable_webhooks(cls):
-        pass
-
-    @classmethod
     def get_script_name(cls):
         pass
 
@@ -242,8 +238,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         docker_configs.script_path = script_dir
         docker_configs.libraries = cls.get_libraries_to_install()
         docker_configs.env = cls.get_environment_variables() or {}
-        os.environ["WEBSITE_HOSTNAME"] = (cls.get_durable_webhooks()
-                                          or "http:")
         os.environ["PYTHON_SCRIPT_FILE_NAME"] = (cls.get_script_name()
                                                  or "function_app.py")
 

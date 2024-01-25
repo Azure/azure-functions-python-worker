@@ -230,6 +230,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     def get_durable_webhooks(cls):
         pass
 
+    @classmethod
     def get_script_name(cls):
         pass
 

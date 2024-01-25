@@ -16,6 +16,7 @@ import threading
 from asyncio import BaseEventLoop
 from logging import LogRecord
 from typing import List, Optional
+from datetime import datetime
 
 import grpc
 
@@ -27,14 +28,16 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                         PYTHON_THREADPOOL_THREAD_COUNT_MIN,
                         PYTHON_ENABLE_DEBUG_LOGGING,
-                        SCRIPT_FILE_NAME,
-                        PYTHON_LANGUAGE_RUNTIME, CUSTOMER_PACKAGES_PATH)
+                        PYTHON_SCRIPT_FILE_NAME,
+                        PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+                        PYTHON_LANGUAGE_RUNTIME)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
 from .utils.app_setting_manager import get_python_appsetting_state
-from .utils.common import get_app_setting, is_envvar_true
+from .utils.common import (get_app_setting, is_envvar_true,
+                           validate_script_file_name)
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
@@ -267,9 +270,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, '
                     'worker version %s, '
-                    'request ID %s.'
-                    'App Settings state: %s.'
-                    ' To enable debug level logging, please refer to '
+                    'request ID %s. '
+                    'App Settings state: %s. '
+                    'To enable debug level logging, please refer to '
                     'https://aka.ms/python-enable-debug-logging',
                     sys.version,
                     VERSION,
@@ -296,12 +299,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             DependencyManager.prioritize_customer_dependencies()
 
         if DependencyManager.is_in_linux_consumption():
-            logger.info(
-                "Importing azure functions in WorkerInitRequest")
             import azure.functions  # NoQA
-
-        if CUSTOMER_PACKAGES_PATH not in sys.path:
-            logger.warning("Customer packages not in sys path.")
 
         # loading bindings registry and saving results to a static
         # dictionary which will be later used in the invocation request
@@ -326,24 +324,27 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__functions_metadata_request(self, request):
         metadata_request = request.functions_metadata_request
         directory = metadata_request.function_app_directory
-        function_path = os.path.join(directory, SCRIPT_FILE_NAME)
+        script_file_name = get_app_setting(
+            setting=PYTHON_SCRIPT_FILE_NAME,
+            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
+        function_path = os.path.join(directory, script_file_name)
 
         logger.info(
-            'Received WorkerMetadataRequest, request ID %s, directory: %s',
-            self.request_id, directory)
-
-        if not os.path.exists(function_path):
-            # Fallback to legacy model
-            logger.info("%s does not exist. "
-                        "Switching to host indexing.", SCRIPT_FILE_NAME)
-            return protos.StreamingMessage(
-                request_id=request.request_id,
-                function_metadata_response=protos.FunctionMetadataResponse(
-                    use_default_metadata_indexing=True,
-                    result=protos.StatusResult(
-                        status=protos.StatusResult.Success)))
+            'Received WorkerMetadataRequest, request ID %s, function_path: %s',
+            self.request_id, function_path)
 
         try:
+            validate_script_file_name(script_file_name)
+
+            if not os.path.exists(function_path):
+                # Fallback to legacy model
+                return protos.StreamingMessage(
+                    request_id=request.request_id,
+                    function_metadata_response=protos.FunctionMetadataResponse(
+                        use_default_metadata_indexing=True,
+                        result=protos.StatusResult(
+                            status=protos.StatusResult.Success)))
+
             fx_metadata_results = self.index_functions(function_path)
 
             return protos.StreamingMessage(
@@ -366,26 +367,33 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_id = func_request.function_id
         function_metadata = func_request.metadata
         function_name = function_metadata.name
-        function_path = os.path.join(function_metadata.directory,
-                                     SCRIPT_FILE_NAME)
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
             'function_name: %s,', self.request_id, function_id, function_name)
 
-        programming_model = "V1"
+        programming_model = "V2"
         try:
             if not self._functions.get_function(function_id):
+                script_file_name = get_app_setting(
+                    setting=PYTHON_SCRIPT_FILE_NAME,
+                    default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
+                validate_script_file_name(script_file_name)
+                function_path = os.path.join(
+                    function_metadata.directory,
+                    script_file_name)
+
                 if function_metadata.properties.get("worker_indexed", False) \
                         or os.path.exists(function_path):
                     # This is for the second worker and above where the worker
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the
                     # function and update the workers registry
-                    programming_model = "V2"
                     _ = self.index_functions(function_path)
                 else:
                     # legacy function
+                    programming_model = "V1"
+
                     func = loader.load_function(
                         func_request.metadata.name,
                         func_request.metadata.directory,
@@ -431,6 +439,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         exception=self._serialize_exception(ex))))
 
     async def _handle__invocation_request(self, request):
+        invocation_time = datetime.utcnow()
         invoc_request = request.invocation_request
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
@@ -452,7 +461,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 f'function ID: {function_id}',
                 f'function name: {fi.name}',
                 f'invocation ID: {invocation_id}',
-                f'function type: {"async" if fi.is_async else "sync"}'
+                f'function type: {"async" if fi.is_async else "sync"}',
+                f'timestamp (UTC): {invocation_time}'
             ]
             if not fi.is_async:
                 function_invocation_logs.append(
@@ -551,9 +561,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         """
         try:
             logger.info('Received FunctionEnvironmentReloadRequest, '
-                        'request ID: %s,'
-                        'App Settings state: %s.'
-                        ' To enable debug level logging, please refer to '
+                        'request ID: %s, '
+                        'App Settings state: %s. '
+                        'To enable debug level logging, please refer to '
                         'https://aka.ms/python-enable-debug-logging',
                         self.request_id,
                         get_python_appsetting_state())

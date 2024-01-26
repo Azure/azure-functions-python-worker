@@ -48,7 +48,7 @@ def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
     # checks first if registry exists (library is imported)
     # then checks if pytype is a supported type (cx is using sdk type)
     # TODO: move pytype check to base library
-    if client_registry is not None and pytype is not None and client_registry.check_supported_type(pytype):
+    if client_registry is not None and client_registry.check_supported_type(pytype):
         global deferred_bindings_enabled
         deferred_bindings_enabled = True
         binding = client_registry.get(bind_name)
@@ -94,7 +94,7 @@ def from_incoming_proto(
         pytype: typing.Optional[type],
         trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]],
         shmem_mgr: SharedMemoryManager) -> typing.Any:
-    binding = get_binding(binding)
+    binding = get_binding(binding, pytype)
     if trigger_metadata:
         metadata = {
             k: datumdef.Datum.from_typed_data(v)

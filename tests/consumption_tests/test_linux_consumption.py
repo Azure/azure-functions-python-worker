@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import os
 import sys
+from time import sleep
 from unittest import TestCase, skipIf
 
 from requests import Request
@@ -90,7 +91,7 @@ class TestLinuxConsumption(TestCase):
             self.assertIn('pyodbc', content)
             self.assertIn('requests', content)
 
-    @skipIf(sys.version_info.minor == 10,
+    @skipIf(sys.version_info.minor in (10, 11),
             "Protobuf pinning fails during remote build")
     def test_new_protobuf(self):
         """A function app with the following requirements.txt:
@@ -120,7 +121,7 @@ class TestLinuxConsumption(TestCase):
             self.assertEqual(content['google.protobuf'], '3.15.8')
             self.assertEqual(content['grpc'], '1.33.2')
 
-    @skipIf(sys.version_info.minor == 10,
+    @skipIf(sys.version_info.minor in (10, 11),
             "Protobuf pinning fails during remote build")
     def test_old_protobuf(self):
         """A function app with the following requirements.txt:
@@ -217,13 +218,106 @@ class TestLinuxConsumption(TestCase):
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
                     "PinningFunctions"),
-                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
             resp = ctrl.send_request(req)
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Func Version: 1.11.1", resp.text)
+
+    @skipIf(sys.version_info.minor != 10,
+            "This is testing only for python310")
+    def test_opencensus_with_extensions_enabled(self):
+        """A function app with extensions enabled containing the
+         following libraries:
+
+        azure-functions, azure-eventhub, azure-storage-blob, numpy,
+        cryptography, pyodbc, requests
+
+        should return 200 after importing all libraries.
+        """
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("Opencensus"),
+                "PYTHON_ENABLE_WORKER_EXTENSIONS": "1",
+                "AzureWebJobsFeatureFlags": "EnableWorkerIndexing"
+            })
+            req = Request('GET', f'{ctrl.url}/api/opencensus')
+            resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 200)
+
+    @skipIf(sys.version_info.minor != 9,
+            "This is testing only for python39 where extensions"
+            "enabled by default")
+    def test_reload_variables_after_timeout_error(self):
+        """
+        A function app with HTTPtrigger which has a function timeout of
+        20s. The app as a sleep of 30s which should trigger a timeout
+        """
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
+                    "TimeoutError"),
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
+                "AzureWebJobsFeatureFlags": "EnableWorkerIndexing"
+            })
+            req = Request('GET', f'{ctrl.url}/api/hello')
+            resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 500)
+
+            sleep(2)
+            logs = ctrl.get_container_logs()
+            self.assertRegex(
+                logs,
+                r"Applying prioritize_customer_dependencies: "
+                r"worker_dependencies_path: \/azure-functions-host\/"
+                r"workers\/python\/.*?\/LINUX\/X64,"
+                r" customer_dependencies_path: \/home\/site\/wwwroot\/"
+                r"\.python_packages\/lib\/site-packages, working_directory:"
+                r" \/home\/site\/wwwroot, Linux Consumption: True,"
+                r" Placeholder: False")
+            self.assertNotIn("Failure Exception: ModuleNotFoundError",
+                             logs)
+
+    @skipIf(sys.version_info.minor != 9,
+            "This is testing only for python39 where extensions"
+            "enabled by default")
+    def test_reload_variables_after_oom_error(self):
+        """
+        A function app with HTTPtrigger mocking error code 137
+        """
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
+                    "OOMError"),
+                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
+                "AzureWebJobsFeatureFlags": "EnableWorkerIndexing"
+            })
+            req = Request('GET', f'{ctrl.url}/api/httptrigger')
+            resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 500)
+
+            sleep(2)
+            logs = ctrl.get_container_logs()
+            self.assertRegex(
+                logs,
+                r"Applying prioritize_customer_dependencies: "
+                r"worker_dependencies_path: \/azure-functions-host\/"
+                r"workers\/python\/.*?\/LINUX\/X64,"
+                r" customer_dependencies_path: \/home\/site\/wwwroot\/"
+                r"\.python_packages\/lib\/site-packages, working_directory:"
+                r" \/home\/site\/wwwroot, Linux Consumption: True,"
+                r" Placeholder: False")
+
+            self.assertNotIn("Failure Exception: ModuleNotFoundError",
+                             logs)
 
     def _get_blob_url(self, scenario_name: str) -> str:
         return (

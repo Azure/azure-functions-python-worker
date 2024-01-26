@@ -8,23 +8,25 @@ import os
 import os.path
 import pathlib
 import sys
+import time
+from datetime import timedelta
 from os import PathLike, fspath
 from typing import Optional, Dict
 
+from google.protobuf.duration_pb2 import Duration
+
 from . import protos, functions
-from .constants import MODULE_NOT_FOUND_TS_URL, SCRIPT_FILE_NAME, \
-    PYTHON_LANGUAGE_RUNTIME
+from .bindings.retrycontext import RetryPolicy
+from .utils.common import get_app_setting
+from .constants import MODULE_NOT_FOUND_TS_URL, PYTHON_SCRIPT_FILE_NAME, \
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT, PYTHON_LANGUAGE_RUNTIME, \
+    CUSTOMER_PACKAGES_PATH, RETRY_POLICY
+from .logging import logger
 from .utils.wrappers import attach_message_to_exception
 
 _AZURE_NAMESPACE = '__app__'
 _DEFAULT_SCRIPT_FILENAME = '__init__.py'
 _DEFAULT_ENTRY_POINT = 'main'
-
-PKGS_PATH = pathlib.Path("site/wwwroot/.python_packages")
-home = pathlib.Path.home()
-pkgs_path = os.path.join(home, PKGS_PATH)
-
-
 _submodule_dirs = []
 
 
@@ -45,6 +47,12 @@ def install() -> None:
         sys.modules[_AZURE_NAMESPACE] = ns_pkg
 
 
+def convert_to_seconds(timestr: str):
+    x = time.strptime(timestr, '%H:%M:%S')
+    return int(timedelta(hours=x.tm_hour, minutes=x.tm_min,
+                         seconds=x.tm_sec).total_seconds())
+
+
 def uninstall() -> None:
     pass
 
@@ -60,6 +68,59 @@ def build_binding_protos(indexed_function) -> Dict:
     return binding_protos
 
 
+def build_retry_protos(indexed_function) -> Dict:
+    retry = get_retry_settings(indexed_function)
+
+    if not retry:
+        return None
+
+    strategy = retry.get(RetryPolicy.STRATEGY.value)
+    max_retry_count = int(retry.get(RetryPolicy.MAX_RETRY_COUNT.value))
+    retry_strategy = retry.get(RetryPolicy.STRATEGY.value)
+
+    if strategy == "fixed_delay":
+        return build_fixed_delay_retry(retry, max_retry_count, retry_strategy)
+    else:
+        return build_variable_interval_retry(retry, max_retry_count,
+                                             retry_strategy)
+
+
+def get_retry_settings(indexed_function):
+    try:
+        return indexed_function.get_settings_dict(RETRY_POLICY)
+    except AttributeError as e:
+        logger.warning("AttributeError while loading retry policy. %s", e)
+        return None
+
+
+def build_fixed_delay_retry(retry, max_retry_count, retry_strategy):
+    delay_interval = Duration(
+        seconds=convert_to_seconds(retry.get(RetryPolicy.DELAY_INTERVAL.value))
+    )
+    return protos.RpcRetryOptions(
+        max_retry_count=max_retry_count,
+        retry_strategy=retry_strategy,
+        delay_interval=delay_interval,
+    )
+
+
+def build_variable_interval_retry(retry, max_retry_count, retry_strategy):
+    minimum_interval = Duration(
+        seconds=convert_to_seconds(
+            retry.get(RetryPolicy.MINIMUM_INTERVAL.value))
+    )
+    maximum_interval = Duration(
+        seconds=convert_to_seconds(
+            retry.get(RetryPolicy.MAXIMUM_INTERVAL.value))
+    )
+    return protos.RpcRetryOptions(
+        max_retry_count=max_retry_count,
+        retry_strategy=retry_strategy,
+        minimum_interval=minimum_interval,
+        maximum_interval=maximum_interval
+    )
+
+
 def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions):
     fx_metadata_results = []
@@ -68,6 +129,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             function=indexed_function)
 
         binding_protos = build_binding_protos(indexed_function)
+        retry_protos = build_retry_protos(indexed_function)
 
         function_metadata = protos.RpcFunctionMetadata(
             name=function_info.name,
@@ -80,6 +142,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             language=PYTHON_LANGUAGE_RUNTIME,
             bindings=binding_protos,
             raw_bindings=indexed_function.get_raw_bindings(),
+            retry_options=retry_protos,
             properties={"worker_indexed": "True"})
 
         fx_metadata_results.append(function_metadata)
@@ -89,12 +152,15 @@ def process_indexed_function(functions_registry: functions.Registry,
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message=f'Please check the requirements.txt file for the missing module. '
-            f'For more info, please refer the troubleshooting'
-            f' guide: {MODULE_NOT_FOUND_TS_URL} ',
+    message='Cannot find module. Please check the requirements.txt '
+            'file for the missing module. For more info, '
+            'please refer the troubleshooting '
+            f'guide: {MODULE_NOT_FOUND_TS_URL}. '
+            f'Current sys.path: {sys.path}',
     debug_logs='Error in load_function. '
                f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
-               f'python-packages Path exists: {os.path.exists(pkgs_path)}')
+               'python-packages Path exists: '
+               f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}')
 def load_function(name: str, directory: str, script_file: str,
                   entry_point: Optional[str]):
     dir_path = pathlib.Path(directory)
@@ -142,10 +208,15 @@ def load_function(name: str, directory: str, script_file: str,
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message=f'Troubleshooting Guide: {MODULE_NOT_FOUND_TS_URL}',
+    message='Cannot find module. Please check the requirements.txt '
+            'file for the missing module. For more info, '
+            'please refer the troubleshooting '
+            f'guide: {MODULE_NOT_FOUND_TS_URL}. '
+            f'Current sys.path: {sys.path}',
     debug_logs='Error in index_function_app. '
                f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
-               f'python-packages Path exists: {os.path.exists(pkgs_path)}')
+               'python-packages Path exists: '
+               f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}')
 def index_function_app(function_path: str):
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)
@@ -162,7 +233,10 @@ def index_function_app(function_path: str):
                     f"level function app instances are defined.")
 
     if not app:
+        script_file_name = get_app_setting(
+            setting=PYTHON_SCRIPT_FILE_NAME,
+            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
         raise ValueError("Could not find top level function app instances in "
-                         f"{SCRIPT_FILE_NAME}.")
+                         f"{script_file_name}.")
 
     return app.get_functions()

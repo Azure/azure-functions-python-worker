@@ -227,6 +227,10 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         pass
 
     @classmethod
+    def get_script_name(cls):
+        pass
+
+    @classmethod
     def setUpClass(cls):
         script_dir = pathlib.Path(cls.get_script_dir())
 
@@ -234,6 +238,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         docker_configs.script_path = script_dir
         docker_configs.libraries = cls.get_libraries_to_install()
         docker_configs.env = cls.get_environment_variables() or {}
+        os.environ["PYTHON_SCRIPT_FILE_NAME"] = (cls.get_script_name()
+                                                 or "function_app.py")
 
         if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             cls.host_stdout = None
@@ -514,7 +520,7 @@ class _MockWebHost:
     def request_id(self):
         return self._request_id
 
-    async def init_worker(self, host_version: str):
+    async def init_worker(self, host_version: str = '4.28.0'):
         r = await self.communicate(
             protos.StreamingMessage(
                 worker_init_request=protos.WorkerInitRequest(
@@ -815,7 +821,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
     if coretools_exe:
         coretools_exe = coretools_exe.strip()
         if pathlib.Path(coretools_exe).exists():
-            hostexe_args = [str(coretools_exe), 'host', 'start']
+            hostexe_args = [str(coretools_exe), 'host', 'start', '--verbose']
             if port is not None:
                 hostexe_args.extend(['--port', str(port)])
 

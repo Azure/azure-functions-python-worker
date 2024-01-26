@@ -53,3 +53,25 @@ def servicebus_trigger(msg: func.ServiceBusMessage) -> str:
     })
 
     return result
+
+
+@app.service_bus_queue_trigger(
+    arg_name="msg",
+    connection="AzureWebJobsServiceBusConnectionString",
+    queue_name="testqueue",
+    cardinality=func.Cardinality.MANY)
+@app.blob_output(arg_name="$return",
+                 path="python-worker-tests/servicebus-triggered_batch.txt",
+                 connection="AzureWebJobsStorage")
+def servicebus_triggered(msg: func.ServiceBusMessage) -> str:
+    return str(msg)
+
+
+@app.route(route="servicebus_triggered")
+@app.blob_input(arg_name="file",
+                path="python-worker-tests/servicebus-triggered_batch.txt",
+                connection="AzureWebJobsStorage")
+def get_servicebus_triggered(req: func.HttpRequest,
+                             file: func.InputStream) -> str:
+    return func.HttpResponse(
+        file.read().decode('utf-8'), mimetype='application/json')

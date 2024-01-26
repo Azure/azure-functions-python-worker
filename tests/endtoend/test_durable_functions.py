@@ -26,7 +26,6 @@ class TestDurableFunctions(testutils.WebHostTestCase):
     @classmethod
     def tearDownClass(cls):
         # Remove the WEBSITE_HOSTNAME environment variable
-        os.environ.pop('WEBSITE_HOSTNAME')
         cls.env_variables.pop('WEBSITE_HOSTNAME')
         super().tearDownClass()
 

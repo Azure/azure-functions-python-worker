@@ -2,7 +2,7 @@
     "scriptFile": "main.py",
     "bindings": [
       {
-        "type": "tokenize",
+        "type": "durableClient",
         "name": "input",
         "direction": "in",
         "dataType": "string"

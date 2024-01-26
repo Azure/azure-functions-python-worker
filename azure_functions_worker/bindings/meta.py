@@ -55,10 +55,10 @@ def check_output_type_annotation(bind_name: str, pytype: type) -> bool:
 def has_implicit_output(bind_name: str) -> bool:
     binding = get_binding(bind_name)
 
+    # Need to pass in bind_name to exempt Durable Functions
     if binding is generic.GenericBinding:
-        properties = generic.GenericBindingProperties(bind_name=bind_name)
         return (getattr(binding, 'has_implicit_output', lambda: False)
-                (properties))
+                (bind_name))
 
     else:
         # If the binding does not have metaclass of meta.InConverter

@@ -6,21 +6,6 @@ from . import datumdef
 from typing import Any, Optional
 
 
-class GenericBindingProperties:
-
-    def __init__(self, *,
-                 bind_name: Optional[str] = None,):
-        self.__bind_name = bind_name
-
-    @property
-    def get_bind_name(self) -> Optional[str]:
-        return self.__bind_name
-
-    @property
-    def special_case_bind_names(self) -> list:
-        return ["tokenize"]
-
-
 class GenericBinding:
 
     @classmethod
@@ -66,12 +51,7 @@ class GenericBinding:
         return result
 
     @classmethod
-    def has_implicit_output(cls,
-                            properties:
-                            Optional[GenericBindingProperties] = None) -> bool:
-        # If the binding is a special case (Logic Apps), return True
-        if (properties and properties.get_bind_name in
-                properties.special_case_bind_names):
-            return True
-        else:
+    def has_implicit_output(cls, bind_name: Optional[str]) -> bool:
+        if bind_name == 'durableClient':
             return False
+        return True

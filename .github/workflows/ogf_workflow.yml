@@ -62,6 +62,7 @@ jobs:
       STORAGE_ACCOUNT_NAME: "ogf${{ matrix.sku }}${{ matrix.region }}${{ github.run_number }}"
       FUNCTION_APP_PLAN_NAME: "ogf-epplan-${{ matrix.sku }}-${{ matrix.region }}-${{ github.run_number }}"
     runs-on: ubuntu-latest
+    permissions: read-all
     timeout-minutes: 30
     strategy:
       # V. IMPORTANT: Copy this strategy section to the dependent

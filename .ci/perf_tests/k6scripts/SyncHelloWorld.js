@@ -35,7 +35,7 @@ export let options = {
 
 // Main function
 export default function () {
-    let response = http.get(`${PROTOCOL}://${HOSTNAME}:${PORT}/api/SyncHttpTriggerHelloWorld`);
+    let response = http.get(`${PROTOCOL}://${HOSTNAME}:${PORT}/api/SyncHelloWorld`);
 
     // check() returns false if any of the specified conditions fail
     let checkRes = check(response, {

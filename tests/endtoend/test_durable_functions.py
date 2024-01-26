@@ -19,15 +19,13 @@ class TestDurableFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.env_variables['WEBSITE_HOSTNAME'] = "http:"
-        os_environ = os.environ.copy()
-        os_environ.update(cls.env_variables)
+        os.environ["WEBSITE_HOSTNAME"] = "http:"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         # Remove the WEBSITE_HOSTNAME environment variable
-        cls.env_variables.pop('WEBSITE_HOSTNAME')
+        os.environ.pop('WEBSITE_HOSTNAME')
         super().tearDownClass()
 
     @classmethod

@@ -260,7 +260,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
             if cls.webhost._proc.errors is not None or \
                cls.webhost._proc.stderr is not None:
                 raise RuntimeError(
-                    'Failed to start WebHost:' \
+                    'Failed to start WebHost:'
                     f'{cls.webhost._proc.errors or cls.webhost._proc.stderr}')
         except Exception:
             _teardown_func_app(TESTS_ROOT / script_dir)

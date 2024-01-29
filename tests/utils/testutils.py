@@ -790,7 +790,7 @@ class _WebHostProxy:
         r = self.request('GET')
         return 200 <= r.status_code < 300
 
-    def request(self, meth, funcname=None, *args, **kwargs):
+    def request(self, meth, func_name=None, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
         params = dict(kwargs.pop('params', {}))
         no_prefix = kwargs.pop('no_prefix', False)
@@ -798,9 +798,9 @@ class _WebHostProxy:
             params['code'] = 'testFunctionKey'
         request_uri = None
 
-        if funcname is not None:
+        if func_name is not None:
             request_uri = self._addr + ('/' if no_prefix else '/api/')\
-                  + funcname
+                + func_name
         else:
             request_uri = self._addr
 

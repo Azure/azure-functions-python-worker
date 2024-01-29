@@ -6,9 +6,9 @@ name: CI E2E tests
 on:
   workflow_dispatch:
   push:
-    branches: [ dev, master, main, release/* ]
+    branches: [dev, master, main, release/*]
   pull_request:
-    branches: [ dev, master, main, release/* ]
+    branches: [dev, master, main, release/*]
   schedule:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string
@@ -21,27 +21,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ 3.7, 3.8, 3.9, "3.10", "3.11" ]
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
     permissions: read-all
     steps:
       - name: Checkout code.
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set up Dotnet 3.1.x
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '3.1.x'
       - name: Set up Dotnet 6.x
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.x'
+          dotnet-version: "6.x"
       - name: Set up Dotnet 8.0.x
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: "8.0.x"
       - name: Install dependencies and the worker
         run: |
           retry() {
@@ -64,7 +60,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
           python -m pip install -U -e .[dev]
-          
+
           # Retry a couple times to avoid certificate issue
           retry 5 python setup.py build
           retry 5 python setup.py webhost --branch-name=dev
@@ -127,7 +123,7 @@ jobs:
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
         run: .github/Scripts/e2e-tests.sh
       - name: Codecov
-        uses: codecov/codecov-action@v1.0.13
+        uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml # optional
           flags: unittests # optional

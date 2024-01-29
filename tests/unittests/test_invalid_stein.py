@@ -30,9 +30,9 @@ class TestInvalidAppStein(testutils.AsyncTestCase):
         self.mock_version_info.stop()
 
     async def test_indexing_not_app(self):
-        """Test if the functions metadata response will be 0
-            when an invalid app is provided
-                """
+        """Test if the functions metadata response will be
+            an error when an invalid app is provided
+        """
         async with self._ctrl as host:
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
@@ -53,9 +53,9 @@ class TestInvalidStein(testutils.AsyncTestCase):
         self.mock_version_info.stop()
 
     async def test_indexing_invalid_app(self):
-        """Test if the functions metadata response will be 0
-            when an invalid app is provided
-                """
+        """Test if the functions metadata response will be
+            an error when an invalid app is provided
+        """
         async with self._ctrl as host:
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)

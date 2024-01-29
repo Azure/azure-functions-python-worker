@@ -43,15 +43,12 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             int] = PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT
         self._over_max_workers: int = 10000
         self._allowed_max_workers: int = PYTHON_THREADPOOL_THREAD_COUNT_MAX_37
-        self._pre_env = dict(os.environ)
         self.mock_version_info = patch(
             'azure_functions_worker.dispatcher.sys.version_info',
             version)
         self.mock_version_info.start()
 
     def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self._pre_env)
         self.mock_version_info.stop()
 
     async def test_dispatcher_initialize_worker(self):

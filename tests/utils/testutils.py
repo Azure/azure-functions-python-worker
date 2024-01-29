@@ -264,7 +264,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                         'WebHost is not started correctly. %s :\n%s',
                         cls.host_stdout.name, cls.host_out)
                     raise
-                
+
         except Exception:
             _teardown_func_app(TESTS_ROOT / script_dir)
             raise
@@ -299,12 +299,11 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 try:
                     self.host_stdout.seek(last_pos)
                     self.host_out = self.host_stdout.read()
-                    if self.host_out is not None \
-                        and len(self.host_out) > 0:
+                    if self.host_out is not None:
                         self.host_stdout_logger.error(
-                        'Captured WebHost log generated during test '\
-                        '%s from %s :\n%s', test.__name__, \
-                        self.host_stdout.name, self.host_out)
+                            'Captured WebHost log generated during test '
+                            '%s from %s :\n%s', test.__name__,
+                            self.host_stdout.name, self.host_out)
                 finally:
                     if test_exception is not None:
                         raise test_exception

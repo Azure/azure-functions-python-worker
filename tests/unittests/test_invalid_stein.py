@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import collections as col
-import os
 from unittest.mock import patch
 
 from azure_functions_worker import protos

@@ -362,9 +362,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  'sync threadpool max workers: 5'
                                  )
 
-    @patch.dict('os.environ', {PYTHON_THREADPOOL_THREAD_COUNT: '4'})
     async def test_async_invocation_request_log_threads(self):
-        #os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
+        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
 
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:

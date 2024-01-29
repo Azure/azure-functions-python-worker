@@ -10,10 +10,6 @@
     <copyright>© .NET Foundation. All rights reserved.</copyright>
   </metadata>
   <files>
-    <file src="..\3.6_WINDOWS_x64\**" target="tools\3.6\WINDOWS\X64" />
-    <!-- <file src="..\3.6_WINDOWS_X86\**" target="tools\3.6\WINDOWS\X86" /> -->
-    <file src="..\3.6_LINUX_X64\**" target="tools\3.6\LINUX\X64" />
-    <file src="..\3.6_OSX_X64\**" target="tools\3.6\OSX\X64" />
     <file src="..\3.7_WINDOWS_X64\**" target="tools\3.7\WINDOWS\X64" />
     <file src="..\3.7_WINDOWS_X86\**" target="tools\3.7\WINDOWS\X86" />
     <file src="..\3.7_LINUX_X64\**" target="tools\3.7\LINUX\X64" />

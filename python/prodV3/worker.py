@@ -7,7 +7,6 @@ from pathlib import Path
 PKGS_PATH = "site/wwwroot/.python_packages"
 VENV_PKGS_PATH = "site/wwwroot/worker_venv"
 
-PKGS_36 = "lib/python3.6/site-packages"
 PKGS = "lib/site-packages"
 
 # Azure environment variables
@@ -32,11 +31,6 @@ def add_script_root_to_sys_path():
 def determine_user_pkg_paths():
     """This finds the user packages when function apps are running on the cloud
 
-    For Python 3.6 app, the third-party packages can live in any of the paths:
-        /home/site/wwwroot/.python_packages/lib/site-packages
-        /home/site/wwwroot/.python_packages/lib/python3.6/site-packages
-        /home/site/wwwroot/worker_venv/lib/python3.6/site-packages
-
     For Python 3.7 and Python 3.8, we only accept:
         /home/site/wwwroot/.python_packages/lib/site-packages
     """
@@ -48,8 +42,6 @@ def determine_user_pkg_paths():
 
     user_pkg_paths = []
     if minor_version == 6:
-        user_pkg_paths.append(os.path.join(venv_pkgs_path, PKGS_36))
-        user_pkg_paths.append(os.path.join(pkgs_path, PKGS_36))
         user_pkg_paths.append(os.path.join(pkgs_path, PKGS))
     elif minor_version in (7, 8, 9):
         user_pkg_paths.append(os.path.join(pkgs_path, PKGS))

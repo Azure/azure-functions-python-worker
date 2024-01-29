@@ -275,10 +275,9 @@ class Extension(distutils.cmd.Command):
 
         env = os.environ.copy()
         env['TERM'] = 'xterm'  # ncurses 6.1 workaround
-        current_working_dir = os.path.abspath('.')
         try:
             subprocess.run(
-                args=['dotnet', 'build', '--property:OutputPath=' + current_working_dir], check=True,
+                args=['dotnet', 'build', '-o', '.'], check=True,
                 cwd=str(self.extensions_dir),
                 stdout=sys.stdout, stderr=sys.stderr, env=env)
         except Exception:  # NoQA
@@ -422,10 +421,8 @@ class Webhost(distutils.cmd.Command):
         print(f'Compiling Functions Host from {webhost_dir}')
 
         try:
-            # current_working_dir = os.path.abspath('.')
-            bin_folder_path = os.path.join(os.path.abspath('.'), 'bin')
             subprocess.run(
-                args=['dotnet', 'build', 'WebJobs.Script.sln', f'--property:OutputPath={bin_folder_path}'],
+                args=['dotnet', 'build', 'WebJobs.Script.sln', '-o', 'bin'],
                 check=True,
                 cwd=str(webhost_dir),
                 stdout=sys.stdout, stderr=sys.stderr)

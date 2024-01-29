@@ -277,7 +277,7 @@ class Extension(distutils.cmd.Command):
         env['TERM'] = 'xterm'  # ncurses 6.1 workaround
         try:
             subprocess.run(
-                args=['dotnet', 'build', '--property:OutputPath=.'], check=True,
+                args=['dotnet', 'build', '-o', '.'], check=True,
                 cwd=str(self.extensions_dir),
                 stdout=sys.stdout, stderr=sys.stderr, env=env)
         except Exception:  # NoQA
@@ -422,7 +422,7 @@ class Webhost(distutils.cmd.Command):
 
         try:
             subprocess.run(
-                args=['dotnet', 'build', 'WebJobs.Script.sln', '--property:OutputPath=bin'],
+                args=['dotnet', 'build', 'WebJobs.Script.sln', '-o', 'bin'],
                 check=True,
                 cwd=str(webhost_dir),
                 stdout=sys.stdout, stderr=sys.stderr)

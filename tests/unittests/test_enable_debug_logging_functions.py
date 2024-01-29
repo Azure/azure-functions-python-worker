@@ -27,7 +27,8 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
     @classmethod
     def setUpClass(cls):
         cls.env_patcher = patch.dict(os.environ,
-                                     {'PYTHON_ENABLE_DEBUG_LOGGING': '1'})
+                                     {'PYTHON_ENABLE_DEBUG_LOGGING': '1'},
+                                     clear=True)
         cls.env_patcher.start()
         super().setUpClass()
 
@@ -63,7 +64,8 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
     @classmethod
     def setUpClass(cls):
         cls.env_patcher = patch.dict(os.environ,
-                                     {'PYTHON_ENABLE_DEBUG_LOGGING': '0'})
+                                     {'PYTHON_ENABLE_DEBUG_LOGGING': '0'},
+                                     clear=True)
         cls.env_patcher.start()
         super().setUpClass()
 
@@ -100,7 +102,8 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
     @classmethod
     def setUpClass(cls):
         cls.env_patcher = patch.dict(os.environ,
-                                     {'PYTHON_ENABLE_DEBUG_LOGGING': '1'})
+                                     {'PYTHON_ENABLE_DEBUG_LOGGING': '1'},
+                                     clear=True)
         cls.env_patcher.start()
         host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
 

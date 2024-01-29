@@ -40,7 +40,8 @@ class ThirdPartyHttpFunctionsTestBase:
             cls.env_patcher = (
                 patch.dict(
                     os.environ,
-                    {'AzureWebJobsFeatureFlags': 'EnableWorkerIndexing'}))
+                    {'AzureWebJobsFeatureFlags': 'EnableWorkerIndexing'},
+                    clear=True))
             cls.env_patcher.start()
 
             super().setUpClass()

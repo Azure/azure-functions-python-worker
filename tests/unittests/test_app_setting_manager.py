@@ -64,7 +64,8 @@ class TestNonDefaultAppSettingsLogs(testutils.AsyncTestCase):
             script_root=DISPATCHER_FUNCTIONS_DIR)
         cls.env_patcher = (patch.dict(os.environ,
                                       {PYTHON_THREADPOOL_THREAD_COUNT: '20',
-                                       PYTHON_ENABLE_DEBUG_LOGGING: '1'}))
+                                       PYTHON_ENABLE_DEBUG_LOGGING: '1'},
+                                      clear=True))
         cls.env_patcher.start()
         super().setUpClass()
 

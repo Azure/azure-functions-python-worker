@@ -150,7 +150,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
     @patch.dict(os.environ,
                 {PYTHON_THREADPOOL_THREAD_COUNT:
-                    f'{PYTHON_THREADPOOL_THREAD_COUNT_MAX_37}'})
+                    f'{PYTHON_THREADPOOL_THREAD_COUNT_MAX_37}'},
+                clear=True)
     async def test_dispatcher_sync_threadpool_set_worker(self):
         """Test if the sync threadpool maximum worker can be set
         """
@@ -160,7 +161,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                                   self._allowed_max_workers)
 
     # Configure thread pool max worker to an invalid value
-    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: 'invalid'})
+    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: 'invalid'},
+                clear=True)
     async def test_dispatcher_sync_threadpool_invalid_worker_count(self):
         """Test when sync threadpool maximum worker is set to an invalid value,
         the host should fallback to default value
@@ -179,7 +181,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 '%s must be an integer', PYTHON_THREADPOOL_THREAD_COUNT)
 
     # Configure thread pool max worker to an invalid value
-    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '0'})
+    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '0'}, clear=True)
     async def test_dispatcher_sync_threadpool_below_min_setting(self):
         """Test if the sync threadpool will pick up default value when the
         setting is below minimum
@@ -197,7 +199,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 
     # Configure thread pool max worker to an invalid value
-    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '10000'})
+    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '10000'},
+                clear=True)
     async def test_dispatcher_sync_threadpool_exceed_max_setting(self):
         """Test if the sync threadpool will pick up default max value when the
         setting is above maximum
@@ -333,7 +336,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  r'\d{2}:\d{2}:\d{2}.\d{6})'
                                  )
 
-    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '5'})
+    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '5'}, clear=True)
     async def test_sync_invocation_request_log_threads(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
@@ -356,7 +359,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  'sync threadpool max workers: 5'
                                  )
 
-    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '4'})
+    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '4'}, clear=True)
     async def test_async_invocation_request_log_threads(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
@@ -686,7 +689,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
     # Consumption apps with placeholder mode enabled
     @patch.dict(os.environ, {'PYTHON_ISOLATE_WORKER_DEPENDENCIES': '1',
                              'CONTAINER_NAME': 'test',
-                             'WEBSITE_PLACEHOLDER_MODE': '1'})
+                             'WEBSITE_PLACEHOLDER_MODE': '1'}, clear=True)
     async def test_dispatcher_load_modules_con_placeholder_enabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
         enabled.
@@ -703,7 +706,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
     # is specialized
     @patch.dict(os.environ, {'PYTHON_ISOLATE_WORKER_DEPENDENCIES': '1',
                              'CONTAINER_NAME': 'test',
-                             'WEBSITE_PLACEHOLDER_MODE': '0'})
+                             'WEBSITE_PLACEHOLDER_MODE': '0'}, clear=True)
     async def test_dispatcher_load_modules_con_app_placeholder_disabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
         disabled.

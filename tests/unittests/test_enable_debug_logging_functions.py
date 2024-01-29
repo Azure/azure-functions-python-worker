@@ -5,7 +5,6 @@ import os
 from unittest.mock import patch
 
 from tests.utils import testutils
-from azure_functions_worker.constants import PYTHON_ENABLE_DEBUG_LOGGING
 from tests.utils.testutils import TESTS_ROOT, remove_path
 
 HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
@@ -27,16 +26,15 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
+        cls.env_patcher = patch.dict(os.environ,
+                                     {'PYTHON_ENABLE_DEBUG_LOGGING': '1'})
+        cls.env_patcher.start()
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        cls._patch_environ.stop()
+        cls.env_patcher.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -64,16 +62,15 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '0'
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
+        cls.env_patcher = patch.dict(os.environ,
+                                     {'PYTHON_ENABLE_DEBUG_LOGGING': '0'})
+        cls.env_patcher.start()
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        cls._patch_environ.stop()
+        cls.env_patcher.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -102,15 +99,14 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
+        cls.env_patcher = patch.dict(os.environ,
+                                     {'PYTHON_ENABLE_DEBUG_LOGGING': '1'})
+        cls.env_patcher.start()
         host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
 
         with open(host_json, 'w+') as f:
             f.write(HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO)
 
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
         super().setUpClass()
 
     @classmethod
@@ -119,7 +115,7 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         remove_path(host_json)
 
         super().tearDownClass()
-        cls._patch_environ.stop()
+        cls.env_patcher.stop()
 
     @classmethod
     def get_script_dir(cls):

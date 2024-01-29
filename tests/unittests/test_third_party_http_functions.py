@@ -36,17 +36,19 @@ class ThirdPartyHttpFunctionsTestBase:
             host_json = cls.get_script_dir() / 'host.json'
             with open(host_json, 'w+') as f:
                 f.write(HOST_JSON_TEMPLATE)
-            os_environ = os.environ.copy()
-            # Turn on feature flag
-            os_environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
-            cls._patch_environ = patch.dict('os.environ', os_environ)
-            cls._patch_environ.start()
+
+            cls.env_patcher = (
+                patch.dict(
+                    os.environ,
+                    {'AzureWebJobsFeatureFlags': 'EnableWorkerIndexing'}))
+            cls.env_patcher.start()
+
             super().setUpClass()
 
         @classmethod
         def tearDownClass(cls):
             super().tearDownClass()
-            cls._patch_environ.stop()
+            cls.env_patcher.stop()
 
         @classmethod
         def get_script_dir(cls):

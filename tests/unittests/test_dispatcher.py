@@ -151,7 +151,9 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             await self._assert_workers_threadpool(self._ctrl, host,
                                                   self._default_workers)
 
-    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: f'{PYTHON_THREADPOOL_THREAD_COUNT_MAX_37}'})
+    @patch.dict(os.environ,
+                {PYTHON_THREADPOOL_THREAD_COUNT:
+                    f'{PYTHON_THREADPOOL_THREAD_COUNT_MAX_37}'})
     async def test_dispatcher_sync_threadpool_set_worker(self):
         """Test if the sync threadpool maximum worker can be set
         """
@@ -196,7 +198,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 'Reverting to default value for max_workers',
                 PYTHON_THREADPOOL_THREAD_COUNT,
                 PYTHON_THREADPOOL_THREAD_COUNT_MIN)
-    
+
     # Configure thread pool max worker to an invalid value
     @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '10000'})
     async def test_dispatcher_sync_threadpool_exceed_max_setting(self):
@@ -685,7 +687,9 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
             )
 
     # Consumption apps with placeholder mode enabled
-    @patch.dict(os.environ, {'PYTHON_ISOLATE_WORKER_DEPENDENCIES': '1', 'CONTAINER_NAME': 'test', 'WEBSITE_PLACEHOLDER_MODE': '1'})
+    @patch.dict(os.environ, {'PYTHON_ISOLATE_WORKER_DEPENDENCIES': '1',
+                             'CONTAINER_NAME': 'test',
+                             'WEBSITE_PLACEHOLDER_MODE': '1'})
     async def test_dispatcher_load_modules_con_placeholder_enabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
         enabled.
@@ -700,7 +704,9 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
 
     # Consumption apps with placeholder mode disabled  i.e. worker
     # is specialized
-    @patch.dict(os.environ, {'PYTHON_ISOLATE_WORKER_DEPENDENCIES': '1', 'CONTAINER_NAME': 'test', 'WEBSITE_PLACEHOLDER_MODE': '0'})
+    @patch.dict(os.environ, {'PYTHON_ISOLATE_WORKER_DEPENDENCIES': '1',
+                             'CONTAINER_NAME': 'test',
+                             'WEBSITE_PLACEHOLDER_MODE': '0'})
     async def test_dispatcher_load_modules_con_app_placeholder_disabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
         disabled.

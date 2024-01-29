@@ -257,6 +257,14 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 _setup_func_app(TESTS_ROOT / script_dir)
                 cls.webhost = start_webhost(script_dir=script_dir,
                                             stdout=cls.host_stdout)
+            if not cls.webhost.is_healthy():
+                cls.host_out = cls.host_stdout.read()
+                if cls.host_out is not None and len(cls.host_out) > 0:
+                    cls.host_stdout_logger.error(
+                        'WebHost is not started correctly. %s :\n%s',
+                        cls.host_stdout.name, cls.host_out)
+                    raise
+                
         except Exception:
             _teardown_func_app(TESTS_ROOT / script_dir)
             raise
@@ -287,16 +295,19 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 test(self, *args, **kwargs)
             except Exception as e:
                 test_exception = e
-
-            try:
-                self.host_stdout.seek(last_pos)
-                self.host_out = self.host_stdout.read()
-                self.host_stdout_logger.error(
-                    'Captured WebHost stdout from %s :\n%s',
-                    self.host_stdout.name, self.host_out)
             finally:
-                if test_exception is not None:
-                    raise test_exception
+                try:
+                    self.host_stdout.seek(last_pos)
+                    self.host_out = self.host_stdout.read()
+                    if self.host_out is not None \
+                        and len(self.host_out) > 0:
+                        self.host_stdout_logger.error(
+                        'Captured WebHost log generated during test '\
+                        '%s from %s :\n%s', test.__name__, \
+                        self.host_stdout.name, self.host_out)
+                finally:
+                    if test_exception is not None:
+                        raise test_exception
 
 
 class SharedMemoryTestCase(unittest.TestCase):
@@ -776,16 +787,25 @@ class _WebHostProxy:
         self._proc = proc
         self._addr = addr
 
-    def request(self, meth, funcname, *args, **kwargs):
+    def is_healthy(self):
+        r = self.request('GET')
+        return 200 <= r.status_code < 300
+
+    def request(self, meth, funcname=None, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
         params = dict(kwargs.pop('params', {}))
         no_prefix = kwargs.pop('no_prefix', False)
         if 'code' not in params:
             params['code'] = 'testFunctionKey'
+        request_uri = None
 
-        return request_method(
-            self._addr + ('/' if no_prefix else '/api/') + funcname,
-            *args, params=params, **kwargs)
+        if funcname is not None:
+            request_uri = self._addr + ('/' if no_prefix else '/api/')\
+                  + funcname
+        else:
+            request_uri = self._addr
+
+        return request_method(request_uri, *args, params=params, **kwargs)
 
     def close(self):
         if self._proc.stdout:

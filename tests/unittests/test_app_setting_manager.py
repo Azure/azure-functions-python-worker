@@ -62,17 +62,16 @@ class TestNonDefaultAppSettingsLogs(testutils.AsyncTestCase):
     def setUpClass(cls):
         cls._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_FUNCTIONS_DIR)
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_THREADPOOL_THREAD_COUNT] = '20'
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
+        cls.env_patcher = (patch.dict(os.environ,
+                                      {PYTHON_THREADPOOL_THREAD_COUNT: '20',
+                                       PYTHON_ENABLE_DEBUG_LOGGING: '1'}))
+        cls.env_patcher.start()
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        cls._patch_environ.stop()
+        cls.env_patcher.stop()
 
     async def test_initialize_worker_logging(self):
         """Test if the dispatcher's log can be flushed out during worker

@@ -151,17 +151,17 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             await self._assert_workers_threadpool(self._ctrl, host,
                                                   self._default_workers)
 
+    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: f'{PYTHON_THREADPOOL_THREAD_COUNT_MAX_37}'})
     async def test_dispatcher_sync_threadpool_set_worker(self):
         """Test if the sync threadpool maximum worker can be set
         """
-        # Configure thread pool max worker
-        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT:
-                           f'{self._allowed_max_workers}'})
         async with self._ctrl as host:
             await self._check_if_function_is_ok(host)
             await self._assert_workers_threadpool(self._ctrl, host,
                                                   self._allowed_max_workers)
 
+    # Configure thread pool max worker to an invalid value
+    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: 'invalid'})
     async def test_dispatcher_sync_threadpool_invalid_worker_count(self):
         """Test when sync threadpool maximum worker is set to an invalid value,
         the host should fallback to default value
@@ -171,9 +171,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         # Thus we're moving the patch() method to use the with syntax
 
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
-            # Configure thread pool max worker to an invalid value
-            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: 'invalid'})
-
             async with self._ctrl as host:
                 await host.init_worker()
                 await self._check_if_function_is_ok(host)
@@ -182,13 +179,13 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             mock_logger.warning.assert_any_call(
                 '%s must be an integer', PYTHON_THREADPOOL_THREAD_COUNT)
 
+    # Configure thread pool max worker to an invalid value
+    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '0'})
     async def test_dispatcher_sync_threadpool_below_min_setting(self):
         """Test if the sync threadpool will pick up default value when the
         setting is below minimum
         """
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
-            # Configure thread pool max worker to an invalid value
-            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '0'})
             async with self._ctrl as host:
                 await host.init_worker()
                 await self._check_if_function_is_ok(host)
@@ -199,15 +196,14 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 'Reverting to default value for max_workers',
                 PYTHON_THREADPOOL_THREAD_COUNT,
                 PYTHON_THREADPOOL_THREAD_COUNT_MIN)
-
+    
+    # Configure thread pool max worker to an invalid value
+    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '10000'})
     async def test_dispatcher_sync_threadpool_exceed_max_setting(self):
         """Test if the sync threadpool will pick up default max value when the
         setting is above maximum
         """
         with patch('azure_functions_worker.dispatcher.logger'):
-            # Configure thread pool max worker to an invalid value
-            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT:
-                               f'{self._over_max_workers}'})
             async with self._ctrl as host:
                 await host.init_worker('4.15.1')
                 await self._check_if_function_is_ok(host)
@@ -338,9 +334,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  r'\d{2}:\d{2}:\d{2}.\d{6})'
                                  )
 
+    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '5'})
     async def test_sync_invocation_request_log_threads(self):
-        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
-
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
                 request_id: str = self._ctrl._worker._request_id
@@ -362,9 +357,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  'sync threadpool max workers: 5'
                                  )
 
+    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '4'})
     async def test_async_invocation_request_log_threads(self):
-        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
-
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
                 request_id: str = self._ctrl._worker._request_id
@@ -690,14 +684,12 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 " Placeholder: False", logs
             )
 
+    # Consumption apps with placeholder mode enabled
+    @patch.dict(os.environ, {'PYTHON_ISOLATE_WORKER_DEPENDENCIES': '1', 'CONTAINER_NAME': 'test', 'WEBSITE_PLACEHOLDER_MODE': '1'})
     async def test_dispatcher_load_modules_con_placeholder_enabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
         enabled.
         """
-        # Consumption apps with placeholder mode enabled
-        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
-        os.environ["CONTAINER_NAME"] = "test"
-        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "1"
         async with self._ctrl as host:
             r = await host.init_worker()
             logs = [log.message for log in r.logs]
@@ -706,15 +698,13 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 "worker_dependencies_path: , customer_dependencies_path: , "
                 "working_directory: , Linux Consumption: True,", logs)
 
+    # Consumption apps with placeholder mode disabled  i.e. worker
+    # is specialized
+    @patch.dict(os.environ, {'PYTHON_ISOLATE_WORKER_DEPENDENCIES': '1', 'CONTAINER_NAME': 'test', 'WEBSITE_PLACEHOLDER_MODE': '0'})
     async def test_dispatcher_load_modules_con_app_placeholder_disabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
         disabled.
         """
-        # Consumption apps with placeholder mode disabled  i.e. worker
-        # is specialized
-        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
-        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "0"
-        os.environ["CONTAINER_NAME"] = "test"
         async with self._ctrl as host:
             r = await host.init_worker()
             logs = [log.message for log in r.logs]

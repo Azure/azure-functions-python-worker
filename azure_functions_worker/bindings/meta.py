@@ -47,7 +47,6 @@ def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
     client_registry = SDK_BINDING_REGISTRY
     # checks first if registry exists (library is imported)
     # then checks if pytype is a supported type (cx is using sdk type)
-    # TODO: move pytype check to base library
     if client_registry is not None and client_registry.check_supported_type(pytype):
         global deferred_bindings_enabled
         deferred_bindings_enabled = True
@@ -67,9 +66,6 @@ def is_trigger_binding(bind_name: str) -> bool:
 
 
 def check_input_type_annotation(bind_name: str, pytype: type) -> bool:
-    # hacky check for testing
-    # if pytype is int:
-    #     return True
     # check that needs to pass for sdk bindings -- pass in pytype
     binding = get_binding(bind_name, pytype)
     return binding.check_input_type_annotation(pytype)

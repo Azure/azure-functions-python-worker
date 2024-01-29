@@ -134,6 +134,7 @@ def process_indexed_function(functions_registry: functions.Registry,
         # Check if deferred bindings is enabled
         if bindings.meta.deferred_bindings_enabled:
             raw_bindings=bindings.meta.SDK_BINDING_REGISTRY.get_raw_bindings(indexed_function)
+            bindings.meta.deferred_bindings_enabled = False
         else:
             raw_bindings = indexed_function.get_raw_bindings()
 

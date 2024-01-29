@@ -22,15 +22,12 @@ class TestInvalidAppStein(testutils.AsyncTestCase):
     def setUp(self):
         self._ctrl = testutils.start_mockhost(
             script_root=STEIN_INVALID_APP_FUNCTIONS_DIR)
-        self._pre_env = dict(os.environ)
         self.mock_version_info = patch(
             'azure_functions_worker.dispatcher.sys.version_info',
             SysVersionInfo(3, 9, 0, 'final', 0))
         self.mock_version_info.start()
 
     def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self._pre_env)
         self.mock_version_info.stop()
 
     async def test_indexing_not_app(self):
@@ -48,15 +45,12 @@ class TestInvalidStein(testutils.AsyncTestCase):
     def setUp(self):
         self._ctrl = testutils.start_mockhost(
             script_root=STEIN_INVALID_FUNCTIONS_DIR)
-        self._pre_env = dict(os.environ)
         self.mock_version_info = patch(
             'azure_functions_worker.dispatcher.sys.version_info',
             SysVersionInfo(3, 9, 0, 'final', 0))
         self.mock_version_info.start()
 
     def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self._pre_env)
         self.mock_version_info.stop()
 
     async def test_indexing_invalid_app(self):

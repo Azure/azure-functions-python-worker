@@ -123,7 +123,7 @@ jobs:
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
         run: .github/Scripts/e2e-tests.sh
       - name: Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v3
         with:
           file: ./coverage.xml # optional
           flags: unittests # optional

@@ -299,7 +299,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 try:
                     self.host_stdout.seek(last_pos)
                     self.host_out = self.host_stdout.read()
-                    if self.host_out is not None:
+                    if self.host_out is not None and len(self.host_out) > 0:
                         self.host_stdout_logger.error(
                             'Captured WebHost log generated during test '
                             '%s from %s :\n%s', test.__name__,

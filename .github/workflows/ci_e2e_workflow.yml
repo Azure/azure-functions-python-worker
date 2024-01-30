@@ -143,6 +143,6 @@ jobs:
       - name: Publish Logs to Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Test WebHost Logs ${{ github.run_id }}
+          name: Test WebHost Logs ${{ github.run_id }} ${{ matrix.python-version }}
           path: logs/*.log
           if-no-files-found: ignore

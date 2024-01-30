@@ -5,6 +5,11 @@ name: CI E2E tests
 
 on:
   workflow_dispatch:
+    inputs:
+      archive_webhost_logging:
+        description: "For debugging purposes, archive test webhost logs"
+        required: false
+        default: "false"
   push:
     branches: [dev, master, main, release/*]
   pull_request:
@@ -78,6 +83,7 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString37 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Running 3.8 Tests
         if: matrix.python-version == 3.8
@@ -89,6 +95,7 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString38 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
@@ -100,6 +107,7 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString39 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Running 3.10 Tests
         if: matrix.python-version == 3.10
@@ -111,6 +119,7 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString310 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Running 3.11 Tests
         if: matrix.python-version == 3.11
@@ -122,6 +131,7 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString311 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Codecov
         uses: codecov/codecov-action@v3
@@ -130,3 +140,9 @@ jobs:
           flags: unittests # optional
           name: codecov # optional
           fail_ci_if_error: false # optional (default = false)
+      - name: Publish Logs to Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test WebHost Logs ${{ github.run_id }}
+          path: logs/*.log
+          if-no-files-found: ignore

@@ -30,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Set up Dotnet 6.x
@@ -74,7 +74,6 @@ jobs:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }} # needed for installing azure-functions-durable while running setup.py
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: |
-          echo "ARCHIVE_WEBHOST_LOGS=${{ env.ARCHIVE_WEBHOST_LOGS }}"
           python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
       - name: Codecov
         uses: codecov/codecov-action@v3
@@ -84,7 +83,7 @@ jobs:
           name: codecov # optional
           fail_ci_if_error: false # optional (default = false)
       - name: Publish Logs to Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Test WebHost Logs ${{ github.run_id }}
           path: logs/*.log

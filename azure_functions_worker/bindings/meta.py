@@ -37,7 +37,6 @@ def load_binding_registry() -> None:
         import azfuncbindingbase as clients
         global SDK_BINDING_REGISTRY
         SDK_BINDING_REGISTRY = clients.get_binding_registry()
-    test = "hello"
 
 
 def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:

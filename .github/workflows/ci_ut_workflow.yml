@@ -6,8 +6,8 @@ name: CI Unit tests
 on:
   workflow_dispatch:
     inputs:
-      enable_webhost_console_logging:
-        description: "For debugging purposes, enable console logging for webhost"
+      archive_webhost_logging:
+        description: "For debugging purposes, archive test webhost logs"
         required: false
         default: "false"
   schedule:
@@ -71,8 +71,9 @@ jobs:
       - name: Test with pytest
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }} # needed for installing azure-functions-durable while running setup.py
-          PYAZURE_WEBHOST_DEBUG: ${{ github.event.inputs.enable_webhost_console_logging }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: |
+          echo "ARCHIVE_WEBHOST_LOGS=${{ env.ARCHIVE_WEBHOST_LOGS }}"
           python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
       - name: Codecov
         uses: codecov/codecov-action@v3
@@ -81,3 +82,9 @@ jobs:
           flags: unittests # optional
           name: codecov # optional
           fail_ci_if_error: false # optional (default = false)
+      - name: Publish Logs to Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Test WebHost Logs ${{ github.run_id }}
+          path: *.log
+          if-no-files-found: ignore

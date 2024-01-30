@@ -48,7 +48,8 @@ from azure_functions_worker.constants import (
 from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
 from tests.utils.constants import PYAZURE_WORKER_DIR, \
     PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
-    CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG
+    CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG, \
+    ARCHIVE_WEBHOST_LOGS
 from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated, \
     DockerConfigs
 
@@ -275,6 +276,12 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         cls.webhost = None
 
         if cls.host_stdout is not None:
+            if is_envvar_true(ARCHIVE_WEBHOST_LOGS):
+                with open(f"{cls.__name__}_webhost.log", 'w+') as file:
+                    cls.host_stdout.seek(0)
+                    content = cls.host_stdout.read()
+                    file.write(content)
+
             cls.host_stdout.close()
             cls.host_stdout = None
 

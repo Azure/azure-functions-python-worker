@@ -104,4 +104,3 @@ def get_servicebus_triggered_batch(req: func.HttpRequest,
                                    file: func.InputStream) -> str:
     return func.HttpResponse(
         file.read().decode('utf-8'), mimetype='application/json')
-

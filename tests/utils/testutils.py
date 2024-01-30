@@ -277,7 +277,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         if cls.host_stdout is not None:
             if is_envvar_true(ARCHIVE_WEBHOST_LOGS):
-                with open(f"{cls.__name__}_webhost.log", 'w+') as file:
+                with open(f"logs/{cls.__name__}_webhost.log", 'w+') as file:
                     cls.host_stdout.seek(0)
                     content = cls.host_stdout.read()
                     file.write(content)

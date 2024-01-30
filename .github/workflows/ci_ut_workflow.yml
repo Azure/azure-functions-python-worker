@@ -68,6 +68,7 @@ jobs:
           retry 5 python setup.py build
           retry 5 python setup.py webhost --branch-name=dev
           retry 5 python setup.py extension
+          mkdir logs
       - name: Test with pytest
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }} # needed for installing azure-functions-durable while running setup.py
@@ -86,5 +87,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: Test WebHost Logs ${{ github.run_id }}
-          path: *.log
+          path: logs/*.log
           if-no-files-found: ignore

@@ -12,7 +12,8 @@ from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
     PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT, \
-    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37, PYTHON_THREADPOOL_THREAD_COUNT_MIN
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37, \
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN, PYTHON_ISOLATE_WORKER_DEPENDENCIES
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
@@ -338,9 +339,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  r'\d{2}:\d{2}:\d{2}.\d{6})'
                                  )
 
+    @patch.dict(os.environ, {PYTHON_THREADPOOL_THREAD_COUNT: '5'})
     async def test_sync_invocation_request_log_threads(self):
-        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
-
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
                 request_id: str = self._ctrl._worker._request_id
@@ -362,8 +362,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  'sync threadpool max workers: 5'
                                  )
 
+    @patch.dict(os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'}))
     async def test_async_invocation_request_log_threads(self):
-        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
 
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:
@@ -674,11 +674,10 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
             )
         self.assertIn("azure.functions", sys.modules)
 
+    @patch.dict(os.environ, {PYTHON_ISOLATE_WORKER_DEPENDENCIES: '1'})
     async def test_dispatcher_load_modules_dedicated_app(self):
         """Test modules are loaded in dedicated apps
         """
-        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
-
         # Dedicated Apps where placeholder mode is not set
         async with self._ctrl as host:
             r = await host.init_worker()
@@ -690,14 +689,15 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 " Placeholder: False", logs
             )
 
+    # Consumption apps with placeholder mode enabled
+    @patch.dict(os.environ, {PYTHON_ISOLATE_WORKER_DEPENDENCIES: '1'})
+    @patch.dict(os.environ, {"CONTAINER_NAME": 'test'})
+    @patch.dict(os.environ, {"WEBSITE_PLACEHOLDER_MODE": '1'})
     async def test_dispatcher_load_modules_con_placeholder_enabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
         enabled.
         """
-        # Consumption apps with placeholder mode enabled
-        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
-        os.environ["CONTAINER_NAME"] = "test"
-        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "1"
+
         async with self._ctrl as host:
             r = await host.init_worker()
             logs = [log.message for log in r.logs]
@@ -706,15 +706,16 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 "worker_dependencies_path: , customer_dependencies_path: , "
                 "working_directory: , Linux Consumption: True,", logs)
 
+    # Consumption apps with placeholder mode disabled  i.e. worker
+    # is specialized
+    @patch.dict(os.environ, {PYTHON_ISOLATE_WORKER_DEPENDENCIES: '1'})
+    @patch.dict(os.environ, {"CONTAINER_NAME": 'test'})
+    @patch.dict(os.environ, {"WEBSITE_PLACEHOLDER_MODE": '0'})
     async def test_dispatcher_load_modules_con_app_placeholder_disabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
         disabled.
         """
-        # Consumption apps with placeholder mode disabled  i.e. worker
-        # is specialized
-        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
-        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "0"
-        os.environ["CONTAINER_NAME"] = "test"
+
         async with self._ctrl as host:
             r = await host.init_worker()
             logs = [log.message for log in r.logs]

@@ -71,7 +71,7 @@ jobs:
       env:
         AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }} # needed for installing azure-functions-durable while running setup.py
       run: |
-        python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
+        python -m pytest --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
     - name: Codecov
       uses: codecov/codecov-action@v3
       with:

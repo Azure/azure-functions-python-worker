@@ -34,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+    permissions: read-all
     env:
         DEDICATED_DOCKER_TEST: ${{ github.event.inputs.DEDICATED_DOCKER_TEST }}
         CONSUMPTION_DOCKER_TEST: ${{ github.event.inputs.CONSUMPTION_DOCKER_TEST }}

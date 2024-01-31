@@ -214,7 +214,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     """
     host_stdout_logger = logging.getLogger('webhosttests')
     env_variables = {}
-    
 
     @classmethod
     def get_script_dir(cls):
@@ -266,7 +265,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     f'{cls.host_stdout.name}: {cls.host_out}'
                     cls.host_stdout_logger.error(error_message)
                     raise RuntimeError(error_message)
-
 
         except Exception:
             _teardown_func_app(TESTS_ROOT / script_dir)
@@ -322,7 +320,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                             'Captured WebHost log generated during test '
                             '%s from %s :\n%s', test.__name__,
                             self.host_stdout.name, self.host_out)
-                    
                 finally:
                     if test_exception is not None:
                         raise test_exception

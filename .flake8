@@ -12,4 +12,4 @@ exclude = .git, __pycache__, build, dist, .eggs, .github, .local, docs/,
           tests/unittests/broken_functions/syntax_error/main.py,
           .env*, .vscode, venv*, *.venv*
 
-max-line-length = 80
+max-line-length = 88

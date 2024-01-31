@@ -38,7 +38,6 @@ def determine_user_pkg_paths():
 
     home = Path.home()
     pkgs_path = os.path.join(home, PKGS_PATH)
-    venv_pkgs_path = os.path.join(home, VENV_PKGS_PATH)
 
     user_pkg_paths = []
     if minor_version == 6:

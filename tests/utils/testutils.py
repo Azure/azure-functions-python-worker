@@ -800,24 +800,19 @@ class _WebHostProxy:
         self._addr = addr
 
     def is_healthy(self):
-        r = self.request('GET')
+        r = self.request('GET', '', no_prefix=True)
         return 200 <= r.status_code < 300
 
-    def request(self, meth, func_name=None, *args, **kwargs):
+    def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
         params = dict(kwargs.pop('params', {}))
         no_prefix = kwargs.pop('no_prefix', False)
         if 'code' not in params:
             params['code'] = 'testFunctionKey'
-        request_uri = None
 
-        if func_name is not None:
-            request_uri = self._addr + ('/' if no_prefix else '/api/')\
-                + func_name
-        else:
-            request_uri = self._addr
-
-        return request_method(request_uri, *args, params=params, **kwargs)
+        return request_method(
+            self._addr + ('/' if no_prefix else '/api/') + funcname,
+            *args, params=params, **kwargs)
 
     def close(self):
         if self._proc.stdout:

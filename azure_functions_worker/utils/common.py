@@ -2,27 +2,29 @@
 # Licensed under the MIT License.
 import importlib
 import os
-import sys
 import re
+import sys
 from types import ModuleType
-from typing import Optional, Callable
+from typing import Callable, Optional
 
-from azure_functions_worker.constants import CUSTOMER_PACKAGES_PATH, \
-    PYTHON_EXTENSIONS_RELOAD_FUNCTIONS
+from azure_functions_worker.constants import (
+    CUSTOMER_PACKAGES_PATH,
+    PYTHON_EXTENSIONS_RELOAD_FUNCTIONS,
+)
 
 
 def is_true_like(setting: str) -> bool:
     if setting is None:
         return False
 
-    return setting.lower().strip() in {'1', 'true', 't', 'yes', 'y'}
+    return setting.lower().strip() in {"1", "true", "t", "yes", "y"}
 
 
 def is_false_like(setting: str) -> bool:
     if setting is None:
         return False
 
-    return setting.lower().strip() in {'0', 'false', 'f', 'no', 'n'}
+    return setting.lower().strip() in {"0", "false", "f", "no", "n"}
 
 
 def is_envvar_true(env_key: str) -> bool:
@@ -40,14 +42,14 @@ def is_envvar_false(env_key: str) -> bool:
 
 
 def is_python_version(version: str) -> bool:
-    current_version = f'{sys.version_info.major}.{sys.version_info.minor}'
+    current_version = f"{sys.version_info.major}.{sys.version_info.minor}"
     return current_version == version
 
 
 def get_app_setting(
     setting: str,
     default_value: Optional[str] = None,
-    validator: Optional[Callable[[str], bool]] = None
+    validator: Optional[Callable[[str], bool]] = None,
 ) -> Optional[str]:
     """Returns the application setting from environment variable.
 
@@ -101,7 +103,7 @@ def get_sdk_version(module: ModuleType) -> str:
         The SDK version that our customer has installed.
     """
 
-    return getattr(module, '__version__', 'undefined')
+    return getattr(module, "__version__", "undefined")
 
 
 def get_sdk_from_sys_path() -> ModuleType:
@@ -119,38 +121,37 @@ def get_sdk_from_sys_path() -> ModuleType:
         backup_azure_functions = None
         backup_azure = None
 
-        if 'azure.functions' in sys.modules:
-            backup_azure_functions = sys.modules.pop('azure.functions')
-        if 'azure' in sys.modules:
-            backup_azure = sys.modules.pop('azure')
+        if "azure.functions" in sys.modules:
+            backup_azure_functions = sys.modules.pop("azure.functions")
+        if "azure" in sys.modules:
+            backup_azure = sys.modules.pop("azure")
 
-        module = importlib.import_module('azure.functions')
+        module = importlib.import_module("azure.functions")
 
         if backup_azure:
-            sys.modules['azure'] = backup_azure
+            sys.modules["azure"] = backup_azure
         if backup_azure_functions:
-            sys.modules['azure.functions'] = backup_azure_functions
+            sys.modules["azure.functions"] = backup_azure_functions
 
         return module
 
     if CUSTOMER_PACKAGES_PATH not in sys.path:
         sys.path.insert(0, CUSTOMER_PACKAGES_PATH)
 
-    return importlib.import_module('azure.functions')
+    return importlib.import_module("azure.functions")
 
 
 class InvalidFileNameError(Exception):
 
     def __init__(self, file_name: str) -> None:
-        super().__init__(
-            f'Invalid file name: {file_name}')
+        super().__init__(f"Invalid file name: {file_name}")
 
 
 def validate_script_file_name(file_name: str):
     # First character can be a letter, number, or underscore
     # Following characters can be a letter, number, underscore, hyphen, or dash
     # Ending must be .py
-    pattern = re.compile(r'^[a-zA-Z0-9_][a-zA-Z0-9_\-]*\.py$')
+    pattern = re.compile(r"^[a-zA-Z0-9_][a-zA-Z0-9_\-]*\.py$")
     if not pattern.match(file_name):
         raise InvalidFileNameError(file_name)
     return True

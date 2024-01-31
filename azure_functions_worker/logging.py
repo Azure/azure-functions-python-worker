@@ -15,8 +15,7 @@ SYSTEM_ERROR_LOG_PREFIX = "azure_functions_worker_errors"
 
 
 logger: logging.Logger = logging.getLogger(SYSTEM_LOG_PREFIX)
-error_logger: logging.Logger = (
-    logging.getLogger(SYSTEM_ERROR_LOG_PREFIX))
+error_logger: logging.Logger = logging.getLogger(SYSTEM_ERROR_LOG_PREFIX)
 
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
@@ -25,12 +24,13 @@ error_handler: Optional[logging.Handler] = None
 def format_exception(exception: Exception) -> str:
     msg = str(exception) + "\n"
     if (sys.version_info.major, sys.version_info.minor) < (3, 10):
-        msg += ''.join(traceback.format_exception(
-            etype=type(exception),
-            tb=exception.__traceback__,
-            value=exception))
+        msg += "".join(
+            traceback.format_exception(
+                etype=type(exception), tb=exception.__traceback__, value=exception
+            )
+        )
     elif (sys.version_info.major, sys.version_info.minor) >= (3, 10):
-        msg += ''.join(traceback.format_exception(exception))
+        msg += "".join(traceback.format_exception(exception))
     else:
         msg = str(exception)
     return msg
@@ -42,11 +42,10 @@ def setup(log_level, log_destination):
     global handler
     global error_handler
 
-    if log_level == 'TRACE':
-        log_level = 'DEBUG'
+    if log_level == "TRACE":
+        log_level = "DEBUG"
 
-    formatter = logging.Formatter(f'{CONSOLE_LOG_PREFIX}'
-                                  ' %(levelname)s: %(message)s')
+    formatter = logging.Formatter(f"{CONSOLE_LOG_PREFIX}" " %(levelname)s: %(message)s")
 
     if log_destination is None:
         # With no explicit log destination we do split logging,
@@ -57,10 +56,10 @@ def setup(log_level, log_destination):
 
         handler = logging.StreamHandler(sys.stdout)
 
-    elif log_destination in ('stdout', 'stderr'):
+    elif log_destination in ("stdout", "stderr"):
         handler = logging.StreamHandler(getattr(sys, log_destination))
 
-    elif log_destination == 'syslog':
+    elif log_destination == "syslog":
         handler = logging.handlers.SysLogHandler()
 
     else:

@@ -12,4 +12,6 @@ exclude = .git, __pycache__, build, dist, .eggs, .github, .local, docs/,
           tests/unittests/broken_functions/syntax_error/main.py,
           .env*, .vscode, venv*, *.venv*
 
+per-file-ignores=tests/utils/testutils_docker.py:E501
+
 max-line-length = 88

@@ -6,13 +6,14 @@ import azure.functions as func
 
 
 def main(req: func.HttpRequest):
-    logging.info('Python HTTP trigger function processed a request.')
-    resp = func.HttpResponse(
-        "This HTTP triggered function executed successfully.")
+    logging.info("Python HTTP trigger function processed a request.")
+    resp = func.HttpResponse("This HTTP triggered function executed successfully.")
 
-    resp.headers.add("Set-Cookie",
-                     'foo3=42; Domain=example.com; Expires=Thu, 12-Jan-2017 '
-                     '13:55:08 GMT; Path=/; Max-Age=10000000; SecureFalse; '
-                     'HttpOnly')
+    resp.headers.add(
+        "Set-Cookie",
+        "foo3=42; Domain=example.com; Expires=Thu, 12-Jan-2017 "
+        "13:55:08 GMT; Path=/; Max-Age=10000000; SecureFalse; "
+        "HttpOnly",
+    )
 
     return resp

@@ -1,36 +1,45 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import json
 import math
 import os
-import json
 import sys
 from unittest import skipIf
 from unittest.mock import patch
-from azure_functions_worker.utils.common import is_envvar_true
+
 from azure.functions import meta as bind_meta
+
+from azure_functions_worker.bindings.shared_memory_data_transfer import (
+    SharedMemoryConstants as consts,
+)
+from azure_functions_worker.bindings.shared_memory_data_transfer import (
+    SharedMemoryManager,
+)
+from azure_functions_worker.constants import (
+    FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
+)
+from azure_functions_worker.utils.common import is_envvar_true
 from tests.utils import testutils
-from azure_functions_worker.bindings.shared_memory_data_transfer \
-    import SharedMemoryManager
-from azure_functions_worker.bindings.shared_memory_data_transfer \
-    import SharedMemoryConstants as consts
-from azure_functions_worker.constants \
-    import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
 
 
-@skipIf(sys.platform == 'darwin', 'MacOS M1 machines do not correctly test the'
-                                  'shared memory filesystems and thus skipping'
-                                  ' these tests for the time being')
+@skipIf(
+    sys.platform == "darwin",
+    "MacOS M1 machines do not correctly test the"
+    "shared memory filesystems and thus skipping"
+    " these tests for the time being",
+)
 class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
     """
     Tests for SharedMemoryManager.
     """
+
     def setUp(self):
         env = os.environ.copy()
-        env['FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED'] = "true"
-        self.mock_environ = patch.dict('os.environ', env)
-        self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
-        self.mock_sys_path = patch('sys.path', sys.path.copy())
+        env["FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED"] = "true"
+        self.mock_environ = patch.dict("os.environ", env)
+        self.mock_sys_module = patch.dict("sys.modules", sys.modules.copy())
+        self.mock_sys_path = patch("sys.path", sys.path.copy())
         self.mock_environ.start()
         self.mock_sys_module.start()
         self.mock_sys_path.start()
@@ -48,15 +57,16 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
 
         # Make sure shared memory data transfer is enabled
         was_shmem_env_true = is_envvar_true(
-            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
-        os.environ.update(
-            {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '1'})
+            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
+        )
+        os.environ.update({FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: "1"})
         manager = SharedMemoryManager()
         self.assertTrue(manager.is_enabled())
         # Restore the env variable to original value
         if not was_shmem_env_true:
             os.environ.update(
-                {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '0'})
+                {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: "0"}
+            )
 
     def test_is_disabled(self):
         """
@@ -65,15 +75,16 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         """
         # Make sure shared memory data transfer is disabled
         was_shmem_env_true = is_envvar_true(
-            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
-        os.environ.update(
-            {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '0'})
+            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
+        )
+        os.environ.update({FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: "0"})
         manager = SharedMemoryManager()
         self.assertFalse(manager.is_enabled())
         # Restore the env variable to original value
         if was_shmem_env_true:
             os.environ.update(
-                {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '1'})
+                {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: "1"}
+            )
 
     def test_bytes_input_support(self):
         """
@@ -84,7 +95,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         manager = SharedMemoryManager()
         content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
         content = self.get_random_bytes(content_size)
-        bytes_datum = bind_meta.Datum(type='bytes', value=content)
+        bytes_datum = bind_meta.Datum(type="bytes", value=content)
         is_supported = manager.is_supported(bytes_datum)
         self.assertTrue(is_supported)
 
@@ -98,7 +109,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
         num_chars = math.floor(content_size / consts.SIZE_OF_CHAR_BYTES)
         content = self.get_random_string(num_chars)
-        bytes_datum = bind_meta.Datum(type='string', value=content)
+        bytes_datum = bind_meta.Datum(type="string", value=content)
         is_supported = manager.is_supported(bytes_datum)
         self.assertTrue(is_supported)
 
@@ -108,7 +119,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         This input is int.
         """
         manager = SharedMemoryManager()
-        datum = bind_meta.Datum(type='int', value=1)
+        datum = bind_meta.Datum(type="int", value=1)
         is_supported = manager.is_supported(datum)
         self.assertFalse(is_supported)
 
@@ -118,7 +129,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         This input is double.
         """
         manager = SharedMemoryManager()
-        datum = bind_meta.Datum(type='double', value=1.0)
+        datum = bind_meta.Datum(type="double", value=1.0)
         is_supported = manager.is_supported(datum)
         self.assertFalse(is_supported)
 
@@ -128,11 +139,8 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         This input is json.
         """
         manager = SharedMemoryManager()
-        content = {
-            'name': 'foo',
-            'val': 'bar'
-        }
-        datum = bind_meta.Datum(type='json', value=json.dumps(content))
+        content = {"name": "foo", "val": "bar"}
+        datum = bind_meta.Datum(type="json", value=json.dumps(content))
         is_supported = manager.is_supported(datum)
         self.assertFalse(is_supported)
 
@@ -142,8 +150,8 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         This input is collection_string.
         """
         manager = SharedMemoryManager()
-        content = ['foo', 'bar']
-        datum = bind_meta.Datum(type='collection_string', value=content)
+        content = ["foo", "bar"]
+        datum = bind_meta.Datum(type="collection_string", value=content)
         is_supported = manager.is_supported(datum)
         self.assertFalse(is_supported)
 
@@ -153,8 +161,8 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         This input is collection_bytes.
         """
         manager = SharedMemoryManager()
-        content = [b'x01', b'x02']
-        datum = bind_meta.Datum(type='collection_bytes', value=content)
+        content = [b"x01", b"x02"]
+        datum = bind_meta.Datum(type="collection_bytes", value=content)
         is_supported = manager.is_supported(datum)
         self.assertFalse(is_supported)
 
@@ -165,7 +173,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         """
         manager = SharedMemoryManager()
         content = [1.0, 2.0]
-        datum = bind_meta.Datum(type='collection_double', value=content)
+        datum = bind_meta.Datum(type="collection_double", value=content)
         is_supported = manager.is_supported(datum)
         self.assertFalse(is_supported)
 
@@ -176,7 +184,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         """
         manager = SharedMemoryManager()
         content = [1, 2]
-        datum = bind_meta.Datum(type='collection_sint64', value=content)
+        datum = bind_meta.Datum(type="collection_sint64", value=content)
         is_supported = manager.is_supported(datum)
         self.assertFalse(is_supported)
 
@@ -190,8 +198,8 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         content_size = consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER + 10
         # Not using get_random_bytes to avoid slowing down for creating a large
         # random input
-        content = b'x01' * content_size
-        bytes_datum = bind_meta.Datum(type='bytes', value=content)
+        content = b"x01" * content_size
+        bytes_datum = bind_meta.Datum(type="bytes", value=content)
         is_supported = manager.is_supported(bytes_datum)
         self.assertFalse(is_supported)
 
@@ -204,7 +212,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         manager = SharedMemoryManager()
         content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER - 10
         content = self.get_random_bytes(content_size)
-        bytes_datum = bind_meta.Datum(type='bytes', value=content)
+        bytes_datum = bind_meta.Datum(type="bytes", value=content)
         is_supported = manager.is_supported(bytes_datum)
         self.assertFalse(is_supported)
 
@@ -219,8 +227,8 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         num_chars = math.floor(content_size / consts.SIZE_OF_CHAR_BYTES)
         # Not using get_random_string to avoid slowing down for creating a large
         # random input
-        content = 'a' * num_chars
-        string_datum = bind_meta.Datum(type='string', value=content)
+        content = "a" * num_chars
+        string_datum = bind_meta.Datum(type="string", value=content)
         is_supported = manager.is_supported(string_datum)
         self.assertFalse(is_supported)
 
@@ -234,7 +242,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER - 10
         num_chars = math.floor(content_size / consts.SIZE_OF_CHAR_BYTES)
         content = self.get_random_string(num_chars)
-        string_datum = bind_meta.Datum(type='string', value=content)
+        string_datum = bind_meta.Datum(type="string", value=content)
         is_supported = manager.is_supported(string_datum)
         self.assertFalse(is_supported)
 
@@ -273,8 +281,9 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         shared_mem_meta = manager.put_bytes(content)
         mem_map_name = shared_mem_meta.mem_map_name
         num_bytes_written = shared_mem_meta.count_bytes
-        read_content = manager.get_bytes(mem_map_name, offset=0,
-                                         count=num_bytes_written)
+        read_content = manager.get_bytes(
+            mem_map_name, offset=0, count=num_bytes_written
+        )
         self.assertEqual(content, read_content)
         free_success = manager.free_mem_map(mem_map_name)
         self.assertTrue(free_success)
@@ -288,7 +297,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
         num_chars = math.floor(content_size / consts.SIZE_OF_CHAR_BYTES)
         content = self.get_random_string(num_chars)
-        expected_size = len(content.encode('utf-8'))
+        expected_size = len(content.encode("utf-8"))
         shared_mem_meta = manager.put_string(content)
         self.assertIsNotNone(shared_mem_meta)
         self.assertTrue(self.is_valid_uuid(shared_mem_meta.mem_map_name))
@@ -317,8 +326,9 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         shared_mem_meta = manager.put_string(content)
         mem_map_name = shared_mem_meta.mem_map_name
         num_bytes_written = shared_mem_meta.count_bytes
-        read_content = manager.get_string(mem_map_name, offset=0,
-                                          count=num_bytes_written)
+        read_content = manager.get_string(
+            mem_map_name, offset=0, count=num_bytes_written
+        )
         self.assertEqual(content, read_content)
         free_success = manager.free_mem_map(mem_map_name)
         self.assertTrue(free_success)

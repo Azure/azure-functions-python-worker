@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import json
+
 import azure.functions as func
 
 
@@ -11,7 +12,5 @@ def main(req: func.HttpRequest, r: func.Out[func.SqlRow]) -> func.HttpResponse:
     r.set(row)
 
     return func.HttpResponse(
-        body=req.get_body(),
-        status_code=201,
-        mimetype="application/json"
+        body=req.get_body(), status_code=201, mimetype="application/json"
     )

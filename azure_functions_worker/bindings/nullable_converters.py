@@ -6,8 +6,9 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from azure_functions_worker import protos
 
 
-def to_nullable_string(nullable: Optional[str], property_name: str) -> \
-        Optional[protos.NullableString]:
+def to_nullable_string(
+    nullable: Optional[str], property_name: str
+) -> Optional[protos.NullableString]:
     """Converts string input to an 'NullableString' to be sent through the
     RPC layer. Input that is not a string but is also not null or undefined
     logs a function app level warning.
@@ -23,13 +24,15 @@ def to_nullable_string(nullable: Optional[str], property_name: str) -> \
     if nullable is not None:
         raise TypeError(
             f"A 'str' type was expected instead of a '{type(nullable)}' "
-            f"type. Cannot parse value {nullable} of '{property_name}'.")
+            f"type. Cannot parse value {nullable} of '{property_name}'."
+        )
 
     return None
 
 
-def to_nullable_bool(nullable: Optional[bool], property_name: str) -> \
-        Optional[protos.NullableBool]:
+def to_nullable_bool(
+    nullable: Optional[bool], property_name: str
+) -> Optional[protos.NullableBool]:
     """Converts boolean input to an 'NullableBool' to be sent through the
     RPC layer. Input that is not a boolean but is also not null or undefined
     logs a function app level warning.
@@ -45,14 +48,15 @@ def to_nullable_bool(nullable: Optional[bool], property_name: str) -> \
     if nullable is not None:
         raise TypeError(
             f"A 'bool' type was expected instead of a '{type(nullable)}' "
-            f"type. Cannot parse value {nullable} of '{property_name}'.")
+            f"type. Cannot parse value {nullable} of '{property_name}'."
+        )
 
     return None
 
 
-def to_nullable_double(nullable: Optional[Union[str, int, float]],
-                       property_name: str) -> \
-        Optional[protos.NullableDouble]:
+def to_nullable_double(
+    nullable: Optional[Union[str, int, float]], property_name: str
+) -> Optional[protos.NullableDouble]:
     """Converts int or float or str that parses to a number to an
     'NullableDouble' to be sent through the RPC layer. Input that is not a
     valid number but is also not null or undefined logs a function app level
@@ -72,20 +76,22 @@ def to_nullable_double(nullable: Optional[Union[str, int, float]],
             return protos.NullableDouble(value=float(nullable))
         except Exception:
             raise TypeError(
-                f"Cannot parse value {nullable} of '{property_name}' to "
-                f"float.")
+                f"Cannot parse value {nullable} of '{property_name}' to " f"float."
+            )
 
     if nullable is not None:
         raise TypeError(
             f"A 'int' or 'float'"
             f" type was expected instead of a '{type(nullable)}' "
-            f"type. Cannot parse value {nullable} of '{property_name}'.")
+            f"type. Cannot parse value {nullable} of '{property_name}'."
+        )
 
     return None
 
 
-def to_nullable_timestamp(date_time: Optional[Union[datetime, int]],
-                          property_name: str) -> protos.NullableTimestamp:
+def to_nullable_timestamp(
+    date_time: Optional[Union[datetime, int]], property_name: str
+) -> protos.NullableTimestamp:
     """Converts Date or number input to an 'NullableTimestamp' to be sent
     through the RPC layer. Input that is not a Date or number but is also
     not null or undefined logs a function app level warning.
@@ -97,15 +103,17 @@ def to_nullable_timestamp(date_time: Optional[Union[datetime, int]],
     """
     if date_time is not None:
         try:
-            time_in_seconds = date_time if isinstance(date_time,
-                                                      int) else \
-                date_time.timestamp()
+            time_in_seconds = (
+                date_time if isinstance(date_time, int) else date_time.timestamp()
+            )
 
             return protos.NullableTimestamp(
-                value=Timestamp(seconds=int(time_in_seconds)))
+                value=Timestamp(seconds=int(time_in_seconds))
+            )
         except Exception:
             raise TypeError(
                 f"A 'datetime' or 'int'"
                 f" type was expected instead of a '{type(date_time)}' "
-                f"type. Cannot parse value {date_time} of '{property_name}'.")
+                f"type. Cannot parse value {date_time} of '{property_name}'."
+            )
     return None

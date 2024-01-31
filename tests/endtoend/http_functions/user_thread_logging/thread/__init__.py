@@ -9,11 +9,11 @@ import azure.functions as func
 
 
 def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
-    logging.info('Before threads.')
+    logging.info("Before threads.")
 
-    t1 = threading.Thread(target=thread_function, args=(context, 'Thread1 used.'))
-    t2 = threading.Thread(target=thread_function, args=(context, 'Thread2 used.'))
-    t3 = threading.Thread(target=thread_function, args=(context, 'Thread3 used.'))
+    t1 = threading.Thread(target=thread_function, args=(context, "Thread1 used."))
+    t2 = threading.Thread(target=thread_function, args=(context, "Thread2 used."))
+    t3 = threading.Thread(target=thread_function, args=(context, "Thread3 used."))
 
     t1.start()
     t2.start()
@@ -23,9 +23,11 @@ def main(req: func.HttpRequest, context: func.Context) -> func.HttpResponse:
     t2.join()
     t3.join()
 
-    logging.info('After threads.')
+    logging.info("After threads.")
 
-    return func.HttpResponse('This HTTP triggered function executed successfully.', status_code=200)
+    return func.HttpResponse(
+        "This HTTP triggered function executed successfully.", status_code=200
+    )
 
 
 def thread_function(context: func.Context, message: str):

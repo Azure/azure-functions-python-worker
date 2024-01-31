@@ -20,6 +20,7 @@ class RetryPolicy(Enum):
 @dataclass
 class RetryContext:
     """Gets the current retry count from retry-context"""
+
     retry_count: int
 
     """Gets the max retry count from retry-context"""

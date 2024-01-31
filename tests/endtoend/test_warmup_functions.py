@@ -18,10 +18,10 @@ class TestWarmupFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'warmup_functions'
+        return testutils.E2E_TESTS_FOLDER / "warmup_functions"
 
     def test_warmup(self):
-        r = self.webhost.request('GET', 'admin/warmup', no_prefix=True)
+        r = self.webhost.request("GET", "admin/warmup", no_prefix=True)
 
         self.assertTrue(r.ok)
 
@@ -33,5 +33,6 @@ class TestWarmupFunctionsStein(TestWarmupFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'warmup_functions' / \
-                                            'warmup_functions_stein'
+        return (
+            testutils.E2E_TESTS_FOLDER / "warmup_functions" / "warmup_functions_stein"
+        )

@@ -23,14 +23,17 @@ class TestFunctionsRegistry(unittest.TestCase):
 
     def test_add_indexed_function_invalid_direction(self):
         trigger1 = HttpTrigger(name="req1", route="test")
-        binding = BlobInput(name="$return", path="testpath",
-                            connection="testconnection")
+        binding = BlobInput(
+            name="$return", path="testpath", connection="testconnection"
+        )
         self.func.add_trigger(trigger=trigger1)
         self.func.add_binding(binding=binding)
 
         with self.assertRaises(FunctionLoadError) as ex:
             self.function_registry.add_indexed_function(function=self.func)
 
-        self.assertEqual(str(ex.exception),
-                         'cannot load the dummy function: \"$return\" '
-                         'binding must have direction set to \"out\"')
+        self.assertEqual(
+            str(ex.exception),
+            'cannot load the dummy function: "$return" '
+            'binding must have direction set to "out"',
+        )

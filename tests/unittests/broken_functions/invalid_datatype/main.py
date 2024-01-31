@@ -4,4 +4,4 @@ import azure.functions as azf
 
 
 def main(req: azf.HttpResponse):
-    return 'This function should fail!!'
+    return "This function should fail!!"

@@ -2,21 +2,23 @@
 # Licensed under the MIT License.
 import os
 
+from azure_functions_worker.constants import (
+    PYTHON_SCRIPT_FILE_NAME,
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+)
 from tests.utils import testutils
-from azure_functions_worker.constants import \
-    PYTHON_SCRIPT_FILE_NAME, PYTHON_SCRIPT_FILE_NAME_DEFAULT
 
-DEFAULT_SCRIPT_FILE_NAME_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'file_name_functions' / \
-    'default_file_name'
+DEFAULT_SCRIPT_FILE_NAME_DIR = (
+    testutils.UNIT_TESTS_FOLDER / "file_name_functions" / "default_file_name"
+)
 
-NEW_SCRIPT_FILE_NAME_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'file_name_functions' / \
-    'new_file_name'
+NEW_SCRIPT_FILE_NAME_DIR = (
+    testutils.UNIT_TESTS_FOLDER / "file_name_functions" / "new_file_name"
+)
 
-INVALID_SCRIPT_FILE_NAME_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'file_name_functions' / \
-    'invalid_file_name'
+INVALID_SCRIPT_FILE_NAME_DIR = (
+    testutils.UNIT_TESTS_FOLDER / "file_name_functions" / "invalid_file_name"
+)
 
 
 class TestDefaultScriptFileName(testutils.WebHostTestCase):
@@ -37,8 +39,9 @@ class TestDefaultScriptFileName(testutils.WebHostTestCase):
         Test the default file name
         """
         self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
-        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
-                         PYTHON_SCRIPT_FILE_NAME_DEFAULT)
+        self.assertEqual(
+            os.environ.get(PYTHON_SCRIPT_FILE_NAME), PYTHON_SCRIPT_FILE_NAME_DEFAULT
+        )
 
 
 class TestNewScriptFileName(testutils.WebHostTestCase):
@@ -59,8 +62,7 @@ class TestNewScriptFileName(testutils.WebHostTestCase):
         Test the new file name
         """
         self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
-        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
-                         'test.py')
+        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME), "test.py")
 
 
 class TestInvalidScriptFileName(testutils.WebHostTestCase):
@@ -81,5 +83,4 @@ class TestInvalidScriptFileName(testutils.WebHostTestCase):
         Test the invalid file name
         """
         self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
-        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
-                         'main')
+        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME), "main")

@@ -10,65 +10,62 @@ class TestMockHost(testutils.AsyncTestCase):
         async with testutils.start_mockhost() as host:
 
             await host.init_worker("4.17.1")
-            await host.load_function('sync_logging')
+            await host.load_function("sync_logging")
 
             invoke_id, r = await host.invoke_function(
-                'sync_logging', [
+                "sync_logging",
+                [
                     protos.ParameterBinding(
-                        name='req',
-                        data=protos.TypedData(
-                            http=protos.RpcHttp(
-                                method='GET')))
-                ])
+                        name="req",
+                        data=protos.TypedData(http=protos.RpcHttp(method="GET")),
+                    )
+                ],
+            )
 
-            self.assertEqual(r.response.result.status,
-                             protos.StatusResult.Success)
+            self.assertEqual(r.response.result.status, protos.StatusResult.Success)
 
-            user_logs = [line for line in r.logs
-                         if line.category == 'my function']
+            user_logs = [line for line in r.logs if line.category == "my function"]
             # 2 log statements added (critical and error) in sync_logging
             self.assertEqual(len(user_logs), 2)
 
             log = user_logs[0]
             self.assertEqual(log.invocation_id, invoke_id)
-            self.assertTrue(log.message.startswith(
-                'a gracefully handled error'))
+            self.assertTrue(log.message.startswith("a gracefully handled error"))
 
-            self.assertEqual(r.response.return_value.string, 'OK-sync')
+            self.assertEqual(r.response.return_value.string, "OK-sync")
 
     async def test_call_async_function_check_logs(self):
         async with testutils.start_mockhost() as host:
 
             await host.init_worker("4.17.1")
-            await host.load_function('async_logging')
+            await host.load_function("async_logging")
 
             invoke_id, r = await host.invoke_function(
-                'async_logging', [
+                "async_logging",
+                [
                     protos.ParameterBinding(
-                        name='req',
-                        data=protos.TypedData(
-                            http=protos.RpcHttp(
-                                method='GET')))
-                ])
+                        name="req",
+                        data=protos.TypedData(http=protos.RpcHttp(method="GET")),
+                    )
+                ],
+            )
 
-            self.assertEqual(r.response.result.status,
-                             protos.StatusResult.Success)
+            self.assertEqual(r.response.result.status, protos.StatusResult.Success)
 
-            user_logs = [line for line in r.logs if
-                         line.category == 'my function']
+            user_logs = [line for line in r.logs if line.category == "my function"]
             self.assertEqual(len(user_logs), 2)
 
             first_msg = user_logs[0]
             self.assertEqual(first_msg.invocation_id, invoke_id)
-            self.assertEqual(first_msg.message, 'hello info')
+            self.assertEqual(first_msg.message, "hello info")
             self.assertEqual(first_msg.level, protos.RpcLog.Information)
 
             second_msg = user_logs[1]
             self.assertEqual(second_msg.invocation_id, invoke_id)
-            self.assertTrue(second_msg.message.startswith('and another error'))
+            self.assertTrue(second_msg.message.startswith("and another error"))
             self.assertEqual(second_msg.level, protos.RpcLog.Error)
 
-            self.assertEqual(r.response.return_value.string, 'OK-async')
+            self.assertEqual(r.response.return_value.string, "OK-async")
 
     async def test_handles_unsupported_messages_gracefully(self):
         async with testutils.start_mockhost() as host:
@@ -78,10 +75,9 @@ class TestMockHost(testutils.AsyncTestCase):
             # their operation.  If anything, the host can always
             # terminate the worker.
             await host.send(
-                protos.StreamingMessage(
-                    worker_heartbeat=protos.WorkerHeartbeat()))
+                protos.StreamingMessage(worker_heartbeat=protos.WorkerHeartbeat())
+            )
 
             await host.init_worker("4.17.1")
-            _, r = await host.load_function('return_out')
-            self.assertEqual(r.response.result.status,
-                             protos.StatusResult.Success)
+            _, r = await host.load_function("return_out")
+            self.assertEqual(r.response.result.status, protos.StatusResult.Success)

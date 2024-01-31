@@ -4,6 +4,7 @@
 import mmap
 from abc import ABCMeta, abstractmethod
 from typing import Optional
+
 from .shared_memory_constants import SharedMemoryConstants as consts
 
 
@@ -18,12 +19,11 @@ class FileAccessor(metaclass=ABCMeta):
     Note: Platform specific details of mmap can be found in the official docs:
           https://docs.python.org/3/library/mmap.html
     """
+
     @abstractmethod
     def open_mem_map(
-            self,
-            mem_map_name: str,
-            mem_map_size: int,
-            access: int = mmap.ACCESS_READ) -> Optional[mmap.mmap]:
+        self, mem_map_name: str, mem_map_size: int, access: int = mmap.ACCESS_READ
+    ) -> Optional[mmap.mmap]:
         """
         Opens an existing memory map.
         Returns the opened mmap if successful, None otherwise.
@@ -31,8 +31,9 @@ class FileAccessor(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def create_mem_map(self, mem_map_name: str, mem_map_size: int) \
-            -> Optional[mmap.mmap]:
+    def create_mem_map(
+        self, mem_map_name: str, mem_map_size: int
+    ) -> Optional[mmap.mmap]:
         """
         Creates a new memory map.
         Returns the created mmap if successful, None otherwise.
@@ -85,12 +86,14 @@ class FileAccessor(metaclass=ABCMeta):
 
 
 class DummyFileAccessor(FileAccessor):
-    def open_mem_map(self, mem_map_name: str, mem_map_size: int,
-                     access: int = mmap.ACCESS_READ) -> Optional[mmap.mmap]:
+    def open_mem_map(
+        self, mem_map_name: str, mem_map_size: int, access: int = mmap.ACCESS_READ
+    ) -> Optional[mmap.mmap]:
         pass
 
-    def create_mem_map(self, mem_map_name: str,
-                       mem_map_size: int) -> Optional[mmap.mmap]:
+    def create_mem_map(
+        self, mem_map_name: str, mem_map_size: int
+    ) -> Optional[mmap.mmap]:
         pass
 
     def delete_mem_map(self, mem_map_name: str, mem_map: mmap.mmap) -> bool:

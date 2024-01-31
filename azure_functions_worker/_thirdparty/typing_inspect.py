@@ -12,18 +12,23 @@ Example usage::
 # NOTE: This module must support Python 2.7 in addition to Python 3.x
 
 import sys
+
 NEW_TYPING = sys.version_info[:3] >= (3, 7, 0)  # PEP 560
 if NEW_TYPING:
     import collections.abc
 
 if NEW_TYPING:
-    from typing import (
-        Generic, Callable, Union, TypeVar, ClassVar, Tuple, _GenericAlias
-    )
+    from typing import Callable, ClassVar, Generic, Tuple, TypeVar, Union, _GenericAlias
 else:
     from typing import (
-        Callable, CallableMeta, Union, _Union, TupleMeta, TypeVar,
-        _ClassVar, GenericMeta,
+        Callable,
+        CallableMeta,
+        GenericMeta,
+        TupleMeta,
+        TypeVar,
+        Union,
+        _ClassVar,
+        _Union,
     )
 
 NEW_39_TYPING = sys.version_info[:3] >= (3, 9, 0)  # PEP 560
@@ -37,7 +42,7 @@ if NEW_39_TYPING:
 def _gorg(cls):
     """This function exists for compatibility with old typing versions."""
     assert isinstance(cls, GenericMeta)
-    if hasattr(cls, '_gorg'):
+    if hasattr(cls, "_gorg"):
         return cls._gorg
     while cls.__origin__ is not None:
         cls = cls.__origin__
@@ -63,16 +68,26 @@ def is_generic_type(tp):
         is_generic_type(Sequence[Union[str, bytes]]) == True
     """
     if NEW_39_TYPING:
-        return (isinstance(tp, type) and issubclass(tp, Generic)
-                or ((isinstance(tp, _GenericAlias) or isinstance(tp, _SpecialGenericAlias))  # NoQA E501
-                and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable)))  # NoQA E501
+        return (
+            isinstance(tp, type)
+            and issubclass(tp, Generic)
+            or (
+                (
+                    isinstance(tp, _GenericAlias)
+                    or isinstance(tp, _SpecialGenericAlias)
+                )  # NoQA E501
+                and tp.__origin__
+                not in (Union, tuple, ClassVar, collections.abc.Callable)
+            )
+        )  # NoQA E501
     if NEW_TYPING:
-        return (isinstance(tp, type)
-                and issubclass(tp, Generic)
-                or isinstance(tp, _GenericAlias)
-                and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable))  # NoQA E501
-    return (isinstance(tp, GenericMeta) and not
-            isinstance(tp, (CallableMeta, TupleMeta)))
+        return (
+            isinstance(tp, type)
+            and issubclass(tp, Generic)
+            or isinstance(tp, _GenericAlias)
+            and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable)
+        )  # NoQA E501
+    return isinstance(tp, GenericMeta) and not isinstance(tp, (CallableMeta, TupleMeta))
 
 
 def is_callable_type(tp):
@@ -95,10 +110,14 @@ def is_callable_type(tp):
         get_origin(tp) is collections.abc.Callable  # Callable prior to Python 3.7  # NoQA E501
     """
     if NEW_TYPING:
-        return (tp is Callable or isinstance(tp, _GenericAlias) and
-                tp.__origin__ is collections.abc.Callable or
-                isinstance(tp, type) and issubclass(tp, Generic) and
-                issubclass(tp, collections.abc.Callable))
+        return (
+            tp is Callable
+            or isinstance(tp, _GenericAlias)
+            and tp.__origin__ is collections.abc.Callable
+            or isinstance(tp, type)
+            and issubclass(tp, Generic)
+            and issubclass(tp, collections.abc.Callable)
+        )
     return type(tp) is CallableMeta
 
 
@@ -121,33 +140,36 @@ def is_tuple_type(tp):
         get_origin(tp) is tuple  # Tuple prior to Python 3.7
     """
     if NEW_TYPING:
-        return (tp is Tuple or isinstance(tp, _GenericAlias) and
-                tp.__origin__ is tuple or
-                isinstance(tp, type) and issubclass(tp, Generic) and
-                issubclass(tp, tuple))
+        return (
+            tp is Tuple
+            or isinstance(tp, _GenericAlias)
+            and tp.__origin__ is tuple
+            or isinstance(tp, type)
+            and issubclass(tp, Generic)
+            and issubclass(tp, tuple)
+        )
     return type(tp) is TupleMeta
 
 
 def is_union_type(tp):
     """Test if the type is a union type. Examples::
 
-        is_union_type(int) == False
-        is_union_type(Union) == True
-        is_union_type(Union[int, int]) == False
-        is_union_type(Union[T, int]) == True
+    is_union_type(int) == False
+    is_union_type(Union) == True
+    is_union_type(Union[int, int]) == False
+    is_union_type(Union[T, int]) == True
     """
     if NEW_TYPING:
-        return (tp is Union or
-                isinstance(tp, _GenericAlias) and tp.__origin__ is Union)
+        return tp is Union or isinstance(tp, _GenericAlias) and tp.__origin__ is Union
     return type(tp) is _Union
 
 
 def is_typevar(tp):
     """Test if the type represents a type variable. Examples::
 
-        is_typevar(int) == False
-        is_typevar(T) == True
-        is_typevar(Union[T, int]) == False
+    is_typevar(int) == False
+    is_typevar(T) == True
+    is_typevar(Union[T, int]) == False
     """
 
     return type(tp) is TypeVar
@@ -156,14 +178,17 @@ def is_typevar(tp):
 def is_classvar(tp):
     """Test if the type represents a class variable. Examples::
 
-        is_classvar(int) == False
-        is_classvar(ClassVar) == True
-        is_classvar(ClassVar[int]) == True
-        is_classvar(ClassVar[List[T]]) == True
+    is_classvar(int) == False
+    is_classvar(ClassVar) == True
+    is_classvar(ClassVar[int]) == True
+    is_classvar(ClassVar[List[T]]) == True
     """
     if NEW_TYPING:
-        return (tp is ClassVar or
-                isinstance(tp, _GenericAlias) and tp.__origin__ is ClassVar)
+        return (
+            tp is ClassVar
+            or isinstance(tp, _GenericAlias)
+            and tp.__origin__ is ClassVar
+        )
     return type(tp) is _ClassVar
 
 
@@ -180,10 +205,11 @@ def get_last_origin(tp):
         get_last_origin(List) == List
     """
     if NEW_TYPING:
-        raise ValueError('This function is only supported in Python 3.6,'
-                         ' use get_origin instead')
+        raise ValueError(
+            "This function is only supported in Python 3.6," " use get_origin instead"
+        )
     sentinel = object()
-    origin = getattr(tp, '__origin__', sentinel)
+    origin = getattr(tp, "__origin__", sentinel)
     if origin is sentinel:
         return None
     if origin is None:
@@ -232,13 +258,19 @@ def get_parameters(tp):
         get_parameters(Mapping[T, Tuple[S_co, T]]) == (T, S_co)
     """
     if NEW_TYPING:
-        if (isinstance(tp, _GenericAlias) or isinstance(tp, type) and
-            issubclass(tp, Generic) and tp is not Generic):   # NoQA E129
+        if (
+            isinstance(tp, _GenericAlias)
+            or isinstance(tp, type)
+            and issubclass(tp, Generic)
+            and tp is not Generic
+        ):  # NoQA E129
             return tp.__parameters__
         return ()
     if (
-        is_generic_type(tp) or is_union_type(tp) or
-        is_callable_type(tp) or is_tuple_type(tp)
+        is_generic_type(tp)
+        or is_union_type(tp)
+        or is_callable_type(tp)
+        or is_tuple_type(tp)
     ):
         return tp.__parameters__ if tp.__parameters__ is not None else ()
     return ()
@@ -246,24 +278,27 @@ def get_parameters(tp):
 
 def get_last_args(tp):
     """Get last arguments of (multiply) subscripted type.
-       Parameters for Callable are flattened. Examples::
+    Parameters for Callable are flattened. Examples::
 
-        get_last_args(int) == ()
-        get_last_args(Union) == ()
-        get_last_args(ClassVar[int]) == (int,)
-        get_last_args(Union[T, int]) == (T, int)
-        get_last_args(Iterable[Tuple[T, S]][int, T]) == (int, T)
-        get_last_args(Callable[[T], int]) == (T, int)
-        get_last_args(Callable[[], int]) == (int,)
+     get_last_args(int) == ()
+     get_last_args(Union) == ()
+     get_last_args(ClassVar[int]) == (int,)
+     get_last_args(Union[T, int]) == (T, int)
+     get_last_args(Iterable[Tuple[T, S]][int, T]) == (int, T)
+     get_last_args(Callable[[T], int]) == (T, int)
+     get_last_args(Callable[[], int]) == (int,)
     """
     if NEW_TYPING:
-        raise ValueError('This function is only supported in Python 3.6,'
-                         ' use get_args instead')
+        raise ValueError(
+            "This function is only supported in Python 3.6," " use get_args instead"
+        )
     if is_classvar(tp):
         return (tp.__type__,) if tp.__type__ is not None else ()
     if (
-        is_generic_type(tp) or is_union_type(tp) or
-        is_callable_type(tp) or is_tuple_type(tp)
+        is_generic_type(tp)
+        or is_union_type(tp)
+        or is_callable_type(tp)
+        or is_tuple_type(tp)
     ):
         return tp.__args__ if tp.__args__ is not None else ()
     return ()
@@ -309,18 +344,22 @@ def get_args(tp, evaluate=None):
     """
     if NEW_TYPING:
         if evaluate is not None and not evaluate:
-            raise ValueError('evaluate can only be True in Python 3.7')
+            raise ValueError("evaluate can only be True in Python 3.7")
         if isinstance(tp, _GenericAlias):
             res = tp.__args__
-            if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:    # NoQA E501
+            if (
+                get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis
+            ):  # NoQA E501
                 res = (list(res[:-1]), res[-1])
             return res
         return ()
     if is_classvar(tp):
         return (tp.__type__,)
     if (
-        is_generic_type(tp) or is_union_type(tp) or
-        is_callable_type(tp) or is_tuple_type(tp)
+        is_generic_type(tp)
+        or is_union_type(tp)
+        or is_callable_type(tp)
+        or is_tuple_type(tp)
     ):
         tree = tp._subs_tree()
         if isinstance(tree, tuple) and len(tree) > 1:
@@ -346,7 +385,7 @@ def get_generic_type(obj):
         get_generic_type(1) == int
     """
 
-    gen_type = getattr(obj, '__orig_class__', None)
+    gen_type = getattr(obj, "__orig_class__", None)
     return gen_type if gen_type is not None else type(obj)
 
 
@@ -360,7 +399,7 @@ def get_generic_bases(tp):
         get_generic_bases(MyClass) == (List[int], Mapping[str, List[int]])
     """
 
-    return getattr(tp, '__orig_bases__', ())
+    return getattr(tp, "__orig_bases__", ())
 
 
 def typed_dict_keys(td):

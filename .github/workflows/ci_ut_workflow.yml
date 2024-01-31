@@ -22,10 +22,16 @@ jobs:
   build:
     name: "Python UT CI Run"
     runs-on: ubuntu-latest
+    env:
+      # Set the environment variable based on the trigger
+      ARCHIVE_WEBHOST_LOGGING: ${{
+        (github.event_name == 'schedule') ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.archive_webhost_logging == 'true')
+        }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ 3.7, 3.8, 3.9, "3.10", "3.11" ]
+        python-version: [ 3.7, 3.8, 3.9, "3.10", "3.11", "3.12" ]
     permissions: read-all
     steps:
     - uses: actions/checkout@v4
@@ -68,7 +74,6 @@ jobs:
     - name: Test with pytest
       env:
         AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }} # needed for installing azure-functions-durable while running setup.py
-        ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
       run: |
         python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
     - name: Codecov

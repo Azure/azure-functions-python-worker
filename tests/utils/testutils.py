@@ -260,7 +260,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                                             stdout=cls.host_stdout)
             if not cls.webhost.is_healthy():
                 cls.host_out = cls.host_stdout.read()
-                if cls.host_out:
+                if cls.host_out is not None and len(cls.host_out) > 0:
                     error_message = 'WebHost is not started correctly. '
                     f'{cls.host_stdout.name}: {cls.host_out}'
                     cls.host_stdout_logger.error(error_message)
@@ -288,8 +288,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                         f"{version_info.minor}_webhost.log"
                     )
                     with open(log_file, 'w+') as file:
-                        cls.host_stdout.seek(0)
-                        content = cls.host_stdout.read()
                         file.write(content)
 
             cls.host_stdout.close()

@@ -294,6 +294,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                     PYTHON_THREADPOOL_THREAD_COUNT,
                     PYTHON_THREADPOOL_THREAD_COUNT_MIN)
 
+    @patch.dict(os.environ,
+                {PYTHON_THREADPOOL_THREAD_COUNT:
+                    f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}'},
+                clear=True)
     async def test_sync_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             async with self._ctrl as host:

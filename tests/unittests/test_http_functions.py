@@ -7,7 +7,6 @@ import pathlib
 import sys
 import typing
 from unittest import skipIf
-from unittest.mock import patch
 
 from tests.utils import testutils
 
@@ -104,20 +103,17 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-debug')
 
-    @patch.dict(os.environ, {'PYTHON_ENABLE_DEBUG_LOGGING': '1'}, clear=True)
     def check_log_debug_logging(self, host_out: typing.List[str]):
         self.assertIn('logging info', host_out)
         self.assertIn('logging warning', host_out)
         self.assertIn('logging error', host_out)
         self.assertNotIn('logging debug', host_out)
 
-    @patch.dict(os.environ, {'PYTHON_ENABLE_DEBUG_LOGGING': '1'}, clear=True)
     def test_debug_with_user_logging(self):
         r = self.webhost.request('GET', 'debug_user_logging')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-user-debug')
 
-    @patch.dict(os.environ, {'PYTHON_ENABLE_DEBUG_LOGGING': '1'}, clear=True)
     def check_log_debug_with_user_logging(self, host_out: typing.List[str]):
         self.assertIn('logging info', host_out)
         self.assertIn('logging warning', host_out)

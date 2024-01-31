@@ -139,6 +139,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             r = await host.get_worker_status()
             self.assertIsInstance(r.response, protos.WorkerStatusResponse)
 
+    @patch.dict(os.environ,
+                {PYTHON_THREADPOOL_THREAD_COUNT:
+                    f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}'},
+                clear=True)
     async def test_dispatcher_sync_threadpool_default_worker(self):
         """Test if the sync threadpool has maximum worker count set the
         correct default value

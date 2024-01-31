@@ -72,13 +72,14 @@ def debug_logging(req: func.HttpRequest):
 
 @app.route(route="debug_user_logging")
 def debug_user_logging(req: func.HttpRequest):
-    logger.setLevel(logging.DEBUG)
+    debug_logger = logging.getLogger('my function')
+    debug_logger.setLevel(logging.DEBUG)
 
     logging.critical('logging critical', exc_info=True)
-    logger.info('logging info', exc_info=True)
-    logger.warning('logging warning', exc_info=True)
-    logger.debug('logging debug', exc_info=True)
-    logger.error('logging error', exc_info=True)
+    debug_logger.info('logging info', exc_info=True)
+    debug_logger.warning('logging warning', exc_info=True)
+    debug_logger.debug('logging debug', exc_info=True)
+    debug_logger.error('logging error', exc_info=True)
     return 'OK-user-debug'
 
 

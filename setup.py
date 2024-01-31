@@ -45,7 +45,7 @@ AZURE_EXTENSIONS = """\
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
         Version="5.0.0" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
-        Version="3.1.0" />
+        Version="3.3.1" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
         Version="4.0.5" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
@@ -106,7 +106,7 @@ PACKAGES = [
 ]
 
 INSTALL_REQUIRES = [
-    "azure-functions==1.18.0",
+    "azure-functions==1.19.0b1",
     "python-dateutil~=2.8.2"
 ]
 

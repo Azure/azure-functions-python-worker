@@ -214,6 +214,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     """
     host_stdout_logger = logging.getLogger('webhosttests')
     env_variables = {}
+    
 
     @classmethod
     def get_script_dir(cls):
@@ -289,6 +290,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     )
                     with open(log_file, 'w+') as file:
                         file.write(content)
+                    cls.host_stdout_logger.info("WebHost log is archived to"
+                                                f"{log_file} in the artifact")
 
             cls.host_stdout.close()
             cls.host_stdout = None
@@ -319,6 +322,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                             'Captured WebHost log generated during test '
                             '%s from %s :\n%s', test.__name__,
                             self.host_stdout.name, self.host_out)
+                    
                 finally:
                     if test_exception is not None:
                         raise test_exception

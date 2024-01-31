@@ -260,11 +260,12 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                                             stdout=cls.host_stdout)
             if not cls.webhost.is_healthy():
                 cls.host_out = cls.host_stdout.read()
-                if cls.host_out is not None and len(cls.host_out) > 0:
-                    cls.host_stdout_logger.error(
-                        'WebHost is not started correctly. %s :\n%s',
-                        cls.host_stdout.name, cls.host_out)
-                    raise
+                if cls.host_out:
+                    error_message = 'WebHost is not started correctly. '
+                    f'{cls.host_stdout.name}: {cls.host_out}'
+                    cls.host_stdout_logger.error(error_message)
+                    raise RuntimeError(error_message)
+
 
         except Exception:
             _teardown_func_app(TESTS_ROOT / script_dir)
@@ -277,16 +278,19 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         if cls.host_stdout is not None:
             if is_envvar_true(ARCHIVE_WEBHOST_LOGS):
-                version_info = sys.version_info
-                log_file = (
-                    "logs/"
-                    f"{cls.__name__}_"
-                    f"{version_info.major}.{version_info.minor}_webhost.log"
-                )
-                with open(log_file, 'w+') as file:
-                    cls.host_stdout.seek(0)
-                    content = cls.host_stdout.read()
-                    file.write(content)
+                cls.host_stdout.seek(0)
+                content = cls.host_stdout.read()
+                if content is not None and len(content) > 0:
+                    version_info = sys.version_info
+                    log_file = (
+                        "logs/"
+                        f"{cls.__module__}_{cls.__name__}"
+                        f"{version_info.minor}_webhost.log"
+                    )
+                    with open(log_file, 'w+') as file:
+                        cls.host_stdout.seek(0)
+                        content = cls.host_stdout.read()
+                        file.write(content)
 
             cls.host_stdout.close()
             cls.host_stdout = None

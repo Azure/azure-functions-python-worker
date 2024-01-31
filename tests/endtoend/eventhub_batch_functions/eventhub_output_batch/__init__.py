@@ -7,4 +7,4 @@ import azure.functions as func
 def main(req: func.HttpRequest, out: func.Out[str]) -> func.HttpResponse:
     events = req.get_body().decode('utf-8')
     out.set(events)
-    return func.HttpResponse(f"Messages sent")
+    return func.HttpResponse("Messages sent")

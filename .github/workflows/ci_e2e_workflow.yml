@@ -141,7 +141,7 @@ jobs:
           name: codecov # optional
           fail_ci_if_error: false # optional (default = false)
       - name: Publish Logs to Artifact
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: Test WebHost Logs ${{ github.run_id }} ${{ matrix.python-version }}

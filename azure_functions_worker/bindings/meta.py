@@ -110,8 +110,7 @@ def from_incoming_proto(
         raise TypeError(f'Unknown ParameterBindingType: {pb_type}')
 
     try:
-        # will eventually have to change decode() to take in pytype
-        return binding.decode(datum, trigger_metadata=metadata)
+        return binding.decode(datum, trigger_metadata=metadata, pytype=pytype)
     except NotImplementedError:
         # Binding does not support the data.
         dt = val.WhichOneof('data')

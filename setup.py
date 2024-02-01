@@ -39,6 +39,8 @@ AZURE_EXTENSIONS = """\
    </PropertyGroup>
    <ItemGroup>
       <PackageReference Include="Microsoft.NET.Sdk.Functions"
+        Version="5.10.0" />
+      <PackageReference Include="Microsoft.NET.Sdk.Functions"
         Version="4.2.0" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
         Version="4.4.2" />

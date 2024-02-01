@@ -32,31 +32,31 @@ AZURE_EXTENSIONS = """\
 <?xml version="1.0" encoding="UTF-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
    <PropertyGroup>
-      <TargetFramework>net8.0</TargetFramework>
+      <TargetFramework>netcoreapp3.1</TargetFramework>
       <AzureFunctionsVersion>v4</AzureFunctionsVersion>
       <WarningsAsErrors />
       <DefaultItemExcludes>**</DefaultItemExcludes>
    </PropertyGroup>
    <ItemGroup>
       <PackageReference Include="Microsoft.NET.Sdk.Functions"
-        Version="4.0.1" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
         Version="4.2.0" />
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
+        Version="4.4.2" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-        Version="5.0.0" />
+        Version="6.0.2" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
         Version="3.3.1" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
-        Version="4.0.5" />
+        Version="5.2.2" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
-        Version="4.2.1" />
+        Version="5.13.5" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Sql"
         Version="0.1.346-preview" />
       <PackageReference
         Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
-        Version="1.1.3" />
+        Version="4.0.1" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask"
-        Version="2.9.4" />
+        Version="3.0.0-rc.1" />
    </ItemGroup>
 </Project>
 """

@@ -57,7 +57,7 @@ class TestDependencyManager(unittest.TestCase):
         sys.path.extend([
             '/tmp/functions\\standby\\wwwroot',
             '/home/site/wwwroot/.python_packages/lib/site-packages',
-            '/azure-functions-host/workers/python/3.7/LINUX/X64',
+            '/azure-functions-host/workers/python/3.11/LINUX/X64',
             '/home/site/wwwroot'
         ])
         DependencyManager.initialize()
@@ -71,7 +71,7 @@ class TestDependencyManager(unittest.TestCase):
         )
         self.assertEqual(
             DependencyManager.worker_deps_path,
-            '/azure-functions-host/workers/python/3.7/LINUX/X64'
+            '/azure-functions-host/workers/python/3.11/LINUX/X64'
         )
 
     def test_initialize_in_linux_dedicated(self):
@@ -79,7 +79,7 @@ class TestDependencyManager(unittest.TestCase):
         sys.path.extend([
             '/home/site/wwwroot',
             '/home/site/wwwroot/.python_packages/lib/site-packages',
-            '/azure-functions-host/workers/python/3.7/LINUX/X64'
+            '/azure-functions-host/workers/python/3.11/LINUX/X64'
         ])
         DependencyManager.initialize()
         self.assertEqual(
@@ -92,7 +92,7 @@ class TestDependencyManager(unittest.TestCase):
         )
         self.assertEqual(
             DependencyManager.worker_deps_path,
-            '/azure-functions-host/workers/python/3.7/LINUX/X64'
+            '/azure-functions-host/workers/python/3.11/LINUX/X64'
         )
 
     def test_initialize_in_windows_core_tools(self):
@@ -100,7 +100,7 @@ class TestDependencyManager(unittest.TestCase):
         sys.path.extend([
             'C:\\Users\\user\\AppData\\Roaming\\npm\\'
             'node_modules\\azure-functions-core-tools\\bin\\'
-            'workers\\python\\3.7\\WINDOWS\\X64',
+            'workers\\python\\3.11\\WINDOWS\\X64',
             'C:\\FunctionApp\\.venv38\\lib\\site-packages',
             'C:\\FunctionApp'
         ])
@@ -116,7 +116,7 @@ class TestDependencyManager(unittest.TestCase):
         self.assertEqual(
             DependencyManager.worker_deps_path,
             'C:\\Users\\user\\AppData\\Roaming\\npm\\node_modules\\'
-            'azure-functions-core-tools\\bin\\workers\\python\\3.7\\WINDOWS'
+            'azure-functions-core-tools\\bin\\workers\\python\\3.11\\WINDOWS'
             '\\X64'
         )
 
@@ -128,15 +128,6 @@ class TestDependencyManager(unittest.TestCase):
         os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
         result = DependencyManager._get_cx_deps_path()
         self.assertEqual(result, '')
-
-    def test_get_cx_deps_path_in_script_root_with_sys_path_linux_py36(self):
-        # Test for Python 3.7 Azure Environment
-        sys.path.append('/home/site/wwwroot/.python_packages/sites/lib/'
-                        'python3.7/site-packages/')
-        os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
-        result = DependencyManager._get_cx_deps_path()
-        self.assertEqual(result, '/home/site/wwwroot/.python_packages/sites/'
-                                 'lib/python3.7/site-packages/')
 
     def test_get_cx_deps_path_in_script_root_with_sys_path_linux(self):
         # Test for Python 3.7+ Azure Environment
@@ -185,19 +176,19 @@ class TestDependencyManager(unittest.TestCase):
         # Test for Windows Core Tools Environment
         sys.path.append('C:\\Users\\user\\AppData\\Roaming\\npm\\'
                         'node_modules\\azure-functions-core-tools\\bin\\'
-                        'workers\\python\\3.7\\WINDOWS\\X64')
+                        'workers\\python\\3.11\\WINDOWS\\X64')
         result = DependencyManager._get_worker_deps_path()
         self.assertEqual(result,
                          'C:\\Users\\user\\AppData\\Roaming\\npm\\'
                          'node_modules\\azure-functions-core-tools\\bin\\'
-                         'workers\\python\\3.7\\WINDOWS\\X64')
+                         'workers\\python\\3.11\\WINDOWS\\X64')
 
     def test_get_worker_deps_path_from_linux_azure_environment(self):
         # Test for Azure Environment
-        sys.path.append('/azure-functions-host/workers/python/3.7/LINUX/X64')
+        sys.path.append('/azure-functions-host/workers/python/3.11/LINUX/X64')
         result = DependencyManager._get_worker_deps_path()
         self.assertEqual(result,
-                         '/azure-functions-host/workers/python/3.7/LINUX/X64')
+                         '/azure-functions-host/workers/python/3.11/LINUX/X64')
 
     @patch('azure_functions_worker.utils.dependency.importlib.util')
     def test_get_worker_deps_path_without_worker_path(self, mock):

@@ -274,11 +274,12 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     def tearDownClass(cls):
         cls.webhost.close()
         cls.webhost = None
-
+        print(f"host_stdout {cls.host_stdout} for {cls.__name__}")
         if cls.host_stdout is not None:
             if is_envvar_true(ARCHIVE_WEBHOST_LOGS):
                 cls.host_stdout.seek(0)
                 content = cls.host_stdout.read()
+                print(f"content {cls.host_stdout} for {cls.__name__}")
                 if content is not None and len(content) > 0:
                     version_info = sys.version_info
                     log_file = (

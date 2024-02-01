@@ -13,7 +13,7 @@ HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
     "version": "2.0",
     "logging": {
         "logLevel": {
-           "default": "Information"
+           "default": "Trace"
         }
     },
     "functionTimeout": "00:05:00"

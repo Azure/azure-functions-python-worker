@@ -32,7 +32,7 @@ AZURE_EXTENSIONS = """\
 <?xml version="1.0" encoding="UTF-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
    <PropertyGroup>
-      <TargetFramework>7.0.11</TargetFramework>
+      <TargetFramework>net8.0</TargetFramework>
       <AzureFunctionsVersion>v4</AzureFunctionsVersion>
       <WarningsAsErrors />
       <DefaultItemExcludes>**</DefaultItemExcludes>

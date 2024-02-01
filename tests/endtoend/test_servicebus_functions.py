@@ -47,7 +47,7 @@ class TestServiceBusFunctionsStein(TestServiceBusFunctions):
 
     @testutils.retryable_test(3, 5)
     def test_servicebus_batch(self):
-        data = '{"value": "2024-01-19T12:50:41.250940Z"}'
+        data = '{"value": "2024-01-19T12:50:41.250941Z"}'
         r = self.webhost.request('POST', 'put_message_batch',
                                  data=data)
         self.assertEqual(r.status_code, 200)

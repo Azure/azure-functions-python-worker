@@ -38,7 +38,7 @@ AZURE_EXTENSIONS = """\
       <DefaultItemExcludes>**</DefaultItemExcludes>
    </PropertyGroup>
    <ItemGroup>
-      <PackageReference Include="Microsoft.NET.Sdk.Functions"
+      <PackageReference Include="Azure.Messaging.EventHubs"
         Version="5.10.0" />
       <PackageReference Include="Microsoft.NET.Sdk.Functions"
         Version="4.2.0" />

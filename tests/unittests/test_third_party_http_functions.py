@@ -26,7 +26,8 @@ HOST_JSON_TEMPLATE = """\
     "functionTimeout": "00:05:00"
 }
 """
-     
+
+
 class ThirdPartyHttpFunctionsTestBase:
     class TestThirdPartyHttpFunctions(testutils.WebHostTestCase):
         @classmethod

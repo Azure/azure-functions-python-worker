@@ -64,6 +64,7 @@ jobs:
         retry 5 python setup.py build
         retry 5 python setup.py webhost --branch-name=dev
         retry 5 python setup.py extension
+        dotnet list package
         mkdir logs
     - name: Test with pytest
       env:

@@ -42,7 +42,7 @@ jobs:
       # Run Linter against code base #
       ################################
       - name: Lint Code Base
-        uses: super-linter/super-linter@v6.0.0  # x-release-please-version
+        uses: super-linter/super-linter@5.7.2  # x-release-please-version
         env:
           VALIDATE_PYTHON: true
           VALIDATE_PYTHON_FLAKE8: true

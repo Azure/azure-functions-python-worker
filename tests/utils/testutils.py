@@ -272,9 +272,12 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 cls.webhost = WebHostDedicated(docker_configs).spawn_container()
             else:
                 _setup_func_app(TESTS_ROOT / script_dir)
-                cls.webhost = start_webhost(
-                    script_dir=script_dir, stdout=cls.host_stdout
-                )
+                try:
+                    cls.webhost = start_webhost(
+                        script_dir=script_dir, stdout=cls.host_stdout
+                    )
+                except Exception as e:
+                    cls.host_stdout_logger.error(f"Error in starting webhost: {e}")
             if not cls.webhost.is_healthy():
                 cls.host_out = cls.host_stdout.read()
                 if cls.host_out is not None and len(cls.host_out) > 0:
@@ -1036,6 +1039,8 @@ def start_webhost(*, script_dir=None, stdout=None):
 
         addr = f"http://{LOCALHOST}:{port}"
         return _WebHostProxy(proc, addr)
+    except Exception:
+        raise
     finally:
         webhost_lock.release()
 

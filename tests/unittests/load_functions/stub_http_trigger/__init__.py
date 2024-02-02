@@ -3,4 +3,4 @@
 
 
 def main(req):
-    return 'OK'
+    return "OK"

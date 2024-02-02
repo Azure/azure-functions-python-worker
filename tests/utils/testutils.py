@@ -34,38 +34,46 @@ import uuid
 import grpc
 import requests
 
-from azure_functions_worker import dispatcher
-from azure_functions_worker import protos
+from azure_functions_worker import dispatcher, protos
 from azure_functions_worker._thirdparty import aio_compat
-from azure_functions_worker.bindings.shared_memory_data_transfer \
-    import FileAccessorFactory
-from azure_functions_worker.bindings.shared_memory_data_transfer \
-    import SharedMemoryConstants as consts
+from azure_functions_worker.bindings.shared_memory_data_transfer import (
+    FileAccessorFactory,
+)
+from azure_functions_worker.bindings.shared_memory_data_transfer import (
+    SharedMemoryConstants as consts,
+)
 from azure_functions_worker.constants import (
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
-    UNIX_SHARED_MEMORY_DIRECTORIES
+    UNIX_SHARED_MEMORY_DIRECTORIES,
 )
-from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
-from tests.utils.constants import PYAZURE_WORKER_DIR, \
-    PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
-    CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG, \
-    ARCHIVE_WEBHOST_LOGS
-from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated, \
-    DockerConfigs
+from azure_functions_worker.utils.common import get_app_setting, is_envvar_true
+from tests.utils.constants import (
+    ARCHIVE_WEBHOST_LOGS,
+    CONSUMPTION_DOCKER_TEST,
+    DEDICATED_DOCKER_TEST,
+    PROJECT_ROOT,
+    PYAZURE_INTEGRATION_TEST,
+    PYAZURE_WEBHOST_DEBUG,
+    PYAZURE_WORKER_DIR,
+    WORKER_CONFIG,
+)
+from tests.utils.testutils_docker import (
+    DockerConfigs,
+    WebHostConsumption,
+    WebHostDedicated,
+)
 
-TESTS_ROOT = PROJECT_ROOT / 'tests'
-E2E_TESTS_FOLDER = pathlib.Path('endtoend')
+TESTS_ROOT = PROJECT_ROOT / "tests"
+E2E_TESTS_FOLDER = pathlib.Path("endtoend")
 E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
-UNIT_TESTS_FOLDER = pathlib.Path('unittests')
+UNIT_TESTS_FOLDER = pathlib.Path("unittests")
 UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
 WEBHOST_DLL = "Microsoft.Azure.WebJobs.Script.WebHost.dll"
-DEFAULT_WEBHOST_DLL_PATH = (
-    PROJECT_ROOT / 'build' / 'webhost' / 'bin' / WEBHOST_DLL
-)
-EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
-FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
-WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
-ON_WINDOWS = platform.system() == 'Windows'
+DEFAULT_WEBHOST_DLL_PATH = PROJECT_ROOT / "build" / "webhost" / "bin" / WEBHOST_DLL
+EXTENSIONS_PATH = PROJECT_ROOT / "build" / "extensions" / "bin"
+FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / "http_functions"
+WORKER_PATH = PROJECT_ROOT / "python" / "test"
+ON_WINDOWS = platform.system() == "Windows"
 LOCALHOST = "127.0.0.1"
 
 # The template of host.json that will be applied to each test functions
@@ -137,8 +145,7 @@ class AsyncTestCaseMeta(type(unittest.TestCase)):
 
     def __new__(mcls, name, bases, ns):
         for attrname, attr in ns.items():
-            if (attrname.startswith('test_')
-                    and inspect.iscoroutinefunction(attr)):
+            if attrname.startswith("test_") and inspect.iscoroutinefunction(attr):
                 ns[attrname] = mcls._sync_wrap(attr)
 
         return super().__new__(mcls, name, bases, ns)
@@ -159,34 +166,43 @@ class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
 class WebHostTestCaseMeta(type(unittest.TestCase)):
 
     def __new__(mcls, name, bases, dct):
-        if is_envvar_true(DEDICATED_DOCKER_TEST) \
-                or is_envvar_true(CONSUMPTION_DOCKER_TEST):
+        if is_envvar_true(DEDICATED_DOCKER_TEST) or is_envvar_true(
+            CONSUMPTION_DOCKER_TEST
+        ):
             return super().__new__(mcls, name, bases, dct)
 
         for attrname, attr in dct.items():
-            if attrname.startswith('test_') and callable(attr):
+            if attrname.startswith("test_") and callable(attr):
                 test_case = attr
-                check_log_name = attrname.replace('test_', 'check_log_', 1)
+                check_log_name = attrname.replace("test_", "check_log_", 1)
                 check_log_case = dct.get(check_log_name)
 
                 @functools.wraps(test_case)
-                def wrapper(self, *args, __meth__=test_case,
-                            __check_log__=check_log_case, **kwargs):
-                    if (__check_log__ is not None
-                            and callable(__check_log__)
-                            and not is_envvar_true(PYAZURE_WEBHOST_DEBUG)):
+                def wrapper(
+                    self,
+                    *args,
+                    __meth__=test_case,
+                    __check_log__=check_log_case,
+                    **kwargs,
+                ):
+                    if (
+                        __check_log__ is not None
+                        and callable(__check_log__)
+                        and not is_envvar_true(PYAZURE_WEBHOST_DEBUG)
+                    ):
 
                         # Check logging output for unit test scenarios
                         result = self._run_test(__meth__, *args, **kwargs)
 
                         # Trim off host output timestamps
-                        host_output = getattr(self, 'host_out', '')
+                        host_output = getattr(self, "host_out", "")
                         output_lines = host_output.splitlines()
-                        ts_re = r"^\[\d+(\/|-)\d+(\/|-)\d+T*\d+\:\d+\:\d+.*(" \
-                                r"A|P)*M*\]"
-                        output = list(map(lambda s:
-                                          re.sub(ts_re, '', s).strip(),
-                                          output_lines))
+                        ts_re = (
+                            r"^\[\d+(\/|-)\d+(\/|-)\d+T*\d+\:\d+\:\d+.*(" r"A|P)*M*\]"
+                        )
+                        output = list(
+                            map(lambda s: re.sub(ts_re, "", s).strip(), output_lines)
+                        )
 
                         # Execute check_log_ test cases
                         self._run_test(__check_log__, host_out=output)
@@ -212,7 +228,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     test_ABC - Unittest
     check_log_ABC - Check logs generated during the execution of test_ABC.
     """
-    host_stdout_logger = logging.getLogger('webhosttests')
+
+    host_stdout_logger = logging.getLogger("webhosttests")
     env_variables = {}
 
     @classmethod
@@ -239,30 +256,30 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         docker_configs.script_path = script_dir
         docker_configs.libraries = cls.get_libraries_to_install()
         docker_configs.env = cls.get_environment_variables() or {}
-        os.environ["PYTHON_SCRIPT_FILE_NAME"] = (cls.get_script_name()
-                                                 or "function_app.py")
+        os.environ["PYTHON_SCRIPT_FILE_NAME"] = (
+            cls.get_script_name() or "function_app.py"
+        )
 
         if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             cls.host_stdout = None
         else:
-            cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
+            cls.host_stdout = tempfile.NamedTemporaryFile("w+t")
 
         try:
             if is_envvar_true(CONSUMPTION_DOCKER_TEST):
-                cls.webhost = \
-                    WebHostConsumption(docker_configs).spawn_container()
+                cls.webhost = WebHostConsumption(docker_configs).spawn_container()
             elif is_envvar_true(DEDICATED_DOCKER_TEST):
-                cls.webhost = \
-                    WebHostDedicated(docker_configs).spawn_container()
+                cls.webhost = WebHostDedicated(docker_configs).spawn_container()
             else:
                 _setup_func_app(TESTS_ROOT / script_dir)
-                cls.webhost = start_webhost(script_dir=script_dir,
-                                            stdout=cls.host_stdout)
+                cls.webhost = start_webhost(
+                    script_dir=script_dir, stdout=cls.host_stdout
+                )
             if not cls.webhost.is_healthy():
                 cls.host_out = cls.host_stdout.read()
                 if cls.host_out is not None and len(cls.host_out) > 0:
-                    error_message = 'WebHost is not started correctly. '
-                    f'{cls.host_stdout.name}: {cls.host_out}'
+                    error_message = "WebHost is not started correctly. "
+                    f"{cls.host_stdout.name}: {cls.host_out}"
                     cls.host_stdout_logger.error(error_message)
                     raise RuntimeError(error_message)
 
@@ -286,10 +303,11 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                         f"{cls.__module__}_{cls.__name__}"
                         f"{version_info.minor}_webhost.log"
                     )
-                    with open(log_file, 'w+') as file:
+                    with open(log_file, "w+") as file:
                         file.write(content)
-                    cls.host_stdout_logger.info("WebHost log is archived to"
-                                                f"{log_file} in the artifact")
+                    cls.host_stdout_logger.info(
+                        "WebHost log is archived to" f"{log_file} in the artifact"
+                    )
 
             cls.host_stdout.close()
             cls.host_stdout = None
@@ -317,9 +335,12 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     self.host_out = self.host_stdout.read()
                     if self.host_out is not None and len(self.host_out) > 0:
                         self.host_stdout_logger.error(
-                            'Captured WebHost log generated during test '
-                            '%s from %s :\n%s', test.__name__,
-                            self.host_stdout.name, self.host_out)
+                            "Captured WebHost log generated during test "
+                            "%s from %s :\n%s",
+                            test.__name__,
+                            self.host_stdout.name,
+                            self.host_out,
+                        )
                 finally:
                     if test_exception is not None:
                         raise test_exception
@@ -332,36 +353,34 @@ class SharedMemoryTestCase(unittest.TestCase):
 
     def setUp(self):
         self.was_shmem_env_true = is_envvar_true(
-            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
-        os.environ.update(
-            {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '1'})
+            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
+        )
+        os.environ.update({FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: "1"})
 
         os_name = platform.system()
-        if os_name == 'Darwin':
+        if os_name == "Darwin":
             # If an existing AppSetting is specified, save it so it can be
             # restored later
-            self.was_shmem_dirs = get_app_setting(
-                UNIX_SHARED_MEMORY_DIRECTORIES
-            )
+            self.was_shmem_dirs = get_app_setting(UNIX_SHARED_MEMORY_DIRECTORIES)
             self._setUpDarwin()
-        elif os_name == 'Linux':
+        elif os_name == "Linux":
             self._setUpLinux()
         self.file_accessor = FileAccessorFactory.create_file_accessor()
 
     def tearDown(self):
         os_name = platform.system()
-        if os_name == 'Darwin':
+        if os_name == "Darwin":
             self._tearDownDarwin()
             if self.was_shmem_dirs is not None:
                 # If an AppSetting was set before the tests ran, restore it back
-                os.environ.update(
-                    {UNIX_SHARED_MEMORY_DIRECTORIES: self.was_shmem_dirs})
-        elif os_name == 'Linux':
+                os.environ.update({UNIX_SHARED_MEMORY_DIRECTORIES: self.was_shmem_dirs})
+        elif os_name == "Linux":
             self._tearDownLinux()
 
         if not self.was_shmem_env_true:
             os.environ.update(
-                {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '0'})
+                {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: "0"}
+            )
 
     def get_new_mem_map_name(self):
         return str(uuid.uuid4())
@@ -370,8 +389,9 @@ class SharedMemoryTestCase(unittest.TestCase):
         return bytearray(random.getrandbits(8) for _ in range(num_bytes))
 
     def get_random_string(self, num_chars):
-        return ''.join(random.choices(string.ascii_uppercase + string.digits,
-                                      k=num_chars))
+        return "".join(
+            random.choices(string.ascii_uppercase + string.digits, k=num_chars)
+        )
 
     def is_valid_uuid(self, uuid_to_test: str, version: int = 4) -> bool:
         """
@@ -409,40 +429,48 @@ class SharedMemoryTestCase(unittest.TestCase):
         size_in_mb = consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER / (1024 * 1024)
         size = 2048 * size_in_mb
         # The following command returns the name of the created disk
-        cmd = ['hdiutil', 'attach', '-nomount', f'ram://{size}']
+        cmd = ["hdiutil", "attach", "-nomount", f"ram://{size}"]
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
         if result.returncode != 0:
-            raise IOError(f'Cannot create ram disk with command: {cmd} - '
-                          f'{result.stdout} - {result.stderr}')
+            raise IOError(
+                f"Cannot create ram disk with command: {cmd} - "
+                f"{result.stdout} - {result.stderr}"
+            )
         disk_name = result.stdout.strip().decode()
         # We create a volume on the disk created above and mount it
-        volume_name = 'shm'
-        cmd = ['diskutil', 'eraseVolume', 'HFS+', volume_name, disk_name]
+        volume_name = "shm"
+        cmd = ["diskutil", "eraseVolume", "HFS+", volume_name, disk_name]
         result = subprocess.run(cmd, stdout=subprocess.PIPE)
         if result.returncode != 0:
-            raise IOError(f'Cannot create volume with command: {cmd} - '
-                          f'{result.stdout} - {result.stderr}')
-        directory = f'/Volumes/{volume_name}'
+            raise IOError(
+                f"Cannot create volume with command: {cmd} - "
+                f"{result.stdout} - {result.stderr}"
+            )
+        directory = f"/Volumes/{volume_name}"
         self.created_directories = [directory]
         # Create directories in the volume for shared memory maps
         self._createSharedMemoryDirectories(self.created_directories)
         # Override the AppSetting for the duration of this test so the
         # FileAccessorUnix can use these directories for creating memory maps
         os.environ.update(
-            {UNIX_SHARED_MEMORY_DIRECTORIES: ','.join(self.created_directories)}
+            {UNIX_SHARED_MEMORY_DIRECTORIES: ",".join(self.created_directories)}
         )
 
     def _tearDownDarwin(self):
         # Delete the directories containing shared memory maps
         self._deleteSharedMemoryDirectories(self.created_directories)
         # Unmount the volume used for shared memory maps
-        volume_name = 'shm'
-        cmd = f"find /Volumes -type d -name '{volume_name}*' -print0 " \
-              "| xargs -0 umount -f"
+        volume_name = "shm"
+        cmd = (
+            f"find /Volumes -type d -name '{volume_name}*' -print0 "
+            "| xargs -0 umount -f"
+        )
         result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
         if result.returncode != 0:
-            raise IOError(f'Cannot delete volume with command: {cmd} - '
-                          f'{result.stdout} - {result.stderr}')
+            raise IOError(
+                f"Cannot delete volume with command: {cmd} - "
+                f"{result.stdout} - {result.stderr}"
+            )
 
 
 class _MockWebHostServicer(protos.FunctionRpcServicer):
@@ -453,22 +481,25 @@ class _MockWebHostServicer(protos.FunctionRpcServicer):
 
     def EventStream(self, client_response_iterator, context):
         client_response = next(client_response_iterator)
-        rtype = client_response.WhichOneof('content')
+        rtype = client_response.WhichOneof("content")
         try:
-            if rtype != 'start_stream':
+            if rtype != "start_stream":
                 raise AssertionError(
-                    f'unexpected {rtype!r} initial message from the worker')
+                    f"unexpected {rtype!r} initial message from the worker"
+                )
 
             if client_response.start_stream.worker_id != self._host.worker_id:
-                raise AssertionError('worker_id mismatch')
+                raise AssertionError("worker_id mismatch")
 
         except Exception as ex:
             self._host._loop.call_soon_threadsafe(
-                self._host._connected_fut.set_exception, ex)
+                self._host._connected_fut.set_exception, ex
+            )
             return
         else:
             self._host._loop.call_soon_threadsafe(
-                self._host._connected_fut.set_result, True)
+                self._host._connected_fut.set_result, True
+            )
 
         while True:
             message, wait_for = self._host._in_queue.get()
@@ -484,22 +515,24 @@ class _MockWebHostServicer(protos.FunctionRpcServicer):
             logs = []
 
             for client_response in client_response_iterator:
-                rtype = client_response.WhichOneof('content')
+                rtype = client_response.WhichOneof("content")
                 unpacked = getattr(client_response, rtype)
 
                 if rtype == wait_for:
                     response = unpacked
                     break
-                elif rtype == 'rpc_log':
+                elif rtype == "rpc_log":
                     logs.append(unpacked)
                 else:
                     raise RuntimeError(
-                        f'unexpected response from worker: '
-                        f'expected to receive {wait_for!r}, got {rtype!r}')
+                        f"unexpected response from worker: "
+                        f"expected to receive {wait_for!r}, got {rtype!r}"
+                    )
 
             self._host._loop.call_soon_threadsafe(
                 self._host._out_aqueue.put_nowait,
-                _WorkerResponseMessages(response, logs))
+                _WorkerResponseMessages(response, logs),
+            )
 
 
 class _WebHostFunction(typing.NamedTuple):
@@ -531,7 +564,7 @@ class _MockWebHost:
         self._servicer = _MockWebHostServicer(self)
 
         protos.add_FunctionRpcServicer_to_server(self._servicer, self._server)
-        self._port = self._server.add_insecure_port(f'{LOCALHOST}:0')
+        self._port = self._server.add_insecure_port(f"{LOCALHOST}:0")
         self._worker_id = self.make_id()
         self._request_id = self.make_id()
 
@@ -546,14 +579,12 @@ class _MockWebHost:
     def request_id(self):
         return self._request_id
 
-    async def init_worker(self, host_version: str = '4.28.0'):
+    async def init_worker(self, host_version: str = "4.28.0"):
         r = await self.communicate(
             protos.StreamingMessage(
-                worker_init_request=protos.WorkerInitRequest(
-                    host_version=host_version
-                )
+                worker_init_request=protos.WorkerInitRequest(host_version=host_version)
             ),
-            wait_for='worker_init_response'
+            wait_for="worker_init_response",
         )
 
         return r
@@ -565,37 +596,36 @@ class _MockWebHost:
                     function_app_directory=str(self._scripts_dir)
                 )
             ),
-            wait_for='function_metadata_response'
+            wait_for="function_metadata_response",
         )
 
         return r
 
     async def load_function(self, name):
         if name not in self._available_functions:
-            raise RuntimeError(f'cannot load function {name}')
+            raise RuntimeError(f"cannot load function {name}")
 
         func = self._available_functions[name]
 
         bindings = {}
-        for b in func.desc['bindings']:
-            direction = getattr(protos.BindingInfo, b['direction'])
+        for b in func.desc["bindings"]:
+            direction = getattr(protos.BindingInfo, b["direction"])
 
-            data_type_v = b.get('dataType')
+            data_type_v = b.get("dataType")
             if not data_type_v:
                 data_type = protos.BindingInfo.undefined
-            elif data_type_v == 'binary':
+            elif data_type_v == "binary":
                 data_type = protos.BindingInfo.binary
-            elif data_type_v == 'string':
+            elif data_type_v == "string":
                 data_type = protos.BindingInfo.string
-            elif data_type_v == 'stream':
+            elif data_type_v == "stream":
                 data_type = protos.BindingInfo.stream
             else:
-                raise RuntimeError(f'invalid dataType: {data_type_v!r}')
+                raise RuntimeError(f"invalid dataType: {data_type_v!r}")
 
-            bindings[b['name']] = protos.BindingInfo(
-                type=b['type'],
-                data_type=data_type,
-                direction=direction)
+            bindings[b["name"]] = protos.BindingInfo(
+                type=b["type"], data_type=data_type, direction=direction
+            )
 
         r = await self.communicate(
             protos.StreamingMessage(
@@ -605,23 +635,27 @@ class _MockWebHost:
                         name=func.name,
                         directory=os.path.dirname(func.script),
                         script_file=func.script,
-                        bindings=bindings))),
-            wait_for='function_load_response')
+                        bindings=bindings,
+                    ),
+                )
+            ),
+            wait_for="function_load_response",
+        )
 
         return func.id, r
 
     async def invoke_function(
-            self,
-            name,
-            input_data: typing.List[protos.ParameterBinding],
-            metadata: typing.Optional[
-                typing.Mapping[str, protos.TypedData]] = None):
+        self,
+        name,
+        input_data: typing.List[protos.ParameterBinding],
+        metadata: typing.Optional[typing.Mapping[str, protos.TypedData]] = None,
+    ):
 
         if metadata is None:
             metadata = {}
 
         if name not in self._available_functions:
-            raise RuntimeError(f'cannot load function {name}')
+            raise RuntimeError(f"cannot load function {name}")
 
         func = self._available_functions[name]
         invocation_id = self.make_id()
@@ -635,53 +669,48 @@ class _MockWebHost:
                     trigger_metadata=metadata,
                 )
             ),
-            wait_for='invocation_response')
+            wait_for="invocation_response",
+        )
 
         return invocation_id, r
 
-    async def close_shared_memory_resources(
-            self,
-            map_names: typing.List[str]):
+    async def close_shared_memory_resources(self, map_names: typing.List[str]):
 
-        request = protos.CloseSharedMemoryResourcesRequest(
-            map_names=map_names)
+        request = protos.CloseSharedMemoryResourcesRequest(map_names=map_names)
 
         r = await self.communicate(
-            protos.StreamingMessage(
-                close_shared_memory_resources_request=request
-            ),
-            wait_for='close_shared_memory_resources_response')
+            protos.StreamingMessage(close_shared_memory_resources_request=request),
+            wait_for="close_shared_memory_resources_response",
+        )
 
         return r
 
     async def reload_environment(
-            self,
-            environment: typing.Dict[str, str],
-            function_project_path: str = '/home/site/wwwroot'
+        self,
+        environment: typing.Dict[str, str],
+        function_project_path: str = "/home/site/wwwroot",
     ) -> protos.FunctionEnvironmentReloadResponse:
 
         request_content = protos.FunctionEnvironmentReloadRequest(
             function_app_directory=function_project_path,
             environment_variables={
                 k.encode(): v.encode() for k, v in environment.items()
-            }
+            },
         )
 
         r = await self.communicate(
             protos.StreamingMessage(
                 function_environment_reload_request=request_content
             ),
-            wait_for='function_environment_reload_response'
+            wait_for="function_environment_reload_response",
         )
 
         return r
 
     async def get_worker_status(self):
         r = await self.communicate(
-            protos.StreamingMessage(
-                worker_status_request=protos.WorkerStatusRequest()
-            ),
-            wait_for='worker_status_response'
+            protos.StreamingMessage(worker_status_request=protos.WorkerStatusRequest()),
+            wait_for="worker_status_response",
         )
 
         return r
@@ -705,26 +734,25 @@ class _MockWebHost:
             if not fd.is_dir():
                 continue
 
-            fjson_fn = fd / 'function.json'
+            fjson_fn = fd / "function.json"
             if not fjson_fn.exists():
                 continue
 
             try:
-                with open(fjson_fn, 'rt') as f:
+                with open(fjson_fn, "rt") as f:
                     fjson = json.loads(f.read())
 
-                fscript = fjson['scriptFile']
+                fscript = fjson["scriptFile"]
                 fscript_fn = fd / fscript
                 if not fscript_fn.exists():
-                    raise RuntimeError(f'{fscript_fn} path does not exist')
+                    raise RuntimeError(f"{fscript_fn} path does not exist")
 
             except Exception as ex:
-                raise RuntimeError(
-                    f'could not load function {fd.name}') from ex
+                raise RuntimeError(f"could not load function {fd.name}") from ex
 
             fn = _WebHostFunction(
-                name=fd.name, desc=fjson, script=str(fscript_fn),
-                id=self.make_id())
+                name=fd.name, desc=fjson, script=str(fscript_fn), id=self.make_id()
+            )
 
             self._available_functions[fn.name] = fn
 
@@ -742,16 +770,20 @@ class _MockWebHostController:
 
         await self._host.start()
 
-        self._worker = await dispatcher. \
-            Dispatcher.connect(LOCALHOST, self._host._port,
-                               self._host.worker_id, self._host.request_id,
-                               connect_timeout=5.0)
+        self._worker = await dispatcher.Dispatcher.connect(
+            LOCALHOST,
+            self._host._port,
+            self._host.worker_id,
+            self._host.request_id,
+            connect_timeout=5.0,
+        )
 
         self._worker_task = loop.create_task(self._worker.dispatch_forever())
 
-        done, pending = await asyncio. \
-            wait([self._host._connected_fut, self._worker_task],
-                 return_when=asyncio.FIRST_COMPLETED)
+        done, pending = await asyncio.wait(
+            [self._host._connected_fut, self._worker_task],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
 
         # noinspection PyBroadException
         try:
@@ -759,7 +791,7 @@ class _MockWebHostController:
                 self._worker_task.result()
 
             if self._host._connected_fut not in done:
-                raise RuntimeError('could not start a worker thread')
+                raise RuntimeError("could not start a worker thread")
         except Exception:
             try:
                 await self._host.close()
@@ -788,8 +820,8 @@ def start_mockhost(*, script_root=FUNCS_PATH):
     scripts_dir = TESTS_ROOT / script_root
     if not (scripts_dir.exists() and scripts_dir.is_dir()):
         raise RuntimeError(
-            f'invalid script_root argument: '
-            f'{scripts_dir} directory does not exist')
+            f"invalid script_root argument: " f"{scripts_dir} directory does not exist"
+        )
 
     sys.path.append(str(scripts_dir))
 
@@ -803,19 +835,22 @@ class _WebHostProxy:
         self._addr = addr
 
     def is_healthy(self):
-        r = self.request('GET', '', no_prefix=True)
+        r = self.request("GET", "", no_prefix=True)
         return 200 <= r.status_code < 300
 
     def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
-        params = dict(kwargs.pop('params', {}))
-        no_prefix = kwargs.pop('no_prefix', False)
-        if 'code' not in params:
-            params['code'] = 'testFunctionKey'
+        params = dict(kwargs.pop("params", {}))
+        no_prefix = kwargs.pop("no_prefix", False)
+        if "code" not in params:
+            params["code"] = "testFunctionKey"
 
         return request_method(
-            self._addr + ('/' if no_prefix else '/api/') + funcname,
-            *args, params=params, **kwargs)
+            self._addr + ("/" if no_prefix else "/api/") + funcname,
+            *args,
+            params=params,
+            **kwargs,
+        )
 
     def close(self):
         if self._proc.stdout:
@@ -844,22 +879,22 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         testconfig.read(WORKER_CONFIG)
 
     hostexe_args = []
-    os.environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
+    os.environ["AzureWebJobsFeatureFlags"] = "EnableWorkerIndexing"
 
     # If we want to use core-tools
-    coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')
+    coretools_exe = os.environ.get("CORE_TOOLS_EXE_PATH")
     if coretools_exe:
         coretools_exe = coretools_exe.strip()
         if pathlib.Path(coretools_exe).exists():
-            hostexe_args = [str(coretools_exe), 'host', 'start', '--verbose']
+            hostexe_args = [str(coretools_exe), "host", "start", "--verbose"]
             if port is not None:
-                hostexe_args.extend(['--port', str(port)])
+                hostexe_args.extend(["--port", str(port)])
 
     # If we need to use Functions host directly
     if not hostexe_args:
-        dll = os.environ.get('PYAZURE_WEBHOST_DLL')
-        if not dll and testconfig and testconfig.has_section('webhost'):
-            dll = testconfig['webhost'].get('dll')
+        dll = os.environ.get("PYAZURE_WEBHOST_DLL")
+        if not dll and testconfig and testconfig.has_section("webhost"):
+            dll = testconfig["webhost"].get("dll")
 
         if dll:
             # Paths from environment might contain trailing
@@ -869,94 +904,97 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         if not dll:
             dll = DEFAULT_WEBHOST_DLL_PATH
 
-            os.makedirs(dll.parent / 'Secrets', exist_ok=True)
-            with open(dll.parent / 'Secrets' / 'host.json', 'w') as f:
+            os.makedirs(dll.parent / "Secrets", exist_ok=True)
+            with open(dll.parent / "Secrets" / "host.json", "w") as f:
                 secrets = SECRETS_TEMPLATE
 
                 f.write(secrets)
 
         if dll and pathlib.Path(dll).exists():
-            hostexe_args = ['dotnet', str(dll)]
+            hostexe_args = ["dotnet", str(dll)]
 
     if not hostexe_args:
-        raise RuntimeError('\n'.join([
-            'Unable to locate Azure Functions Host binary.',
-            'Please do one of the following:',
-            ' * run the following command from the root folder of',
-            '   the project:',
-            '',
-            f'       $ {sys.executable} setup.py webhost',
-            '',
-            ' * or download or build the Azure Functions Host and'
-            '   then write the full path to WebHost.dll'
-            '   into the `PYAZURE_WEBHOST_DLL` environment variable.',
-            '   Alternatively, you can create the',
-            f'   {WORKER_CONFIG.name} file in the root folder',
-            '   of the project with the following structure:',
-            '',
-            '      [webhost]',
-            '      dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
-            ' * or download Azure Functions Core Tools binaries and',
-            '   then write the full path to func.exe into the ',
-            '   `CORE_TOOLS_EXE_PATH` envrionment variable.',
-            '',
-            'Setting "export PYAZURE_WEBHOST_DEBUG=true" to get the full',
-            'stdout and stderr from function host.'
-        ]))
+        raise RuntimeError(
+            "\n".join(
+                [
+                    "Unable to locate Azure Functions Host binary.",
+                    "Please do one of the following:",
+                    " * run the following command from the root folder of",
+                    "   the project:",
+                    "",
+                    f"       $ {sys.executable} setup.py webhost",
+                    "",
+                    " * or download or build the Azure Functions Host and"
+                    "   then write the full path to WebHost.dll"
+                    "   into the `PYAZURE_WEBHOST_DLL` environment variable.",
+                    "   Alternatively, you can create the",
+                    f"   {WORKER_CONFIG.name} file in the root folder",
+                    "   of the project with the following structure:",
+                    "",
+                    "      [webhost]",
+                    "      dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll",
+                    " * or download Azure Functions Core Tools binaries and",
+                    "   then write the full path to func.exe into the ",
+                    "   `CORE_TOOLS_EXE_PATH` envrionment variable.",
+                    "",
+                    'Setting "export PYAZURE_WEBHOST_DEBUG=true" to get the full',
+                    "stdout and stderr from function host.",
+                ]
+            )
+        )
 
     worker_path = os.environ.get(PYAZURE_WORKER_DIR)
     worker_path = WORKER_PATH if not worker_path else pathlib.Path(worker_path)
     if not worker_path.exists():
-        raise RuntimeError(f'Worker path {worker_path} does not exist')
+        raise RuntimeError(f"Worker path {worker_path} does not exist")
 
     # Casting to strings is necessary because Popen doesn't like
     # path objects there on Windows.
     extra_env = {
-        'AzureWebJobsScriptRoot': str(script_root),
-        'languageWorkers:python:workerDirectory': str(worker_path),
-        'host:logger:consoleLoggingMode': 'always',
-        'AZURE_FUNCTIONS_ENVIRONMENT': 'development',
-        'AzureWebJobsSecretStorageType': 'files',
-        'FUNCTIONS_WORKER_RUNTIME': 'python'
+        "AzureWebJobsScriptRoot": str(script_root),
+        "languageWorkers:python:workerDirectory": str(worker_path),
+        "host:logger:consoleLoggingMode": "always",
+        "AZURE_FUNCTIONS_ENVIRONMENT": "development",
+        "AzureWebJobsSecretStorageType": "files",
+        "FUNCTIONS_WORKER_RUNTIME": "python",
     }
 
     # In E2E Integration mode, we should use the core tools worker
     # from the latest artifact instead of the azure_functions_worker module
     if is_envvar_true(PYAZURE_INTEGRATION_TEST):
-        extra_env.pop('languageWorkers:python:workerDirectory')
+        extra_env.pop("languageWorkers:python:workerDirectory")
 
-    if testconfig and 'azure' in testconfig:
-        st = testconfig['azure'].get('storage_key')
+    if testconfig and "azure" in testconfig:
+        st = testconfig["azure"].get("storage_key")
         if st:
-            extra_env['AzureWebJobsStorage'] = st
+            extra_env["AzureWebJobsStorage"] = st
 
-        cosmos = testconfig['azure'].get('cosmosdb_key')
+        cosmos = testconfig["azure"].get("cosmosdb_key")
         if cosmos:
-            extra_env['AzureWebJobsCosmosDBConnectionString'] = cosmos
+            extra_env["AzureWebJobsCosmosDBConnectionString"] = cosmos
 
-        eventhub = testconfig['azure'].get('eventhub_key')
+        eventhub = testconfig["azure"].get("eventhub_key")
         if eventhub:
-            extra_env['AzureWebJobsEventHubConnectionString'] = eventhub
+            extra_env["AzureWebJobsEventHubConnectionString"] = eventhub
 
-        servicebus = testconfig['azure'].get('servicebus_key')
+        servicebus = testconfig["azure"].get("servicebus_key")
         if servicebus:
-            extra_env['AzureWebJobsServiceBusConnectionString'] = servicebus
+            extra_env["AzureWebJobsServiceBusConnectionString"] = servicebus
 
-        sql = testconfig['azure'].get('sql_key')
+        sql = testconfig["azure"].get("sql_key")
         if sql:
-            extra_env['AzureWebJobsSqlConnectionString'] = sql
+            extra_env["AzureWebJobsSqlConnectionString"] = sql
 
-        eventgrid_topic_uri = testconfig['azure'].get('eventgrid_topic_uri')
+        eventgrid_topic_uri = testconfig["azure"].get("eventgrid_topic_uri")
         if eventgrid_topic_uri:
-            extra_env['AzureWebJobsEventGridTopicUri'] = eventgrid_topic_uri
+            extra_env["AzureWebJobsEventGridTopicUri"] = eventgrid_topic_uri
 
-        eventgrid_topic_key = testconfig['azure'].get('eventgrid_topic_key')
+        eventgrid_topic_key = testconfig["azure"].get("eventgrid_topic_key")
         if eventgrid_topic_key:
-            extra_env['AzureWebJobsEventGridConnectionKey'] = \
-                eventgrid_topic_key
+            extra_env["AzureWebJobsEventGridConnectionKey"] = eventgrid_topic_key
 
     if port is not None:
-        extra_env['ASPNETCORE_URLS'] = f'http://*:{port}'
+        extra_env["ASPNETCORE_URLS"] = f"http://*:{port}"
 
     return subprocess.Popen(
         hostexe_args,
@@ -966,7 +1004,8 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             **extra_env,
         },
         stdout=stdout,
-        stderr=stderr)
+        stderr=stderr,
+    )
 
 
 def start_webhost(*, script_dir=None, stdout=None):
@@ -979,28 +1018,26 @@ def start_webhost(*, script_dir=None, stdout=None):
 
     port = _find_open_port()
 
-    proc = popen_webhost(stdout=stdout, stderr=subprocess.STDOUT,
-                         script_root=script_root, port=port)
+    proc = popen_webhost(
+        stdout=stdout, stderr=subprocess.STDOUT, script_root=script_root, port=port
+    )
     time.sleep(10)  # Giving host some time to start fully.
 
-    addr = f'http://{LOCALHOST}:{port}'
+    addr = f"http://{LOCALHOST}:{port}"
     return _WebHostProxy(proc, addr)
 
 
 def create_dummy_dispatcher():
     dummy_event_loop = asyncio.new_event_loop()
     disp = dispatcher.Dispatcher(
-        dummy_event_loop, LOCALHOST, 0,
-        'test_worker_id', 'test_request_id',
-        1.0, 1000)
+        dummy_event_loop, LOCALHOST, 0, "test_worker_id", "test_request_id", 1.0, 1000
+    )
     dummy_event_loop.close()
     return disp
 
 
 def retryable_test(
-        number_of_retries: int,
-        interval_sec: int,
-        expected_exception: type = Exception
+    number_of_retries: int, interval_sec: int, expected_exception: type = Exception
 ):
     def decorate(func):
         def call(*args, **kwargs):
@@ -1039,37 +1076,41 @@ def _symlink_dir(src, dst):
 
 
 def _setup_func_app(app_root):
-    extensions = app_root / 'bin'
-    host_json = app_root / 'host.json'
-    extensions_csproj_file = app_root / 'extensions.csproj'
+    extensions = app_root / "bin"
+    host_json = app_root / "host.json"
+    extensions_csproj_file = app_root / "extensions.csproj"
 
     if not os.path.isfile(host_json):
-        with open(host_json, 'w') as f:
+        with open(host_json, "w") as f:
             f.write(HOST_JSON_TEMPLATE)
 
     if not os.path.isfile(extensions_csproj_file):
-        with open(extensions_csproj_file, 'w') as f:
+        with open(extensions_csproj_file, "w") as f:
             f.write(EXTENSION_CSPROJ_TEMPLATE)
 
     _symlink_dir(EXTENSIONS_PATH, extensions)
 
 
 def _teardown_func_app(app_root):
-    extensions = app_root / 'bin'
-    host_json = app_root / 'host.json'
-    extensions_csproj_file = app_root / 'extensions.csproj'
-    extensions_obj_file = app_root / 'obj'
-    libraries_path = app_root / '.python_packages'
+    extensions = app_root / "bin"
+    host_json = app_root / "host.json"
+    extensions_csproj_file = app_root / "extensions.csproj"
+    extensions_obj_file = app_root / "obj"
+    libraries_path = app_root / ".python_packages"
 
-    for path in (extensions, host_json, extensions_csproj_file,
-                 extensions_obj_file, libraries_path):
+    for path in (
+        extensions,
+        host_json,
+        extensions_csproj_file,
+        extensions_obj_file,
+        libraries_path,
+    ):
         remove_path(path)
 
 
 def _main():
-    parser = argparse.ArgumentParser(description='Run a Python worker.')
-    parser.add_argument('scriptroot',
-                        help='directory with functions to load')
+    parser = argparse.ArgumentParser(description="Run a Python worker.")
+    parser.add_argument("scriptroot", help="directory with functions to load")
 
     args = parser.parse_args()
 
@@ -1077,8 +1118,10 @@ def _main():
     _setup_func_app(app_root)
 
     host = popen_webhost(
-        stdout=sys.stdout, stderr=sys.stderr,
-        script_root=os.path.abspath(args.scriptroot))
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+        script_root=os.path.abspath(args.scriptroot),
+    )
     try:
         host.wait()
     finally:
@@ -1086,5 +1129,5 @@ def _main():
         _teardown_func_app()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     _main()

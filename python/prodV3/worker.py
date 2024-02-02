@@ -1,6 +1,5 @@
 import os
 import sys
-
 from pathlib import Path
 
 # User packages
@@ -18,8 +17,7 @@ AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
 
 def is_azure_environment():
     """Check if the function app is running on the cloud"""
-    return (AZURE_CONTAINER_NAME in os.environ
-            or AZURE_WEBSITE_INSTANCE_ID in os.environ)
+    return AZURE_CONTAINER_NAME in os.environ or AZURE_WEBSITE_INSTANCE_ID in os.environ
 
 
 def add_script_root_to_sys_path():
@@ -54,12 +52,12 @@ def determine_user_pkg_paths():
     elif minor_version in (7, 8, 9):
         user_pkg_paths.append(os.path.join(pkgs_path, PKGS))
     else:
-        raise RuntimeError(f'Unsupported Python version: 3.{minor_version}')
+        raise RuntimeError(f"Unsupported Python version: 3.{minor_version}")
 
     return user_pkg_paths
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # worker.py lives in the same directory as azure_functions_worker
     func_worker_dir = str(Path(__file__).absolute().parent)
     env = os.environ
@@ -71,11 +69,12 @@ if __name__ == '__main__':
 
         # On cloud, we prioritize third-party user packages
         # over worker packages in PYTHONPATH
-        env['PYTHONPATH'] = f'{joined_pkg_paths}:{func_worker_dir}'
-        os.execve(sys.executable,
-                  [sys.executable, '-m', 'azure_functions_worker']
-                  + sys.argv[1:],
-                  env)
+        env["PYTHONPATH"] = f"{joined_pkg_paths}:{func_worker_dir}"
+        os.execve(
+            sys.executable,
+            [sys.executable, "-m", "azure_functions_worker"] + sys.argv[1:],
+            env,
+        )
     else:
         # On local development, we prioritize worker packages over
         # third-party user packages (in .venv)

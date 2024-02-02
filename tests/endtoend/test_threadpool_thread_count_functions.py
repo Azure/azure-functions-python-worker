@@ -1,14 +1,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+from datetime import datetime
 from threading import Thread
 from unittest.mock import patch
-from datetime import datetime
+
 from tests.utils import testutils
 
 
 class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
-    """ Test the Http Trigger with setting up the python threadpool thread
+    """Test the Http Trigger with setting up the python threadpool thread
     count to 2. this test will check if both requests should be processed
     at the same time. this file is more focus on testing the E2E flow
     scenarios.
@@ -16,12 +17,12 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.env_variables['PYTHON_THREADPOOL_THREAD_COUNT'] = '2'
+        cls.env_variables["PYTHON_THREADPOOL_THREAD_COUNT"] = "2"
 
         os_environ = os.environ.copy()
         os_environ.update(cls.env_variables)
 
-        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ = patch.dict("os.environ", os_environ)
         cls._patch_environ.start()
         super().setUpClass()
 
@@ -31,17 +32,16 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions'
+        return testutils.E2E_TESTS_FOLDER / "http_functions"
 
     @testutils.retryable_test(3, 5)
     def test_http_func_with_thread_count(self):
         response = [None, None]
 
         def http_req(res_num):
-            r = self.webhost.request('GET', 'http_func')
+            r = self.webhost.request("GET", "http_func")
             self.assertTrue(r.ok)
-            response[res_num] = datetime.strptime(
-                r.content.decode("utf-8"), "%H:%M:%S")
+            response[res_num] = datetime.strptime(r.content.decode("utf-8"), "%H:%M:%S")
 
         # creating 2 different threads to send HTTP request
         thread1 = Thread(target=http_req, args=(0,))
@@ -62,5 +62,4 @@ class TestPythonThreadpoolThreadCountStein(TestPythonThreadpoolThreadCount):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-                                            'http_functions_stein'
+        return testutils.E2E_TESTS_FOLDER / "http_functions" / "http_functions_stein"

@@ -1,7 +1,7 @@
 from typing import Optional
 
 import azure.functions as func
-from fastapi import FastAPI, Response, Body, HTTPException
+from fastapi import Body, FastAPI, HTTPException, Response
 from pydantic import BaseModel
 
 fast_app = FastAPI()
@@ -37,5 +37,4 @@ async def raise_http_exception():
     raise HTTPException(status_code=404, detail="Item not found")
 
 
-app = func.AsgiFunctionApp(app=fast_app,
-                           http_auth_level=func.AuthLevel.ANONYMOUS)
+app = func.AsgiFunctionApp(app=fast_app, http_auth_level=func.AuthLevel.ANONYMOUS)

@@ -5,4 +5,4 @@ import notfound
 
 
 def modulenotfound(req) -> str:
-    return f'notfound = {notfound.__name__}'
+    return f"notfound = {notfound.__name__}"

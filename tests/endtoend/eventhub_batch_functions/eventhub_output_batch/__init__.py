@@ -5,5 +5,5 @@ import azure.functions as func
 
 # An HttpTrigger to generating EventHub event from EventHub Output Binding
 def main(req: func.HttpRequest) -> str:
-    events = req.get_body().decode('utf-8')
+    events = req.get_body().decode("utf-8")
     return events

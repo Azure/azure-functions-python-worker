@@ -2,12 +2,13 @@
 # Licensed under the MIT License.
 
 import logging
+
 import azure.functions as func
 from sklearn.datasets import load_iris
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
+    logging.info("Python HTTP trigger function processed a request.")
 
     iris = load_iris()
 

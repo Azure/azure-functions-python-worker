@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import time
 import typing
+
 from tests.utils import testutils
 
 REQUEST_TIMEOUT_SEC = 5
@@ -21,23 +22,22 @@ class TestTimerFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'timer_functions'
+        return testutils.E2E_TESTS_FOLDER / "timer_functions"
 
     def test_timer(self):
         time.sleep(1)
         # Checking webhost status.
-        r = self.webhost.request('GET', '', no_prefix=True,
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request("GET", "", no_prefix=True, timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
 
     def check_log_timer(self, host_out: typing.List[str]):
-        self.assertEqual(host_out.count("This timer trigger function executed "
-                                        "successfully"), 1)
+        self.assertEqual(
+            host_out.count("This timer trigger function executed " "successfully"), 1
+        )
 
 
 class TestTimerFunctionsStein(TestTimerFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'timer_functions' / \
-                                            'timer_functions_stein'
+        return testutils.E2E_TESTS_FOLDER / "timer_functions" / "timer_functions_stein"

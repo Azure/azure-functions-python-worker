@@ -3,19 +3,21 @@
 import threading
 from typing import Type
 
-from . import TraceContext
-from . import RetryContext
+from .retrycontext import RetryContext
+from .tracecontext import TraceContext
 
 
 class Context:
 
-    def __init__(self,
-                 func_name: str,
-                 func_dir: str,
-                 invocation_id: str,
-                 thread_local_storage: Type[threading.local],
-                 trace_context: TraceContext,
-                 retry_context: RetryContext) -> None:
+    def __init__(
+        self,
+        func_name: str,
+        func_dir: str,
+        invocation_id: str,
+        thread_local_storage: Type[threading.local],
+        trace_context: TraceContext,
+        retry_context: RetryContext,
+    ) -> None:
         self.__func_name = func_name
         self.__func_dir = func_dir
         self.__invocation_id = invocation_id

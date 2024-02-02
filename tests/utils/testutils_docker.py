@@ -17,8 +17,8 @@ _DOCKER_DEFAULT_PATH = "docker"
 _HOST_VERSION = "4"
 _docker_cmd = os.getenv(_DOCKER_PATH, _DOCKER_DEFAULT_PATH)
 _addr = ""
-_python_version = f'{sys.version_info.major}.{sys.version_info.minor}'
-_libraries_path = '.python_packages/lib/site-packages'
+_python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+_libraries_path = ".python_packages/lib/site-packages"
 _uuid = str(uuid.uuid4())
 _MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
 _MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
@@ -42,16 +42,18 @@ class WebHostProxy:
 
     def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
-        params = dict(kwargs.pop('params', {}))
-        no_prefix = kwargs.pop('no_prefix', False)
+        params = dict(kwargs.pop("params", {}))
+        no_prefix = kwargs.pop("no_prefix", False)
 
         return request_method(
-            self._addr + ('/' if no_prefix else '/api/') + funcname,
-            *args, params=params, **kwargs)
+            self._addr + ("/" if no_prefix else "/api/") + funcname,
+            *args,
+            params=params,
+            **kwargs,
+        )
 
     def close(self) -> bool:
-        """Kill a container by its name. Returns True on success.
-        """
+        """Kill a container by its name. Returns True on success."""
         kill_cmd = [_docker_cmd, "rm", "-f", _uuid]
         kill_process = subprocess.run(args=kill_cmd, stdout=subprocess.DEVNULL)
         exit_code = kill_process.returncode
@@ -62,18 +64,19 @@ class WebHostProxy:
 class WebHostDockerContainerBase(unittest.TestCase):
 
     @staticmethod
-    def find_latest_image(image_repo: str,
-                          image_url: str) -> str:
+    def find_latest_image(image_repo: str, image_url: str) -> str:
 
-        regex = re.compile(_HOST_VERSION + r'.\d+.\d+-python' + _python_version)
+        regex = re.compile(_HOST_VERSION + r".\d+.\d+-python" + _python_version)
 
         response = requests.get(image_url, allow_redirects=True)
         if not response.ok:
-            raise RuntimeError(f'Failed to query latest image for v4'
-                               f' Python {_python_version}.'
-                               f' Status {response.status_code}')
+            raise RuntimeError(
+                f"Failed to query latest image for v4"
+                f" Python {_python_version}."
+                f" Status {response.status_code}"
+            )
 
-        tag_list = response.json().get('tags', [])
+        tag_list = response.json().get("tags", [])
         # Removing images with a -upgrade and -slim. Upgrade images were
         # temporary images used to onboard customers from a previous version.
         # These images are no longer used.
@@ -85,35 +88,30 @@ class WebHostDockerContainerBase(unittest.TestCase):
 
         # sorting all the python versions based on the runtime version and
         # getting the latest released runtime version for python.
-        latest_version = sorted(python_versions, key=lambda x: float(
-            x.split(_HOST_VERSION + '.')[-1].split("-python")[0]))[-1]
+        latest_version = sorted(
+            python_versions,
+            key=lambda x: float(x.split(f"{_HOST_VERSION}.")[-1].split("-python")[0]),
+        )[-1]
 
-        image_tag = f'{image_repo}:{latest_version}'
-        return image_tag
+        return f"{image_repo}:{latest_version}"
 
-    def create_container(self, image_repo: str, image_url: str,
-                         configs: DockerConfigs):
+    def create_container(self, image_repo: str, image_url: str, configs: DockerConfigs):
         """Create a docker container and record its port. Create a docker
         container according to the image name. Return the port of container.
-       """
+        """
 
-        worker_path = os.path.join(PROJECT_ROOT, 'azure_functions_worker')
+        worker_path = os.path.join(PROJECT_ROOT, "azure_functions_worker")
         script_path = os.path.join(TESTS_ROOT, configs.script_path)
-        env = {"AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
-               "AzureWebJobsStorage": f"{os.getenv('AzureWebJobsStorage')}",
-               "AzureWebJobsEventHubConnectionString":
-                   f"{os.getenv('AzureWebJobsEventHubConnectionString')}",
-               "AzureWebJobsCosmosDBConnectionString":
-                   f"{os.getenv('AzureWebJobsCosmosDBConnectionString')}",
-               "AzureWebJobsServiceBusConnectionString":
-                   f"{os.getenv('AzureWebJobsServiceBusConnectionString')}",
-               "AzureWebJobsSqlConnectionString":
-                   f"{os.getenv('AzureWebJobsSqlConnectionString')}",
-               "AzureWebJobsEventGridTopicUri":
-                   f"{os.getenv('AzureWebJobsEventGridTopicUri')}",
-               "AzureWebJobsEventGridConnectionKey":
-                   f"{os.getenv('AzureWebJobsEventGridConnectionKey')}"
-               }
+        env = {
+            "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
+            "AzureWebJobsStorage": f"{os.getenv('AzureWebJobsStorage')}",
+            "AzureWebJobsEventHubConnectionString": f"{os.getenv('AzureWebJobsEventHubConnectionString')}",
+            "AzureWebJobsCosmosDBConnectionString": f"{os.getenv('AzureWebJobsCosmosDBConnectionString')}",
+            "AzureWebJobsServiceBusConnectionString": f"{os.getenv('AzureWebJobsServiceBusConnectionString')}",
+            "AzureWebJobsSqlConnectionString": f"{os.getenv('AzureWebJobsSqlConnectionString')}",
+            "AzureWebJobsEventGridTopicUri": f"{os.getenv('AzureWebJobsEventGridTopicUri')}",
+            "AzureWebJobsEventGridConnectionKey": f"{os.getenv('AzureWebJobsEventGridConnectionKey')}",
+        }
 
         configs.env.update(env)
 
@@ -131,18 +129,18 @@ class WebHostDockerContainerBase(unittest.TestCase):
 
         if configs.libraries:
             install_libraries_cmd = []
-            install_libraries_cmd.extend(['pip', 'install'])
+            install_libraries_cmd.extend(["pip", "install"])
             install_libraries_cmd.extend(configs.libraries)
-            install_libraries_cmd.extend(['-t',
-                                          f'{script_path}/{_libraries_path}'])
+            install_libraries_cmd.extend(["-t", f"{script_path}/{_libraries_path}"])
 
-            install_libraries_process = \
-                subprocess.run(args=install_libraries_cmd,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
+            install_libraries_process = subprocess.run(
+                args=install_libraries_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
 
             if install_libraries_process.returncode != 0:
-                raise RuntimeError('Failed to install libraries')
+                raise RuntimeError("Failed to install libraries")
 
         run_cmd = []
         run_cmd.extend([_docker_cmd, "run", "-p", "0:80", "-d"])
@@ -159,31 +157,34 @@ class WebHostDockerContainerBase(unittest.TestCase):
                 run_cmd.extend(["-e", f"{key}={value}"])
 
         run_cmd.append(image)
-        run_process = subprocess.run(args=run_cmd,
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE)
+        run_process = subprocess.run(
+            args=run_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
 
         if run_process.returncode != 0:
-            raise RuntimeError('Failed to create docker container for'
-                               f' {image} with uuid {_uuid}.'
-                               f' stderr: {run_process.stderr}')
+            raise RuntimeError(
+                "Failed to create docker container for"
+                f" {image} with uuid {_uuid}."
+                f" stderr: {run_process.stderr}"
+            )
 
         # Wait for six seconds for the port to expose
         sleep(6)
 
         # Acquire the port number of the container
         port_cmd = [_docker_cmd, "port", _uuid]
-        port_process = subprocess.run(args=port_cmd,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE)
+        port_process = subprocess.run(
+            args=port_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         if port_process.returncode != 0:
-            raise RuntimeError(f'Failed to acquire port for {_uuid}.'
-                               f' stderr: {port_process.stderr}')
-        port_number = port_process.stdout.decode().strip('\n').split(':')[-1]
+            raise RuntimeError(
+                f"Failed to acquire port for {_uuid}." f" stderr: {port_process.stderr}"
+            )
+        port_number = port_process.stdout.decode().strip("\n").split(":")[-1]
 
         # Wait for six seconds for the container to be in ready state
         sleep(6)
-        self._addr = f'http://localhost:{port_number}'
+        self._addr = f"http://localhost:{port_number}"
 
         return WebHostProxy(run_process, self._addr)
 
@@ -194,9 +195,7 @@ class WebHostConsumption(WebHostDockerContainerBase):
         self.configs = configs
 
     def spawn_container(self):
-        return self.create_container(_MESH_IMAGE_REPO,
-                                     _MESH_IMAGE_URL,
-                                     self.configs)
+        return self.create_container(_MESH_IMAGE_REPO, _MESH_IMAGE_URL, self.configs)
 
 
 class WebHostDedicated(WebHostDockerContainerBase):
@@ -205,5 +204,4 @@ class WebHostDedicated(WebHostDockerContainerBase):
         self.configs = configs
 
     def spawn_container(self):
-        return self.create_container(_IMAGE_REPO, _IMAGE_URL,
-                                     self.configs)
+        return self.create_container(_IMAGE_REPO, _IMAGE_URL, self.configs)

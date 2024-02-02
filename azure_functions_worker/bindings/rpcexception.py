@@ -4,10 +4,7 @@
 
 class RpcException:
 
-    def __init__(self,
-                 source: str,
-                 stack_trace: str,
-                 message: str) -> None:
+    def __init__(self, source: str, stack_trace: str, message: str) -> None:
         self.__source = source
         self.__stack_trace = stack_trace
         self.__message = message

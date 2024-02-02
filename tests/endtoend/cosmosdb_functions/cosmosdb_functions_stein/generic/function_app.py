@@ -13,9 +13,10 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
     database_name="test",
     container_name="items",
     id="cosmosdb-input-test",
-    connection="AzureWebJobsCosmosDBConnectionString")
+    connection="AzureWebJobsCosmosDBConnectionString",
+)
 def cosmosdb_input(req: func.HttpRequest, docs: func.DocumentList) -> str:
-    return func.HttpResponse(docs[0].to_json(), mimetype='application/json')
+    return func.HttpResponse(docs[0].to_json(), mimetype="application/json")
 
 
 @app.generic_trigger(
@@ -25,12 +26,14 @@ def cosmosdb_input(req: func.HttpRequest, docs: func.DocumentList) -> str:
     container_name="items",
     lease_container_name="leases",
     connection="AzureWebJobsCosmosDBConnectionString",
-    create_lease_container_if_not_exists=True)
+    create_lease_container_if_not_exists=True,
+)
 @app.generic_output_binding(
     arg_name="$return",
     type="blob",
     connection="AzureWebJobsStorage",
-    path="python-worker-tests/test-cosmosdb-triggered.txt")
+    path="python-worker-tests/test-cosmosdb-triggered.txt",
+)
 def cosmosdb_trigger(docs: func.DocumentList) -> str:
     return docs[0].to_json()
 
@@ -41,10 +44,10 @@ def cosmosdb_trigger(docs: func.DocumentList) -> str:
     arg_name="file",
     connection="AzureWebJobsStorage",
     type="blob",
-    path="python-worker-tests/test-cosmosdb-triggered.txt")
-def get_cosmosdb_triggered(req: func.HttpRequest,
-                           file: func.InputStream) -> str:
-    return file.read().decode('utf-8')
+    path="python-worker-tests/test-cosmosdb-triggered.txt",
+)
+def get_cosmosdb_triggered(req: func.HttpRequest, file: func.InputStream) -> str:
+    return file.read().decode("utf-8")
 
 
 @app.generic_trigger(arg_name="req", type="httpTrigger")
@@ -55,7 +58,8 @@ def get_cosmosdb_triggered(req: func.HttpRequest,
     type="cosmosDB",
     container_name="items",
     create_if_not_exists=True,
-    connection="AzureWebJobsCosmosDBConnectionString")
+    connection="AzureWebJobsCosmosDBConnectionString",
+)
 def put_document(req: func.HttpRequest, doc: func.Out[func.Document]):
     doc.set(func.Document.from_json(req.get_body()))
-    return 'OK'
+    return "OK"

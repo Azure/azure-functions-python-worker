@@ -17,23 +17,19 @@ class TestLogging(unittest.TestCase):
     """
 
     def test_system_log_namespace(self):
-        """Ensure the following list is part of the system's log
-        """
-        self.assertTrue(flog.is_system_log_category('azure_functions_worker'))
-        self.assertTrue(
-            flog.is_system_log_category('azure_functions_worker_error')
-        )
-        self.assertTrue(flog.is_system_log_category('azure.functions'))
-        self.assertTrue(flog.is_system_log_category('azure.functions.module'))
+        """Ensure the following list is part of the system's log"""
+        self.assertTrue(flog.is_system_log_category("azure_functions_worker"))
+        self.assertTrue(flog.is_system_log_category("azure_functions_worker_error"))
+        self.assertTrue(flog.is_system_log_category("azure.functions"))
+        self.assertTrue(flog.is_system_log_category("azure.functions.module"))
 
     def test_customer_log_namespace(self):
-        """Ensure the following list is part of the customer's log
-        """
-        self.assertFalse(flog.is_system_log_category('customer_logger'))
-        self.assertFalse(flog.is_system_log_category('azure'))
-        self.assertFalse(flog.is_system_log_category('protobuf'))
-        self.assertFalse(flog.is_system_log_category('root'))
-        self.assertFalse(flog.is_system_log_category(''))
+        """Ensure the following list is part of the customer's log"""
+        self.assertFalse(flog.is_system_log_category("customer_logger"))
+        self.assertFalse(flog.is_system_log_category("azure"))
+        self.assertFalse(flog.is_system_log_category("protobuf"))
+        self.assertFalse(flog.is_system_log_category("root"))
+        self.assertFalse(flog.is_system_log_category(""))
 
     def test_format_exception(self):
         def call0(fn):
@@ -46,7 +42,9 @@ class TestLogging(unittest.TestCase):
             fn()
 
         def raising_function():
-            raise ValueError("Value error being raised.", )
+            raise ValueError(
+                "Value error being raised.",
+            )
 
         try:
             call0(raising_function)
@@ -56,5 +54,4 @@ class TestLogging(unittest.TestCase):
             self.assertIn("call1", processed_exception)
             self.assertIn("call2", processed_exception)
             self.assertIn("f", processed_exception)
-            self.assertIn("tests/unittests/test_logging.py",
-                          processed_exception)
+            self.assertIn("tests/unittests/test_logging.py", processed_exception)

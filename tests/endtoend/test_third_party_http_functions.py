@@ -32,8 +32,8 @@ class ThirdPartyHttpFunctionsTestBase:
     class TestThirdPartyHttpFunctions(utils.WebHostTestCase):
         @classmethod
         def setUpClass(cls):
-            host_json = cls.get_script_dir() / 'host.json'
-            with open(host_json, 'w+') as f:
+            host_json = cls.get_script_dir() / "host.json"
+            with open(host_json, "w+") as f:
                 f.write(HOST_JSON_TEMPLATE)
             super().setUpClass()
 
@@ -62,7 +62,7 @@ class ThirdPartyHttpFunctionsTestBase:
             Function app
             will return OK
             """
-            r = self.webhost.request('GET', 'get_query_param', no_prefix=True)
+            r = self.webhost.request("GET", "get_query_param", no_prefix=True)
             self.assertTrue(r.ok)
             self.assertEqual(r.text, "hello world")
 
@@ -71,28 +71,26 @@ class ThirdPartyHttpFunctionsTestBase:
             """Test if the azure.functions SDK is able to deserialize query
             parameter from the default template
             """
-            r = self.webhost.request('GET', 'get_query_param',
-                                     params={'name': 'dummy'}, no_prefix=True)
-            self.assertTrue(r.ok)
-            self.assertEqual(
-                r.text,
-                "hello dummy"
+            r = self.webhost.request(
+                "GET", "get_query_param", params={"name": "dummy"}, no_prefix=True
             )
+            self.assertTrue(r.ok)
+            self.assertEqual(r.text, "hello dummy")
 
         @utils.retryable_test(3, 5)
         def test_post_endpoint_should_accept_body(self):
             """Test if the azure.functions SDK is able to deserialize http body
             and pass it to default template
             """
-            r = self.webhost.request('POST', 'post_str',
-                                     data="dummy",
-                                     headers={'content-type': 'text/plain'},
-                                     no_prefix=True)
-            self.assertTrue(r.ok)
-            self.assertEqual(
-                r.text,
-                "hello dummy"
+            r = self.webhost.request(
+                "POST",
+                "post_str",
+                data="dummy",
+                headers={"content-type": "text/plain"},
+                no_prefix=True,
             )
+            self.assertTrue(r.ok)
+            self.assertEqual(r.text, "hello dummy")
 
         @utils.retryable_test(3, 5)
         def test_worker_status_endpoint_should_return_ok(self):
@@ -102,9 +100,8 @@ class ThirdPartyHttpFunctionsTestBase:
             to host
             """
             root_url = self.webhost._addr
-            health_check_url = f'{root_url}/admin/host/ping'
-            r = requests.post(health_check_url,
-                              params={'checkHealth': '1'})
+            health_check_url = f"{root_url}/admin/host/ping"
+            r = requests.post(health_check_url, params={"checkHealth": "1"})
             self.assertTrue(r.ok)
 
         @utils.retryable_test(3, 5)
@@ -114,50 +111,45 @@ class ThirdPartyHttpFunctionsTestBase:
             response back
             to host
             """
-            os.environ['WEBSITE_PING_METRICS_SCALE_ENABLED'] = '0'
+            os.environ["WEBSITE_PING_METRICS_SCALE_ENABLED"] = "0"
             root_url = self.webhost._addr
-            health_check_url = f'{root_url}/admin/host/ping'
-            r = requests.post(health_check_url,
-                              params={'checkHealth': '1'})
+            health_check_url = f"{root_url}/admin/host/ping"
+            r = requests.post(health_check_url, params={"checkHealth": "1"})
             self.assertTrue(r.ok)
 
         @utils.retryable_test(3, 5)
         def test_get_endpoint_should_accept_path_param(self):
-            r = self.webhost.request('GET', 'get_path_param/1', no_prefix=True)
+            r = self.webhost.request("GET", "get_path_param/1", no_prefix=True)
             self.assertTrue(r.ok)
             self.assertEqual(r.text, "hello 1")
 
         @utils.retryable_test(3, 5)
         def test_post_json_body_and_return_json_response(self):
-            test_data = {
-                "name": "apple",
-                "description": "yummy"
-            }
-            r = self.webhost.request('POST', 'post_json_return_json_response',
-                                     json=test_data,
-                                     no_prefix=True)
+            test_data = {"name": "apple", "description": "yummy"}
+            r = self.webhost.request(
+                "POST", "post_json_return_json_response", json=test_data, no_prefix=True
+            )
             self.assertTrue(r.ok)
             self.assertEqual(r.json(), test_data)
 
         @utils.retryable_test(3, 5)
         def test_raise_exception_should_return_not_found(self):
-            r = self.webhost.request('GET', 'raise_http_exception',
-                                     no_prefix=True)
+            r = self.webhost.request("GET", "raise_http_exception", no_prefix=True)
             self.assertEqual(r.status_code, 404)
             self.assertEqual(r.json(), {"detail": "Item not found"})
 
 
 class TestAsgiHttpFunctions(
-        ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
+    ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions
+):
     @classmethod
     def get_script_dir(cls):
-        return E2E_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
-            'asgi_function'
+        return E2E_TESTS_ROOT / "third_party_http_functions" / "stein" / "asgi_function"
 
 
 class TestWsgiHttpFunctions(
-        ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
+    ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions
+):
     @classmethod
     def get_script_dir(cls):
-        return E2E_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
-            'wsgi_function'
+        return E2E_TESTS_ROOT / "third_party_http_functions" / "stein" / "wsgi_function"

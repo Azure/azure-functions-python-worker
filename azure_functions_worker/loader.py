@@ -11,22 +11,27 @@ import sys
 import time
 from datetime import timedelta
 from os import PathLike, fspath
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 from google.protobuf.duration_pb2 import Duration
 
-from . import protos, functions
+from . import functions, protos
 from .bindings.retrycontext import RetryPolicy
-from .utils.common import get_app_setting
-from .constants import MODULE_NOT_FOUND_TS_URL, PYTHON_SCRIPT_FILE_NAME, \
-    PYTHON_SCRIPT_FILE_NAME_DEFAULT, PYTHON_LANGUAGE_RUNTIME, \
-    CUSTOMER_PACKAGES_PATH, RETRY_POLICY
+from .constants import (
+    CUSTOMER_PACKAGES_PATH,
+    MODULE_NOT_FOUND_TS_URL,
+    PYTHON_LANGUAGE_RUNTIME,
+    PYTHON_SCRIPT_FILE_NAME,
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+    RETRY_POLICY,
+)
 from .logging import logger
+from .utils.common import get_app_setting
 from .utils.wrappers import attach_message_to_exception
 
-_AZURE_NAMESPACE = '__app__'
-_DEFAULT_SCRIPT_FILENAME = '__init__.py'
-_DEFAULT_ENTRY_POINT = 'main'
+_AZURE_NAMESPACE = "__app__"
+_DEFAULT_SCRIPT_FILENAME = "__init__.py"
+_DEFAULT_ENTRY_POINT = "main"
 _submodule_dirs = []
 
 
@@ -34,8 +39,11 @@ def register_function_dir(path: PathLike) -> None:
     try:
         _submodule_dirs.append(fspath(path))
     except TypeError as e:
-        raise RuntimeError(f'Path ({path}) is incompatible with fspath. '
-                           f'It is of type {type(path)}.', e)
+        raise RuntimeError(
+            f"Path ({path}) is incompatible with fspath. "
+            f"It is of type {type(path)}.",
+            e,
+        )
 
 
 def install() -> None:
@@ -48,9 +56,10 @@ def install() -> None:
 
 
 def convert_to_seconds(timestr: str):
-    x = time.strptime(timestr, '%H:%M:%S')
-    return int(timedelta(hours=x.tm_hour, minutes=x.tm_min,
-                         seconds=x.tm_sec).total_seconds())
+    x = time.strptime(timestr, "%H:%M:%S")
+    return int(
+        timedelta(hours=x.tm_hour, minutes=x.tm_min, seconds=x.tm_sec).total_seconds()
+    )
 
 
 def uninstall() -> None:
@@ -61,9 +70,8 @@ def build_binding_protos(indexed_function) -> Dict:
     binding_protos = {}
     for binding in indexed_function.get_bindings():
         binding_protos[binding.name] = protos.BindingInfo(
-            type=binding.type,
-            data_type=binding.data_type,
-            direction=binding.direction)
+            type=binding.type, data_type=binding.data_type, direction=binding.direction
+        )
 
     return binding_protos
 
@@ -81,8 +89,7 @@ def build_retry_protos(indexed_function) -> Dict:
     if strategy == "fixed_delay":
         return build_fixed_delay_retry(retry, max_retry_count, retry_strategy)
     else:
-        return build_variable_interval_retry(retry, max_retry_count,
-                                             retry_strategy)
+        return build_variable_interval_retry(retry, max_retry_count, retry_strategy)
 
 
 def get_retry_settings(indexed_function):
@@ -106,27 +113,25 @@ def build_fixed_delay_retry(retry, max_retry_count, retry_strategy):
 
 def build_variable_interval_retry(retry, max_retry_count, retry_strategy):
     minimum_interval = Duration(
-        seconds=convert_to_seconds(
-            retry.get(RetryPolicy.MINIMUM_INTERVAL.value))
+        seconds=convert_to_seconds(retry.get(RetryPolicy.MINIMUM_INTERVAL.value))
     )
     maximum_interval = Duration(
-        seconds=convert_to_seconds(
-            retry.get(RetryPolicy.MAXIMUM_INTERVAL.value))
+        seconds=convert_to_seconds(retry.get(RetryPolicy.MAXIMUM_INTERVAL.value))
     )
     return protos.RpcRetryOptions(
         max_retry_count=max_retry_count,
         retry_strategy=retry_strategy,
         minimum_interval=minimum_interval,
-        maximum_interval=maximum_interval
+        maximum_interval=maximum_interval,
     )
 
 
-def process_indexed_function(functions_registry: functions.Registry,
-                             indexed_functions):
+def process_indexed_function(functions_registry: functions.Registry, indexed_functions):
     fx_metadata_results = []
     for indexed_function in indexed_functions:
         function_info = functions_registry.add_indexed_function(
-            function=indexed_function)
+            function=indexed_function
+        )
 
         binding_protos = build_binding_protos(indexed_function)
         retry_protos = build_retry_protos(indexed_function)
@@ -143,7 +148,8 @@ def process_indexed_function(functions_registry: functions.Registry,
             bindings=binding_protos,
             raw_bindings=indexed_function.get_raw_bindings(),
             retry_options=retry_protos,
-            properties={"worker_indexed": "True"})
+            properties={"worker_indexed": "True"},
+        )
 
         fx_metadata_results.append(function_metadata)
 
@@ -152,20 +158,25 @@ def process_indexed_function(functions_registry: functions.Registry,
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message='Cannot find module. Please check the requirements.txt '
-            'file for the missing module. For more info, '
-            'please refer the troubleshooting '
-            f'guide: {MODULE_NOT_FOUND_TS_URL}. '
-            f'Current sys.path: {sys.path}',
-    debug_logs='Error in load_function. '
-               f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
-               'python-packages Path exists: '
-               f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}')
-def load_function(name: str, directory: str, script_file: str,
-                  entry_point: Optional[str]):
+    message="Cannot find module. Please check the requirements.txt "
+    "file for the missing module. For more info, "
+    "please refer the troubleshooting "
+    f"guide: {MODULE_NOT_FOUND_TS_URL}. "
+    f"Current sys.path: {sys.path}",
+    debug_logs="Error in load_function. "
+    f"Sys Path: {sys.path}, Sys Module: {sys.modules},"
+    "python-packages Path exists: "
+    f"{os.path.exists(CUSTOMER_PACKAGES_PATH)}",
+)
+def load_function(
+    name: str, directory: str, script_file: str, entry_point: Optional[str]
+):
     dir_path = pathlib.Path(directory)
-    script_path = pathlib.Path(script_file) if script_file else pathlib.Path(
-        _DEFAULT_SCRIPT_FILENAME)
+    script_path = (
+        pathlib.Path(script_file)
+        if script_file
+        else pathlib.Path(_DEFAULT_SCRIPT_FILENAME)
+    )
     if not entry_point:
         entry_point = _DEFAULT_ENTRY_POINT
 
@@ -175,53 +186,56 @@ def load_function(name: str, directory: str, script_file: str,
         rel_script_path = script_path.relative_to(dir_path.parent)
     except ValueError:
         raise RuntimeError(
-            f'script path {script_file} is not relative to the specified '
-            f'directory {directory}'
+            f"script path {script_file} is not relative to the specified "
+            f"directory {directory}"
         )
 
     last_part = rel_script_path.parts[-1]
     modname, ext = os.path.splitext(last_part)
-    if ext != '.py':
+    if ext != ".py":
         raise RuntimeError(
-            f'cannot load function {name}: '
-            f'invalid Python filename {script_file}')
+            f"cannot load function {name}: " f"invalid Python filename {script_file}"
+        )
 
     modname_parts = [_AZURE_NAMESPACE]
     modname_parts.extend(rel_script_path.parts[:-1])
 
     # If the __init__.py contains the code, we should avoid double loading.
-    if modname.lower() != '__init__':
+    if modname.lower() != "__init__":
         modname_parts.append(modname)
 
-    fullmodname = '.'.join(modname_parts)
+    fullmodname = ".".join(modname_parts)
 
     mod = importlib.import_module(fullmodname)
 
     func = getattr(mod, entry_point, None)
     if func is None or not callable(func):
         raise RuntimeError(
-            f'cannot load function {name}: function {entry_point}() is not '
-            f'present in {rel_script_path}')
+            f"cannot load function {name}: function {entry_point}() is not "
+            f"present in {rel_script_path}"
+        )
 
     return func
 
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message='Cannot find module. Please check the requirements.txt '
-            'file for the missing module. For more info, '
-            'please refer the troubleshooting '
-            f'guide: {MODULE_NOT_FOUND_TS_URL}. '
-            f'Current sys.path: {sys.path}',
-    debug_logs='Error in index_function_app. '
-               f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
-               'python-packages Path exists: '
-               f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}')
+    message="Cannot find module. Please check the requirements.txt "
+    "file for the missing module. For more info, "
+    "please refer the troubleshooting "
+    f"guide: {MODULE_NOT_FOUND_TS_URL}. "
+    f"Current sys.path: {sys.path}",
+    debug_logs="Error in index_function_app. "
+    f"Sys Path: {sys.path}, Sys Module: {sys.modules},"
+    "python-packages Path exists: "
+    f"{os.path.exists(CUSTOMER_PACKAGES_PATH)}",
+)
 def index_function_app(function_path: str):
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)
 
     from azure.functions import FunctionRegister
+
     app: Optional[FunctionRegister] = None
     for i in imported_module.__dir__():
         if isinstance(getattr(imported_module, i, None), FunctionRegister):
@@ -230,13 +244,16 @@ def index_function_app(function_path: str):
             else:
                 raise ValueError(
                     f"More than one {app.__class__.__name__} or other top "
-                    f"level function app instances are defined.")
+                    f"level function app instances are defined."
+                )
 
     if not app:
         script_file_name = get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
-            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
-        raise ValueError("Could not find top level function app instances in "
-                         f"{script_file_name}.")
+            default_value=f"{PYTHON_SCRIPT_FILE_NAME_DEFAULT}",
+        )
+        raise ValueError(
+            "Could not find top level function app instances in " f"{script_file_name}."
+        )
 
     return app.get_functions()

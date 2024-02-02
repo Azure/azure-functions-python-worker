@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 import logging
 
-
 logger = logging.getLogger(__name__)
 
 

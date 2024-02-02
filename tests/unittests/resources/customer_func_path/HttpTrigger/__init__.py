@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import os
+
 import azure.functions as func  # NoQA
 
 

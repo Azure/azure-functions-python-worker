@@ -32,5 +32,6 @@ def raise_http_exception():
     return {"detail": "Item not found"}, 404
 
 
-app = func.WsgiFunctionApp(app=flask_app.wsgi_app,
-                           http_auth_level=func.AuthLevel.ANONYMOUS)
+app = func.WsgiFunctionApp(
+    app=flask_app.wsgi_app, http_auth_level=func.AuthLevel.ANONYMOUS
+)

@@ -24,7 +24,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     """
 
     def setUp(self):
-        self._patch_environ = patch.dict('os.environ', os.environ.copy())
+        self._patch_environ = patch.dict("os.environ", os.environ.copy())
         self._patch_environ.start()
         super().setUp()
 
@@ -34,15 +34,14 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions'
+        return testutils.E2E_TESTS_FOLDER / "http_functions"
 
     @testutils.retryable_test(3, 5)
     def test_function_index_page_should_return_ok(self):
         """The index page of Azure Functions should return OK in any
         circumstances
         """
-        r = self.webhost.request('GET', '', no_prefix=True,
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request("GET", "", no_prefix=True, timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
 
     @testutils.retryable_test(3, 5)
@@ -50,8 +49,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         """Test if the default template of Http trigger in Python Function app
         will return OK
         """
-        r = self.webhost.request('GET', 'default_template',
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request("GET", "default_template", timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
 
     @testutils.retryable_test(3, 5)
@@ -59,13 +57,16 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         """Test if the azure.functions SDK is able to deserialize query
         parameter from the default template
         """
-        r = self.webhost.request('GET', 'default_template',
-                                 params={'name': 'query'},
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request(
+            "GET",
+            "default_template",
+            params={"name": "query"},
+            timeout=REQUEST_TIMEOUT_SEC,
+        )
         self.assertTrue(r.ok)
         self.assertEqual(
             r.content,
-            b'Hello, query. This HTTP triggered function executed successfully.'
+            b"Hello, query. This HTTP triggered function executed successfully.",
         )
 
     @testutils.retryable_test(3, 5)
@@ -73,13 +74,16 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         """Test if the azure.functions SDK is able to deserialize http body
         and pass it to default template
         """
-        r = self.webhost.request('POST', 'default_template',
-                                 data='{ "name": "body" }'.encode('utf-8'),
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request(
+            "POST",
+            "default_template",
+            data='{ "name": "body" }'.encode("utf-8"),
+            timeout=REQUEST_TIMEOUT_SEC,
+        )
         self.assertTrue(r.ok)
         self.assertEqual(
             r.content,
-            b'Hello, body. This HTTP triggered function executed successfully.'
+            b"Hello, body. This HTTP triggered function executed successfully.",
         )
 
     @testutils.retryable_test(3, 5)
@@ -89,10 +93,10 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         to host
         """
         root_url = self.webhost._addr
-        health_check_url = f'{root_url}/admin/host/ping'
-        r = requests.post(health_check_url,
-                          params={'checkHealth': '1'},
-                          timeout=REQUEST_TIMEOUT_SEC)
+        health_check_url = f"{root_url}/admin/host/ping"
+        r = requests.post(
+            health_check_url, params={"checkHealth": "1"}, timeout=REQUEST_TIMEOUT_SEC
+        )
         self.assertTrue(r.ok)
 
     @testutils.retryable_test(3, 5)
@@ -101,12 +105,12 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         _handle__worker_status_request and sends a worker status response back
         to host
         """
-        os.environ['WEBSITE_PING_METRICS_SCALE_ENABLED'] = '0'
+        os.environ["WEBSITE_PING_METRICS_SCALE_ENABLED"] = "0"
         root_url = self.webhost._addr
-        health_check_url = f'{root_url}/admin/host/ping'
-        r = requests.post(health_check_url,
-                          params={'checkHealth': '1'},
-                          timeout=REQUEST_TIMEOUT_SEC)
+        health_check_url = f"{root_url}/admin/host/ping"
+        r = requests.post(
+            health_check_url, params={"checkHealth": "1"}, timeout=REQUEST_TIMEOUT_SEC
+        )
         self.assertTrue(r.ok)
 
 
@@ -114,17 +118,19 @@ class TestHttpFunctionsStein(TestHttpFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-                                            'http_functions_stein'
+        return testutils.E2E_TESTS_FOLDER / "http_functions" / "http_functions_stein"
 
 
 class TestHttpFunctionsSteinGeneric(TestHttpFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-                                            'http_functions_stein' / \
-                                            'generic'
+        return (
+            testutils.E2E_TESTS_FOLDER
+            / "http_functions"
+            / "http_functions_stein"
+            / "generic"
+        )
 
 
 class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
@@ -137,72 +143,70 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-                                            'common_libs_functions'
+        return testutils.E2E_TESTS_FOLDER / "http_functions" / "common_libs_functions"
 
     @classmethod
     def get_libraries_to_install(cls):
-        return ['requests', 'python-dotenv', "plotly", "scikit-learn",
-                "opencv-python", "pandas", "numpy"]
+        return [
+            "requests",
+            "python-dotenv",
+            "plotly",
+            "scikit-learn",
+            "opencv-python",
+            "pandas",
+            "numpy",
+        ]
 
     @testutils.retryable_test(3, 5)
     def test_numpy(self):
-        r = self.webhost.request('GET', 'numpy_func',
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request("GET", "numpy_func", timeout=REQUEST_TIMEOUT_SEC)
 
         res = "array: [1.+0.j 2.+0.j]"
 
         self.assertEqual(r.content.decode("UTF-8"), res)
 
     def test_requests(self):
-        r = self.webhost.request('GET', 'requests_func',
-                                 timeout=10)
+        r = self.webhost.request("GET", "requests_func", timeout=10)
 
         self.assertTrue(r.ok)
-        self.assertEqual(r.content.decode("UTF-8"), 'req status code: 200')
+        self.assertEqual(r.content.decode("UTF-8"), "req status code: 200")
 
     def test_pandas(self):
-        r = self.webhost.request('GET', 'pandas_func',
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request("GET", "pandas_func", timeout=REQUEST_TIMEOUT_SEC)
 
-        self.assertIn("two-dimensional",
-                      r.content.decode("UTF-8"))
+        self.assertIn("two-dimensional", r.content.decode("UTF-8"))
 
     def test_sklearn(self):
-        r = self.webhost.request('GET', 'sklearn_func',
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request("GET", "sklearn_func", timeout=REQUEST_TIMEOUT_SEC)
 
-        self.assertIn("First 5 records of array:",
-                      r.content.decode("UTF-8"))
+        self.assertIn("First 5 records of array:", r.content.decode("UTF-8"))
 
     def test_opencv(self):
-        r = self.webhost.request('GET', 'opencv_func',
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request("GET", "opencv_func", timeout=REQUEST_TIMEOUT_SEC)
 
-        self.assertIn("opencv version:",
-                      r.content.decode("UTF-8"))
+        self.assertIn("opencv version:", r.content.decode("UTF-8"))
 
     def test_dotenv(self):
-        r = self.webhost.request('GET', 'dotenv_func',
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request("GET", "dotenv_func", timeout=REQUEST_TIMEOUT_SEC)
 
         self.assertEqual(r.content.decode("UTF-8"), "found")
 
     def test_plotly(self):
-        r = self.webhost.request('GET', 'plotly_func',
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request("GET", "plotly_func", timeout=REQUEST_TIMEOUT_SEC)
 
-        self.assertIn("plotly version:",
-                      r.content.decode("UTF-8"))
+        self.assertIn("plotly version:", r.content.decode("UTF-8"))
 
 
 class TestCommonLibsHttpFunctionsStein(TestCommonLibsHttpFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-                                            'common_libs_functions' / \
-                                            'common_libs_functions_stein'
+        return (
+            testutils.E2E_TESTS_FOLDER
+            / "http_functions"
+            / "common_libs_functions"
+            / "common_libs_functions_stein"
+        )
 
 
 class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):
@@ -215,58 +219,56 @@ class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-                                            'user_thread_logging'
+        return testutils.E2E_TESTS_FOLDER / "http_functions" / "user_thread_logging"
 
     @testutils.retryable_test(3, 5)
     def test_http_thread(self):
-        r = self.webhost.request('GET', 'thread',
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request("GET", "thread", timeout=REQUEST_TIMEOUT_SEC)
 
         self.assertTrue(r.ok)
 
     def check_log_http_thread(self, host_out: typing.List[str]):
-        self.assertEqual(host_out.count('Before threads.'), 1)
-        self.assertEqual(host_out.count('Thread1 used.'), 1)
-        self.assertEqual(host_out.count('Thread2 used.'), 1)
-        self.assertEqual(host_out.count('Thread3 used.'), 1)
-        self.assertEqual(host_out.count('After threads.'), 1)
+        self.assertEqual(host_out.count("Before threads."), 1)
+        self.assertEqual(host_out.count("Thread1 used."), 1)
+        self.assertEqual(host_out.count("Thread2 used."), 1)
+        self.assertEqual(host_out.count("Thread3 used."), 1)
+        self.assertEqual(host_out.count("After threads."), 1)
 
     @testutils.retryable_test(3, 5)
     def test_http_async_thread(self):
-        r = self.webhost.request('GET', 'async_thread',
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request("GET", "async_thread", timeout=REQUEST_TIMEOUT_SEC)
 
         self.assertTrue(r.ok)
 
     def check_log_http_async_thread(self, host_out: typing.List[str]):
-        self.assertEqual(host_out.count('Before threads.'), 1)
-        self.assertEqual(host_out.count('Thread1 used.'), 1)
-        self.assertEqual(host_out.count('Thread2 used.'), 1)
-        self.assertEqual(host_out.count('Thread3 used.'), 1)
-        self.assertEqual(host_out.count('After threads.'), 1)
+        self.assertEqual(host_out.count("Before threads."), 1)
+        self.assertEqual(host_out.count("Thread1 used."), 1)
+        self.assertEqual(host_out.count("Thread2 used."), 1)
+        self.assertEqual(host_out.count("Thread3 used."), 1)
+        self.assertEqual(host_out.count("After threads."), 1)
 
     @testutils.retryable_test(3, 5)
     def test_http_thread_pool_executor(self):
-        r = self.webhost.request('GET', 'thread_pool_executor',
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request(
+            "GET", "thread_pool_executor", timeout=REQUEST_TIMEOUT_SEC
+        )
 
         self.assertTrue(r.ok)
 
     def check_log_http_thread_pool_executor(self, host_out: typing.List[str]):
-        self.assertEqual(host_out.count('Before TPE.'), 1)
-        self.assertEqual(host_out.count('Using TPE.'), 1)
-        self.assertEqual(host_out.count('After TPE.'), 1)
+        self.assertEqual(host_out.count("Before TPE."), 1)
+        self.assertEqual(host_out.count("Using TPE."), 1)
+        self.assertEqual(host_out.count("After TPE."), 1)
 
     @testutils.retryable_test(3, 5)
     def test_http_async_thread_pool_executor(self):
-        r = self.webhost.request('GET', 'async_thread_pool_executor',
-                                 timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request(
+            "GET", "async_thread_pool_executor", timeout=REQUEST_TIMEOUT_SEC
+        )
 
         self.assertTrue(r.ok)
 
-    def check_log_http_async_thread_pool_executor(self,
-                                                  host_out: typing.List[str]):
-        self.assertEqual(host_out.count('Before TPE.'), 1)
-        self.assertEqual(host_out.count('Using TPE.'), 1)
-        self.assertEqual(host_out.count('After TPE.'), 1)
+    def check_log_http_async_thread_pool_executor(self, host_out: typing.List[str]):
+        self.assertEqual(host_out.count("Before TPE."), 1)
+        self.assertEqual(host_out.count("Using TPE."), 1)
+        self.assertEqual(host_out.count("After TPE."), 1)

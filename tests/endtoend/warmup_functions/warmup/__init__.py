@@ -5,4 +5,4 @@ import logging
 
 
 def main(warmupContext) -> None:
-    logging.info('Function App instance is warm')
+    logging.info("Function App instance is warm")

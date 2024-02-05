@@ -13,7 +13,7 @@
     {
       "direction": "in",
       "type": "table",
-      "name": "testEntity",
+      "name": "testEntities",
       "partitionKey": "WillBePopulated",
       "tableName": "EventHubBatchTest",
       "connection": "AzureWebJobsStorage"

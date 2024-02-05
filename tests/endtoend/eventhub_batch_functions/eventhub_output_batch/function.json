@@ -10,15 +10,10 @@
     },
     {
       "type": "eventHub",
-      "name": "out",
+      "name": "$return",
       "direction": "out",
       "eventHubName": "python-worker-ci-eventhub-batch",
       "connection": "AzureWebJobsEventHubConnectionString"
-    },
-    {
-      "type": "http",
-      "direction": "out",
-      "name": "$return"
     }
   ]
 }

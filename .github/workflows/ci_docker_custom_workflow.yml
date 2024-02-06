@@ -122,4 +122,4 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString312 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString312 }}
         run: |
-          python -m pytest --dist loadfile --reruns 4 -vv --instafail tests/endtoend
+          python -m pytest --reruns 4 -vv --instafail tests/endtoend

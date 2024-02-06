@@ -192,6 +192,6 @@ class TestGenericFunctions(testutils.AsyncTestCase):
                 ]
             )
             # It should fail here, since implicit output is False
-            # For the Durable Functions case
+            # For the Durable Functions durableClient case
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Failure)

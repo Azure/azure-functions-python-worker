@@ -14,7 +14,7 @@ on:
         required: true
         type: choice
         default: '3.11'
-        options: [ '3.7', '3.8', '3.9', '3.10', '3.11' ]
+        options: [ '3.7', '3.8', '3.9', '3.10', '3.11', '3.12' ]
       DEDICATED_DOCKER_TEST:
         description: 'Is this Dedicated Image?'
         required: true
@@ -108,5 +108,17 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString311 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
+        run: |
+          python -m pytest --dist loadfile --reruns 4 -vv --instafail tests/endtoend
+      - name: Running 3.12 Tests
+        if: env.python_version == 3.12
+        env:
+          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString312 }}
+          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString312 }}
+          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString312}}
+          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString312 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString312}}
+          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString312 }}
+          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString312 }}
         run: |
           python -m pytest --dist loadfile --reruns 4 -vv --instafail tests/endtoend

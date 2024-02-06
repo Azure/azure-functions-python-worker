@@ -144,7 +144,8 @@ EXTRA_REQUIRES = {
         "scikit-learn",
         "opencv-python",
         "pandas",
-        "numpy"
+        "numpy",
+        "pyyaml"
     ]
 }
 

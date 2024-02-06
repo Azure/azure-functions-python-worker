@@ -48,8 +48,7 @@ from azure_functions_worker.constants import (
 from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
 from tests.utils.constants import PYAZURE_WORKER_DIR, \
     PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
-    CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG, \
-    ARCHIVE_WEBHOST_LOGS
+    CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG
 from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated, \
     DockerConfigs
 
@@ -258,14 +257,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 _setup_func_app(TESTS_ROOT / script_dir)
                 cls.webhost = start_webhost(script_dir=script_dir,
                                             stdout=cls.host_stdout)
-            # if not cls.webhost.is_healthy():
-            #     cls.host_out = cls.host_stdout.read()
-            #     if cls.host_out is not None and len(cls.host_out) > 0:
-            #         error_message = 'WebHost is not started correctly. '
-            #         f'{cls.host_stdout.name}: {cls.host_out}'
-            #         cls.host_stdout_logger.error(error_message)
-            #         raise RuntimeError(error_message)
-
         except Exception:
             _teardown_func_app(TESTS_ROOT / script_dir)
             raise
@@ -276,21 +267,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         cls.webhost = None
 
         if cls.host_stdout is not None:
-            if is_envvar_true(ARCHIVE_WEBHOST_LOGS):
-                cls.host_stdout.seek(0)
-                content = cls.host_stdout.read()
-                if content is not None and len(content) > 0:
-                    version_info = sys.version_info
-                    log_file = (
-                        "logs/"
-                        f"{cls.__module__}_{cls.__name__}"
-                        f"{version_info.minor}_webhost.log"
-                    )
-                    with open(log_file, 'w+') as file:
-                        file.write(content)
-                    cls.host_stdout_logger.info("WebHost log is archived to"
-                                                f"{log_file} in the artifact")
-
             cls.host_stdout.close()
             cls.host_stdout = None
 
@@ -311,18 +287,16 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 test(self, *args, **kwargs)
             except Exception as e:
                 test_exception = e
+
+            try:
+                self.host_stdout.seek(last_pos)
+                self.host_out = self.host_stdout.read()
+                self.host_stdout_logger.error(
+                    'Captured WebHost stdout from %s :\n%s',
+                    self.host_stdout.name, self.host_out)
             finally:
-                try:
-                    self.host_stdout.seek(last_pos)
-                    self.host_out = self.host_stdout.read()
-                    if self.host_out is not None and len(self.host_out) > 0:
-                        self.host_stdout_logger.error(
-                            'Captured WebHost log generated during test '
-                            '%s from %s :\n%s', test.__name__,
-                            self.host_stdout.name, self.host_out)
-                finally:
-                    if test_exception is not None:
-                        raise test_exception
+                if test_exception is not None:
+                    raise test_exception
 
 
 class SharedMemoryTestCase(unittest.TestCase):
@@ -801,10 +775,6 @@ class _WebHostProxy:
     def __init__(self, proc, addr):
         self._proc = proc
         self._addr = addr
-
-    def is_healthy(self):
-        r = self.request('GET', '', no_prefix=True)
-        return 200 <= r.status_code < 300
 
     def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())

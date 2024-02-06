@@ -5,11 +5,6 @@ name: CI Unit tests
 
 on:
   workflow_dispatch:
-    inputs:
-      archive_webhost_logging:
-        description: "For debugging purposes, archive test webhost logs"
-        required: false
-        default: "false"
   schedule:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string
@@ -28,13 +23,21 @@ jobs:
         python-version: [ 3.7, 3.8, 3.9, "3.10", "3.11" ]
     permissions: read-all
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Set up Dotnet 3.1.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+    - name: Set up Dotnet 6.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.x'
     - name: Set up Dotnet 8.0.x
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v1
       with:
         dotnet-version: "8.0.x"
     - name: Install dependencies and the worker
@@ -64,13 +67,11 @@ jobs:
         retry 5 python setup.py build
         retry 5 python setup.py webhost --branch-name=dev
         retry 5 python setup.py extension
-        mkdir logs
     - name: Test with pytest
       env:
         AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }} # needed for installing azure-functions-durable while running setup.py
-        ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
       run: |
-        python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
+        python -m pytest -n auto --dist loadfile --reruns 4 -vv --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
     - name: Codecov
       uses: codecov/codecov-action@v3
       with:
@@ -78,10 +79,3 @@ jobs:
         flags: unittests # optional
         name: codecov # optional
         fail_ci_if_error: false # optional (default = false)
-    - name: Publish Logs to Artifact
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: Test WebHost Logs ${{ github.run_id }} ${{ matrix.python-version }}
-        path: logs/*.log
-        if-no-files-found: ignore

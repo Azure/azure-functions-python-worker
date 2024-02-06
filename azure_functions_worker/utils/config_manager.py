@@ -11,10 +11,17 @@ def read_config(function_path: str):
     with open(function_path, "r") as stream:
         try:
             global config_data
+            # loads the entire yaml file
             config_data = yaml.safe_load(stream)
-            config_data = dict((k, v) for k, v in config_data.items())
+            # gets the python section of the yaml file
+            config_data = config_data.get("PYTHON")
         except yaml.YAMLError as exc:
             print(exc)
+
+    env_copy = os.environ
+    # updates the config dictionary with the environment variables
+    # this prioritizes set env variables over the config file
+    config_data.update(env_copy)
 
 
 def write_config(config_data: dict):
@@ -44,24 +51,14 @@ def is_false_like(setting: str) -> bool:
 
 
 def is_envvar_true(key: str) -> bool:
-    # Check first from config file
     if config_exists() and config_data.get(key) is not None:
         return is_true_like(config_data.get(key))
-    # Now check from environment variables
-    elif os.getenv(key) is not None:
-        return is_true_like(os.environ[key])
-    # Var not found in config file or environment variables, return False
     return False
 
 
 def is_envvar_false(key: str) -> bool:
-    # Check first from config file
     if config_exists() and config_data.get(key) is not None:
         return is_false_like(config_data.get(key))
-    # Now check from environment variables
-    elif os.getenv(key) is not None:
-        return is_false_like(os.environ[key])
-    # Var not found in config file or environment variables, return False
     return False
 
 
@@ -90,33 +87,22 @@ def get_app_setting(
     Optional[str]
         A string value that is set in the application setting
     """
-    # Check first from config file
     if config_exists() and config_data.get(setting) is not None:
         # Setting exists, check with validator
         app_setting_value = config_data.get(setting)
+
+        # If there's no validator, return the app setting value directly
         if validator is None:
             return app_setting_value
-        else:
-            if validator(app_setting_value):
-                return app_setting_value
-            return default_value
 
-    # Setting not in config file, now check from environment variables
-    app_setting_value = os.getenv(setting)
+        # If the app setting is set with a validator,
+        # On True, should return the app setting value
+        # On False, should return the default value
+        if validator(app_setting_value):
+            return app_setting_value
 
-    # If an app setting is not configured, we return the default value
-    if app_setting_value is None:
-        return default_value
-
-    # If there's no validator, we should return the app setting value directly
-    if validator is None:
-        return app_setting_value
-
-    # If the app setting is set with a validator,
-    # On True, should return the app setting value
-    # On False, should return the default value
-    if validator(app_setting_value):
-        return app_setting_value
+    # Setting is not configured or validator is false
+    # Return default value
     return default_value
 
 

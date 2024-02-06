@@ -569,6 +569,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             env_vars = func_env_reload_request.environment_variables
             for var in env_vars:
                 os.environ[var] = env_vars[var]
+            read_config(os.path.join(
+                func_env_reload_request.function_app_directory,
+                "az-config.yml"))
 
             # Apply PYTHON_THREADPOOL_THREAD_COUNT
             self._stop_sync_call_tp()

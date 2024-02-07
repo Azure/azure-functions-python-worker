@@ -12,4 +12,7 @@ def main(event: func.EventGridEvent) -> str:
         'topic': event.topic,
         'subject': event.subject,
         'event_type': event.event_type,
+        'event_time': (event.event_time.isoformat() if
+                       event.event_time else None),
+        'data_version': event.data_version
     })

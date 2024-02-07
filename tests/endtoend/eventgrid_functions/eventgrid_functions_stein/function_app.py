@@ -20,6 +20,9 @@ def event_grid_trigger(event: func.EventGridEvent) -> str:
         'topic': event.topic,
         'subject': event.subject,
         'event_type': event.event_type,
+        'event_time': (event.event_time.isoformat() if
+                       event.event_time else None),
+        'data_version': event.data_version
     })
 
 
@@ -43,11 +46,14 @@ def eventgrid_output_binding(
                                                    data_version="1.0")
 
     outputEvent.set(data_to_event_grid)
-    r_value = "Sent event with subject: {}, id: {}, data: {}, event_type: {} " \
+    r_value = "Sent event with subject: {}, id: {}, data: {}, event_type: {}, " \
+              "event_time: {}, data_version: {} " \
               "to EventGrid!".format(data_to_event_grid.subject,
                                      data_to_event_grid.id,
                                      data_to_event_grid.get_json(),
-                                     data_to_event_grid.event_type)
+                                     data_to_event_grid.event_type,
+                                     data_to_event_grid.event_time.isoformat(),
+                                     data_to_event_grid.data_version)
     return func.HttpResponse(r_value)
 
 

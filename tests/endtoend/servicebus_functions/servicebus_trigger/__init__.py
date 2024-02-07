@@ -32,7 +32,8 @@ def main(msg: azf.ServiceBusMessage) -> str:
         'enqueued_sequence_number': msg.enqueued_sequence_number,
         'enqueued_time_utc': msg.enqueued_time_utc,
         'expires_at_utc': msg.expires_at_utc,
-        'locked_until': msg.locked_until,
+        'locked_until': (msg.locked_until.isoformat() if
+                         msg.locked_until else None),
         'lock_token': msg.lock_token,
         'sequence_number': msg.sequence_number,
         'state': msg.state,

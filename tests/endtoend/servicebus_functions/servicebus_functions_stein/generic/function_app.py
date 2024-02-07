@@ -65,8 +65,10 @@ def servicebus_trigger(msg: func.ServiceBusMessage) -> str:
         'dead_letter_reason': msg.dead_letter_reason,
         'dead_letter_source': msg.dead_letter_source,
         'enqueued_sequence_number': msg.enqueued_sequence_number,
-        'enqueued_time_utc': msg.enqueued_time_utc,
-        'expires_at_utc': msg.expires_at_utc,
+        'enqueued_time_utc': (msg.enqueued_time_utc.isoformat() if
+                              msg.enqueued_time_utc else None),
+        'expires_at_utc': (msg.expires_at_utc.isoformat() if
+                           msg.expires_at_utc else None),
         'locked_until': (msg.locked_until.isoformat() if
                          msg.locked_until else None),
         'lock_token': msg.lock_token,

@@ -26,6 +26,6 @@ def main(req: func.HttpRequest,
                                      data_to_event_grid.id,
                                      data_to_event_grid.get_json(),
                                      data_to_event_grid.event_type,
-                                     data_to_event_grid.event_time.isoformat(),
+                                     data_to_event_grid.event_time,
                                      data_to_event_grid.data_version)
     return func.HttpResponse(r_value)

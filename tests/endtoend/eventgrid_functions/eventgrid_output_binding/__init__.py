@@ -15,13 +15,16 @@ def main(req: func.HttpRequest,
                                                    },
                                                    subject="test-subject",
                                                    event_type="test-event-1",
-                                                   event_time=datetime.utcnow(),
+                                                   event_time="01-01-2024",
                                                    data_version="1.0")
 
     outputEvent.set(data_to_event_grid)
     r_value = "Sent event with subject: {}, id: {}, data: {}, event_type: {} " \
+              "event_time: {}, data_version: {} " \
               "to EventGrid!".format(data_to_event_grid.subject,
                                      data_to_event_grid.id,
                                      data_to_event_grid.get_json(),
-                                     data_to_event_grid.event_type)
+                                     data_to_event_grid.event_type,
+                                     data_to_event_grid.event_time.isoformat(),
+                                     data_to_event_grid.data_version)
     return func.HttpResponse(r_value)

@@ -116,7 +116,7 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
         test_uuid = uuid.uuid4().__str__()
         expected_response = "Sent event with subject: {}, id: {}, data: {}, " \
                             "event_type: {}, event_time: {}, " \
-                             "data_version: {} to EventGrid!".format(
+                            "data_version: {} to EventGrid!".format(
                                 "test-subject", "test-id",
                                 f"{{'test_uuid': '{test_uuid}'}}",
                                 "test-event-1", "01-01-2024", "1.0")

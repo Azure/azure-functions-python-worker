@@ -43,7 +43,7 @@ def eventgrid_output_binding(
                                                    subject="test-subject",
                                                    event_type="test-event-1",
                                                    event_time=datetime(
-                                                       2024, 1, 1).isoformat(),
+                                                       2024, 1, 1),
                                                    data_version="1.0")
 
     outputEvent.set(data_to_event_grid)
@@ -53,7 +53,7 @@ def eventgrid_output_binding(
                                      data_to_event_grid.id,
                                      data_to_event_grid.get_json(),
                                      data_to_event_grid.event_type,
-                                     data_to_event_grid.event_time,
+                                     data_to_event_grid.event_time.isoformat(),
                                      data_to_event_grid.data_version)
     return func.HttpResponse(r_value)
 

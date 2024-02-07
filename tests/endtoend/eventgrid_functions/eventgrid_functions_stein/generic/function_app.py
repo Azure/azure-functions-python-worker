@@ -47,7 +47,7 @@ def eventgrid_output_binding(
                                                    },
                                                    subject="test-subject",
                                                    event_type="test-event-1",
-                                                   event_time=datetime(2024, 1, 1),
+                                                   event_time=datetime(2024, 1, 1).isoformat(),
                                                    data_version="1.0")
 
     outputEvent.set(data_to_event_grid)

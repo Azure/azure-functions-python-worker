@@ -19,7 +19,7 @@ def event_grid_trigger(event: func.EventGridEvent) -> str:
         'data': event.get_json(),
         'topic': event.topic,
         'subject': event.subject,
-        'event_type': event.event_type
+        'event_type': event.event_type,
     })
 
 

@@ -12,7 +12,7 @@ from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
         "Table functions which are used in the bindings in these tests"
         " has a bug with the table extension 1.0.0. "
         "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
-class GenericFunctions(testutils.WebHostTestCase):
+class TestGenericFunctions(testutils.WebHostTestCase):
     """Test Generic Functions with implicit output enabled
 
     With implicit output enabled for generic types, these tests cover
@@ -40,3 +40,15 @@ class GenericFunctions(testutils.WebHostTestCase):
 
         r = self.webhost.request('GET', 'return_not_processed_last')
         self.assertEqual(r.status_code, 200)
+
+
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Table functions has a bug with the table extension 1.0.0."
+        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
+class TestGenericFunctionsStein(TestGenericFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'generic_functions' / \
+            'generic_functions_stein'

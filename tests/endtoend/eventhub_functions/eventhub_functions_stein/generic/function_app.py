@@ -116,7 +116,8 @@ async def metadata_output(req: func.HttpRequest):
 async def metadata_trigger(event: func.EventHubEvent) -> bytes:
     event_dict: typing.Mapping[str, typing.Any] = {
         'body': event.get_body().decode('utf-8'),
-        'enqueued_time': event.enqueued_time.isoformat(),
+        # Uncomment this when the EnqueuedTimeUtc is fixed in azure-functions
+        # 'enqueued_time': event.enqueued_time.isoformat(),
         'partition_key': event.partition_key,
         'sequence_number': event.sequence_number,
         'offset': event.offset,

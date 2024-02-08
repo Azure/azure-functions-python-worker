@@ -6,8 +6,6 @@ import uuid
 
 import requests
 
-from datetime import datetime
-
 from tests.utils import testutils
 
 
@@ -117,17 +115,14 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
 
         test_uuid = uuid.uuid4().__str__()
         expected_response = "Sent event with subject: {}, id: {}, data: {}, " \
-                            "event_type: {}, event_time: {}, " \
-                            "data_version: {} to EventGrid!".format(
+                            "event_type: {} to EventGrid!".format(
                                 "test-subject", "test-id",
                                 f"{{'test_uuid': '{test_uuid}'}}",
-                                "test-event-1", f"{datetime(2024, 1, 1).isoformat()}",
-                                "1.0")
+                                "test-event-1")
         expected_final_data = {
             'id': 'test-id', 'subject': 'test-subject', 'dataVersion': '1.0',
             'eventType': 'test-event-1',
-            'data': {'test_uuid': test_uuid},
-            "eventTime": {datetime(2024, 1, 1).isoformat()}
+            'data': {'test_uuid': test_uuid}
         }
 
         r = self.webhost.request('GET', 'eventgrid_output_binding',
@@ -151,8 +146,7 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
 
                 # list of fields to check are limited as other fields contain
                 # datetime or other uncertain values
-                for f in ['data', 'id', 'eventType', 'subject', 'dataVersion',
-                          'eventTime']:
+                for f in ['data', 'id', 'eventType', 'subject', 'dataVersion']:
                     self.assertEqual(response[f], expected_final_data[f])
 
             except AssertionError:

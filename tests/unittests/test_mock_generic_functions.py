@@ -170,3 +170,28 @@ class TestGenericFunctions(testutils.AsyncTestCase):
             # implicitly
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+
+    async def test_mock_generic_implicit_output_exemption(self):
+        async with testutils.start_mockhost(
+                script_root=self.generic_funcs_dir) as host:
+            await host.init_worker("4.17.1")
+            func_id, r = await host.load_function(
+                'foobar_implicit_output_exemption')
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            _, r = await host.invoke_function(
+                'foobar_implicit_output_exemption', [
+                    protos.ParameterBinding(
+                        name='input',
+                        data=protos.TypedData(
+                            bytes=b'\x00\x01'
+                        )
+                    )
+                ]
+            )
+            # It should fail here, since implicit output is False
+            # For the Durable Functions durableClient case
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)

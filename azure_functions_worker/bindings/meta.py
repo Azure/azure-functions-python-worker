@@ -15,6 +15,7 @@ PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 BINDING_REGISTRY = None
 SDK_BINDING_REGISTRY = None
 deferred_bindings_enabled = False
+SDK_CACHE = {}
 
 
 def load_binding_registry() -> None:
@@ -46,7 +47,8 @@ def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
     client_registry = SDK_BINDING_REGISTRY
     # checks first if registry exists (library is imported)
     # then checks if pytype is a supported type (cx is using sdk type)
-    if client_registry is not None and client_registry.check_supported_type(pytype):
+    if (client_registry is not None
+            and client_registry.check_supported_type(pytype)):
         global deferred_bindings_enabled
         deferred_bindings_enabled = True
         binding = client_registry.get(bind_name)
@@ -110,6 +112,23 @@ def from_incoming_proto(
         raise TypeError(f'Unknown ParameterBindingType: {pb_type}')
 
     try:
+        # if the binding is an sdk type binding
+        if (SDK_BINDING_REGISTRY is not None
+                and SDK_BINDING_REGISTRY.check_supported_type(pytype)):
+            global SDK_CACHE
+            # Check is the object is already in the cache
+            obj = SDK_CACHE.get((pb.name, pytype, datum.value.content), None)
+
+            # if the object is in the cache, return it
+            if obj is not None:
+                return obj
+            # if the object is not in the cache, create and add it to the cache
+            else:
+                obj = binding.decode(datum, trigger_metadata=metadata,
+                                     pytype=pytype)
+                SDK_CACHE[(pb.name, pytype, datum.value.content)] = obj
+                return obj
+
         return binding.decode(datum, trigger_metadata=metadata, pytype=pytype)
     except NotImplementedError:
         # Binding does not support the data.

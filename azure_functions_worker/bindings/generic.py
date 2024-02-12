@@ -51,7 +51,5 @@ class GenericBinding:
         return result
 
     @classmethod
-    def has_implicit_output(cls, bind_name: Optional[str]) -> bool:
-        if bind_name == 'durableClient':
-            return False
+    def has_implicit_output(cls) -> bool:
         return True

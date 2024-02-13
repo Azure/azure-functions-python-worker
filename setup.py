@@ -118,7 +118,11 @@ else:
 
 EXTRA_REQUIRES = {
     "dev": [
+        "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
+        "azure-functions-durable",  # Used for Durable E2E tests
         "flask",
+        "fastapi~=0.85.0",  # Used for ASGIMiddleware test
+        "pydantic",
         "pycryptodome~=3.10.1",
         "flake8~=4.0.1",
         "mypy",

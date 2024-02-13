@@ -143,6 +143,7 @@ EXTRA_REQUIRES = {
         "pandas",
         "numpy",
         "pre-commit",
+        "python-dateutil~=2.8.2"
     ]
 }
 

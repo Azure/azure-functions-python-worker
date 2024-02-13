@@ -58,10 +58,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             self.assertIsInstance(r.response, protos.WorkerInitResponse)
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
-            self.assertEquals(r.response.worker_metadata.runtime_name,
-                              "python")
-            self.assertEquals(r.response.worker_metadata.worker_version,
-                              VERSION)
+            self.assertEqual(r.response.worker_metadata.runtime_name,
+                             "python")
+            self.assertEqual(r.response.worker_metadata.worker_version,
+                             VERSION)
 
     async def test_dispatcher_environment_reload(self):
         """Test function environment reload response
@@ -73,10 +73,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                   protos.FunctionEnvironmentReloadResponse)
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
-            self.assertEquals(r.response.worker_metadata.runtime_name,
-                              "python")
-            self.assertEquals(r.response.worker_metadata.worker_version,
-                              VERSION)
+            self.assertEqual(r.response.worker_metadata.runtime_name,
+                             "python")
+            self.assertEqual(r.response.worker_metadata.worker_version,
+                             VERSION)
 
     async def test_dispatcher_initialize_worker_logging(self):
         """Test if the dispatcher's log can be flushed out during worker

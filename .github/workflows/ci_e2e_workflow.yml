@@ -133,6 +133,18 @@ jobs:
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
+      - name: Running 3.12 Tests
+        if: matrix.python-version == 3.12
+        env:
+          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString312 }}
+          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString312 }}
+          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString312 }}
+          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString312 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString312 }}
+          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString312 }}
+          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString312 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
+        run: .github/Scripts/e2e-tests.sh
       - name: Codecov
         uses: codecov/codecov-action@v3
         with:

@@ -113,7 +113,7 @@ if sys.version_info[:2] == (3, 7):
     )
 else:
     INSTALL_REQUIRES.extend(
-        ("protobuf~=4.22.0", "grpcio-tools~=1.59.0", "grpcio~=1.59.0")
+        ("protobuf~=4.25.2", "grpcio-tools~=1.60.1", "grpcio~=1.60.1")
     )
 
 EXTRA_REQUIRES = {
@@ -138,7 +138,6 @@ EXTRA_REQUIRES = {
         "opencv-python",
         "pandas",
         "numpy",
-        "python-dateutil~=2.8.2"
         "pre-commit",
         "python-dateutil~=2.8.2"
     ]

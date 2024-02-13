@@ -5,10 +5,15 @@ name: CI E2E tests
 
 on:
   workflow_dispatch:
+    inputs:
+      archive_webhost_logging:
+        description: "For debugging purposes, archive test webhost logs"
+        required: false
+        default: "false"
   push:
-    branches: [ dev, master, main, release/* ]
+    branches: [dev, master, main, release/*]
   pull_request:
-    branches: [ dev, master, main, release/* ]
+    branches: [dev, master, main, release/*]
   schedule:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string
@@ -22,22 +27,22 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [ 3.7, 3.8, 3.9, "3.10", "3.11", "3.12" ]
-
+    permissions: read-all
     steps:
       - name: Checkout code.
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set up Dotnet 3.1.x
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '3.1.x'
       - name: Set up Dotnet 6.x
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.x'
+          dotnet-version: "6.x"
+      - name: Set up Dotnet 8.0.x
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
       - name: Install dependencies and the worker
         run: |
           retry() {
@@ -60,12 +65,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
           python -m pip install -U -e .[dev]
-          python -m pip install -U -e .[e2etests]
           
           # Retry a couple times to avoid certificate issue
           retry 5 python setup.py build
           retry 5 python setup.py webhost --branch-name=dev
           retry 5 python setup.py extension
+          mkdir logs
       - name: Grant execute permission
         run: chmod +x .github/Scripts/e2e-tests.sh
       - name: Running 3.7 Tests
@@ -78,6 +83,7 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString37 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Running 3.8 Tests
         if: matrix.python-version == 3.8
@@ -89,6 +95,7 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString38 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
@@ -100,6 +107,7 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString39 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Running 3.10 Tests
         if: matrix.python-version == 3.10
@@ -111,6 +119,7 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString310 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Running 3.11 Tests
         if: matrix.python-version == 3.11
@@ -122,11 +131,19 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString311 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Codecov
-        uses: codecov/codecov-action@v1.0.13
+        uses: codecov/codecov-action@v3
         with:
           file: ./coverage.xml # optional
           flags: unittests # optional
           name: codecov # optional
           fail_ci_if_error: false # optional (default = false)
+      - name: Publish Logs to Artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test WebHost Logs ${{ github.run_id }} ${{ matrix.python-version }}
+          path: logs/*.log
+          if-no-files-found: ignore

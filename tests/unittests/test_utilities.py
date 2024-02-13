@@ -315,7 +315,6 @@ class TestUtilities(unittest.TestCase):
 
     def test_is_python_version(self):
         # Should pass at least 1 test
-        is_python_version_36 = common.is_python_version('3.6')
         is_python_version_37 = common.is_python_version('3.7')
         is_python_version_38 = common.is_python_version('3.8')
         is_python_version_39 = common.is_python_version('3.9')
@@ -323,7 +322,6 @@ class TestUtilities(unittest.TestCase):
         is_python_version_311 = common.is_python_version('3.11')
 
         self.assertTrue(any([
-            is_python_version_36,
             is_python_version_37,
             is_python_version_38,
             is_python_version_39,
@@ -373,6 +371,16 @@ class TestUtilities(unittest.TestCase):
         module = common.get_sdk_from_sys_path()
         sdk_version = common.get_sdk_version(module)
         self.assertEqual(sdk_version, 'dummy')
+
+    def test_valid_script_file_name(self):
+        file_name = 'test.py'
+        valid_name = common.validate_script_file_name(file_name)
+        self.assertTrue(valid_name)
+
+    def test_invalid_script_file_name(self):
+        file_name = 'test'
+        with self.assertRaises(common.InvalidFileNameError):
+            common.validate_script_file_name(file_name)
 
     def _unset_feature_flag(self):
         try:

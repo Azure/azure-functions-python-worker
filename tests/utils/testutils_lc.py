@@ -118,11 +118,7 @@ class LinuxConsumptionWebHostController:
             return cls._mesh_images[host_major]
 
         # match 3.1.3
-        regex = re.compile(host_major + r'.\d+.\d+')
-
-        # match 3.1.3-python3.x
-        if python_version != '3.6':
-            regex = re.compile(host_major + r'.\d+.\d+-python' + python_version)
+        regex = re.compile(host_major + r'.\d+.\d+-python' + python_version)
 
         response = requests.get(_MESH_IMAGE_URL, allow_redirects=True)
         if not response.ok:

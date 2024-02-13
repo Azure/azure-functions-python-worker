@@ -36,7 +36,6 @@ import requests
 
 from azure_functions_worker import dispatcher
 from azure_functions_worker import protos
-from azure_functions_worker._thirdparty import aio_compat
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import FileAccessorFactory
 from azure_functions_worker.bindings.shared_memory_data_transfer \
@@ -147,7 +146,7 @@ class AsyncTestCaseMeta(type(unittest.TestCase)):
     def _sync_wrap(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            return aio_compat.run(func(*args, **kwargs))
+            return asyncio.run(func(*args, **kwargs))
 
         return wrapper
 
@@ -737,7 +736,7 @@ class _MockWebHostController:
         self._worker: typing.Optional[dispatcher.Dispatcher] = None
 
     async def __aenter__(self) -> _MockWebHost:
-        loop = aio_compat.get_running_loop()
+        loop = asyncio.get_running_loop()
         self._host = _MockWebHost(loop, self._scripts_dir)
 
         await self._host.start()

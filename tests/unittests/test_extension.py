@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import asyncio
 import importlib
 import logging
 import os
@@ -9,7 +10,6 @@ import unittest
 from importlib import import_module
 from unittest.mock import patch, Mock, call
 
-from azure_functions_worker._thirdparty import aio_compat
 from azure_functions_worker.constants import PYTHON_ENABLE_WORKER_EXTENSIONS, \
     CUSTOMER_PACKAGES_PATH
 from azure_functions_worker.extension import (
@@ -578,7 +578,7 @@ class TestExtension(unittest.TestCase):
         the customer's function.
         """
         # Create a mocked customer_function with async wrapper
-        result = aio_compat.run(
+        result = asyncio.run(
             self._instance.get_async_invocation_wrapper(
                 self._mock_context,
                 self._mock_function_main_async,
@@ -602,7 +602,7 @@ class TestExtension(unittest.TestCase):
         _func_ext_instance = FuncExtClass()
 
         # Create a mocked customer_function with async wrapper
-        result = aio_compat.run(
+        result = asyncio.run(
             self._instance.get_async_invocation_wrapper(
                 self._mock_context,
                 self._mock_function_main_async,
@@ -631,7 +631,7 @@ class TestExtension(unittest.TestCase):
         _func_ext_instance = FuncExtClass()
 
         # Create a mocked customer_function with async wrapper
-        result = aio_compat.run(
+        result = asyncio.run(
             self._instance.get_async_invocation_wrapper(
                 self._mock_context,
                 self._mock_function_main_async,

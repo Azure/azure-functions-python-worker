@@ -48,7 +48,7 @@ class DependencyManager:
     Core Tools sys.path: [
         "%appdata%\\azure-functions-core-tools\\bin\\workers\\"
             "python\\3.11\\WINDOWS\\X64", # Worker's deps
-        "C:\\Users\\user\\Project\\.venv38\\lib\\site-packages", # CX's deps
+        "C:\\Users\\user\\Project\\.venv311\\lib\\site-packages", # CX's deps
         "C:\\Users\\user\\Project", # CX's Working Directory
     ]
 

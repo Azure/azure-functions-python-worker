@@ -7,6 +7,7 @@ PYTHON_VERSION=$(python --version 2>&1)
 echo "Python Version: $PYTHON_VERSION"
 
 if [[ $PYTHON_VERSION == *"3.12"* ]]; then
+  echo "Upgrading ensurepip"
   python -m ensurepip --upgrade
 fi
 

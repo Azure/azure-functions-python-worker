@@ -9,9 +9,10 @@ echo "Python Version: $PYTHON_VERSION"
 if [[ $PYTHON_VERSION == *"3.12"* ]]; then
   echo "Upgrading ensurepip"
   python -m ensurepip --upgrade
+  pip install --upgrade setuptools
+else
+  python -m pip install --upgrade pip==23.0
 fi
-
-python -m pip install --upgrade pip==23.0
 
 python -m pip install .
 

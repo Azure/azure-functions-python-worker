@@ -249,9 +249,10 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         try:
             if docker_tests_enabled:
-                docker_configs = DockerConfigs(script_path=script_dir,
-                                               libraries=cls.get_libraries_to_install(),
-                                               env=cls.get_environment_variables() or {})
+                docker_configs = DockerConfigs(
+                    script_path=script_dir,
+                    libraries=cls.get_libraries_to_install(),
+                    env=cls.get_environment_variables() or {})
                 if sku == CONSUMPTION_DOCKER_TEST:
                     cls.webhost = \
                         WebHostConsumption(docker_configs).spawn_container()

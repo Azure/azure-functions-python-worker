@@ -35,7 +35,6 @@ class TestDefaultScriptFileName(testutils.WebHostTestCase):
         os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
         super().tearDownClass()
 
-
     @classmethod
     def get_script_dir(cls):
         return DEFAULT_SCRIPT_FILE_NAME_DIR

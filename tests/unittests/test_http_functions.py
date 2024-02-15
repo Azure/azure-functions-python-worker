@@ -28,7 +28,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         os.environ.pop('ENABLE_EXTENSION')
         super().tearDownClass()
 
-
     def test_return_str(self):
         r = self.webhost.request('GET', 'return_str')
         self.assertEqual(r.status_code, 200)

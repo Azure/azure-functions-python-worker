@@ -6,6 +6,7 @@ import typing
 import unittest
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 from time import sleep
 
 import requests
@@ -29,7 +30,7 @@ _CUSTOM_IMAGE = os.getenv("IMAGE_NAME")
 
 @dataclass
 class DockerConfigs:
-    script_path: str
+    script_path: Path
     libraries: typing.List = None
     env: typing.Dict = None
 

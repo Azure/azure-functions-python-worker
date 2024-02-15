@@ -211,6 +211,9 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     test_ABC - Unittest
     check_log_ABC - Check logs generated during the execution of test_ABC.
     """
+    webhost = None
+    host_out = None
+    host_stdout = None
     host_stdout_logger = logging.getLogger('webhosttests')
     env_variables = {}
 
@@ -219,7 +222,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         raise NotImplementedError
 
     @classmethod
-    def get_libraries_to_install(cls):
+    def get_libraries_to_install(cls) -> typing.List:
         pass
 
     @classmethod
@@ -227,32 +230,34 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         pass
 
     @classmethod
-    def get_script_name(cls):
-        pass
+    def docker_tests_enabled(self) -> (bool, str):
+        if is_envvar_true(CONSUMPTION_DOCKER_TEST):
+            return True, CONSUMPTION_DOCKER_TEST
+        elif is_envvar_true(DEDICATED_DOCKER_TEST):
+            return True, DEDICATED_DOCKER_TEST
+        else:
+            return False, None
 
     @classmethod
     def setUpClass(cls):
         script_dir = pathlib.Path(cls.get_script_dir())
 
-        docker_configs = DockerConfigs
-        docker_configs.script_path = script_dir
-        docker_configs.libraries = cls.get_libraries_to_install()
-        docker_configs.env = cls.get_environment_variables() or {}
-        os.environ["PYTHON_SCRIPT_FILE_NAME"] = (cls.get_script_name()
-                                                 or "function_app.py")
+        docker_tests_enabled, sku = cls.docker_tests_enabled()
 
-        if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
-            cls.host_stdout = None
-        else:
-            cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
+        cls.host_stdout = None if is_envvar_true(PYAZURE_WEBHOST_DEBUG) \
+            else tempfile.NamedTemporaryFile('w+t')
 
         try:
-            if is_envvar_true(CONSUMPTION_DOCKER_TEST):
-                cls.webhost = \
-                    WebHostConsumption(docker_configs).spawn_container()
-            elif is_envvar_true(DEDICATED_DOCKER_TEST):
-                cls.webhost = \
-                    WebHostDedicated(docker_configs).spawn_container()
+            if docker_tests_enabled:
+                docker_configs = DockerConfigs(script_path=script_dir,
+                                               libraries=cls.get_libraries_to_install(),
+                                               env=cls.get_environment_variables() or {})
+                if sku == CONSUMPTION_DOCKER_TEST:
+                    cls.webhost = \
+                        WebHostConsumption(docker_configs).spawn_container()
+                elif sku == DEDICATED_DOCKER_TEST:
+                    cls.webhost = \
+                        WebHostDedicated(docker_configs).spawn_container()
             else:
                 _setup_func_app(TESTS_ROOT / script_dir)
                 cls.webhost = start_webhost(script_dir=script_dir,
@@ -1046,9 +1051,10 @@ def _setup_func_app(app_root):
         with open(host_json, 'w') as f:
             f.write(HOST_JSON_TEMPLATE)
 
-    if not os.path.isfile(extensions_csproj_file):
-        with open(extensions_csproj_file, 'w') as f:
-            f.write(EXTENSION_CSPROJ_TEMPLATE)
+    if not os.environ.get("ENABLE_EXTENSION"):
+        if not os.path.isfile(extensions_csproj_file):
+            with open(extensions_csproj_file, 'w') as f:
+                f.write(EXTENSION_CSPROJ_TEMPLATE)
 
     _symlink_dir(EXTENSIONS_PATH, extensions)
 

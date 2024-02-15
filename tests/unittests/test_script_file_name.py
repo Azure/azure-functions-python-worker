@@ -25,8 +25,16 @@ class TestDefaultScriptFileName(testutils.WebHostTestCase):
     """
 
     @classmethod
-    def get_script_name(cls):
-        return "function_app.py"
+    def setUpClass(cls):
+        os.environ["PYTHON_SCRIPT_FILE_NAME"] = "function_app.py"
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        # Remove the WEBSITE_HOSTNAME environment variable
+        os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
+        super().tearDownClass()
+
 
     @classmethod
     def get_script_dir(cls):
@@ -47,12 +55,19 @@ class TestNewScriptFileName(testutils.WebHostTestCase):
     """
 
     @classmethod
-    def get_script_dir(cls):
-        return NEW_SCRIPT_FILE_NAME_DIR
+    def setUpClass(cls):
+        os.environ["PYTHON_SCRIPT_FILE_NAME"] = "test.py"
+        super().setUpClass()
 
     @classmethod
-    def get_script_name(cls):
-        return "test.py"
+    def tearDownClass(cls):
+        # Remove the WEBSITE_HOSTNAME environment variable
+        os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
+        super().tearDownClass()
+
+    @classmethod
+    def get_script_dir(cls):
+        return NEW_SCRIPT_FILE_NAME_DIR
 
     def test_new_file_name(self):
         """
@@ -69,12 +84,19 @@ class TestInvalidScriptFileName(testutils.WebHostTestCase):
     """
 
     @classmethod
-    def get_script_dir(cls):
-        return INVALID_SCRIPT_FILE_NAME_DIR
+    def setUpClass(cls):
+        os.environ["PYTHON_SCRIPT_FILE_NAME"] = "main"
+        super().setUpClass()
 
     @classmethod
-    def get_script_name(cls):
-        return "main"
+    def tearDownClass(cls):
+        # Remove the WEBSITE_HOSTNAME environment variable
+        os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
+        super().tearDownClass()
+
+    @classmethod
+    def get_script_dir(cls):
+        return INVALID_SCRIPT_FILE_NAME_DIR
 
     def test_invalid_file_name(self):
         """

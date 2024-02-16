@@ -19,13 +19,13 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        os.environ["ENABLE_EXTENSION"] = "0"
+        os.environ["DISABLE_EXTENSIONS"] = "1"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         # Remove the WEBSITE_HOSTNAME environment variable
-        os.environ.pop('ENABLE_EXTENSION')
+        os.environ.pop('DISABLE_EXTENSIONS')
         super().tearDownClass()
 
     def test_return_str(self):

@@ -261,8 +261,13 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                         WebHostDedicated(docker_configs).spawn_container()
             else:
                 _setup_func_app(TESTS_ROOT / script_dir)
-                cls.webhost = start_webhost(script_dir=script_dir,
-                                            stdout=cls.host_stdout)
+                try:
+                    cls.webhost = start_webhost(script_dir=script_dir,
+                                                stdout=cls.host_stdout)
+                except Exception as ex:
+                    error_message = f'WebHost is not started correctly. {ex} '
+                    cls.host_stdout_logger.error(error_message)
+
             if not cls.webhost.is_healthy():
                 cls.host_out = cls.host_stdout.read()
                 if cls.host_out is not None and len(cls.host_out) > 0:

@@ -673,7 +673,6 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
     async def test_dispatcher_load_modules_dedicated_app(self):
         """Test modules are loaded in dedicated apps
         """
-
         os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
 
         # Dedicated Apps where placeholder mode is not set

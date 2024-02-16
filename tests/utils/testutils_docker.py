@@ -59,6 +59,9 @@ class WebHostProxy:
 
         return exit_code == 0
 
+    def is_healthy(self) -> bool:
+        pass
+
 
 class WebHostDockerContainerBase(unittest.TestCase):
 

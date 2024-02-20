@@ -17,17 +17,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'http_functions'
 
-    @classmethod
-    def setUpClass(cls):
-        os.environ["DISABLE_EXTENSIONS"] = "1"
-        super().setUpClass()
-
-    @classmethod
-    def tearDownClass(cls):
-        # Remove the WEBSITE_HOSTNAME environment variable
-        os.environ.pop('DISABLE_EXTENSIONS')
-        super().tearDownClass()
-
     def test_return_str(self):
         r = self.webhost.request('GET', 'return_str')
         self.assertEqual(r.status_code, 200)

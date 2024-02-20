@@ -1055,12 +1055,11 @@ def _setup_func_app(app_root):
         with open(host_json, 'w') as f:
             f.write(HOST_JSON_TEMPLATE)
 
-    if not os.environ.get("DISABLE_EXTENSIONS"):
-        if not os.path.isfile(extensions_csproj_file):
-            with open(extensions_csproj_file, 'w') as f:
-                f.write(EXTENSION_CSPROJ_TEMPLATE)
+    if not os.path.isfile(extensions_csproj_file):
+        with open(extensions_csproj_file, 'w') as f:
+            f.write(EXTENSION_CSPROJ_TEMPLATE)
 
-        _symlink_dir(EXTENSIONS_PATH, extensions)
+    _symlink_dir(EXTENSIONS_PATH, extensions)
 
 
 def _teardown_func_app(app_root):

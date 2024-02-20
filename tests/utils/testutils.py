@@ -278,7 +278,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         except Exception:
             cls.tearDownClass()
 
-
     @classmethod
     def tearDownClass(cls):
         cls.webhost.close()

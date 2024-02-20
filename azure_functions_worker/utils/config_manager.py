@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
-import yaml
+import json
 from typing import Optional, Callable
 
 config_data = {}
@@ -9,14 +9,11 @@ config_data = {}
 
 def read_config(function_path: str):
     with open(function_path, "r") as stream:
-        try:
-            global config_data
-            # loads the entire yaml file
-            config_data = yaml.safe_load(stream)
-            # gets the python section of the yaml file
-            config_data = config_data.get("PYTHON")
-        except yaml.YAMLError as exc:
-            print(exc)
+        global config_data
+        # loads the entire yaml file
+        full_config_data = json.load(stream)
+        # gets the python section of the yaml file
+        config_data = full_config_data.get("PYTHON")
 
     env_copy = os.environ
     # updates the config dictionary with the environment variables
@@ -26,10 +23,7 @@ def read_config(function_path: str):
 
 def write_config(config_data: dict):
     with open("az-config.yml", "w") as stream:
-        try:
-            yaml.dump(config_data, stream)
-        except yaml.YAMLError as exc:
-            print(exc)
+        json.dumps(config_data, stream)
 
 
 def config_exists() -> bool:

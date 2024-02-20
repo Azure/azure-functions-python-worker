@@ -287,7 +287,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         }
 
         read_config(os.path.join(worker_init_request.function_app_directory,
-                                 "az-config.yml"))
+                                 "az-config.json"))
         # Can detech worker packages only when customer's code is present
         # This only works in dedicated and premium sku.
         # The consumption sku will switch on environment_reload request.
@@ -571,7 +571,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 os.environ[var] = env_vars[var]
             read_config(os.path.join(
                 func_env_reload_request.function_app_directory,
-                "az-config.yml"))
+                "az-config.json"))
 
             # Apply PYTHON_THREADPOOL_THREAD_COUNT
             self._stop_sync_call_tp()

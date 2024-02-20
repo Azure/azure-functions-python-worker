@@ -34,6 +34,7 @@ class TestInvalidAppStein(testutils.AsyncTestCase):
             an error when an invalid app is provided
         """
         async with self._ctrl as host:
+            await host.init_worker()
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertIn("Error", r.response.result.exception.message)
@@ -57,6 +58,7 @@ class TestInvalidStein(testutils.AsyncTestCase):
             an error when an invalid app is provided
         """
         async with self._ctrl as host:
+            await host.init_worker()
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertIn("Error", r.response.result.exception.message)

@@ -45,8 +45,8 @@ def main():
     DependencyManager.initialize()
     DependencyManager.use_worker_dependencies()
 
+    import asyncio
     from . import logging
-    from ._thirdparty import aio_compat
     from .logging import error_logger, logger, format_exception
 
     args = parse_args()
@@ -57,7 +57,7 @@ def main():
                 args.worker_id, args.request_id, args.host, args.port)
 
     try:
-        return aio_compat.run(start_async(
+        return asyncio.run(start_async(
             args.host, args.port, args.worker_id, args.request_id))
     except Exception as ex:
         error_logger.exception(

@@ -277,6 +277,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     raise RuntimeError(error_message)
 
         except Exception:
+            cls.webhost.close()
             _teardown_func_app(TESTS_ROOT / script_dir)
             raise
 

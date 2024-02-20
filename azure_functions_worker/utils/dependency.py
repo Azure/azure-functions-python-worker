@@ -37,20 +37,20 @@ class DependencyManager:
     Linux Consumption sys.path: [
         "/tmp/functions\\standby\\wwwroot", # Placeholder folder
         "/home/site/wwwroot/.python_packages/lib/site-packages", # CX's deps
-        "/azure-functions-host/workers/python/3.6/LINUX/X64", # Worker's deps
+        "/azure-functions-host/workers/python/3.11/LINUX/X64", # Worker's deps
         "/home/site/wwwroot" # CX's Working Directory
     ]
 
     Linux Dedicated/Premium sys.path: [
         "/home/site/wwwroot", # CX's Working Directory
         "/home/site/wwwroot/.python_packages/lib/site-packages", # CX's deps
-        "/azure-functions-host/workers/python/3.6/LINUX/X64", # Worker's deps
+        "/azure-functions-host/workers/python/3.11/LINUX/X64", # Worker's deps
     ]
 
     Core Tools sys.path: [
         "%appdata%\\azure-functions-core-tools\\bin\\workers\\"
-            "python\\3.6\\WINDOWS\\X64", # Worker's deps
-        "C:\\Users\\user\\Project\\.venv38\\lib\\site-packages", # CX's deps
+            "python\\3.11\\WINDOWS\\X64", # Worker's deps
+        "C:\\Users\\user\\Project\\.venv311\\lib\\site-packages", # CX's deps
         "C:\\Users\\user\\Project", # CX's Working Directory
     ]
 
@@ -77,13 +77,22 @@ class DependencyManager:
         return CONTAINER_NAME in os.environ
 
     @classmethod
+    def should_load_cx_dependencies(cls):
+        """
+        Customer dependencies should be loaded when dependency
+         isolation is enabled and
+         1) App is a dedicated app
+         2) App is linux consumption but not in placeholder mode.
+         This can happen when the worker restarts for any reason
+         (OOM, timeouts etc) and env reload request is not called.
+        """
+        return not (DependencyManager.is_in_linux_consumption()
+                    and is_envvar_true("WEBSITE_PLACEHOLDER_MODE"))
+
+    @classmethod
     @enable_feature_by(
         flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-        flag_default=(
-            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
-            is_python_version('3.10') else
-            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
-        )
+        flag_default=PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
     )
     def use_worker_dependencies(cls):
         """Switch the sys.path and ensure the worker imports are loaded from
@@ -111,11 +120,7 @@ class DependencyManager:
     @classmethod
     @enable_feature_by(
         flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-        flag_default=(
-            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
-            is_python_version('3.10') else
-            PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
-        )
+        flag_default=PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
     )
     def prioritize_customer_dependencies(cls, cx_working_dir=None):
         """Switch the sys.path and ensure the customer's code import are loaded
@@ -149,9 +154,12 @@ class DependencyManager:
             cx_deps_path = cls.cx_deps_path
 
         logger.info(
-            'Applying prioritize_customer_dependencies: worker_dependencies: '
-            '%s, customer_dependencies: %s, working_directory: %s',
-            cls.worker_deps_path, cx_deps_path, working_directory)
+            'Applying prioritize_customer_dependencies: '
+            'worker_dependencies_path: %s, customer_dependencies_path: %s, '
+            'working_directory: %s, Linux Consumption: %s, Placeholder: %s',
+            cls.worker_deps_path, cx_deps_path, working_directory,
+            DependencyManager.is_in_linux_consumption(),
+            is_envvar_true("WEBSITE_PLACEHOLDER_MODE"))
 
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.cx_deps_path, True)
@@ -177,6 +185,9 @@ class DependencyManager:
 
         Depends on the PYTHON_ISOLATE_WORKER_DEPENDENCIES, the actual behavior
         differs.
+
+        This is called only when placeholder mode is true. In the case of a
+        worker restart, this will not be called.
 
         Parameters
         ----------

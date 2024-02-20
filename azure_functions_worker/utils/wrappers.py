@@ -5,7 +5,7 @@ from typing import Callable, Any
 
 from .config_manager import is_envvar_true, is_envvar_false
 from .tracing import extend_exception_message
-from ..logging import logger
+from ..logging import error_logger, logger
 
 
 def enable_feature_by(flag: str,
@@ -45,6 +45,7 @@ def attach_message_to_exception(expt_type: Exception, message: str,
             except expt_type as e:
                 if debug_logs is not None:
                     logger.error(debug_logs)
+                error_logger.exception("Error: %s, %s", e, message)
                 raise extend_exception_message(e, message)
         return call
     return decorate

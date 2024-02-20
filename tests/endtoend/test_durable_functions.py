@@ -4,7 +4,6 @@ import json
 import os
 import time
 from unittest import skipIf
-from unittest.mock import patch
 
 import requests
 
@@ -20,31 +19,28 @@ class TestDurableFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.env_variables['WEBSITE_HOSTNAME'] = "http:"
-        os_environ = os.environ.copy()
-        os_environ.update(cls.env_variables)
-
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
+        os.environ["WEBSITE_HOSTNAME"] = "http:"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
+        # Remove the WEBSITE_HOSTNAME environment variable
+        os.environ.pop('WEBSITE_HOSTNAME')
         super().tearDownClass()
-        cls._patch_environ.stop()
-
-    @classmethod
-    def get_libraries_to_install(cls):
-        return ['azure-functions-durable']
 
     @classmethod
     def get_environment_variables(cls):
         return cls.env_variables
 
     @classmethod
+    def get_libraries_to_install(cls):
+        return ['azure-functions-durable']
+
+    @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'durable_functions'
 
+    @testutils.retryable_test(3, 5)
     def test_durable(self):
         r = self.webhost.request('GET',
                                  'orchestrators/DurableFunctionsOrchestrator')

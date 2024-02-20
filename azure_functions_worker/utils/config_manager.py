@@ -10,9 +10,9 @@ config_data = {}
 def read_config(function_path: str):
     with open(function_path, "r") as stream:
         global config_data
-        # loads the entire yaml file
+        # loads the entire json file
         full_config_data = json.load(stream)
-        # gets the python section of the yaml file
+        # gets the python section of the json file
         config_data = full_config_data.get("PYTHON")
 
     env_copy = os.environ
@@ -21,9 +21,9 @@ def read_config(function_path: str):
     config_data.update(env_copy)
 
 
-def write_config(config_data: dict):
-    with open("az-config.yml", "w") as stream:
-        json.dumps(config_data, stream)
+def write_config(data: dict):
+    with open("az-config.json", "w") as stream:
+        json.dumps(data, stream)
 
 
 def config_exists() -> bool:

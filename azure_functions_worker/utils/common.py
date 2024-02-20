@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import importlib
 import sys
+import re
 from types import ModuleType
 import azure_functions_worker.utils.config_manager as config_manager
 
@@ -64,3 +65,20 @@ def get_sdk_from_sys_path() -> ModuleType:
         sys.path.insert(0, CUSTOMER_PACKAGES_PATH)
 
     return importlib.import_module('azure.functions')
+
+
+class InvalidFileNameError(Exception):
+
+    def __init__(self, file_name: str) -> None:
+        super().__init__(
+            f'Invalid file name: {file_name}')
+
+
+def validate_script_file_name(file_name: str):
+    # First character can be a letter, number, or underscore
+    # Following characters can be a letter, number, underscore, hyphen, or dash
+    # Ending must be .py
+    pattern = re.compile(r'^[a-zA-Z0-9_][a-zA-Z0-9_\-]*\.py$')
+    if not pattern.match(file_name):
+        raise InvalidFileNameError(file_name)
+    return True

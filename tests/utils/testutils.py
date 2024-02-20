@@ -36,7 +36,6 @@ import requests
 
 from azure_functions_worker import dispatcher
 from azure_functions_worker import protos
-from azure_functions_worker._thirdparty import aio_compat
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import FileAccessorFactory
 from azure_functions_worker.bindings.shared_memory_data_transfer \
@@ -49,7 +48,8 @@ from azure_functions_worker.utils.config_manager import (is_envvar_true,
                                                          get_app_setting)
 from tests.utils.constants import PYAZURE_WORKER_DIR, \
     PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
-    CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG
+    CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG, \
+    ARCHIVE_WEBHOST_LOGS
 from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated, \
     DockerConfigs
 
@@ -147,7 +147,7 @@ class AsyncTestCaseMeta(type(unittest.TestCase)):
     def _sync_wrap(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            return aio_compat.run(func(*args, **kwargs))
+            return asyncio.run(func(*args, **kwargs))
 
         return wrapper
 
@@ -228,6 +228,10 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         pass
 
     @classmethod
+    def get_script_name(cls):
+        pass
+
+    @classmethod
     def setUpClass(cls):
         script_dir = pathlib.Path(cls.get_script_dir())
 
@@ -235,6 +239,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         docker_configs.script_path = script_dir
         docker_configs.libraries = cls.get_libraries_to_install()
         docker_configs.env = cls.get_environment_variables() or {}
+        os.environ["PYTHON_SCRIPT_FILE_NAME"] = (cls.get_script_name()
+                                                 or "function_app.py")
 
         if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             cls.host_stdout = None
@@ -252,6 +258,14 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 _setup_func_app(TESTS_ROOT / script_dir)
                 cls.webhost = start_webhost(script_dir=script_dir,
                                             stdout=cls.host_stdout)
+            if not cls.webhost.is_healthy():
+                cls.host_out = cls.host_stdout.read()
+                if cls.host_out is not None and len(cls.host_out) > 0:
+                    error_message = 'WebHost is not started correctly. '
+                    f'{cls.host_stdout.name}: {cls.host_out}'
+                    cls.host_stdout_logger.error(error_message)
+                    raise RuntimeError(error_message)
+
         except Exception:
             _teardown_func_app(TESTS_ROOT / script_dir)
             raise
@@ -262,6 +276,21 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         cls.webhost = None
 
         if cls.host_stdout is not None:
+            if is_envvar_true(ARCHIVE_WEBHOST_LOGS):
+                cls.host_stdout.seek(0)
+                content = cls.host_stdout.read()
+                if content is not None and len(content) > 0:
+                    version_info = sys.version_info
+                    log_file = (
+                        "logs/"
+                        f"{cls.__module__}_{cls.__name__}"
+                        f"{version_info.minor}_webhost.log"
+                    )
+                    with open(log_file, 'w+') as file:
+                        file.write(content)
+                    cls.host_stdout_logger.info("WebHost log is archived to"
+                                                f"{log_file} in the artifact")
+
             cls.host_stdout.close()
             cls.host_stdout = None
 
@@ -282,16 +311,18 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 test(self, *args, **kwargs)
             except Exception as e:
                 test_exception = e
-
-            try:
-                self.host_stdout.seek(last_pos)
-                self.host_out = self.host_stdout.read()
-                self.host_stdout_logger.error(
-                    'Captured WebHost stdout from %s :\n%s',
-                    self.host_stdout.name, self.host_out)
             finally:
-                if test_exception is not None:
-                    raise test_exception
+                try:
+                    self.host_stdout.seek(last_pos)
+                    self.host_out = self.host_stdout.read()
+                    if self.host_out is not None and len(self.host_out) > 0:
+                        self.host_stdout_logger.error(
+                            'Captured WebHost log generated during test '
+                            '%s from %s :\n%s', test.__name__,
+                            self.host_stdout.name, self.host_out)
+                finally:
+                    if test_exception is not None:
+                        raise test_exception
 
 
 class SharedMemoryTestCase(unittest.TestCase):
@@ -515,7 +546,7 @@ class _MockWebHost:
     def request_id(self):
         return self._request_id
 
-    async def init_worker(self, host_version: str):
+    async def init_worker(self, host_version: str = '4.28.0'):
         r = await self.communicate(
             protos.StreamingMessage(
                 worker_init_request=protos.WorkerInitRequest(
@@ -706,7 +737,7 @@ class _MockWebHostController:
         self._worker: typing.Optional[dispatcher.Dispatcher] = None
 
     async def __aenter__(self) -> _MockWebHost:
-        loop = aio_compat.get_running_loop()
+        loop = asyncio.get_running_loop()
         self._host = _MockWebHost(loop, self._scripts_dir)
 
         await self._host.start()
@@ -770,6 +801,10 @@ class _WebHostProxy:
     def __init__(self, proc, addr):
         self._proc = proc
         self._addr = addr
+
+    def is_healthy(self):
+        r = self.request('GET', '', no_prefix=True)
+        return 200 <= r.status_code < 300
 
     def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())

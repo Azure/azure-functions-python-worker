@@ -9,7 +9,7 @@ Azure Functions for Python
 Requirements
 ============
 
-Azure Functions for Python support Python 3.6 or later.
+Azure Functions for Python support Python 3.7 or later.
 
 
 Programming Model

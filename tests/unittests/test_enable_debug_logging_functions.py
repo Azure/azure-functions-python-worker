@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 import typing
 import os
-from unittest.mock import patch
 
 from tests.utils import testutils
 from tests.utils.testutils import TESTS_ROOT, remove_path
@@ -26,16 +25,13 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.env_patcher = patch.dict(os.environ,
-                                     {'PYTHON_ENABLE_DEBUG_LOGGING': '1'},
-                                     clear=True)
-        cls.env_patcher.start()
+        os.environ["PYTHON_ENABLE_DEBUG_LOGGING"] = "1"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
+        os.environ.pop('PYTHON_ENABLE_DEBUG_LOGGING')
         super().tearDownClass()
-        cls.env_patcher.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -63,16 +59,13 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.env_patcher = patch.dict(os.environ,
-                                     {'PYTHON_ENABLE_DEBUG_LOGGING': '0'},
-                                     clear=True)
-        cls.env_patcher.start()
+        os.environ["PYTHON_ENABLE_DEBUG_LOGGING"] = "0"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
+        os.environ.pop('PYTHON_ENABLE_DEBUG_LOGGING')
         super().tearDownClass()
-        cls.env_patcher.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -101,10 +94,7 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.env_patcher = patch.dict(os.environ,
-                                     {'PYTHON_ENABLE_DEBUG_LOGGING': '1'},
-                                     clear=True)
-        cls.env_patcher.start()
+        os.environ["PYTHON_ENABLE_DEBUG_LOGGING"] = "1"
         host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
 
         with open(host_json, 'w+') as f:
@@ -114,11 +104,11 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        os.environ.pop("PYTHON_ENABLE_DEBUG_LOGGING")
         host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
         remove_path(host_json)
 
         super().tearDownClass()
-        cls.env_patcher.stop()
 
     @classmethod
     def get_script_dir(cls):

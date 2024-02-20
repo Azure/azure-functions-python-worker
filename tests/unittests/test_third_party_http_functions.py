@@ -5,7 +5,6 @@ import os
 import pathlib
 import re
 import typing
-from unittest.mock import patch
 
 from tests.utils import testutils
 from tests.utils.testutils import UNIT_TESTS_ROOT
@@ -37,19 +36,14 @@ class ThirdPartyHttpFunctionsTestBase:
             with open(host_json, 'w+') as f:
                 f.write(HOST_JSON_TEMPLATE)
 
-            cls.env_patcher = (
-                patch.dict(
-                    os.environ,
-                    {'AzureWebJobsFeatureFlags': 'EnableWorkerIndexing'},
-                    clear=True))
-            cls.env_patcher.start()
+            os.environ["AzureWebJobsFeatureFlags"] = "EnableWorkerIndexing"
 
             super().setUpClass()
 
         @classmethod
         def tearDownClass(cls):
+            os.environ.pop("AzureWebJobsFeatureFlags")
             super().tearDownClass()
-            cls.env_patcher.stop()
 
         @classmethod
         def get_script_dir(cls):

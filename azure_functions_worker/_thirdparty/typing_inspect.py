@@ -12,18 +12,8 @@ Example usage::
 # NOTE: This module must support Python 2.7 in addition to Python 3.x
 
 import sys
-NEW_TYPING = sys.version_info[:3] >= (3, 7, 0)  # PEP 560
-if NEW_TYPING:
-    import collections.abc
-
-if NEW_TYPING:
-    from typing import (
+from typing import (
         Generic, Callable, Union, TypeVar, ClassVar, Tuple, _GenericAlias
-    )
-else:
-    from typing import (
-        Callable, CallableMeta, Union, _Union, TupleMeta, TypeVar,
-        _ClassVar, GenericMeta,
     )
 
 NEW_39_TYPING = sys.version_info[:3] >= (3, 9, 0)  # PEP 560
@@ -32,17 +22,6 @@ if NEW_39_TYPING:
 
 
 # from mypy_extensions import _TypedDictMeta
-
-
-def _gorg(cls):
-    """This function exists for compatibility with old typing versions."""
-    assert isinstance(cls, GenericMeta)
-    if hasattr(cls, '_gorg'):
-        return cls._gorg
-    while cls.__origin__ is not None:
-        cls = cls.__origin__
-    return cls
-
 
 def is_generic_type(tp):
     """Test if the given type is a generic type. This includes Generic itself,
@@ -66,13 +45,10 @@ def is_generic_type(tp):
         return (isinstance(tp, type) and issubclass(tp, Generic)
                 or ((isinstance(tp, _GenericAlias) or isinstance(tp, _SpecialGenericAlias))  # NoQA E501
                 and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable)))  # NoQA E501
-    if NEW_TYPING:
-        return (isinstance(tp, type)
+    return (isinstance(tp, type)
                 and issubclass(tp, Generic)
                 or isinstance(tp, _GenericAlias)
                 and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable))  # NoQA E501
-    return (isinstance(tp, GenericMeta) and not
-            isinstance(tp, (CallableMeta, TupleMeta)))
 
 
 def is_callable_type(tp):
@@ -94,12 +70,10 @@ def is_callable_type(tp):
 
         get_origin(tp) is collections.abc.Callable  # Callable prior to Python 3.7  # NoQA E501
     """
-    if NEW_TYPING:
-        return (tp is Callable or isinstance(tp, _GenericAlias) and
-                tp.__origin__ is collections.abc.Callable or
-                isinstance(tp, type) and issubclass(tp, Generic) and
-                issubclass(tp, collections.abc.Callable))
-    return type(tp) is CallableMeta
+    return (tp is Callable or isinstance(tp, _GenericAlias) and
+            tp.__origin__ is collections.abc.Callable or
+            isinstance(tp, type) and issubclass(tp, Generic) and
+            issubclass(tp, collections.abc.Callable))
 
 
 def is_tuple_type(tp):
@@ -120,12 +94,10 @@ def is_tuple_type(tp):
 
         get_origin(tp) is tuple  # Tuple prior to Python 3.7
     """
-    if NEW_TYPING:
-        return (tp is Tuple or isinstance(tp, _GenericAlias) and
-                tp.__origin__ is tuple or
-                isinstance(tp, type) and issubclass(tp, Generic) and
-                issubclass(tp, tuple))
-    return type(tp) is TupleMeta
+    return (tp is Tuple or isinstance(tp, _GenericAlias) and
+            tp.__origin__ is tuple or
+            isinstance(tp, type) and issubclass(tp, Generic) and
+            issubclass(tp, tuple))
 
 
 def is_union_type(tp):
@@ -136,10 +108,8 @@ def is_union_type(tp):
         is_union_type(Union[int, int]) == False
         is_union_type(Union[T, int]) == True
     """
-    if NEW_TYPING:
-        return (tp is Union or
-                isinstance(tp, _GenericAlias) and tp.__origin__ is Union)
-    return type(tp) is _Union
+    return (tp is Union or
+            isinstance(tp, _GenericAlias) and tp.__origin__ is Union)
 
 
 def is_typevar(tp):
@@ -161,10 +131,8 @@ def is_classvar(tp):
         is_classvar(ClassVar[int]) == True
         is_classvar(ClassVar[List[T]]) == True
     """
-    if NEW_TYPING:
-        return (tp is ClassVar or
-                isinstance(tp, _GenericAlias) and tp.__origin__ is ClassVar)
-    return type(tp) is _ClassVar
+    return (tp is ClassVar or
+            isinstance(tp, _GenericAlias) and tp.__origin__ is ClassVar)
 
 
 def get_last_origin(tp):
@@ -179,16 +147,8 @@ def get_last_origin(tp):
         get_last_origin(List[Tuple[T, T]][int]) == List[Tuple[T, T]]
         get_last_origin(List) == List
     """
-    if NEW_TYPING:
-        raise ValueError('This function is only supported in Python 3.6,'
-                         ' use get_origin instead')
-    sentinel = object()
-    origin = getattr(tp, '__origin__', sentinel)
-    if origin is sentinel:
-        return None
-    if origin is None:
-        return tp
-    return origin
+    raise ValueError('This function is only supported in Python 3.6,'
+                     ' use get_origin instead')
 
 
 def get_origin(tp):
@@ -202,17 +162,10 @@ def get_origin(tp):
         get_origin(Union[T, int]) == Union
         get_origin(List[Tuple[T, T]][int]) == list  # List prior to Python 3.7
     """
-    if NEW_TYPING:
-        if isinstance(tp, _GenericAlias):
-            return tp.__origin__ if tp.__origin__ is not ClassVar else None
-        if tp is Generic:
-            return Generic
-        return None
-    if isinstance(tp, GenericMeta):
-        return _gorg(tp)
-    if is_union_type(tp):
-        return Union
-
+    if isinstance(tp, _GenericAlias):
+        return tp.__origin__ if tp.__origin__ is not ClassVar else None
+    if tp is Generic:
+        return Generic
     return None
 
 
@@ -231,16 +184,9 @@ def get_parameters(tp):
         get_parameters(Union[S_co, Tuple[T, T]][int, U]) == (U,)
         get_parameters(Mapping[T, Tuple[S_co, T]]) == (T, S_co)
     """
-    if NEW_TYPING:
-        if (isinstance(tp, _GenericAlias) or isinstance(tp, type) and
-            issubclass(tp, Generic) and tp is not Generic):   # NoQA E129
-            return tp.__parameters__
-        return ()
-    if (
-        is_generic_type(tp) or is_union_type(tp) or
-        is_callable_type(tp) or is_tuple_type(tp)
-    ):
-        return tp.__parameters__ if tp.__parameters__ is not None else ()
+    if (isinstance(tp, _GenericAlias) or isinstance(tp, type) and
+        issubclass(tp, Generic) and tp is not Generic):   # NoQA E129
+        return tp.__parameters__
     return ()
 
 
@@ -256,17 +202,8 @@ def get_last_args(tp):
         get_last_args(Callable[[T], int]) == (T, int)
         get_last_args(Callable[[], int]) == (int,)
     """
-    if NEW_TYPING:
-        raise ValueError('This function is only supported in Python 3.6,'
-                         ' use get_args instead')
-    if is_classvar(tp):
-        return (tp.__type__,) if tp.__type__ is not None else ()
-    if (
-        is_generic_type(tp) or is_union_type(tp) or
-        is_callable_type(tp) or is_tuple_type(tp)
-    ):
-        return tp.__args__ if tp.__args__ is not None else ()
-    return ()
+    raise ValueError('This function is only supported in Python 3.6,'
+                     ' use get_args instead')
 
 
 def _eval_args(args):
@@ -307,29 +244,13 @@ def get_args(tp, evaluate=None):
                  (int, Tuple[Optional[int], Optional[int]])
         get_args(Callable[[], T][int], evaluate=True) == ([], int,)
     """
-    if NEW_TYPING:
-        if evaluate is not None and not evaluate:
-            raise ValueError('evaluate can only be True in Python 3.7')
-        if isinstance(tp, _GenericAlias):
-            res = tp.__args__
-            if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:    # NoQA E501
-                res = (list(res[:-1]), res[-1])
-            return res
-        return ()
-    if is_classvar(tp):
-        return (tp.__type__,)
-    if (
-        is_generic_type(tp) or is_union_type(tp) or
-        is_callable_type(tp) or is_tuple_type(tp)
-    ):
-        tree = tp._subs_tree()
-        if isinstance(tree, tuple) and len(tree) > 1:
-            if not evaluate:
-                return tree[1:]
-            res = _eval_args(tree[1:])
-            if get_origin(tp) is Callable and res[0] is not Ellipsis:
-                res = (list(res[:-1]), res[-1])
-            return res
+    if evaluate is not None and not evaluate:
+        raise ValueError('evaluate can only be True in Python 3.7')
+    if isinstance(tp, _GenericAlias):
+        res = tp.__args__
+        if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:    # NoQA E501
+            res = (list(res[:-1]), res[-1])
+        return res
     return ()
 
 

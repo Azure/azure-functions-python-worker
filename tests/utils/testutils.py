@@ -84,22 +84,22 @@ EXTENSION_CSPROJ_TEMPLATE = """\
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-     Version="5.1.2.0" />
+     Version="5.5.0" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
-     Version="3.2.0" />
+     Version="3.3.1" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-     Version="3.0.10" />
+     Version="4.5.0" />
      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
-     Version="4.0.5" />
+     Version="5.2.2" />
      <PackageReference
       Include="Microsoft.Azure.WebJobs.Extensions.Storage.Blobs"
-      Version="5.1.0" />
+      Version="5.2.2" />
      <PackageReference
       Include="Microsoft.Azure.WebJobs.Extensions.Storage.Queues"
-      Version="5.1.0" />
+      Version="5.2.1" />
     <PackageReference
      Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
-     Version="1.1.3" />
+     Version="4.0.1" />
   </ItemGroup>
 </Project>
 """

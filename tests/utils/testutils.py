@@ -275,7 +275,8 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     f'{cls.host_stdout.name}: {cls.host_out}'
                     cls.host_stdout_logger.error(error_message)
                     raise RuntimeError(error_message)
-        except Exception:
+        except Exception as ex:
+            cls.host_stdout_logger.error(ex)
             cls.tearDownClass()
 
     @classmethod

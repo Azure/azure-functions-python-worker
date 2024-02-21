@@ -9,9 +9,29 @@ import typing
 from unittest import skipIf
 
 from tests.utils import testutils
+from tests.utils.testutils import TESTS_ROOT, remove_path
+
+HOST_JSON_TEMPLATE_HTTP = """\
+{
+    "version": "2.0"
+}
+"""
 
 
 class TestHttpFunctions(testutils.WebHostTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        host_json = TESTS_ROOT / cls.get_script_dir() / "host.json"
+        with open(host_json, "w+") as f:
+            f.write(HOST_JSON_TEMPLATE_HTTP)
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        host_json = TESTS_ROOT / cls.get_script_dir() / "host.json"
+        remove_path(host_json)
+        super().tearDownClass()
 
     @classmethod
     def get_script_dir(cls):

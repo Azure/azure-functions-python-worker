@@ -142,7 +142,6 @@ def get_sdk_from_sys_path() -> ModuleType:
 
 
 class InvalidFileNameError(Exception):
-
     def __init__(self, file_name: str) -> None:
         super().__init__(f"Invalid file name: {file_name}")
 

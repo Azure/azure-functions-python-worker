@@ -42,13 +42,13 @@ jobs:
       # Run Linter against code base #
       ################################
       - name: Lint Code Base
-        uses: github/super-linter@v4
+        uses: super-linter/super-linter@v5.7.2  # x-release-please-version
         env:
           VALIDATE_PYTHON: true
-          # VALIDATE_PYTHON_FLAKE8: true
-          # VALIDATE_PYTHON_PYLINT: false # disable pylint, as we have not configure it
-          VALIDATE_PYTHON_BLACK: true # same as above
-          PYTHON_FLAKE8_CONFIG_FILE: tox.ini
+          VALIDATE_PYTHON_FLAKE8: true
+          VALIDATE_PYTHON_BLACK: true
+          PYTHON_BLACK_CONFIG_FILE: pyproject.toml
+          PYTHON_FLAKE8_CONFIG_FILE: .flake8
           FILTER_REGEX_INCLUDE: azure_functions_worker/.*
           FILTER_REGEX_EXCLUDE: tests/.*
           DEFAULT_BRANCH: dev

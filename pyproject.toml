@@ -1,0 +1,29 @@
+[tool.black]
+exclude = '''
+(
+    /(__pycache__|build|dist|\.eggs|\.github|\.local|docs|Samples|
+    azure_functions_worker/protos|azure_functions_worker/_thirdparty/typing_inspect\.py|
+    tests/unittests/test_typing_inspect\.py|tests/unittests/broken_functions/syntax_error/main\.py|
+    \.env.*|\.vscode|venv.*|\.*venv.*)
+)
+'''
+
+[tool.mypy]
+python_version = 3.11
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unused_configs = true
+strict_optional = true
+warn_return_any = true
+disallow_subclassing_any = false
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "azure_functions_worker._thirdparty.aio_compat",
+    "azure_functions_worker.protos.*",
+    "azure_functions_worker._thirdparty.typing_inspect",
+    "config",
+]
+ignore_errors = true

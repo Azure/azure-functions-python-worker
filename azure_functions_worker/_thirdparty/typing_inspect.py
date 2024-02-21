@@ -12,6 +12,7 @@ Example usage::
 # NOTE: This module must support Python 2.7 in addition to Python 3.x
 
 import sys
+import collections.abc
 from typing import (
         Generic, Callable, Union, TypeVar, ClassVar, Tuple, _GenericAlias
     )

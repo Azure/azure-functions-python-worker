@@ -211,9 +211,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     test_ABC - Unittest
     check_log_ABC - Check logs generated during the execution of test_ABC.
     """
-    webhost = None
-    host_out = None
-    host_stdout = None
     host_stdout_logger = logging.getLogger('webhosttests')
     env_variables = {}
 
@@ -267,6 +264,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 except Exception as ex:
                     error_message = f'WebHost is not started correctly. {ex} '
                     cls.host_stdout_logger.error(error_message)
+                    raise
 
             if not cls.webhost.is_healthy():
                 cls.host_out = cls.host_stdout.read()

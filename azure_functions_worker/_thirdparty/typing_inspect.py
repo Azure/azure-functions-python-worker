@@ -14,8 +14,8 @@ Example usage::
 import sys
 import collections.abc
 from typing import (
-        Generic, Callable, Union, TypeVar, ClassVar, Tuple, _GenericAlias
-    )
+    Generic, Callable, Union, TypeVar, ClassVar, Tuple, _GenericAlias
+)
 
 NEW_39_TYPING = sys.version_info[:3] >= (3, 9, 0)  # PEP 560
 if NEW_39_TYPING:
@@ -47,9 +47,9 @@ def is_generic_type(tp):
                 or ((isinstance(tp, _GenericAlias) or isinstance(tp, _SpecialGenericAlias))  # NoQA E501
                 and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable)))  # NoQA E501
     return (isinstance(tp, type)
-                and issubclass(tp, Generic)
-                or isinstance(tp, _GenericAlias)
-                and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable))  # NoQA E501
+            and issubclass(tp, Generic)
+            or isinstance(tp, _GenericAlias)
+            and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable))  # NoQA E501
 
 
 def is_callable_type(tp):

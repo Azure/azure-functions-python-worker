@@ -8,6 +8,7 @@ from .. import protos
 from . import datumdef
 from . import generic
 from .shared_memory_data_transfer import SharedMemoryManager
+from ..logging import logger
 
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
@@ -19,6 +20,7 @@ SDK_CACHE = {}
 
 
 def load_binding_registry() -> None:
+    logger.warning("Loading azure functions.")
     func = sys.modules.get('azure.functions')
 
     # If fails to acquire customer's BYO azure-functions, load the builtin
@@ -28,6 +30,7 @@ def load_binding_registry() -> None:
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()
 
+    logger.warning("Checking for base ext.")
     # Check if cx has imported sdk bindings library
     clients = sys.modules.get('azure.functions.extension.base')
 
@@ -35,6 +38,7 @@ def load_binding_registry() -> None:
     # if it is not none, we want to set and use the registry
     # if clients is not None:
     if clients is None:
+        logger.warning("Trying to import base extension")
         import azure.functions.extension.base as clients
         global SDK_BINDING_REGISTRY
         SDK_BINDING_REGISTRY = clients.get_binding_registry()

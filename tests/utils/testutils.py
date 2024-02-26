@@ -48,7 +48,7 @@ from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
 from tests.utils.constants import PYAZURE_WORKER_DIR, \
     PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
     CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG, \
-    ARCHIVE_WEBHOST_LOGS
+    ARCHIVE_WEBHOST_LOGS, AZURE_EXTENSIONS
 from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated, \
     DockerConfigs
 
@@ -73,35 +73,6 @@ HOST_JSON_TEMPLATE = """\
     "version": "2.0",
     "logging": {"logLevel": {"default": "Trace"}}
 }
-"""
-
-EXTENSION_CSPROJ_TEMPLATE = """\
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <WarningsAsErrors></WarningsAsErrors>
-    <DefaultItemExcludes>**</DefaultItemExcludes>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-     Version="5.5.0" />
-    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
-     Version="3.3.1" />
-    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-     Version="4.5.0" />
-     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
-     Version="5.2.2" />
-     <PackageReference
-      Include="Microsoft.Azure.WebJobs.Extensions.Storage.Blobs"
-      Version="5.2.2" />
-     <PackageReference
-      Include="Microsoft.Azure.WebJobs.Extensions.Storage.Queues"
-      Version="5.2.1" />
-    <PackageReference
-     Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
-     Version="4.0.1" />
-  </ItemGroup>
-</Project>
 """
 
 SECRETS_TEMPLATE = """\
@@ -1055,7 +1026,7 @@ def _setup_func_app(app_root):
 
     if not os.path.isfile(extensions_csproj_file):
         with open(extensions_csproj_file, 'w') as f:
-            f.write(EXTENSION_CSPROJ_TEMPLATE)
+            f.write(AZURE_EXTENSIONS)
 
     _symlink_dir(EXTENSIONS_PATH, extensions)
 

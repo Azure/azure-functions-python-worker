@@ -14,9 +14,9 @@ AZURE_EXTENSIONS = """\
    </PropertyGroup>
    <ItemGroup>
       <PackageReference Include="Azure.Messaging.EventHubs"
-        Version="5.6.2.0" />
+        Version="5.6.2" />
       <PackageReference Include="Azure.Messaging.EventGrid"
-        Version="4.21.0.0" />
+        Version="4.21.0" />
       <PackageReference Include="Microsoft.NET.Sdk.Functions"
         Version="4.0.1" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"

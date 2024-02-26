@@ -232,9 +232,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 try:
                     cls.webhost = start_webhost(script_dir=script_dir,
                                                 stdout=cls.host_stdout)
-                except Exception as ex:
-                    error_message = f'WebHost is not started correctly. {ex} '
-                    cls.host_stdout_logger.error(error_message)
+                except Exception:
                     raise
 
             if not cls.webhost.is_healthy():
@@ -247,6 +245,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         except Exception as ex:
             cls.host_stdout_logger.error(f"WebHost is not started correctly. {ex}")
             cls.tearDownClass()
+            raise
 
     @classmethod
     def tearDownClass(cls):

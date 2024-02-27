@@ -22,7 +22,11 @@ class TestInvalidAppStein(testutils.AsyncTestCase):
             await host.init_worker()
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertIn("Error", r.response.result.exception.message)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+            self.assertIsNotNone(r.response.result.exception.message)
+            self.assertRegex(r.response.result.exception.message,
+                             r"ValueError: Could not find top level function app instances in function_app.py.")
 
 
 class TestInvalidStein(testutils.AsyncTestCase):
@@ -36,4 +40,11 @@ class TestInvalidStein(testutils.AsyncTestCase):
             await host.init_worker()
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertIn("Error", r.response.result.exception.message)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+            self.assertIsNotNone(r.response.result.exception.message)
+            self.assertRegex(r.response.result.exception.message,
+
+                             r"FunctionLoadError: cannot load the main function: the following parameters "
+                             r"are declared in function.json but not in Python: "
+                             r".*'req'.*")

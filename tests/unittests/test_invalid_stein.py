@@ -1,13 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import collections as col
-from unittest.mock import patch
-
 from azure_functions_worker import protos
 from tests.utils import testutils
 
-SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
-                                                "releaselevel", "serial"])
 STEIN_INVALID_APP_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'broken_functions' / \
     'invalid_app_stein'
@@ -18,22 +13,12 @@ STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
 
 class TestInvalidAppStein(testutils.AsyncTestCase):
 
-    def setUp(self):
-        self._ctrl = testutils.start_mockhost(
-            script_root=STEIN_INVALID_APP_FUNCTIONS_DIR)
-        self.mock_version_info = patch(
-            'azure_functions_worker.dispatcher.sys.version_info',
-            SysVersionInfo(3, 9, 0, 'final', 0))
-        self.mock_version_info.start()
-
-    def tearDown(self):
-        self.mock_version_info.stop()
-
     async def test_indexing_not_app(self):
         """Test if the functions metadata response will be
             an error when an invalid app is provided
         """
-        async with self._ctrl as host:
+        async with testutils.start_mockhost(
+                script_root=STEIN_INVALID_APP_FUNCTIONS_DIR) as host:
             await host.init_worker()
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
@@ -42,22 +27,12 @@ class TestInvalidAppStein(testutils.AsyncTestCase):
 
 class TestInvalidStein(testutils.AsyncTestCase):
 
-    def setUp(self):
-        self._ctrl = testutils.start_mockhost(
-            script_root=STEIN_INVALID_FUNCTIONS_DIR)
-        self.mock_version_info = patch(
-            'azure_functions_worker.dispatcher.sys.version_info',
-            SysVersionInfo(3, 9, 0, 'final', 0))
-        self.mock_version_info.start()
-
-    def tearDown(self):
-        self.mock_version_info.stop()
-
     async def test_indexing_invalid_app(self):
         """Test if the functions metadata response will be
             an error when an invalid app is provided
         """
-        async with self._ctrl as host:
+        async with testutils.start_mockhost(
+                script_root=STEIN_INVALID_FUNCTIONS_DIR) as host:
             await host.init_worker()
             r = await host.get_functions_metadata()
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)

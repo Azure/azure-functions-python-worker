@@ -4,11 +4,11 @@ from azure_functions_worker import protos
 from tests.utils import testutils
 
 STEIN_INVALID_APP_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
-                                  'broken_functions' / \
-                                  'invalid_app_stein'
+    'broken_functions' / \
+    'invalid_app_stein'
 STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
-                              'broken_functions' / \
-                              'invalid_stein'
+    'broken_functions' / \
+    'invalid_stein'
 
 
 @testutils.retryable_test(4, 5)
@@ -29,9 +29,7 @@ class TestInvalidAppStein(testutils.AsyncTestCase):
                              r"ValueError: Could not find top level "
                              r"function app instances in function_app.py.")
 
-
-@testutils.retryable_test(4, 5)
-async def test_indexing_invalid_app(self):
+    @testutils.retryable_test(4, 5)
     async def test_indexing_invalid_app(self):
         """Test if the functions metadata response will be
             an error when an invalid app is provided

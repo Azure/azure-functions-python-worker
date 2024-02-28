@@ -113,16 +113,18 @@ class TestUtilities(unittest.TestCase):
         self.assertFalse(config_manager.is_false_like('secret'))
 
     def test_is_envvar_true(self):
-        os.environ[TEST_FEATURE_FLAG] = 'true'
+        config_manager.set_env_var(TEST_FEATURE_FLAG, 'true')
         self.assertTrue(config_manager.is_envvar_true(TEST_FEATURE_FLAG))
+        config_manager.del_env_var(TEST_FEATURE_FLAG)
 
     def test_is_envvar_not_true_on_unset(self):
         self._unset_feature_flag()
         self.assertFalse(config_manager.is_envvar_true(TEST_FEATURE_FLAG))
 
     def test_is_envvar_false(self):
-        os.environ[TEST_FEATURE_FLAG] = 'false'
+        config_manager.set_env_var(TEST_FEATURE_FLAG, 'false')
         self.assertTrue(config_manager.is_envvar_false(TEST_FEATURE_FLAG))
+        config_manager.del_env_var(TEST_FEATURE_FLAG)
 
     def test_is_envvar_not_false_on_unset(self):
         self._unset_feature_flag()
@@ -144,12 +146,13 @@ class TestUtilities(unittest.TestCase):
 
     def test_enable_feature_with_feature_flag(self):
         feature_flag = TEST_FEATURE_FLAG
-        os.environ[feature_flag] = '1'
+        config_manager.set_env_var(feature_flag, '1')
         mock_feature = MockFeature()
         output = []
         result = mock_feature.mock_feature_enabled(output)
         self.assertEqual(result, 'mock_feature_enabled')
         self.assertListEqual(output, ['mock_feature_enabled'])
+        config_manager.del_env_var(feature_flag)
 
     def test_enable_feature_with_default_value(self):
         mock_feature = MockFeature()
@@ -167,39 +170,43 @@ class TestUtilities(unittest.TestCase):
 
     def test_ignore_disable_default_value_when_set_explicitly(self):
         feature_flag = TEST_FEATURE_FLAG
-        os.environ[feature_flag] = '0'
+        config_manager.set_env_var(feature_flag, '0')
         mock_feature = MockFeature()
         output = []
         result = mock_feature.mock_disabled_default_true(output)
         self.assertEqual(result, 'mock_disabled_default_true')
         self.assertListEqual(output, ['mock_disabled_default_true'])
+        config_manager.del_env_var(feature_flag)
 
     def test_disable_feature_with_rollback_flag(self):
         rollback_flag = TEST_FEATURE_FLAG
-        os.environ[rollback_flag] = '1'
+        config_manager.set_env_var(rollback_flag, '1')
         mock_feature = MockFeature()
         output = []
         result = mock_feature.mock_feature_disabled(output)
         self.assertIsNone(result)
         self.assertListEqual(output, [])
+        config_manager.del_env_var(rollback_flag)
 
     def test_enable_feature_with_rollback_flag_is_false(self):
         rollback_flag = TEST_FEATURE_FLAG
-        os.environ[rollback_flag] = 'false'
+        config_manager.set_env_var(rollback_flag, 'false')
         mock_feature = MockFeature()
         output = []
         result = mock_feature.mock_feature_disabled(output)
         self.assertEqual(result, 'mock_feature_disabled')
         self.assertListEqual(output, ['mock_feature_disabled'])
+        config_manager.del_env_var(rollback_flag)
 
     def test_ignore_enable_default_value_when_set_explicitly(self):
         feature_flag = TEST_FEATURE_FLAG
-        os.environ[feature_flag] = '0'
+        config_manager.set_env_var(feature_flag, '0')
         mock_feature = MockFeature()
         output = []
         result = mock_feature.mock_enabled_default_true(output)
         self.assertIsNone(result)
         self.assertListEqual(output, [])
+        config_manager.del_env_var(feature_flag)
 
     def test_fail_to_enable_feature_return_default_value(self):
         mock_feature = MockFeature()
@@ -210,12 +217,13 @@ class TestUtilities(unittest.TestCase):
 
     def test_disable_feature_with_false_flag_return_default_value(self):
         feature_flag = TEST_FEATURE_FLAG
-        os.environ[feature_flag] = 'false'
+        config_manager.set_env_var(feature_flag, 'false')
         mock_feature = MockFeature()
         output = []
         result = mock_feature.mock_feature_default(output)
         self.assertEqual(result, FEATURE_DEFAULT)
         self.assertListEqual(output, [])
+        config_manager.del_env_var(feature_flag)
 
     def test_exception_message_should_not_be_extended_on_success(self):
         mock_method = MockMethod()
@@ -249,11 +257,12 @@ class TestUtilities(unittest.TestCase):
 
     def test_app_settings_should_return_value(self):
         # Set application setting by os.setenv
-        os.environ.update({TEST_APP_SETTING_NAME: '42'})
+        config_manager.set_env_var(TEST_APP_SETTING_NAME, '42')
 
         # Try using utility to acquire application setting
         app_setting = config_manager.get_app_setting(TEST_APP_SETTING_NAME)
         self.assertEqual(app_setting, '42')
+        config_manager.del_env_var(TEST_APP_SETTING_NAME)
 
     def test_app_settings_not_set_should_return_default_value(self):
         app_setting = config_manager.get_app_setting(TEST_APP_SETTING_NAME,
@@ -262,12 +271,13 @@ class TestUtilities(unittest.TestCase):
 
     def test_app_settings_should_ignore_default_value(self):
         # Set application setting by os.setenv
-        os.environ.update({TEST_APP_SETTING_NAME: '42'})
+        config_manager.set_env_var(TEST_APP_SETTING_NAME, '42')
 
         # Try using utility to acquire application setting
         app_setting = config_manager.get_app_setting(TEST_APP_SETTING_NAME,
                                                      'default')
         self.assertEqual(app_setting, '42')
+        config_manager.del_env_var(TEST_APP_SETTING_NAME)
 
     def test_app_settings_should_not_trigger_validator_when_not_set(self):
         def raise_excpt(value: str):
@@ -285,7 +295,7 @@ class TestUtilities(unittest.TestCase):
                 return False
 
         # Set application setting to an invalid value
-        os.environ.update({TEST_APP_SETTING_NAME: 'invalid'})
+        config_manager.set_env_var(TEST_APP_SETTING_NAME, 'invalid')
 
         app_setting = config_manager.get_app_setting(
             TEST_APP_SETTING_NAME,
@@ -295,6 +305,7 @@ class TestUtilities(unittest.TestCase):
 
         # Because 'invalid' is not an interger, falls back to default value
         self.assertEqual(app_setting, '1')
+        config_manager.del_env_var(TEST_APP_SETTING_NAME)
 
     def test_app_settings_return_setting_value_when_validation_succeed(self):
         def parse_int_no_raise(value: str):
@@ -305,7 +316,7 @@ class TestUtilities(unittest.TestCase):
                 return False
 
         # Set application setting to an invalid value
-        os.environ.update({TEST_APP_SETTING_NAME: '42'})
+        config_manager.set_env_var(TEST_APP_SETTING_NAME, '42')
 
         app_setting = config_manager.get_app_setting(
             TEST_APP_SETTING_NAME,
@@ -315,6 +326,7 @@ class TestUtilities(unittest.TestCase):
 
         # Because 'invalid' is not an interger, falls back to default value
         self.assertEqual(app_setting, '42')
+        config_manager.del_env_var(TEST_APP_SETTING_NAME)
 
     def test_is_python_version(self):
         # Should pass at least 1 test
@@ -361,19 +373,22 @@ class TestUtilities(unittest.TestCase):
     def test_get_sdk_dummy_version(self):
         """Test if sdk version can get dummy sdk version
         """
+        config_manager.set_env_var(PYTHON_EXTENSIONS_RELOAD_FUNCTIONS, 'false')
         sys.path.insert(0, self._dummy_sdk_sys_path)
         module = common.get_sdk_from_sys_path()
         sdk_version = common.get_sdk_version(module)
         self.assertNotEqual(sdk_version, 'dummy')
+        config_manager.del_env_var(PYTHON_EXTENSIONS_RELOAD_FUNCTIONS)
 
     def test_get_sdk_dummy_version_with_flag_enabled(self):
         """Test if sdk version can get dummy sdk version
         """
-        os.environ[PYTHON_EXTENSIONS_RELOAD_FUNCTIONS] = '1'
+        config_manager.set_env_var(PYTHON_EXTENSIONS_RELOAD_FUNCTIONS, '1')
         sys.path.insert(0, self._dummy_sdk_sys_path)
         module = common.get_sdk_from_sys_path()
         sdk_version = common.get_sdk_version(module)
         self.assertEqual(sdk_version, 'dummy')
+        config_manager.del_env_var(PYTHON_EXTENSIONS_RELOAD_FUNCTIONS)
 
     def test_valid_script_file_name(self):
         file_name = 'test.py'
@@ -387,6 +402,6 @@ class TestUtilities(unittest.TestCase):
 
     def _unset_feature_flag(self):
         try:
-            os.environ.pop(TEST_FEATURE_FLAG)
+            config_manager.del_env_var(TEST_FEATURE_FLAG)
         except KeyError:
             pass

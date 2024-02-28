@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from azure_functions_worker.utils.dependency import DependencyManager
+from azure_functions_worker.utils.config_manager import read_config, set_env_var, del_env_var, is_envvar_true
 from tests.utils import testutils
 
 
@@ -37,6 +38,7 @@ class TestDependencyManager(unittest.TestCase):
         self._patch_sys_path.start()
         self._patch_importer_cache.start()
         self._patch_modules.start()
+        read_config("")
 
     def tearDown(self):
         self._patch_environ.stop()
@@ -53,7 +55,7 @@ class TestDependencyManager(unittest.TestCase):
         self.assertEqual(DependencyManager.worker_deps_path, '')
 
     def test_initialize_in_linux_consumption(self):
-        os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
+        set_env_var('AzureWebJobsScriptRoot', '/home/site/wwwroot')
         sys.path.extend([
             '/tmp/functions\\standby\\wwwroot',
             '/home/site/wwwroot/.python_packages/lib/site-packages',
@@ -73,9 +75,10 @@ class TestDependencyManager(unittest.TestCase):
             DependencyManager.worker_deps_path,
             '/azure-functions-host/workers/python/3.11/LINUX/X64'
         )
+        del_env_var('AzureWebJobsScriptRoot')
 
     def test_initialize_in_linux_dedicated(self):
-        os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
+        set_env_var('AzureWebJobsScriptRoot', '/home/site/wwwroot')
         sys.path.extend([
             '/home/site/wwwroot',
             '/home/site/wwwroot/.python_packages/lib/site-packages',
@@ -94,9 +97,10 @@ class TestDependencyManager(unittest.TestCase):
             DependencyManager.worker_deps_path,
             '/azure-functions-host/workers/python/3.11/LINUX/X64'
         )
+        del_env_var('AzureWebJobsScriptRoot')
 
     def test_initialize_in_windows_core_tools(self):
-        os.environ['AzureWebJobsScriptRoot'] = 'C:\\FunctionApp'
+        set_env_var('AzureWebJobsScriptRoot', 'C:\\FunctionApp')
         sys.path.extend([
             'C:\\Users\\user\\AppData\\Roaming\\npm\\'
             'node_modules\\azure-functions-core-tools\\bin\\'
@@ -119,32 +123,36 @@ class TestDependencyManager(unittest.TestCase):
             'azure-functions-core-tools\\bin\\workers\\python\\3.11\\WINDOWS'
             '\\X64'
         )
+        del_env_var('AzureWebJobsScriptRoot')
 
     def test_get_cx_deps_path_in_no_script_root(self):
         result = DependencyManager._get_cx_deps_path()
         self.assertEqual(result, '')
 
     def test_get_cx_deps_path_in_script_root_no_sys_path(self):
-        os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
+        set_env_var('AzureWebJobsScriptRoot', '/home/site/wwwroot')
         result = DependencyManager._get_cx_deps_path()
         self.assertEqual(result, '')
+        del_env_var('AzureWebJobsScriptRoot')
 
     def test_get_cx_deps_path_in_script_root_with_sys_path_linux(self):
         # Test for Python 3.7+ Azure Environment
         sys.path.append('/home/site/wwwroot/.python_packages/sites/lib/'
                         'site-packages/')
-        os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
+        set_env_var('AzureWebJobsScriptRoot', '/home/site/wwwroot')
         result = DependencyManager._get_cx_deps_path()
         self.assertEqual(result, '/home/site/wwwroot/.python_packages/sites/'
                                  'lib/site-packages/')
+        del_env_var('AzureWebJobsScriptRoot')
 
     def test_get_cx_deps_path_in_script_root_with_sys_path_windows(self):
         # Test for Windows Core Tools Environment
         sys.path.append('C:\\FunctionApp\\sites\\lib\\site-packages')
-        os.environ['AzureWebJobsScriptRoot'] = 'C:\\FunctionApp'
+        set_env_var('AzureWebJobsScriptRoot', 'C:\\FunctionApp')
         result = DependencyManager._get_cx_deps_path()
         self.assertEqual(result,
                          'C:\\FunctionApp\\sites\\lib\\site-packages')
+        del_env_var('AzureWebJobsScriptRoot')
 
     def test_get_cx_working_dir_no_script_root(self):
         result = DependencyManager._get_cx_working_dir()
@@ -152,17 +160,19 @@ class TestDependencyManager(unittest.TestCase):
 
     def test_get_cx_working_dir_with_script_root_linux(self):
         # Test for Azure Environment
-        os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
+        set_env_var('AzureWebJobsScriptRoot', '/home/site/wwwroot')
         result = DependencyManager._get_cx_working_dir()
         self.assertEqual(result, '/home/site/wwwroot')
+        del_env_var('AzureWebJobsScriptRoot')
 
     def test_get_cx_working_dir_with_script_root_windows(self):
         # Test for Windows Core Tools Environment
-        os.environ['AzureWebJobsScriptRoot'] = 'C:\\FunctionApp'
+        set_env_var('AzureWebJobsScriptRoot', 'C:\\FunctionApp')
         result = DependencyManager._get_cx_working_dir()
         self.assertEqual(result, 'C:\\FunctionApp')
+        del_env_var('AzureWebJobsScriptRoot')
 
-    @unittest.skipIf(os.environ.get('VIRTUAL_ENV'),
+    @unittest.skipIf(is_envvar_true('VIRTUAL_ENV'),
                      'Test is not capable to run in a virtual environment')
     def test_get_worker_deps_path_with_no_worker_sys_path(self):
         result = DependencyManager._get_worker_deps_path()
@@ -350,6 +360,9 @@ class TestDependencyManager(unittest.TestCase):
             self._customer_func_path,
         ])
 
+        del_env_var('PYTHON_ISOLATE_WORKER_DEPENDENCIES')
+        del_env_var('AzureWebJobsScriptRoot')
+
     def test_reload_all_namespaces_from_customer_deps(self):
         """The test simulates a linux consumption environment where the worker
         transits from placeholder mode to specialized mode. In a very typical
@@ -383,6 +396,9 @@ class TestDependencyManager(unittest.TestCase):
             self._worker_deps_path,
             self._customer_func_path,
         ])
+
+        del_env_var('PYTHON_ISOLATE_WORKER_DEPENDENCIES')
+        del_env_var('AzureWebJobsScriptRoot')
 
     def test_remove_from_sys_path(self):
         sys.path.append(self._customer_deps_path)
@@ -516,7 +532,7 @@ class TestDependencyManager(unittest.TestCase):
 
     def test_use_worker_dependencies(self):
         # Setup app settings
-        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
+        set_env_var('PYTHON_ISOLATE_WORKER_DEPENDENCIES', 'true')
 
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
@@ -531,9 +547,11 @@ class TestDependencyManager(unittest.TestCase):
             os.path.join(self._worker_deps_path, 'common_module')
         )
 
+        del_env_var('PYTHON_ISOLATE_WORKER_DEPENDENCIES')
+
     def test_use_worker_dependencies_disable(self):
         # Setup app settings
-        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'false'
+        set_env_var('PYTHON_ISOLATE_WORKER_DEPENDENCIES', 'false')
 
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
@@ -544,6 +562,8 @@ class TestDependencyManager(unittest.TestCase):
         DependencyManager.use_worker_dependencies()
         with self.assertRaises(ImportError):
             import common_module  # NoQA
+
+        del_env_var('PYTHON_ISOLATE_WORKER_DEPENDENCIES')
 
     def test_use_worker_dependencies_default_python_all_versions(self):
         # Feature should be disabled for all python versions
@@ -559,7 +579,7 @@ class TestDependencyManager(unittest.TestCase):
 
     def test_prioritize_customer_dependencies(self):
         # Setup app settings
-        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
+        set_env_var('PYTHON_ISOLATE_WORKER_DEPENDENCIES', 'true')
 
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
@@ -581,9 +601,11 @@ class TestDependencyManager(unittest.TestCase):
             self._customer_func_path,
         ])
 
+        del_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES")
+
     def test_prioritize_customer_dependencies_disable(self):
         # Setup app settings
-        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'false'
+        set_env_var('PYTHON_ISOLATE_WORKER_DEPENDENCIES', 'false')
 
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path
@@ -594,6 +616,8 @@ class TestDependencyManager(unittest.TestCase):
         DependencyManager.prioritize_customer_dependencies()
         with self.assertRaises(ImportError):
             import common_module  # NoQA
+
+        del_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES")
 
     def test_prioritize_customer_dependencies_default_all_versions(self):
         # Feature should be disabled in Python for all versions
@@ -623,6 +647,9 @@ class TestDependencyManager(unittest.TestCase):
             os.path.join(self._customer_func_path, 'func_specific_module')
         )
 
+        del_env_var('PYTHON_ISOLATE_WORKER_DEPENDENCIES')
+        del_env_var('AzureWebJobsScriptRoot')
+
     def test_remove_module_cache(self):
         # First import the common_module and create a sys.modules cache
         sys.path.append(self._customer_deps_path)
@@ -644,8 +671,8 @@ class TestDependencyManager(unittest.TestCase):
 
     def _initialize_scenario(self):
         # Setup app settings
-        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
-        os.environ['AzureWebJobsScriptRoot'] = '/home/site/wwwroot'
+        set_env_var('PYTHON_ISOLATE_WORKER_DEPENDENCIES', 'true')
+        set_env_var('AzureWebJobsScriptRoot', '/home/site/wwwroot')
 
         # Setup paths
         DependencyManager.worker_deps_path = self._worker_deps_path

@@ -8,22 +8,19 @@ config_data = {}
 
 
 def read_config(function_path: str):
-    with open(function_path, "r") as stream:
-        global config_data
-        # loads the entire json file
-        full_config_data = json.load(stream)
-        # gets the python section of the json file
-        config_data = full_config_data.get("PYTHON")
-
+    try:
+        with open(function_path, "r") as stream:
+            global config_data
+            # loads the entire json file
+            full_config_data = json.load(stream)
+            # gets the python section of the json file
+            config_data = full_config_data.get("PYTHON")
+    except FileNotFoundError:
+        pass
     env_copy = os.environ
     # updates the config dictionary with the environment variables
     # this prioritizes set env variables over the config file
     config_data.update(env_copy)
-
-
-def write_config(data: dict):
-    with open("az-config.json", "w") as stream:
-        json.dumps(data, stream)
 
 
 def config_exists() -> bool:
@@ -101,4 +98,11 @@ def get_app_setting(
 
 
 def set_env_var(setting: str, value: str):
-    config_data.update({setting.lower: value})
+    global config_data
+    config_data[setting] = value
+    test = ""
+
+
+def del_env_var(setting: str):
+    global config_data
+    config_data.pop(setting, None)

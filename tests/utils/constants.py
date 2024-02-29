@@ -3,7 +3,7 @@
 import pathlib
 
 # Extensions necessary for non-core bindings.
-AZURE_EXTENSIONS = """\
+EXTENSIONS_CSPROJ_TEMPLATE = """\
 <?xml version="1.0" encoding="UTF-8"?>
    <Project Sdk="Microsoft.NET.Sdk">
       <PropertyGroup>

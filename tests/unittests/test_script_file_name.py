@@ -31,7 +31,7 @@ class TestDefaultScriptFileName(testutils.WebHostTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # Remove the WEBSITE_HOSTNAME environment variable
+        # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
         os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
         super().tearDownClass()
 
@@ -60,7 +60,7 @@ class TestNewScriptFileName(testutils.WebHostTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # Remove the WEBSITE_HOSTNAME environment variable
+        # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
         os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
         super().tearDownClass()
 
@@ -89,7 +89,7 @@ class TestInvalidScriptFileName(testutils.WebHostTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # Remove the WEBSITE_HOSTNAME environment variable
+        # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
         os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
         super().tearDownClass()
 

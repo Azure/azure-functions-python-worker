@@ -21,7 +21,7 @@ from setuptools import setup
 from setuptools.command import develop
 
 from azure_functions_worker.version import VERSION
-from tests.utils.constants import AZURE_EXTENSIONS
+from tests.utils.constants import EXTENSIONS_CSPROJ_TEMPLATE
 
 # The GitHub repository of the Azure Functions Host
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
@@ -243,7 +243,7 @@ class Extension(distutils.cmd.Command):
 
         if not (self.extensions_dir / "extensions.csproj").exists():
             with open(self.extensions_dir / "extensions.csproj", "w") as f:
-                print(AZURE_EXTENSIONS, file=f)
+                print(EXTENSIONS_CSPROJ_TEMPLATE, file=f)
 
         with open(self.extensions_dir / "NuGet.config", "w") as f:
             print(NUGET_CONFIG, file=f)

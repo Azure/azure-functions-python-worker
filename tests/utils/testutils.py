@@ -48,7 +48,7 @@ from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
 from tests.utils.constants import PYAZURE_WORKER_DIR, \
     PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
     CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG, \
-    ARCHIVE_WEBHOST_LOGS, AZURE_EXTENSIONS
+    ARCHIVE_WEBHOST_LOGS, EXTENSIONS_CSPROJ_TEMPLATE
 from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated, \
     DockerConfigs
 
@@ -199,6 +199,11 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
     @classmethod
     def docker_tests_enabled(self) -> (bool, str):
+        """
+        Returns True if the environment variables
+        CONSUMPTION_DOCKER_TEST or DEDICATED_DOCKER_TEST
+        is enabled else returns False
+        """
         if is_envvar_true(CONSUMPTION_DOCKER_TEST):
             return True, CONSUMPTION_DOCKER_TEST
         elif is_envvar_true(DEDICATED_DOCKER_TEST):
@@ -1015,7 +1020,7 @@ def _symlink_dir(src, dst):
         dst.symlink_to(src, target_is_directory=True)
 
 
-def _setup_func_app(app_root, is_unit_test):
+def _setup_func_app(app_root, is_unit_test=False):
     extensions = app_root / 'bin'
     host_json = app_root / 'host.json'
     extensions_csproj_file = app_root / 'extensions.csproj'
@@ -1026,7 +1031,7 @@ def _setup_func_app(app_root, is_unit_test):
 
     if not os.path.isfile(extensions_csproj_file) and not is_unit_test:
         with open(extensions_csproj_file, 'w') as f:
-            f.write(AZURE_EXTENSIONS)
+            f.write(EXTENSIONS_CSPROJ_TEMPLATE)
 
         _symlink_dir(EXTENSIONS_PATH, extensions)
 

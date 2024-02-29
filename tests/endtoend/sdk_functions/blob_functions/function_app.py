@@ -205,12 +205,12 @@ def bc_cache_3(req: func.HttpRequest, client: bindings.BlobClient) -> str:
     return client.download_blob().readall()
 
 
-@app.function_name(name="put_blob_str")
+@app.function_name(name="put_blob_str2")
 @app.blob_output(arg_name="file",
                  path="python-worker-tests/test-str.txt",
                  connection="AzureWebJobsStorage")
-@app.route(route="put_blob_str")
-def put_blob_str(req: func.HttpRequest, file: func.Out[str]) -> str:
+@app.route(route="put_blob_str2")
+def put_blob_str2(req: func.HttpRequest, file: func.Out[str]) -> str:
     file.set(req.get_body())
     return 'OK'
 

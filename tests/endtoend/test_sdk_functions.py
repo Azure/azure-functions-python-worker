@@ -11,11 +11,11 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'sdk_functions'
+        return testutils.E2E_TESTS_FOLDER / 'sdk_functions' / "blob_functions"
 
     @testutils.retryable_test(3, 5)
     def test_blob_str(self):
-        r = self.webhost.request('POST', 'put_blob_str', data='test-data')
+        r = self.webhost.request('POST', 'put_blob_str2', data='test-data')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
 

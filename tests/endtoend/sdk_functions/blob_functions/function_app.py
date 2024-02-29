@@ -1,10 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import hashlib
-import io
 import json
-import random
-import string
 
 import azure.functions as func
 import azure.functions.extension.blob as bindings
@@ -34,7 +30,8 @@ def bc_blob_trigger(client: bindings.BlobClient) -> str:
                 path="python-worker-tests/test-blob-triggered.txt",
                 connection="AzureWebJobsStorage")
 @app.route(route="get_blob_triggered")
-def get_bc_blob_triggered(req: func.HttpRequest, client: bindings.BlobClient) -> str:
+def get_bc_blob_triggered(req: func.HttpRequest,
+                          client: bindings.BlobClient) -> str:
     return client.download_blob(encoding='utf-8').readall()
 
 
@@ -47,7 +44,8 @@ def get_bc_blob_triggered(req: func.HttpRequest, client: bindings.BlobClient) ->
                  connection="AzureWebJobsStorage")
 def cc_blob_trigger(client: bindings.ContainerClient) -> str:
     container_properties = client.get_container_properties()
-    file = client.download_blob("test-blob-trigger.txt", encoding='utf-8').readall()
+    file = client.download_blob("test-blob-trigger.txt",
+                                encoding='utf-8').readall()
     return json.dumps({
         'name': container_properties.name,
         'content': file
@@ -59,8 +57,10 @@ def cc_blob_trigger(client: bindings.ContainerClient) -> str:
                 path="python-worker-tests/test-blob-triggered.txt",
                 connection="AzureWebJobsStorage")
 @app.route(route="get_blob_triggered")
-def get_cc_blob_triggered(req: func.HttpRequest, client: bindings.BlobClient) -> str:
-    return client.download_blob("test-blob-trigger.txt", encoding='utf-8').readall()
+def get_cc_blob_triggered(req: func.HttpRequest,
+                          client: bindings.BlobClient) -> str:
+    return client.download_blob("test-blob-trigger.txt",
+                                encoding='utf-8').readall()
 
 
 @app.function_name(name="ssd_blob_trigger")
@@ -82,7 +82,8 @@ def ssd_blob_trigger(stream: bindings.StorageStreamDownloader) -> str:
                 path="python-worker-tests/test-blob-triggered.txt",
                 connection="AzureWebJobsStorage")
 @app.route(route="get_blob_triggered")
-def get_ssd_blob_triggered(req: func.HttpRequest, stream: bindings.BlobClient) -> str:
+def get_ssd_blob_triggered(req: func.HttpRequest,
+                           stream: bindings.BlobClient) -> str:
     return stream.readall()
 
 
@@ -100,7 +101,8 @@ def get_bc_bytes(req: func.HttpRequest, client: bindings.BlobClient) -> str:
 @app.blob_input(arg_name="client",
                 path="python-worker-tests/test-bytes.txt",
                 connection="AzureWebJobsStorage")
-def get_cc_bytes(req: func.HttpRequest, client: bindings.ContainerClient) -> str:
+def get_cc_bytes(req: func.HttpRequest,
+                 client: bindings.ContainerClient) -> str:
     return client.download_blob("test-bytes.txt", encoding='utf-8').readall()
 
 
@@ -109,7 +111,8 @@ def get_cc_bytes(req: func.HttpRequest, client: bindings.ContainerClient) -> str
 @app.blob_input(arg_name="stream",
                 path="python-worker-tests/test-bytes.txt",
                 connection="AzureWebJobsStorage")
-def get_ssd_bytes(req: func.HttpRequest, stream: bindings.StorageStreamDownloader) -> str:
+def get_ssd_bytes(req: func.HttpRequest,
+                  stream: bindings.StorageStreamDownloader) -> str:
     return stream.readall()
 
 
@@ -150,7 +153,8 @@ def get_ssd_str(req: func.HttpRequest, stream: bindings.BlobClient) -> str:
                 path="python-worker-tests/test-str.txt",
                 data_type="STRING",
                 connection="AzureWebJobsStorage")
-def bc_and_inputstream_input(req: func.HttpRequest, client: bindings.BlobClient, blob: func.InputStream) -> str:
+def bc_and_inputstream_input(req: func.HttpRequest, client: bindings.BlobClient,
+                             blob: func.InputStream) -> str:
     output_msg = ""
     file = blob.read().decode('utf-8')
     client_file = client.download_blob().readall()
@@ -169,6 +173,7 @@ def type_undefined(req: func.HttpRequest, file) -> str:
     assert not isinstance(file, bindings.ContainerClient)
     assert not isinstance(file, bindings.StorageStreamDownloader)
     return file.decode('utf-8')
+
 
 @app.function_name(name="bc_cache")
 @app.route(route="bc_cache")

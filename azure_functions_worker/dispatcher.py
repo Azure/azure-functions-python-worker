@@ -306,11 +306,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         if CUSTOMER_PACKAGES_PATH not in sys.path:
             logger.warning("Customer packages not in sys path.")
 
-        logger.warning("Before load binding registry.")
         # loading bindings registry and saving results to a static
         # dictionary which will be later used in the invocation request
         bindings.load_binding_registry()
-        logger.warning("After load binding registry.")
 
         return protos.StreamingMessage(
             request_id=self.request_id,

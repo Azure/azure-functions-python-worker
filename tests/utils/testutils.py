@@ -209,6 +209,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     @classmethod
     def setUpClass(cls):
         script_dir = pathlib.Path(cls.get_script_dir())
+        is_unit_test = True if 'unittests' in script_dir.parts else False
 
         docker_tests_enabled, sku = cls.docker_tests_enabled()
 
@@ -228,7 +229,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     cls.webhost = \
                         WebHostDedicated(docker_configs).spawn_container()
             else:
-                _setup_func_app(TESTS_ROOT / script_dir)
+                _setup_func_app(TESTS_ROOT / script_dir, is_unit_test)
                 try:
                     cls.webhost = start_webhost(script_dir=script_dir,
                                                 stdout=cls.host_stdout)
@@ -1014,7 +1015,7 @@ def _symlink_dir(src, dst):
         dst.symlink_to(src, target_is_directory=True)
 
 
-def _setup_func_app(app_root):
+def _setup_func_app(app_root, is_unit_test):
     extensions = app_root / 'bin'
     host_json = app_root / 'host.json'
     extensions_csproj_file = app_root / 'extensions.csproj'
@@ -1023,11 +1024,11 @@ def _setup_func_app(app_root):
         with open(host_json, 'w') as f:
             f.write(HOST_JSON_TEMPLATE)
 
-    if not os.path.isfile(extensions_csproj_file):
+    if not os.path.isfile(extensions_csproj_file) and not is_unit_test:
         with open(extensions_csproj_file, 'w') as f:
             f.write(AZURE_EXTENSIONS)
 
-    _symlink_dir(EXTENSIONS_PATH, extensions)
+        _symlink_dir(EXTENSIONS_PATH, extensions)
 
 
 def _teardown_func_app(app_root):

@@ -30,7 +30,7 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_ENABLE_DEBUG_LOGGING,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
-                        PYTHON_LANGUAGE_RUNTIME, CUSTOMER_PACKAGES_PATH)
+                        PYTHON_LANGUAGE_RUNTIME)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
@@ -44,14 +44,6 @@ from .utils.wrappers import disable_feature_by
 from .version import VERSION
 
 _TRUE = "true"
-
-"""In Python 3.6, the current_task method was in the Task class, but got moved
-out in 3.7+ and fully removed in 3.9. Thus, to support 3.6 and 3.9 together, we
-need to switch the implementation of current_task for 3.6.
-"""
-_CURRENT_TASK = asyncio.Task.current_task \
-    if (sys.version_info[0] == 3 and sys.version_info[1] == 6) \
-    else asyncio.current_task
 
 
 class DispatcherMeta(type):
@@ -299,12 +291,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             DependencyManager.prioritize_customer_dependencies()
 
         if DependencyManager.is_in_linux_consumption():
-            logger.info(
-                "Importing azure functions in WorkerInitRequest")
             import azure.functions  # NoQA
-
-        if CUSTOMER_PACKAGES_PATH not in sys.path:
-            logger.warning("Customer packages not in sys path.")
 
         # loading bindings registry and saving results to a static
         # dictionary which will be later used in the invocation request
@@ -343,8 +330,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             if not os.path.exists(function_path):
                 # Fallback to legacy model
-                logger.info("%s does not exist. "
-                            "Switching to host indexing.", script_file_name)
                 return protos.StreamingMessage(
                     request_id=request.request_id,
                     function_metadata_response=protos.FunctionMetadataResponse(
@@ -379,7 +364,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
             'function_name: %s,', self.request_id, function_id, function_name)
 
-        programming_model = "V1"
+        programming_model = "V2"
         try:
             if not self._functions.get_function(function_id):
                 script_file_name = get_app_setting(
@@ -396,10 +381,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the
                     # function and update the workers registry
-                    programming_model = "V2"
                     _ = self.index_functions(function_path)
                 else:
                     # legacy function
+                    programming_model = "V1"
+
                     func = loader.load_function(
                         func_request.metadata.name,
                         func_request.metadata.directory,
@@ -452,7 +438,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
-        current_task = _CURRENT_TASK(self._loop)
+        current_task = asyncio.current_task(self._loop)
         assert isinstance(current_task, ContextEnabledTask)
         current_task.set_azure_invocation_id(invocation_id)
 
@@ -866,7 +852,7 @@ class ContextEnabledTask(asyncio.Task):
     def __init__(self, coro, loop):
         super().__init__(coro, loop=loop)
 
-        current_task = _CURRENT_TASK(loop)
+        current_task = asyncio.current_task(loop)
         if current_task is not None:
             invocation_id = getattr(
                 current_task, self.AZURE_INVOCATION_ID, None)
@@ -880,7 +866,7 @@ class ContextEnabledTask(asyncio.Task):
 def get_current_invocation_id() -> Optional[str]:
     loop = asyncio._get_running_loop()
     if loop is not None:
-        current_task = _CURRENT_TASK(loop)
+        current_task = asyncio.current_task(loop)
         if current_task is not None:
             task_invocation_id = getattr(current_task,
                                          ContextEnabledTask.AZURE_INVOCATION_ID,

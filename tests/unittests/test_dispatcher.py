@@ -28,10 +28,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
     Python 3.7 and extended classes change this value and other platform
     specific values to test the behavior across the different python versions.
 
-    - Why not python 3.6?
-    - In Azure.Functions (library), the typing_inspect module imports specific
-    modules which are not available on systems where Python 3.7+ is installed.
-
     Ref:
     NEW_TYPING = sys.version_info[:3] >= (3, 7, 0)  # PEP 560
     """

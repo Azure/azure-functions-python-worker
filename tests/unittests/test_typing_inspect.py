@@ -14,9 +14,6 @@ from typing import (
     MutableMapping, Iterable, Generic, List, Any, Dict, Tuple, NamedTuple,
 )
 
-import sys
-NEW_TYPING = sys.version_info[:3] >= (3, 7, 0)  # PEP 560
-
 
 class IsUtilityTestCase(TestCase):
     def sample_test(self, fun, samples, nonsamples):
@@ -74,23 +71,13 @@ class IsUtilityTestCase(TestCase):
 
 class GetUtilityTestCase(TestCase):
 
-    @skipIf(NEW_TYPING, "Not supported in Python 3.7")
-    def test_last_origin(self):
-        T = TypeVar('T')
-        self.assertEqual(get_last_origin(int), None)
-        self.assertEqual(get_last_origin(ClassVar[int]), None)
-        self.assertEqual(get_last_origin(Generic[T]), Generic)
-        self.assertEqual(get_last_origin(Union[T, int][str]), Union[T, int])
-        self.assertEqual(get_last_origin(List[Tuple[T, T]][int]), List[Tuple[T, T]])
-        self.assertEqual(get_last_origin(List), List)
-
     def test_origin(self):
         T = TypeVar('T')
         self.assertEqual(get_origin(int), None)
         self.assertEqual(get_origin(ClassVar[int]), None)
         self.assertEqual(get_origin(Generic), Generic)
         self.assertEqual(get_origin(Generic[T]), Generic)
-        self.assertEqual(get_origin(List[Tuple[T, T]][int]), list if NEW_TYPING else List)
+        self.assertEqual(get_origin(List[Tuple[T, T]][int]), list)
 
     def test_parameters(self):
         T = TypeVar('T')
@@ -104,27 +91,6 @@ class GetUtilityTestCase(TestCase):
         self.assertEqual(get_parameters(Tuple[List[T], List[S_co]]), (T, S_co))
         self.assertEqual(get_parameters(Union[S_co, Tuple[T, T]][int, U]), (U,))
         self.assertEqual(get_parameters(Mapping[T, Tuple[S_co, T]]), (T, S_co))
-
-    @skipIf(NEW_TYPING, "Not supported in Python 3.7")
-    def test_last_args(self):
-        T = TypeVar('T')
-        S = TypeVar('S')
-        self.assertEqual(get_last_args(int), ())
-        self.assertEqual(get_last_args(Union), ())
-        self.assertEqual(get_last_args(ClassVar[int]), (int,))
-        self.assertEqual(get_last_args(Union[T, int]), (T, int))
-        self.assertEqual(get_last_args(Iterable[Tuple[T, S]][int, T]), (int, T))
-        self.assertEqual(get_last_args(Callable[[T, S], int]), (T, S, int))
-        self.assertEqual(get_last_args(Callable[[], int]), (int,))
-
-    @skipIf(NEW_TYPING, "Not supported in Python 3.7")
-    def test_args(self):
-        T = TypeVar('T')
-        self.assertEqual(get_args(Union[int, Tuple[T, int]][str]),
-                         (int, (Tuple, str, int)))
-        self.assertEqual(get_args(Union[int, Union[T, int], str][int]),
-                         (int, str))
-        self.assertEqual(get_args(int), ())
 
     def test_args_evaluated(self):
         T = TypeVar('T')

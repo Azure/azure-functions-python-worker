@@ -20,9 +20,17 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
     Compared to the unittests/test_http_functions.py, this file is more focus
     on testing the E2E flow scenarios.
     """
+
     @classmethod
-    def get_script_name(cls):
-        return "main.py"
+    def setUpClass(cls):
+        os.environ["PYTHON_SCRIPT_FILE_NAME"] = "main.py"
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        # Remove the WEBSITE_HOSTNAME environment variable
+        os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
+        super().tearDownClass()
 
     @classmethod
     def get_script_dir(cls):

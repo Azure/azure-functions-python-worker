@@ -30,7 +30,7 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_ENABLE_DEBUG_LOGGING,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
-                        PYTHON_LANGUAGE_RUNTIME)
+                        PYTHON_LANGUAGE_RUNTIME, INIT_INDEXING)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
@@ -72,8 +72,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._function_data_cache_enabled = False
         self._functions = functions.Registry()
         self._shmem_mgr = SharedMemoryManager()
-
         self._old_task_factory = None
+
+        # Used to store metadata returns
+        self.function_metadata_result = None
+        self.function_metadata_exception = None
 
         # We allow the customer to change synchronous thread pool max worker
         # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
@@ -297,6 +300,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         # dictionary which will be later used in the invocation request
         bindings.load_binding_registry()
 
+        if is_envvar_true(INIT_INDEXING):
+            self.get_function_metadata(worker_init_request)
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
@@ -313,52 +319,57 @@ class Dispatcher(metaclass=DispatcherMeta):
             request_id=request.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
-    async def _handle__functions_metadata_request(self, request):
-        metadata_request = request.functions_metadata_request
-        directory = metadata_request.function_app_directory
+    def get_function_metadata(self, directory, caller_info):
         script_file_name = get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
             default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
-        function_path = os.path.join(directory, script_file_name)
 
         logger.info(
-            'Received WorkerMetadataRequest, request ID %s, function_path: %s',
-            self.request_id, function_path)
+            'Received WorkerMetadataRequest from %s, request ID %s, script_file_name: %s',
+            caller_info, self.request_id, script_file_name)
 
         try:
             validate_script_file_name(script_file_name)
+            function_path = os.path.join(directory, script_file_name)
 
-            if not os.path.exists(function_path):
-                # Fallback to legacy model
-                return protos.StreamingMessage(
-                    request_id=request.request_id,
-                    function_metadata_response=protos.FunctionMetadataResponse(
-                        use_default_metadata_indexing=True,
-                        result=protos.StatusResult(
-                            status=protos.StatusResult.Success)))
-
-            fx_metadata_results = self.index_functions(function_path)
-
-            return protos.StreamingMessage(
-                request_id=request.request_id,
-                function_metadata_response=protos.FunctionMetadataResponse(
-                    function_metadata_results=fx_metadata_results,
-                    result=protos.StatusResult(
-                        status=protos.StatusResult.Success)))
+            self.function_metadata_result = self.index_functions(function_path) \
+                if os.path.exists(function_path) else None
 
         except Exception as ex:
+            self.function_metadata_exception = self._serialize_exception(ex)
+
+    async def _handle__functions_metadata_request(self, request):
+        metadata_request = request.functions_metadata_request
+        directory = metadata_request.function_app_directory
+
+        if not is_envvar_true(INIT_INDEXING):
+            self.get_function_metadata(directory,
+                                       caller_info=sys._getframe().f_code.co_name)
+
+        if self.function_metadata_exception:
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 function_metadata_response=protos.FunctionMetadataResponse(
                     result=protos.StatusResult(
                         status=protos.StatusResult.Failure,
-                        exception=self._serialize_exception(ex))))
+                        exception=self.function_metadata_exception)))
+        else:
+            fmr = self.function_metadata_result
+
+            return protos.StreamingMessage(
+                request_id=request.request_id,
+                function_metadata_response=protos.FunctionMetadataResponse(
+                    use_default_metadata_indexing=False if fmr else True,
+                    function_metadata_results=fmr,
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Success)))
 
     async def _handle__function_load_request(self, request):
         func_request = request.function_load_request
         function_id = func_request.function_id
         function_metadata = func_request.metadata
         function_name = function_metadata.name
+        directory = function_metadata.directory
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
@@ -367,28 +378,23 @@ class Dispatcher(metaclass=DispatcherMeta):
         programming_model = "V2"
         try:
             if not self._functions.get_function(function_id):
-                script_file_name = get_app_setting(
-                    setting=PYTHON_SCRIPT_FILE_NAME,
-                    default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
-                validate_script_file_name(script_file_name)
-                function_path = os.path.join(
-                    function_metadata.directory,
-                    script_file_name)
 
-                if function_metadata.properties.get("worker_indexed", False) \
-                        or os.path.exists(function_path):
+                if function_metadata.properties.get("worker_indexed", False)\
+                        and not is_envvar_true(INIT_INDEXING):
                     # This is for the second worker and above where the worker
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the
                     # function and update the workers registry
-                    _ = self.index_functions(function_path)
+
+                    self.get_function_metadata(directory,
+                                               caller_info=sys._getframe().f_code.co_name)
                 else:
                     # legacy function
                     programming_model = "V1"
 
                     func = loader.load_function(
-                        func_request.metadata.name,
-                        func_request.metadata.directory,
+                        function_name,
+                        directory,
                         func_request.metadata.script_file,
                         func_request.metadata.entry_point)
 

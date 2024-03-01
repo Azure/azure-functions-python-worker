@@ -104,12 +104,10 @@ def from_incoming_proto(
     if pb_type == PB_TYPE_DATA:
         val = pb.data
         datum = datumdef.Datum.from_typed_data(val)
-        raise TypeError(f'Binding: {binding}, pytype: {pytype}, datum: {datum}')
     elif pb_type == PB_TYPE_RPC_SHARED_MEMORY:
         # Data was sent over shared memory, attempt to read
         datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory,
                                                       shmem_mgr)
-        raise TypeError(f'Binding: {binding}, pytype: {pytype}, datum: {datum}')
     else:
         raise TypeError(f'Unknown ParameterBindingType: {pb_type}')
 
@@ -126,6 +124,7 @@ def from_incoming_proto(
             #     return obj
             # # if the object is not in the cache, create and add it to the cache
             # else:
+                raise TypeError(f'Binding: {binding}, pytype: {pytype}, datum: {datum}')
                 obj = binding.decode(datum, trigger_metadata=metadata,
                                      pytype=pytype)
                 # SDK_CACHE[(pb.name, pytype, datum.value.content)] = obj

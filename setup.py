@@ -21,46 +21,12 @@ from setuptools import setup
 from setuptools.command import develop
 
 from azure_functions_worker.version import VERSION
+from tests.utils.constants import EXTENSIONS_CSPROJ_TEMPLATE
 
 # The GitHub repository of the Azure Functions Host
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
 WEBHOST_TAG_PREFIX = "v4."
 WEBHOST_GIT_REPO = "https://github.com/Azure/azure-functions-host/archive"
-
-# Extensions necessary for non-core bindings.
-AZURE_EXTENSIONS = """\
-<?xml version="1.0" encoding="UTF-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
-   <PropertyGroup>
-      <TargetFramework>netcoreapp3.1</TargetFramework>
-      <AzureFunctionsVersion>v4</AzureFunctionsVersion>
-      <WarningsAsErrors />
-      <DefaultItemExcludes>**</DefaultItemExcludes>
-   </PropertyGroup>
-   <ItemGroup>
-      <PackageReference Include="Microsoft.NET.Sdk.Functions"
-        Version="4.0.1" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-        Version="4.2.0" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-        Version="5.0.0" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
-        Version="3.1.0" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
-        Version="4.0.5" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
-        Version="4.2.1" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Sql"
-        Version="0.1.346-preview" />
-      <PackageReference
-        Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
-        Version="1.1.3" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask"
-        Version="2.9.4" />
-   </ItemGroup>
-</Project>
-"""
-
 NUGET_CONFIG = """\
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
@@ -81,7 +47,7 @@ NUGET_CONFIG = """\
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
-    'Programming Language :: Python',
+    "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
@@ -102,13 +68,10 @@ PACKAGES = [
     "azure_functions_worker.bindings",
     "azure_functions_worker.bindings.shared_memory_data_transfer",
     "azure_functions_worker.utils",
-    "azure_functions_worker._thirdparty"
+    "azure_functions_worker._thirdparty",
 ]
 
-INSTALL_REQUIRES = [
-    "azure-functions==1.18.0",
-    "python-dateutil~=2.8.2"
-]
+INSTALL_REQUIRES = ["azure-functions==1.19.0b2"]
 
 if sys.version_info[:2] == (3, 7):
     INSTALL_REQUIRES.extend(
@@ -144,7 +107,9 @@ EXTRA_REQUIRES = {
         "scikit-learn",
         "opencv-python",
         "pandas",
-        "numpy"
+        "numpy",
+        "pre-commit",
+        "python-dateutil~=2.8.2"
     ]
 }
 
@@ -155,13 +120,12 @@ class BuildGRPC:
     def _gen_grpc(self):
         root = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 
-        proto_root_dir = root / 'azure_functions_worker' / 'protos'
-        proto_src_dir = proto_root_dir / '_src' / 'src' / 'proto'
-        build_dir = root / 'build'
-        staging_root_dir = build_dir / 'protos'
-        staging_dir = (staging_root_dir
-                       / 'azure_functions_worker' / 'protos')
-        built_protos_dir = build_dir / 'built_protos'
+        proto_root_dir = root / "azure_functions_worker" / "protos"
+        proto_src_dir = proto_root_dir / "_src" / "src" / "proto"
+        build_dir = root / "build"
+        staging_root_dir = build_dir / "protos"
+        staging_dir = staging_root_dir / "azure_functions_worker" / "protos"
+        built_protos_dir = build_dir / "built_protos"
 
         if os.path.exists(build_dir):
             shutil.rmtree(build_dir)
@@ -171,28 +135,37 @@ class BuildGRPC:
         os.makedirs(built_protos_dir)
 
         protos = [
-            os.sep.join(('shared', 'NullableTypes.proto')),
-            os.sep.join(('identity', 'ClaimsIdentityRpc.proto')),
-            'FunctionRpc.proto'
+            os.sep.join(("shared", "NullableTypes.proto")),
+            os.sep.join(("identity", "ClaimsIdentityRpc.proto")),
+            "FunctionRpc.proto",
         ]
 
         for proto in protos:
-            subprocess.run([
-                sys.executable, '-m', 'grpc_tools.protoc',
-                '-I', os.sep.join(('azure_functions_worker', 'protos')),
-                '--python_out', str(built_protos_dir),
-                '--grpc_python_out', str(built_protos_dir),
-                os.sep.join(('azure_functions_worker', 'protos', proto)),
-            ], check=True, stdout=sys.stdout, stderr=sys.stderr,
-                cwd=staging_root_dir)
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "grpc_tools.protoc",
+                    "-I",
+                    os.sep.join(("azure_functions_worker", "protos")),
+                    "--python_out",
+                    str(built_protos_dir),
+                    "--grpc_python_out",
+                    str(built_protos_dir),
+                    os.sep.join(("azure_functions_worker", "protos", proto)),
+                ],
+                check=True,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+                cwd=staging_root_dir,
+            )
 
         compiled_files = glob.glob(
-            str(built_protos_dir / '**' / '*.py'),
-            recursive=True)
+            str(built_protos_dir / "**" / "*.py"), recursive=True
+        )
 
         if not compiled_files:
-            print('grpc_tools.protoc produced no Python files',
-                  file=sys.stderr)
+            print("grpc_tools.protoc produced no Python files", file=sys.stderr)
             sys.exit(1)
 
         # Needed to support absolute imports in files. See
@@ -204,23 +177,25 @@ class BuildGRPC:
     @staticmethod
     def make_absolute_imports(compiled_files):
         for compiled in compiled_files:
-            with open(compiled, 'r+') as f:
+            with open(compiled, "r+") as f:
                 content = f.read()
                 f.seek(0)
                 # Convert lines of the form:
                 # import xxx_pb2 as xxx__pb2 to
                 # from azure_functions_worker.protos import xxx_pb2 as..
                 p1 = re.sub(
-                    r'\nimport (.*?_pb2)',
-                    r'\nfrom azure_functions_worker.protos import \g<1>',
-                    content)
+                    r"\nimport (.*?_pb2)",
+                    r"\nfrom azure_functions_worker.protos import \g<1>",
+                    content,
+                )
                 # Convert lines of the form:
                 # from identity import xxx_pb2 as.. to
                 # from azure_functions_worker.protos.identity import xxx_pb2..
                 p2 = re.sub(
-                    r'from ([a-z]*) (import.*_pb2)',
-                    r'from azure_functions_worker.protos.\g<1> \g<2>',
-                    p1)
+                    r"from ([a-z]*) (import.*_pb2)",
+                    r"from azure_functions_worker.protos.\g<1> \g<2>",
+                    p1,
+                )
                 f.write(p2)
                 f.truncate()
 
@@ -238,12 +213,13 @@ class Development(develop.develop, BuildGRPC):
 
 
 class Extension(distutils.cmd.Command):
-    description = (
-        'Resolve WebJobs Extensions from AZURE_EXTENSIONS and NUGET_CONFIG.'
-    )
+    description = "Resolve WebJobs Extensions from AZURE_EXTENSIONS and NUGET_CONFIG."
     user_options = [
-        ('extensions-dir', None,
-         'A path to the directory where extension should be installed')
+        (
+            "extensions-dir",
+            None,
+            "A path to the directory where extension should be installed",
+        )
     ]
 
     def __init__(self, dist: Distribution):
@@ -255,34 +231,39 @@ class Extension(distutils.cmd.Command):
 
     def finalize_options(self):
         if self.extensions_dir is None:
-            self.extensions_dir = \
-                pathlib.Path(__file__).parent / 'build' / 'extensions'
+            self.extensions_dir = pathlib.Path(__file__).parent / "build" / "extensions"
 
     def _install_extensions(self):
         if not self.extensions_dir.exists():
             os.makedirs(self.extensions_dir, exist_ok=True)
 
-        if not (self.extensions_dir / 'host.json').exists():
-            with open(self.extensions_dir / 'host.json', 'w') as f:
-                print('{}', file=f)
+        if not (self.extensions_dir / "host.json").exists():
+            with open(self.extensions_dir / "host.json", "w") as f:
+                print("{}", file=f)
 
-        if not (self.extensions_dir / 'extensions.csproj').exists():
-            with open(self.extensions_dir / 'extensions.csproj', 'w') as f:
-                print(AZURE_EXTENSIONS, file=f)
+        if not (self.extensions_dir / "extensions.csproj").exists():
+            with open(self.extensions_dir / "extensions.csproj", "w") as f:
+                print(EXTENSIONS_CSPROJ_TEMPLATE, file=f)
 
-        with open(self.extensions_dir / 'NuGet.config', 'w') as f:
+        with open(self.extensions_dir / "NuGet.config", "w") as f:
             print(NUGET_CONFIG, file=f)
 
         env = os.environ.copy()
-        env['TERM'] = 'xterm'  # ncurses 6.1 workaround
+        env["TERM"] = "xterm"  # ncurses 6.1 workaround
         try:
             subprocess.run(
-                args=['dotnet', 'build', '-o', '.'], check=True,
+                args=["dotnet", "build", "-o", "."],
+                check=True,
                 cwd=str(self.extensions_dir),
-                stdout=sys.stdout, stderr=sys.stderr, env=env)
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+                env=env,
+            )
         except Exception:  # NoQA
-            print(".NET Core SDK is required to build the extensions. "
-                  "Please visit https://aka.ms/dotnet-download")
+            print(
+                ".NET Core SDK is required to build the extensions. "
+                "Please visit https://aka.ms/dotnet-download"
+            )
             sys.exit(1)
 
     def run(self):
@@ -290,15 +271,24 @@ class Extension(distutils.cmd.Command):
 
 
 class Webhost(distutils.cmd.Command):
-    description = 'Download and setup Azure Functions Web Host.'
+    description = "Download and setup Azure Functions Web Host."
     user_options = [
-        ('webhost-version=', None,
-         'A Functions Host version to be downloaded (e.g. 3.0.15278).'),
-        ('webhost-dir=', None,
-         'A path to the directory where Azure Web Host will be installed.'),
-        ('branch-name=', None,
-         'A branch from where azure-functions-host will be installed '
-         '(e.g. branch-name=dev, branch-name= abc/branchname)')
+        (
+            "webhost-version=",
+            None,
+            "A Functions Host version to be downloaded (e.g. 3.0.15278).",
+        ),
+        (
+            "webhost-dir=",
+            None,
+            "A path to the directory where Azure Web Host will be installed.",
+        ),
+        (
+            "branch-name=",
+            None,
+            "A branch from where azure-functions-host will be installed "
+            "(e.g. branch-name=dev, branch-name= abc/branchname)",
+        ),
     ]
 
     def __init__(self, dist: Distribution):
@@ -315,23 +305,20 @@ class Webhost(distutils.cmd.Command):
             self.webhost_version = self._get_webhost_version()
 
         if self.webhost_dir is None:
-            self.webhost_dir = \
-                pathlib.Path(__file__).parent / 'build' / 'webhost'
+            self.webhost_dir = pathlib.Path(__file__).parent / "build" / "webhost"
 
     @staticmethod
     def _get_webhost_version() -> str:
         # Return the latest matched version (e.g. 3.0.15278)
-        github_api_url = f'{WEBHOST_GITHUB_API}/tags?page=1&per_page=10'
-        print(f'Checking latest webhost version from {github_api_url}')
+        github_api_url = f"{WEBHOST_GITHUB_API}/tags?page=1&per_page=10"
+        print(f"Checking latest webhost version from {github_api_url}")
         github_response = urllib.request.urlopen(github_api_url)
         tags = json.loads(github_response.read())
 
         # As tags are placed in time desending order, the latest v3
         # tag should be the first occurance starts with 'v3.' string
-        latest = [
-            gt for gt in tags if gt['name'].startswith(WEBHOST_TAG_PREFIX)
-        ]
-        return latest[0]['name'].replace('v', '')
+        latest = [gt for gt in tags if gt["name"].startswith(WEBHOST_TAG_PREFIX)]
+        return latest[0]["name"].replace("v", "")
 
     @staticmethod
     def _download_webhost_zip(version: str, branch: str) -> str:
@@ -339,26 +326,25 @@ class Webhost(distutils.cmd.Command):
         temporary_file = tempfile.NamedTemporaryFile()
 
         if branch is not None:
-            zip_url = (
-                f'{WEBHOST_GIT_REPO}/refs/heads/{branch}.zip'
-            )
+            zip_url = f"{WEBHOST_GIT_REPO}/refs/heads/{branch}.zip"
         else:
-            zip_url = (
-                f'{WEBHOST_GIT_REPO}/v{version}.zip'
-            )
+            zip_url = f"{WEBHOST_GIT_REPO}/v{version}.zip"
 
-        print(f'Downloading Functions Host from {zip_url}')
+        print(f"Downloading Functions Host from {zip_url}")
 
         with temporary_file as zipf:
             zipf.close()
             try:
                 urllib.request.urlretrieve(zip_url, zipf.name)
             except Exception as e:
-                print('Failed to download Functions Host source code from'
-                      f' {zip_url}: {e!r}', file=sys.stderr)
+                print(
+                    "Failed to download Functions Host source code from"
+                    f" {zip_url}: {e!r}",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
 
-        print(f'Functions Host is downloaded into {temporary_file.name}')
+        print(f"Functions Host is downloaded into {temporary_file.name}")
         return temporary_file.name
 
     @staticmethod
@@ -366,11 +352,11 @@ class Webhost(distutils.cmd.Command):
         if dest_folder.exists():
             shutil.rmtree(dest_folder)
         os.makedirs(dest_folder, exist_ok=True)
-        print(f'Functions Host folder is created in {dest_folder}')
+        print(f"Functions Host folder is created in {dest_folder}")
 
     @staticmethod
     def _extract_webhost_zip(version: str, src_zip: str, dest: str):
-        print(f'Extracting Functions Host from {src_zip}')
+        print(f"Extracting Functions Host from {src_zip}")
 
         with zipfile.ZipFile(src_zip) as archive:
             # We cannot simply use extractall(), as the archive
@@ -380,11 +366,11 @@ class Webhost(distutils.cmd.Command):
             # backslashes in file names.
 
             for archive_name in archive.namelist():
-                prefix = f'azure-functions-host-{version}/'
+                prefix = f"azure-functions-host-{version}/"
                 if archive_name.startswith(prefix):
-                    sanitized_name = archive_name \
-                        .replace('\\', os.sep) \
-                        .replace(prefix, '')
+                    sanitized_name = archive_name.replace("\\", os.sep).replace(
+                        prefix, ""
+                    )
                     dest_filename = dest / sanitized_name
                     zipinfo = archive.getinfo(archive_name)
 
@@ -395,68 +381,70 @@ class Webhost(distutils.cmd.Command):
                         if zipinfo.is_dir():
                             os.makedirs(dest_filename, exist_ok=True)
                         else:
-                            with archive.open(archive_name) as src, \
-                                    open(dest_filename, 'wb') as dst:
+                            with archive.open(archive_name) as src, open(
+                                dest_filename, "wb"
+                            ) as dst:
                                 dst.write(src.read())
                     except Exception as e:
-                        print(f'Failed to extract file {archive_name}'
-                              f': {e!r}', file=sys.stderr)
+                        print(
+                            f"Failed to extract file {archive_name}" f": {e!r}",
+                            file=sys.stderr,
+                        )
                         sys.exit(1)
 
-        print(f'Functions Host is extracted into {dest}')
+        print(f"Functions Host is extracted into {dest}")
 
     @staticmethod
     def _chmod_protobuf_generation_script(webhost_dir: pathlib.Path):
         # This script is needed to set to executable in order to build the
         # WebJobs.Script.Grpc project in Linux and MacOS
-        script_path = (
-            webhost_dir / 'src' / 'WebJobs.Script.Grpc' / 'generate_protos.sh'
-        )
-        if sys.platform != 'win32' and os.path.exists(script_path):
-            print('Change generate_protos.sh script permission')
+        script_path = webhost_dir / "src" / "WebJobs.Script.Grpc" / "generate_protos.sh"
+        if sys.platform != "win32" and os.path.exists(script_path):
+            print("Change generate_protos.sh script permission")
             os.chmod(script_path, 0o555)
 
     @staticmethod
     def _compile_webhost(webhost_dir: pathlib.Path):
-        print(f'Compiling Functions Host from {webhost_dir}')
+        print(f"Compiling Functions Host from {webhost_dir}")
 
         try:
             subprocess.run(
-                args=['dotnet', 'build', 'WebJobs.Script.sln', '-o', 'bin'],
+                args=["dotnet", "build", "WebJobs.Script.sln", "-o", "bin"],
                 check=True,
                 cwd=str(webhost_dir),
-                stdout=sys.stdout, stderr=sys.stderr)
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
         except Exception:  # NoQA
-            print(f"Failed to compile webhost in {webhost_dir}. "
-                  ".NET Core SDK is required to build the solution. "
-                  "Please visit https://aka.ms/dotnet-download",
-                  file=sys.stderr)
+            print(
+                f"Failed to compile webhost in {webhost_dir}. "
+                ".NET Core SDK is required to build the solution. "
+                "Please visit https://aka.ms/dotnet-download",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
-        print('Functions Host is compiled successfully')
+        print("Functions Host is compiled successfully")
 
     def run(self):
         # Prepare webhost
-        zip_path = self._download_webhost_zip(self.webhost_version,
-                                              self.branch_name)
+        zip_path = self._download_webhost_zip(self.webhost_version, self.branch_name)
         self._create_webhost_folder(self.webhost_dir)
         version = self.branch_name or self.webhost_version
-        self._extract_webhost_zip(version=version.replace('/', '-'),
-                                  src_zip=zip_path,
-                                  dest=self.webhost_dir)
+        self._extract_webhost_zip(
+            version=version.replace("/", "-"), src_zip=zip_path, dest=self.webhost_dir
+        )
         self._chmod_protobuf_generation_script(self.webhost_dir)
         self._compile_webhost(self.webhost_dir)
 
 
 class Clean(distutils.cmd.Command):
-    description = 'Clean up build generated files'
+    description = "Clean up build generated files"
     user_options = []
 
     def __init__(self, dist: Distribution):
         super().__init__(dist)
-        self.dir_list_to_delete = [
-            "build"
-        ]
+        self.dir_list_to_delete = ["build"]
 
     def initialize_options(self) -> None:
         pass
@@ -472,17 +460,19 @@ class Clean(distutils.cmd.Command):
                     print(f"Deleting directory: {dir_to_delete}")
                     shutil.rmtree(dir_delete)
                 except OSError as ex:
-                    print(f"Error deleting directory: {dir_to_delete}. "
-                          f"Exception: {ex}")
+                    print(
+                        f"Error deleting directory: {dir_to_delete}. "
+                        f"Exception: {ex}"
+                    )
 
 
 COMMAND_CLASS = {
-    'develop': Development,
-    'build': BuildProtos,
-    'webhost': Webhost,
-    'webhost --branch-name={branch-name}': Webhost,
-    'extension': Extension,
-    'clean': Clean
+    "develop": Development,
+    "build": BuildProtos,
+    "webhost": Webhost,
+    "webhost --branch-name={branch-name}": Webhost,
+    "extension": Extension,
+    "clean": Clean,
 }
 
 setup(
@@ -502,5 +492,5 @@ setup(
     extras_require=EXTRA_REQUIRES,
     include_package_data=True,
     cmdclass=COMMAND_CLASS,
-    test_suite='tests'
+    test_suite="tests",
 )

@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 from azure_functions_worker import protos
 from tests.utils import testutils
+import pytest
 
 STEIN_INVALID_APP_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'broken_functions' / \
@@ -13,6 +14,7 @@ STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
 
 class TestInvalidAppStein(testutils.AsyncTestCase):
 
+    @pytest.mark.asyncio
     async def test_indexing_not_app(self):
         """Test if the functions metadata response will be
             an error when an invalid app is provided
@@ -29,6 +31,7 @@ class TestInvalidAppStein(testutils.AsyncTestCase):
                              r"ValueError: Could not find top level "
                              r"function app instances in function_app.py.")
 
+    @pytest.mark.asyncio
     async def test_indexing_invalid_app(self):
         """Test if the functions metadata response will be
             an error when an invalid app is provided

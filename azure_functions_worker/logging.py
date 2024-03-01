@@ -78,6 +78,9 @@ def setup(log_level, log_destination):
     error_logger.addHandler(error_handler)
     error_logger.setLevel(getattr(logging, log_level))
 
+    local_handler = logging.FileHandler('C:/mylog.txt')
+    logger.addHandler(local_handler)
+
 
 def disable_console_logging() -> None:
     # We should only remove the sys.stdout stream, as error_logger is used for

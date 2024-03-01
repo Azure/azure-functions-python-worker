@@ -3,6 +3,7 @@
 from azure_functions_worker import protos
 from tests.utils import testutils
 import pytest
+import asyncio
 
 STEIN_INVALID_APP_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'broken_functions' / \
@@ -14,6 +15,7 @@ STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
 
 @pytest.mark.asyncio(scope="class")
 class TestInvalidAppStein(testutils.AsyncTestCase):
+    loop = asyncio.get_event_loop_policy().new_event_loop()
 
     async def test_indexing_not_app(self):
         """Test if the functions metadata response will be

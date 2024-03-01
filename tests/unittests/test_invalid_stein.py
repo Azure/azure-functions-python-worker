@@ -15,7 +15,11 @@ STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
 
 @pytest.mark.asyncio(scope="class")
 class TestInvalidAppStein(testutils.AsyncTestCase):
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    def event_loop(self):
+        policy = asyncio.get_event_loop_policy()
+        loop = policy.new_event_loop()
+        yield loop
+        loop.close()
 
     async def test_indexing_not_app(self):
         """Test if the functions metadata response will be

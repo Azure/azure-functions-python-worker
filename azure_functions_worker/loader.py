@@ -135,6 +135,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             raw_bindings = bindings.meta.SDK_BINDING_REGISTRY.get_raw_bindings(
                 indexed_function, function_info.input_types)
             bindings.meta.deferred_bindings_enabled = False
+            raise TypeError(f'Raw bindings: {raw_bindings}')
         else:
             raw_bindings = indexed_function.get_raw_bindings()
 

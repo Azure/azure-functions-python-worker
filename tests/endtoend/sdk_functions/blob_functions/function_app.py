@@ -119,7 +119,7 @@ def get_ssd_bytes(req: func.HttpRequest,
 @app.function_name(name="get_bc_str")
 @app.route(route="get_bc_str")
 @app.blob_input(arg_name="client",
-                path="python-worker-tests/test-bytes.txt",
+                path="python-worker-tests/test-str.txt",
                 connection="AzureWebJobsStorage")
 def get_bc_str(req: func.HttpRequest, client: bindings.BlobClient) -> str:
     return client.download_blob(encoding='utf-8').readall()

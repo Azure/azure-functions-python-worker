@@ -105,6 +105,7 @@ def from_incoming_proto(
         val = pb.data
         datum = datumdef.Datum.from_typed_data(val)
     elif pb_type == PB_TYPE_RPC_SHARED_MEMORY:
+        raise TypeError('RPC shared memory in sdk tests')
         # Data was sent over shared memory, attempt to read
         datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory,
                                                       shmem_mgr)

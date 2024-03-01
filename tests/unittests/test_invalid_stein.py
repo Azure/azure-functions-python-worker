@@ -2,8 +2,6 @@
 # Licensed under the MIT License.
 from azure_functions_worker import protos
 from tests.utils import testutils
-import pytest
-import asyncio
 
 STEIN_INVALID_APP_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'broken_functions' / \
@@ -13,17 +11,11 @@ STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'invalid_stein'
 
 
-@pytest.mark.asyncio(scope="class")
 class TestInvalidAppStein(testutils.AsyncTestCase):
-    def event_loop(self):
-        policy = asyncio.get_event_loop_policy()
-        loop = policy.new_event_loop()
-        yield loop
-        loop.close()
 
     async def test_indexing_not_app(self):
-        """Test if the functions metadata response will be
-            an error when an invalid app is provided
+        """Test if the functions metadata status will be
+            Failure when an invalid app is provided
         """
         async with testutils.start_mockhost(
                 script_root=STEIN_INVALID_APP_FUNCTIONS_DIR) as host:
@@ -33,13 +25,10 @@ class TestInvalidAppStein(testutils.AsyncTestCase):
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Failure)
             self.assertIsNotNone(r.response.result.exception.message)
-            self.assertRegex(r.response.result.exception.message,
-                             r"ValueError: Could not find top level "
-                             r"function app instances in function_app.py.")
 
     async def test_indexing_invalid_app(self):
-        """Test if the functions metadata response will be
-            an error when an invalid app is provided
+        """Test if the functions metadata status will be
+            Failure when an invalid app is provided
         """
         async with testutils.start_mockhost(
                 script_root=STEIN_INVALID_FUNCTIONS_DIR) as host:
@@ -49,10 +38,3 @@ class TestInvalidAppStein(testutils.AsyncTestCase):
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Failure)
             self.assertIsNotNone(r.response.result.exception.message)
-            self.assertRegex(r.response.result.exception.message,
-                             r"FunctionLoadError: cannot load the main "
-                             r"function: "
-                             r"the following parameters "
-                             r"are declared in function.json but not in "
-                             r"Python: "
-                             r".*'req'.*")

@@ -12,7 +12,7 @@ STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
 
 
 class TestInvalidAppStein(testutils.AsyncTestCase):
-    @testutils.retryable_test(4, 5)
+
     async def test_indexing_not_app(self):
         """Test if the functions metadata response will be
             an error when an invalid app is provided
@@ -29,7 +29,6 @@ class TestInvalidAppStein(testutils.AsyncTestCase):
                              r"ValueError: Could not find top level "
                              r"function app instances in function_app.py.")
 
-    @testutils.retryable_test(4, 5)
     async def test_indexing_invalid_app(self):
         """Test if the functions metadata response will be
             an error when an invalid app is provided

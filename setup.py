@@ -93,6 +93,7 @@ EXTRA_REQUIRES = {
         "flake8~=4.0.1",
         "mypy",
         "pytest",
+        "pytest-asyncio",
         "requests==2.*",
         "coverage",
         "pytest-sugar",

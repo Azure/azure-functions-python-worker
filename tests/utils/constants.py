@@ -32,7 +32,7 @@ EXTENSIONS_CSPROJ_TEMPLATE = """\
         Version="0.1.346-preview" />
       <PackageReference
         Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
-        Version="1.1.3" />
+        Version="4.0.1" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask"
         Version="2.9.4" />
    </ItemGroup>

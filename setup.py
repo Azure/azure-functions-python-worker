@@ -21,46 +21,12 @@ from setuptools import setup
 from setuptools.command import develop
 
 from azure_functions_worker.version import VERSION
+from tests.utils.constants import EXTENSIONS_CSPROJ_TEMPLATE
 
 # The GitHub repository of the Azure Functions Host
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
 WEBHOST_TAG_PREFIX = "v4."
 WEBHOST_GIT_REPO = "https://github.com/Azure/azure-functions-host/archive"
-
-# Extensions necessary for non-core bindings.
-AZURE_EXTENSIONS = """\
-<?xml version="1.0" encoding="UTF-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
-   <PropertyGroup>
-      <TargetFramework>netcoreapp3.1</TargetFramework>
-      <AzureFunctionsVersion>v4</AzureFunctionsVersion>
-      <WarningsAsErrors />
-      <DefaultItemExcludes>**</DefaultItemExcludes>
-   </PropertyGroup>
-   <ItemGroup>
-      <PackageReference Include="Microsoft.NET.Sdk.Functions"
-        Version="4.0.1" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-        Version="4.2.0" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-        Version="5.0.0" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
-        Version="3.3.1" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
-        Version="4.0.5" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
-        Version="4.2.1" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Sql"
-        Version="0.1.346-preview" />
-      <PackageReference
-        Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
-        Version="1.1.3" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask"
-        Version="2.9.4" />
-   </ItemGroup>
-</Project>
-"""
-
 NUGET_CONFIG = """\
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
@@ -277,7 +243,7 @@ class Extension(distutils.cmd.Command):
 
         if not (self.extensions_dir / "extensions.csproj").exists():
             with open(self.extensions_dir / "extensions.csproj", "w") as f:
-                print(AZURE_EXTENSIONS, file=f)
+                print(EXTENSIONS_CSPROJ_TEMPLATE, file=f)
 
         with open(self.extensions_dir / "NuGet.config", "w") as f:
             print(NUGET_CONFIG, file=f)

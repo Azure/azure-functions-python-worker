@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ 3.7, 3.8, 3.9, "3.10" ]
+        python-version: [ 3.7, 3.8, 3.9, "3.10", "3.11" ]
     permissions: read-all
     env:
         DEDICATED_DOCKER_TEST: "true"
@@ -80,3 +80,16 @@ jobs:
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
         run: |
           python -m pytest --reruns 4 -vv --instafail tests/endtoend
+      - name: Running 3.11 Tests
+        if: matrix.python-version == 3.11
+        env:
+          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString311 }}
+          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString311 }}
+          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString311 }}
+          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString311 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString311 }}
+          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
+          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
+        run: |
+          python -m pytest --reruns 4 -vv --instafail tests/endtoend
+      

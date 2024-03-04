@@ -10,6 +10,8 @@ from . import datumdef
 from . import generic
 from .shared_memory_data_transfer import SharedMemoryManager
 
+from ..logging import logger
+
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
 PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
@@ -30,7 +32,8 @@ def load_binding_registry() -> None:
     BINDING_REGISTRY = func.get_binding_registry()
 
     # Check if cx has imported sdk bindings library
-    clients = importlib.util.find_spec('azure.functions.extension.base')
+    clients = sys.modules.get('azure.functions.extension.base')
+    # clients = importlib.util.find_spec('azure.functions.extension.base')
 
     # this will be none if the library is not imported
     # if it is not none, we want to set and use the registry
@@ -102,10 +105,12 @@ def from_incoming_proto(
 
     pb_type = pb.WhichOneof(PB_TYPE)
     if pb_type == PB_TYPE_DATA:
+        logger.warning('pb_type is data')
         val = pb.data
         datum = datumdef.Datum.from_typed_data(val)
     elif pb_type == PB_TYPE_RPC_SHARED_MEMORY:
         # Data was sent over shared memory, attempt to read
+        logger.warning('pb_type is shared memory')
         datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory,
                                                       shmem_mgr)
     else:
@@ -124,11 +129,11 @@ def from_incoming_proto(
             #     return obj
             # # if the object is not in the cache, create and add it to the cache
             # else:
-                raise TypeError(f'Binding: {binding}, pytype: {pytype}, datum: {datum}')
-                obj = binding.decode(datum, trigger_metadata=metadata,
-                                     pytype=pytype)
+            logger.warning(f'Binding: {binding}, pytype: {pytype}, datum: {datum}')
+            obj = binding.decode(datum, trigger_metadata=metadata,
+                                 pytype=pytype)
                 # SDK_CACHE[(pb.name, pytype, datum.value.content)] = obj
-                return obj
+            return obj
 
         return binding.decode(datum, trigger_metadata=metadata)
     except NotImplementedError:

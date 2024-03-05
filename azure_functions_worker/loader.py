@@ -3,7 +3,6 @@
 """Python functions loader."""
 import importlib
 import importlib.machinery
-import importlib.util
 import os
 import os.path
 import pathlib

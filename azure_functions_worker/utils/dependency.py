@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import importlib
+import importlib.util
 import inspect
 import os
 import re
@@ -35,20 +35,20 @@ class DependencyManager:
     Linux Consumption sys.path: [
         "/tmp/functions\\standby\\wwwroot", # Placeholder folder
         "/home/site/wwwroot/.python_packages/lib/site-packages", # CX's deps
-        "/azure-functions-host/workers/python/3.6/LINUX/X64", # Worker's deps
+        "/azure-functions-host/workers/python/3.11/LINUX/X64", # Worker's deps
         "/home/site/wwwroot" # CX's Working Directory
     ]
 
     Linux Dedicated/Premium sys.path: [
         "/home/site/wwwroot", # CX's Working Directory
         "/home/site/wwwroot/.python_packages/lib/site-packages", # CX's deps
-        "/azure-functions-host/workers/python/3.6/LINUX/X64", # Worker's deps
+        "/azure-functions-host/workers/python/3.11/LINUX/X64", # Worker's deps
     ]
 
     Core Tools sys.path: [
         "%appdata%\\azure-functions-core-tools\\bin\\workers\\"
-            "python\\3.6\\WINDOWS\\X64", # Worker's deps
-        "C:\\Users\\user\\Project\\.venv38\\lib\\site-packages", # CX's deps
+            "python\\3.11\\WINDOWS\\X64", # Worker's deps
+        "C:\\Users\\user\\Project\\.venv311\\lib\\site-packages", # CX's deps
         "C:\\Users\\user\\Project", # CX's Working Directory
     ]
 

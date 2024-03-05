@@ -24,6 +24,7 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
     @classmethod
     def setUpClass(cls):
         os.environ["PYTHON_SCRIPT_FILE_NAME"] = "main.py"
+        cls.env_variables['PYTHON_SCRIPT_FILE_NAME'] = 'main.py'
         super().setUpClass()
 
     @classmethod
@@ -40,7 +41,7 @@ class TestHttpFunctionsFileName(testutils.WebHostTestCase):
 
     @classmethod
     def get_environment_variables(cls):
-        return {"PYTHON_SCRIPT_FILE_NAME": "main.py"}
+        return cls.env_variables
 
     @testutils.retryable_test(3, 5)
     def test_index_page_should_return_ok(self):

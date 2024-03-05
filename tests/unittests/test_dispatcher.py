@@ -143,7 +143,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         correct default value
         """
         async with self._ctrl as host:
-            # await self._check_if_function_is_ok(host)
+            await host.init_worker()
+            await self._check_if_function_is_ok(host)
             await self._assert_workers_threadpool(self._ctrl, host,
                                                   self._default_workers)
 
@@ -154,6 +155,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT:
                            f'{self._allowed_max_workers}'})
         async with self._ctrl as host:
+            await host.init_worker()
             await self._check_if_function_is_ok(host)
             await self._assert_workers_threadpool(self._ctrl, host,
                                                   self._allowed_max_workers)
@@ -339,6 +341,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
 
             async with self._ctrl as host:
+                await host.init_worker()
                 request_id: str = self._ctrl._worker._request_id
                 func_id, invoke_id, func_name = (
                     await self._check_if_function_is_ok(host)
@@ -363,6 +366,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
 
             async with self._ctrl as host:
+                await host.init_worker()
                 request_id: str = self._ctrl._worker._request_id
                 func_id, invoke_id, func_name = (
                     await self._check_if_async_function_is_ok(host)

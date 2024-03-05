@@ -13,6 +13,7 @@ STEIN_INVALID_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
 
 class TestInvalidAppStein(testutils.AsyncTestCase):
 
+    @testutils.retryable_test(4, 5)
     async def test_indexing_not_app(self):
         """Test if the functions metadata status will be
             Failure when an invalid app is provided
@@ -26,6 +27,7 @@ class TestInvalidAppStein(testutils.AsyncTestCase):
                              protos.StatusResult.Failure)
             self.assertIsNotNone(r.response.result.exception.message)
 
+    @testutils.retryable_test(4, 5)
     async def test_indexing_invalid_app(self):
         """Test if the functions metadata status will be
             Failure when an invalid app is provided

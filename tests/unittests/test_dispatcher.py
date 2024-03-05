@@ -335,9 +335,9 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  )
 
     async def test_sync_invocation_request_log_threads(self):
-        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
-
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
+
             async with self._ctrl as host:
                 request_id: str = self._ctrl._worker._request_id
                 func_id, invoke_id, func_name = (
@@ -359,9 +359,9 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  )
 
     async def test_async_invocation_request_log_threads(self):
-        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
-
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
+
             async with self._ctrl as host:
                 request_id: str = self._ctrl._worker._request_id
                 func_id, invoke_id, func_name = (

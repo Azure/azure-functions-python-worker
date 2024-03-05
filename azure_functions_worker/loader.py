@@ -59,10 +59,18 @@ def uninstall() -> None:
 def build_binding_protos(indexed_function) -> Dict:
     binding_protos = {}
     for binding in indexed_function.get_bindings():
-        binding_protos[binding.name] = protos.BindingInfo(
-            type=binding.type,
-            data_type=binding.data_type,
-            direction=binding.direction)
+        if binding.type == 'blob':
+            binding_protos[binding.name] = protos.BindingInfo(
+                type=binding.type,
+                data_type=binding.data_type,
+                direction=binding.direction,
+                properties={"supportsDeferredBinding": "True"})
+        else:
+            binding_protos[binding.name] = protos.BindingInfo(
+                type=binding.type,
+                data_type=binding.data_type,
+                direction=binding.direction,
+                properties={"supportsDeferredBinding": "False"})
 
     return binding_protos
 
@@ -128,6 +136,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             function=indexed_function)
 
         binding_protos = build_binding_protos(indexed_function)
+        logger.warning(f'build bindings: {binding_protos}')
         retry_protos = build_retry_protos(indexed_function)
 
         # Check if deferred bindings is enabled

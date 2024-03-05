@@ -1,24 +1,28 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from typing import Optional, Callable
-from types import ModuleType
+import importlib
 import os
 import sys
-import importlib
+import re
+from types import ModuleType
+from typing import Optional, Callable
+
+from azure_functions_worker.constants import CUSTOMER_PACKAGES_PATH, \
+    PYTHON_EXTENSIONS_RELOAD_FUNCTIONS
 
 
 def is_true_like(setting: str) -> bool:
     if setting is None:
         return False
 
-    return setting.lower().strip() in ['1', 'true', 't', 'yes', 'y']
+    return setting.lower().strip() in {'1', 'true', 't', 'yes', 'y'}
 
 
 def is_false_like(setting: str) -> bool:
     if setting is None:
         return False
 
-    return setting.lower().strip() in ['0', 'false', 'f', 'no', 'n']
+    return setting.lower().strip() in {'0', 'false', 'f', 'no', 'n'}
 
 
 def is_envvar_true(env_key: str) -> bool:
@@ -110,19 +114,43 @@ def get_sdk_from_sys_path() -> ModuleType:
     ModuleType
         The azure.functions that is loaded from the first sys.path entry
     """
-    backup_azure_functions = None
-    backup_azure = None
 
-    if 'azure.functions' in sys.modules:
-        backup_azure_functions = sys.modules.pop('azure.functions')
-    if 'azure' in sys.modules:
-        backup_azure = sys.modules.pop('azure')
+    if is_envvar_true(PYTHON_EXTENSIONS_RELOAD_FUNCTIONS):
+        backup_azure_functions = None
+        backup_azure = None
 
-    module = importlib.import_module('azure.functions')
+        if 'azure.functions' in sys.modules:
+            backup_azure_functions = sys.modules.pop('azure.functions')
+        if 'azure' in sys.modules:
+            backup_azure = sys.modules.pop('azure')
 
-    if backup_azure:
-        sys.modules['azure'] = backup_azure
-    if backup_azure_functions:
-        sys.modules['azure.functions'] = backup_azure_functions
+        module = importlib.import_module('azure.functions')
 
-    return module
+        if backup_azure:
+            sys.modules['azure'] = backup_azure
+        if backup_azure_functions:
+            sys.modules['azure.functions'] = backup_azure_functions
+
+        return module
+
+    if CUSTOMER_PACKAGES_PATH not in sys.path:
+        sys.path.insert(0, CUSTOMER_PACKAGES_PATH)
+
+    return importlib.import_module('azure.functions')
+
+
+class InvalidFileNameError(Exception):
+
+    def __init__(self, file_name: str) -> None:
+        super().__init__(
+            f'Invalid file name: {file_name}')
+
+
+def validate_script_file_name(file_name: str):
+    # First character can be a letter, number, or underscore
+    # Following characters can be a letter, number, underscore, hyphen, or dash
+    # Ending must be .py
+    pattern = re.compile(r'^[a-zA-Z0-9_][a-zA-Z0-9_\-]*\.py$')
+    if not pattern.match(file_name):
+        raise InvalidFileNameError(file_name)
+    return True

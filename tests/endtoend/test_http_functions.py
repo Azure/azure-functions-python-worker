@@ -1,11 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+import typing
 from unittest.mock import patch
 
 import requests
 
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 REQUEST_TIMEOUT_SEC = 5
 
@@ -21,6 +22,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     Compared to the unittests/test_http_functions.py, this file is more focus
     on testing the E2E flow scenarios.
     """
+
     def setUp(self):
         self._patch_environ = patch.dict('os.environ', os.environ.copy())
         self._patch_environ.start()
@@ -39,8 +41,8 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         """The index page of Azure Functions should return OK in any
         circumstances
         """
-        root_url = self.webhost._addr
-        r = requests.get(root_url, timeout=REQUEST_TIMEOUT_SEC)
+        r = self.webhost.request('GET', '', no_prefix=True,
+                                 timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
 
     @testutils.retryable_test(3, 5)
@@ -112,7 +114,7 @@ class TestHttpFunctionsStein(TestHttpFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'http_functions_stein'
 
 
@@ -120,6 +122,151 @@ class TestHttpFunctionsSteinGeneric(TestHttpFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
-                                            'http_functions_stein' /\
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+                                            'http_functions_stein' / \
                                             'generic'
+
+
+class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
+    """Test the common libs scenarios in the local webhost.
+
+    This test class will spawn a webhost from your <project_root>/build/webhost
+    folder and replace the built-in Python with azure_functions_worker from
+    your code base. this file is more focus on testing the E2E flow scenarios.
+    """
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+                                            'common_libs_functions'
+
+    @classmethod
+    def get_libraries_to_install(cls):
+        return ['requests', 'python-dotenv', "plotly", "scikit-learn",
+                "opencv-python", "pandas", "numpy"]
+
+    @testutils.retryable_test(3, 5)
+    def test_numpy(self):
+        r = self.webhost.request('GET', 'numpy_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        res = "array: [1.+0.j 2.+0.j]"
+
+        self.assertEqual(r.content.decode("UTF-8"), res)
+
+    def test_requests(self):
+        r = self.webhost.request('GET', 'requests_func',
+                                 timeout=10)
+
+        self.assertTrue(r.ok)
+        self.assertEqual(r.content.decode("UTF-8"), 'req status code: 200')
+
+    def test_pandas(self):
+        r = self.webhost.request('GET', 'pandas_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertIn("two-dimensional",
+                      r.content.decode("UTF-8"))
+
+    def test_sklearn(self):
+        r = self.webhost.request('GET', 'sklearn_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertIn("First 5 records of array:",
+                      r.content.decode("UTF-8"))
+
+    def test_opencv(self):
+        r = self.webhost.request('GET', 'opencv_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertIn("opencv version:",
+                      r.content.decode("UTF-8"))
+
+    def test_dotenv(self):
+        r = self.webhost.request('GET', 'dotenv_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertEqual(r.content.decode("UTF-8"), "found")
+
+    def test_plotly(self):
+        r = self.webhost.request('GET', 'plotly_func',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertIn("plotly version:",
+                      r.content.decode("UTF-8"))
+
+
+class TestCommonLibsHttpFunctionsStein(TestCommonLibsHttpFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+                                            'common_libs_functions' / \
+                                            'common_libs_functions_stein'
+
+
+class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):
+    """Test the Http trigger that contains logging with user threads.
+
+    This test class will spawn a webhost from your <project_root>/build/webhost
+    folder and replace the built-in Python with azure_functions_worker from
+    your code base. this file is more focus on testing the E2E flow scenarios.
+    """
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
+                                            'user_thread_logging'
+
+    @testutils.retryable_test(3, 5)
+    def test_http_thread(self):
+        r = self.webhost.request('GET', 'thread',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+    def check_log_http_thread(self, host_out: typing.List[str]):
+        self.assertEqual(host_out.count('Before threads.'), 1)
+        self.assertEqual(host_out.count('Thread1 used.'), 1)
+        self.assertEqual(host_out.count('Thread2 used.'), 1)
+        self.assertEqual(host_out.count('Thread3 used.'), 1)
+        self.assertEqual(host_out.count('After threads.'), 1)
+
+    @testutils.retryable_test(3, 5)
+    def test_http_async_thread(self):
+        r = self.webhost.request('GET', 'async_thread',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+    def check_log_http_async_thread(self, host_out: typing.List[str]):
+        self.assertEqual(host_out.count('Before threads.'), 1)
+        self.assertEqual(host_out.count('Thread1 used.'), 1)
+        self.assertEqual(host_out.count('Thread2 used.'), 1)
+        self.assertEqual(host_out.count('Thread3 used.'), 1)
+        self.assertEqual(host_out.count('After threads.'), 1)
+
+    @testutils.retryable_test(3, 5)
+    def test_http_thread_pool_executor(self):
+        r = self.webhost.request('GET', 'thread_pool_executor',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+    def check_log_http_thread_pool_executor(self, host_out: typing.List[str]):
+        self.assertEqual(host_out.count('Before TPE.'), 1)
+        self.assertEqual(host_out.count('Using TPE.'), 1)
+        self.assertEqual(host_out.count('After TPE.'), 1)
+
+    @testutils.retryable_test(3, 5)
+    def test_http_async_thread_pool_executor(self):
+        r = self.webhost.request('GET', 'async_thread_pool_executor',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+
+        self.assertTrue(r.ok)
+
+    def check_log_http_async_thread_pool_executor(self,
+                                                  host_out: typing.List[str]):
+        self.assertEqual(host_out.count('Before TPE.'), 1)
+        self.assertEqual(host_out.count('Using TPE.'), 1)
+        self.assertEqual(host_out.count('After TPE.'), 1)

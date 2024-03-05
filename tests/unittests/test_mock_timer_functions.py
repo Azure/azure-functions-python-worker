@@ -2,7 +2,8 @@
 # Licensed under the MIT License.
 import json
 
-from azure_functions_worker import protos, testutils
+from azure_functions_worker import protos
+from tests.utils import testutils
 
 
 class TestTimerFunctions(testutils.AsyncTestCase):
@@ -12,6 +13,7 @@ class TestTimerFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.timer_funcs_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('return_pastdue')
 
             self.assertEqual(r.response.function_id, func_id)
@@ -43,7 +45,7 @@ class TestTimerFunctions(testutils.AsyncTestCase):
     async def test_mock_timer__user_event_loop(self):
         async with testutils.start_mockhost(
                 script_root=self.timer_funcs_dir) as host:
-
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('user_event_loop_timer')
 
             self.assertEqual(r.response.function_id, func_id)

@@ -5,18 +5,19 @@
     {
       "type": "httpTrigger",
       "direction": "in",
-      "name": "req"
+      "name": "req",
+      "authLevel": "anonymous"
     },
     {
       "direction": "in",
       "type": "cosmosDB",
       "name": "docs",
       "databaseName": "test",
-      "collectionName": "items",
+      "containerName": "items",
       "id": "cosmosdb-input-test",
-      "leaseCollectionName": "leases",
-      "connectionStringSetting": "AzureWebJobsCosmosDBConnectionString",
-      "createLeaseCollectionIfNotExists": true
+      "leaseContainerName": "leases",
+      "connection": "AzureWebJobsCosmosDBConnectionString",
+      "createLeaseContainerIfNotExists": true
     },
     {
       "type": "http",

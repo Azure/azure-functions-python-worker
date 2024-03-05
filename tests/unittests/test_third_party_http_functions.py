@@ -7,8 +7,8 @@ import re
 import typing
 from unittest.mock import patch
 
-from azure_functions_worker import testutils
-from azure_functions_worker.testutils import UNIT_TESTS_ROOT
+from tests.utils import testutils
+from tests.utils.testutils import UNIT_TESTS_ROOT
 
 HOST_JSON_TEMPLATE = """\
 {

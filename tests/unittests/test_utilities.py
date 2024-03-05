@@ -1,13 +1,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+import pathlib
 import sys
+import typing
 import unittest
 from unittest.mock import patch
-import typing
 
+from azure_functions_worker.constants import PYTHON_EXTENSIONS_RELOAD_FUNCTIONS
 from azure_functions_worker.utils import common, wrappers
-
 
 TEST_APP_SETTING_NAME = "TEST_APP_SETTING_NAME"
 TEST_FEATURE_FLAG = "APP_SETTING_FEATURE_FLAG"
@@ -314,18 +315,18 @@ class TestUtilities(unittest.TestCase):
 
     def test_is_python_version(self):
         # Should pass at least 1 test
-        is_python_version_36 = common.is_python_version('3.6')
         is_python_version_37 = common.is_python_version('3.7')
         is_python_version_38 = common.is_python_version('3.8')
         is_python_version_39 = common.is_python_version('3.9')
         is_python_version_310 = common.is_python_version('3.10')
+        is_python_version_311 = common.is_python_version('3.11')
 
         self.assertTrue(any([
-            is_python_version_36,
             is_python_version_37,
             is_python_version_38,
             is_python_version_39,
-            is_python_version_310
+            is_python_version_310,
+            is_python_version_311
         ]))
 
     def test_get_sdk_from_sys_path(self):
@@ -341,9 +342,9 @@ class TestUtilities(unittest.TestCase):
         """
         sys.path.insert(0, self._dummy_sdk_sys_path)
         module = common.get_sdk_from_sys_path()
-        self.assertEqual(
+        self.assertNotEqual(
             os.path.dirname(module.__file__),
-            os.path.join(self._dummy_sdk_sys_path, 'azure', 'functions')
+            os.path.join(pathlib.Path.home(), 'azure', 'functions')
         )
 
     def test_get_sdk_version(self):
@@ -360,7 +361,26 @@ class TestUtilities(unittest.TestCase):
         sys.path.insert(0, self._dummy_sdk_sys_path)
         module = common.get_sdk_from_sys_path()
         sdk_version = common.get_sdk_version(module)
+        self.assertNotEqual(sdk_version, 'dummy')
+
+    def test_get_sdk_dummy_version_with_flag_enabled(self):
+        """Test if sdk version can get dummy sdk version
+        """
+        os.environ[PYTHON_EXTENSIONS_RELOAD_FUNCTIONS] = '1'
+        sys.path.insert(0, self._dummy_sdk_sys_path)
+        module = common.get_sdk_from_sys_path()
+        sdk_version = common.get_sdk_version(module)
         self.assertEqual(sdk_version, 'dummy')
+
+    def test_valid_script_file_name(self):
+        file_name = 'test.py'
+        valid_name = common.validate_script_file_name(file_name)
+        self.assertTrue(valid_name)
+
+    def test_invalid_script_file_name(self):
+        file_name = 'test'
+        with self.assertRaises(common.InvalidFileNameError):
+            common.validate_script_file_name(file_name)
 
     def _unset_feature_flag(self):
         try:

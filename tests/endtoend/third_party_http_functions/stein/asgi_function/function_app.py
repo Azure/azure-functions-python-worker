@@ -37,5 +37,5 @@ async def raise_http_exception():
     raise HTTPException(status_code=404, detail="Item not found")
 
 
-app = func.FunctionApp(asgi_app=fast_app,
-                       http_auth_level=func.AuthLevel.ANONYMOUS)
+app = func.AsgiFunctionApp(app=fast_app,
+                           http_auth_level=func.AuthLevel.ANONYMOUS)

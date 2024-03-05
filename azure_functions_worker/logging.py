@@ -4,20 +4,36 @@
 import logging
 import logging.handlers
 import sys
+import traceback
 from typing import Optional
 
 # Logging Prefixes
 CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
 SYSTEM_LOG_PREFIX = "azure_functions_worker"
 SDK_LOG_PREFIX = "azure.functions"
+SYSTEM_ERROR_LOG_PREFIX = "azure_functions_worker_errors"
 
 
-logger: logging.Logger = logging.getLogger('azure_functions_worker')
+logger: logging.Logger = logging.getLogger(SYSTEM_LOG_PREFIX)
 error_logger: logging.Logger = (
-    logging.getLogger('azure_functions_worker_errors'))
+    logging.getLogger(SYSTEM_ERROR_LOG_PREFIX))
 
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
+
+
+def format_exception(exception: Exception) -> str:
+    msg = str(exception) + "\n"
+    if (sys.version_info.major, sys.version_info.minor) < (3, 10):
+        msg += ''.join(traceback.format_exception(
+            etype=type(exception),
+            tb=exception.__traceback__,
+            value=exception))
+    elif (sys.version_info.major, sys.version_info.minor) >= (3, 10):
+        msg += ''.join(traceback.format_exception(exception))
+    else:
+        msg = str(exception)
+    return msg
 
 
 def setup(log_level, log_destination):
@@ -74,11 +90,6 @@ def disable_console_logging() -> None:
 def enable_console_logging() -> None:
     if logger and handler:
         logger.addHandler(handler)
-
-
-def enable_debug_logging_recommendation():
-    logging.info("To enable debug level logging, please refer to "
-                 "https://aka.ms/python-enable-debug-logging")
 
 
 def is_system_log_category(ctg: str) -> bool:

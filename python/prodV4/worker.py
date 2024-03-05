@@ -1,10 +1,9 @@
 import os
+import pathlib
 import sys
 
-from pathlib import Path
-
 # User packages
-PKGS_PATH = "site/wwwroot/.python_packages"
+PKGS_PATH = "/home/site/wwwroot/.python_packages"
 VENV_PKGS_PATH = "site/wwwroot/worker_venv"
 
 PKGS = "lib/site-packages"
@@ -36,12 +35,10 @@ def determine_user_pkg_paths():
     """
     minor_version = sys.version_info[1]
 
-    home = Path.home()
-    pkgs_path = os.path.join(home, PKGS_PATH)
     usr_packages_path = []
 
-    if minor_version in (7, 8, 9, 10):
-        usr_packages_path.append(os.path.join(pkgs_path, PKGS))
+    if minor_version in (7, 8, 9, 10, 11):
+        usr_packages_path.append(os.path.join(PKGS_PATH, PKGS))
     else:
         raise RuntimeError(f'Unsupported Python version: 3.{minor_version}')
 
@@ -50,16 +47,16 @@ def determine_user_pkg_paths():
 
 if __name__ == '__main__':
     # worker.py lives in the same directory as azure_functions_worker
-    func_worker_dir = str(Path(__file__).absolute().parent)
+    func_worker_dir = str(pathlib.Path(__file__).absolute().parent)
     env = os.environ
 
-    if is_azure_environment():
-        user_pkg_paths = determine_user_pkg_paths()
-        joined_pkg_paths = os.pathsep.join(user_pkg_paths)
+    # Setting up python path for all environments to prioritize
+    # third-party user packages over worker packages in PYTHONPATH
+    user_pkg_paths = determine_user_pkg_paths()
+    joined_pkg_paths = os.pathsep.join(user_pkg_paths)
+    env['PYTHONPATH'] = f'{joined_pkg_paths}:{func_worker_dir}'
 
-        # On cloud, we prioritize third-party user packages
-        # over worker packages in PYTHONPATH
-        env['PYTHONPATH'] = f'{joined_pkg_paths}:{func_worker_dir}'
+    if is_azure_environment():
         os.execve(sys.executable,
                   [sys.executable, '-m', 'azure_functions_worker']
                   + sys.argv[1:],

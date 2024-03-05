@@ -3,17 +3,24 @@
 import json
 import pathlib
 import time
+from unittest import skipIf
 
-from azure_functions_worker import testutils
+from azure_functions_worker.utils.common import is_envvar_true
+from tests.utils import testutils
+from tests.utils.constants import DEDICATED_DOCKER_TEST, \
+    CONSUMPTION_DOCKER_TEST
 
 
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Table functions has a bug with the table extension 1.0.0."
+        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
 class TestTableFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'table_functions'
 
-    @testutils.retryable_test(3, 5)
     def test_table_bindings(self):
         out_resp = self.webhost.request('POST', 'table_out_binding')
         self.assertEqual(out_resp.status_code, 200)
@@ -37,3 +44,38 @@ class TestTableFunctions(testutils.WebHostTestCase):
         self.assertEqual(in_resp.status_code, 200)
         in_row_key = in_resp.headers['rowKey']
         self.assertEqual(in_row_key, row_key)
+
+
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Table functions has a bug with the table extension 1.0.0."
+        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
+class TestTableFunctionsStein(testutils.WebHostTestCase):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'table_functions' / \
+                                            'table_functions_stein'
+
+    def test_table_bindings(self):
+        out_resp = self.webhost.request('POST', 'table_out_binding')
+        self.assertEqual(out_resp.status_code, 200)
+        row_key = out_resp.headers['rowKey']
+
+        in_resp = self.webhost.request('GET', f'table_in_binding/{row_key}')
+        self.assertEqual(in_resp.status_code, 200)
+        in_row_key = in_resp.headers['rowKey']
+        self.assertEqual(in_row_key, row_key)
+
+
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Table functions has a bug with the table extension 1.0.0."
+        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
+class TestTableFunctionsGeneric(TestTableFunctionsStein):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'table_functions' / \
+                                            'table_functions_stein' /\
+                                            'generic'

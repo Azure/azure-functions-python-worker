@@ -24,10 +24,20 @@ from .FunctionRpc_pb2 import (  # NoQA
     ParameterBinding,
     TypedData,
     RpcHttp,
+    RpcHttpCookie,
     RpcLog,
     RpcSharedMemory,
     RpcDataType,
     CloseSharedMemoryResourcesRequest,
     CloseSharedMemoryResourcesResponse,
     FunctionsMetadataRequest,
-    FunctionMetadataResponse)
+    FunctionMetadataResponse,
+    WorkerMetadata,
+    RpcRetryOptions)
+
+from .shared.NullableTypes_pb2 import (
+    NullableString,
+    NullableBool,
+    NullableDouble,
+    NullableTimestamp
+)

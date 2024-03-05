@@ -11,7 +11,6 @@ pool:
 
 variables:
     DOTNET_VERSION: '3.1.x'
-    DOTNET_VERSION_5: '5.0.x'
     DOTNET_VERSION_6: '6.x'
     PYTHON_VERSION: '3.9'
 
@@ -27,11 +26,6 @@ steps:
     packageType: 'sdk'
     version: $(DOTNET_VERSION)
 - task: UseDotNet@2
-  displayName: 'Install DotNet 5'
-  inputs:
-    packageType: 'sdk'
-    version: $(DOTNET_VERSION_5)
-- task: UseDotNet@2
   displayName: 'Install DotNet 6'
   inputs:
     packageType: 'sdk'
@@ -42,6 +36,7 @@ steps:
     AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
     AzureWebJobsEventHubConnectionString: $(AzureWebJobsEventHubConnectionString)
     AzureWebJobsServiceBusConnectionString: $(AzureWebJobsServiceBusConnectionString)
+    AzureWebJobsSqlConnectionString: $(AzureWebJobsSqlConnectionString)
     AzureWebJobsEventGridTopicUri: $(AzureWebJobsEventGridTopicUri)
     AzureWebJobsEventGridConnectionKey: $(AzureWebJobsEventGridConnectionKey)
     PythonVersion: $(PYTHON_VERSION)

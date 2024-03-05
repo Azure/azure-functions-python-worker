@@ -4,15 +4,14 @@ import filecmp
 import hashlib
 import os
 import pathlib
+import sys
 import typing
+from unittest import skipIf
 
-import pytest
-
-from azure_functions_worker import testutils
-from azure_functions_worker.testutils import WebHostTestCase
+from tests.utils import testutils
 
 
-class TestHttpFunctions(WebHostTestCase):
+class TestHttpFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
@@ -316,14 +315,20 @@ class TestHttpFunctions(WebHostTestCase):
 
     def check_log_import_module_troubleshooting_url(self,
                                                     host_out: typing.List[str]):
-        self.assertIn("Exception: ModuleNotFoundError: "
-                      "No module named 'does_not_exist'. "
-                      "Please check the requirements.txt file for the "
-                      "missing module. For more info, please refer the "
-                      "troubleshooting guide: "
-                      "https://aka.ms/functions-modulenotfound", host_out)
+        passed = False
+        exception_message = "Exception: ModuleNotFoundError: "\
+                            "No module named 'does_not_exist'. "\
+                            "Cannot find module. "\
+                            "Please check the requirements.txt file for the "\
+                            "missing module. For more info, please refer the "\
+                            "troubleshooting guide: "\
+                            "https://aka.ms/functions-modulenotfound. "\
+                            "Current sys.path: "
+        for log in host_out:
+            if exception_message in log:
+                passed = True
+        self.assertTrue(passed)
 
-    @pytest.mark.flaky(reruns=3)
     def test_print_logging_no_flush(self):
         r = self.webhost.request('GET', 'print_logging?message=Secret42')
         self.assertEqual(r.status_code, 200)
@@ -332,7 +337,6 @@ class TestHttpFunctions(WebHostTestCase):
     def check_log_print_logging_no_flush(self, host_out: typing.List[str]):
         self.assertIn('Secret42', host_out)
 
-    @pytest.mark.flaky(reruns=3)
     def test_print_logging_with_flush(self):
         r = self.webhost.request('GET',
                                  'print_logging?flush=true&message=Secret42')
@@ -342,14 +346,75 @@ class TestHttpFunctions(WebHostTestCase):
     def check_log_print_logging_with_flush(self, host_out: typing.List[str]):
         self.assertIn('Secret42', host_out)
 
-    @pytest.mark.flaky(reruns=3)
     def test_print_to_console_stdout(self):
         r = self.webhost.request('GET',
                                  'print_logging?console=true&message=Secret42')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-print-logging')
 
-    @pytest.mark.flaky(reruns=3)
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
+    def test_multiple_cookie_header_in_response(self):
+        r = self.webhost.request('GET', 'multiple_set_cookie_resp_headers')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers.get(
+            'Set-Cookie'),
+            "foo3=42; expires=Thu, 12 Jan 2017 13:55:08 GMT; "
+            "max-age=10000000; domain=example.com; path=/; secure; httponly, "
+            "foo3=43; expires=Fri, 12 Jan 2018 13:55:08 GMT; "
+            "max-age=10000000; domain=example.com; path=/; secure; httponly")
+
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
+    def test_set_cookie_header_in_response_empty_value(self):
+        r = self.webhost.request('GET', 'set_cookie_resp_header_empty')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers.get('Set-Cookie'), None)
+
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
+    def test_set_cookie_header_in_response_default_value(self):
+        r = self.webhost.request('GET',
+                                 'set_cookie_resp_header_default_values')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers.get('Set-Cookie'),
+                         'foo=bar; domain=; path=')
+
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
+    def test_response_cookie_header_nullable_timestamp_err(self):
+        r = self.webhost.request(
+            'GET',
+            'response_cookie_header_nullable_timestamp_err')
+        self.assertEqual(r.status_code, 500)
+
+    def check_log_response_cookie_header_nullable_timestamp_err(self,
+                                                                host_out:
+                                                                typing.List[
+                                                                    str]):
+        self.assertIn(
+            "Can not parse value Dummy of expires in the cookie due to "
+            "invalid format.",
+            host_out)
+
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
+    def test_response_cookie_header_nullable_bool_err(self):
+        r = self.webhost.request(
+            'GET',
+            'response_cookie_header_nullable_bool_err')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse("Set-Cookie" in r.headers)
+
+    @skipIf(sys.version_info < (3, 8, 0),
+            "Skip the tests for Python 3.7 and below")
+    def test_response_cookie_header_nullable_double_err(self):
+        r = self.webhost.request(
+            'GET',
+            'response_cookie_header_nullable_double_err')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse("Set-Cookie" in r.headers)
+
     def check_log_print_to_console_stdout(self, host_out: typing.List[str]):
         # System logs stdout should not exist in host_out
         self.assertNotIn('Secret42', host_out)
@@ -364,7 +429,6 @@ class TestHttpFunctions(WebHostTestCase):
         # System logs stderr should not exist in host_out
         self.assertNotIn('Secret42', host_out)
 
-    @pytest.mark.flaky(reruns=3)
     def test_hijack_current_event_loop(self):
         r = self.webhost.request('GET', 'hijack_current_event_loop/')
         self.assertEqual(r.status_code, 200)

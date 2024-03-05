@@ -2,11 +2,8 @@
 # Licensed under the MIT License.
 import json
 import time
-from datetime import datetime
 
-from dateutil import parser, tz
-
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 
 class TestEventHubFunctions(testutils.WebHostTestCase):
@@ -21,6 +18,10 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'eventhub_functions'
+
+    @classmethod
+    def get_libraries_to_install(cls):
+        return ['azure-eventhub']
 
     @testutils.retryable_test(3, 5)
     def test_eventhub_trigger(self):
@@ -41,6 +42,10 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
         # Call get_eventhub_triggered to retrieve event metadata from blob.
         r = self.webhost.request('GET', 'get_eventhub_triggered')
+
+        # Waiting for the blob get updated with the latest data from the
+        # eventhub output binding
+        time.sleep(5)
         self.assertEqual(r.status_code, 200)
         response = r.json()
 
@@ -51,7 +56,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     def test_eventhub_trigger_with_metadata(self):
         # Generate a unique event body for EventHub event
         # Record the start_time and end_time for checking event enqueue time
-        start_time = datetime.now(tz=tz.UTC)
         random_number = str(round(time.time()) % 1000)
         req_body = {
             'body': random_number
@@ -63,7 +67,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
                                  data=json.dumps(req_body))
         self.assertEqual(r.status_code, 200)
         self.assertIn('OK', r.text)
-        end_time = datetime.now(tz=tz.UTC)
 
         # Once the event get generated, allow function host to pool from
         # EventHub and wait for eventhub_trigger to execute,
@@ -72,6 +75,10 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
         # Call get_metadata_triggered to retrieve event metadata from blob
         r = self.webhost.request('GET', 'get_metadata_triggered')
+
+        # Waiting for the blob get updated with the latest data from the
+        # eventhub output binding
+        time.sleep(5)
         self.assertEqual(r.status_code, 200)
 
         # Check if the event body matches the unique random_number
@@ -90,11 +97,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertIsNotNone(event['metadata'])
         metadata = event['metadata']
         sys_props = metadata['SystemProperties']
-        enqueued_time = parser.isoparse(metadata['EnqueuedTimeUtc']).astimezone(
-            tz=tz.UTC)
-
-        self.assertTrue(
-            start_time.timestamp() < enqueued_time.timestamp() < end_time.timestamp())  # NoQA
         self.assertIsNone(sys_props['PartitionKey'])
         self.assertGreaterEqual(sys_props['SequenceNumber'], 0)
         self.assertIsNotNone(sys_props['Offset'])

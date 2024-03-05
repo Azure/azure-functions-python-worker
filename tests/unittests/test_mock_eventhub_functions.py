@@ -2,7 +2,8 @@
 # Licensed under the MIT License.
 import json
 
-from azure_functions_worker import protos, testutils
+from azure_functions_worker import protos
+from tests.utils import testutils
 
 
 class TestEventHubMockFunctions(testutils.AsyncTestCase):
@@ -12,6 +13,7 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.mock_funcs_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('eventhub_trigger_iot')
 
             self.assertEqual(r.response.function_id, func_id)
@@ -55,6 +57,7 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.mock_funcs_dir) as host:
 
+            await host.init_worker("4.17.1")
             func_id, r = await host.load_function('eventhub_cardinality_one')
             self.assertEqual(r.response.function_id, func_id)
             self.assertEqual(r.response.result.status,
@@ -89,6 +92,7 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
         async with testutils.start_mockhost(
                 script_root=self.mock_funcs_dir) as host:
 
+            await host.init_worker("4.17.1")
             # This suppose to fail since the event should not be int
             func_id, r = await host.load_function(
                 'eventhub_cardinality_one_bad_anno'
@@ -100,6 +104,8 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
     async def test_mock_eventhub_cardinality_many(self):
         async with testutils.start_mockhost(
                 script_root=self.mock_funcs_dir) as host:
+
+            await host.init_worker("4.17.1")
 
             func_id, r = await host.load_function('eventhub_cardinality_many')
             self.assertEqual(r.response.function_id, func_id)
@@ -138,6 +144,8 @@ class TestEventHubMockFunctions(testutils.AsyncTestCase):
                 script_root=self.mock_funcs_dir) as host:
 
             # This suppose to fail since the event should not be List[str]
+            await host.init_worker("4.17.1")
+
             func_id, r = await host.load_function(
                 'eventhub_cardinality_many_bad_anno'
             )

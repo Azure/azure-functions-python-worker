@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
 import sys
 
 # Capabilities
@@ -11,13 +10,6 @@ RPC_HTTP_TRIGGER_METADATA_REMOVED = "RpcHttpTriggerMetadataRemoved"
 WORKER_STATUS = "WorkerStatus"
 SHARED_MEMORY_DATA_TRANSFER = "SharedMemoryDataTransfer"
 FUNCTION_DATA_CACHE = "FunctionDataCache"
-
-# Debug Flags
-PYAZURE_WEBHOST_DEBUG = "PYAZURE_WEBHOST_DEBUG"
-
-# E2E Integration Flags and Configurations
-PYAZURE_INTEGRATION_TEST = "PYAZURE_INTEGRATION_TEST"
-PYAZURE_WORKER_DIR = "PYAZURE_WORKER_DIR"
 
 # Platform Environment Variables
 AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
@@ -47,11 +39,19 @@ PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT = False
 PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 = False
 PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT = False
 PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39 = True
+PYTHON_EXTENSIONS_RELOAD_FUNCTIONS = "PYTHON_EXTENSIONS_RELOAD_FUNCTIONS"
+
+# new programming model default script file name
+PYTHON_SCRIPT_FILE_NAME = "PYTHON_SCRIPT_FILE_NAME"
+PYTHON_SCRIPT_FILE_NAME_DEFAULT = "function_app.py"
 
 # External Site URLs
 MODULE_NOT_FOUND_TS_URL = "https://aka.ms/functions-modulenotfound"
 
-# new programming model script file name
-SCRIPT_FILE_NAME = "function_app.py"
-
 PYTHON_LANGUAGE_RUNTIME = "python"
+
+# Settings for V2 programming model
+RETRY_POLICY = "retry_policy"
+
+# Paths
+CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site-packages"

@@ -11,7 +11,8 @@ from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryMap
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import SharedMemoryConstants as consts
-from azure_functions_worker import protos, testutils
+from azure_functions_worker import protos
+from tests.utils import testutils
 
 
 @skipIf(sys.platform == 'darwin', 'MacOS M1 machines do not correctly test the'
@@ -53,6 +54,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
         func_name = 'put_blob_as_bytes_return_http_response'
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
+            await host.init_worker("4.17.1")
             await host.load_function(func_name)
 
             content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
@@ -132,6 +134,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
         func_name = 'get_blob_as_str_return_http_response'
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
+            await host.init_worker("4.17.1")
             await host.load_function(func_name)
 
             # Write binary content into shared memory
@@ -198,6 +201,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
         func_name = 'put_blob_as_str_return_http_response'
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
+            await host.init_worker("4.17.1")
             await host.load_function(func_name)
 
             content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
@@ -278,6 +282,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
         func_name = 'put_blob_as_bytes_return_http_response'
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
+            await host.init_worker("4.17.1")
             await host.load_function(func_name)
 
             content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
@@ -333,6 +338,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
         func_name = 'put_blob_as_bytes_return_http_response'
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
+            await host.init_worker("4.17.1")
             await host.load_function(func_name)
 
             content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER - 10
@@ -371,6 +377,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
         func_name = 'put_get_multiple_blobs_as_bytes_return_http_response'
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
+            await host.init_worker("4.17.1")
             await host.load_function(func_name)
 
             # Input 1
@@ -513,6 +520,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
         """
         async with testutils.start_mockhost(script_root=self.blob_funcs_dir) \
                 as host:
+            await host.init_worker("4.17.1")
             await host.load_function(func_name)
 
             # Write binary content into shared memory

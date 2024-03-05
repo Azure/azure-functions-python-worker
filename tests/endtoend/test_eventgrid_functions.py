@@ -6,7 +6,7 @@ import uuid
 
 import requests
 
-from azure_functions_worker import testutils
+from tests.utils import testutils
 
 
 class TestEventGridFunctions(testutils.WebHostTestCase):
@@ -27,7 +27,6 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
         return request_method(url, *args, params=params, headers=headers,
                               **kwargs)
 
-    @testutils.retryable_test(3, 5)
     @unittest.skip("Run locally. Running on Azure fails with 401/403 as the"
                    "host does not pick up the SecretKey from the"
                    "azure_functions_worker.testutils.py.SECRETS_TEMPLATE and"
@@ -92,7 +91,6 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
             else:
                 break
 
-    @testutils.retryable_test(3, 5)
     def test_eventgrid_output_binding(self):
         """test event_grid output binding
 
@@ -156,3 +154,19 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
                     raise
             else:
                 break
+
+
+class TestEventGridFunctionsStein(TestEventGridFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'eventgrid_functions' / \
+                                            'eventgrid_functions_stein'
+
+
+class TestEventGridFunctionsGeneric(TestEventGridFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'eventgrid_functions' / \
+            'eventgrid_functions_stein' / 'generic'

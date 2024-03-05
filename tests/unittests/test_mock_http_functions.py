@@ -1,12 +1,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from azure_functions_worker import protos, testutils
+from azure_functions_worker import protos
+from tests.utils import testutils
 
 
 class TestMockHost(testutils.AsyncTestCase):
 
     async def test_call_sync_function_check_logs(self):
         async with testutils.start_mockhost() as host:
+
+            await host.init_worker("4.17.1")
             await host.load_function('sync_logging')
 
             invoke_id, r = await host.invoke_function(
@@ -35,6 +38,8 @@ class TestMockHost(testutils.AsyncTestCase):
 
     async def test_call_async_function_check_logs(self):
         async with testutils.start_mockhost() as host:
+
+            await host.init_worker("4.17.1")
             await host.load_function('async_logging')
 
             invoke_id, r = await host.invoke_function(
@@ -76,6 +81,7 @@ class TestMockHost(testutils.AsyncTestCase):
                 protos.StreamingMessage(
                     worker_heartbeat=protos.WorkerHeartbeat()))
 
+            await host.init_worker("4.17.1")
             _, r = await host.load_function('return_out')
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)

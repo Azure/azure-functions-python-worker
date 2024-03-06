@@ -294,7 +294,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # Can detech worker packages only when customer's code is present
         # This only works in dedicated and premium sku.
         # The consumption sku will switch on environment_reload request.
-        if not DependencyManager.is_in_linux_consumption():
+        if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
 
         if DependencyManager.is_in_linux_consumption():

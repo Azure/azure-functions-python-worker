@@ -7,7 +7,9 @@ import unittest
 from unittest.mock import patch
 
 from azure_functions_worker.utils.dependency import DependencyManager
-from azure_functions_worker.utils.config_manager import read_config, set_env_var, del_env_var, is_envvar_true
+from azure_functions_worker.utils.config_manager import (read_config,
+                                                         set_env_var, del_env_var,
+                                                         is_envvar_true)
 from tests.utils import testutils
 
 

@@ -19,6 +19,7 @@ from azure_functions_worker.extension import (
     APP_EXT_POST_INVOCATION, FUNC_EXT_POST_INVOCATION
 )
 from azure_functions_worker.utils.common import get_sdk_from_sys_path
+from azure_functions_worker.utils import config_manager
 
 
 class MockContext:
@@ -69,10 +70,10 @@ class TestExtension(unittest.TestCase):
         )
 
         # Set feature flag to on
-        os.environ[PYTHON_ENABLE_WORKER_EXTENSIONS] = 'true'
+        config_manager.set_env_var(PYTHON_ENABLE_WORKER_EXTENSIONS, 'true')
 
     def tearDown(self) -> None:
-        os.environ.pop(PYTHON_ENABLE_WORKER_EXTENSIONS)
+        config_manager.del_env_var(PYTHON_ENABLE_WORKER_EXTENSIONS)
 
         self.mock_sys_path.stop()
         self.mock_sys_module.stop()
@@ -136,12 +137,13 @@ class TestExtension(unittest.TestCase):
         """When turning off the feature flag PYTHON_ENABLE_WORKER_EXTENSIONS,
         the post_function_load extension should be disabled
         """
-        os.environ[PYTHON_ENABLE_WORKER_EXTENSIONS] = 'false'
+        config_manager.set_env_var(PYTHON_ENABLE_WORKER_EXTENSIONS, 'false')
         self._instance.function_load_extension(
             func_name=self._mock_func_name,
             func_directory=self._mock_func_dir
         )
         get_sdk_from_sys_path_mock.assert_not_called()
+        config_manager.del_env_var(PYTHON_ENABLE_WORKER_EXTENSIONS)
 
     @patch('azure_functions_worker.extension.ExtensionManager.'
            '_warn_sdk_not_support_extension')
@@ -211,7 +213,7 @@ class TestExtension(unittest.TestCase):
         """When turning off the feature flag PYTHON_ENABLE_WORKER_EXTENSIONS,
         the pre_invocation and post_invocation extension should be disabled
         """
-        os.environ[PYTHON_ENABLE_WORKER_EXTENSIONS] = 'false'
+        config_manager.set_env_var(PYTHON_ENABLE_WORKER_EXTENSIONS, 'false')
         self._instance._invocation_extension(
             ctx=self._mock_context,
             hook_name=FUNC_EXT_PRE_INVOCATION,
@@ -219,6 +221,7 @@ class TestExtension(unittest.TestCase):
             func_ret=None
         )
         get_sdk_from_sys_path_mock.assert_not_called()
+        config_manager.del_env_var(PYTHON_ENABLE_WORKER_EXTENSIONS)
 
     @patch('azure_functions_worker.extension.ExtensionManager.'
            '_warn_sdk_not_support_extension')
@@ -548,7 +551,7 @@ class TestExtension(unittest.TestCase):
         be executed, but not the extension
         """
         # Turn off feature flag
-        os.environ[PYTHON_ENABLE_WORKER_EXTENSIONS] = 'false'
+        config_manager.set_env_var(PYTHON_ENABLE_WORKER_EXTENSIONS, 'false')
 
         # Register a function extension
         FuncExtClass = self._generate_new_func_extension_class(
@@ -571,6 +574,7 @@ class TestExtension(unittest.TestCase):
 
         # Ensure the customer's function is executed
         self.assertEqual(result, 'request_ok')
+        config_manager.del_env_var(PYTHON_ENABLE_WORKER_EXTENSIONS)
 
     def test_get_async_invocation_wrapper_no_extension(self):
         """The async wrapper will wrap an asynchronous function with a
@@ -621,7 +625,7 @@ class TestExtension(unittest.TestCase):
         should not execute the extension.
         """
         # Turn off feature flag
-        os.environ[PYTHON_ENABLE_WORKER_EXTENSIONS] = 'false'
+        config_manager.set_env_var(PYTHON_ENABLE_WORKER_EXTENSIONS, 'false')
 
         # Register a function extension
         FuncExtClass = self._generate_new_func_extension_class(
@@ -644,6 +648,7 @@ class TestExtension(unittest.TestCase):
 
         # Ensure the customer's function is executed
         self.assertEqual(result, 'request_ok')
+        config_manager.del_env_var(PYTHON_ENABLE_WORKER_EXTENSIONS)
 
     def test_is_pre_invocation_hook(self):
         for name in (FUNC_EXT_PRE_INVOCATION, APP_EXT_PRE_INVOCATION):

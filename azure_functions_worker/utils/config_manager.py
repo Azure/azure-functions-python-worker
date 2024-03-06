@@ -100,7 +100,6 @@ def get_app_setting(
 def set_env_var(setting: str, value: str):
     global config_data
     config_data[setting] = value
-    test = ""
 
 
 def del_env_var(setting: str):

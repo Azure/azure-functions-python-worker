@@ -74,7 +74,7 @@ class DependencyManager:
 
     @classmethod
     def is_in_linux_consumption(cls):
-        return CONTAINER_NAME in os.environ
+        return get_app_setting(CONTAINER_NAME) is not None
 
     @classmethod
     def should_load_cx_dependencies(cls):
@@ -195,7 +195,7 @@ class DependencyManager:
             The path which contains customer's project file (e.g. wwwroot).
         """
         use_new_env = is_envvar_true(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
-        if use_new_env is None:
+        if use_new_env is False:
             use_new = (
                 PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
                 is_python_version('3.10') else

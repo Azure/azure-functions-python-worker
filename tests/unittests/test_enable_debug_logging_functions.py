@@ -2,10 +2,10 @@
 # Licensed under the MIT License.
 import typing
 import os
-from unittest.mock import patch
 
 from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_ENABLE_DEBUG_LOGGING
+from azure_functions_worker.utils import config_manager
 from tests.utils.testutils import TESTS_ROOT, remove_path
 
 HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
@@ -27,17 +27,13 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
+        config_manager.set_env_var(PYTHON_ENABLE_DEBUG_LOGGING, '1')
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        os.environ.pop(PYTHON_ENABLE_DEBUG_LOGGING)
+        config_manager.del_env_var(PYTHON_ENABLE_DEBUG_LOGGING)
         super().tearDownClass()
-        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -65,17 +61,13 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '0'
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
+        config_manager.set_env_var(PYTHON_ENABLE_DEBUG_LOGGING, '0')
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        os.environ.pop(PYTHON_ENABLE_DEBUG_LOGGING)
+        config_manager.del_env_var(PYTHON_ENABLE_DEBUG_LOGGING)
         super().tearDownClass()
-        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -109,10 +101,7 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         with open(host_json, 'w+') as f:
             f.write(HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO)
 
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
+        config_manager.set_env_var(PYTHON_ENABLE_DEBUG_LOGGING, '1')
         super().setUpClass()
 
     @classmethod
@@ -122,7 +111,6 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
 
         os.environ.pop(PYTHON_ENABLE_DEBUG_LOGGING)
         super().tearDownClass()
-        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):

@@ -17,6 +17,7 @@ from azure_functions_worker.constants import PYTHON_SCRIPT_FILE_NAME, \
     PYTHON_SCRIPT_FILE_NAME_DEFAULT
 from azure_functions_worker.loader import build_retry_protos
 from tests.utils import testutils
+from azure_functions_worker.utils import config_manager
 
 
 class TestLoader(testutils.WebHostTestCase):
@@ -270,7 +271,8 @@ class TestConfigurableFileName(testutils.WebHostTestCase):
                                              'http_functions_stein'
 
     def test_correct_file_name(self):
-        os.environ.update({PYTHON_SCRIPT_FILE_NAME: self.file_name})
+        config_manager.set_env_var(PYTHON_SCRIPT_FILE_NAME, self.file_name)
         self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
         self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
                          'function_app.py')
+        config_manager.del_env_var(PYTHON_SCRIPT_FILE_NAME)

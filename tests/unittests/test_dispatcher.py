@@ -153,7 +153,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """Test if the sync threadpool maximum worker can be set
         """
         # Configure thread pool max worker
-        config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT, self._allowed_max_workers)
+        config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT,
+                                   self._allowed_max_workers)
         async with self._ctrl as host:
             await host.init_worker()
             await self._check_if_function_is_ok(host)
@@ -208,7 +209,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """
         with patch('azure_functions_worker.dispatcher.logger'):
             # Configure thread pool max worker to an invalid value
-            config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT, self._over_max_workers)
+            config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT,
+                                       self._over_max_workers)
             async with self._ctrl as host:
                 await host.init_worker('4.15.1')
                 await self._check_if_function_is_ok(host)
@@ -343,7 +345,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
     async def test_sync_invocation_request_log_threads(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT, '5')
-
 
             async with self._ctrl as host:
                 await host.init_worker()
@@ -684,7 +685,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
     async def test_dispatcher_load_modules_dedicated_app(self):
         """Test modules are loaded in dedicated apps
         """
-        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
+        config_manager.set_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES", "1")
 
         # Dedicated Apps where placeholder mode is not set
         async with self._ctrl as host:
@@ -696,15 +697,16 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 "working_directory: , Linux Consumption: False,"
                 " Placeholder: False", logs
             )
+        config_manager.del_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES")
 
     async def test_dispatcher_load_modules_con_placeholder_enabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
         enabled.
         """
         # Consumption apps with placeholder mode enabled
-        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
-        os.environ["CONTAINER_NAME"] = "test"
-        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "1"
+        config_manager.set_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES", "1")
+        config_manager.set_env_var("CONTAINER_NAME", "test")
+        config_manager.set_env_var("WEBSITE_PLACEHOLDER_MODE", "1")
         async with self._ctrl as host:
             r = await host.init_worker()
             logs = [log.message for log in r.logs]
@@ -712,6 +714,9 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 "Applying prioritize_customer_dependencies: "
                 "worker_dependencies_path: , customer_dependencies_path: , "
                 "working_directory: , Linux Consumption: True,", logs)
+        config_manager.del_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES")
+        config_manager.del_env_var("CONTAINER_NAME")
+        config_manager.del_env_var("WEBSITE_PLACEHOLDER_MODE")
 
     async def test_dispatcher_load_modules_con_app_placeholder_disabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
@@ -719,9 +724,9 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         """
         # Consumption apps with placeholder mode disabled  i.e. worker
         # is specialized
-        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
-        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "0"
-        os.environ["CONTAINER_NAME"] = "test"
+        config_manager.set_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES", "1")
+        config_manager.set_env_var("CONTAINER_NAME", "test")
+        config_manager.set_env_var("WEBSITE_PLACEHOLDER_MODE", "0")
         async with self._ctrl as host:
             r = await host.init_worker()
             logs = [log.message for log in r.logs]
@@ -730,3 +735,6 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 "worker_dependencies_path: , customer_dependencies_path: , "
                 "working_directory: , Linux Consumption: True,"
                 " Placeholder: False", logs)
+        config_manager.del_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES")
+        config_manager.del_env_var("CONTAINER_NAME")
+        config_manager.del_env_var("WEBSITE_PLACEHOLDER_MODE")

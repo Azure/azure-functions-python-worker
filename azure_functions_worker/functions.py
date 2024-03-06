@@ -71,14 +71,20 @@ class Registry:
     @staticmethod
     def get_return_binding(binding_name: str,
                            binding_type: str,
-                           return_binding_name: str) -> str:
+                           return_binding_name: str,
+                           explicit_return_val_set: bool) \
+            -> typing.Tuple[str, bool]:
+        # prioritize explicit return value
+        if explicit_return_val_set:
+            return return_binding_name, explicit_return_val_set
         if binding_name == "$return":
             return_binding_name = binding_type
             assert return_binding_name is not None
+            explicit_return_val_set = True
         elif bindings_utils.has_implicit_output(binding_type):
             return_binding_name = binding_type
 
-        return return_binding_name
+        return return_binding_name, explicit_return_val_set
 
     @staticmethod
     def validate_binding_direction(binding_name: str,
@@ -314,6 +320,7 @@ class Registry:
         params = dict(sig.parameters)
         annotations = typing.get_type_hints(func)
         return_binding_name: typing.Optional[str] = None
+        explicit_return_val_set = False
         has_explicit_return = False
         has_implicit_return = False
 
@@ -327,9 +334,11 @@ class Registry:
                     binding_name, binding_info, has_explicit_return,
                     has_implicit_return, bound_params)
 
-            return_binding_name = self.get_return_binding(binding_name,
-                                                          binding_info.type,
-                                                          return_binding_name)
+            return_binding_name, explicit_return_val_set = \
+                self.get_return_binding(binding_name,
+                                        binding_info.type,
+                                        return_binding_name,
+                                        explicit_return_val_set)
 
         requires_context = self.is_context_required(params, bound_params,
                                                     annotations,
@@ -362,6 +371,7 @@ class Registry:
         function_id = str(uuid.uuid5(namespace=uuid.NAMESPACE_OID,
                                      name=func_name))
         return_binding_name: typing.Optional[str] = None
+        explicit_return_val_set = False
         has_explicit_return = False
         has_implicit_return = False
 
@@ -381,9 +391,11 @@ class Registry:
                     binding.name, binding, has_explicit_return,
                     has_implicit_return, bound_params)
 
-            return_binding_name = self.get_return_binding(binding.name,
-                                                          binding.type,
-                                                          return_binding_name)
+            return_binding_name, explicit_return_val_set = \
+                self.get_return_binding(binding.name,
+                                        binding.type,
+                                        return_binding_name,
+                                        explicit_return_val_set)
 
         requires_context = self.is_context_required(params, bound_params,
                                                     annotations,

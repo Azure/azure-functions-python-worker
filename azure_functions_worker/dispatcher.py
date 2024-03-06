@@ -291,9 +291,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         read_config(os.path.join(worker_init_request.function_app_directory,
                                  "az-config.json"))
 
-        # Can detech worker packages only when customer's code is present
-        # This only works in dedicated and premium sku.
-        # The consumption sku will switch on environment_reload request.
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
 

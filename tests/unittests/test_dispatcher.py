@@ -143,11 +143,14 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """Test if the sync threadpool has maximum worker count set the
         correct default value
         """
+        config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT,
+                                   PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT)
         async with self._ctrl as host:
             await host.init_worker()
             await self._check_if_function_is_ok(host)
             await self._assert_workers_threadpool(self._ctrl, host,
                                                   self._default_workers)
+        config_manager.del_env_var(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_dispatcher_sync_threadpool_set_worker(self):
         """Test if the sync threadpool maximum worker can be set

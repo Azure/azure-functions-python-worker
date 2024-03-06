@@ -373,12 +373,10 @@ class TestUtilities(unittest.TestCase):
     def test_get_sdk_dummy_version(self):
         """Test if sdk version can get dummy sdk version
         """
-        config_manager.set_env_var(PYTHON_EXTENSIONS_RELOAD_FUNCTIONS, 'false')
         sys.path.insert(0, self._dummy_sdk_sys_path)
         module = common.get_sdk_from_sys_path()
         sdk_version = common.get_sdk_version(module)
         self.assertNotEqual(sdk_version, 'dummy')
-        config_manager.del_env_var(PYTHON_EXTENSIONS_RELOAD_FUNCTIONS)
 
     def test_get_sdk_dummy_version_with_flag_enabled(self):
         """Test if sdk version can get dummy sdk version

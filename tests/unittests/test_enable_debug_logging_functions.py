@@ -5,7 +5,6 @@ import os
 
 from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_ENABLE_DEBUG_LOGGING
-from azure_functions_worker.utils import config_manager
 from tests.utils.testutils import TESTS_ROOT, remove_path
 
 HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\

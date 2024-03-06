@@ -298,6 +298,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
     async def test_sync_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+            config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT,
+                                       PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT)
             async with self._ctrl as host:
                 await host.init_worker()
                 request_id: str = self._ctrl._worker._request_id
@@ -319,6 +321,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  'sync threadpool max workers: '
                                  f'{self._default_workers}'
                                  )
+            config_manager.del_env_var(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_async_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:

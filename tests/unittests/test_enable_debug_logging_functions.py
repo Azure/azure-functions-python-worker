@@ -109,7 +109,7 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
         remove_path(host_json)
 
-        os.environ.pop(PYTHON_ENABLE_DEBUG_LOGGING)
+        config_manager.del_env_var(PYTHON_ENABLE_DEBUG_LOGGING)
         super().tearDownClass()
 
     @classmethod

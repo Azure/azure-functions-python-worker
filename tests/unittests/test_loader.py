@@ -272,7 +272,7 @@ class TestConfigurableFileName(testutils.WebHostTestCase):
 
     def test_correct_file_name(self):
         config_manager.set_env_var(PYTHON_SCRIPT_FILE_NAME, self.file_name)
-        self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
-        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
+        self.assertIsNotNone(config_manager.get_app_setting(PYTHON_SCRIPT_FILE_NAME))
+        self.assertEqual(config_manager.get_app_setting(PYTHON_SCRIPT_FILE_NAME),
                          'function_app.py')
         config_manager.del_env_var(PYTHON_SCRIPT_FILE_NAME)

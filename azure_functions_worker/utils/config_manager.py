@@ -42,6 +42,11 @@ def is_false_like(setting: str) -> bool:
 
 
 def is_envvar_true(key: str) -> bool:
+    # special case for PYTHON_ENABLE_DEBUG_LOGGING
+    # This is read by the host and must be set in os.environ
+    if key is 'PYTHON_ENABLE_DEBUG_LOGGING':
+        val = os.getenv(key)
+        return is_true_like(val)
     if config_exists() and config_data.get(key) is not None:
         return is_true_like(config_data.get(key))
     return False

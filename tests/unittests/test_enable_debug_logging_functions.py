@@ -27,12 +27,12 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        config_manager.set_env_var(PYTHON_ENABLE_DEBUG_LOGGING, '1')
+        os.environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        config_manager.del_env_var(PYTHON_ENABLE_DEBUG_LOGGING)
+        os.environ.pop(PYTHON_ENABLE_DEBUG_LOGGING)
         super().tearDownClass()
 
     @classmethod
@@ -61,12 +61,12 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        config_manager.set_env_var(PYTHON_ENABLE_DEBUG_LOGGING, '0')
+        os.environ[PYTHON_ENABLE_DEBUG_LOGGING] = '0'
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        config_manager.del_env_var(PYTHON_ENABLE_DEBUG_LOGGING)
+        os.environ.pop(PYTHON_ENABLE_DEBUG_LOGGING)
         super().tearDownClass()
 
     @classmethod
@@ -101,7 +101,7 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         with open(host_json, 'w+') as f:
             f.write(HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO)
 
-        config_manager.set_env_var(PYTHON_ENABLE_DEBUG_LOGGING, '1')
+        os.environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
         super().setUpClass()
 
     @classmethod
@@ -109,7 +109,7 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
         remove_path(host_json)
 
-        config_manager.del_env_var(PYTHON_ENABLE_DEBUG_LOGGING)
+        os.environ.pop(PYTHON_ENABLE_DEBUG_LOGGING)
         super().tearDownClass()
 
     @classmethod

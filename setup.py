@@ -71,7 +71,7 @@ PACKAGES = [
     "azure_functions_worker._thirdparty",
 ]
 
-INSTALL_REQUIRES = ["azure-functions==$newLibraryVersion"]
+INSTALL_REQUIRES = ["azure-functions==1.19.0b3"]
 
 if sys.version_info[:2] == (3, 7):
     INSTALL_REQUIRES.extend(

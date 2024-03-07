@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import json
+# import json
 
 import azure.functions as func
 import azure.functions.extension.blob as bindings

@@ -276,6 +276,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     )
 
         worker_init_request = request.worker_init_request
+        directory = worker_init_request.function_app_directory
         host_capabilities = worker_init_request.capabilities
         if constants.FUNCTION_DATA_CACHE in host_capabilities:
             val = host_capabilities[constants.FUNCTION_DATA_CACHE]
@@ -301,7 +302,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         bindings.load_binding_registry()
 
         if is_envvar_true(INIT_INDEXING):
-            self.get_function_metadata(worker_init_request)
+            self.get_function_metadata(directory,
+                                       caller_info=sys._getframe().f_code.co_name)
 
         return protos.StreamingMessage(
             request_id=self.request_id,

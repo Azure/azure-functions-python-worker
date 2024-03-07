@@ -327,7 +327,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
 
         logger.info(
-            'Received WorkerMetadataRequest from %s, request ID %s, script_file_name: %s',
+            'Received WorkerMetadataRequest from %s, request ID %s, '
+            'script_file_name: %s',
             caller_info, self.request_id, script_file_name)
 
         try:
@@ -389,7 +390,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     # function and update the workers registry
 
                     self.get_function_metadata(directory,
-                                               caller_info=sys._getframe().f_code.co_name)
+                                               sys._getframe().f_code.co_name)
                 else:
                     # legacy function
                     programming_model = "V1"

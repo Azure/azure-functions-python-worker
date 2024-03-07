@@ -205,7 +205,7 @@ class TestCommonLibsHttpFunctionsStein(TestCommonLibsHttpFunctions):
                                             'common_libs_functions_stein'
 
 
-class TestHttpFunctionsWithInitIndexing(testutils.WebHostTestCase):
+class TestHttpFunctionsWithInitIndexing(TestHttpFunctions):
 
     @classmethod
     def setUpClass(cls):
@@ -218,22 +218,19 @@ class TestHttpFunctionsWithInitIndexing(testutils.WebHostTestCase):
         os.environ.pop('INIT_INDEXING')
         super().tearDownClass()
 
-    @classmethod
-    def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
-    def test_default_http_template_should_accept_body(self):
-        """Test if the azure.functions SDK is able to deserialize http body
-        and pass it to default template
-        """
-        r = self.webhost.request('POST', 'default_template',
-                                 data='{ "name": "body" }'.encode('utf-8'),
-                                 timeout=REQUEST_TIMEOUT_SEC)
-        self.assertTrue(r.ok)
-        self.assertEqual(
-            r.content,
-            b'Hello, body. This HTTP triggered function executed successfully.'
-        )
+class TestHttpFunctionsV2WithInitIndexing(TestHttpFunctionsStein):
+
+    @classmethod
+    def setUpClass(cls):
+        os.environ["INIT_INDEXING"] = "1"
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
+        os.environ.pop('INIT_INDEXING')
+        super().tearDownClass()
 
 
 class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):

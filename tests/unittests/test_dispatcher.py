@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import asyncio
 import collections as col
 import os
 import sys
@@ -8,11 +9,12 @@ from typing import Optional, Tuple
 from unittest.mock import patch
 
 from azure_functions_worker import protos
-from azure_functions_worker.version import VERSION
-from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
     PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT, \
     PYTHON_THREADPOOL_THREAD_COUNT_MAX_37, PYTHON_THREADPOOL_THREAD_COUNT_MIN
+from azure_functions_worker.version import VERSION
+from tests.utils import testutils
+from tests.utils.testutils import UNIT_TESTS_ROOT
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
@@ -20,6 +22,8 @@ DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'
 DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
     'dispatcher_functions_stein'
+FUNCTION_APP_DIRECTORY =  UNIT_TESTS_ROOT / 'dispatcher_functions' / \
+        'dispatcher_functions_stein'
 
 
 class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
@@ -668,7 +672,34 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 )]),
                 1
             )
+            self.assertEqual(
+                len([log for log in r.logs if log.message.startswith(
+                    "Received WorkerMetadataRequest from _handle__worker_init_request"
+                )]),
+                0
+            )
         self.assertIn("azure.functions", sys.modules)
+
+    async def test_dispatcher_indexing_in_init(self):
+        """Test if azure functions is loaded during init
+        """
+        env = {"INIT_INDEXING": "1"}
+        with patch.dict(os.environ, env):
+            async with self._ctrl as host:
+                r = await host.init_worker()
+                self.assertEqual(
+                    len([log for log in r.logs if log.message.startswith(
+                        "Received WorkerInitRequest"
+                    )]),
+                    1
+                )
+
+                self.assertEqual(
+                    len([log for log in r.logs if log.message.startswith(
+                        "Received WorkerMetadataRequest from _handle__worker_init_request"
+                    )]),
+                    1
+                )
 
     async def test_dispatcher_load_modules_dedicated_app(self):
         """Test modules are loaded in dedicated apps
@@ -719,3 +750,48 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 "worker_dependencies_path: , customer_dependencies_path: , "
                 "working_directory: , Linux Consumption: True,"
                 " Placeholder: False", logs)
+
+
+class DispatcherTests(unittest.TestCase):
+
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.dispatcher = testutils.create_dummy_dispatcher()
+
+    def tearDown(self):
+        self.loop.close()
+
+    @patch.dict(os.environ, {'INIT_INDEXING': 'true'})
+    # @patch('azure_functions_worker.dispatcher.Dispatcher.get_function_metadata')
+    def test_worker_init_request_with_indexing_enabled(self):
+        # Set up any additional mocks needed for your test
+        # mock_get_function_metadata.return_value = None
+        import azure.functions
+
+        request = protos.StreamingMessage(
+                worker_init_request=protos.WorkerInitRequest(
+                    host_version="2.3.4",
+                    function_app_directory=str(FUNCTION_APP_DIRECTORY)
+                )
+            )
+
+        # Execute the method under test
+        result = self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(request))
+
+        # Assert conditions based on INIT_INDEXING being true
+        self.assertIsNotNone(self.dispatcher.function_metadata_result)
+
+    @patch.dict(os.environ, {'INIT_INDEXING': 'false'})
+    @patch('yourmodule.dispatcher.Dispatcher.get_function_metadata')
+    def test_worker_init_request_with_indexing_disabled(self, mock_get_function_metadata):
+        # Execute the method under test
+        # result = self.loop.run_until_complete(self.dispatcher._handle__worker_init_request(request))
+
+        # Assert conditions based on INIT_INDEXING being false
+        # For example, you might expect function_metadata_result or function_metadata_exception to be set differently
+        # Adjust your assertions accordingly
+        pass
+
+

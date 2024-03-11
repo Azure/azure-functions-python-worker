@@ -1,0 +1,19 @@
+{
+  "scriptFile": "main.py",
+  "bindings": [
+    {
+      "type": "blobTrigger",
+      "direction": "in",
+      "name": "file",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/test-blob-trigger-large-data.txt"
+    },
+    {
+      "type": "blob",
+      "direction": "out",
+      "name": "$return",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/test-blob-triggered-large-data.txt"
+    }
+  ]
+}

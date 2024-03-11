@@ -23,10 +23,16 @@ jobs:
   build:
     name: "Python E2E CI Run"
     runs-on: ubuntu-latest
+    env:
+      # Set the environment variable based on the trigger
+      ARCHIVE_WEBHOST_LOGGING: ${{
+        (github.event_name == 'schedule') ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.archive_webhost_logging == 'true')
+        }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11", "3.12" ]
     permissions: read-all
     steps:
       - name: Checkout code.
@@ -83,7 +89,6 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString37 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Running 3.8 Tests
         if: matrix.python-version == 3.8
@@ -95,7 +100,6 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString38 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
@@ -107,7 +111,6 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString39 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Running 3.10 Tests
         if: matrix.python-version == 3.10
@@ -119,7 +122,6 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString310 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Running 3.11 Tests
         if: matrix.python-version == 3.11
@@ -131,7 +133,6 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString311 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Codecov
         uses: codecov/codecov-action@v3

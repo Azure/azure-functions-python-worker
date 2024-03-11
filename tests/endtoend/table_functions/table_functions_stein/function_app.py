@@ -16,7 +16,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
                  partition_key="test")
 def table_in_binding(req: func.HttpRequest, testEntity):
     headers_dict = json.loads(testEntity)
-    return func.HttpResponse(status_code=200, headers=headers_dict)
+    return func.HttpResponse(status_code=200, headers=headers_dict[0])
 
 
 @app.function_name(name="table_out_binding")

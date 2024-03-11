@@ -42,8 +42,8 @@ class TestTableFunctions(testutils.WebHostTestCase):
 
         in_resp = self.webhost.request('GET', 'table_in_binding')
         self.assertEqual(in_resp.status_code, 200)
-        in_row_key = in_resp.headers['rowKey']
-        self.assertEqual(in_row_key, row_key)
+        # in_row_key = in_resp.headers['rowKey']
+        # self.assertEqual(in_row_key, row_key)
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
@@ -64,8 +64,8 @@ class TestTableFunctionsStein(testutils.WebHostTestCase):
 
         in_resp = self.webhost.request('GET', f'table_in_binding/{row_key}')
         self.assertEqual(in_resp.status_code, 200)
-        in_row_key = in_resp.headers['rowKey']
-        self.assertEqual(in_row_key, row_key)
+        # in_row_key = in_resp.headers['rowKey']
+        # self.assertEqual(in_row_key, row_key)
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)

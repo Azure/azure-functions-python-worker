@@ -139,12 +139,14 @@ def from_incoming_proto(
             #     return obj
             # # if the object is not in the cache, create and add it to the cache
             # else:
-            logger.warning(f'Binding: {binding}, pytype: {pytype}, datum: {datum}')
+            logger.warning(f'SDK bindings -- Binding: {binding}, pytype: {pytype}, datum: {datum}')
             obj = binding.decode(datum, trigger_metadata=metadata,
                                  pytype=pytype)
             # SDK_CACHE[(pb.name, pytype, datum.value.content)] = obj
             return obj
-
+        logger.warning(f'Non-SDK bindings: Binding: {binding}, pytype: {pytype}, datum: {datum}')
+        if pytype is None:
+            logger.warning(f'Datum: {datum.value}')
         return binding.decode(datum, trigger_metadata=metadata)
     except NotImplementedError:
         # Binding does not support the data.

@@ -9,7 +9,7 @@ from io import BufferedRandom
 from .shared_memory_constants import SharedMemoryConstants as consts
 from .shared_memory_exception import SharedMemoryException
 from .file_accessor import FileAccessor
-from ...utils.common import get_app_setting
+from ...utils.config_manager import get_app_setting
 from ...logging import logger
 
 

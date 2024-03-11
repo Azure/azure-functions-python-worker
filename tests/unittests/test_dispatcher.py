@@ -13,6 +13,7 @@ from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
     PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT, \
     PYTHON_THREADPOOL_THREAD_COUNT_MAX_37, PYTHON_THREADPOOL_THREAD_COUNT_MIN
+from azure_functions_worker.utils import config_manager
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
@@ -142,23 +143,27 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """Test if the sync threadpool has maximum worker count set the
         correct default value
         """
+        config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT,
+                                   PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT)
         async with self._ctrl as host:
             await host.init_worker()
             await self._check_if_function_is_ok(host)
             await self._assert_workers_threadpool(self._ctrl, host,
                                                   self._default_workers)
+        config_manager.del_env_var(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_dispatcher_sync_threadpool_set_worker(self):
         """Test if the sync threadpool maximum worker can be set
         """
         # Configure thread pool max worker
-        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT:
-                           f'{self._allowed_max_workers}'})
+        config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT,
+                                   self._allowed_max_workers)
         async with self._ctrl as host:
             await host.init_worker()
             await self._check_if_function_is_ok(host)
             await self._assert_workers_threadpool(self._ctrl, host,
                                                   self._allowed_max_workers)
+        config_manager.del_env_var(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_dispatcher_sync_threadpool_invalid_worker_count(self):
         """Test when sync threadpool maximum worker is set to an invalid value,
@@ -170,7 +175,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             # Configure thread pool max worker to an invalid value
-            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: 'invalid'})
+            config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT, 'invalid')
 
             async with self._ctrl as host:
                 await host.init_worker()
@@ -179,6 +184,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                                       self._default_workers)
             mock_logger.warning.assert_any_call(
                 '%s must be an integer', PYTHON_THREADPOOL_THREAD_COUNT)
+            config_manager.del_env_var(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_dispatcher_sync_threadpool_below_min_setting(self):
         """Test if the sync threadpool will pick up default value when the
@@ -187,6 +193,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
             # Configure thread pool max worker to an invalid value
             os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '0'})
+            config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT, '0')
             async with self._ctrl as host:
                 await host.init_worker()
                 await self._check_if_function_is_ok(host)
@@ -197,6 +204,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 'Reverting to default value for max_workers',
                 PYTHON_THREADPOOL_THREAD_COUNT,
                 PYTHON_THREADPOOL_THREAD_COUNT_MIN)
+            config_manager.del_env_var(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_dispatcher_sync_threadpool_exceed_max_setting(self):
         """Test if the sync threadpool will pick up default max value when the
@@ -204,8 +212,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         """
         with patch('azure_functions_worker.dispatcher.logger'):
             # Configure thread pool max worker to an invalid value
-            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT:
-                               f'{self._over_max_workers}'})
+            config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT,
+                                       self._over_max_workers)
             async with self._ctrl as host:
                 await host.init_worker('4.15.1')
                 await self._check_if_function_is_ok(host)
@@ -213,6 +221,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 # Ensure the dispatcher sync threadpool should fallback to max
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._allowed_max_workers)
+            config_manager.del_env_var(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_dispatcher_sync_threadpool_in_placeholder(self):
         """Test if the sync threadpool will pick up app setting in placeholder
@@ -292,6 +301,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
     async def test_sync_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+            config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT,
+                                       PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT)
             async with self._ctrl as host:
                 await host.init_worker()
                 request_id: str = self._ctrl._worker._request_id
@@ -313,6 +324,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  'sync threadpool max workers: '
                                  f'{self._default_workers}'
                                  )
+            config_manager.del_env_var(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_async_invocation_request_log(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
@@ -338,7 +350,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
     async def test_sync_invocation_request_log_threads(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
-            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
+            config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT, '5')
 
             async with self._ctrl as host:
                 await host.init_worker()
@@ -360,10 +372,11 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  r'\d{2}:\d{2}:\d{2}.\d{6}), '
                                  'sync threadpool max workers: 5'
                                  )
+            config_manager.del_env_var(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_async_invocation_request_log_threads(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
-            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
+            config_manager.set_env_var(PYTHON_THREADPOOL_THREAD_COUNT, '4')
 
             async with self._ctrl as host:
                 await host.init_worker()
@@ -384,6 +397,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  r'(\d{4}-\d{2}-\d{2} '
                                  r'\d{2}:\d{2}:\d{2}.\d{6})'
                                  )
+            config_manager.del_env_var(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_sync_invocation_request_log_in_placeholder_threads(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
@@ -677,7 +691,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
     async def test_dispatcher_load_modules_dedicated_app(self):
         """Test modules are loaded in dedicated apps
         """
-        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
+        config_manager.set_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES", "1")
 
         # Dedicated Apps where placeholder mode is not set
         async with self._ctrl as host:
@@ -689,15 +703,16 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 "working_directory: , Linux Consumption: False,"
                 " Placeholder: False", logs
             )
+        config_manager.del_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES")
 
     async def test_dispatcher_load_modules_con_placeholder_enabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
         enabled.
         """
         # Consumption apps with placeholder mode enabled
-        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
-        os.environ["CONTAINER_NAME"] = "test"
-        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "1"
+        config_manager.set_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES", "1")
+        config_manager.set_env_var("CONTAINER_NAME", "test")
+        config_manager.set_env_var("WEBSITE_PLACEHOLDER_MODE", "1")
         async with self._ctrl as host:
             r = await host.init_worker()
             logs = [log.message for log in r.logs]
@@ -705,6 +720,9 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 "Applying prioritize_customer_dependencies: "
                 "worker_dependencies_path: , customer_dependencies_path: , "
                 "working_directory: , Linux Consumption: True,", logs)
+        config_manager.del_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES")
+        config_manager.del_env_var("CONTAINER_NAME")
+        config_manager.del_env_var("WEBSITE_PLACEHOLDER_MODE")
 
     async def test_dispatcher_load_modules_con_app_placeholder_disabled(self):
         """Test modules are loaded in consumption apps with placeholder mode
@@ -712,9 +730,9 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
         """
         # Consumption apps with placeholder mode disabled  i.e. worker
         # is specialized
-        os.environ["PYTHON_ISOLATE_WORKER_DEPENDENCIES"] = "1"
-        os.environ["WEBSITE_PLACEHOLDER_MODE"] = "0"
-        os.environ["CONTAINER_NAME"] = "test"
+        config_manager.set_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES", "1")
+        config_manager.set_env_var("CONTAINER_NAME", "test")
+        config_manager.set_env_var("WEBSITE_PLACEHOLDER_MODE", "0")
         async with self._ctrl as host:
             r = await host.init_worker()
             logs = [log.message for log in r.logs]
@@ -723,3 +741,6 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 "worker_dependencies_path: , customer_dependencies_path: , "
                 "working_directory: , Linux Consumption: True,"
                 " Placeholder: False", logs)
+        config_manager.del_env_var("PYTHON_ISOLATE_WORKER_DEPENDENCIES")
+        config_manager.del_env_var("CONTAINER_NAME")
+        config_manager.del_env_var("WEBSITE_PLACEHOLDER_MODE")

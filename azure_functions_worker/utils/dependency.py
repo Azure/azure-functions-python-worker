@@ -8,7 +8,9 @@ import sys
 from types import ModuleType
 from typing import List, Optional
 
-from azure_functions_worker.utils.common import is_true_like, is_envvar_true
+from azure_functions_worker.utils.config_manager import (is_true_like,
+                                                         is_envvar_true,
+                                                         get_app_setting)
 from ..constants import (
     AZURE_WEBJOBS_SCRIPT_ROOT,
     CONTAINER_NAME,
@@ -72,7 +74,7 @@ class DependencyManager:
 
     @classmethod
     def is_in_linux_consumption(cls):
-        return CONTAINER_NAME in os.environ
+        return get_app_setting(CONTAINER_NAME) is not None
 
     @classmethod
     def should_load_cx_dependencies(cls):
@@ -144,7 +146,7 @@ class DependencyManager:
         if not working_directory:
             working_directory = cls.cx_working_dir
         if not working_directory:
-            working_directory = os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT, '')
+            working_directory = get_app_setting(AZURE_WEBJOBS_SCRIPT_ROOT, '')
 
         # Try to get the latest customer's dependency path
         cx_deps_path: str = cls._get_cx_deps_path()
@@ -192,8 +194,8 @@ class DependencyManager:
         cx_working_dir: str
             The path which contains customer's project file (e.g. wwwroot).
         """
-        use_new_env = os.getenv(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
-        if use_new_env is None:
+        use_new_env = is_envvar_true(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
+        if use_new_env is False:
             use_new = (
                 PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
                 is_python_version('3.10') else
@@ -313,7 +315,7 @@ class DependencyManager:
             Linux Dedicated/Premium: path to customer's site pacakges
             Linux Consumption: empty string
         """
-        prefix: Optional[str] = os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT)
+        prefix: Optional[str] = get_app_setting(AZURE_WEBJOBS_SCRIPT_ROOT)
         cx_paths: List[str] = [
             p for p in sys.path
             if prefix and p.startswith(prefix) and ('site-packages' in p)
@@ -332,7 +334,7 @@ class DependencyManager:
             Linux Dedicated/Premium: AzureWebJobsScriptRoot env variable
             Linux Consumption: empty string
         """
-        return os.getenv(AZURE_WEBJOBS_SCRIPT_ROOT, '')
+        return get_app_setting(AZURE_WEBJOBS_SCRIPT_ROOT, '')
 
     @staticmethod
     def _get_worker_deps_path() -> str:

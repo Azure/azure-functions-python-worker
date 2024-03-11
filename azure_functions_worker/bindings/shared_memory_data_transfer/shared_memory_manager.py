@@ -9,7 +9,7 @@ from .shared_memory_metadata import SharedMemoryMetadata
 from .shared_memory_map import SharedMemoryMap
 from ..datumdef import Datum
 from ...logging import logger
-from ...utils.common import is_envvar_true
+from ...utils.config_manager import is_envvar_true
 from ...constants import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
 
 

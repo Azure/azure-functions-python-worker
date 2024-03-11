@@ -36,8 +36,9 @@ from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
 from .utils.app_setting_manager import get_python_appsetting_state
-from .utils.common import (get_app_setting, is_envvar_true,
-                           validate_script_file_name)
+from .utils.common import validate_script_file_name
+from .utils.config_manager import (read_config, is_envvar_true,
+                                   get_app_setting)
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
@@ -286,6 +287,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
+
+        read_config(os.path.join(worker_init_request.function_app_directory,
+                                 "az-config.json"))
 
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
@@ -575,6 +579,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             env_vars = func_env_reload_request.environment_variables
             for var in env_vars:
                 os.environ[var] = env_vars[var]
+            read_config(os.path.join(
+                func_env_reload_request.function_app_directory,
+                "az-config.json"))
 
             # Apply PYTHON_THREADPOOL_THREAD_COUNT
             self._stop_sync_call_tp()

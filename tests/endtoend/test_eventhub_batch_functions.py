@@ -8,7 +8,7 @@ from unittest import skipIf
 
 from dateutil import parser, tz
 
-from azure_functions_worker.utils.common import is_envvar_true
+from azure_functions_worker.utils.config_manager import is_envvar_true
 from tests.utils import testutils
 from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
 

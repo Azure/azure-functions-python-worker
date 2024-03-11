@@ -16,7 +16,7 @@ from google.protobuf.duration_pb2 import Duration
 
 from . import protos, functions
 from .bindings.retrycontext import RetryPolicy
-from .utils.common import get_app_setting
+from .utils.config_manager import get_app_setting
 from .constants import MODULE_NOT_FOUND_TS_URL, PYTHON_SCRIPT_FILE_NAME, \
     PYTHON_SCRIPT_FILE_NAME_DEFAULT, PYTHON_LANGUAGE_RUNTIME, \
     CUSTOMER_PACKAGES_PATH, RETRY_POLICY

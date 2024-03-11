@@ -241,12 +241,13 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 except Exception:
                     raise
             if not cls.webhost.is_healthy():
-                cls.host_out = cls.host_stdout.read()
-                if cls.host_out is not None and len(cls.host_out) > 0:
-                    error_message = 'WebHost is not started correctly.'
-                    f'{cls.host_stdout.name}: {cls.host_out}'
-                    cls.host_stdout_logger.error(error_message)
-                    raise RuntimeError(error_message)
+                if cls.host_stdout is not None:
+                    cls.host_out = cls.host_stdout.read()
+                    if cls.host_out is not None and len(cls.host_out) > 0:
+                        error_message = 'WebHost is not started correctly.'
+                        f'{cls.host_stdout.name}: {cls.host_out}'
+                        cls.host_stdout_logger.error(error_message)
+                        raise RuntimeError(error_message)
         except Exception as ex:
             cls.host_stdout_logger.error(f"WebHost is not started correctly. {ex}")
             cls.tearDownClass()

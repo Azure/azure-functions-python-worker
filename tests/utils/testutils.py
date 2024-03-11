@@ -36,7 +36,6 @@ import requests
 
 from azure_functions_worker import dispatcher
 from azure_functions_worker import protos
-from azure_functions_worker._thirdparty import aio_compat
 from azure_functions_worker.bindings.shared_memory_data_transfer \
     import FileAccessorFactory
 from azure_functions_worker.bindings.shared_memory_data_transfer \
@@ -48,7 +47,8 @@ from azure_functions_worker.constants import (
 from azure_functions_worker.utils.common import is_envvar_true, get_app_setting
 from tests.utils.constants import PYAZURE_WORKER_DIR, \
     PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
-    CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG
+    CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG, \
+    ARCHIVE_WEBHOST_LOGS, EXTENSIONS_CSPROJ_TEMPLATE
 from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated, \
     DockerConfigs
 
@@ -73,35 +73,6 @@ HOST_JSON_TEMPLATE = """\
     "version": "2.0",
     "logging": {"logLevel": {"default": "Trace"}}
 }
-"""
-
-EXTENSION_CSPROJ_TEMPLATE = """\
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <WarningsAsErrors></WarningsAsErrors>
-    <DefaultItemExcludes>**</DefaultItemExcludes>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-     Version="5.1.2.0" />
-    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
-     Version="3.2.0" />
-    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-     Version="3.0.10" />
-     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
-     Version="4.0.5" />
-     <PackageReference
-      Include="Microsoft.Azure.WebJobs.Extensions.Storage.Blobs"
-      Version="5.1.0" />
-     <PackageReference
-      Include="Microsoft.Azure.WebJobs.Extensions.Storage.Queues"
-      Version="5.1.0" />
-    <PackageReference
-     Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator"
-     Version="1.1.3" />
-  </ItemGroup>
-</Project>
 """
 
 SECRETS_TEMPLATE = """\
@@ -146,7 +117,7 @@ class AsyncTestCaseMeta(type(unittest.TestCase)):
     def _sync_wrap(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            return aio_compat.run(func(*args, **kwargs))
+            return asyncio.run(func(*args, **kwargs))
 
         return wrapper
 
@@ -219,7 +190,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         raise NotImplementedError
 
     @classmethod
-    def get_libraries_to_install(cls):
+    def get_libraries_to_install(cls) -> typing.List:
         pass
 
     @classmethod
@@ -227,38 +198,59 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         pass
 
     @classmethod
-    def get_script_name(cls):
-        pass
+    def docker_tests_enabled(self) -> (bool, str):
+        """
+        Returns True if the environment variables
+        CONSUMPTION_DOCKER_TEST or DEDICATED_DOCKER_TEST
+        is enabled else returns False
+        """
+        if is_envvar_true(CONSUMPTION_DOCKER_TEST):
+            return True, CONSUMPTION_DOCKER_TEST
+        elif is_envvar_true(DEDICATED_DOCKER_TEST):
+            return True, DEDICATED_DOCKER_TEST
+        else:
+            return False, None
 
     @classmethod
     def setUpClass(cls):
         script_dir = pathlib.Path(cls.get_script_dir())
+        is_unit_test = True if 'unittests' in script_dir.parts else False
 
-        docker_configs = DockerConfigs
-        docker_configs.script_path = script_dir
-        docker_configs.libraries = cls.get_libraries_to_install()
-        docker_configs.env = cls.get_environment_variables() or {}
-        os.environ["PYTHON_SCRIPT_FILE_NAME"] = (cls.get_script_name()
-                                                 or "function_app.py")
+        docker_tests_enabled, sku = cls.docker_tests_enabled()
 
-        if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
-            cls.host_stdout = None
-        else:
-            cls.host_stdout = tempfile.NamedTemporaryFile('w+t')
+        cls.host_stdout = None if is_envvar_true(PYAZURE_WEBHOST_DEBUG) \
+            else tempfile.NamedTemporaryFile('w+t')
 
         try:
-            if is_envvar_true(CONSUMPTION_DOCKER_TEST):
-                cls.webhost = \
-                    WebHostConsumption(docker_configs).spawn_container()
-            elif is_envvar_true(DEDICATED_DOCKER_TEST):
-                cls.webhost = \
-                    WebHostDedicated(docker_configs).spawn_container()
+            if docker_tests_enabled:
+                docker_configs = DockerConfigs(
+                    script_path=script_dir,
+                    libraries=cls.get_libraries_to_install(),
+                    env=cls.get_environment_variables() or {})
+                if sku == CONSUMPTION_DOCKER_TEST:
+                    cls.webhost = \
+                        WebHostConsumption(docker_configs).spawn_container()
+                elif sku == DEDICATED_DOCKER_TEST:
+                    cls.webhost = \
+                        WebHostDedicated(docker_configs).spawn_container()
             else:
-                _setup_func_app(TESTS_ROOT / script_dir)
-                cls.webhost = start_webhost(script_dir=script_dir,
-                                            stdout=cls.host_stdout)
-        except Exception:
-            _teardown_func_app(TESTS_ROOT / script_dir)
+                _setup_func_app(TESTS_ROOT / script_dir, is_unit_test)
+                try:
+                    cls.webhost = start_webhost(script_dir=script_dir,
+                                                stdout=cls.host_stdout)
+                except Exception:
+                    raise
+
+            if not cls.webhost.is_healthy():
+                cls.host_out = cls.host_stdout.read()
+                if cls.host_out is not None and len(cls.host_out) > 0:
+                    error_message = 'WebHost is not started correctly.'
+                    f'{cls.host_stdout.name}: {cls.host_out}'
+                    cls.host_stdout_logger.error(error_message)
+                    raise RuntimeError(error_message)
+        except Exception as ex:
+            cls.host_stdout_logger.error(f"WebHost is not started correctly. {ex}")
+            cls.tearDownClass()
             raise
 
     @classmethod
@@ -267,6 +259,21 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         cls.webhost = None
 
         if cls.host_stdout is not None:
+            if is_envvar_true(ARCHIVE_WEBHOST_LOGS):
+                cls.host_stdout.seek(0)
+                content = cls.host_stdout.read()
+                if content is not None and len(content) > 0:
+                    version_info = sys.version_info
+                    log_file = (
+                        "logs/"
+                        f"{cls.__module__}_{cls.__name__}"
+                        f"{version_info.minor}_webhost.log"
+                    )
+                    with open(log_file, 'w+') as file:
+                        file.write(content)
+                    cls.host_stdout_logger.info("WebHost log is archived to"
+                                                f"{log_file} in the artifact")
+
             cls.host_stdout.close()
             cls.host_stdout = None
 
@@ -287,16 +294,18 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 test(self, *args, **kwargs)
             except Exception as e:
                 test_exception = e
-
-            try:
-                self.host_stdout.seek(last_pos)
-                self.host_out = self.host_stdout.read()
-                self.host_stdout_logger.error(
-                    'Captured WebHost stdout from %s :\n%s',
-                    self.host_stdout.name, self.host_out)
             finally:
-                if test_exception is not None:
-                    raise test_exception
+                try:
+                    self.host_stdout.seek(last_pos)
+                    self.host_out = self.host_stdout.read()
+                    if self.host_out is not None and len(self.host_out) > 0:
+                        self.host_stdout_logger.error(
+                            'Captured WebHost log generated during test '
+                            '%s from %s :\n%s', test.__name__,
+                            self.host_stdout.name, self.host_out)
+                finally:
+                    if test_exception is not None:
+                        raise test_exception
 
 
 class SharedMemoryTestCase(unittest.TestCase):
@@ -711,7 +720,7 @@ class _MockWebHostController:
         self._worker: typing.Optional[dispatcher.Dispatcher] = None
 
     async def __aenter__(self) -> _MockWebHost:
-        loop = aio_compat.get_running_loop()
+        loop = asyncio.get_running_loop()
         self._host = _MockWebHost(loop, self._scripts_dir)
 
         await self._host.start()
@@ -776,6 +785,10 @@ class _WebHostProxy:
         self._proc = proc
         self._addr = addr
 
+    def is_healthy(self):
+        r = self.request('GET', '', no_prefix=True)
+        return 200 <= r.status_code < 300
+
     def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
         params = dict(kwargs.pop('params', {}))
@@ -814,7 +827,6 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         testconfig.read(WORKER_CONFIG)
 
     hostexe_args = []
-    os.environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
 
     # If we want to use core-tools
     coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')
@@ -1008,7 +1020,7 @@ def _symlink_dir(src, dst):
         dst.symlink_to(src, target_is_directory=True)
 
 
-def _setup_func_app(app_root):
+def _setup_func_app(app_root, is_unit_test=False):
     extensions = app_root / 'bin'
     host_json = app_root / 'host.json'
     extensions_csproj_file = app_root / 'extensions.csproj'
@@ -1017,11 +1029,11 @@ def _setup_func_app(app_root):
         with open(host_json, 'w') as f:
             f.write(HOST_JSON_TEMPLATE)
 
-    if not os.path.isfile(extensions_csproj_file):
+    if not os.path.isfile(extensions_csproj_file) and not is_unit_test:
         with open(extensions_csproj_file, 'w') as f:
-            f.write(EXTENSION_CSPROJ_TEMPLATE)
+            f.write(EXTENSIONS_CSPROJ_TEMPLATE)
 
-    _symlink_dir(EXTENSIONS_PATH, extensions)
+        _symlink_dir(EXTENSIONS_PATH, extensions)
 
 
 def _teardown_func_app(app_root):

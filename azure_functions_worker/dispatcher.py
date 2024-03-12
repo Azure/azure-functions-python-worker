@@ -30,7 +30,7 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_ENABLE_DEBUG_LOGGING,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
-                        PYTHON_LANGUAGE_RUNTIME, INIT_INDEXING)
+                        PYTHON_LANGUAGE_RUNTIME, ENABLE_INIT_INDEXING)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
@@ -301,7 +301,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # dictionary which will be later used in the invocation request
         bindings.load_binding_registry()
 
-        if is_envvar_true(INIT_INDEXING):
+        if is_envvar_true(ENABLE_INIT_INDEXING):
             self.get_function_metadata(directory,
                                        caller_info=sys._getframe().f_code.co_name)
 
@@ -322,6 +322,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             worker_status_response=protos.WorkerStatusResponse())
 
     def get_function_metadata(self, directory, caller_info):
+        """
+        This method is called to index the functions in the function app directory
+        and save the results in function_metadata_result or 
+        function_metadata_exception in case of an exception. 
+        """
         script_file_name = get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
             default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
@@ -345,7 +350,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         metadata_request = request.functions_metadata_request
         directory = metadata_request.function_app_directory
 
-        if not is_envvar_true(INIT_INDEXING):
+        if not is_envvar_true(ENABLE_INIT_INDEXING):
             self.get_function_metadata(directory,
                                        caller_info=sys._getframe().f_code.co_name)
 
@@ -383,7 +388,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             if not self._functions.get_function(function_id):
 
                 if function_metadata.properties.get("worker_indexed", False)\
-                        and not is_envvar_true(INIT_INDEXING):
+                        and not is_envvar_true(ENABLE_INIT_INDEXING):
                     # This is for the second worker and above where the worker
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the

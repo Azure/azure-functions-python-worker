@@ -218,6 +218,7 @@ def load_function(name: str, directory: str, script_file: str,
                f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}')
 def index_function_app(function_path: str):
     module_name = pathlib.Path(function_path).stem
+    logger.info(f'Loading module {module_name}')
     imported_module = importlib.import_module(module_name)
 
     from azure.functions import FunctionRegister

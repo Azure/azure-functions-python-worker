@@ -57,4 +57,4 @@ RETRY_POLICY = "retry_policy"
 CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site-packages"
 
 # Flag to index functions in handle init request
-INIT_INDEXING = "INIT_INDEXING"
+ENABLE_INIT_INDEXING = "ENABLE_INIT_INDEXING"

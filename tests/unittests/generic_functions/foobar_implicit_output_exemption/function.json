@@ -1,0 +1,12 @@
+{
+    "scriptFile": "main.py",
+    "bindings": [
+      {
+        "type": "durableClient",
+        "name": "input",
+        "direction": "in",
+        "dataType": "string"
+      }
+    ]
+  }
+  

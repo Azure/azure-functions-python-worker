@@ -37,11 +37,8 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
     def test_eventhub_multiple(self):
         NUM_EVENTS = 3
-        all_row_keys_seen = dict([(str(i), True) for i in range(NUM_EVENTS)])
+        all_row_keys_seen = dict([(i, True) for i in range(NUM_EVENTS)])
         partition_key = str(round(time.time()))
-
-        # wait for host to restart after change
-        time.sleep(5)
 
         docs = []
         for i in range(NUM_EVENTS):
@@ -63,7 +60,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
         # Waiting for the blob get updated with the latest data from the
         # eventhub output binding
-        time.sleep(2)
+        time.sleep(5)
         self.assertEqual(r.status_code, 200)
         entries = r.json()
         for entry in entries:
@@ -183,7 +180,7 @@ class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
 
     def test_eventhub_multiple(self):
         NUM_EVENTS = 3
-        all_row_keys_seen = dict([(str(i), True) for i in range(NUM_EVENTS)])
+        all_row_keys_seen = dict([(i, True) for i in range(NUM_EVENTS)])
         partition_key = str(round(time.time()))
 
         docs = []

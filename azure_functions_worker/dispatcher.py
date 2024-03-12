@@ -324,8 +324,8 @@ class Dispatcher(metaclass=DispatcherMeta):
     def get_function_metadata(self, directory, caller_info):
         """
         This method is called to index the functions in the function app directory
-        and save the results in function_metadata_result or 
-        function_metadata_exception in case of an exception. 
+        and save the results in function_metadata_result or
+        function_metadata_exception in case of an exception.
         """
         script_file_name = get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,

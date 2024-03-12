@@ -9,9 +9,11 @@ from typing import Optional, Tuple
 from unittest.mock import patch
 
 from azure_functions_worker import protos
-from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
-    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT, \
-    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37, PYTHON_THREADPOOL_THREAD_COUNT_MIN, ENABLE_INIT_INDEXING
+from azure_functions_worker.constants import (PYTHON_THREADPOOL_THREAD_COUNT,
+                                              PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+                                              PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
+                                              PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+                                              ENABLE_INIT_INDEXING)
 from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from tests.utils.testutils import UNIT_TESTS_ROOT
@@ -841,7 +843,7 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNone(self.dispatcher.function_metadata_exception)
 
     @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'false'})
-    def test_functions_metadata_request_with_init_indexing_enabled(self):
+    def test_functions_metadata_request_with_init_indexing_disabled(self):
         init_request = protos.StreamingMessage(
             worker_init_request=protos.WorkerInitRequest(
                 host_version="2.3.4",
@@ -861,7 +863,6 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
                          protos.StatusResult.Success)
         self.assertIsNone(self.dispatcher.function_metadata_result)
         self.assertIsNone(self.dispatcher.function_metadata_exception)
-
 
         metadata_response = self.loop.run_until_complete(
             self.dispatcher._handle__functions_metadata_request(metadata_request))
@@ -915,12 +916,12 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNone(self.dispatcher.function_metadata_result)
 
         load_request = protos.StreamingMessage(
-                function_load_request=protos.FunctionLoadRequest(
-                    function_id="http_trigger",
-                    metadata=protos.RpcFunctionMetadata(
-                        directory=str(FUNCTION_APP_DIRECTORY),
-                        properties={"worker_indexed": "True"}
-                    )))
+            function_load_request=protos.FunctionLoadRequest(
+                function_id="http_trigger",
+                metadata=protos.RpcFunctionMetadata(
+                    directory=str(FUNCTION_APP_DIRECTORY),
+                    properties={"worker_indexed": "True"}
+                )))
 
         self.loop.run_until_complete(
             self.dispatcher._handle__function_load_request(load_request))

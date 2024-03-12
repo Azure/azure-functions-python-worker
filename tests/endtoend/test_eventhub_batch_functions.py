@@ -40,11 +40,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         all_row_keys_seen = dict([(str(i), True) for i in range(NUM_EVENTS)])
         partition_key = str(round(time.time()))
 
-        # Dynamically rewrite function.json to point to new partition key
-        # for recording EventHub state
-        old_partition_key = self._get_table_partition_key()
-        self._set_table_partition_key(partition_key)
-
         # wait for host to restart after change
         time.sleep(5)
 
@@ -57,29 +52,26 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
                                  data=json.dumps(docs))
         self.assertEqual(r.status_code, 200)
 
-        row_keys = [str(i) for i in range(NUM_EVENTS)]
+        row_keys = [i for i in range(NUM_EVENTS)]
         seen = [False] * NUM_EVENTS
         row_keys_seen = dict(zip(row_keys, seen))
 
         # Allow trigger to fire.
         time.sleep(5)
 
-        try:
-            r = self.webhost.request('GET', 'get_eventhub_batch_triggered')
+        r = self.webhost.request('GET', 'get_eventhub_batch_triggered')
 
-            # Waiting for the blob get updated with the latest data from the
-            # eventhub output binding
-            time.sleep(2)
-            self.assertEqual(r.status_code, 200)
-            entries = r.json()
-            for entry in entries:
-                self.assertEqual(entry['PartitionKey'], partition_key)
-                row_key = entry['RowKey']
-                row_keys_seen[row_key] = True
+        # Waiting for the blob get updated with the latest data from the
+        # eventhub output binding
+        time.sleep(2)
+        self.assertEqual(r.status_code, 200)
+        entries = r.json()
+        for entry in entries:
+            self.assertEqual(entry['PartitionKey'], partition_key)
+            row_key = entry['RowKey']
+            row_keys_seen[row_key] = True
 
-            self.assertDictEqual(all_row_keys_seen, row_keys_seen)
-        finally:
-            self._cleanup(old_partition_key)
+        self.assertDictEqual(all_row_keys_seen, row_keys_seen)
 
     def test_eventhub_multiple_with_metadata(self):
         # Generate a unique event body for EventHub event
@@ -203,7 +195,7 @@ class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
                                  data=json.dumps(docs))
         self.assertEqual(r.status_code, 200)
 
-        row_keys = [str(i) for i in range(NUM_EVENTS)]
+        row_keys = [i for i in range(NUM_EVENTS)]
         seen = [False] * NUM_EVENTS
         row_keys_seen = dict(zip(row_keys, seen))
 
@@ -212,7 +204,7 @@ class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
 
         r = self.webhost.request(
             'GET',
-            f'get_eventhub_batch_triggered/{partition_key}')
+            'get_eventhub_batch_triggered')
         self.assertEqual(r.status_code, 200)
         entries = r.json()
         for entry in entries:

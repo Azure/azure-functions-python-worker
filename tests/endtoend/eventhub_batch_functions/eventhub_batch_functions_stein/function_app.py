@@ -18,9 +18,9 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
     connection="AzureWebJobsEventHubConnectionString",
     data_type="string",
     cardinality="many")
-@app.table_output(arg_name="$return",
-                  connection="AzureWebJobsStorage",
-                  table_name="EventHubBatchTest")
+@app.blob_output(arg_name="$return",
+                 path="python-worker-tests/test-eventhub-batch-triggered.txt",
+                 connection="AzureWebJobsStorage")
 def eventhub_multiple(events):
     table_entries = []
     for event in events:
@@ -46,13 +46,12 @@ def eventhub_output_batch(req: func.HttpRequest, out: func.Out[str]) -> str:
 
 # Retrieve the event data from storage blob and return it as Http response
 @app.function_name(name="get_eventhub_batch_triggered")
-@app.route(route="get_eventhub_batch_triggered/{id}")
-@app.table_input(arg_name="testEntities",
-                 connection="AzureWebJobsStorage",
-                 table_name="EventHubBatchTest",
-                 partition_key="{id}")
-def get_eventhub_batch_triggered(req: func.HttpRequest, testEntities):
-    return func.HttpResponse(status_code=200, body=testEntities)
+@app.route(route="get_eventhub_batch_triggered")
+@app.blob_input(arg_name="testEntities",
+                path="python-worker-tests/test-eventhub-batch-triggered.txt",
+                connection="AzureWebJobsStorage")
+def get_eventhub_batch_triggered(req: func.HttpRequest, testEntities: func.InputStream):
+    return func.HttpResponse(status_code=200, body=testEntities.read().decode('utf-8'))
 
 
 # Retrieve the event data from storage blob and return it as Http response

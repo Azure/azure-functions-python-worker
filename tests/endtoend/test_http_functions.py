@@ -34,8 +34,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
-            'http_functions_stein'
+        return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
     @testutils.retryable_test(3, 5)
     def test_function_index_page_should_return_ok(self):

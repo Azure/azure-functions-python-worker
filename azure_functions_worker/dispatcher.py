@@ -365,13 +365,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Failure,
                         exception=self.function_metadata_exception)))
         else:
-            fmr = self.function_metadata_result
+            metadata_result = self.function_metadata_result
 
             return protos.StreamingMessage(
                 request_id=request.request_id,
                 function_metadata_response=protos.FunctionMetadataResponse(
-                    use_default_metadata_indexing=False if fmr else True,
-                    function_metadata_results=fmr,
+                    use_default_metadata_indexing=False if metadata_result else
+                    True,
+                    function_metadata_results=metadata_result,
                     result=protos.StatusResult(
                         status=protos.StatusResult.Success)))
 

@@ -175,14 +175,14 @@ def get_bc_str(req: func.HttpRequest, client: bindings.BlobClient) -> str:
 #     return file.read().decode('utf-8')
 
 
-# @app.function_name(name="put_blob_str")
-# @app.blob_output(arg_name="file",
-#                  path="python-worker-tests/test-str.txt",
-#                  connection="AzureWebJobsStorage")
-# @app.route(route="put_blob_str")
-# def put_blob_str(req: func.HttpRequest, file: func.Out[str]) -> str:
-#     file.set(req.get_body())
-#     return 'OK'
+@app.function_name(name="put_blob_str")
+@app.blob_output(arg_name="file",
+                 path="python-worker-tests/test-str.txt",
+                 connection="AzureWebJobsStorage")
+@app.route(route="put_blob_str")
+def put_blob_str(req: func.HttpRequest, file: func.Out[str]) -> str:
+    file.set(req.get_body())
+    return 'OK'
 
 
 # @app.function_name(name="put_blob_bytes")

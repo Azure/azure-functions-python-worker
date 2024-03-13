@@ -16,13 +16,13 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
 
     @testutils.retryable_test(3, 5)
     def test_blob_str(self):
-        # r = self.webhost.request('POST', 'put_blob_str', data='test-data')
-        # self.assertEqual(r.status_code, 200)
-        # self.assertEqual(r.text, 'OK')
-
-        r = self.webhost.request('GET', 'get_bc_str')
+        r = self.webhost.request('POST', 'put_blob_str', data='test-data')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'test-data')
+        self.assertEqual(r.text, 'OK')
+
+        # r = self.webhost.request('GET', 'get_bc_str')
+        # self.assertEqual(r.status_code, 200)
+        # self.assertEqual(r.text, 'test-data')
 
     #     r = self.webhost.request('GET', 'get_cc_str')
     #     self.assertEqual(r.status_code, 200)

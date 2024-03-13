@@ -32,19 +32,19 @@ def load_binding_registry() -> None:
     BINDING_REGISTRY = func.get_binding_registry()
 
     # Check if cx has imported sdk bindings library
-    try:
-        clients = importlib.util.find_spec('azure.functions.extension.base')
-    except ModuleNotFoundError:
-        # This will throw a ModuleNotFoundError in env reload because
-        # azure.functions.extension isn't loaded in
-        clients = None
-
-    # This will be None if the library is not imported
-    # If it is not None, we want to set and use the registry
-    if clients is not None:
-        import azure.functions.extension.base as clients
-        global SDK_BINDING_REGISTRY
-        SDK_BINDING_REGISTRY = clients.get_binding_registry()
+    # try:
+    #     clients = importlib.util.find_spec('azure.functions.extension.base')
+    # except ModuleNotFoundError:
+    #     # This will throw a ModuleNotFoundError in env reload because
+    #     # azure.functions.extension isn't loaded in
+    #     clients = None
+    #
+    # # This will be None if the library is not imported
+    # # If it is not None, we want to set and use the registry
+    # if clients is not None:
+    import azure.functions.extension.base as clients
+    global SDK_BINDING_REGISTRY
+    SDK_BINDING_REGISTRY = clients.get_binding_registry()
 
 
 def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:

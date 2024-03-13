@@ -250,7 +250,7 @@ class Extension(distutils.cmd.Command):
                 print("{}", file=f)
 
         if not (self.extensions_dir / "extensions.csproj").exists():
-            if self.test_type is "deferred-bindings":
+            if self.test_type == "deferred-bindings":
                 with open(self.extensions_dir / "extensions.csproj", "w") as f:
                     print(DEFERRED_BINDINGS_CSPROJ_TEMPLATE, file=f)
             else:

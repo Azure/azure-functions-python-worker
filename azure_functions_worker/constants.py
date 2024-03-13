@@ -58,3 +58,5 @@ CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site-packages"
 
 # Flag to index functions in handle init request
 ENABLE_INIT_INDEXING = "ENABLE_INIT_INDEXING"
+
+METADATA_PROPERTIES_WORKER_INDEXED = "worker_indexed"

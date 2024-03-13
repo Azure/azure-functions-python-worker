@@ -30,7 +30,8 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_ENABLE_DEBUG_LOGGING,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
-                        PYTHON_LANGUAGE_RUNTIME, ENABLE_INIT_INDEXING)
+                        PYTHON_LANGUAGE_RUNTIME, ENABLE_INIT_INDEXING,
+                        METADATA_PROPERTIES_WORKER_INDEXED)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
@@ -75,8 +76,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._old_task_factory = None
 
         # Used to store metadata returns
-        self.function_metadata_result = None
-        self.function_metadata_exception = None
+        self._function_metadata_result = None
+        self._function_metadata_exception = None
 
         # We allow the customer to change synchronous thread pool max worker
         # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
@@ -276,7 +277,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                     )
 
         worker_init_request = request.worker_init_request
-        directory = worker_init_request.function_app_directory
         host_capabilities = worker_init_request.capabilities
         if constants.FUNCTION_DATA_CACHE in host_capabilities:
             val = host_capabilities[constants.FUNCTION_DATA_CACHE]
@@ -303,8 +303,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         if is_envvar_true(ENABLE_INIT_INDEXING):
             self.get_function_metadata(
-                directory,
-                caller_info=sys._getframe().f_code.co_name)
+                worker_init_request.function_app_directory,
+                caller_info="worker_init_request")
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -322,7 +322,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             request_id=request.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
-    def get_function_metadata(self, directory, caller_info):
+    def get_function_metadata(self, function_app_directory, caller_info):
         """
         This method is called to index the functions in the function app
         directory and save the results in function_metadata_result or
@@ -339,33 +339,34 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         try:
             validate_script_file_name(script_file_name)
-            function_path = os.path.join(directory, script_file_name)
+            function_path = os.path.join(function_app_directory,
+                                         script_file_name)
 
-            self.function_metadata_result = (
+            self._function_metadata_result = (
                 self.index_functions(function_path)) \
                 if os.path.exists(function_path) else None
 
         except Exception as ex:
-            self.function_metadata_exception = self._serialize_exception(ex)
+            self._function_metadata_exception = self._serialize_exception(ex)
 
     async def _handle__functions_metadata_request(self, request):
         metadata_request = request.functions_metadata_request
-        directory = metadata_request.function_app_directory
+        function_app_directory = metadata_request.function_app_directory
 
         if not is_envvar_true(ENABLE_INIT_INDEXING):
             self.get_function_metadata(
-                directory,
-                caller_info=sys._getframe().f_code.co_name)
+                function_app_directory,
+                caller_info="functions_metadata_request")
 
-        if self.function_metadata_exception:
+        if self._function_metadata_exception:
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 function_metadata_response=protos.FunctionMetadataResponse(
                     result=protos.StatusResult(
                         status=protos.StatusResult.Failure,
-                        exception=self.function_metadata_exception)))
+                        exception=self._function_metadata_exception)))
         else:
-            metadata_result = self.function_metadata_result
+            metadata_result = self._function_metadata_result
 
             return protos.StreamingMessage(
                 request_id=request.request_id,
@@ -381,7 +382,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_id = func_request.function_id
         function_metadata = func_request.metadata
         function_name = function_metadata.name
-        directory = function_metadata.directory
+        function_app_directory = function_metadata.directory
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
@@ -392,22 +393,24 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             if not self._functions.get_function(function_id):
 
-                if function_metadata.properties.get("worker_indexed", False)\
+                if function_metadata.properties.get(
+                        METADATA_PROPERTIES_WORKER_INDEXED, False) \
                         and not is_envvar_true(ENABLE_INIT_INDEXING):
                     # This is for the second worker and above where the worker
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the
                     # function and update the workers registry
 
-                    self.get_function_metadata(directory,
-                                               sys._getframe().f_code.co_name)
+                    self.get_function_metadata(
+                        function_app_directory,
+                        caller_info="functions_load_request")
                 else:
                     # legacy function
                     programming_model = "V1"
 
                     func = loader.load_function(
                         function_name,
-                        directory,
+                        function_app_directory,
                         func_request.metadata.script_file,
                         func_request.metadata.entry_point)
 

@@ -13,7 +13,8 @@ from azure_functions_worker.constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                                               PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                                               PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                                               PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                                              ENABLE_INIT_INDEXING)
+                                              ENABLE_INIT_INDEXING,
+                                              METADATA_PROPERTIES_WORKER_INDEXED)
 from azure_functions_worker.dispatcher import Dispatcher
 from azure_functions_worker.version import VERSION
 from tests.utils import testutils
@@ -784,8 +785,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.loop.run_until_complete(
             self.dispatcher._handle__worker_init_request(request))
 
-        self.assertIsNotNone(self.dispatcher.function_metadata_result)
-        self.assertIsNone(self.dispatcher.function_metadata_exception)
+        self.assertIsNotNone(self.dispatcher._function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
 
     @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'false'})
     def test_worker_init_request_with_indexing_disabled(self):
@@ -799,8 +800,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.loop.run_until_complete(
             self.dispatcher._handle__worker_init_request(request))
 
-        self.assertIsNone(self.dispatcher.function_metadata_result)
-        self.assertIsNone(self.dispatcher.function_metadata_exception)
+        self.assertIsNone(self.dispatcher._function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
 
     @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'true'})
     @patch.object(Dispatcher, 'index_functions')
@@ -818,8 +819,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.loop.run_until_complete(
             self.dispatcher._handle__worker_init_request(request))
 
-        self.assertIsNone(self.dispatcher.function_metadata_result)
-        self.assertIsNotNone(self.dispatcher.function_metadata_exception)
+        self.assertIsNone(self.dispatcher._function_metadata_result)
+        self.assertIsNotNone(self.dispatcher._function_metadata_exception)
 
     @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'true'})
     def test_functions_metadata_request_with_init_indexing_enabled(self):
@@ -846,8 +847,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
 
         self.assertEqual(metadata_response.function_metadata_response.result.status,
                          protos.StatusResult.Success)
-        self.assertIsNotNone(self.dispatcher.function_metadata_result)
-        self.assertIsNone(self.dispatcher.function_metadata_exception)
+        self.assertIsNotNone(self.dispatcher._function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
 
     @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'false'})
     def test_functions_metadata_request_with_init_indexing_disabled(self):
@@ -868,16 +869,16 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
             self.dispatcher._handle__worker_init_request(init_request))
         self.assertEqual(init_response.worker_init_response.result.status,
                          protos.StatusResult.Success)
-        self.assertIsNone(self.dispatcher.function_metadata_result)
-        self.assertIsNone(self.dispatcher.function_metadata_exception)
+        self.assertIsNone(self.dispatcher._function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
 
         metadata_response = self.loop.run_until_complete(
             self.dispatcher._handle__functions_metadata_request(metadata_request))
 
         self.assertEqual(metadata_response.function_metadata_response.result.status,
                          protos.StatusResult.Success)
-        self.assertIsNotNone(self.dispatcher.function_metadata_result)
-        self.assertIsNone(self.dispatcher.function_metadata_exception)
+        self.assertIsNotNone(self.dispatcher._function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
 
     @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'true'})
     @patch.object(Dispatcher, 'index_functions')
@@ -903,8 +904,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.loop.run_until_complete(
             self.dispatcher._handle__worker_init_request(request))
 
-        self.assertIsNone(self.dispatcher.function_metadata_result)
-        self.assertIsNotNone(self.dispatcher.function_metadata_exception)
+        self.assertIsNone(self.dispatcher._function_metadata_result)
+        self.assertIsNotNone(self.dispatcher._function_metadata_exception)
 
         metadata_response = self.loop.run_until_complete(
             self.dispatcher._handle__functions_metadata_request(
@@ -926,18 +927,18 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.loop.run_until_complete(
             self.dispatcher._handle__worker_init_request(init_request))
 
-        self.assertIsNone(self.dispatcher.function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_result)
 
         load_request = protos.StreamingMessage(
             function_load_request=protos.FunctionLoadRequest(
                 function_id="http_trigger",
                 metadata=protos.RpcFunctionMetadata(
                     directory=str(FUNCTION_APP_DIRECTORY),
-                    properties={"worker_indexed": "True"}
+                    properties={METADATA_PROPERTIES_WORKER_INDEXED: "True"}
                 )))
 
         self.loop.run_until_complete(
             self.dispatcher._handle__function_load_request(load_request))
 
-        self.assertIsNotNone(self.dispatcher.function_metadata_result)
-        self.assertIsNone(self.dispatcher.function_metadata_exception)
+        self.assertIsNotNone(self.dispatcher._function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_exception)

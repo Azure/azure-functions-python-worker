@@ -19,7 +19,7 @@ from .bindings.retrycontext import RetryPolicy
 from .utils.common import get_app_setting
 from .constants import MODULE_NOT_FOUND_TS_URL, PYTHON_SCRIPT_FILE_NAME, \
     PYTHON_SCRIPT_FILE_NAME_DEFAULT, PYTHON_LANGUAGE_RUNTIME, \
-    CUSTOMER_PACKAGES_PATH, RETRY_POLICY
+    CUSTOMER_PACKAGES_PATH, RETRY_POLICY, METADATA_PROPERTIES_WORKER_INDEXED
 from .logging import logger
 from .utils.wrappers import attach_message_to_exception
 
@@ -142,7 +142,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             bindings=binding_protos,
             raw_bindings=indexed_function.get_raw_bindings(),
             retry_options=retry_protos,
-            properties={"worker_indexed": "True"})
+            properties={METADATA_PROPERTIES_WORKER_INDEXED: "True"})
 
         fx_metadata_results.append(function_metadata)
 
@@ -218,7 +218,6 @@ def load_function(name: str, directory: str, script_file: str,
                f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}')
 def index_function_app(function_path: str):
     module_name = pathlib.Path(function_path).stem
-    logger.info(f'Loading module {module_name}')
     imported_module = importlib.import_module(module_name)
 
     from azure.functions import FunctionRegister

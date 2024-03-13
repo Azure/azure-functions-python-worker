@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies and run end to end tests with single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: CI E2E tests
+name: CI E2E Deferred Bindings tests
 
 on:
   workflow_dispatch:
@@ -21,12 +21,12 @@ on:
 
 jobs:
   build:
-    name: "Python E2E CI Run"
+    name: "Python E2E Deferred Bindings CI Run"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
+        python-version: [3.9, "3.10", "3.11"]
     permissions: read-all
     steps:
       - name: Checkout code.
@@ -65,38 +65,15 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
           python -m pip install -U -e .[dev]
+          python -m pip install -U -e --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --pre .[deferred-bindings]
 
           # Retry a couple times to avoid certificate issue
           retry 5 python setup.py build
           retry 5 python setup.py webhost --branch-name=dev
-          retry 5 python setup.py extension
+          retry 5 python setup.py extension --test-type=deferred-bindings
           mkdir logs
       - name: Grant execute permission
-        run: chmod +x .github/Scripts/e2e-tests.sh
-      - name: Running 3.7 Tests
-        if: matrix.python-version == 3.7
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString37 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString37 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString37 }}
-          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString37 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
-      - name: Running 3.8 Tests
-        if: matrix.python-version == 3.8
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString38 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString38 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString38 }}
-          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString38 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
+        run: chmod +x .github/Scripts/deferred-bindings-e2e-tests.sh
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
         env:
@@ -108,7 +85,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
+        run: .github/Scripts/deferred-bindings-e2e-tests.sh
       - name: Running 3.10 Tests
         if: matrix.python-version == 3.10
         env:
@@ -120,7 +97,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
+        run: .github/Scripts/deferred-bindings-e2e-tests.sh
       - name: Running 3.11 Tests
         if: matrix.python-version == 3.11
         env:

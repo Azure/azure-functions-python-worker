@@ -447,3 +447,165 @@ pb_type is data
 Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum model_binding_data version: "...>
 
 
+<<<<<<< HEAD
+=======
+
+Starting Azure Functions Python Worker.
+Worker ID: 23f308a8-d776-4a46-809b-afdb3e9b54d9, Request ID: 1e840ec4-aef4-494b-a51a-b1ea89d2fa63, Host Address: 127.0.0.1:58257
+Successfully opened gRPC channel to 127.0.0.1:58257 
+Detaching console logging.
+Switched to gRPC logging.
+Received WorkerInitRequest, python version 3.11.8 (tags/v3.11.8:db85d51, Feb  6 2024, 22:03:32) [MSC v.1937 64 bit (AMD64)], worker version 4.24.0, request ID 1e840ec4-aef4-494b-a51a-b1ea89d2fa63. App Settings state: PYTHON_THREADPOOL_THREAD_COUNT: 1000 | PYTHON_ENABLE_WORKER_EXTENSIONS: False. To enable debug level logging, please refer to https://aka.ms/python-enable-debug-logging
+Received WorkerMetadataRequest, request ID 1e840ec4-aef4-494b-a51a-b1ea89d2fa63, function_path: C:\Users\victoriahall\Documents\repos\azure-functions-python-worker\tests\endtoend\sdk_functions\function_app.py
+Received WorkerLoadRequest, request ID 1e840ec4-aef4-494b-a51a-b1ea89d2fa63, function_id: 62dd6aa7-92c1-4349-8da9-f81c2d5982fc,function_name: testing,
+Successfully processed FunctionLoadRequest, request ID: 1e840ec4-aef4-494b-a51a-b1ea89d2fa63, function ID: 62dd6aa7-92c1-4349-8da9-f81c2d5982fc,function Name: testing,programming model: V1
+Received FunctionInvocationRequest, request ID: 1e840ec4-aef4-494b-a51a-b1ea89d2fa63, function ID: 62dd6aa7-92c1-4349-8da9-f81c2d5982fc, function name: testing, invocation ID: 499b6196-a17b-4498-8f5c-7ae90a6e2b52, function type: sync, timestamp (UTC): 2024-03-05 20:00:01.730167, sync threadpool max workers: 1000
+pb_type is data
+pb_type is data
+Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum string 'DummyData...>
+Received FunctionInvocationRequest, request ID: 1e840ec4-aef4-494b-a51a-b1ea89d2fa63, function ID: 62dd6aa7-92c1-4349-8da9-f81c2d5982fc, function name: testing, invocation ID: 1248dc10-54fe-455b-8bf9-5d3f4be5e4d3, function type: sync, timestamp (UTC): 2024-03-05 20:00:28.420219, sync threadpool max workers: 1000
+pb_type is data
+pb_type is data
+Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum string 'DummyData...>
+Received FunctionInvocationRequest, request ID: 1e840ec4-aef4-494b-a51a-b1ea89d2fa63, function ID: 62dd6aa7-92c1-4349-8da9-f81c2d5982fc, function name: testing, invocation ID: 45601603-4629-484c-bfde-b55aef21adf0, function type: sync, timestamp (UTC): 2024-03-05 20:00:53.740198, sync threadpool max workers: 1000
+pb_type is data
+pb_type is data
+Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum string 'DummyData...>
+
+
+
+
+Starting Azure Functions Python Worker.
+Worker ID: 5690943c-c838-4eab-9636-e12ac9c5fbf2, Request ID: 54d4c55f-b06d-45b8-908f-c4c2acf2e0ab, Host Address: 127.0.0.1:61914
+Successfully opened gRPC channel to 127.0.0.1:61914 
+Detaching console logging.
+Switched to gRPC logging.
+Received WorkerInitRequest, python version 3.11.8 (tags/v3.11.8:db85d51, Feb  6 2024, 22:03:32) [MSC v.1937 64 bit (AMD64)], worker version 4.24.0, request ID 54d4c55f-b06d-45b8-908f-c4c2acf2e0ab. App Settings state: PYTHON_THREADPOOL_THREAD_COUNT: 1000 | PYTHON_ENABLE_WORKER_EXTENSIONS: False. To enable debug level logging, please refer to https://aka.ms/python-enable-debug-logging
+Received WorkerMetadataRequest, request ID 54d4c55f-b06d-45b8-908f-c4c2acf2e0ab, function_path: C:\Users\victoriahall\Documents\repos\azure-functions-python-worker\tests\endtoend\sdk_functions\blob_functions\function_app.py
+Indexed function app and found 1 functions
+build bindings: {'client': type: "blob"
+properties {
+  key: "supportsDeferredBinding"
+  value: "True"
+}
+, 'req': type: "httpTrigger"
+properties {
+  key: "supportsDeferredBinding"
+  value: "False"
+}
+, '$return': type: "http"
+direction: out
+properties {
+  key: "supportsDeferredBinding"
+  value: "False"
+}
+}
+SDK bindings raw bindings: ['{"direction": "IN", "dataType": null, "type": "blob", "name": "client", "path": "python-worker-tests/test-str.txt", "connection": "AzureWebJobsStorage", "properties": {"SupportsDeferredBinding": true}}', '{"direction": "IN", "dataType": null, "type": "httpTrigger", "name": "req", "methods": null, "authLevel": "ANONYMOUS", "route": "get_bc_str", "properties": {"SupportsDeferredBinding": false}}', '{"direction": "OUT", "dataType": null, "type": "http", "name": "$return", "properties": {"SupportsDeferredBinding": false}}']
+Successfully processed FunctionMetadataRequest for functions: Function Name: get_bc_str, Function Binding: [('blob', 'client'), ('httpTrigger', 'req'), ('http', '$return')]
+Received WorkerLoadRequest, request ID 54d4c55f-b06d-45b8-908f-c4c2acf2e0ab, function_id: 3faa0806-f6a8-5d6c-af21-613b51248c46,function_name: get_bc_str,
+Successfully processed FunctionLoadRequest, request ID: 54d4c55f-b06d-45b8-908f-c4c2acf2e0ab, function ID: 3faa0806-f6a8-5d6c-af21-613b51248c46,function Name: get_bc_str,programming model: V2
+Received FunctionInvocationRequest, request ID: 54d4c55f-b06d-45b8-908f-c4c2acf2e0ab, function ID: 3faa0806-f6a8-5d6c-af21-613b51248c46, function name: get_bc_str, invocation ID: 5e57e5f2-3526-4f04-bc82-430a90c8f9f6, function type: sync, timestamp (UTC): 2024-03-05 21:54:42.677895, sync threadpool max workers: 1000
+pb_type is data
+pb_type is data
+Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum string 'test-data...>
+Received FunctionInvocationRequest, request ID: 54d4c55f-b06d-45b8-908f-c4c2acf2e0ab, function ID: 3faa0806-f6a8-5d6c-af21-613b51248c46, function name: get_bc_str, invocation ID: ab135e5d-5fa4-494d-99a4-6ae5882def7a, function type: sync, timestamp (UTC): 2024-03-05 21:54:47.977933, sync threadpool max workers: 1000
+pb_type is data
+pb_type is data
+Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum string 'test-data...>
+Received FunctionInvocationRequest, request ID: 54d4c55f-b06d-45b8-908f-c4c2acf2e0ab, function ID: 3faa0806-f6a8-5d6c-af21-613b51248c46, function name: get_bc_str, invocation ID: 3b967e91-914a-47b0-8700-cd5964e7d94a, function type: sync, timestamp (UTC): 2024-03-05 21:54:53.207735, sync threadpool max workers: 1000
+pb_type is data
+pb_type is data
+Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum string 'test-data...>
+
+
+
+Starting Azure Functions Python Worker.
+Worker ID: d5432f3f-9c1e-44ca-9076-e97a5a142f52, Request ID: e2bdeb87-58b4-42f5-a574-a742377d68e5, Host Address: 127.0.0.1:62622
+Successfully opened gRPC channel to 127.0.0.1:62622 
+Detaching console logging.
+Switched to gRPC logging.
+Received WorkerInitRequest, python version 3.11.8 (tags/v3.11.8:db85d51, Feb  6 2024, 22:03:32) [MSC v.1937 64 bit (AMD64)], worker version 4.24.0, request ID e2bdeb87-58b4-42f5-a574-a742377d68e5. App Settings state: PYTHON_THREADPOOL_THREAD_COUNT: 1000 | PYTHON_ENABLE_WORKER_EXTENSIONS: False. To enable debug level logging, please refer to https://aka.ms/python-enable-debug-logging
+Received WorkerMetadataRequest, request ID e2bdeb87-58b4-42f5-a574-a742377d68e5, function_path: C:\Users\victoriahall\Documents\repos\azure-functions-python-worker\tests\endtoend\sdk_functions\blob_functions\function_app.py
+Indexed function app and found 1 functions
+build bindings: {'client': type: "blob"
+properties {
+  key: "supportsDeferredBinding"
+  value: "True"
+}
+, 'req': type: "httpTrigger"
+properties {
+  key: "supportsDeferredBinding"
+  value: "False"
+}
+, '$return': type: "http"
+direction: out
+properties {
+  key: "supportsDeferredBinding"
+  value: "False"
+}
+}
+SDK bindings raw bindings: ['{"direction": "IN", "dataType": null, "type": "blob", "name": "client", "path": "python-worker-tests/test-str.txt", "connection": "AzureWebJobsStorage", "properties": {"SupportsDeferredBinding": true}}', '{"direction": "IN", "dataType": null, "type": "httpTrigger", "name": "req", "methods": null, "authLevel": "ANONYMOUS", "route": "get_bc_str", "properties": {"SupportsDeferredBinding": false}}', '{"direction": "OUT", "dataType": null, "type": "http", "name": "$return", "properties": {"SupportsDeferredBinding": false}}']
+Successfully processed FunctionMetadataRequest for functions: Function Name: get_bc_str, Function Binding: [('blob', 'client'), ('httpTrigger', 'req'), ('http', '$return')]
+Received WorkerLoadRequest, request ID e2bdeb87-58b4-42f5-a574-a742377d68e5, function_id: 3faa0806-f6a8-5d6c-af21-613b51248c46,function_name: get_bc_str,
+Successfully processed FunctionLoadRequest, request ID: e2bdeb87-58b4-42f5-a574-a742377d68e5, function ID: 3faa0806-f6a8-5d6c-af21-613b51248c46,function Name: get_bc_str,programming model: V2
+Received FunctionInvocationRequest, request ID: e2bdeb87-58b4-42f5-a574-a742377d68e5, function ID: 3faa0806-f6a8-5d6c-af21-613b51248c46, function name: get_bc_str, invocation ID: a684f9b8-a6f5-4a73-9259-8021823ee268, function type: sync, timestamp (UTC): 2024-03-05 22:29:47.517612, sync threadpool max workers: 1000
+pb_type is data
+pb_type is data
+Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum string 'test-data...>
+Received FunctionInvocationRequest, request ID: e2bdeb87-58b4-42f5-a574-a742377d68e5, function ID: 3faa0806-f6a8-5d6c-af21-613b51248c46, function name: get_bc_str, invocation ID: c5b62214-a60f-4a7d-84e5-4d5bdc085102, function type: sync, timestamp (UTC): 2024-03-05 22:29:52.863428, sync threadpool max workers: 1000
+pb_type is data
+pb_type is data
+Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum string 'test-data...>
+Received FunctionInvocationRequest, request ID: e2bdeb87-58b4-42f5-a574-a742377d68e5, function ID: 3faa0806-f6a8-5d6c-af21-613b51248c46, function name: get_bc_str, invocation ID: a9385f21-15c2-4b8f-b7cc-bfae11302948, function type: sync, timestamp (UTC): 2024-03-05 22:29:58.087224, sync threadpool max workers: 1000
+pb_type is data
+pb_type is data
+Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum string 'test-data...>
+
+
+
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+
+Starting Azure Functions Python Worker.
+Worker ID: a663a89f-b729-451d-a33f-87e6ee7bd6db, Request ID: 53109d3d-a754-4ee0-adba-a10d3cb01284, Host Address: 127.0.0.1:65353
+Successfully opened gRPC channel to 127.0.0.1:65353 
+Detaching console logging.
+Switched to gRPC logging.
+Received WorkerInitRequest, python version 3.11.8 (tags/v3.11.8:db85d51, Feb  6 2024, 22:03:32) [MSC v.1937 64 bit (AMD64)], worker version 4.24.0, request ID 53109d3d-a754-4ee0-adba-a10d3cb01284. App Settings state: PYTHON_THREADPOOL_THREAD_COUNT: 1000 | PYTHON_ENABLE_WORKER_EXTENSIONS: False. To enable debug level logging, please refer to https://aka.ms/python-enable-debug-logging
+Received WorkerMetadataRequest, request ID 53109d3d-a754-4ee0-adba-a10d3cb01284, function_path: C:\Users\victoriahall\Documents\repos\azure-functions-python-worker\tests\endtoend\sdk_functions\blob_functions\function_app.py
+Indexed function app and found 1 functions
+build bindings: {'client': type: "blob"
+properties {
+  key: "supportsDeferredBinding"
+  value: "True"
+}
+, 'req': type: "httpTrigger"
+properties {
+  key: "supportsDeferredBinding"
+  value: "False"
+}
+, '$return': type: "http"
+direction: out
+properties {
+  key: "supportsDeferredBinding"
+  value: "False"
+}
+}
+SDK bindings raw bindings: ['{"direction": "IN", "dataType": null, "type": "blob", "name": "client", "path": "python-worker-tests/test-str.txt", "connection": "AzureWebJobsStorage", "properties": {"SupportsDeferredBinding": true}}', '{"direction": "IN", "dataType": null, "type": "httpTrigger", "name": "req", "methods": null, "authLevel": "ANONYMOUS", "route": "get_bc_str", "properties": {"SupportsDeferredBinding": false}}', '{"direction": "OUT", "dataType": null, "type": "http", "name": "$return", "properties": {"SupportsDeferredBinding": false}}']
+Successfully processed FunctionMetadataRequest for functions: Function Name: get_bc_str, Function Binding: [('blob', 'client'), ('httpTrigger', 'req'), ('http', '$return')]
+Received WorkerLoadRequest, request ID 53109d3d-a754-4ee0-adba-a10d3cb01284, function_id: 3faa0806-f6a8-5d6c-af21-613b51248c46,function_name: get_bc_str,
+Successfully processed FunctionLoadRequest, request ID: 53109d3d-a754-4ee0-adba-a10d3cb01284, function ID: 3faa0806-f6a8-5d6c-af21-613b51248c46,function Name: get_bc_str,programming model: V2
+Received FunctionInvocationRequest, request ID: 53109d3d-a754-4ee0-adba-a10d3cb01284, function ID: 3faa0806-f6a8-5d6c-af21-613b51248c46, function name: get_bc_str, invocation ID: f40d81f4-0de8-4330-9b5c-41586f585377, function type: sync, timestamp (UTC): 2024-03-08 16:36:16.830845, sync threadpool max workers: 1000
+pb_type is data
+pb_type is data
+Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum string 'test-data...>
+Received FunctionInvocationRequest, request ID: 53109d3d-a754-4ee0-adba-a10d3cb01284, function ID: 3faa0806-f6a8-5d6c-af21-613b51248c46, function name: get_bc_str, invocation ID: 2db17c20-6fd8-486b-8892-9ec474aaf65e, function type: sync, timestamp (UTC): 2024-03-08 16:36:22.114239, sync threadpool max workers: 1000
+pb_type is data
+pb_type is data
+Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum string 'test-data...>
+Received FunctionInvocationRequest, request ID: 53109d3d-a754-4ee0-adba-a10d3cb01284, function ID: 3faa0806-f6a8-5d6c-af21-613b51248c46, function name: get_bc_str, invocation ID: ad8553e8-bb1a-44da-87bc-b05b5a4ca4db, function type: sync, timestamp (UTC): 2024-03-08 16:36:27.334612, sync threadpool max workers: 1000
+pb_type is data
+pb_type is data
+Binding: <class 'azure.functions.extension.blob.blobClientConverter.BlobClientConverter'>, pytype: <class 'azure.functions.extension.blob.blobClient.BlobClient'>, datum: <Datum string 'test-data...>
+>>>>>>> cf155ec8fc542c699086ccb5ab81f4d61c589409

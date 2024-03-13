@@ -1,4 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+# Input as string, without annotation
 
-VERSION = '4.26.0'
+
+def main(input: str):
+    return input

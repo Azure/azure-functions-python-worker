@@ -12,9 +12,10 @@
     },
     {
       "direction": "in",
-      "type": "blob",
+      "type": "table",
       "name": "testEntities",
-      "path": "python-worker-tests/test-eventhub-batch-triggered.txt",
+      "partitionKey": "WillBePopulated",
+      "tableName": "EventHubBatchTest",
       "connection": "AzureWebJobsStorage"
     },
     {

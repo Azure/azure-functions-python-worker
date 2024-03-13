@@ -15,7 +15,8 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
                  row_key='{id}',
                  partition_key="test")
 def table_in_binding(req: func.HttpRequest, testEntity):
-    return func.HttpResponse(status_code=200, body=testEntity)
+    headers_dict = json.loads(testEntity)
+    return func.HttpResponse(status_code=200, headers=headers_dict)
 
 
 @app.function_name(name="table_out_binding")
@@ -27,5 +28,6 @@ def table_out_binding(req: func.HttpRequest, resp: func.Out[func.HttpResponse]):
     row_key_uuid = str(uuid.uuid4())
     table_dict = {'PartitionKey': 'test', 'RowKey': row_key_uuid}
     table_json = json.dumps(table_dict)
-    resp.set(table_json)
+    http_resp = func.HttpResponse(status_code=200, headers=table_dict)
+    resp.set(http_resp)
     return table_json

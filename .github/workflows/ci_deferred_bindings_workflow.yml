@@ -65,7 +65,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
           python -m pip install -U -e .[dev]
-          python -m pip install -U --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --pre .[deferred-bindings]
+          # python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --pre .[deferred-bindings]
+          # Installing blob from test pypi right now. Later, can install from .[deferred-bindings]
+          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple azure-functions-extension-blob
 
           # Retry a couple times to avoid certificate issue
           retry 5 python setup.py build

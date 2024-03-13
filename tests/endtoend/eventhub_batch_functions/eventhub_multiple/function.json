@@ -13,9 +13,9 @@
     },
     {
       "direction": "out",
-      "type": "blob",
+      "type": "table",
       "name": "$return",
-      "path": "python-worker-tests/test-eventhub-batch-triggered.txt",
+      "tableName": "EventHubBatchTest",
       "connection": "AzureWebJobsStorage"
     }
   ]

@@ -24,17 +24,15 @@ class TestTableFunctions(testutils.WebHostTestCase):
     def test_table_bindings(self):
         out_resp = self.webhost.request('POST', 'table_out_binding')
         self.assertEqual(out_resp.status_code, 200)
-        row_key = json.loads(out_resp.text)['RowKey']
+        row_key = out_resp.headers['rowKey']
 
         script_dir = pathlib.Path(self.get_script_dir())
         json_path = pathlib.Path('table_in_binding/function.json')
         full_json_path = testutils.TESTS_ROOT / script_dir / json_path
-        route = f'table_in_binding/{row_key}'
         # Dynamically rewrite function.json to point to new row key
         with open(full_json_path, 'r') as f:
             func_dict = json.load(f)
             func_dict['bindings'][1]['rowKey'] = row_key
-            func_dict['bindings'][0]['route'] = route
 
         with open(full_json_path, 'w') as f:
             json.dump(func_dict, f, indent=2)
@@ -42,14 +40,10 @@ class TestTableFunctions(testutils.WebHostTestCase):
         # wait for host to restart after change
         time.sleep(1)
 
-        in_resp = self.webhost.request('GET', route)
+        in_resp = self.webhost.request('GET', 'table_in_binding')
         self.assertEqual(in_resp.status_code, 200)
-        row_key_present = False
-        for row in json.loads(in_resp.text):
-            if row["RowKey"] == row_key:
-                row_key_present = True
-                break
-        self.assertTrue(row_key_present)
+        in_row_key = in_resp.headers['rowKey']
+        self.assertEqual(in_row_key, row_key)
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
@@ -66,16 +60,12 @@ class TestTableFunctionsStein(testutils.WebHostTestCase):
     def test_table_bindings(self):
         out_resp = self.webhost.request('POST', 'table_out_binding')
         self.assertEqual(out_resp.status_code, 200)
-        row_key = json.loads(out_resp.text)['RowKey']
+        row_key = out_resp.headers['rowKey']
 
         in_resp = self.webhost.request('GET', f'table_in_binding/{row_key}')
         self.assertEqual(in_resp.status_code, 200)
-        row_key_present = False
-        for row in json.loads(in_resp.text):
-            if row["RowKey"] == row_key:
-                row_key_present = True
-                break
-        self.assertTrue(row_key_present)
+        in_row_key = in_resp.headers['rowKey']
+        self.assertEqual(in_row_key, row_key)
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)

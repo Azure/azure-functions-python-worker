@@ -302,8 +302,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         bindings.load_binding_registry()
 
         if is_envvar_true(ENABLE_INIT_INDEXING):
-            self.get_function_metadata(directory,
-                                       caller_info=sys._getframe().f_code.co_name)
+            self.get_function_metadata(
+                directory,
+                caller_info=sys._getframe().f_code.co_name)
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -323,8 +324,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     def get_function_metadata(self, directory, caller_info):
         """
-        This method is called to index the functions in the function app directory
-        and save the results in function_metadata_result or
+        This method is called to index the functions in the function app
+        directory and save the results in function_metadata_result or
         function_metadata_exception in case of an exception.
         """
         script_file_name = get_app_setting(
@@ -340,7 +341,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             validate_script_file_name(script_file_name)
             function_path = os.path.join(directory, script_file_name)
 
-            self.function_metadata_result = self.index_functions(function_path) \
+            self.function_metadata_result = (
+                self.index_functions(function_path)) \
                 if os.path.exists(function_path) else None
 
         except Exception as ex:
@@ -351,8 +353,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         directory = metadata_request.function_app_directory
 
         if not is_envvar_true(ENABLE_INIT_INDEXING):
-            self.get_function_metadata(directory,
-                                       caller_info=sys._getframe().f_code.co_name)
+            self.get_function_metadata(
+                directory,
+                caller_info=sys._getframe().f_code.co_name)
 
         if self.function_metadata_exception:
             return protos.StreamingMessage(
@@ -381,7 +384,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
-            'function_name: %s,', self.request_id, function_id, function_name)
+            'function_name: %s,',
+            self.request_id, function_id, function_name)
 
         programming_model = "V2"
         try:
@@ -576,6 +580,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             func_env_reload_request = \
                 request.function_environment_reload_request
+            directory = func_env_reload_request.function_app_directory
 
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:
@@ -601,13 +606,16 @@ class Dispatcher(metaclass=DispatcherMeta):
                 root_logger.setLevel(logging.DEBUG)
 
             # Reload azure google namespaces
-            DependencyManager.reload_customer_libraries(
-                func_env_reload_request.function_app_directory
-            )
+            DependencyManager.reload_customer_libraries(directory)
 
             # calling load_binding_registry again since the
             # reload_customer_libraries call clears the registry
             bindings.load_binding_registry()
+
+            if is_envvar_true(ENABLE_INIT_INDEXING):
+                self.get_function_metadata(
+                    directory,
+                    caller_info=sys._getframe().f_code.co_name)
 
             # Change function app directory
             if getattr(func_env_reload_request,

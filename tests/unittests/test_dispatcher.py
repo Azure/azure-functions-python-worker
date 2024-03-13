@@ -14,6 +14,7 @@ from azure_functions_worker.constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                                               PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                                               PYTHON_THREADPOOL_THREAD_COUNT_MIN,
                                               ENABLE_INIT_INDEXING)
+from azure_functions_worker.dispatcher import Dispatcher
 from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from tests.utils.testutils import UNIT_TESTS_ROOT
@@ -802,8 +803,10 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNone(self.dispatcher.function_metadata_exception)
 
     @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'true'})
-    def test_worker_init_request_with_indexing_exception(self):
-        sys.path.remove(str(FUNCTION_APP_DIRECTORY))
+    @patch.object(Dispatcher, 'index_functions')
+    def test_worker_init_request_with_indexing_exception(self,
+                                                         mock_index_functions):
+        mock_index_functions.side_effect = Exception("Mocked Exception")
 
         request = protos.StreamingMessage(
             worker_init_request=protos.WorkerInitRequest(
@@ -877,8 +880,12 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNone(self.dispatcher.function_metadata_exception)
 
     @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'true'})
-    def test_functions_metadata_request_with_indexing_exception(self):
-        sys.path.remove(str(FUNCTION_APP_DIRECTORY))
+    @patch.object(Dispatcher, 'index_functions')
+    def test_functions_metadata_request_with_indexing_exception(
+            self,
+            mock_index_functions):
+
+        mock_index_functions.side_effect = Exception("Mocked Exception")
 
         request = protos.StreamingMessage(
             worker_init_request=protos.WorkerInitRequest(
@@ -900,10 +907,12 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNotNone(self.dispatcher.function_metadata_exception)
 
         metadata_response = self.loop.run_until_complete(
-            self.dispatcher._handle__functions_metadata_request(metadata_request))
+            self.dispatcher._handle__functions_metadata_request(
+                metadata_request))
 
-        self.assertEqual(metadata_response.function_metadata_response.result.status,
-                         protos.StatusResult.Failure)
+        self.assertEqual(
+            metadata_response.function_metadata_response.result.status,
+            protos.StatusResult.Failure)
 
     @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'false'})
     def test_dispatcher_indexing_in_load_request(self):

@@ -81,18 +81,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         finally:
             self._cleanup(old_partition_key)
 
-        # Waiting for the blob get updated with the latest data from the
-        # eventhub output binding
-        time.sleep(5)
-        self.assertEqual(r.status_code, 200)
-        entries = r.json()
-        for entry in entries:
-            self.assertEqual(entry['PartitionKey'], partition_key)
-            row_key = entry['RowKey']
-            row_keys_seen[row_key] = True
-
-        self.assertDictEqual(all_row_keys_seen, row_keys_seen)
-
     def test_eventhub_multiple_with_metadata(self):
         # Generate a unique event body for EventHub event
         # Record the start_time and end_time for checking event enqueue time

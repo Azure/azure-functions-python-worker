@@ -111,7 +111,7 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
+        run: .github/Scripts/deferred-bindings-e2e-tests.sh
       - name: Codecov
         uses: codecov/codecov-action@v3
         with:

@@ -31,20 +31,22 @@ def load_binding_registry() -> None:
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()
 
-    # Check if cx has imported sdk bindings library
-    # try:
-    #     clients = importlib.util.find_spec('azure.functions.extension.base')
-    # except ModuleNotFoundError:
-    #     # This will throw a ModuleNotFoundError in env reload because
-    #     # azure.functions.extension isn't loaded in
-    #     clients = None
-    #
-    # # This will be None if the library is not imported
-    # # If it is not None, we want to set and use the registry
-    # if clients is not None:
-    import azure.functions.extension.base as clients
-    global SDK_BINDING_REGISTRY
-    SDK_BINDING_REGISTRY = clients.get_binding_registry()
+    # The SDKs only support python 3.9+
+    if sys.version_info.minor > 8:
+        # Check if cx has imported sdk bindings library
+        try:
+            clients = importlib.util.find_spec('azure.functions.extension.base')
+        except ModuleNotFoundError:
+            # This will throw a ModuleNotFoundError in env reload because
+            # azure.functions.extension isn't loaded in
+            clients = None
+
+        # This will be None if the library is not imported
+        # If it is not None, we want to set and use the registry
+        if clients is not None:
+            import azure.functions.extension.base as clients
+            global SDK_BINDING_REGISTRY
+            SDK_BINDING_REGISTRY = clients.get_binding_registry()
 
 
 def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
@@ -130,20 +132,20 @@ def from_incoming_proto(
         # if the binding is an sdk type binding
         if (SDK_BINDING_REGISTRY is not None
                 and SDK_BINDING_REGISTRY.check_supported_type(pytype)):
-            # global SDK_CACHE
-            # # Check is the object is already in the cache
-            # obj = SDK_CACHE.get((pb.name, pytype, datum.value.content), None)
+            global SDK_CACHE
+            # Check is the object is already in the cache
+            obj = SDK_CACHE.get((pb.name, pytype, datum.value.content), None)
 
-            # # if the object is in the cache, return it
-            # if obj is not None:
-            #     return obj
-            # # if the object is not in the cache, create and add it to the cache
-            # else:
-            logger.warning(f'SDK bindings -- Binding: {binding}, pytype: {pytype}, datum: {datum}')
-            obj = binding.decode(datum, trigger_metadata=metadata,
-                                 pytype=pytype)
-            # SDK_CACHE[(pb.name, pytype, datum.value.content)] = obj
-            return obj
+            # if the object is in the cache, return it
+            if obj is not None:
+                return obj
+            # if the object is not in the cache, create and add it to the cache
+            else:
+                logger.warning(f'SDK bindings -- Binding: {binding}, pytype: {pytype}, datum: {datum}')
+                obj = binding.decode(datum, trigger_metadata=metadata,
+                                     pytype=pytype)
+                SDK_CACHE[(pb.name, pytype, datum.value.content)] = obj
+                return obj
         logger.warning(f'Non-SDK bindings: Binding: {binding}, pytype: {pytype}, datum: {datum}')
         logger.warning(f'Datum: {datum.value}')
         return binding.decode(datum, trigger_metadata=metadata)

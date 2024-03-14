@@ -90,10 +90,10 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, large_string)
 
-    def test_blob_trigger(self):
+    def test_bc_blob_trigger(self):
         data = "DummyData"
 
-        r = self.webhost.request('POST', 'put_blob_trigger',
+        r = self.webhost.request('POST', 'put_bc_trigger',
                                  data=data.encode('utf-8'))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
@@ -111,7 +111,7 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
                 response = r.json()
 
                 self.assertEqual(response['name'],
-                                 'python-worker-tests/test-blob-trigger.txt')
+                                 'python-worker-tests/test-blobclient-trigger.txt')
                 self.assertEqual(response['content'], data)
 
                 break
@@ -122,7 +122,7 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
     def test_bc_blob_trigger_with_large_content(self):
         data = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 
-        r = self.webhost.request('POST', 'put_blob_trigger',
+        r = self.webhost.request('POST', 'put_bc_trigger',
                                  data=data.encode('utf-8'))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
@@ -142,11 +142,40 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
                 response = r.json()
 
                 self.assertEqual(response['name'],
-                                 'python-worker-tests/test-blob-trigger.txt')
+                                 'python-worker-tests/test-blobclient-trigger.txt')
                 self.assertEqual(response['content'], data)
                 break
             # JSONDecodeError will be thrown if the response is empty.
             except AssertionError or JSONDecodeError:
+                if try_no == max_retries - 1:
+                    raise
+
+    def test_cc_blob_trigger(self):
+        data = "DummyData"
+
+        r = self.webhost.request('POST', 'put_cc_trigger',
+                                 data=data.encode('utf-8'))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK')
+
+        # Blob trigger may be processed after some delay
+        # We check it every 2 seconds to allow the trigger to be fired
+        max_retries = 10
+        for try_no in range(max_retries):
+            time.sleep(2)
+
+            try:
+                # Check that the trigger has fired
+                r = self.webhost.request('GET', 'get_cc_blob_triggered')
+                self.assertEqual(r.status_code, 200)
+                response = r.json()
+
+                self.assertEqual(response['name'],
+                                 'python-worker-tests')
+                self.assertEqual(response['content'], data)
+
+                break
+            except AssertionError:
                 if try_no == max_retries - 1:
                     raise
 
@@ -181,11 +210,42 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
                 if try_no == max_retries - 1:
                     raise
 
+
+
+
+
+    def test_ssd_blob_trigger(self):
+        data = "DummyData"
+
+        r = self.webhost.request('POST', 'put_ssd_trigger',
+                                 data=data.encode('utf-8'))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK')
+
+        # Blob trigger may be processed after some delay
+        # We check it every 2 seconds to allow the trigger to be fired
+        max_retries = 10
+        for try_no in range(max_retries):
+            time.sleep(2)
+
+            try:
+                # Check that the trigger has fired
+                r = self.webhost.request('GET', 'get_ssd_triggered')
+                self.assertEqual(r.status_code, 200)
+                response = r.json()
+
+                self.assertEqual(response['content'], data)
+
+                break
+            except AssertionError:
+                if try_no == max_retries - 1:
+                    raise
+
     # SSD
     def test_ssd_blob_trigger_with_large_content(self):
         data = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 
-        r = self.webhost.request('POST', 'put_blob_trigger',
+        r = self.webhost.request('POST', 'put_ssd_trigger',
                                  data=data.encode('utf-8'))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')

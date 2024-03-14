@@ -101,7 +101,10 @@ def put_ssd_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
                  path="python-worker-tests/test-ssd-triggered.txt",
                  connection="AzureWebJobsStorage")
 def ssd_blob_trigger(stream: bindings.StorageStreamDownloader) -> str:
-    file = stream.readall().decode('utf-8')
+    # testing chunking
+    file = ""
+    for chunk in stream.chunks():
+        file += chunk.decode("utf-8")
     return json.dumps({
         'content': file
     })

@@ -2,8 +2,6 @@
 # Licensed under the MIT License.
 import time
 
-from requests import JSONDecodeError
-
 from tests.utils import testutils
 
 
@@ -81,7 +79,6 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
             except AssertionError:
                 if try_no == max_retries - 1:
                     raise
-
 
     def test_cc_blob_trigger(self):
         data = "DummyData"

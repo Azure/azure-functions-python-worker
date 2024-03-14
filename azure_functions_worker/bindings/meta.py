@@ -10,8 +10,6 @@ from . import datumdef
 from . import generic
 from .shared_memory_data_transfer import SharedMemoryManager
 
-from ..logging import logger
-
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
 PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
@@ -117,12 +115,10 @@ def from_incoming_proto(
 
     pb_type = pb.WhichOneof(PB_TYPE)
     if pb_type == PB_TYPE_DATA:
-        logger.warning('pb_type is data')
         val = pb.data
         datum = datumdef.Datum.from_typed_data(val)
     elif pb_type == PB_TYPE_RPC_SHARED_MEMORY:
         # Data was sent over shared memory, attempt to read
-        logger.warning('pb_type is shared memory')
         datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory,
                                                       shmem_mgr)
     else:
@@ -141,13 +137,10 @@ def from_incoming_proto(
                 return obj
             # if the object is not in the cache, create and add it to the cache
             else:
-                logger.warning(f'SDK bindings -- Binding: {binding}, pytype: {pytype}, datum: {datum}')
                 obj = binding.decode(datum, trigger_metadata=metadata,
                                      pytype=pytype)
                 SDK_CACHE[(pb.name, pytype, datum.value.content)] = obj
                 return obj
-        logger.warning(f'Non-SDK bindings: Binding: {binding}, pytype: {pytype}, datum: {datum}')
-        logger.warning(f'Datum: {datum.value}')
         return binding.decode(datum, trigger_metadata=metadata)
     except NotImplementedError:
         # Binding does not support the data.

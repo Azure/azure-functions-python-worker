@@ -144,7 +144,7 @@ class WebHostTestCaseMeta(type(unittest.TestCase)):
                             __check_log__=check_log_case, **kwargs):
                     if (__check_log__ is not None
                             and callable(__check_log__)
-                            and not True):
+                            and not is_envvar_true(PYAZURE_WEBHOST_DEBUG)):
 
                         # Check logging output for unit test scenarios
                         result = self._run_test(__meth__, *args, **kwargs)
@@ -218,7 +218,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         docker_tests_enabled, sku = cls.docker_tests_enabled()
 
-        cls.host_stdout = None if True \
+        cls.host_stdout = None if is_envvar_true(PYAZURE_WEBHOST_DEBUG) \
             else tempfile.NamedTemporaryFile('w+t')
 
         try:
@@ -240,14 +240,14 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                                                 stdout=cls.host_stdout)
                 except Exception:
                     raise
-            if not cls.webhost.is_healthy():
-                if cls.host_stdout is not None:
-                    cls.host_out = cls.host_stdout.read()
-                    if cls.host_out is not None and len(cls.host_out) > 0:
-                        error_message = 'WebHost is not started correctly.'
-                        f'{cls.host_stdout.name}: {cls.host_out}'
-                        cls.host_stdout_logger.error(error_message)
-                        raise RuntimeError(error_message)
+
+            if not cls.webhost.is_healthy() and cls.host_stdout is not None:
+                cls.host_out = cls.host_stdout.read()
+                if cls.host_out is not None and len(cls.host_out) > 0:
+                    error_message = 'WebHost is not started correctly.'
+                    f'{cls.host_stdout.name}: {cls.host_out}'
+                    cls.host_stdout_logger.error(error_message)
+                    raise RuntimeError(error_message)
         except Exception as ex:
             cls.host_stdout_logger.error(f"WebHost is not started correctly. {ex}")
             cls.tearDownClass()
@@ -955,7 +955,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
 def start_webhost(*, script_dir=None, stdout=None):
     script_root = TESTS_ROOT / script_dir if script_dir else FUNCS_PATH
     if stdout is None:
-        if True:
+        if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             stdout = sys.stdout
         else:
             stdout = subprocess.DEVNULL

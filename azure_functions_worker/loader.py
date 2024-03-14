@@ -128,19 +128,15 @@ def process_indexed_function(functions_registry: functions.Registry,
             function=indexed_function)
 
         binding_protos = build_binding_protos(indexed_function)
-        logger.warning(f'build bindings: {binding_protos}')
         retry_protos = build_retry_protos(indexed_function)
 
         # Check if deferred bindings is enabled
         if bindings.meta.deferred_bindings_enabled:
             raw_bindings = bindings.meta.SDK_BINDING_REGISTRY.get_raw_bindings(
                 indexed_function, function_info.input_types)
-            bindings.meta.deferred_bindings_enabled = False
-            logger.warning(f'SDK bindings raw bindings: {raw_bindings}')
 
         else:
             raw_bindings = indexed_function.get_raw_bindings()
-            logger.warning(f'non-SDK raw bindings: {raw_bindings}')
         function_metadata = protos.RpcFunctionMetadata(
             name=function_info.name,
             function_id=function_info.function_id,

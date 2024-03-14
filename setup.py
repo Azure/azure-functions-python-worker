@@ -21,7 +21,8 @@ from setuptools import setup
 from setuptools.command import develop
 
 from azure_functions_worker.version import VERSION
-from tests.utils.constants import DEFERRED_BINDINGS_CSPROJ_TEMPLATE, EXTENSIONS_CSPROJ_TEMPLATE
+from tests.utils.constants import (DEFERRED_BINDINGS_CSPROJ_TEMPLATE,
+                                   EXTENSIONS_CSPROJ_TEMPLATE)
 
 # The GitHub repository of the Azure Functions Host
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
@@ -71,7 +72,8 @@ PACKAGES = [
     "azure_functions_worker._thirdparty",
 ]
 
-INSTALL_REQUIRES = ["azure-functions==1.19.0b3", "python-dateutil~=2.8.2", "azure-functions-extension-base"]
+INSTALL_REQUIRES = ["azure-functions==1.19.0b3", "python-dateutil~=2.8.2",
+                    "azure-functions-extension-base"]
 
 if sys.version_info[:2] == (3, 7):
     INSTALL_REQUIRES.extend(

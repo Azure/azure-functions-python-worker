@@ -50,9 +50,10 @@ def get_bc_blob_triggered(req: func.HttpRequest,
                  path="python-worker-tests/test-containerclient-trigger.txt",
                  connection="AzureWebJobsStorage")
 @app.route(route="put_cc_trigger")
-def put_bc_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
+def put_cc_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
     file.set(req.get_body())
     return 'OK'
+
 
 @app.function_name(name="cc_blob_trigger")
 @app.blob_trigger(arg_name="client",
@@ -63,7 +64,7 @@ def put_bc_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
                  connection="AzureWebJobsStorage")
 def cc_blob_trigger(client: bindings.ContainerClient) -> str:
     container_properties = client.get_container_properties()
-    file = client.download_blob("test-blob-extension-trigger.txt",
+    file = client.download_blob("test-containerclient-trigger.txt",
                                 encoding='utf-8').readall()
     return json.dumps({
         'name': container_properties.name,
@@ -87,7 +88,7 @@ def get_cc_blob_triggered(req: func.HttpRequest,
                  path="python-worker-tests/test-ssd-trigger.txt",
                  connection="AzureWebJobsStorage")
 @app.route(route="put_ssd_trigger")
-def put_bc_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
+def put_ssd_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
     file.set(req.get_body())
     return 'OK'
 
@@ -132,7 +133,8 @@ def get_bc_bytes(req: func.HttpRequest, client: bindings.BlobClient) -> str:
                 connection="AzureWebJobsStorage")
 def get_cc_bytes(req: func.HttpRequest,
                  client: bindings.ContainerClient) -> str:
-    return client.download_blob("test-blob-extension-bytes.txt", encoding='utf-8').readall()
+    return client.download_blob("test-blob-extension-bytes.txt",
+                                encoding='utf-8').readall()
 
 
 @app.function_name(name="get_ssd_bytes")
@@ -160,7 +162,8 @@ def get_bc_str(req: func.HttpRequest, client: bindings.BlobClient) -> str:
                 path="python-worker-tests",
                 connection="AzureWebJobsStorage")
 def get_cc_str(req: func.HttpRequest, client: bindings.ContainerClient) -> str:
-    return client.download_blob("test-blob-extension-str.txt", encoding='utf-8').readall()
+    return client.download_blob("test-blob-extension-str.txt",
+                                encoding='utf-8').readall()
 
 
 @app.function_name(name="get_ssd_str")

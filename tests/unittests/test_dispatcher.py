@@ -705,7 +705,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 self.assertEqual(
                     len([log for log in r.logs if log.message.startswith(
                         "Received WorkerMetadataRequest from "
-                        "_handle__worker_init_request"
+                        "worker_init_request"
                     )]),
                     1
                 )
@@ -942,3 +942,42 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
 
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+    @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'true'})
+    @patch.object(Dispatcher, 'index_functions')
+    def test_dispatcher_indexing_in_load_request_with_exception(
+            self,
+            mock_index_functions):
+        # This is the case when the second worker has an exception in indexing.
+        # In this case, we save the error in _function_metadata_exception in
+        # the init request and throw the error when load request is called.
+
+        mock_index_functions.side_effect = Exception("Mocked Exception")
+
+        init_request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(init_request))
+
+        self.assertIsNone(self.dispatcher._function_metadata_result)
+
+        load_request = protos.StreamingMessage(
+            function_load_request=protos.FunctionLoadRequest(
+                function_id="http_trigger",
+                metadata=protos.RpcFunctionMetadata(
+                    directory=str(FUNCTION_APP_DIRECTORY),
+                    properties={METADATA_PROPERTIES_WORKER_INDEXED: "True"}
+                )))
+
+        response = self.loop.run_until_complete(
+            self.dispatcher._handle__function_load_request(load_request))
+
+        self.assertIsNotNone(self.dispatcher._function_metadata_exception)
+        self.assertEqual(
+            response.function_load_response.result.exception.message,
+            "Exception: Mocked Exception")

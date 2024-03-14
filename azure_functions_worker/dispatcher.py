@@ -302,7 +302,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         bindings.load_binding_registry()
 
         if is_envvar_true(ENABLE_INIT_INDEXING):
-            self.get_function_metadata(
+            self.load_function_metadata(
                 worker_init_request.function_app_directory,
                 caller_info="worker_init_request")
 
@@ -322,7 +322,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             request_id=request.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
-    def get_function_metadata(self, function_app_directory, caller_info):
+    def load_function_metadata(self, function_app_directory, caller_info):
         """
         This method is called to index the functions in the function app
         directory and save the results in function_metadata_result or
@@ -347,14 +347,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                 if os.path.exists(function_path) else None
 
         except Exception as ex:
-            self._function_metadata_exception = self._serialize_exception(ex)
+            self._function_metadata_exception = ex
 
     async def _handle__functions_metadata_request(self, request):
         metadata_request = request.functions_metadata_request
         function_app_directory = metadata_request.function_app_directory
 
         if not is_envvar_true(ENABLE_INIT_INDEXING):
-            self.get_function_metadata(
+            self.load_function_metadata(
                 function_app_directory,
                 caller_info="functions_metadata_request")
 
@@ -364,7 +364,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 function_metadata_response=protos.FunctionMetadataResponse(
                     result=protos.StatusResult(
                         status=protos.StatusResult.Failure,
-                        exception=self._function_metadata_exception)))
+                        exception=self._serialize_exception(
+                            self._function_metadata_exception))))
         else:
             metadata_result = self._function_metadata_result
 
@@ -394,16 +395,22 @@ class Dispatcher(metaclass=DispatcherMeta):
             if not self._functions.get_function(function_id):
 
                 if function_metadata.properties.get(
-                        METADATA_PROPERTIES_WORKER_INDEXED, False) \
-                        and not is_envvar_true(ENABLE_INIT_INDEXING):
+                        METADATA_PROPERTIES_WORKER_INDEXED, False):
                     # This is for the second worker and above where the worker
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the
                     # function and update the workers registry
 
-                    self.get_function_metadata(
-                        function_app_directory,
-                        caller_info="functions_load_request")
+                    if not is_envvar_true(ENABLE_INIT_INDEXING):
+                        self.load_function_metadata(
+                            function_app_directory,
+                            caller_info="functions_load_request")
+
+                    # For the second worker, if there was an exception in
+                    # indexing, we raise it here
+                    if self._function_metadata_exception:
+                        raise Exception(self._function_metadata_exception)
+
                 else:
                     # legacy function
                     programming_model = "V1"
@@ -617,7 +624,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             bindings.load_binding_registry()
 
             if is_envvar_true(ENABLE_INIT_INDEXING):
-                self.get_function_metadata(
+                self.load_function_metadata(
                     directory,
                     caller_info=sys._getframe().f_code.co_name)
 

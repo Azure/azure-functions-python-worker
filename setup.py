@@ -84,7 +84,7 @@ else:
     )
 
 if sys.version_info.minor > 8:
-    INSTALL_REQUIRES.extend("azure-functions-extension-base")
+    INSTALL_REQUIRES.append("azure-functions-extension-base")
 
 EXTRA_REQUIRES = {
     "dev": [

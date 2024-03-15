@@ -72,8 +72,7 @@ PACKAGES = [
     "azure_functions_worker._thirdparty",
 ]
 
-INSTALL_REQUIRES = ["azure-functions==1.19.0b3", "python-dateutil~=2.8.2",
-                    "azure-functions-extension-base"]
+INSTALL_REQUIRES = ["azure-functions==1.19.0b3", "python-dateutil~=2.8.2"]
 
 if sys.version_info[:2] == (3, 7):
     INSTALL_REQUIRES.extend(
@@ -83,6 +82,9 @@ else:
     INSTALL_REQUIRES.extend(
         ("protobuf~=4.22.0", "grpcio-tools~=1.54.2", "grpcio~=1.54.2")
     )
+
+if sys.version_info.minor > 8:
+    INSTALL_REQUIRES.extend("azure-functions-extension-base")
 
 EXTRA_REQUIRES = {
     "dev": [

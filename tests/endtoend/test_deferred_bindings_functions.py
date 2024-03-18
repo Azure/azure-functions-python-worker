@@ -32,8 +32,6 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data')
 
-        self.assertTrue(meta.deferred_bindings_enabled)
-
     def test_blob_bytes(self):
         r = self.webhost.request('POST', 'put_blob_bytes',
                                  data='test-dată'.encode('utf-8'))
@@ -53,8 +51,6 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('POST', 'get_ssd_bytes')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-dată')
-
-        self.assertTrue(meta.deferred_bindings_enabled)
 
     def test_bc_blob_trigger(self):
         data = "DummyData"

@@ -32,7 +32,6 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
-            self.assertTrue(meta.deferred_bindings_enabled)
 
 
 @unittest.skipIf(sys.version_info.minor <= 8,

@@ -210,7 +210,8 @@ def get_deferred_binding(bind_name: str,
     binding = None
 
     # Checks if pytype is a supported sdk type
-    if SDK_BINDING_REGISTRY.check_supported_type(pytype):
+    if (SDK_BINDING_REGISTRY is not None
+            and SDK_BINDING_REGISTRY.check_supported_type(pytype)):
         # Set flag once
         global deferred_bindings_enabled
         if not deferred_bindings_enabled:
@@ -227,6 +228,9 @@ def deferred_bindings_decode(binding: str,
                              datum,
                              metadata):
     global SDK_CACHE
+
+    if SDK_CACHE is None:
+        SDK_CACHE = {}
     # Check is the object is already in the cache
     obj = SDK_CACHE.get((pb.name, pytype, datum.value.content), None)
 

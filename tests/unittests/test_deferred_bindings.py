@@ -11,6 +11,10 @@ DEFERRED_BINDINGS_DISABLED_DIR = testutils.UNIT_TESTS_FOLDER / \
     'deferred_bindings_functions' / \
     'deferred_bindings_disabled'
 
+DEFERRED_BINDINGS_ENABLED_DUAL_DIR = testutils.UNIT_TESTS_FOLDER / \
+    'deferred_bindings_functions' / \
+    'deferred_bindings_enabled_dual'
+
 
 class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
 
@@ -23,6 +27,18 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
             self.assertTrue(meta.deferred_bindings_enabled)
+
+
+class TestDeferredBindingsEnabledDual(testutils.AsyncTestCase):
+
+    async def test_deferred_bindings_dual_metadata(self):
+        async with testutils.start_mockhost(
+                script_root=DEFERRED_BINDINGS_ENABLED_DUAL_DIR) as host:
+            await host.init_worker()
+            r = await host.get_functions_metadata()
+            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
 
 
 class TestDeferredBindingsDisabled(testutils.AsyncTestCase):

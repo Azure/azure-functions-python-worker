@@ -32,27 +32,29 @@ def load_binding_registry() -> None:
     BINDING_REGISTRY = func.get_binding_registry()
 
     # The SDKs only support python 3.9+
-    if sys.version_info.minor > 8:
-        import azure.functions.extension.base as clients
-        global SDK_BINDING_REGISTRY
-        SDK_BINDING_REGISTRY = clients.get_binding_registry()
+    if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_VERSION:
+        # Check if cx has imported sdk bindings library
+        try:
+            clients = importlib.util.find_spec('azure.functions.extension.base')
+        except ModuleNotFoundError:
+            # This will throw a ModuleNotFoundError in env reload because
+            # azure.functions.extension isn't loaded in
+            clients = None
+
+        # This will be None if the library is not imported
+        # If it is not None, we want to set and use the registry
+        if clients is not None:
+            import azure.functions.extension.base as clients
+            global SDK_BINDING_REGISTRY
+            SDK_BINDING_REGISTRY = clients.get_binding_registry()
 
 
 def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
-    binding = None
+    binding = get_deferred_binding(bind_name=bind_name, pytype=pytype)
 
-    registry = BINDING_REGISTRY
-    client_registry = SDK_BINDING_REGISTRY
-    # checks first if registry exists (library is imported)
-    # then checks if pytype is a supported type (cx is using sdk type)
-    if (client_registry is not None
-            and client_registry.check_supported_type(pytype)):
-        global deferred_bindings_enabled
-        deferred_bindings_enabled = True
-        binding = client_registry.get(bind_name)
-    # either cx didn't import library or didn't define sdk type
-    elif registry is not None:
-        binding = registry.get(bind_name)
+    # Either cx didn't import library or didn't define sdk type
+    if binding is None and BINDING_REGISTRY is not None:
+        binding = BINDING_REGISTRY.get(bind_name)
     if binding is None:
         binding = generic.GenericBinding
 
@@ -117,21 +119,12 @@ def from_incoming_proto(
 
     try:
         # if the binding is an sdk type binding
-        if (SDK_BINDING_REGISTRY is not None
-                and SDK_BINDING_REGISTRY.check_supported_type(pytype)):
-            global SDK_CACHE
-            # Check is the object is already in the cache
-            obj = SDK_CACHE.get((pb.name, pytype, datum.value.content), None)
-
-            # if the object is in the cache, return it
-            if obj is not None:
-                return obj
-            # if the object is not in the cache, create and add it to the cache
-            else:
-                obj = binding.decode(datum, trigger_metadata=metadata,
-                                     pytype=pytype)
-                SDK_CACHE[(pb.name, pytype, datum.value.content)] = obj
-                return obj
+        if deferred_bindings_enabled:
+            return deferred_bindings_decode(binding=binding,
+                                            pb=pb,
+                                            pytype=pytype,
+                                            datum=datum,
+                                            metadata=metadata)
         return binding.decode(datum, trigger_metadata=metadata)
     except NotImplementedError:
         # Binding does not support the data.
@@ -225,41 +218,41 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
             data=rpc_val)
 
 
-# def get_deferred_binding(bind_name: str,
-#                          pytype: typing.Optional[type] = None) -> object:
-#     binding = None
-#
-#     # Checks if pytype is a supported sdk type
-#     if (SDK_BINDING_REGISTRY is not None
-#             and SDK_BINDING_REGISTRY.check_supported_type(pytype)):
-#         # Set flag once
-#         global deferred_bindings_enabled
-#         if not deferred_bindings_enabled:
-#             deferred_bindings_enabled = True
-#         binding = SDK_BINDING_REGISTRY.get(bind_name)
-#
-#     # This will return None if not a supported type
-#     return binding
-#
-#
-# def deferred_bindings_decode(binding: str,
-#                              pb: protos.ParameterBinding, *,
-#                              pytype: typing.Optional[type],
-#                              datum,
-#                              metadata):
-#     global SDK_CACHE
-#
-#     if SDK_CACHE is None:
-#         SDK_CACHE = {}
-#     # Check is the object is already in the cache
-#     obj = SDK_CACHE.get((pb.name, pytype, datum.value.content), None)
-#
-#     # if the object is in the cache, return it
-#     if obj is not None:
-#         return obj
-#     # if the object is not in the cache, create and add it to the cache
-#     else:
-#         obj = binding.decode(datum, trigger_metadata=metadata,
-#                              pytype=pytype)
-#         SDK_CACHE[(pb.name, pytype, datum.value.content)] = obj
-#         return obj
+def get_deferred_binding(bind_name: str,
+                         pytype: typing.Optional[type] = None) -> object:
+    binding = None
+
+    # Checks if pytype is a supported sdk type
+    if (SDK_BINDING_REGISTRY is not None
+            and SDK_BINDING_REGISTRY.check_supported_type(pytype)):
+        # Set flag once
+        global deferred_bindings_enabled
+        if not deferred_bindings_enabled:
+            deferred_bindings_enabled = True
+        binding = SDK_BINDING_REGISTRY.get(bind_name)
+
+    # This will return None if not a supported type
+    return binding
+
+
+def deferred_bindings_decode(binding: str,
+                             pb: protos.ParameterBinding, *,
+                             pytype: typing.Optional[type],
+                             datum,
+                             metadata):
+    global SDK_CACHE
+
+    if SDK_CACHE is None:
+        SDK_CACHE = {}
+    # Check is the object is already in the cache
+    obj = SDK_CACHE.get((pb.name, pytype, datum.value.content), None)
+
+    # if the object is in the cache, return it
+    if obj is not None:
+        return obj
+    # if the object is not in the cache, create and add it to the cache
+    else:
+        obj = binding.decode(datum, trigger_metadata=metadata,
+                             pytype=pytype)
+        SDK_CACHE[(pb.name, pytype, datum.value.content)] = obj
+        return obj

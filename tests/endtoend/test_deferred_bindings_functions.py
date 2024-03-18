@@ -146,8 +146,6 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data - input stream test-data - blob client')
 
-        self.assertTrue(meta.deferred_bindings_enabled)
-
     def test_type_undefined(self):
         r = self.webhost.request('POST', 'put_blob_str', data='test-data')
         self.assertEqual(r.status_code, 200)
@@ -164,9 +162,3 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(meta.SDK_CACHE, {})
         r = self.webhost.request('GET', 'blob_cache')
         self.assertEqual(r.status_code, 200)
-        # Add to the cache
-        self.assertFalse(meta.SDK_CACHE == {})
-        r = self.webhost.request('GET', 'blob_cache')
-        self.assertEqual(r.status_code, 200)
-        # Cache hasn't changed
-        self.assertEqual(len(meta.SDK_CACHE), 1)

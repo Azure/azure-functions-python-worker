@@ -3,6 +3,7 @@
 import time
 
 from tests.utils import testutils
+from azure_functions_worker.bindings import meta
 
 
 class TestSdkBlobFunctions(testutils.WebHostTestCase):
@@ -31,6 +32,8 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data')
 
+        self.assertTrue(meta.deferred_bindings_enabled)
+
     def test_blob_bytes(self):
         r = self.webhost.request('POST', 'put_blob_bytes',
                                  data='test-dată'.encode('utf-8'))
@@ -50,6 +53,8 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('POST', 'get_ssd_bytes')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-dată')
+
+        self.assertTrue(meta.deferred_bindings_enabled)
 
     def test_bc_blob_trigger(self):
         data = "DummyData"
@@ -145,6 +150,8 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data - input stream test-data - blob client')
 
+        self.assertTrue(meta.deferred_bindings_enabled)
+
     def test_type_undefined(self):
         r = self.webhost.request('POST', 'put_blob_str', data='test-data')
         self.assertEqual(r.status_code, 200)
@@ -153,3 +160,17 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'type_undefined')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data')
+
+        self.assertFalse(meta.deferred_bindings_enabled)
+
+    def test_caching(self):
+        # Cache is empty at the start
+        self.assertEqual(meta.SDK_CACHE, {})
+        r = self.webhost.request('GET', 'blob_cache')
+        self.assertEqual(r.status_code, 200)
+        # Add to the cache
+        self.assertFalse(meta.SDK_CACHE == {})
+        r = self.webhost.request('GET', 'blob_cache')
+        self.assertEqual(r.status_code, 200)
+        # Cache hasn't changed
+        self.assertEqual(len(meta.SDK_CACHE), 1)

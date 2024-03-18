@@ -30,7 +30,7 @@ DEFERRED_BINDINGS_CSPROJ_TEMPLATE = """\
         Version="3.2.0" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage"
         Version="5.2.2" />
-        <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage.Blobs"
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage.Blobs"
         Version="5.2.2" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
         Version="5.13.6" />
@@ -41,7 +41,7 @@ DEFERRED_BINDINGS_CSPROJ_TEMPLATE = """\
         Version="4.0.1" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask"
         Version="2.13.1" />
-        <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Tables"
+      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Tables"
         Version="1.2.1" />
    </ItemGroup>
 </Project>

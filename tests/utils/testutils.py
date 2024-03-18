@@ -827,7 +827,6 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         testconfig.read(WORKER_CONFIG)
 
     hostexe_args = []
-    os.environ['AzureWebJobsFeatureFlags'] = 'EnableWorkerIndexing'
 
     # If we want to use core-tools
     coretools_exe = os.environ.get('CORE_TOOLS_EXE_PATH')

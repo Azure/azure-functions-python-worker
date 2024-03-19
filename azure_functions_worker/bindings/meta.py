@@ -236,11 +236,11 @@ def get_deferred_binding(bind_name: str,
     return binding
 
 
-def deferred_bindings_decode(binding: str,
+def deferred_bindings_decode(binding: typing.Any,
                              pb: protos.ParameterBinding, *,
                              pytype: typing.Optional[type],
-                             datum,
-                             metadata):
+                             datum: typing.Any,
+                             metadata: typing.Any):
     global SDK_CACHE
 
     if SDK_CACHE is None:

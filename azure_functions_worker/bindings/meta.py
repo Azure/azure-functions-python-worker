@@ -5,6 +5,7 @@ import typing
 import importlib.util
 
 from .. import protos
+from ..constants import BASE_EXT_SUPPORTED_PY_VERSION
 
 from . import datumdef
 from . import generic
@@ -17,8 +18,6 @@ BINDING_REGISTRY = None
 SDK_BINDING_REGISTRY = None
 deferred_bindings_enabled = False
 SDK_CACHE = {}
-# TODO: change to 8
-BASE_EXT_SUPPORTED_PY_VERSION = 9
 
 
 def load_binding_registry() -> None:

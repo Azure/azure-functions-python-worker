@@ -7,7 +7,7 @@ from unittest import TestCase, skipIf
 
 from requests import Request
 
-from azure_functions_worker.constants import ENABLE_INIT_INDEXING, \
+from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING, \
     PYTHON_ENABLE_WORKER_EXTENSIONS, PYTHON_ISOLATE_WORKER_DEPENDENCIES, \
     PYTHON_ENABLE_DEBUG_LOGGING
 from tests.utils.testutils_lc import (
@@ -262,7 +262,7 @@ class TestLinuxConsumption(TestCase):
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url("Opencensus"),
                 PYTHON_ENABLE_WORKER_EXTENSIONS: "1",
-                ENABLE_INIT_INDEXING: "true"
+                PYTHON_ENABLE_INIT_INDEXING: "true"
             })
             req = Request('GET', f'{ctrl.url}/api/opencensus')
             resp = ctrl.send_request(req)

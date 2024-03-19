@@ -30,7 +30,7 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_ENABLE_DEBUG_LOGGING,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
-                        PYTHON_LANGUAGE_RUNTIME, ENABLE_INIT_INDEXING,
+                        PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
                         METADATA_PROPERTIES_WORKER_INDEXED)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
@@ -301,7 +301,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # dictionary which will be later used in the invocation request
         bindings.load_binding_registry()
 
-        if is_envvar_true(ENABLE_INIT_INDEXING):
+        if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
             self.load_function_metadata(
                 worker_init_request.function_app_directory,
                 caller_info="worker_init_request")
@@ -353,7 +353,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         metadata_request = request.functions_metadata_request
         function_app_directory = metadata_request.function_app_directory
 
-        if not is_envvar_true(ENABLE_INIT_INDEXING):
+        if not is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
             self.load_function_metadata(
                 function_app_directory,
                 caller_info="functions_metadata_request")
@@ -401,7 +401,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     # calling the metadata request. In this case we index the
                     # function and update the workers registry
 
-                    if not is_envvar_true(ENABLE_INIT_INDEXING):
+                    if not is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
                         self.load_function_metadata(
                             function_app_directory,
                             caller_info="functions_load_request")
@@ -623,7 +623,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             # reload_customer_libraries call clears the registry
             bindings.load_binding_registry()
 
-            if is_envvar_true(ENABLE_INIT_INDEXING):
+            if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
                 self.load_function_metadata(
                     directory,
                     caller_info=sys._getframe().f_code.co_name)

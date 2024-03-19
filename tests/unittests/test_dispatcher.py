@@ -13,7 +13,7 @@ from azure_functions_worker.constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                                               PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                                               PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                                               PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                                              ENABLE_INIT_INDEXING,
+                                              PYTHON_ENABLE_INIT_INDEXING,
                                               METADATA_PROPERTIES_WORKER_INDEXED)
 from azure_functions_worker.dispatcher import Dispatcher
 from azure_functions_worker.version import VERSION
@@ -691,7 +691,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
     async def test_dispatcher_indexing_in_init_request(self):
         """Test if azure functions is loaded during init
         """
-        env = {ENABLE_INIT_INDEXING: "1"}
+        env = {PYTHON_ENABLE_INIT_INDEXING: "1"}
         with patch.dict(os.environ, env):
             async with self._ctrl as host:
                 r = await host.init_worker()
@@ -772,7 +772,7 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
     def tearDown(self):
         self.loop.close()
 
-    @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'true'})
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     def test_worker_init_request_with_indexing_enabled(self):
 
         request = protos.StreamingMessage(
@@ -788,7 +788,7 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
-    @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'false'})
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
     def test_worker_init_request_with_indexing_disabled(self):
         request = protos.StreamingMessage(
             worker_init_request=protos.WorkerInitRequest(
@@ -803,7 +803,7 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
-    @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'true'})
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     @patch.object(Dispatcher, 'index_functions')
     def test_worker_init_request_with_indexing_exception(self,
                                                          mock_index_functions):
@@ -822,7 +822,7 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNone(self.dispatcher._function_metadata_result)
         self.assertIsNotNone(self.dispatcher._function_metadata_exception)
 
-    @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'true'})
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     def test_functions_metadata_request_with_init_indexing_enabled(self):
         init_request = protos.StreamingMessage(
             worker_init_request=protos.WorkerInitRequest(
@@ -850,7 +850,7 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
-    @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'false'})
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
     def test_functions_metadata_request_with_init_indexing_disabled(self):
         init_request = protos.StreamingMessage(
             worker_init_request=protos.WorkerInitRequest(
@@ -880,7 +880,7 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
-    @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'true'})
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     @patch.object(Dispatcher, 'index_functions')
     def test_functions_metadata_request_with_indexing_exception(
             self,
@@ -915,7 +915,7 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
             metadata_response.function_metadata_response.result.status,
             protos.StatusResult.Failure)
 
-    @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'false'})
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
     def test_dispatcher_indexing_in_load_request(self):
         init_request = protos.StreamingMessage(
             worker_init_request=protos.WorkerInitRequest(
@@ -943,7 +943,7 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
-    @patch.dict(os.environ, {ENABLE_INIT_INDEXING: 'true'})
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     @patch.object(Dispatcher, 'index_functions')
     def test_dispatcher_indexing_in_load_request_with_exception(
             self,

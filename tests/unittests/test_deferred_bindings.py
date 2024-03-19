@@ -78,26 +78,25 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
 @unittest.skipIf(sys.version_info.minor <= 8,
                  "Run the tests only for Python 3.9+. The"
                  "SDK only supports Python 3.9+")
-class TestDeferredBindingsHelpers(unittest.TestCase):
+class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
 
-    def test_get_deferred_binding(self):
-        bind_name = 'client'
-        pytype = BlobClient(data={'version': '1.0',
-                                  'source': 'AzureStorageBlobs',
-                                  'content_type': 'application/json',
-                                  'content': "{\"Connection\":\"AzureWebJobsStorage\","
-                                             "\"ContainerName\":"
-                                             "\"python-worker-tests\","
-                                             "\"BlobName\":"
-                                             "\"test-blobclient-trigger.txt\"}"})
-        binding = meta.get_deferred_binding(bind_name=bind_name, pytype=pytype)
-        self.assertIsInstance(binding, BlobClient)
+    async def test_get_deferred_binding(self):
+        async with testutils.start_mockhost(
+                script_root=DEFERRED_BINDINGS_DISABLED_DIR) as host:
+            await host.init_worker()
+            bind_name = 'blob'
+            pytype = BlobClient
+            binding = meta.get_deferred_binding(bind_name=bind_name, pytype=pytype)
+            self.assertEquals(binding, BlobClientConverter)
 
-    def test_get_non_deferred_binding(self):
-        bind_name = 'blob'
-        pytype = str
-        binding = meta.get_deferred_binding(bind_name=bind_name, pytype=pytype)
-        self.assertIsInstance(binding, None)
+    async def test_get_non_deferred_binding(self):
+        async with testutils.start_mockhost(
+                script_root=DEFERRED_BINDINGS_DISABLED_DIR) as host:
+            await host.init_worker()
+            bind_name = 'blob'
+            pytype = str
+            binding = meta.get_deferred_binding(bind_name=bind_name, pytype=pytype)
+            self.assertEquals(binding, None)
 
     def test_deferred_bindings_decode(self):
         binding = BlobClientConverter

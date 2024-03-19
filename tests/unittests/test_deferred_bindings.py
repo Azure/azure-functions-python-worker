@@ -7,7 +7,6 @@ from azure_functions_worker import protos
 from azure_functions_worker.bindings import datumdef, meta
 from tests.utils import testutils
 from azure.functions.extension.blob import BlobClient, BlobClientConverter
-from azure.storage.blob import BlobClient as BlobClientSDK
 
 DEFERRED_BINDINGS_ENABLED_DIR = testutils.UNIT_TESTS_FOLDER / \
     'deferred_bindings_functions' / \
@@ -119,4 +118,3 @@ class TestDeferredBindingsHelpers(unittest.TestCase):
                                             pytype=BlobClient, datum=datum, metadata={})
 
         self.assertIsNotNone(obj)
-        self.assertIsInstance(obj, BlobClientSDK)

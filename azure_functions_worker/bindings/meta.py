@@ -119,7 +119,8 @@ def from_incoming_proto(
 
     try:
         # if the binding is an sdk type binding
-        if deferred_bindings_enabled:
+        if (SDK_BINDING_REGISTRY is not None
+                and SDK_BINDING_REGISTRY.check_supported_type(pytype)):
             return deferred_bindings_decode(binding=binding,
                                             pb=pb,
                                             pytype=pytype,

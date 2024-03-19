@@ -31,7 +31,7 @@ def load_binding_registry() -> None:
     BINDING_REGISTRY = func.get_binding_registry()
 
     # The SDKs only support python 3.9+
-    if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_VERSION:
+    if sys.version_info.minor > BASE_EXT_SUPPORTED_PY_VERSION:
         # Check if cx has imported sdk bindings library
         try:
             clients = importlib.util.find_spec('azure.functions.extension.base')

@@ -323,7 +323,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             bindings.load_binding_registry()
 
             if is_envvar_true(ENABLE_INIT_INDEXING):
-                self.get_function_metadata(directory,
+                self.load_function_metadata(directory,
                                         caller_info="worker_init_request")
 
                 if self._has_http_func:
@@ -676,10 +676,17 @@ class Dispatcher(metaclass=DispatcherMeta):
             # reload_customer_libraries call clears the registry
             bindings.load_binding_registry()
 
+            capabilities = {}
             if is_envvar_true(ENABLE_INIT_INDEXING):
                 self.load_function_metadata(
                     directory,
                     caller_info=sys._getframe().f_code.co_name)
+                
+                if self._has_http_func:
+                    from azure.functions.extension.base import http_v2_enabled 
+
+                    if http_v2_enabled():
+                        capabilities[constants.HTTP_URI] = await self._initialize_http_server()
 
             # Change function app directory
             if getattr(func_env_reload_request,
@@ -688,7 +695,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     func_env_reload_request.function_app_directory)
 
             success_response = protos.FunctionEnvironmentReloadResponse(
-                capabilities={},
+                capabilities=capabilities,
                 worker_metadata=self.get_worker_metadata(),
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success))

@@ -10,6 +10,7 @@ RPC_HTTP_TRIGGER_METADATA_REMOVED = "RpcHttpTriggerMetadataRemoved"
 WORKER_STATUS = "WorkerStatus"
 SHARED_MEMORY_DATA_TRANSFER = "SharedMemoryDataTransfer"
 FUNCTION_DATA_CACHE = "FunctionDataCache"
+HTTP_URI = "HttpUri"
 
 # Platform Environment Variables
 AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
@@ -60,3 +61,15 @@ CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site-packages"
 ENABLE_INIT_INDEXING = "ENABLE_INIT_INDEXING"
 
 METADATA_PROPERTIES_WORKER_INDEXED = "worker_indexed"
+
+# HostNames
+LOCAL_HOST = "localhost"
+
+# Header names
+X_MS_INVOCATION_ID = "x-ms-invocation-id"
+
+# Trigger Names
+HTTP_TRIGGER = "httpTrigger"
+
+# Output Names
+HTTP = "http"

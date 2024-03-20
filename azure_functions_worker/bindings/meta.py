@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 import sys
 import typing
-import importlib.util
 
 from .. import protos
 from ..constants import BASE_EXT_SUPPORTED_PY_MINOR_VERSION

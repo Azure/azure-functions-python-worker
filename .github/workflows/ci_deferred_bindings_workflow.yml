@@ -39,10 +39,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "6.x"
-      - name: Set up Dotnet 8.0.x
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "8.0.x"
       - name: Install dependencies and the worker
         run: |
           retry() {

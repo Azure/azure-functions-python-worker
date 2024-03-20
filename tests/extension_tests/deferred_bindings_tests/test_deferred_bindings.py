@@ -1,7 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import sys
-import unittest
 
 from azure_functions_worker import protos
 from azure_functions_worker.bindings import datumdef, meta

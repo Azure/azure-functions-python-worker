@@ -68,9 +68,6 @@ jobs:
           retry 5 python setup.py webhost --branch-name=dev
           retry 5 python setup.py extension --test-type=deferred-bindings
           mkdir logs
-      - name: Grant execute permission
-        run: |
-          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/extension_tests/deferred_bindings_tests
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
         env:

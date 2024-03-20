@@ -56,5 +56,5 @@ RETRY_POLICY = "retry_policy"
 # Paths
 CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site-packages"
 
-# Base extension supported Python version
-BASE_EXT_SUPPORTED_PY_VERSION = 8
+# Base extension supported Python minor version
+BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8

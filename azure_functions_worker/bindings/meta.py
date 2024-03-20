@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import sys
 import typing
+import importlib.util
 
 from .. import protos
 from ..constants import BASE_EXT_SUPPORTED_PY_MINOR_VERSION
@@ -31,26 +32,30 @@ def load_binding_registry() -> None:
 
     # The SDKs only support python 3.8+
     if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
-        # Import the base extension
+        # Check if cx has imported sdk bindings library
         try:
+            clients = importlib.util.find_spec('azure.functions.extension.base')
+        except ModuleNotFoundError:
+            # This will throw a ModuleNotFoundError in env reload because
+            # azure.functions.extension isn't loaded in
+            clients = None
+
+        # This will be None if the library is not imported
+        # If it is not None, we want to set and use the registry
+        if clients is not None:
             import azure.functions.extension.base as clients
             global SDK_BINDING_REGISTRY
             SDK_BINDING_REGISTRY = clients.get_binding_registry()
-        except ImportError:
-            # This will throw a ModuleNotFoundError in env reload because
-            # azure.functions.extension isn't loaded in
-            pass
 
 
 def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
     binding = get_deferred_binding(bind_name=bind_name, pytype=pytype)
 
     # Either cx didn't import library or didn't define sdk type
+    if binding is None and BINDING_REGISTRY is not None:
+        binding = BINDING_REGISTRY.get(bind_name)
     if binding is None:
-        if BINDING_REGISTRY is not None:
-            binding = BINDING_REGISTRY.get(bind_name)
-        else:
-            binding = generic.GenericBinding
+        binding = generic.GenericBinding
 
     return binding
 

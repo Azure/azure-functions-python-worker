@@ -5,7 +5,7 @@ import typing
 import importlib.util
 
 from .. import protos
-from ..constants import BASE_EXT_SUPPORTED_PY_VERSION
+from ..constants import BASE_EXT_SUPPORTED_PY_MINOR_VERSION
 
 from . import datumdef
 from . import generic
@@ -31,7 +31,7 @@ def load_binding_registry() -> None:
     BINDING_REGISTRY = func.get_binding_registry()
 
     # The SDKs only support python 3.8+
-    if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_VERSION:
+    if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
         # Check if cx has imported sdk bindings library
         try:
             clients = importlib.util.find_spec('azure.functions.extension.base')

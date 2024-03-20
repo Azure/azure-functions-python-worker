@@ -155,7 +155,7 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data')
 
-        self.assertFalse(meta.deferred_bindings_enabled)
+        self.assertFalse(meta.DEFERRED_BINDINGS_ENABLED)
 
     def test_caching(self):
         # Cache is empty at the start

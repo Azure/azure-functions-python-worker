@@ -247,10 +247,10 @@ def index_function_app(function_path: str):
 def get_fx_raw_bindings(indexed_function, function_info):
     # Check if deferred bindings is enabled
     if (bindings.meta is not None
-            and bindings.meta.deferred_bindings_enabled
+            and bindings.meta.DEFERRED_BINDINGS_ENABLED
             and bindings.meta.SDK_BINDING_REGISTRY is not None):
         # Reset the flag
-        bindings.meta.deferred_bindings_enabled = False
+        bindings.meta.DEFERRED_BINDINGS_ENABLED = False
         return bindings.meta.SDK_BINDING_REGISTRY.get_raw_bindings(
             indexed_function, function_info.input_types)
 

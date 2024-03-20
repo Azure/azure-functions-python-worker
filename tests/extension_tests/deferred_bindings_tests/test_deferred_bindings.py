@@ -8,14 +8,17 @@ from azure_functions_worker.bindings import datumdef, meta
 from tests.utils import testutils
 from azure.functions.extension.blob import BlobClient, BlobClientConverter
 
-DEFERRED_BINDINGS_ENABLED_DIR = testutils.UNIT_TESTS_FOLDER / \
+DEFERRED_BINDINGS_ENABLED_DIR = testutils.EXTENSION_TESTS_FOLDER / \
+    'deferred_bindings_tests' / \
     'deferred_bindings_functions' / \
     'deferred_bindings_enabled'
-DEFERRED_BINDINGS_DISABLED_DIR = testutils.UNIT_TESTS_FOLDER / \
+DEFERRED_BINDINGS_DISABLED_DIR = testutils.EXTENSION_TESTS_FOLDER / \
+    'deferred_bindings_tests' / \
     'deferred_bindings_functions' / \
     'deferred_bindings_disabled'
 
-DEFERRED_BINDINGS_ENABLED_DUAL_DIR = testutils.UNIT_TESTS_FOLDER / \
+DEFERRED_BINDINGS_ENABLED_DUAL_DIR = testutils.EXTENSION_TESTS_FOLDER / \
+    'deferred_bindings_tests' / \
     'deferred_bindings_functions' / \
     'deferred_bindings_enabled_dual'
 
@@ -29,9 +32,6 @@ class MockMBD:
         self.content = content
 
 
-@unittest.skipIf(sys.version_info.minor <= 8,
-                 "Run the tests only for Python 3.9+. The"
-                 "SDK only supports Python 3.9+")
 class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
 
     async def test_deferred_bindings_metadata(self):
@@ -44,9 +44,6 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
 
 
-@unittest.skipIf(sys.version_info.minor <= 8,
-                 "Run the tests only for Python 3.9+. The"
-                 "SDK only supports Python 3.9+")
 class TestDeferredBindingsEnabledDual(testutils.AsyncTestCase):
 
     async def test_deferred_bindings_dual_metadata(self):
@@ -59,9 +56,6 @@ class TestDeferredBindingsEnabledDual(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
 
 
-@unittest.skipIf(sys.version_info.minor <= 8,
-                 "Run the tests only for Python 3.9+. The"
-                 "SDK only supports Python 3.9+")
 class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
 
     async def test_non_deferred_bindings_metadata(self):
@@ -75,9 +69,6 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
             self.assertFalse(meta.deferred_bindings_enabled)
 
 
-@unittest.skipIf(sys.version_info.minor <= 8,
-                 "Run the tests only for Python 3.9+. The"
-                 "SDK only supports Python 3.9+")
 class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
 
     async def test_get_deferred_binding(self):

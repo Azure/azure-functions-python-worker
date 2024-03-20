@@ -10,8 +10,8 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'deferred_bindings_functions' / \
-            "blob_functions"
+        return testutils.EXTENSION_TESTS_FOLDER / 'deferred_bindings_tests' / \
+            'deferred_bindings_blob_functions'
 
     def test_blob_str(self):
         r = self.webhost.request('POST', 'put_blob_str', data='test-data')

@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies and run end to end tests with single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: CI E2E Deferred Bindings tests
+name: CI Deferred Bindings tests
 
 on:
   workflow_dispatch:
@@ -11,9 +11,9 @@ on:
         required: false
         default: "false"
   push:
-    branches: [dev, master, main, release/*]
+    branches: [dev, main, release/*]
   pull_request:
-    branches: [dev, master, main, release/*]
+    branches: [dev, main, release/*]
   schedule:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string
@@ -21,7 +21,7 @@ on:
 
 jobs:
   build:
-    name: "Python E2E Deferred Bindings CI Run"
+    name: "Python Deferred Bindings CI Run"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

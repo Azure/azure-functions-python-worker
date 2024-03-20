@@ -52,10 +52,11 @@ def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
     binding = get_deferred_binding(bind_name=bind_name, pytype=pytype)
 
     # Either cx didn't import library or didn't define sdk type
-    if binding is None and BINDING_REGISTRY is not None:
-        binding = BINDING_REGISTRY.get(bind_name)
     if binding is None:
-        binding = generic.GenericBinding
+        if BINDING_REGISTRY is not None:
+            binding = BINDING_REGISTRY.get(bind_name)
+        else:
+            binding = generic.GenericBinding
 
     return binding
 

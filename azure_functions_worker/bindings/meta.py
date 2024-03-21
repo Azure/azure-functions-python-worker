@@ -14,9 +14,9 @@ PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
 PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 BINDING_REGISTRY = None
-SDK_BINDING_REGISTRY = None
+DEFERRED_BINDINGS_REGISTRY = None
 DEFERRED_BINDINGS_ENABLED = False
-SDK_CACHE = {}
+DEFERRED_BINDINGS_CACHE = {}
 
 
 def load_binding_registry() -> None:
@@ -29,29 +29,34 @@ def load_binding_registry() -> None:
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()
 
-    # The SDKs only support python 3.8+
+    # The base extension supports python 3.8+
     if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
         # Import the base extension
         try:
             import azure.functions.extension.base as clients
-            global SDK_BINDING_REGISTRY
-            SDK_BINDING_REGISTRY = clients.get_binding_registry()
+            global DEFERRED_BINDINGS_REGISTRY
+            DEFERRED_BINDINGS_REGISTRY = clients.get_binding_registry()
         except ImportError:
-            # This will throw a ModuleNotFoundError in env reload because
-            # azure.functions.extension isn't loaded in
+            # This means that the customer hasn't imported the library.
+            # This isn't an error.
             pass
 
 
 def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
-    binding = get_deferred_binding(bind_name=bind_name, pytype=pytype)
-
-    # Either cx didn't import library or didn't define sdk type
-    if binding is None and BINDING_REGISTRY is not None:
-        binding = BINDING_REGISTRY.get(bind_name)
-    if binding is None:
-        binding = generic.GenericBinding
-
-    return binding
+    try:
+        # Check if binding is deferred binding
+        binding = get_deferred_binding(bind_name=bind_name, pytype=pytype)
+        # Binding is not deferred binding type
+        if binding is None:
+            binding = BINDING_REGISTRY.get(bind_name)
+        # Binding is generic
+        if binding is None:
+            binding = generic.GenericBinding
+        return binding
+    except TypeError:
+        # If BINDING_REGISTRY is None, azure-functions hasn't been loaded
+        # in correctly.
+        raise TypeError("BINDING_REGISTRY is None.")
 
 
 def is_trigger_binding(bind_name: str) -> bool:
@@ -112,8 +117,8 @@ def from_incoming_proto(
 
     try:
         # if the binding is an sdk type binding
-        if (SDK_BINDING_REGISTRY is not None
-                and SDK_BINDING_REGISTRY.check_supported_type(pytype)):
+        if (DEFERRED_BINDINGS_REGISTRY is not None
+                and DEFERRED_BINDINGS_REGISTRY.check_supported_type(pytype)):
             return deferred_bindings_decode(binding=binding,
                                             pb=pb,
                                             pytype=pytype,
@@ -214,19 +219,26 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
 
 def get_deferred_binding(bind_name: str,
                          pytype: typing.Optional[type] = None) -> object:
-    binding = None
+    try:
+        binding = None
 
-    # Checks if pytype is a supported sdk type
-    if (SDK_BINDING_REGISTRY is not None
-            and SDK_BINDING_REGISTRY.check_supported_type(pytype)):
-        # Set flag once
+        # Checks if pytype is a supported sdk type
+        if DEFERRED_BINDINGS_REGISTRY.check_supported_type(pytype):
+            # Set flag once
+            global DEFERRED_BINDINGS_ENABLED
+            if not DEFERRED_BINDINGS_ENABLED:
+                DEFERRED_BINDINGS_ENABLED = True
+            # Returns deferred binding converter
+            binding = DEFERRED_BINDINGS_REGISTRY.get(bind_name)
+
+        # This will return None if not a supported type
+        return binding
+    except TypeError:
+        # This will catch if the DEFERRED_BINDINGS_REGISTRY is None
+        # It will be None if the library isn't imported
+        # Ensure that the flag is set to False in this case
         global DEFERRED_BINDINGS_ENABLED
-        if not DEFERRED_BINDINGS_ENABLED:
-            DEFERRED_BINDINGS_ENABLED = True
-        binding = SDK_BINDING_REGISTRY.get(bind_name)
-
-    # This will return None if not a supported type
-    return binding
+        DEFERRED_BINDINGS_ENABLED = False
 
 
 def deferred_bindings_decode(binding: typing.Any,
@@ -234,17 +246,23 @@ def deferred_bindings_decode(binding: typing.Any,
                              pytype: typing.Optional[type],
                              datum: typing.Any,
                              metadata: typing.Any):
-    global SDK_CACHE
-    # Check is the object is already in the cache
-    # If dict is empty or key doesn't exist, obj is None
-    obj = SDK_CACHE.get((pb.name, pytype, datum.value.content), None)
+    # This cache holds deferred binding types (ie. BlobClient, ContainerClient) that
+    # Have already been created, so that the worker can reuse the previously created
+    # Type without creating a new one. It allows these types to be singleton.
+    global DEFERRED_BINDINGS_CACHE
 
-    # If the object is in the cache, return it
-    if obj is not None:
-        return obj
-    # If the object is not in the cache, create and add it to the cache
+    # Check if the type is already in the cache
+    # If dict is empty or key doesn't exist, deferred_binding_type is None
+    deferred_binding_type = DEFERRED_BINDINGS_CACHE.get((pb.name, pytype,
+                                                         datum.value.content), None)
+
+    # If the type is in the cache, return it
+    if deferred_binding_type is not None:
+        return deferred_binding_type
+    # If the type is not in the cache, create the specified type and add it to the cache
     else:
-        obj = binding.decode(datum, trigger_metadata=metadata,
-                             pytype=pytype)
-        SDK_CACHE[(pb.name, pytype, datum.value.content)] = obj
-        return obj
+        deferred_binding_type = binding.decode(datum, trigger_metadata=metadata,
+                                               pytype=pytype)
+        DEFERRED_BINDINGS_CACHE[(pb.name, pytype, datum.value.content)]\
+            = deferred_binding_type
+        return deferred_binding_type

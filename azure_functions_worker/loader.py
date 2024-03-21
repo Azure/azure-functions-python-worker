@@ -245,13 +245,14 @@ def index_function_app(function_path: str):
 
 
 def get_fx_raw_bindings(indexed_function, function_info):
-    # Check if deferred bindings is enabled
-    if (bindings.meta is not None
-            and bindings.meta.DEFERRED_BINDINGS_ENABLED
-            and bindings.meta.SDK_BINDING_REGISTRY is not None):
+    # If the flag is True, we know that:
+    # 1. Library is imported
+    # 2. At least one binding is a defined deferred binding type
+    # 3. DEFERRED_BINDINGS_REGISTRY is not None
+    if bindings.meta.DEFERRED_BINDINGS_ENABLED:
         # Reset the flag
         bindings.meta.DEFERRED_BINDINGS_ENABLED = False
-        return bindings.meta.SDK_BINDING_REGISTRY.get_raw_bindings(
+        return bindings.meta.DEFERRED_BINDINGS_REGISTRY.get_raw_bindings(
             indexed_function, function_info.input_types)
 
     else:

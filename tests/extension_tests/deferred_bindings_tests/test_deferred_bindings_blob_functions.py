@@ -159,6 +159,6 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
 
     def test_caching(self):
         # Cache is empty at the start
-        self.assertEqual(meta.SDK_CACHE, {})
+        self.assertEqual(meta.DEFERRED_BINDINGS_CACHE, {})
         r = self.webhost.request('GET', 'blob_cache')
         self.assertEqual(r.status_code, 200)

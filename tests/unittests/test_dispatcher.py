@@ -14,7 +14,8 @@ from azure_functions_worker.constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                                               PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
                                               PYTHON_THREADPOOL_THREAD_COUNT_MIN,
                                               PYTHON_ENABLE_INIT_INDEXING,
-                                              METADATA_PROPERTIES_WORKER_INDEXED)
+                                              METADATA_PROPERTIES_WORKER_INDEXED,
+                                              PYTHON_ENABLE_DEBUG_LOGGING)
 from azure_functions_worker.dispatcher import Dispatcher
 from azure_functions_worker.version import VERSION
 from tests.utils import testutils
@@ -691,7 +692,8 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
     async def test_dispatcher_indexing_in_init_request(self):
         """Test if azure functions is loaded during init
         """
-        env = {PYTHON_ENABLE_INIT_INDEXING: "1"}
+        env = {PYTHON_ENABLE_INIT_INDEXING: "1",
+               PYTHON_ENABLE_DEBUG_LOGGING: "1"}
         with patch.dict(os.environ, env):
             async with self._ctrl as host:
                 r = await host.init_worker()
@@ -704,7 +706,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
 
                 self.assertEqual(
                     len([log for log in r.logs if log.message.startswith(
-                        "Received WorkerMetadataRequest from "
+                        "Received load metadata request from "
                         "worker_init_request"
                     )]),
                     1

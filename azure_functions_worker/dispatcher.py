@@ -302,9 +302,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         bindings.load_binding_registry()
 
         if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
-            self.load_function_metadata(
-                worker_init_request.function_app_directory,
-                caller_info="worker_init_request")
+            try:
+                self.load_function_metadata(
+                    worker_init_request.function_app_directory,
+                    caller_info="worker_init_request")
+            except Exception as ex:
+                self._function_metadata_exception = ex
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -332,31 +335,41 @@ class Dispatcher(metaclass=DispatcherMeta):
             setting=PYTHON_SCRIPT_FILE_NAME,
             default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
 
-        logger.info(
-            'Received load metadata request from  from %s, request ID %s, '
+        logger.debug(
+            'Received load metadata request from %s, request ID %s, '
             'script_file_name: %s',
             caller_info, self.request_id, script_file_name)
 
-        try:
-            validate_script_file_name(script_file_name)
-            function_path = os.path.join(function_app_directory,
-                                         script_file_name)
+        validate_script_file_name(script_file_name)
+        function_path = os.path.join(function_app_directory,
+                                     script_file_name)
 
-            self._function_metadata_result = (
-                self.index_functions(function_path)) \
-                if os.path.exists(function_path) else None
-
-        except Exception as ex:
-            self._function_metadata_exception = ex
+        self._function_metadata_result = (
+            self.index_functions(function_path)) \
+            if os.path.exists(function_path) else None
 
     async def _handle__functions_metadata_request(self, request):
         metadata_request = request.functions_metadata_request
         function_app_directory = metadata_request.function_app_directory
 
+        script_file_name = get_app_setting(
+            setting=PYTHON_SCRIPT_FILE_NAME,
+            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
+        function_path = os.path.join(function_app_directory,
+                                     script_file_name)
+
+        logger.info(
+            'Received WorkerMetadataRequest, request ID %s, '
+            'function_path: %s',
+            self.request_id, function_path)
+
         if not is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
-            self.load_function_metadata(
-                function_app_directory,
-                caller_info="functions_metadata_request")
+            try:
+                self.load_function_metadata(
+                    function_app_directory,
+                    caller_info="functions_metadata_request")
+            except Exception as ex:
+                self._function_metadata_exception = ex
 
         if self._function_metadata_exception:
             return protos.StreamingMessage(
@@ -404,9 +417,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     # function and update the workers registry
 
                     if not is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
-                        self.load_function_metadata(
-                            function_app_directory,
-                            caller_info="functions_load_request")
+                        try:
+                            self.load_function_metadata(
+                                function_app_directory,
+                                caller_info="functions_load_request")
+                        except Exception as ex:
+                            self._function_metadata_exception = ex
 
                     # For the second worker, if there was an exception in
                     # indexing, we raise it here
@@ -626,9 +642,12 @@ class Dispatcher(metaclass=DispatcherMeta):
             bindings.load_binding_registry()
 
             if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
-                self.load_function_metadata(
-                    directory,
-                    caller_info="environment_reload_request")
+                try:
+                    self.load_function_metadata(
+                        directory,
+                        caller_info="environment_reload_request")
+                except Exception as ex:
+                    self._function_metadata_exception = ex
 
             # Change function app directory
             if getattr(func_env_reload_request,

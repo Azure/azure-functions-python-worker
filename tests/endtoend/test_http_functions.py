@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import requests
 
+from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 from tests.utils import testutils
 
 REQUEST_TIMEOUT_SEC = 5
@@ -209,13 +210,13 @@ class TestHttpFunctionsWithInitIndexing(TestHttpFunctions):
 
     @classmethod
     def setUpClass(cls):
-        os.environ["INIT_INDEXING"] = "1"
+        os.environ[PYTHON_ENABLE_INIT_INDEXING] = "1"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
-        os.environ.pop('INIT_INDEXING')
+        os.environ.pop(PYTHON_ENABLE_INIT_INDEXING)
         super().tearDownClass()
 
 
@@ -223,13 +224,13 @@ class TestHttpFunctionsV2WithInitIndexing(TestHttpFunctionsStein):
 
     @classmethod
     def setUpClass(cls):
-        os.environ["INIT_INDEXING"] = "1"
+        os.environ[PYTHON_ENABLE_INIT_INDEXING] = "1"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
-        os.environ.pop('INIT_INDEXING')
+        os.environ.pop(PYTHON_ENABLE_INIT_INDEXING)
         super().tearDownClass()
 
 

@@ -333,7 +333,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
 
         logger.info(
-            'Received WorkerMetadataRequest from %s, request ID %s, '
+            'Received load metadata request from  from %s, request ID %s, '
             'script_file_name: %s',
             caller_info, self.request_id, script_file_name)
 
@@ -360,7 +360,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         if self._function_metadata_exception:
             return protos.StreamingMessage(
-                request_id=self.request_id,
+                request_id=request.request_id,
                 function_metadata_response=protos.FunctionMetadataResponse(
                     result=protos.StatusResult(
                         status=protos.StatusResult.Failure,
@@ -384,15 +384,17 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_metadata = func_request.metadata
         function_name = function_metadata.name
         function_app_directory = function_metadata.directory
+        function_already_indexed = self._functions.get_function(function_id)
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
-            'function_name: %s,',
-            self.request_id, function_id, function_name)
+            'function_name: %s, function_already_indexed: %s',
+            self.request_id, function_id, function_name,
+            function_already_indexed)
 
         programming_model = "V2"
         try:
-            if not self._functions.get_function(function_id):
+            if not function_already_indexed:
 
                 if function_metadata.properties.get(
                         METADATA_PROPERTIES_WORKER_INDEXED, False):
@@ -626,7 +628,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
                 self.load_function_metadata(
                     directory,
-                    caller_info=sys._getframe().f_code.co_name)
+                    caller_info="environment_reload_request")
 
             # Change function app directory
             if getattr(func_env_reload_request,

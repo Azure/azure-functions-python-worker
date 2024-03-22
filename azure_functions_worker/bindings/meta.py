@@ -53,10 +53,10 @@ def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
         if binding is None:
             binding = generic.GenericBinding
         return binding
-    except TypeError:
+    except AttributeError:
         # If BINDING_REGISTRY is None, azure-functions hasn't been loaded
         # in correctly.
-        raise TypeError("BINDING_REGISTRY is None.")
+        raise AttributeError("BINDING_REGISTRY is None.")
 
 
 def is_trigger_binding(bind_name: str) -> bool:
@@ -233,7 +233,7 @@ def get_deferred_binding(bind_name: str,
 
         # This will return None if not a supported type
         return binding
-    except TypeError:
+    except AttributeError:
         # This will catch if the DEFERRED_BINDINGS_REGISTRY is None
         # It will be None if the library isn't imported
         # Ensure that the flag is set to False in this case
@@ -245,20 +245,22 @@ def deferred_bindings_decode(binding: typing.Any,
                              pytype: typing.Optional[type],
                              datum: typing.Any,
                              metadata: typing.Any):
-    # This cache holds deferred binding types (ie. BlobClient, ContainerClient) that
-    # Have already been created, so that the worker can reuse the previously created
-    # Type without creating a new one. It allows these types to be singleton.
+    # This cache holds deferred binding types (ie. BlobClient, ContainerClient)
+    # That have already been created, so that the worker can reuse the
+    # Previously created type without creating a new one. It allows these
+    # Types to be singleton.
     global DEFERRED_BINDINGS_CACHE
 
     # Check if the type is already in the cache
     # If dict is empty or key doesn't exist, deferred_binding_type is None
     deferred_binding_type = DEFERRED_BINDINGS_CACHE.get((pb.name, pytype,
-                                                         datum.value.content), None)
+                                                         datum.value.content),
+                                                        None)
 
     # If the type is in the cache, return it
     if deferred_binding_type is not None:
         return deferred_binding_type
-    # If the type is not in the cache, create the specified type and add it to the cache
+    # Otherwise, create the specified type and add it to the cache
     else:
         deferred_binding_type = binding.decode(datum, trigger_metadata=metadata,
                                                pytype=pytype)

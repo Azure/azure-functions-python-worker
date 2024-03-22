@@ -234,7 +234,7 @@ def get_deferred_binding(bind_name: str,
         # This will return None if not a supported type
         return binding
     except AttributeError:
-        # This will catch if the DEFERRED_BINDINGS_REGISTRY is None
+        # This will catch if DEFERRED_BINDINGS_REGISTRY is None
         # It will be None if the library isn't imported
         # Ensure that the flag is set to False in this case
         DEFERRED_BINDINGS_ENABLED = False

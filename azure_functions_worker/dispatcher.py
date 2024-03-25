@@ -30,7 +30,8 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_ENABLE_DEBUG_LOGGING,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
-                        PYTHON_LANGUAGE_RUNTIME)
+                        PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
+                        METADATA_PROPERTIES_WORKER_INDEXED)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
@@ -72,8 +73,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._function_data_cache_enabled = False
         self._functions = functions.Registry()
         self._shmem_mgr = SharedMemoryManager()
-
         self._old_task_factory = None
+
+        # Used to store metadata returns
+        self._function_metadata_result = None
+        self._function_metadata_exception = None
 
         # We allow the customer to change synchronous thread pool max worker
         # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
@@ -297,6 +301,14 @@ class Dispatcher(metaclass=DispatcherMeta):
         # dictionary which will be later used in the invocation request
         bindings.load_binding_registry()
 
+        if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
+            try:
+                self.load_function_metadata(
+                    worker_init_request.function_app_directory,
+                    caller_info="worker_init_request")
+            except Exception as ex:
+                self._function_metadata_exception = ex
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
@@ -313,82 +325,114 @@ class Dispatcher(metaclass=DispatcherMeta):
             request_id=request.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
-    async def _handle__functions_metadata_request(self, request):
-        metadata_request = request.functions_metadata_request
-        directory = metadata_request.function_app_directory
+    def load_function_metadata(self, function_app_directory, caller_info):
+        """
+        This method is called to index the functions in the function app
+        directory and save the results in function_metadata_result or
+        function_metadata_exception in case of an exception.
+        """
         script_file_name = get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
             default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
-        function_path = os.path.join(directory, script_file_name)
+
+        logger.debug(
+            'Received load metadata request from %s, request ID %s, '
+            'script_file_name: %s',
+            caller_info, self.request_id, script_file_name)
+
+        validate_script_file_name(script_file_name)
+        function_path = os.path.join(function_app_directory,
+                                     script_file_name)
+
+        self._function_metadata_result = (
+            self.index_functions(function_path)) \
+            if os.path.exists(function_path) else None
+
+    async def _handle__functions_metadata_request(self, request):
+        metadata_request = request.functions_metadata_request
+        function_app_directory = metadata_request.function_app_directory
+
+        script_file_name = get_app_setting(
+            setting=PYTHON_SCRIPT_FILE_NAME,
+            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
+        function_path = os.path.join(function_app_directory,
+                                     script_file_name)
 
         logger.info(
-            'Received WorkerMetadataRequest, request ID %s, function_path: %s',
+            'Received WorkerMetadataRequest, request ID %s, '
+            'function_path: %s',
             self.request_id, function_path)
 
-        try:
-            validate_script_file_name(script_file_name)
+        if not is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
+            try:
+                self.load_function_metadata(
+                    function_app_directory,
+                    caller_info="functions_metadata_request")
+            except Exception as ex:
+                self._function_metadata_exception = ex
 
-            if not os.path.exists(function_path):
-                # Fallback to legacy model
-                return protos.StreamingMessage(
-                    request_id=request.request_id,
-                    function_metadata_response=protos.FunctionMetadataResponse(
-                        use_default_metadata_indexing=True,
-                        result=protos.StatusResult(
-                            status=protos.StatusResult.Success)))
-
-            fx_metadata_results = self.index_functions(function_path)
+        if self._function_metadata_exception:
+            return protos.StreamingMessage(
+                request_id=request.request_id,
+                function_metadata_response=protos.FunctionMetadataResponse(
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Failure,
+                        exception=self._serialize_exception(
+                            self._function_metadata_exception))))
+        else:
+            metadata_result = self._function_metadata_result
 
             return protos.StreamingMessage(
                 request_id=request.request_id,
                 function_metadata_response=protos.FunctionMetadataResponse(
-                    function_metadata_results=fx_metadata_results,
+                    use_default_metadata_indexing=False if metadata_result else
+                    True,
+                    function_metadata_results=metadata_result,
                     result=protos.StatusResult(
                         status=protos.StatusResult.Success)))
-
-        except Exception as ex:
-            return protos.StreamingMessage(
-                request_id=self.request_id,
-                function_metadata_response=protos.FunctionMetadataResponse(
-                    result=protos.StatusResult(
-                        status=protos.StatusResult.Failure,
-                        exception=self._serialize_exception(ex))))
 
     async def _handle__function_load_request(self, request):
         func_request = request.function_load_request
         function_id = func_request.function_id
         function_metadata = func_request.metadata
         function_name = function_metadata.name
+        function_app_directory = function_metadata.directory
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
-            'function_name: %s,', self.request_id, function_id, function_name)
+            'function_name: %s',
+            self.request_id, function_id, function_name)
 
         programming_model = "V2"
         try:
             if not self._functions.get_function(function_id):
-                script_file_name = get_app_setting(
-                    setting=PYTHON_SCRIPT_FILE_NAME,
-                    default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
-                validate_script_file_name(script_file_name)
-                function_path = os.path.join(
-                    function_metadata.directory,
-                    script_file_name)
 
-                if function_metadata.properties.get("worker_indexed", False) \
-                        or os.path.exists(function_path):
+                if function_metadata.properties.get(
+                        METADATA_PROPERTIES_WORKER_INDEXED, False):
                     # This is for the second worker and above where the worker
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the
                     # function and update the workers registry
-                    _ = self.index_functions(function_path)
+
+                    try:
+                        self.load_function_metadata(
+                            function_app_directory,
+                            caller_info="functions_load_request")
+                    except Exception as ex:
+                        self._function_metadata_exception = ex
+
+                    # For the second worker, if there was an exception in
+                    # indexing, we raise it here
+                    if self._function_metadata_exception:
+                        raise Exception(self._function_metadata_exception)
+
                 else:
                     # legacy function
                     programming_model = "V1"
 
                     func = loader.load_function(
-                        func_request.metadata.name,
-                        func_request.metadata.directory,
+                        function_name,
+                        function_app_directory,
                         func_request.metadata.script_file,
                         func_request.metadata.entry_point)
 
@@ -562,6 +606,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             func_env_reload_request = \
                 request.function_environment_reload_request
+            directory = func_env_reload_request.function_app_directory
 
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:
@@ -587,13 +632,19 @@ class Dispatcher(metaclass=DispatcherMeta):
                 root_logger.setLevel(logging.DEBUG)
 
             # Reload azure google namespaces
-            DependencyManager.reload_customer_libraries(
-                func_env_reload_request.function_app_directory
-            )
+            DependencyManager.reload_customer_libraries(directory)
 
             # calling load_binding_registry again since the
             # reload_customer_libraries call clears the registry
             bindings.load_binding_registry()
+
+            if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
+                try:
+                    self.load_function_metadata(
+                        directory,
+                        caller_info="environment_reload_request")
+                except Exception as ex:
+                    self._function_metadata_exception = ex
 
             # Change function app directory
             if getattr(func_env_reload_request,

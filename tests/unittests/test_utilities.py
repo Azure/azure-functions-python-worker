@@ -374,8 +374,7 @@ class TestUtilities(unittest.TestCase):
 
     def test_valid_script_file_name(self):
         file_name = 'test.py'
-        valid_name = common.validate_script_file_name(file_name)
-        self.assertTrue(valid_name)
+        common.validate_script_file_name(file_name)
 
     def test_invalid_script_file_name(self):
         file_name = 'test'

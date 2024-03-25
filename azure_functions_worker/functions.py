@@ -145,7 +145,7 @@ class Registry:
             param_anno = annotations.get(param.name)
 
             # Check the declared type
-            set_deferred_bindings_flag(param_anno)
+            bindings_utils.set_deferred_bindings_flag(param_anno)
 
             if param_has_anno:
                 if typing_inspect.is_generic_type(param_anno):
@@ -426,14 +426,3 @@ class Registry:
                                                           input_types,
                                                           output_types,
                                                           return_type)
-
-
-def set_deferred_bindings_flag(param_anno: type):
-    # If flag hasn't already been set
-    # If DEFERRED_BINDINGS_REGISTRY is not None
-    # If the binding type is a deferred binding type
-    if (not bindings_utils.meta.DEFERRED_BINDINGS_ENABLED
-            and bindings_utils.meta.DEFERRED_BINDINGS_REGISTRY is not None
-            and bindings_utils.meta.DEFERRED_BINDINGS_REGISTRY.check_supported_type(
-                param_anno)):
-        bindings_utils.meta.DEFERRED_BINDINGS_ENABLED = True

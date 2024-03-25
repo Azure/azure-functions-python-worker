@@ -264,3 +264,14 @@ def deferred_bindings_decode(binding: typing.Any,
         DEFERRED_BINDINGS_CACHE[(pb.name, pytype, datum.value.content)]\
             = deferred_binding_type
         return deferred_binding_type
+
+
+def set_deferred_bindings_flag(param_anno: type):
+    # If flag hasn't already been set
+    # If DEFERRED_BINDINGS_REGISTRY is not None
+    # If the binding type is a deferred binding type
+    global DEFERRED_BINDINGS_ENABLED
+    if (not DEFERRED_BINDINGS_ENABLED
+            and DEFERRED_BINDINGS_REGISTRY is not None
+            and DEFERRED_BINDINGS_REGISTRY.check_supported_type(param_anno)):
+        DEFERRED_BINDINGS_ENABLED = True

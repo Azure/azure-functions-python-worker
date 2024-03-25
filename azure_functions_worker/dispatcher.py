@@ -397,17 +397,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_metadata = func_request.metadata
         function_name = function_metadata.name
         function_app_directory = function_metadata.directory
-        function_already_indexed = self._functions.get_function(function_id)
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
-            'function_name: %s, function_already_indexed: %s',
-            self.request_id, function_id, function_name,
-            function_already_indexed)
+            'function_name: %s',
+            self.request_id, function_id, function_name)
 
         programming_model = "V2"
         try:
-            if not function_already_indexed:
+            if not self._functions.get_function(function_id):
 
                 if function_metadata.properties.get(
                         METADATA_PROPERTIES_WORKER_INDEXED, False):
@@ -416,13 +414,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     # calling the metadata request. In this case we index the
                     # function and update the workers registry
 
-                    if not is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
-                        try:
-                            self.load_function_metadata(
-                                function_app_directory,
-                                caller_info="functions_load_request")
-                        except Exception as ex:
-                            self._function_metadata_exception = ex
+                    try:
+                        self.load_function_metadata(
+                            function_app_directory,
+                            caller_info="functions_load_request")
+                    except Exception as ex:
+                        self._function_metadata_exception = ex
 
                     # For the second worker, if there was an exception in
                     # indexing, we raise it here

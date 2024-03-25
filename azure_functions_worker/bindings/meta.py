@@ -224,10 +224,6 @@ def get_deferred_binding(bind_name: str,
 
         # Checks if pytype is a supported sdk type
         if DEFERRED_BINDINGS_REGISTRY.check_supported_type(pytype):
-            # Set flag once
-            global DEFERRED_BINDINGS_ENABLED
-            if not DEFERRED_BINDINGS_ENABLED:
-                DEFERRED_BINDINGS_ENABLED = True
             # Returns deferred binding converter
             binding = DEFERRED_BINDINGS_REGISTRY.get(bind_name)
 
@@ -237,6 +233,7 @@ def get_deferred_binding(bind_name: str,
         # This will catch if DEFERRED_BINDINGS_REGISTRY is None
         # It will be None if the library isn't imported
         # Ensure that the flag is set to False in this case
+        global DEFERRED_BINDINGS_ENABLED
         DEFERRED_BINDINGS_ENABLED = False
 
 

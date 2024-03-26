@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import asyncio
 import collections as col
 import os
 import sys
@@ -8,17 +9,25 @@ from typing import Optional, Tuple
 from unittest.mock import patch
 
 from azure_functions_worker import protos
+from azure_functions_worker.constants import (PYTHON_THREADPOOL_THREAD_COUNT,
+                                              PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+                                              PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
+                                              PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+                                              PYTHON_ENABLE_INIT_INDEXING,
+                                              METADATA_PROPERTIES_WORKER_INDEXED,
+                                              PYTHON_ENABLE_DEBUG_LOGGING)
+from azure_functions_worker.dispatcher import Dispatcher
 from azure_functions_worker.version import VERSION
 from tests.utils import testutils
-from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
-    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT, \
-    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37, PYTHON_THREADPOOL_THREAD_COUNT_MIN
+from tests.utils.testutils import UNIT_TESTS_ROOT
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
 DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'
 DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
+    'dispatcher_functions_stein'
+FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
     'dispatcher_functions_stein'
 
 
@@ -143,7 +152,8 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         correct default value
         """
         async with self._ctrl as host:
-            # await self._check_if_function_is_ok(host)
+            await host.init_worker()
+            await self._check_if_function_is_ok(host)
             await self._assert_workers_threadpool(self._ctrl, host,
                                                   self._default_workers)
 
@@ -154,6 +164,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT:
                            f'{self._allowed_max_workers}'})
         async with self._ctrl as host:
+            await host.init_worker()
             await self._check_if_function_is_ok(host)
             await self._assert_workers_threadpool(self._ctrl, host,
                                                   self._allowed_max_workers)
@@ -335,10 +346,11 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  )
 
     async def test_sync_invocation_request_log_threads(self):
-        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
-
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '5'})
+
             async with self._ctrl as host:
+                await host.init_worker()
                 request_id: str = self._ctrl._worker._request_id
                 func_id, invoke_id, func_name = (
                     await self._check_if_function_is_ok(host)
@@ -359,10 +371,11 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  )
 
     async def test_async_invocation_request_log_threads(self):
-        os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
-
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
+            os.environ.update({PYTHON_THREADPOOL_THREAD_COUNT: '4'})
+
             async with self._ctrl as host:
+                await host.init_worker()
                 request_id: str = self._ctrl._worker._request_id
                 func_id, invoke_id, func_name = (
                     await self._check_if_async_function_is_ok(host)
@@ -668,7 +681,36 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 )]),
                 1
             )
+            self.assertEqual(
+                len([log for log in r.logs if log.message.startswith(
+                    "Received WorkerMetadataRequest from _handle__worker_init_request"
+                )]),
+                0
+            )
         self.assertIn("azure.functions", sys.modules)
+
+    async def test_dispatcher_indexing_in_init_request(self):
+        """Test if azure functions is loaded during init
+        """
+        env = {PYTHON_ENABLE_INIT_INDEXING: "1",
+               PYTHON_ENABLE_DEBUG_LOGGING: "1"}
+        with patch.dict(os.environ, env):
+            async with self._ctrl as host:
+                r = await host.init_worker()
+                self.assertEqual(
+                    len([log for log in r.logs if log.message.startswith(
+                        "Received WorkerInitRequest"
+                    )]),
+                    1
+                )
+
+                self.assertEqual(
+                    len([log for log in r.logs if log.message.startswith(
+                        "Received load metadata request from "
+                        "worker_init_request"
+                    )]),
+                    1
+                )
 
     async def test_dispatcher_load_modules_dedicated_app(self):
         """Test modules are loaded in dedicated apps
@@ -719,3 +761,225 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 "worker_dependencies_path: , customer_dependencies_path: , "
                 "working_directory: , Linux Consumption: True,"
                 " Placeholder: False", logs)
+
+
+class TestDispatcherIndexinginInit(unittest.TestCase):
+
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.dispatcher = testutils.create_dummy_dispatcher()
+        sys.path.append(str(FUNCTION_APP_DIRECTORY))
+
+    def tearDown(self):
+        self.loop.close()
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
+    def test_worker_init_request_with_indexing_enabled(self):
+
+        request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(request))
+
+        self.assertIsNotNone(self.dispatcher._function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
+    def test_worker_init_request_with_indexing_disabled(self):
+        request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(request))
+
+        self.assertIsNone(self.dispatcher._function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
+    @patch.object(Dispatcher, 'index_functions')
+    def test_worker_init_request_with_indexing_exception(self,
+                                                         mock_index_functions):
+        mock_index_functions.side_effect = Exception("Mocked Exception")
+
+        request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(request))
+
+        self.assertIsNone(self.dispatcher._function_metadata_result)
+        self.assertIsNotNone(self.dispatcher._function_metadata_exception)
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
+    def test_functions_metadata_request_with_init_indexing_enabled(self):
+        init_request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        metadata_request = protos.StreamingMessage(
+            functions_metadata_request=protos.FunctionsMetadataRequest(
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        init_response = self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(init_request))
+        self.assertEqual(init_response.worker_init_response.result.status,
+                         protos.StatusResult.Success)
+
+        metadata_response = self.loop.run_until_complete(
+            self.dispatcher._handle__functions_metadata_request(metadata_request))
+
+        self.assertEqual(metadata_response.function_metadata_response.result.status,
+                         protos.StatusResult.Success)
+        self.assertIsNotNone(self.dispatcher._function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
+    def test_functions_metadata_request_with_init_indexing_disabled(self):
+        init_request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        metadata_request = protos.StreamingMessage(
+            functions_metadata_request=protos.FunctionsMetadataRequest(
+                function_app_directory=str(str(FUNCTION_APP_DIRECTORY))
+            )
+        )
+
+        init_response = self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(init_request))
+        self.assertEqual(init_response.worker_init_response.result.status,
+                         protos.StatusResult.Success)
+        self.assertIsNone(self.dispatcher._function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+        metadata_response = self.loop.run_until_complete(
+            self.dispatcher._handle__functions_metadata_request(metadata_request))
+
+        self.assertEqual(metadata_response.function_metadata_response.result.status,
+                         protos.StatusResult.Success)
+        self.assertIsNotNone(self.dispatcher._function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
+    @patch.object(Dispatcher, 'index_functions')
+    def test_functions_metadata_request_with_indexing_exception(
+            self,
+            mock_index_functions):
+
+        mock_index_functions.side_effect = Exception("Mocked Exception")
+
+        request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        metadata_request = protos.StreamingMessage(
+            functions_metadata_request=protos.FunctionsMetadataRequest(
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(request))
+
+        self.assertIsNone(self.dispatcher._function_metadata_result)
+        self.assertIsNotNone(self.dispatcher._function_metadata_exception)
+
+        metadata_response = self.loop.run_until_complete(
+            self.dispatcher._handle__functions_metadata_request(
+                metadata_request))
+
+        self.assertEqual(
+            metadata_response.function_metadata_response.result.status,
+            protos.StatusResult.Failure)
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
+    def test_dispatcher_indexing_in_load_request(self):
+        init_request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(init_request))
+
+        self.assertIsNone(self.dispatcher._function_metadata_result)
+
+        load_request = protos.StreamingMessage(
+            function_load_request=protos.FunctionLoadRequest(
+                function_id="http_trigger",
+                metadata=protos.RpcFunctionMetadata(
+                    directory=str(FUNCTION_APP_DIRECTORY),
+                    properties={METADATA_PROPERTIES_WORKER_INDEXED: "True"}
+                )))
+
+        self.loop.run_until_complete(
+            self.dispatcher._handle__function_load_request(load_request))
+
+        self.assertIsNotNone(self.dispatcher._function_metadata_result)
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
+    @patch.object(Dispatcher, 'index_functions')
+    def test_dispatcher_indexing_in_load_request_with_exception(
+            self,
+            mock_index_functions):
+        # This is the case when the second worker has an exception in indexing.
+        # In this case, we save the error in _function_metadata_exception in
+        # the init request and throw the error when load request is called.
+
+        mock_index_functions.side_effect = Exception("Mocked Exception")
+
+        init_request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(init_request))
+
+        self.assertIsNone(self.dispatcher._function_metadata_result)
+
+        load_request = protos.StreamingMessage(
+            function_load_request=protos.FunctionLoadRequest(
+                function_id="http_trigger",
+                metadata=protos.RpcFunctionMetadata(
+                    directory=str(FUNCTION_APP_DIRECTORY),
+                    properties={METADATA_PROPERTIES_WORKER_INDEXED: "True"}
+                )))
+
+        response = self.loop.run_until_complete(
+            self.dispatcher._handle__function_load_request(load_request))
+
+        self.assertIsNotNone(self.dispatcher._function_metadata_exception)
+        self.assertEqual(
+            response.function_load_response.result.exception.message,
+            "Exception: Mocked Exception")

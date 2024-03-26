@@ -9,7 +9,7 @@ from tests.utils import testutils
 from azure_functions_worker.utils.app_setting_manager import \
     get_python_appsetting_state
 from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
-    PYTHON_ENABLE_DEBUG_LOGGING
+    PYTHON_ENABLE_DEBUG_LOGGING, PYTHON_ENABLE_INIT_INDEXING
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
@@ -65,6 +65,7 @@ class TestNonDefaultAppSettingsLogs(testutils.AsyncTestCase):
         os_environ = os.environ.copy()
         os_environ[PYTHON_THREADPOOL_THREAD_COUNT] = '20'
         os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
+        os_environ[PYTHON_ENABLE_INIT_INDEXING] = '1'
         cls._patch_environ = patch.dict('os.environ', os_environ)
         cls._patch_environ.start()
         super().setUpClass()
@@ -84,6 +85,8 @@ class TestNonDefaultAppSettingsLogs(testutils.AsyncTestCase):
             self.assertTrue('PYTHON_THREADPOOL_THREAD_COUNT: '
                             in log for log in r.logs)
             self.assertTrue('PYTHON_ENABLE_DEBUG_LOGGING: '
+                            in log for log in r.logs)
+            self.assertTrue('PYTHON_ENABLE_INIT_INDEXING: '
                             in log for log in r.logs)
 
     def test_get_python_appsetting_state(self):

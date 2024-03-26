@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
+        python-version: [ 3.7, 3.8, 3.9, "3.10", "3.11", "3.12" ]
     permissions: read-all
     steps:
       - name: Checkout code.
@@ -65,7 +65,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
           python -m pip install -U -e .[dev]
-
           # Retry a couple times to avoid certificate issue
           retry 5 python setup.py build
           retry 5 python setup.py webhost --branch-name=dev
@@ -131,6 +130,18 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString311 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
+        run: .github/Scripts/e2e-tests.sh
+      - name: Running 3.12 Tests
+        if: matrix.python-version == 3.12
+        env:
+          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString312 }}
+          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString312 }}
+          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString312 }}
+          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString312 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString312 }}
+          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString312 }}
+          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString312 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: .github/Scripts/e2e-tests.sh
       - name: Codecov

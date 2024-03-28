@@ -57,6 +57,7 @@ E2E_TESTS_FOLDER = pathlib.Path('endtoend')
 E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
 UNIT_TESTS_FOLDER = pathlib.Path('unittests')
 UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
+EXTENSION_TESTS_FOLDER = pathlib.Path('extension_tests')
 WEBHOST_DLL = "Microsoft.Azure.WebJobs.Script.WebHost.dll"
 DEFAULT_WEBHOST_DLL_PATH = (
     PROJECT_ROOT / 'build' / 'webhost' / 'bin' / WEBHOST_DLL
@@ -241,7 +242,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 except Exception:
                     raise
 
-            if not cls.webhost.is_healthy():
+            if not cls.webhost.is_healthy() and cls.host_stdout is not None:
                 cls.host_out = cls.host_stdout.read()
                 if cls.host_out is not None and len(cls.host_out) > 0:
                     error_message = 'WebHost is not started correctly.'

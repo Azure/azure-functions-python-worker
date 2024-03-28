@@ -14,7 +14,7 @@ from typing import Optional, Dict
 
 from google.protobuf.duration_pb2 import Duration
 
-from . import protos, functions
+from . import protos, functions, bindings
 from .bindings.retrycontext import RetryPolicy
 from .utils.common import get_app_setting
 from .constants import MODULE_NOT_FOUND_TS_URL, PYTHON_SCRIPT_FILE_NAME, \
@@ -130,6 +130,9 @@ def process_indexed_function(functions_registry: functions.Registry,
         binding_protos = build_binding_protos(indexed_function)
         retry_protos = build_retry_protos(indexed_function)
 
+        raw_bindings = get_fx_raw_bindings(indexed_function=indexed_function,
+                                           function_info=function_info)
+
         function_metadata = protos.RpcFunctionMetadata(
             name=function_info.name,
             function_id=function_info.function_id,
@@ -140,7 +143,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             is_proxy=False,  # not supported in V4
             language=PYTHON_LANGUAGE_RUNTIME,
             bindings=binding_protos,
-            raw_bindings=indexed_function.get_raw_bindings(),
+            raw_bindings=raw_bindings,
             retry_options=retry_protos,
             properties={METADATA_PROPERTIES_WORKER_INDEXED: "True"})
 
@@ -239,3 +242,18 @@ def index_function_app(function_path: str):
                          f"{script_file_name}.")
 
     return app.get_functions()
+
+
+def get_fx_raw_bindings(indexed_function, function_info):
+    # If the flag is True, we know that:
+    # 1. Library is imported
+    # 2. At least one binding is a defined deferred binding type
+    # 3. DEFERRED_BINDINGS_REGISTRY is not None
+    if bindings.meta.DEFERRED_BINDINGS_ENABLED:
+        # Reset the flag
+        bindings.meta.DEFERRED_BINDINGS_ENABLED = False
+        return bindings.meta.DEFERRED_BINDINGS_REGISTRY.get_raw_bindings(
+            indexed_function, function_info.input_types)
+
+    else:
+        return indexed_function.get_raw_bindings()

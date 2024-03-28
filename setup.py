@@ -20,8 +20,10 @@ from distutils.dist import Distribution
 from setuptools import setup
 from setuptools.command import develop
 
+from azure_functions_worker.constants import BASE_EXT_SUPPORTED_PY_MINOR_VERSION
 from azure_functions_worker.version import VERSION
-from tests.utils.constants import EXTENSIONS_CSPROJ_TEMPLATE
+from tests.utils.constants import (DEFERRED_BINDINGS_CSPROJ_TEMPLATE,
+                                   EXTENSIONS_CSPROJ_TEMPLATE)
 
 # The GitHub repository of the Azure Functions Host
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
@@ -82,6 +84,9 @@ else:
         ("protobuf~=4.22.0", "grpcio-tools~=1.54.2", "grpcio~=1.54.2")
     )
 
+if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
+    INSTALL_REQUIRES.append("azure-functions-extension-base")
+
 EXTRA_REQUIRES = {
     "dev": [
         "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
@@ -109,6 +114,9 @@ EXTRA_REQUIRES = {
         "pandas",
         "numpy",
         "pre-commit"
+    ],
+    "deferred-bindings": [
+        "azure-functions-extension-blob"
     ]
 }
 
@@ -218,12 +226,18 @@ class Extension(distutils.cmd.Command):
             "extensions-dir",
             None,
             "A path to the directory where extension should be installed",
+        ),
+        (
+            "test-type=",
+            None,
+            "The type of test to be run",
         )
     ]
 
     def __init__(self, dist: Distribution):
         super().__init__(dist)
         self.extensions_dir = None
+        self.test_type = None
 
     def initialize_options(self):
         pass
@@ -241,8 +255,12 @@ class Extension(distutils.cmd.Command):
                 print("{}", file=f)
 
         if not (self.extensions_dir / "extensions.csproj").exists():
-            with open(self.extensions_dir / "extensions.csproj", "w") as f:
-                print(EXTENSIONS_CSPROJ_TEMPLATE, file=f)
+            if self.test_type == "deferred-bindings":
+                with open(self.extensions_dir / "extensions.csproj", "w") as f:
+                    print(DEFERRED_BINDINGS_CSPROJ_TEMPLATE, file=f)
+            else:
+                with open(self.extensions_dir / "extensions.csproj", "w") as f:
+                    print(EXTENSIONS_CSPROJ_TEMPLATE, file=f)
 
         with open(self.extensions_dir / "NuGet.config", "w") as f:
             print(NUGET_CONFIG, file=f)

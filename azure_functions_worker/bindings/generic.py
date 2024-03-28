@@ -28,12 +28,17 @@ class GenericBinding:
 
         elif isinstance(obj, (bytes, bytearray)):
             return datumdef.Datum(type='bytes', value=bytes(obj))
-
+        elif obj is None:
+            return datumdef.Datum(type=None, value=obj)
         else:
             raise NotImplementedError
 
     @classmethod
     def decode(cls, data: datumdef.Datum, *, trigger_metadata) -> typing.Any:
+        # Enabling support for Dapr bindings
+        # https://github.com/Azure/azure-functions-python-worker/issues/1316
+        if data is None:
+            return None
         data_type = data.type
 
         if data_type == 'string':
@@ -42,6 +47,8 @@ class GenericBinding:
             result = data.value
         elif data_type == 'json':
             result = data.value
+        elif data_type is None:
+            result = None
         else:
             raise ValueError(
                 f'unexpected type of data received for the "generic" binding '

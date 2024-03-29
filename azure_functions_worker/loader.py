@@ -249,8 +249,7 @@ def get_fx_raw_bindings(indexed_function, function_info):
     # 1. Library is imported
     # 2. At least one binding is a defined deferred binding type
     # 3. DEFERRED_BINDINGS_REGISTRY is not None
-    if (bindings.meta.DEFERRED_BINDINGS_ENABLED
-            and bindings.meta.DEFERRED_BINDINGS_REGISTRY is not None):
+    if bindings.meta.DEFERRED_BINDINGS_ENABLED:
         # Reset the flag
         bindings.meta.DEFERRED_BINDINGS_ENABLED = False
         return bindings.meta.DEFERRED_BINDINGS_REGISTRY.get_raw_bindings(

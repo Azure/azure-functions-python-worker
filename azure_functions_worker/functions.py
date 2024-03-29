@@ -144,6 +144,9 @@ class Registry:
             param_has_anno = param.name in annotations
             param_anno = annotations.get(param.name)
 
+            # Check the declared type
+            bindings_utils.set_deferred_bindings_flag(param_anno)
+
             if param_has_anno:
                 if typing_inspect.is_generic_type(param_anno):
                     param_anno_origin = typing_inspect.get_origin(param_anno)

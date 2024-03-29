@@ -31,6 +31,7 @@ _DUMMY_CONT_KEY = "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY="
 _FUNC_GITHUB_ZIP = "https://github.com/Azure/azure-functions-python-library" \
                    "/archive/refs/heads/dev.zip"
 _FUNC_FILE_NAME = "azure-functions-python-library-dev"
+_CUSTOM_IMAGE = "CUSTOM_IMAGE"
 
 
 class LinuxConsumptionWebHostController:
@@ -277,8 +278,9 @@ class LinuxConsumptionWebHostController:
         return f'{iv_base64}.{encrypted_base64}.{key_sha256_base64}'
 
     def __enter__(self):
-        mesh_image = self._find_latest_mesh_image(self._host_version,
-                                                  self._py_version)
+        mesh_image = os.environ.get(_CUSTOM_IMAGE,
+                                    self._find_latest_mesh_image(self._host_version,
+                                                                 self._py_version))
         self.spawn_container(image=mesh_image)
         return self
 

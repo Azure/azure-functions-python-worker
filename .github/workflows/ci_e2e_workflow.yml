@@ -11,9 +11,9 @@ on:
         required: false
         default: "false"
   push:
-    branches: [dev, master, main, release/*]
+    branches: [dev, main, release/*]
   pull_request:
-    branches: [dev, master, main, release/*]
+    branches: [dev, main, release/*]
   schedule:
     # Monday to Thursday 1 AM PDT build
     # * is a special character in YAML so you have to quote this string

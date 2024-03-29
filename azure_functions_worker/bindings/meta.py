@@ -43,20 +43,15 @@ def load_binding_registry() -> None:
 
 
 def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
-    try:
-        # Check if binding is deferred binding
-        binding = get_deferred_binding(bind_name=bind_name, pytype=pytype)
-        # Binding is not deferred binding type
-        if binding is None:
-            binding = BINDING_REGISTRY.get(bind_name)
-        # Binding is generic
-        if binding is None:
-            binding = generic.GenericBinding
-        return binding
-    except AttributeError:
-        # If BINDING_REGISTRY is None, azure-functions hasn't been loaded
-        # in correctly.
-        raise AttributeError("BINDING_REGISTRY is None.")
+    # Check if binding is deferred binding
+    binding = get_deferred_binding(bind_name=bind_name, pytype=pytype)
+    # Binding is not deferred binding type
+    if binding is None:
+        binding = BINDING_REGISTRY.get(bind_name)
+    # Binding is generic
+    if binding is None:
+        binding = generic.GenericBinding
+    return binding
 
 
 def is_trigger_binding(bind_name: str) -> bool:
@@ -219,22 +214,16 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
 
 def get_deferred_binding(bind_name: str,
                          pytype: typing.Optional[type] = None) -> object:
-    try:
-        binding = None
+    binding = None
 
-        # Checks if pytype is a supported sdk type
-        if DEFERRED_BINDINGS_REGISTRY.check_supported_type(pytype):
-            # Returns deferred binding converter
-            binding = DEFERRED_BINDINGS_REGISTRY.get(bind_name)
+    # Checks if pytype is a supported sdk type
+    if (DEFERRED_BINDINGS_REGISTRY is not None
+            and DEFERRED_BINDINGS_REGISTRY.check_supported_type(pytype)):
+        # Returns deferred binding converter
+        binding = DEFERRED_BINDINGS_REGISTRY.get(bind_name)
 
-        # This will return None if not a supported type
-        return binding
-    except AttributeError:
-        # This will catch if DEFERRED_BINDINGS_REGISTRY is None
-        # It will be None if the library isn't imported
-        # Ensure that the flag is set to False in this case
-        global DEFERRED_BINDINGS_ENABLED
-        DEFERRED_BINDINGS_ENABLED = False
+    # This will return None if not a supported type
+    return binding
 
 
 def deferred_bindings_decode(binding: typing.Any,

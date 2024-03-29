@@ -9,7 +9,7 @@
       "methods": [
         "get"
       ],
-      "route": "sql_input/{productid}"
+      "route": "sql_input2/{productid}"
     },
     {
       "name": "$return",
@@ -20,7 +20,7 @@
       "name": "products",
       "type": "sql",
       "direction": "in",
-      "commandText": "SELECT * FROM Products WHERE ProductId = @ProductId",
+      "commandText": "SELECT * FROM Products2 WHERE ProductId = @ProductId",
       "commandType": "Text",
       "parameters": "@ProductId={productid}",
       "connectionStringSetting": "AzureWebJobsSqlConnectionString"

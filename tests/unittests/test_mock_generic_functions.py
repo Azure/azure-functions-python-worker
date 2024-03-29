@@ -144,6 +144,9 @@ class TestGenericFunctions(testutils.AsyncTestCase):
             # implicitly
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+            self.assertEqual(
+                r.response.return_value,
+                protos.TypedData(bytes=b'\x00\x01'))
 
     async def test_mock_generic_should_support_without_datatype(self):
         async with testutils.start_mockhost(
@@ -219,4 +222,4 @@ class TestGenericFunctions(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
             self.assertEqual(
                 r.response.return_value,
-                protos.TypedData())
+                protos.TypedData(string="This is fine"))

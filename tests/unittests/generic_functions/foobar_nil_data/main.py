@@ -3,5 +3,7 @@
 import logging
 
 
-def main(input) -> None:
+def main(input):
     logging.info("Hello World")
+    # The function must return a non-None value
+    return "This is fine"

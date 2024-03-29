@@ -178,8 +178,9 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
             rpc_shared_memory=shared_mem_value)
     else:
         # If not, send it as part of the response message over RPC
-        # rpc_val can be None here as we now support a None return type
         rpc_val = datumdef.datum_as_proto(datum)
+        if rpc_val is None:
+            raise TypeError('Cannot convert datum to rpc_val')
         return protos.ParameterBinding(
             name=out_name,
             data=rpc_val)

@@ -29,6 +29,9 @@ def load_binding_registry() -> None:
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()
 
+    if BINDING_REGISTRY is None:
+        raise AttributeError("BINDING_REGISTRY is None.")
+
     # The base extension supports python 3.8+
     if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
         # Import the base extension

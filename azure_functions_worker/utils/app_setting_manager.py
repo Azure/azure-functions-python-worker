@@ -11,7 +11,7 @@ from ..constants import (PYTHON_ROLLBACK_CWD_PATH,
                          PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39,
                          PYTHON_ENABLE_DEBUG_LOGGING,
                          FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
-                         PYTHON_SCRIPT_FILE_NAME)
+                         PYTHON_SCRIPT_FILE_NAME, PYTHON_ENABLE_INIT_INDEXING)
 
 
 def get_python_appsetting_state():
@@ -23,7 +23,8 @@ def get_python_appsetting_state():
          PYTHON_ENABLE_DEBUG_LOGGING,
          PYTHON_ENABLE_WORKER_EXTENSIONS,
          FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
-         PYTHON_SCRIPT_FILE_NAME]
+         PYTHON_SCRIPT_FILE_NAME,
+         PYTHON_ENABLE_INIT_INDEXING]
 
     app_setting_states = "".join(
         f"{app_setting}: {current_vars[app_setting]} | "

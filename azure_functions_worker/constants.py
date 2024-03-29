@@ -58,3 +58,8 @@ CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site-packages"
 
 # Base extension supported Python minor version
 BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8
+
+# Flag to index functions in handle init request
+PYTHON_ENABLE_INIT_INDEXING = "PYTHON_ENABLE_INIT_INDEXING"
+
+METADATA_PROPERTIES_WORKER_INDEXED = "worker_indexed"

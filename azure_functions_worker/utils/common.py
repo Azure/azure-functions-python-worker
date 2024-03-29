@@ -153,4 +153,3 @@ def validate_script_file_name(file_name: str):
     pattern = re.compile(r'^[a-zA-Z0-9_][a-zA-Z0-9_\-]*\.py$')
     if not pattern.match(file_name):
         raise InvalidFileNameError(file_name)
-    return True

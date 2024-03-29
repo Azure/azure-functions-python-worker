@@ -29,9 +29,6 @@ def load_binding_registry() -> None:
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()
 
-    if BINDING_REGISTRY is None:
-        raise AttributeError("BINDING_REGISTRY is None.")
-
     # The base extension supports python 3.8+
     if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
         # Import the base extension
@@ -49,7 +46,7 @@ def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
     # Check if binding is deferred binding
     binding = get_deferred_binding(bind_name=bind_name, pytype=pytype)
     # Binding is not deferred binding type
-    if binding is None:
+    if BINDING_REGISTRY is not None and binding is None:
         binding = BINDING_REGISTRY.get(bind_name)
     # Binding is generic
     if binding is None:

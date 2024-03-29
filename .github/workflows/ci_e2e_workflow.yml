@@ -15,7 +15,7 @@ on:
   pull_request:
     branches: [dev, main, release/*]
   schedule:
-    # Monday to Thursday 1 AM PDT build
+    # Monday to Thursday 3 AM CST build
     # * is a special character in YAML so you have to quote this string
     - cron: "0 8 * * 1,2,3,4"
 

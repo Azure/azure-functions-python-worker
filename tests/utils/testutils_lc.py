@@ -278,9 +278,8 @@ class LinuxConsumptionWebHostController:
         return f'{iv_base64}.{encrypted_base64}.{key_sha256_base64}'
 
     def __enter__(self):
-        mesh_image = os.environ.get(_CUSTOM_IMAGE,
-                                    self._find_latest_mesh_image(self._host_version,
-                                                                 self._py_version))
+        mesh_image = (os.environ.get(_CUSTOM_IMAGE) or
+                      self._find_latest_mesh_image(self._host_version, self._py_version))
         self.spawn_container(image=mesh_image)
         return self
 

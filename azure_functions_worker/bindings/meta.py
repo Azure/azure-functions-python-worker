@@ -46,7 +46,7 @@ def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
     # Check if binding is deferred binding
     binding = get_deferred_binding(bind_name=bind_name, pytype=pytype)
     # Binding is not deferred binding type
-    if BINDING_REGISTRY is not None and binding is None:
+    if binding is None and BINDING_REGISTRY is not None:
         binding = BINDING_REGISTRY.get(bind_name)
     # Binding is generic
     if binding is None:
@@ -216,9 +216,11 @@ def get_deferred_binding(bind_name: str,
                          pytype: typing.Optional[type] = None) -> object:
     binding = None
 
+    if DEFERRED_BINDINGS_REGISTRY is None:
+        global DEFERRED_BINDINGS_ENABLED
+        DEFERRED_BINDINGS_ENABLED = False
     # Checks if pytype is a supported sdk type
-    if (DEFERRED_BINDINGS_REGISTRY is not None
-            and DEFERRED_BINDINGS_REGISTRY.check_supported_type(pytype)):
+    elif DEFERRED_BINDINGS_REGISTRY.check_supported_type(pytype):
         # Returns deferred binding converter
         binding = DEFERRED_BINDINGS_REGISTRY.get(bind_name)
 

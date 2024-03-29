@@ -301,8 +301,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         # dictionary which will be later used in the invocation request
         bindings.load_binding_registry()
         if bindings.meta.BINDING_REGISTRY is None:
-            # If BINDING_REGISTRY is None, azure-functions hasn't been loaded
-            # in correctly.
+            # If BINDING_REGISTRY is None, azure-functions hasn't
+            # been loaded in correctly.
             raise AttributeError("BINDING_REGISTRY is None.")
 
         if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
@@ -642,8 +642,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             # reload_customer_libraries call clears the registry
             bindings.load_binding_registry()
             if bindings.meta.BINDING_REGISTRY is None:
-                # If BINDING_REGISTRY is None, azure-functions hasn't been loaded
-                # in correctly.
+                # If BINDING_REGISTRY is None, azure-functions hasn't
+                # loaded in correctly.
                 raise AttributeError("BINDING_REGISTRY is None.")
 
             if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):

@@ -9,32 +9,10 @@ EXTENSIONS_CSPROJ_TEMPLATE = """\
       <PropertyGroup>
       <TargetFramework>net8.0</TargetFramework>
       <AzureFunctionsVersion>v4</AzureFunctionsVersion>
-      <WarningsAsErrors></WarningsAsErrors>
-      <DefaultItemExcludes>**</DefaultItemExcludes>
    </PropertyGroup>
    <ItemGroup>
-      <PackageReference Include="Azure.Messaging.EventHubs"
-        Version="5.11.1" />
-      <PackageReference Include="Azure.Messaging.EventGrid"
-        Version="4.23.0" />
       <PackageReference Include="Microsoft.NET.Sdk.Functions"
         Version="4.3.0" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
-        Version="4.5.0" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"
-        Version="6.2.0" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid"
-        Version="3.3.1" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage.Blobs"
-        Version="5.2.2" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage.Queues"
-        Version="5.2.1" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus"
-        Version="5.14.0" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Sql"
-        Version="3.0.534" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask"
-        Version="2.13.2" />
    </ItemGroup>
 </Project>
 """

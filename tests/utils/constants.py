@@ -8,6 +8,7 @@ EXTENSIONS_CSPROJ_TEMPLATE = """\
    <Project Sdk="Microsoft.NET.Sdk">
       <PropertyGroup>
       <TargetFramework>net8.0</TargetFramework>
+      <AzureFunctionsVersion>v4</AzureFunctionsVersion>
       <WarningsAsErrors></WarningsAsErrors>
       <DefaultItemExcludes>**</DefaultItemExcludes>
    </PropertyGroup>
@@ -16,6 +17,8 @@ EXTENSIONS_CSPROJ_TEMPLATE = """\
         Version="5.11.1" />
       <PackageReference Include="Azure.Messaging.EventGrid"
         Version="4.23.0" />
+      <PackageReference Include="Microsoft.NET.Sdk.Functions"
+        Version="4.3.0" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
         Version="4.5.0" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"

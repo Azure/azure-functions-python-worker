@@ -37,6 +37,8 @@ EXTENSIONS_CSPROJ_TEMPLATE = """\
         Version="2.13.2" />
       <PackageReference Include="System.Drawing.Common"
         Version="4.7.3" />
+      <PackageReference Include="System.Text.Json"
+        Version="6.0.9" />
    </ItemGroup>
 </Project>
 """

@@ -7,7 +7,7 @@ EXTENSIONS_CSPROJ_TEMPLATE = """\
 <?xml version="1.0" encoding="UTF-8"?>
    <Project Sdk="Microsoft.NET.Sdk">
       <PropertyGroup>
-      <TargetFramework>net8.0</TargetFramework>
+      <TargetFramework>net6.0</TargetFramework>
       <AzureFunctionsVersion>v4</AzureFunctionsVersion>
       <WarningsAsErrors></WarningsAsErrors>
       <DefaultItemExcludes>**</DefaultItemExcludes>
@@ -17,8 +17,6 @@ EXTENSIONS_CSPROJ_TEMPLATE = """\
         Version="4.3.0" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions"
         Version="5.0.0" />
-      <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Http"
-        Version="3.2.0" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB"
         Version="4.5.0" />
       <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs"

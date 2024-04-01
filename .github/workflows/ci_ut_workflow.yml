@@ -62,7 +62,7 @@ jobs:
 
         # Retry a couple times to avoid certificate issue
         retry 5 python setup.py build
-        retry 5 python setup.py webhost --branch-name=dev
+        retry 5 python setup.py webhost --branch-name=in-proc
         mkdir logs
     - name: Test with pytest
       env:

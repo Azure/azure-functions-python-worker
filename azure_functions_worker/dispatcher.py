@@ -14,6 +14,7 @@ import queue
 import sys
 import threading
 from asyncio import BaseEventLoop
+from importlib.metadata import distribution, PackageNotFoundError
 from logging import LogRecord
 from typing import List, Optional
 from datetime import datetime
@@ -78,6 +79,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         # Used to store metadata returns
         self._function_metadata_result = None
         self._function_metadata_exception = None
+
+        # Used for checking if open telemetry is enabled
+        self.is_opentelemetry_available = False
 
         # We allow the customer to change synchronous thread pool max worker
         # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
@@ -261,6 +265,16 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         resp = await request_handler(request)
         self._grpc_resp_queue.put_nowait(resp)
+
+    def update_opentelemetry_status(self):
+        """Check for OpenTelemetry library availability
+        and update the status attribute."""
+
+        try:
+            distribution('opentelemetry')
+            self.is_opentelemetry_available = True
+        except PackageNotFoundError:
+            self.is_opentelemetry_available = False
 
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '
@@ -522,6 +536,15 @@ class Dispatcher(metaclass=DispatcherMeta):
                     shmem_mgr=self._shmem_mgr)
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
+
+            if self.is_opentelemetry_available:
+                from opentelemetry.trace.propagation import _SPAN_KEY
+                from opentelemetry import context as context_api
+                from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator  # NoQA
+
+                carrier = {"traceparent": fi_context.trace_context.Traceparent}
+                span_context = TraceContextTextMapPropagator().extract(carrier)
+                context_api.set_value(_SPAN_KEY, span_context)
 
             # Use local thread storage to store the invocation ID
             # for a customer's threads

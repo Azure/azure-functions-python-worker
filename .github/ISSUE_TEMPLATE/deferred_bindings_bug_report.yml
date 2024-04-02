@@ -1,7 +1,7 @@
 name: Python Worker Deferred Bindings Feature Request
 description: File a Deferred Bindings bug report
 title: "[Bug] Bug Title Here"
-labels: ["python", "bug"]
+labels: ["python", "bug", "deferred-bindings"]
 body:
   - type: markdown
     attributes:
@@ -35,7 +35,7 @@ body:
         5. Include any additional steps or details that may be relevant.
 
   - type: textarea
-    id: code-snipped
+    id: code-snippet
     attributes:
       label: Relevant code being tried
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
@@ -46,6 +46,13 @@ body:
     attributes:
       label: Relevant log output
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: shell
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: requirements.txt file
+      description: Please copy and paste your requirements.txt file. This will be automatically formatted into code, so no need for backticks.
       render: shell
 
   - type: dropdown

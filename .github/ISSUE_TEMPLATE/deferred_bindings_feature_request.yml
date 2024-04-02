@@ -1,12 +1,19 @@
 name: Python Worker Deferred Bindings Feature Request
 description: File a Deferred Bindings Feature report
 title: "Request a feature"
-labels: ["python", "feature"]
+labels: ["python", "feature", "deferred-bindings"]
 body:
   - type: markdown
     attributes:
       value: |
         This form will help you to fill in a feature request for the Azure Functions Python Worker Deferred Bindings feature.
+
+  - type: textarea
+    id: binding-type
+    attributes:
+      label: Binding Type
+      description: Add information about the binding type.
+      placeholder: Is this on an existing binding or new binding?
 
   - type: textarea
     id: expected-behavior

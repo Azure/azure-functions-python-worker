@@ -20,7 +20,6 @@ from distutils.dist import Distribution
 from setuptools import setup
 from setuptools.command import develop
 
-from azure_functions_worker.constants import BASE_EXT_SUPPORTED_PY_MINOR_VERSION
 from azure_functions_worker.version import VERSION
 from tests.utils.constants import (DEFERRED_BINDINGS_CSPROJ_TEMPLATE,
                                    EXTENSIONS_CSPROJ_TEMPLATE)
@@ -81,11 +80,9 @@ if sys.version_info[:2] == (3, 7):
     )
 else:
     INSTALL_REQUIRES.extend(
-        ("protobuf~=4.22.0", "grpcio-tools~=1.54.2", "grpcio~=1.54.2")
+        ("protobuf~=4.22.0", "grpcio-tools~=1.54.2", "grpcio~=1.54.2",
+         "azure-functions-extension-base")
     )
-
-if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
-    INSTALL_REQUIRES.append("azure-functions-extension-base")
 
 EXTRA_REQUIRES = {
     "dev": [
@@ -115,7 +112,7 @@ EXTRA_REQUIRES = {
         "numpy",
         "pre-commit"
     ],
-    "deferred-bindings": [
+    "test-deferred-bindings": [
         "azure-functions-extension-blob"
     ]
 }

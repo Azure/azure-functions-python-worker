@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from unittest import skipIf
 
-from dateutil import parser, tz
+from dateutil import parser
 
 from azure_functions_worker.utils.common import is_envvar_true
 from tests.utils import testutils

@@ -5,7 +5,7 @@ import json
 
 # This is an actual EventHub trigger which handles Eventhub events in batches.
 # It serializes multiple event data into a json and store it into a blob.
-def main(events):
+def main(events) -> str:
     table_entries = []
     for event in events:
         json_entry = event.get_body()

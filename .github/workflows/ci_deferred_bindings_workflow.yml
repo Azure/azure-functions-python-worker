@@ -65,7 +65,7 @@ jobs:
           # Retry a couple times to avoid certificate issue
           retry 5 python setup.py build
           retry 5 python setup.py webhost --branch-name=dev
-          retry 5 python setup.py extension --test-type=deferred-bindings
+          retry 5 python setup.py extension
           mkdir logs
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9

@@ -15,7 +15,7 @@ What are the supported Python versions?
 |----------------------------------|------------|------------|------------|------------|-------------|-------------|
 | Azure Functions 2.0 (deprecated) | ✔          | ✔          | -          | -          | -           | -           |
 | Azure Functions 3.0 (deprecated)             | ✔          | ✔          | ✔          | ✔          | -           | -           |
-| Azure Functions 4.0              | -          | ✔          | ✔          | ✔          | ✔           | coming soon |
+| Azure Functions 4.0              | -          | -          | ✔          | ✔          | ✔           | ✔           |     
 
 For information about Azure Functions Runtime, please refer to [Azure Functions runtime versions overview](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) page.
 

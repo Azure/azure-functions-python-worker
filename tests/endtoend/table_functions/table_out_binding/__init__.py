@@ -10,6 +10,5 @@ def main(req: func.HttpRequest, resp: func.Out[func.HttpResponse]):
     row_key_uuid = str(uuid.uuid4())
     table_dict = {'PartitionKey': 'test', 'RowKey': row_key_uuid}
     table_json = json.dumps(table_dict)
-    http_resp = func.HttpResponse(status_code=200, headers=table_dict)
-    resp.set(http_resp)
+    resp.set(table_json)
     return table_json

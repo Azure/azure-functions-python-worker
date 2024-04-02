@@ -11,11 +11,11 @@ on:
         required: false
         default: "false"
   push:
-    branches: [dev, master, main, release/*]
+    branches: [dev, main, release/*]
   pull_request:
-    branches: [dev, master, main, release/*]
+    branches: [dev, main, release/*]
   schedule:
-    # Monday to Thursday 1 AM PDT build
+    # Monday to Thursday 3 AM CST build
     # * is a special character in YAML so you have to quote this string
     - cron: "0 8 * * 1,2,3,4"
 
@@ -35,10 +35,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set up Dotnet 6.x
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "6.x"
       - name: Set up Dotnet 8.0.x
         uses: actions/setup-dotnet@v4
         with:

@@ -5,10 +5,14 @@ name: CI Consumption E2E tests
 
 on:
   workflow_dispatch:
+    inputs:
+      custom_image:
+        description: "Use a custom image to run consumption tests"
+        required: false
   push:
-    branches: [ dev, master, main, release/* ]
+    branches: [ dev, main, release/* ]
   pull_request:
-    branches: [ dev, master, main, release/* ]
+    branches: [ dev, main, release/* ]
 
 jobs:
   build:
@@ -35,24 +39,29 @@ jobs:
         if: matrix.python-version == 3.7
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
+          CUSTOM_IMAGE: ${{ github.event.inputs.custom_image }}
         run: python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.8 Tests
         if: matrix.python-version == 3.8
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
+          CUSTOM_IMAGE: ${{ github.event.inputs.custom_image }}
         run: python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString39 }}
+          CUSTOM_IMAGE: ${{ github.event.inputs.custom_image }}
         run: python -m pytest -n auto --dist loadfile -vv --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.10 Tests
         if: matrix.python-version == 3.10
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
+          CUSTOM_IMAGE: ${{ github.event.inputs.custom_image }}
         run: python -m pytest -n auto --dist loadfile -vv --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.11 Tests
         if: matrix.python-version == 3.11
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString311 }}
+          CUSTOM_IMAGE: ${{ github.event.inputs.custom_image }}
         run: python -m pytest -n auto --dist loadfile -vv --reruns 4 --instafail tests/consumption_tests

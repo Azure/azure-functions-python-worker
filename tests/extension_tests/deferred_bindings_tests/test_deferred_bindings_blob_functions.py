@@ -6,7 +6,7 @@ from tests.utils import testutils
 from azure_functions_worker.bindings import meta
 
 
-class TestSdkBlobFunctions(testutils.WebHostTestCase):
+class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
@@ -155,10 +155,10 @@ class TestSdkBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data')
 
-        self.assertFalse(meta.DEFERRED_BINDINGS_ENABLED)
+        self.assertFalse(meta.deferred_bindings_enabled)
 
     def test_caching(self):
         # Cache is empty at the start
-        self.assertEqual(meta.DEFERRED_BINDINGS_CACHE, {})
+        self.assertEqual(meta.deferred_bindings_cache, {})
         r = self.webhost.request('GET', 'blob_cache')
         self.assertEqual(r.status_code, 200)

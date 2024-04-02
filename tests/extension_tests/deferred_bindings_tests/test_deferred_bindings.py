@@ -64,7 +64,7 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
-            self.assertFalse(meta.DEFERRED_BINDINGS_ENABLED)
+            self.assertFalse(meta.deferred_bindings_enabled)
 
 
 class TestDeferredBindingsHelpers(testutils.AsyncTestCase):

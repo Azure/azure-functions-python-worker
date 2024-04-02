@@ -28,6 +28,8 @@ class GenericBinding:
 
         elif isinstance(obj, (bytes, bytearray)):
             return datumdef.Datum(type='bytes', value=bytes(obj))
+        elif obj is None:
+            return datumdef.Datum(type=None, value=obj)
         else:
             raise NotImplementedError
 
@@ -45,6 +47,8 @@ class GenericBinding:
             result = data.value
         elif data_type == 'json':
             result = data.value
+        elif data_type is None:
+            result = None
         else:
             raise ValueError(
                 f'unexpected type of data received for the "generic" binding '

@@ -222,4 +222,4 @@ class TestGenericFunctions(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
             self.assertEqual(
                 r.response.return_value,
-                protos.TypedData(string="This is fine"))
+                protos.TypedData())

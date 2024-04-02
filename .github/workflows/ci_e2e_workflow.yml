@@ -62,6 +62,7 @@ jobs:
             done
           }
 
+          chmod +x .github/Scripts/install-deps.sh
           .github/Scripts/install-deps.sh
 
           # Retry a couple times to avoid certificate issue

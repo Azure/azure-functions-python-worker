@@ -35,10 +35,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set up Dotnet 6.x
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "6.x"
       - name: Set up Dotnet 8.0.x
         uses: actions/setup-dotnet@v4
         with:

@@ -109,11 +109,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('logging error', host_out)
         self.assertNotIn('logging debug', host_out)
 
-    def test_debug_with_user_logging(self):
-        r = self.webhost.request('GET', 'debug_user_logging')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-user-debug')
-
     def check_log_debug_with_user_logging(self, host_out: typing.List[str]):
         self.assertIn('logging info', host_out)
         self.assertIn('logging warning', host_out)

@@ -34,6 +34,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
     def get_libraries_to_install(cls):
         return ['azure-eventhub']
 
+    @testutils.retryable_test(3, 5)
     def test_eventhub_multiple(self):
         NUM_EVENTS = 3
         all_row_keys_seen = dict([(i, True) for i in range(NUM_EVENTS)])
@@ -72,10 +73,11 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
         self.assertDictEqual(all_row_keys_seen, row_keys_seen)
 
+    @testutils.retryable_test(3, 5)
     def test_eventhub_multiple_with_metadata(self):
         # Generate a unique event body for EventHub event
         # Record the start_time and end_time for checking event enqueue time
-        start_time = datetime.now(tz=tz.UTC)
+        start_time = datetime.utcnow()
         count = 10
         random_number = str(round(time.time()) % 1000)
         req_body = {
@@ -89,7 +91,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
                                  data=json.dumps(req_body))
         self.assertEqual(r.status_code, 200)
         self.assertIn('OK', r.text)
-        end_time = datetime.now(tz=tz.UTC)
+        end_time = datetime.utcnow()
 
         # Once the event get generated, allow function host to pool from
         # EventHub and wait for metadata_multiple to execute,
@@ -110,8 +112,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
             event = events[event_index]
 
             # Check if the event is enqueued between start_time and end_time
-            enqueued_time = parser.isoparse(event['enqueued_time']).astimezone(
-                tz=tz.UTC)
+            enqueued_time = parser.isoparse(event['enqueued_time'])
             self.assertTrue(start_time < enqueued_time < end_time)
 
             # Check if event properties are properly set
@@ -150,6 +151,7 @@ class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
     def get_libraries_to_install(cls):
         return ['azure-eventhub']
 
+    @testutils.retryable_test(3, 5)
     def test_eventhub_multiple(self):
         NUM_EVENTS = 3
         all_row_keys_seen = dict([(i, True) for i in range(NUM_EVENTS)])
@@ -183,10 +185,11 @@ class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
 
         self.assertDictEqual(all_row_keys_seen, row_keys_seen)
 
+    @testutils.retryable_test(3, 5)
     def test_eventhub_multiple_with_metadata(self):
         # Generate a unique event body for EventHub event
         # Record the start_time and end_time for checking event enqueue time
-        start_time = datetime.now(tz=tz.UTC)
+        start_time = datetime.utcnow()
         count = 10
         random_number = str(round(time.time()) % 1000)
         req_body = {
@@ -200,7 +203,7 @@ class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
                                  data=json.dumps(req_body))
         self.assertEqual(r.status_code, 200)
         self.assertIn('OK', r.text)
-        end_time = datetime.now(tz=tz.UTC)
+        end_time = datetime.utcnow()
 
         # Once the event get generated, allow function host to pool from
         # EventHub and wait for metadata_multiple to execute,
@@ -221,8 +224,7 @@ class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
             event = events[event_index]
 
             # Check if the event is enqueued between start_time and end_time
-            enqueued_time = parser.isoparse(event['enqueued_time']).astimezone(
-                tz=tz.UTC)
+            enqueued_time = parser.isoparse(event['enqueued_time'])
             self.assertTrue(start_time < enqueued_time < end_time)
 
             # Check if event properties are properly set

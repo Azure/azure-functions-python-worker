@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9, "3.10", "3.11", "3.12"]
+        python-version: [3.9, "3.10", "3.11"]
     permissions: read-all
     steps:
       - name: Checkout code.
@@ -103,19 +103,6 @@ jobs:
           AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString311 }}
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: |
-          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/extension_tests/deferred_bindings_tests
-      - name: Running 3.12 Tests
-        if: matrix.python-version == 3.12
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString312 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString312 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString312 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString312 }}
-          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString312 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString312 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString312 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: |
           python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/extension_tests/deferred_bindings_tests

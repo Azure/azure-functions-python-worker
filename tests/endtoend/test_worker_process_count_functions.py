@@ -25,9 +25,12 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
         cls._patch_environ.start()
         super().setUpClass()
 
-    def tearDown(self):
-        super().tearDown()
-        self._patch_environ.stop()
+    @classmethod
+    def tearDownClass(cls):
+        # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
+        os.environ.pop('PYTHON_THREADPOOL_THREAD_COUNT')
+        os.environ.pop('FUNCTIONS_WORKER_PROCESS_COUNT')
+        super().tearDownClass()
 
     @classmethod
     def get_script_dir(cls):

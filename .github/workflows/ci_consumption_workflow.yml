@@ -34,20 +34,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip==23.0
           python -m pip install -r requirements.txt
-          python -m pip install pytest pytest-instafail pytest-rerunfailures
+          python -m pip install pytest pytest-instafail pytest-rerunfailures pytest-xdist
           python setup.py build
       - name: Running 3.7 Tests
         if: matrix.python-version == 3.7
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
           CUSTOM_IMAGE: ${{ github.event.inputs.custom_image }}
-        run: python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests
+        run: python -m pytest -n auto --dist loadfile -vv --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.8 Tests
         if: matrix.python-version == 3.8
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
           CUSTOM_IMAGE: ${{ github.event.inputs.custom_image }}
-        run: python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests
+        run: python -m pytest -n auto --dist loadfile -vv --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
         env:

@@ -1,11 +1,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import time
+import unittest
+import sys
 
 from tests.utils import testutils
 from azure_functions_worker.bindings import meta
 
 
+@unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
+                                              "is only supported for 3.9+.")
 class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
 
     @classmethod

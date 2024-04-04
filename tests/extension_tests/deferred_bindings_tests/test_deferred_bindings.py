@@ -1,5 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import unittest
+import sys
 
 from azure_functions_worker import protos
 from azure_functions_worker.bindings import datumdef, meta
@@ -30,6 +32,8 @@ class MockMBD:
         self.content = content
 
 
+@unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
+                                              "is only supported for 3.9+.")
 class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
 
     async def test_deferred_bindings_metadata(self):

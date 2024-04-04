@@ -56,8 +56,9 @@ jobs:
           done
         }
 
-        chmod +x .github/Scripts/install-deps.sh
-        .github/Scripts/install-deps.sh
+        python -m pip install --upgrade pip
+        python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
+        python -m pip install -U -e .[dev]
 
         # Retry a couple times to avoid certificate issue
         retry 5 python setup.py build

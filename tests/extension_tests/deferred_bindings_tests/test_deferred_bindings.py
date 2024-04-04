@@ -6,7 +6,11 @@ import sys
 from azure_functions_worker import protos
 from azure_functions_worker.bindings import datumdef, meta
 from tests.utils import testutils
-from azure.functions.extension.blob import BlobClient, BlobClientConverter
+
+# Even if the tests are skipped for <=3.8, the library is still imported as
+# it is used for these tests.
+if sys.version_info.minor >= 9:
+    from azure.functions.extension.blob import BlobClient, BlobClientConverter
 
 DEFERRED_BINDINGS_ENABLED_DIR = testutils.EXTENSION_TESTS_FOLDER / \
     'deferred_bindings_tests' / \

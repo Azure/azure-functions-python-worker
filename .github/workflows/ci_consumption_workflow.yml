@@ -12,7 +12,6 @@ on:
   push:
     branches: [ dev, main, release/* ]
   pull_request:
-    branches: [ dev, main, release/* ]
 
 jobs:
   build:

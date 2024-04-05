@@ -13,7 +13,6 @@ on:
   push:
     branches: [dev, main, release/*]
   pull_request:
-    branches: [dev, main, release/*]
   schedule:
     # Monday to Thursday 3 AM CST build
     # * is a special character in YAML so you have to quote this string

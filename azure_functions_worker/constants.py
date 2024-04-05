@@ -63,7 +63,7 @@ PYTHON_ENABLE_INIT_INDEXING = "PYTHON_ENABLE_INIT_INDEXING"
 METADATA_PROPERTIES_WORKER_INDEXED = "worker_indexed"
 
 # HostNames
-LOCAL_HOST = "localhost"
+LOCAL_HOST = "127.0.0.1"
 
 # Header names
 X_MS_INVOCATION_ID = "x-ms-invocation-id"

@@ -146,7 +146,7 @@ def process_indexed_function(functions_registry: functions.Registry,
                 properties={METADATA_PROPERTIES_WORKER_INDEXED: "True"})
 
             fx_metadata_results.append(function_metadata)
-            return fx_metadata_results
+        return fx_metadata_results
     except Exception as e:
         logger.error(f'Error in process_indexed_function. {e}', exc_info=True)
         raise e

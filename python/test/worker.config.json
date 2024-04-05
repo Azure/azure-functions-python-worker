@@ -2,7 +2,7 @@
     "description":{
         "language":"python",
         "extensions":[".py"],
-        "defaultExecutablePath":"E:\\projects\\AzureFunctionsPythonWorker\\.venv_3.8\\Scripts\\python.exe",
+        "defaultExecutablePath":"E:\\projects\\AzureFunctionsPythonWorker\\.venv_3.9_debug\\Scripts\\python.exe",
         "defaultWorkerPath":"worker.py",
         "workerIndexing": "true"
     }

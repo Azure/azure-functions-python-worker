@@ -7,33 +7,39 @@ import pathlib
 import sys
 import typing
 from unittest import skipIf
+from unittest.mock import patch
 
+from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 from tests.utils import testutils
 
-class TestHttpFunctions(testutils.WebHostTestCase):
+
+class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
+    @classmethod
+    def setUpClass(cls):
+        os_environ = os.environ.copy()
+        # Turn on feature flag
+        os_environ[PYTHON_ENABLE_INIT_INDEXING] = '1'
+        cls._patch_environ = patch.dict('os.environ', os_environ)
+        cls._patch_environ.start()
+
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._patch_environ.stop()
+        super().tearDownClass()
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'http_functions'
-
-    def test_return_str(self):
-        r = self.webhost.request('GET', 'return_str')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'Hello World!')
-        self.assertTrue(r.headers['content-type'].startswith('text/plain'))
-
-    def test_return_out(self):
-        r = self.webhost.request('GET', 'return_out')
-        self.assertEqual(r.status_code, 201)
-        self.assertEqual(r.text, 'hello')
-        self.assertTrue(r.headers['content-type'].startswith('text/plain'))
+        return testutils.UNIT_TESTS_FOLDER / 'http_functions' / \
+                                             'http_v2_functions' / \
+                                              'fastapi'
 
     def test_return_bytes(self):
         r = self.webhost.request('GET', 'return_bytes')
-        self.assertEqual(r.status_code, 500)
-        # https://github.com/Azure/azure-functions-host/issues/2706
-        # self.assertRegex(
-        #    r.text, r'.*unsupported type .*http.* for Python type .*bytes.*')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.content, b'"Hello World"')
+        self.assertEqual(r.headers['content-type'], 'application/json')
 
     def test_return_http_200(self):
         r = self.webhost.request('GET', 'return_http')
@@ -57,8 +63,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'return_http_404')
         self.assertEqual(r.status_code, 404)
         self.assertEqual(r.text, 'bye')
-        self.assertEqual(r.headers['content-type'],
-                         'text/plain; charset=utf-8')
 
     def test_return_http_redirect(self):
         r = self.webhost.request('GET', 'return_http_redirect')
@@ -69,28 +73,16 @@ class TestHttpFunctions(testutils.WebHostTestCase):
                                  allow_redirects=False)
         self.assertEqual(r.status_code, 302)
 
-    def test_no_return(self):
-        r = self.webhost.request('GET', 'no_return')
-        self.assertEqual(r.status_code, 204)
-
-    def test_no_return_returns(self):
-        r = self.webhost.request('GET', 'no_return_returns')
-        self.assertEqual(r.status_code, 500)
-        # https://github.com/Azure/azure-functions-host/issues/2706
-        # self.assertRegex(r.text,
-        #                  r'.*function .+no_return_returns.+ without a '
-        #                  r'\$return binding returned a non-None value.*')
-
     def test_async_return_str(self):
         r = self.webhost.request('GET', 'async_return_str')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'Hello Async World!')
+        self.assertEqual(r.text, '"Hello Async World!"')
 
     def test_async_logging(self):
         # Test that logging doesn't *break* things.
         r = self.webhost.request('GET', 'async_logging')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-async')
+        self.assertEqual(r.text, '"OK-async"')
 
     def check_log_async_logging(self, host_out: typing.List[str]):
         # Host out only contains user logs
@@ -100,7 +92,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def test_debug_logging(self):
         r = self.webhost.request('GET', 'debug_logging')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-debug')
+        self.assertEqual(r.text, '"OK-debug"')
 
     def check_log_debug_logging(self, host_out: typing.List[str]):
         self.assertIn('logging info', host_out)
@@ -111,7 +103,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def test_debug_with_user_logging(self):
         r = self.webhost.request('GET', 'debug_user_logging')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-user-debug')
+        self.assertEqual(r.text, '"OK-user-debug"')
 
     def check_log_debug_with_user_logging(self, host_out: typing.List[str]):
         self.assertIn('logging info', host_out)
@@ -123,7 +115,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # Test that logging doesn't *break* things.
         r = self.webhost.request('GET', 'sync_logging')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-sync')
+        self.assertEqual(r.text, '"OK-sync"')
 
     def check_log_sync_logging(self, host_out: typing.List[str]):
         # Host out only contains user logs
@@ -144,7 +136,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def test_remapped_context(self):
         r = self.webhost.request('GET', 'remapped_context')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'GET')
+        self.assertEqual(r.text, '"GET"')
 
     def test_return_request(self):
         r = self.webhost.request(
@@ -180,7 +172,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
         self.assertIn('return_request', req['url'])
 
-        self.assertEqual(req['get_body'], 'key=value')
+        self.assertEqual(req['body'], 'key=value')
 
     def test_post_json_request_is_untouched(self):
         body = b'{"foo":  "bar", "two":  4}'
@@ -196,15 +188,13 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
     def test_accept_json(self):
         r = self.webhost.request(
-            'POST', 'accept_json',
+            'GET', 'accept_json',
             json={'a': 'abc', 'd': 42})
 
-        req = r.json()
-
-        self.assertEqual(req['method'], 'POST')
-        self.assertEqual(req['get_json'], {'a': 'abc', 'd': 42})
-
-        self.assertIn('accept_json', req['url'])
+        self.assertEqual(r.status_code, 200)
+        r_json = r.json()
+        self.assertEqual(r_json, {'a': 'abc', 'd': 42})
+        self.assertEqual(r.headers['content-type'], 'application/json')
 
     def test_unhandled_error(self):
         r = self.webhost.request('GET', 'unhandled_error')
@@ -307,7 +297,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # User event loop is not supported in HTTP trigger
         r = self.webhost.request('GET', 'user_event_loop/')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-user-event-loop')
+        self.assertEqual(r.text, '"OK-user-event-loop"')
 
     def check_log_user_event_loop_error(self, host_out: typing.List[str]):
         self.assertIn('try_log', host_out)
@@ -331,7 +321,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def test_print_logging_no_flush(self):
         r = self.webhost.request('GET', 'print_logging?message=Secret42')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-print-logging')
+        self.assertEqual(r.text, '"OK-print-logging"')
 
     def check_log_print_logging_no_flush(self, host_out: typing.List[str]):
         self.assertIn('Secret42', host_out)
@@ -340,7 +330,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET',
                                  'print_logging?flush=true&message=Secret42')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-print-logging')
+        self.assertEqual(r.text, '"OK-print-logging"')
 
     def check_log_print_logging_with_flush(self, host_out: typing.List[str]):
         self.assertIn('Secret42', host_out)
@@ -349,7 +339,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET',
                                  'print_logging?console=true&message=Secret42')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-print-logging')
+        self.assertEqual(r.text, '"OK-print-logging"')
 
     @skipIf(sys.version_info < (3, 8, 0),
             "Skip the tests for Python 3.7 and below")
@@ -358,17 +348,10 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers.get(
             'Set-Cookie'),
-            "foo3=42; expires=Thu, 12 Jan 2017 13:55:08 GMT; "
-            "max-age=10000000; domain=example.com; path=/; secure; httponly, "
-            "foo3=43; expires=Fri, 12 Jan 2018 13:55:08 GMT; "
-            "max-age=10000000; domain=example.com; path=/; secure; httponly")
-
-    @skipIf(sys.version_info < (3, 8, 0),
-            "Skip the tests for Python 3.7 and below")
-    def test_set_cookie_header_in_response_empty_value(self):
-        r = self.webhost.request('GET', 'set_cookie_resp_header_empty')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.headers.get('Set-Cookie'), None)
+            "foo3=42; Domain=example.com; expires=Thu, 12 Jan 2017 13:55:08"
+            " GMT; HttpOnly; Max-Age=10000000; Path=/; SameSite=Lax; Secure,"
+            " foo3=43; Domain=example.com; expires=Fri, 12 Jan 2018 13:55:08"
+            " GMT; HttpOnly; Max-Age=10000000; Path=/; SameSite=Lax; Secure")
 
     @skipIf(sys.version_info < (3, 8, 0),
             "Skip the tests for Python 3.7 and below")
@@ -377,7 +360,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
                                  'set_cookie_resp_header_default_values')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers.get('Set-Cookie'),
-                         'foo=bar; domain=; path=')
+                         'foo3=42; Path=/; SameSite=lax')
 
     @skipIf(sys.version_info < (3, 8, 0),
             "Skip the tests for Python 3.7 and below")
@@ -385,16 +368,8 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         r = self.webhost.request(
             'GET',
             'response_cookie_header_nullable_timestamp_err')
-        self.assertEqual(r.status_code, 500)
+        self.assertEqual(r.status_code, 200)
 
-    def check_log_response_cookie_header_nullable_timestamp_err(self,
-                                                                host_out:
-                                                                typing.List[
-                                                                    str]):
-        self.assertIn(
-            "Can not parse value Dummy of expires in the cookie due to "
-            "invalid format.",
-            host_out)
 
     @skipIf(sys.version_info < (3, 8, 0),
             "Skip the tests for Python 3.7 and below")
@@ -403,26 +378,14 @@ class TestHttpFunctions(testutils.WebHostTestCase):
             'GET',
             'response_cookie_header_nullable_bool_err')
         self.assertEqual(r.status_code, 200)
-        self.assertFalse("Set-Cookie" in r.headers)
+        self.assertTrue("Set-Cookie" in r.headers)
 
-    @skipIf(sys.version_info < (3, 8, 0),
-            "Skip the tests for Python 3.7 and below")
-    def test_response_cookie_header_nullable_double_err(self):
-        r = self.webhost.request(
-            'GET',
-            'response_cookie_header_nullable_double_err')
-        self.assertEqual(r.status_code, 200)
-        self.assertFalse("Set-Cookie" in r.headers)
-
-    def check_log_print_to_console_stdout(self, host_out: typing.List[str]):
-        # System logs stdout should not exist in host_out
-        self.assertNotIn('Secret42', host_out)
 
     def test_print_to_console_stderr(self):
         r = self.webhost.request('GET', 'print_logging?console=true'
                                         '&message=Secret42&is_stderr=true')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-print-logging')
+        self.assertEqual(r.text, '"OK-print-logging"')
 
     def check_log_print_to_console_stderr(self, host_out: typing.List[str], ):
         # System logs stderr should not exist in host_out
@@ -431,7 +394,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def test_hijack_current_event_loop(self):
         r = self.webhost.request('GET', 'hijack_current_event_loop/')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-hijack-current-event-loop')
+        self.assertEqual(r.text, '"OK-hijack-current-event-loop"')
 
     def check_log_hijack_current_event_loop(self, host_out: typing.List[str]):
         # User logs should exist in host_out
@@ -446,19 +409,49 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # System logs should not exist in host_out
         self.assertNotIn('parallelly_log_system at disguised_logger', host_out)
 
+    def test_no_type_hint(self):
+        r = self.webhost.request('GET', 'no_type_hint')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '"no_type_hint"')
 
-class TestHttpFunctionsStein(TestHttpFunctions):
+    def test_return_int(self):
+        r = self.webhost.request('GET', 'return_int')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '1000')
 
-    @classmethod
-    def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'http_functions' / \
-                                             'http_functions_stein'
+    def test_return_float(self):
+        r = self.webhost.request('GET', 'return_float')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '1000.0')
 
-    def test_no_return(self):
-        r = self.webhost.request('GET', 'no_return')
+    def test_return_bool(self):
+        r = self.webhost.request('GET', 'return_bool')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'true')
+
+    def test_return_dict(self):
+        r = self.webhost.request('GET', 'return_dict')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {'key': 'value'})
+
+    def test_return_list(self):
+        r = self.webhost.request('GET', 'return_list')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), ["value1", "value2"])
+
+    def test_return_pydantic_model(self):
+        r = self.webhost.request('GET', 'return_pydantic_model')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {'description': 'description1',
+                                    'name': 'item1'})
+
+    def test_return_pydantic_model_with_missing_fields(self):
+        r = self.webhost.request('GET',
+                                 'return_pydantic_model_with_missing_fields')
         self.assertEqual(r.status_code, 500)
 
-    def test_no_return_returns(self):
-        r = self.webhost.request('GET', 'no_return_returns')
-        self.assertEqual(r.status_code, 200)
-
+    def check_return_pydantic_model_with_missing_fields(self,
+                                                        host_out:
+                                                        typing.List[str]):
+        self.assertIn("Field required [type=missing, input_value={'name': "
+                      "'item1'}, input_type=dict]", host_out)

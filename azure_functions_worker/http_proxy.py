@@ -102,14 +102,12 @@ class HttpCoordinator(metaclass=SingletonMeta):
             self._context_references[invoc_id] = AsyncContextReference()
         context_ref = self._context_references.get(invoc_id)
         context_ref.http_request = http_request
-        context_ref.http_request_available_event.set()
 
     def set_http_response(self, invoc_id, http_response):
         if invoc_id not in self._context_references:
             raise Exception("No context reference found for invocation %s", invoc_id)
         context_ref = self._context_references.get(invoc_id)
         context_ref.http_response = http_response
-        context_ref.http_response_available_event.set()
 
     async def get_http_request_async(self, invoc_id):
         if invoc_id not in self._context_references:
@@ -141,8 +139,7 @@ class HttpCoordinator(metaclass=SingletonMeta):
         if response is not None:
             context_ref.http_response = None
             return response
-        
-        raise Exception("No http response found for invocation %s", invoc_id)
+        # If user does not set the response, return nothing and web server will return 200 empty response
 
 
 http_coordinator = HttpCoordinator()

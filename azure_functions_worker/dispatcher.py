@@ -146,7 +146,7 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def dispatch_forever(self):  # sourcery skip: swap-if-expression
         if DispatcherMeta.__current_dispatcher__ is not None:
             raise RuntimeError('there can be only one running dispatcher per '
-                                    'process')
+                               'process')
 
         self._old_task_factory = self._loop.get_task_factory()
 
@@ -174,10 +174,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             logging_handler = AsyncLoggingHandler()
             root_logger = logging.getLogger()
 
-
             log_level = logging.INFO if not is_envvar_true(
                 PYTHON_ENABLE_DEBUG_LOGGING) else logging.DEBUG
-            
+
             root_logger.setLevel(log_level)
             root_logger.addHandler(logging_handler)
             logger.info('Switched to gRPC logging.')
@@ -285,20 +284,19 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__worker_init_request(self, request):
         try:
             logger.info('Received WorkerInitRequest, '
-                                'python version %s, '
-                                'worker version %s, '
-                                'request ID %s. '
-                                'App Settings state: %s. '
-                                'To enable debug level logging, please refer to '
-                                'https://aka.ms/python-enable-debug-logging',
-                                sys.version,
-                                VERSION,
-                                self.request_id,
-                                get_python_appsetting_state()
-                                )
+                        'python version %s, '
+                        'worker version %s, '
+                        'request ID %s. '
+                        'App Settings state: %s. '
+                        'To enable debug level logging, please refer to '
+                        'https://aka.ms/python-enable-debug-logging',
+                        sys.version,
+                        VERSION,
+                        self.request_id,
+                        get_python_appsetting_state()
+                        )
 
             worker_init_request = request.worker_init_request
-            directory = worker_init_request.function_app_directory
             host_capabilities = worker_init_request.capabilities
             if constants.FUNCTION_DATA_CACHE in host_capabilities:
                 val = host_capabilities[constants.FUNCTION_DATA_CACHE]
@@ -332,10 +330,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self._function_metadata_exception = ex
 
                 if self._has_http_func:
-                    from azure.functions.extension.base import HttpV2FeatureChecker 
+                    from azure.functions.extension.base import HttpV2FeatureChecker
 
                     if HttpV2FeatureChecker.http_v2_enabled():
-                        capabilities[constants.HTTP_URI] = await self._initialize_http_server()
+                        capabilities[constants.HTTP_URI] = \
+                            await self._initialize_http_server()
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -385,7 +384,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._function_metadata_result = (
             self.index_functions(function_path)) \
             if os.path.exists(function_path) else None
-
 
     async def _handle__functions_metadata_request(self, request):
         metadata_request = request.functions_metadata_request
@@ -555,7 +553,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 trigger_metadata = None
                 if bindings.is_trigger_binding(pb_type_info.binding_name):
                     trigger_metadata = invoc_request.trigger_metadata
-                
+
                 args[pb.name] = bindings.from_incoming_proto(
                     pb_type_info.binding_name, pb,
                     trigger_metadata=trigger_metadata,
@@ -570,11 +568,14 @@ class Dispatcher(metaclass=DispatcherMeta):
             if http_v2_enabled:
                 http_request = await http_coordinator.get_http_request_async(
                     invocation_id)
-                
-                from azure.functions.extension.base import RequestTrackerMeta
-                route_params = {key: item.string for key, item in trigger_metadata.items() if key not in ['Headers', 'Query']}
 
-                RequestTrackerMeta.get_synchronizer().sync_route_params(http_request, route_params)
+                from azure.functions.extension.base import RequestTrackerMeta
+                route_params = {key: item.string for key, item
+                                in trigger_metadata.items() if key not in [
+                                    'Headers', 'Query']}
+
+                (RequestTrackerMeta.get_synchronizer()
+                    .sync_route_params(http_request, route_params))
                 args[fi.trigger_metadata.get('param_name')] = http_request
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
@@ -599,16 +600,18 @@ class Dispatcher(metaclass=DispatcherMeta):
                         self._sync_call_tp,
                         self._run_sync_func,
                         invocation_id, fi_context, fi.func, args)
-                
+
                 if call_result is not None and not fi.has_return:
                     raise RuntimeError(f'function {fi.name!r} without a $return '
-                                    'binding returned a non-None value')
+                                       'binding returned a non-None value')
             except Exception as e:
                 call_error = e
                 raise
             finally:
                 if http_v2_enabled:
-                    http_coordinator.set_http_response(invocation_id, call_result if call_result is not None else call_error)
+                    http_coordinator.set_http_response(
+                        invocation_id, call_result
+                        if call_result is not None else call_error)
 
             output_data = []
             cache_enabled = self._function_data_cache_enabled
@@ -655,7 +658,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                     result=protos.StatusResult(
                         status=protos.StatusResult.Failure,
                         exception=self._serialize_exception(ex))))
-
 
     async def _handle__function_environment_reload_request(self, request):
         """Only runs on Linux Consumption placeholder specialization.
@@ -713,12 +715,13 @@ class Dispatcher(metaclass=DispatcherMeta):
                         caller_info="environment_reload_request")
                 except Exception as ex:
                     self._function_metadata_exception = ex
-                
+
                 if self._has_http_func:
                     from azure.functions.extension.base import HttpV2FeatureChecker
 
                     if HttpV2FeatureChecker.http_v2_enabled():
-                        capabilities[constants.HTTP_URI] = await self._initialize_http_server()
+                        capabilities[constants.HTTP_URI] = \
+                            await self._initialize_http_server()
 
             # Change function app directory
             if getattr(func_env_reload_request,
@@ -748,7 +751,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def _initialize_http_server(self):
         from azure.functions.extension.base import ModuleTrackerMeta, RequestTrackerMeta
-        
+
         web_extension_mod_name = ModuleTrackerMeta.get_module()
         extension_module = importlib.import_module(web_extension_mod_name)
         web_app_class = extension_module.WebApp
@@ -760,7 +763,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         request_type = RequestTrackerMeta.get_request_type()
 
         @app.route
-        async def catch_all(request: request_type): # type: ignore
+        async def catch_all(request: request_type):  # type: ignore
             invoc_id = request.headers.get(X_MS_INVOCATION_ID)
             if invoc_id is None:
                 raise ValueError(f"Header {X_MS_INVOCATION_ID} not found")
@@ -772,7 +775,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             # if http_resp is an python exception, raise it
             if isinstance(http_resp, Exception):
                 raise http_resp
-            
+
             return http_resp
 
         web_server = web_server_class(LOCAL_HOST, unused_port, app)

@@ -34,7 +34,9 @@ jobs:
         run: |
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
           python -m pip install -U -e .[dev]
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --pre -U -e .[test-http-v2]
+          if [[ "${{ matrix.python-version }}" != "3.7" ]]; then
+            python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --pre -U -e .[test-http-v2]
+          fi
           python setup.py build
       - name: Running 3.7 Tests
         if: matrix.python-version == 3.7

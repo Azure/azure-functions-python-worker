@@ -24,7 +24,7 @@ class TestTableFunctions(testutils.WebHostTestCase):
     def test_table_bindings(self):
         out_resp = self.webhost.request('POST', 'table_out_binding')
         self.assertEqual(out_resp.status_code, 200)
-        row_key = out_resp.headers['rowKey']
+        row_key = json.loads(out_resp.text)['RowKey']
 
         script_dir = pathlib.Path(self.get_script_dir())
         json_path = pathlib.Path('table_in_binding/function.json')
@@ -42,8 +42,12 @@ class TestTableFunctions(testutils.WebHostTestCase):
 
         in_resp = self.webhost.request('GET', 'table_in_binding')
         self.assertEqual(in_resp.status_code, 200)
-        in_row_key = in_resp.headers['rowKey']
-        self.assertEqual(in_row_key, row_key)
+        row_key_present = False
+        for row in json.loads(in_resp.text):
+            if row["RowKey"] == row_key:
+                row_key_present = True
+                break
+        self.assertTrue(row_key_present)
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
@@ -60,12 +64,16 @@ class TestTableFunctionsStein(testutils.WebHostTestCase):
     def test_table_bindings(self):
         out_resp = self.webhost.request('POST', 'table_out_binding')
         self.assertEqual(out_resp.status_code, 200)
-        row_key = out_resp.headers['rowKey']
+        row_key = json.loads(out_resp.text)['RowKey']
 
         in_resp = self.webhost.request('GET', f'table_in_binding/{row_key}')
         self.assertEqual(in_resp.status_code, 200)
-        in_row_key = in_resp.headers['rowKey']
-        self.assertEqual(in_row_key, row_key)
+        row_key_present = False
+        for row in json.loads(in_resp.text):
+            if row["RowKey"] == row_key:
+                row_key_present = True
+                break
+        self.assertTrue(row_key_present)
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)

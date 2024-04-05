@@ -7,10 +7,7 @@ from azure_functions_worker import protos
 from azure_functions_worker.bindings import datumdef, meta
 from tests.utils import testutils
 
-# Even if the tests are skipped for <=3.8, the library is still imported as
-# it is used for these tests.
-if sys.version_info.minor >= 9:
-    from azure.functions.extension.blob import BlobClient, BlobClientConverter
+from azure.functions.extension.blob import BlobClient, BlobClientConverter
 
 DEFERRED_BINDINGS_ENABLED_DIR = testutils.EXTENSION_TESTS_FOLDER / \
     'deferred_bindings_tests' / \
@@ -50,6 +47,8 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
 
 
+@unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
+                                              "is only supported for 3.9+.")
 class TestDeferredBindingsEnabledDual(testutils.AsyncTestCase):
 
     async def test_deferred_bindings_dual_metadata(self):
@@ -62,6 +61,8 @@ class TestDeferredBindingsEnabledDual(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
 
 
+@unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
+                                              "is only supported for 3.9+.")
 class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
 
     async def test_non_deferred_bindings_metadata(self):
@@ -75,6 +76,8 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
             self.assertFalse(meta.deferred_bindings_enabled)
 
 
+@unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
+                                              "is only supported for 3.9+.")
 class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
 
     async def test_get_deferred_binding(self):

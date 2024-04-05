@@ -15,19 +15,21 @@ PB_TYPE_DATA = 'data'
 PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 BINDING_REGISTRY = None
 
+
 def _check_http_input_type_annotation(bind_name: str, pytype: type) -> bool:
     ext_base = sys.modules.get('azure.functions.extension.base')
     if ext_base is not None and ext_base.HttpV2FeatureChecker.http_v2_enabled():
         return ext_base.RequestTrackerMeta.check_type(pytype)
-        
+
     binding = get_binding(bind_name)
     return binding.check_input_type_annotation(pytype)
+
 
 def _check_http_output_type_annotation(bind_name: str, pytype: type) -> bool:
     ext_base = sys.modules.get('azure.functions.extension.base')
     if ext_base is not None and ext_base.HttpV2FeatureChecker.http_v2_enabled():
         return ext_base.ResponseTrackerMeta.check_type(pytype)
-    
+
     binding = get_binding(bind_name)
     return binding.check_output_type_annotation(pytype)
 
@@ -39,6 +41,7 @@ INPUT_TYPE_CHECK_OVERRIDE_MAP = {
 OUTPUT_TYPE_CHECK_OVERRIDE_MAP = {
     HTTP: _check_http_output_type_annotation
 }
+
 
 def load_binding_registry() -> None:
     func = sys.modules.get('azure.functions')
@@ -71,15 +74,16 @@ def check_input_type_annotation(bind_name: str, pytype: type) -> bool:
     global INPUT_TYPE_CHECK_OVERRIDE_MAP
     if bind_name in INPUT_TYPE_CHECK_OVERRIDE_MAP:
         return INPUT_TYPE_CHECK_OVERRIDE_MAP[bind_name](bind_name, pytype)
-    
+
     binding = get_binding(bind_name)
     return binding.check_input_type_annotation(pytype)
+
 
 def check_output_type_annotation(bind_name: str, pytype: type) -> bool:
     global OUTPUT_TYPE_CHECK_OVERRIDE_MAP
     if bind_name in OUTPUT_TYPE_CHECK_OVERRIDE_MAP:
         return OUTPUT_TYPE_CHECK_OVERRIDE_MAP[bind_name](bind_name, pytype)
-    
+
     binding = get_binding(bind_name)
     return binding.check_output_type_annotation(pytype)
 

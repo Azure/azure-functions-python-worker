@@ -21,6 +21,7 @@ error_logger: logging.Logger = (
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
 
+
 def format_exception(exception: Exception) -> str:
     msg = str(exception) + "\n"
     if (sys.version_info.major, sys.version_info.minor) < (3, 10):

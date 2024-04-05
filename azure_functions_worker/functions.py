@@ -35,6 +35,7 @@ class FunctionInfo(typing.NamedTuple):
 
     trigger_metadata: typing.Optional[typing.Dict[str, typing.Any]]
 
+
 class FunctionLoadError(RuntimeError):
 
     def __init__(self, function_name: str, msg: str) -> None:
@@ -301,7 +302,8 @@ class Registry:
                                                  return_type: str):
 
         http_trigger_param_name = next(
-            (input_type for input_type, type_info in input_types.items() if type_info.binding_name == HTTP_TRIGGER),
+            (input_type for input_type, type_info in input_types.items()
+             if type_info.binding_name == HTTP_TRIGGER),
             None
         )
 
@@ -323,7 +325,6 @@ class Registry:
             output_types=output_types,
             return_type=return_type,
             trigger_metadata=trigger_metadata)
-        
 
         self._functions[function_id] = function_info
         return function_info

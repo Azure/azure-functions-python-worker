@@ -2,7 +2,9 @@
 # Licensed under the MIT License.
 import concurrent
 import os
+import sys
 import typing
+import unittest
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
@@ -222,6 +224,7 @@ class TestHttpFunctionsWithInitIndexing(TestHttpFunctions):
         super().tearDownClass()
 
 
+@unittest.skipIf(sys.version_info <= (3, 7), "Skipping tests if <= Python 3.7")
 class TestHttpFunctionsV2FastApiWithInitIndexing(TestHttpFunctionsWithInitIndexing):
         @classmethod
         def get_script_dir(cls):

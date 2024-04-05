@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import unittest
 from unittest.mock import MagicMock
 
@@ -13,6 +14,7 @@ class MockHttpResponse:
     pass
 
 
+@unittest.skipIf(sys.version_info <= (3, 7), "Skipping tests if <= Python 3.7")
 class TestHttpCoordinator(unittest.TestCase):
     def setUp(self):
         self.invoc_id = "test_invocation"

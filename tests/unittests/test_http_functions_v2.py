@@ -6,6 +6,7 @@ import os
 import pathlib
 import sys
 import typing
+import unittest
 from unittest import skipIf
 from unittest.mock import patch
 
@@ -13,6 +14,7 @@ from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 from tests.utils import testutils
 
 
+@unittest.skipIf(sys.version_info <= (3, 7), "Skipping tests if <= Python 3.7")
 class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
     @classmethod
     def setUpClass(cls):

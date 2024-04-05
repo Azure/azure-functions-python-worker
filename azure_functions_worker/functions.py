@@ -33,7 +33,7 @@ class FunctionInfo(typing.NamedTuple):
     output_types: typing.Mapping[str, ParamTypeInfo]
     return_type: typing.Optional[ParamTypeInfo]
 
-    trigger_metadata: typing.Optional[Dict[str, typing.Any]]
+    trigger_metadata: typing.Optional[typing.Dict[str, typing.Any]]
 
 class FunctionLoadError(RuntimeError):
 

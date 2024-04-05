@@ -330,7 +330,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self._function_metadata_exception = ex
 
                 if self._has_http_func:
-                    from azure.functions.extension.base import HttpV2FeatureChecker
+                    from azure.functions.extension.base \
+                        import HttpV2FeatureChecker
 
                     if HttpV2FeatureChecker.http_v2_enabled():
                         capabilities[constants.HTTP_URI] = \
@@ -341,7 +342,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 worker_init_response=protos.WorkerInitResponse(
                     capabilities=capabilities,
                     worker_metadata=self.get_worker_metadata(),
-                    result=protos.StatusResult(status=protos.StatusResult.Success),
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Success),
                 ),
             )
         except Exception as e:
@@ -349,8 +351,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 worker_init_response=protos.WorkerInitResponse(
-                    result=protos.StatusResult(status=protos.StatusResult.Failure,
-                                               exception=self._serialize_exception(e))
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Failure,
+                        exception=self._serialize_exception(e))
                 ),
             )
 
@@ -594,7 +597,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             call_error = None
             try:
                 if fi.is_async:
-                    call_result = await self._run_async_func(fi_context, fi.func, args)
+                    call_result = \
+                        await self._run_async_func(fi_context, fi.func, args)
                 else:
                     call_result = await self._loop.run_in_executor(
                         self._sync_call_tp,
@@ -602,8 +606,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                         invocation_id, fi_context, fi.func, args)
 
                 if call_result is not None and not fi.has_return:
-                    raise RuntimeError(f'function {fi.name!r} without a $return '
-                                       'binding returned a non-None value')
+                    raise RuntimeError(
+                        f'function {fi.name!r} without a $return binding'
+                        'returned a non-None value')
             except Exception as e:
                 call_error = e
                 raise
@@ -717,7 +722,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self._function_metadata_exception = ex
 
                 if self._has_http_func:
-                    from azure.functions.extension.base import HttpV2FeatureChecker
+                    from azure.functions.extension.base \
+                        import HttpV2FeatureChecker
 
                     if HttpV2FeatureChecker.http_v2_enabled():
                         capabilities[constants.HTTP_URI] = \
@@ -750,7 +756,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 function_environment_reload_response=failure_response)
 
     async def _initialize_http_server(self):
-        from azure.functions.extension.base import ModuleTrackerMeta, RequestTrackerMeta
+        from azure.functions.extension.base \
+            import ModuleTrackerMeta, RequestTrackerMeta
 
         web_extension_mod_name = ModuleTrackerMeta.get_module()
         extension_module = importlib.import_module(web_extension_mod_name)
@@ -769,7 +776,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 raise ValueError(f"Header {X_MS_INVOCATION_ID} not found")
             logger.info('Received HTTP request for invocation %s', invoc_id)
             http_coordinator.set_http_request(invoc_id, request)
-            http_resp = await http_coordinator.await_http_response_async(invoc_id)
+            http_resp = \
+                await http_coordinator.await_http_response_async(invoc_id)
 
             logger.info('Sending HTTP response for invocation %s', invoc_id)
             # if http_resp is an python exception, raise it
@@ -801,7 +809,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             indexed_function_logs: List[str] = []
             for func in indexed_functions:
-                self._has_http_func = self._has_http_func or func.is_http_function()
+                self._has_http_func = self._has_http_func or \
+                    func.is_http_function()
                 function_log = "Function Name: {}, Function Binding: {}" \
                     .format(func.get_function_name(),
                             [(binding.type, binding.name) for binding in

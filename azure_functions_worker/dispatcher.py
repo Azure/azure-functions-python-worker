@@ -678,16 +678,22 @@ class Dispatcher(metaclass=DispatcherMeta):
                     len(indexed_functions))
 
         if indexed_functions:
-            fx_metadata_results = loader.process_indexed_function(
-                self._functions,
-                indexed_functions)
+            fx_metadata_results, bindings_logs = (
+                loader.process_indexed_function(
+                    self._functions,
+                    indexed_functions))
 
             indexed_function_logs: List[str] = []
             for func in indexed_functions:
+                # break this loop down
+                bindings_info = []
+                for binding in func.get_bindings():
+                    deferred_binding_info = bindings_logs.get(binding.name) if bindings_logs.get(binding.name) else ""
+                    bindings_info.append((binding.type, binding.name,
+                                          deferred_binding_info))
+
                 function_log = "Function Name: {}, Function Binding: {}" \
-                    .format(func.get_function_name(),
-                            [(binding.type, binding.name) for binding in
-                             func.get_bindings()])
+                    .format(func.get_function_name(), bindings_info)
                 indexed_function_logs.append(function_log)
 
             logger.info(

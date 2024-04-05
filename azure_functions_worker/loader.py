@@ -123,6 +123,7 @@ def build_variable_interval_retry(retry, max_retry_count, retry_strategy):
 def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions):
     fx_metadata_results = []
+    bindings_logs = {}
     for indexed_function in indexed_functions:
         function_info = functions_registry.add_indexed_function(
             function=indexed_function)
@@ -130,8 +131,9 @@ def process_indexed_function(functions_registry: functions.Registry,
         binding_protos = build_binding_protos(indexed_function)
         retry_protos = build_retry_protos(indexed_function)
 
-        raw_bindings = get_fx_raw_bindings(indexed_function=indexed_function,
-                                           function_info=function_info)
+        raw_bindings, bindings_logs = get_fx_raw_bindings(
+            indexed_function=indexed_function,
+            function_info=function_info)
 
         function_metadata = protos.RpcFunctionMetadata(
             name=function_info.name,
@@ -149,7 +151,7 @@ def process_indexed_function(functions_registry: functions.Registry,
 
         fx_metadata_results.append(function_metadata)
 
-    return fx_metadata_results
+    return fx_metadata_results, bindings_logs
 
 
 @attach_message_to_exception(
@@ -250,4 +252,4 @@ def get_fx_raw_bindings(indexed_function, function_info):
             indexed_function, function_info.input_types)
 
     else:
-        return indexed_function.get_raw_bindings()
+        return indexed_function.get_raw_bindings(), {}

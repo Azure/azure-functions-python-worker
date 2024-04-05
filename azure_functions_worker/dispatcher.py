@@ -33,7 +33,8 @@ from .constants import (HTTP_TRIGGER, PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
                         X_MS_INVOCATION_ID, LOCAL_HOST,
-                        METADATA_PROPERTIES_WORKER_INDEXED)
+                        METADATA_PROPERTIES_WORKER_INDEXED,
+                        BASE_EXT_SUPPORTED_PY_MINOR_VERSION)
 from .extension import ExtensionManager
 from .http_v2 import http_coordinator
 from .logging import disable_console_logging, enable_console_logging
@@ -129,7 +130,8 @@ class Dispatcher(metaclass=DispatcherMeta):
          3.9 scenarios (as we'll start passing only None by default), and we
          need to get that information.
 
-         Ref: concurrent.futures.thread.ThreadPoolExecutor.__init__._max_workers
+         Ref: concurrent.futures.thread.ThreadPoolExecutor.__init__
+         ._max_workers
         """
         return self._sync_call_tp._max_workers
 
@@ -208,7 +210,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         self._stop_sync_call_tp()
 
-    def on_logging(self, record: logging.LogRecord, formatted_msg: str) -> None:
+    def on_logging(self, record: logging.LogRecord,
+                   formatted_msg: str) -> None:
         if record.levelno >= logging.CRITICAL:
             log_level = protos.RpcLog.Critical
         elif record.levelno >= logging.ERROR:
@@ -506,7 +509,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         except Exception as ex:
-            logging.error(ex)
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 function_load_response=protos.FunctionLoadResponse(
@@ -564,7 +566,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     shmem_mgr=self._shmem_mgr)
 
             http_v2_enabled = False
-            if fi.trigger_metadata.get('type') == HTTP_TRIGGER:
+            if sys.version_info.minor >= \
+                    BASE_EXT_SUPPORTED_PY_MINOR_VERSION \
+                    and fi.trigger_metadata.get('type') == HTTP_TRIGGER:
                 from azure.functions.extension.base import HttpV2FeatureChecker
                 http_v2_enabled = HttpV2FeatureChecker.http_v2_enabled()
 
@@ -578,10 +582,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                                     'Headers', 'Query']}
 
                 (RequestTrackerMeta.get_synchronizer()
-                    .sync_route_params(http_request, route_params))
+                 .sync_route_params(http_request, route_params))
                 args[fi.trigger_metadata.get('param_name')] = http_request
 
-            fi_context = self._get_context(invoc_request, fi.name, fi.directory)
+            fi_context = self._get_context(invoc_request, fi.name,
+                                           fi.directory)
 
             # Use local thread storage to store the invocation ID
             # for a customer's threads
@@ -721,7 +726,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                 except Exception as ex:
                     self._function_metadata_exception = ex
 
-                if self._has_http_func:
+                if sys.version_info.minor >= \
+                        BASE_EXT_SUPPORTED_PY_MINOR_VERSION and \
+                        self._has_http_func:
                     from azure.functions.extension.base \
                         import HttpV2FeatureChecker
 
@@ -810,7 +817,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             indexed_function_logs: List[str] = []
             for func in indexed_functions:
                 self._has_http_func = self._has_http_func or \
-                    func.is_http_function()
+                                      func.is_http_function()
                 function_log = "Function Name: {}, Function Binding: {}" \
                     .format(func.get_function_name(),
                             [(binding.type, binding.name) for binding in
@@ -861,7 +868,8 @@ class Dispatcher(metaclass=DispatcherMeta):
     @staticmethod
     def _get_context(invoc_request: protos.InvocationRequest, name: str,
                      directory: str) -> bindings.Context:
-        """ For more information refer: https://aka.ms/azfunc-invocation-context
+        """ For more information refer:
+        https://aka.ms/azfunc-invocation-context
         """
         trace_context = bindings.TraceContext(
             invoc_request.trace_context.trace_parent,

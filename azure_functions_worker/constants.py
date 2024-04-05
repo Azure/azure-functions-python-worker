@@ -55,7 +55,8 @@ PYTHON_LANGUAGE_RUNTIME = "python"
 RETRY_POLICY = "retry_policy"
 
 # Paths
-CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site-packages"
+CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site" \
+                         "-packages"
 
 # Flag to index functions in handle init request
 PYTHON_ENABLE_INIT_INDEXING = "PYTHON_ENABLE_INIT_INDEXING"
@@ -73,3 +74,6 @@ HTTP_TRIGGER = "httpTrigger"
 
 # Output Names
 HTTP = "http"
+
+# Base extension supported Python minor version
+BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8

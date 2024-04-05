@@ -17,18 +17,20 @@ BINDING_REGISTRY = None
 
 
 def _check_http_input_type_annotation(bind_name: str, pytype: type) -> bool:
-    ext_base = sys.modules.get('azure.functions.extension.base')
-    if ext_base is not None and ext_base.HttpV2FeatureChecker.http_v2_enabled():
-        return ext_base.RequestTrackerMeta.check_type(pytype)
+    if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
+        ext_base = sys.modules.get('azure.functions.extension.base')
+        if ext_base is not None and ext_base.HttpV2FeatureChecker.http_v2_enabled():
+            return ext_base.RequestTrackerMeta.check_type(pytype)
 
     binding = get_binding(bind_name)
     return binding.check_input_type_annotation(pytype)
 
 
 def _check_http_output_type_annotation(bind_name: str, pytype: type) -> bool:
-    ext_base = sys.modules.get('azure.functions.extension.base')
-    if ext_base is not None and ext_base.HttpV2FeatureChecker.http_v2_enabled():
-        return ext_base.ResponseTrackerMeta.check_type(pytype)
+    if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
+        ext_base = sys.modules.get('azure.functions.extension.base')
+        if ext_base is not None and ext_base.HttpV2FeatureChecker.http_v2_enabled():
+            return ext_base.ResponseTrackerMeta.check_type(pytype)
 
     binding = get_binding(bind_name)
     return binding.check_output_type_annotation(pytype)

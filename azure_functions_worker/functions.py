@@ -293,19 +293,18 @@ class Registry:
 
         return return_type
 
-    def add_func_to_registry_and_return_funcinfo(self, function,
-                                                 function_name: str,
-                                                 function_id: str,
-                                                 directory: str,
-                                                 requires_context: bool,
-                                                 has_explicit_return: bool,
-                                                 has_implicit_return: bool,
-                                                 input_types: typing.Dict[
-                                                     str, ParamTypeInfo],
-                                                 output_types: typing.Dict[
-                                                     str, ParamTypeInfo],
-                                                 return_type: str,
-                                                 deferred_bindings_enabled: bool):
+    def add_func_to_registry_and_return_funcinfo(
+            self, function,
+            function_name: str,
+            function_id: str,
+            directory: str,
+            requires_context: bool,
+            has_explicit_return: bool,
+            has_implicit_return: bool,
+            input_types: typing.Dict[str, ParamTypeInfo],
+            output_types: typing.Dict[str, ParamTypeInfo],
+            return_type: str,
+            deferred_bindings_enabled: bool):
 
         function_info = FunctionInfo(
             func=function,
@@ -355,10 +354,8 @@ class Registry:
                                                     annotations,
                                                     func_name)
 
-        input_types, output_types, _ = self.validate_function_params(params,
-                                                                     bound_params,
-                                                                     annotations,
-                                                                     func_name)
+        input_types, output_types, _ = self.validate_function_params(
+            params, bound_params, annotations, func_name)
 
         return_type = \
             self.get_function_return_type(annotations,
@@ -374,7 +371,8 @@ class Registry:
                                                       has_explicit_return,
                                                       has_implicit_return,
                                                       input_types,
-                                                      output_types, return_type, _)
+                                                      output_types,
+                                                      return_type, _)
 
     def add_indexed_function(self, function):
         func = function.get_user_function()
@@ -427,13 +425,8 @@ class Registry:
                                           func_name)
 
         return \
-            self.add_func_to_registry_and_return_funcinfo(func, func_name,
-                                                          function_id,
-                                                          func_dir,
-                                                          requires_context,
-                                                          has_explicit_return,
-                                                          has_implicit_return,
-                                                          input_types,
-                                                          output_types,
-                                                          return_type,
-                                                          deferred_bindings_enabled)
+            self.add_func_to_registry_and_return_funcinfo(
+                func, func_name, function_id, func_dir,
+                requires_context, has_explicit_return,
+                has_implicit_return, input_types, output_types,
+                return_type, deferred_bindings_enabled)

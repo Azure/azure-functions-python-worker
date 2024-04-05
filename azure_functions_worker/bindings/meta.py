@@ -18,8 +18,8 @@ PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 # Base extension supported Python minor version
 BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8
 
-binding_registry = None
-deferred_binding_registry = None
+BINDING_REGISTRY = None
+DEFERRED_BINDING_REGISTRY = None
 deferred_bindings_enabled = False
 deferred_bindings_cache = {}
 
@@ -31,13 +31,13 @@ def load_binding_registry() -> None:
     if func is None:
         import azure.functions as func
 
-    global binding_registry
-    binding_registry = func.get_binding_registry()
+    global BINDING_REGISTRY
+    BINDING_REGISTRY = func.get_binding_registry()
 
-    if binding_registry is None:
-        # If the binding_registry is None, azure-functions hasn't been
+    if BINDING_REGISTRY is None:
+        # If the BINDING_REGISTRY is None, azure-functions hasn't been
         # loaded in properly.
-        raise AttributeError('binding_registry is None. Sys Path:'
+        raise AttributeError('BINDING_REGISTRY is None. Sys Path:'
                              f'{sys.path}, Sys Module: {sys.modules},'
                              f'python-packages Path exists:'
                              f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}')
@@ -47,8 +47,8 @@ def load_binding_registry() -> None:
         # Import the base extension
         try:
             import azure.functions.extension.base as clients
-            global deferred_binding_registry
-            deferred_binding_registry = clients.get_binding_registry()
+            global DEFERRED_BINDING_REGISTRY
+            DEFERRED_BINDING_REGISTRY = clients.get_binding_registry()
         except ImportError:
             # This means that the customer hasn't imported the library.
             # This isn't an error.
@@ -58,9 +58,9 @@ def load_binding_registry() -> None:
 def get_deferred_binding(bind_name: str,
                          pytype: typing.Optional[type] = None) -> object:
     # This will return None if not a supported type
-    return deferred_binding_registry.get(bind_name)\
-        if (deferred_binding_registry is not None
-            and deferred_binding_registry.check_supported_type(
+    return DEFERRED_BINDING_REGISTRY.get(bind_name)\
+        if (DEFERRED_BINDING_REGISTRY is not None
+            and DEFERRED_BINDING_REGISTRY.check_supported_type(
                 pytype)) else None
 
 
@@ -69,7 +69,7 @@ def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
     binding = get_deferred_binding(bind_name=bind_name, pytype=pytype)
     # Binding is not a deferred binding type
     if binding is None:
-        binding = binding_registry.get(bind_name)
+        binding = BINDING_REGISTRY.get(bind_name)
     # Binding is generic
     if binding is None:
         binding = generic.GenericBinding
@@ -134,8 +134,8 @@ def from_incoming_proto(
 
     try:
         # if the binding is an sdk type binding
-        if (deferred_binding_registry is not None
-                and deferred_binding_registry.check_supported_type(pytype)):
+        if (DEFERRED_BINDING_REGISTRY is not None
+                and DEFERRED_BINDING_REGISTRY.check_supported_type(pytype)):
             return deferred_bindings_decode(binding=binding,
                                             pb=pb,
                                             pytype=pytype,
@@ -261,10 +261,10 @@ def deferred_bindings_decode(binding: typing.Any,
 
 def set_deferred_bindings_flag(param_anno: type):
     # If flag hasn't already been set
-    # If deferred_binding_registry is not None
+    # If DEFERRED_BINDING_REGISTRY is not None
     # If the binding type is a deferred binding type
     global deferred_bindings_enabled
     if (not deferred_bindings_enabled
-            and deferred_binding_registry is not None
-            and deferred_binding_registry.check_supported_type(param_anno)):
+            and DEFERRED_BINDING_REGISTRY is not None
+            and DEFERRED_BINDING_REGISTRY.check_supported_type(param_anno)):
         deferred_bindings_enabled = True

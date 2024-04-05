@@ -248,11 +248,11 @@ def get_fx_raw_bindings(indexed_function, function_info):
     # If the flag is True, we know that:
     # 1. Library is imported
     # 2. At least one binding is a defined deferred binding type
-    # 3. deferred_binding_registry is not None
+    # 3. DEFERRED_BINDING_REGISTRY is not None
     if bindings.meta.deferred_bindings_enabled:
         # Reset the flag
         bindings.meta.deferred_bindings_enabled = False
-        return bindings.meta.deferred_binding_registry.get_raw_bindings(
+        return bindings.meta.DEFERRED_BINDING_REGISTRY.get_raw_bindings(
             indexed_function, function_info.input_types)
 
     else:

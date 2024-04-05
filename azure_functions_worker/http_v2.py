@@ -2,8 +2,11 @@ import abc
 import asyncio
 from typing import Dict
 
+
 class BaseContextReference(abc.ABC):
-    def __init__(self, event_class, http_request=None, http_response=None, function=None, fi_context=None, args=None, http_trigger_param_name=None):
+    def __init__(self, event_class, http_request=None, http_response=None,
+                 function=None, fi_context=None, args=None,
+                 http_trigger_param_name=None):
         self._http_request = http_request
         self._http_response = http_response
         self._function = function
@@ -78,8 +81,10 @@ class BaseContextReference(abc.ABC):
 
 
 class AsyncContextReference(BaseContextReference):
-    def __init__(self, http_request=None, http_response=None, function=None, fi_context=None, args=None):
-        super().__init__(event_class=asyncio.Event, http_request=http_request, http_response=http_response,
+    def __init__(self, http_request=None, http_response=None, function=None,
+                 fi_context=None, args=None):
+        super().__init__(event_class=asyncio.Event, http_request=http_request,
+                         http_response=http_response,
                          function=function, fi_context=fi_context, args=args)
         self.is_async = True
 
@@ -96,7 +101,7 @@ class SingletonMeta(type):
 class HttpCoordinator(metaclass=SingletonMeta):
     def __init__(self):
         self._context_references: Dict[str, BaseContextReference] = {}
-        
+
     def set_http_request(self, invoc_id, http_request):
         if invoc_id not in self._context_references:
             self._context_references[invoc_id] = AsyncContextReference()
@@ -105,32 +110,36 @@ class HttpCoordinator(metaclass=SingletonMeta):
 
     def set_http_response(self, invoc_id, http_response):
         if invoc_id not in self._context_references:
-            raise Exception("No context reference found for invocation %s", invoc_id)
+            raise Exception("No context reference found for invocation %s",
+                            invoc_id)
         context_ref = self._context_references.get(invoc_id)
         context_ref.http_response = http_response
 
     async def get_http_request_async(self, invoc_id):
         if invoc_id not in self._context_references:
             self._context_references[invoc_id] = AsyncContextReference()
-        
+
         await asyncio.sleep(0)
-        await self._context_references.get(invoc_id).http_request_available_event.wait()
+        await self._context_references.get(
+            invoc_id).http_request_available_event.wait()
         return self._pop_http_request(invoc_id)
 
     async def await_http_response_async(self, invoc_id):
         if invoc_id not in self._context_references:
-            raise Exception("No context reference found for invocation %s", invoc_id)
+            raise Exception("No context reference found for invocation %s",
+                            invoc_id)
         await asyncio.sleep(0)
-        await self._context_references.get(invoc_id).http_response_available_event.wait()
+        await self._context_references.get(
+            invoc_id).http_response_available_event.wait()
         return self._pop_http_response(invoc_id)
-    
+
     def _pop_http_request(self, invoc_id):
         context_ref = self._context_references.get(invoc_id)
         request = context_ref.http_request
         if request is not None:
             context_ref.http_request = None
             return request
-        
+
         raise Exception("No http request found for invocation %s", invoc_id)
 
     def _pop_http_response(self, invoc_id):
@@ -139,7 +148,7 @@ class HttpCoordinator(metaclass=SingletonMeta):
         if response is not None:
             context_ref.http_response = None
             return response
-        # If user does not set the response, return nothing and web server will return 200 empty response
+        raise Exception("No http response found for invocation %s", invoc_id)
 
 
 http_coordinator = HttpCoordinator()

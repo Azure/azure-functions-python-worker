@@ -3,11 +3,16 @@
 import unittest
 import sys
 
+import azure.functions as func
+
 from azure_functions_worker import protos
 from azure_functions_worker.bindings import datumdef, meta
 from tests.utils import testutils
 
-from azure.functions.extension.blob import BlobClient, BlobClientConverter
+# Even if the tests are skipped for <=3.8, the library is still imported as
+# it is used for these tests.
+if sys.version_info.minor >= 9:
+    from azure.functions.extension.blob import BlobClient, BlobClientConverter
 
 DEFERRED_BINDINGS_ENABLED_DIR = testutils.EXTENSION_TESTS_FOLDER / \
     'deferred_bindings_tests' / \
@@ -73,7 +78,6 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
-            self.assertFalse(meta.deferred_bindings_enabled)
 
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
@@ -117,3 +121,22 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
                                             pytype=BlobClient, datum=datum, metadata={})
 
         self.assertIsNotNone(obj)
+
+    async def test_check_deferred_bindings_enabled(self):
+        async with testutils.start_mockhost(
+                script_root=DEFERRED_BINDINGS_DISABLED_DIR) as host:
+            await host.init_worker()
+
+            self.assertFalse(meta.check_deferred_bindings_enabled(
+                func.InputStream,
+                False))
+            self.assertTrue(meta.check_deferred_bindings_enabled(
+                func.InputStream,
+                True))
+
+            self.assertTrue(meta.check_deferred_bindings_enabled(
+                BlobClient,
+                False))
+            self.assertTrue(meta.check_deferred_bindings_enabled(
+                BlobClient,
+                True))

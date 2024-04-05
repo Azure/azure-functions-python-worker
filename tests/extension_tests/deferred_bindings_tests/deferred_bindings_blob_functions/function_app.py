@@ -197,6 +197,25 @@ def bc_and_inputstream_input(req: func.HttpRequest, client: bindings.BlobClient,
     return output_msg
 
 
+@app.function_name(name="inputstream_and_bc_input")
+@app.route(route="inputstream_and_bc_input")
+@app.blob_input(arg_name="blob",
+                path="python-worker-tests/test-blob-extension-str.txt",
+                data_type="STRING",
+                connection="AzureWebJobsStorage")
+@app.blob_input(arg_name="client",
+                path="python-worker-tests/test-blob-extension-str.txt",
+                data_type="STRING",
+                connection="AzureWebJobsStorage")
+def inputstream_and_bc_input(req: func.HttpRequest, blob: func.InputStream,
+                             client: bindings.BlobClient) -> str:
+    output_msg = ""
+    file = blob.read().decode('utf-8')
+    client_file = client.download_blob(encoding='utf-8').readall()
+    output_msg = file + " - input stream " + client_file + " - blob client"
+    return output_msg
+
+
 @app.function_name(name="type_undefined")
 @app.route(route="type_undefined")
 @app.blob_input(arg_name="file",

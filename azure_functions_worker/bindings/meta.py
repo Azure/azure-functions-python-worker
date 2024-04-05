@@ -20,7 +20,6 @@ BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8
 
 BINDING_REGISTRY = None
 DEFERRED_BINDING_REGISTRY = None
-deferred_bindings_enabled = False
 deferred_bindings_cache = {}
 
 
@@ -259,12 +258,11 @@ def deferred_bindings_decode(binding: typing.Any,
         return deferred_binding_type
 
 
-def set_deferred_bindings_flag(param_anno: type):
-    # If flag hasn't already been set
-    # If DEFERRED_BINDING_REGISTRY is not None
-    # If the binding type is a deferred binding type
-    global deferred_bindings_enabled
-    if (not deferred_bindings_enabled
-            and DEFERRED_BINDING_REGISTRY is not None
-            and DEFERRED_BINDING_REGISTRY.check_supported_type(param_anno)):
-        deferred_bindings_enabled = True
+def check_deferred_bindings_enabled(param_anno: type,
+                                    deferred_bindings_enabled: bool) -> bool:
+    # If previous binding was SDK type, deferred_bindings_enabled will be
+    # True
+    return (deferred_bindings_enabled
+            or (DEFERRED_BINDING_REGISTRY is not None
+                and DEFERRED_BINDING_REGISTRY.check_supported_type(
+                    param_anno)))

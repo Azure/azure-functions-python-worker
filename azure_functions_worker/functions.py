@@ -31,6 +31,8 @@ class FunctionInfo(typing.NamedTuple):
     output_types: typing.Mapping[str, ParamTypeInfo]
     return_type: typing.Optional[ParamTypeInfo]
 
+    deferred_bindings_enabled: bool
+
 
 class FunctionLoadError(RuntimeError):
 
@@ -137,6 +139,7 @@ class Registry:
 
         input_types: typing.Dict[str, ParamTypeInfo] = {}
         output_types: typing.Dict[str, ParamTypeInfo] = {}
+        deferred_bindings_enabled = False
 
         for param in params.values():
             binding = bound_params[param.name]
@@ -144,8 +147,11 @@ class Registry:
             param_has_anno = param.name in annotations
             param_anno = annotations.get(param.name)
 
-            # Check the declared type
-            bindings_utils.set_deferred_bindings_flag(param_anno)
+            # Check if deferred bindings is enabled
+            deferred_bindings_enabled = (
+                bindings_utils.check_deferred_bindings_enabled(
+                    param_anno,
+                    deferred_bindings_enabled))
 
             if param_has_anno:
                 if typing_inspect.is_generic_type(param_anno):
@@ -245,7 +251,7 @@ class Registry:
                 output_types[param.name] = param_type_info
             else:
                 input_types[param.name] = param_type_info
-        return input_types, output_types
+        return input_types, output_types, deferred_bindings_enabled
 
     @staticmethod
     def get_function_return_type(annotations: dict, has_explicit_return: bool,
@@ -298,7 +304,8 @@ class Registry:
                                                      str, ParamTypeInfo],
                                                  output_types: typing.Dict[
                                                      str, ParamTypeInfo],
-                                                 return_type: str):
+                                                 return_type: str,
+                                                 deferred_bindings_enabled: bool):
 
         function_info = FunctionInfo(
             func=function,
@@ -310,7 +317,8 @@ class Registry:
             has_return=has_explicit_return or has_implicit_return,
             input_types=input_types,
             output_types=output_types,
-            return_type=return_type)
+            return_type=return_type,
+            deferred_bindings_enabled=deferred_bindings_enabled)
 
         self._functions[function_id] = function_info
         return function_info
@@ -347,10 +355,10 @@ class Registry:
                                                     annotations,
                                                     func_name)
 
-        input_types, output_types = self.validate_function_params(params,
-                                                                  bound_params,
-                                                                  annotations,
-                                                                  func_name)
+        input_types, output_types, _ = self.validate_function_params(params,
+                                                                     bound_params,
+                                                                     annotations,
+                                                                     func_name)
 
         return_type = \
             self.get_function_return_type(annotations,
@@ -366,7 +374,7 @@ class Registry:
                                                       has_explicit_return,
                                                       has_implicit_return,
                                                       input_types,
-                                                      output_types, return_type)
+                                                      output_types, return_type, _)
 
     def add_indexed_function(self, function):
         func = function.get_user_function()
@@ -404,10 +412,12 @@ class Registry:
                                                     annotations,
                                                     func_name)
 
-        input_types, output_types = self.validate_function_params(params,
-                                                                  bound_params,
-                                                                  annotations,
-                                                                  func_name)
+        (input_types, output_types,
+         deferred_bindings_enabled) = self.validate_function_params(
+            params,
+            bound_params,
+            annotations,
+            func_name)
 
         return_type = \
             self.get_function_return_type(annotations,
@@ -425,4 +435,5 @@ class Registry:
                                                           has_implicit_return,
                                                           input_types,
                                                           output_types,
-                                                          return_type)
+                                                          return_type,
+                                                          deferred_bindings_enabled)

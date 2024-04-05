@@ -35,7 +35,7 @@ from .constants import (HTTP_TRIGGER, PYTHON_ROLLBACK_CWD_PATH,
                         X_MS_INVOCATION_ID, LOCAL_HOST,
                         METADATA_PROPERTIES_WORKER_INDEXED)
 from .extension import ExtensionManager
-from .http_proxy import http_coordinator
+from .http_v2 import http_coordinator
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)

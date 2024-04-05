@@ -110,7 +110,7 @@ EXTRA_REQUIRES = {
         "numpy",
         "pre-commit"
     ],
-    "http-v2": ["azure-functions-extension-fastapi", "ujson", "orjson"]
+    "test-http-v2": ["azure-functions-extension-fastapi", "ujson", "orjson"]
 }
 
 

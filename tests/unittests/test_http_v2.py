@@ -24,68 +24,82 @@ class TestHttpCoordinator(unittest.TestCase):
     def tearDown(self) -> None:
         http_coordinator._context_references.clear()
 
-    def test_set_http_request_new_invocation(self):
+    async def test_set_http_request_new_invocation(self):
         # Test setting a new HTTP request
         http_coordinator.set_http_request(self.invoc_id, self.http_request)
         context_ref = http_coordinator._context_references.get(self.invoc_id)
         self.assertIsNotNone(context_ref)
         self.assertEqual(context_ref.http_request, self.http_request)
 
-    def test_set_http_request_existing_invocation(self):
+    async def test_set_http_request_existing_invocation(self):
         # Test updating an existing HTTP request
         new_http_request = MagicMock()
-        http_coordinator.set_http_request(self.invoc_id, self.http_request)
         http_coordinator.set_http_request(self.invoc_id, new_http_request)
         context_ref = http_coordinator._context_references.get(self.invoc_id)
         self.assertIsNotNone(context_ref)
         self.assertEqual(context_ref.http_request, new_http_request)
 
-    def test_set_http_response_context_ref_null(self):
+    async def test_set_http_response_context_ref_null(self):
         with self.assertRaises(Exception) as cm:
             http_coordinator.set_http_response(self.invoc_id,
                                                self.http_response)
         self.assertEqual(cm.exception.args[0],
                          "No context reference found for invocation %s")
 
-    def test_set_http_response(self):
+    async def test_set_http_response(self):
         http_coordinator.set_http_request(self.invoc_id, self.http_request)
         http_coordinator.set_http_response(self.invoc_id, self.http_response)
         context_ref = http_coordinator._context_references[self.invoc_id]
         self.assertEqual(context_ref.http_response, self.http_response)
 
-    def test_get_http_request_async_existing_invocation(self):
+    async def test_get_http_request_async_existing_invocation(self):
         # Test retrieving an existing HTTP request
         http_coordinator.set_http_request(self.invoc_id,
                                           self.http_request)
-        loop = asyncio.get_event_loop()
-        retrieved_request = loop.run_until_complete(
-            http_coordinator.get_http_request_async(self.invoc_id))
-        self.assertEqual(retrieved_request, self.http_request)
+        loop = asyncio.new_event_loop()
 
-    def test_get_http_request_async_wait_for_request(self):
+        try:
+            retrieved_request = loop.run_until_complete(
+                http_coordinator.get_http_request_async(self.invoc_id))
+            self.assertEqual(retrieved_request, self.http_request)
+        finally:
+            loop.close()
+
+    async def test_get_http_request_async_wait_for_request(self):
         # Test waiting for an HTTP request to become available
         async def set_request_after_delay():
             await asyncio.sleep(1)
-            http_coordinator.set_http_request(self.invoc_id,
-                                              self.http_request)
+            http_coordinator.set_http_request(self.invoc_id, self.http_request)
 
-        loop = asyncio.get_event_loop()
-        loop.create_task(set_request_after_delay())
-        retrieved_request = loop.run_until_complete(
-            http_coordinator.get_http_request_async(self.invoc_id))
-        self.assertEqual(retrieved_request, self.http_request)
+        # Create a new event loop in the main thread
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
-    def test_get_http_request_async_wait_forever(self):
+        # Run the test
+        try:
+            loop.run_until_complete(set_request_after_delay())
+            retrieved_request = loop.run_until_complete(
+                http_coordinator.get_http_request_async(self.invoc_id))
+            self.assertEqual(retrieved_request, self.http_request)
+        finally:
+            loop.close()  # Close the event loop when done
+
+    async def test_get_http_request_async_wait_forever(self):
         # Test handling error when invoc_id is not found
         invalid_invoc_id = "invalid_invocation"
-        loop = asyncio.get_event_loop()
-        with self.assertRaises(asyncio.TimeoutError):
-            loop.run_until_complete(
-                asyncio.wait_for(
-                    http_coordinator.get_http_request_async(invalid_invoc_id),
-                    timeout=1
+        # Create a new event loop in the main thread
+        loop = asyncio.new_event_loop()
+        try:
+            with self.assertRaises(asyncio.TimeoutError):
+                loop.run_until_complete(
+                    asyncio.wait_for(
+                        http_coordinator.get_http_request_async(
+                            invalid_invoc_id),
+                        timeout=1
+                    )
                 )
-            )
+        finally:
+            loop.close()
 
     async def test_await_http_response_async_valid_invocation(self):
         invoc_id = "valid_invocation"

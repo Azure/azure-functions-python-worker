@@ -79,7 +79,8 @@ if sys.version_info[:2] == (3, 7):
     )
 else:
     INSTALL_REQUIRES.extend(
-        ("protobuf~=4.22.0", "grpcio-tools~=1.54.2", "grpcio~=1.54.2", "azure-functions-extension-base")
+        ("protobuf~=4.22.0", "grpcio-tools~=1.54.2", "grpcio~=1.54.2",
+         "azure-functions-extension-base")
     )
 
 EXTRA_REQUIRES = {

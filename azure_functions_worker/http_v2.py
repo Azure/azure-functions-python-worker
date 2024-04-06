@@ -1,5 +1,6 @@
 import abc
 import asyncio
+import socket
 from typing import Dict
 
 
@@ -149,6 +150,19 @@ class HttpCoordinator(metaclass=SingletonMeta):
             context_ref.http_response = None
             return response
         raise Exception("No http response found for invocation %s", invoc_id)
+
+
+def get_unused_tcp_port():
+    # Create a TCP socket
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # Bind it to a free port provided by the OS
+    tcp_socket.bind(("", 0))
+    # Get the port number
+    port = tcp_socket.getsockname()[1]
+    # Close the socket
+    tcp_socket.close()
+    # Return the port number
+    return port
 
 
 http_coordinator = HttpCoordinator()

@@ -20,7 +20,6 @@ from typing import List, Optional
 from datetime import datetime
 
 import grpc
-import socket
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (HTTP_TRIGGER, PYTHON_ROLLBACK_CWD_PATH,
@@ -36,7 +35,7 @@ from .constants import (HTTP_TRIGGER, PYTHON_ROLLBACK_CWD_PATH,
                         METADATA_PROPERTIES_WORKER_INDEXED,
                         BASE_EXT_SUPPORTED_PY_MINOR_VERSION)
 from .extension import ExtensionManager
-from .http_v2 import http_coordinator
+from .http_v2 import http_coordinator, get_unused_tcp_port
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
@@ -62,19 +61,6 @@ class DispatcherMeta(type):
         return disp
 
 
-def get_unused_tcp_port():
-    # Create a TCP socket
-    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # Bind it to a free port provided by the OS
-    tcp_socket.bind(("", 0))
-    # Get the port number
-    port = tcp_socket.getsockname()[1]
-    # Close the socket
-    tcp_socket.close()
-    # Return the port number
-    return port
-
-
 class Dispatcher(metaclass=DispatcherMeta):
     _GRPC_STOP_RESPONSE = object()
 
@@ -91,7 +77,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._functions = functions.Registry()
         self._shmem_mgr = SharedMemoryManager()
         self._old_task_factory = None
-        self.function_metadata_result = None
         self._has_http_func = False
 
         # Used to store metadata returns
@@ -285,80 +270,70 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_resp_queue.put_nowait(resp)
 
     async def _handle__worker_init_request(self, request):
-        try:
-            logger.info('Received WorkerInitRequest, '
-                        'python version %s, '
-                        'worker version %s, '
-                        'request ID %s. '
-                        'App Settings state: %s. '
-                        'To enable debug level logging, please refer to '
-                        'https://aka.ms/python-enable-debug-logging',
-                        sys.version,
-                        VERSION,
-                        self.request_id,
-                        get_python_appsetting_state()
-                        )
+        logger.info('Received WorkerInitRequest, '
+                    'python version %s, '
+                    'worker version %s, '
+                    'request ID %s. '
+                    'App Settings state: %s. '
+                    'To enable debug level logging, please refer to '
+                    'https://aka.ms/python-enable-debug-logging',
+                    sys.version,
+                    VERSION,
+                    self.request_id,
+                    get_python_appsetting_state()
+                    )
 
-            worker_init_request = request.worker_init_request
-            host_capabilities = worker_init_request.capabilities
-            if constants.FUNCTION_DATA_CACHE in host_capabilities:
-                val = host_capabilities[constants.FUNCTION_DATA_CACHE]
-                self._function_data_cache_enabled = val == _TRUE
+        worker_init_request = request.worker_init_request
+        host_capabilities = worker_init_request.capabilities
+        if constants.FUNCTION_DATA_CACHE in host_capabilities:
+            val = host_capabilities[constants.FUNCTION_DATA_CACHE]
+            self._function_data_cache_enabled = val == _TRUE
 
-            capabilities = {
-                constants.RAW_HTTP_BODY_BYTES: _TRUE,
-                constants.TYPED_DATA_COLLECTION: _TRUE,
-                constants.RPC_HTTP_BODY_ONLY: _TRUE,
-                constants.WORKER_STATUS: _TRUE,
-                constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
-                constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
-            }
+        capabilities = {
+            constants.RAW_HTTP_BODY_BYTES: _TRUE,
+            constants.TYPED_DATA_COLLECTION: _TRUE,
+            constants.RPC_HTTP_BODY_ONLY: _TRUE,
+            constants.WORKER_STATUS: _TRUE,
+            constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
+            constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
+        }
 
-            if DependencyManager.should_load_cx_dependencies():
-                DependencyManager.prioritize_customer_dependencies()
+        if DependencyManager.should_load_cx_dependencies():
+            DependencyManager.prioritize_customer_dependencies()
 
-            if DependencyManager.is_in_linux_consumption():
-                import azure.functions  # NoQA
+        if DependencyManager.is_in_linux_consumption():
+            import azure.functions  # NoQA
 
-            # loading bindings registry and saving results to a static
-            # dictionary which will be later used in the invocation request
-            bindings.load_binding_registry()
+        # loading bindings registry and saving results to a static
+        # dictionary which will be later used in the invocation request
+        bindings.load_binding_registry()
 
-            if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
-                try:
-                    self.load_function_metadata(
-                        worker_init_request.function_app_directory,
-                        caller_info="worker_init_request")
-                except Exception as ex:
-                    self._function_metadata_exception = ex
+        if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
+            try:
+                self.load_function_metadata(
+                    worker_init_request.function_app_directory,
+                    caller_info="worker_init_request")
+            except Exception as ex:
+                self._function_metadata_exception = ex
 
-                if self._has_http_func:
-                    from azure.functions.extension.base \
-                        import HttpV2FeatureChecker
+            if self._has_http_func:
+                from azure.functions.extension.base \
+                    import HttpV2FeatureChecker
 
-                    if HttpV2FeatureChecker.http_v2_enabled():
-                        capabilities[constants.HTTP_URI] = \
-                            await self._initialize_http_server()
+                if HttpV2FeatureChecker.http_v2_enabled():
+                    capabilities[constants.HTTP_URI] = \
+                        await self._initialize_http_server()
 
-            return protos.StreamingMessage(
-                request_id=self.request_id,
-                worker_init_response=protos.WorkerInitResponse(
-                    capabilities=capabilities,
-                    worker_metadata=self.get_worker_metadata(),
-                    result=protos.StatusResult(
-                        status=protos.StatusResult.Success),
-                ),
-            )
-        except Exception as e:
-            logger.error("Error handling WorkerInitRequest: %s", str(e))
-            return protos.StreamingMessage(
-                request_id=self.request_id,
-                worker_init_response=protos.WorkerInitResponse(
-                    result=protos.StatusResult(
-                        status=protos.StatusResult.Failure,
-                        exception=self._serialize_exception(e))
-                ),
-            )
+        return protos.StreamingMessage(
+            request_id=self.request_id,
+            worker_init_response=protos.WorkerInitResponse(
+                capabilities=capabilities,
+                worker_metadata=self.get_worker_metadata(),
+                result=protos.StatusResult(
+                    status=protos.StatusResult.Success),
+            ),
+        )
+
 
     async def _handle__worker_status_request(self, request):
         # Logging is not necessary in this request since the response is used

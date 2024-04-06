@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from azure_functions_worker.http_v2 import http_coordinator, \
-    BaseContextReference, AsyncContextReference, SingletonMeta
+    AsyncContextReference, SingletonMeta
 
 
 class MockHttpRequest:
@@ -143,6 +143,7 @@ class TestHttpCoordinator(unittest.TestCase):
         self.assertEqual(str(context.exception),
                          f"No http response found for invocation {invoc_id}")
 
+
 @unittest.skipIf(sys.version_info <= (3, 7), "Skipping tests if <= Python 3.7")
 class TestAsyncContextReference(unittest.TestCase):
 
@@ -189,7 +190,7 @@ class TestAsyncContextReference(unittest.TestCase):
         ref = AsyncContextReference()
         self.assertIsNotNone(ref.http_response_available_event)
 
-    def  test_full_args(self):
+    def test_full_args(self):
         ref = AsyncContextReference(http_request=object(),
                                     http_response=object(),
                                     function=object(),

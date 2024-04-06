@@ -7,7 +7,6 @@ Implements loading and execution of Python workers.
 
 import asyncio
 import concurrent.futures
-import importlib
 import logging
 import os
 import platform
@@ -31,11 +30,10 @@ from .constants import (HTTP_TRIGGER, PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
-                        X_MS_INVOCATION_ID, LOCAL_HOST,
                         METADATA_PROPERTIES_WORKER_INDEXED,
                         BASE_EXT_SUPPORTED_PY_MINOR_VERSION)
 from .extension import ExtensionManager
-from .http_v2 import http_coordinator, get_unused_tcp_port
+from .http_v2 import http_coordinator, initialize_http_server
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
@@ -323,7 +321,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
                 if HttpV2FeatureChecker.http_v2_enabled():
                     capabilities[constants.HTTP_URI] = \
-                        await self._initialize_http_server()
+                        await initialize_http_server()
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -710,7 +708,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
                     if HttpV2FeatureChecker.http_v2_enabled():
                         capabilities[constants.HTTP_URI] = \
-                            await self._initialize_http_server()
+                            await initialize_http_server()
 
             # Change function app directory
             if getattr(func_env_reload_request,
@@ -737,46 +735,6 @@ class Dispatcher(metaclass=DispatcherMeta):
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
-
-    async def _initialize_http_server(self):
-        from azure.functions.extension.base \
-            import ModuleTrackerMeta, RequestTrackerMeta
-
-        web_extension_mod_name = ModuleTrackerMeta.get_module()
-        extension_module = importlib.import_module(web_extension_mod_name)
-        web_app_class = extension_module.WebApp
-        web_server_class = extension_module.WebServer
-
-        unused_port = get_unused_tcp_port()
-
-        app = web_app_class()
-        request_type = RequestTrackerMeta.get_request_type()
-
-        @app.route
-        async def catch_all(request: request_type):  # type: ignore
-            invoc_id = request.headers.get(X_MS_INVOCATION_ID)
-            if invoc_id is None:
-                raise ValueError(f"Header {X_MS_INVOCATION_ID} not found")
-            logger.info('Received HTTP request for invocation %s', invoc_id)
-            http_coordinator.set_http_request(invoc_id, request)
-            http_resp = \
-                await http_coordinator.await_http_response_async(invoc_id)
-
-            logger.info('Sending HTTP response for invocation %s', invoc_id)
-            # if http_resp is an python exception, raise it
-            if isinstance(http_resp, Exception):
-                raise http_resp
-
-            return http_resp
-
-        web_server = web_server_class(LOCAL_HOST, unused_port, app)
-        web_server_run_task = web_server.serve()
-
-        loop = asyncio.get_event_loop()
-        loop.create_task(web_server_run_task)
-        logger.info('HTTP server starting on %s:%s', LOCAL_HOST, unused_port)
-
-        return f"http://{LOCAL_HOST}:{unused_port}"
 
     def index_functions(self, function_path: str):
         indexed_functions = loader.index_function_app(function_path)

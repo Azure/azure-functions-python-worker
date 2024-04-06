@@ -1,7 +1,11 @@
 import abc
 import asyncio
+import importlib
 import socket
 from typing import Dict
+
+from azure_functions_worker.constants import X_MS_INVOCATION_ID, LOCAL_HOST
+from azure_functions_worker.logging import logger
 
 
 class BaseContextReference(abc.ABC):
@@ -158,6 +162,47 @@ def get_unused_tcp_port():
     tcp_socket.close()
     # Return the port number
     return port
+
+
+async def initialize_http_server():
+    from azure.functions.extension.base \
+        import ModuleTrackerMeta, RequestTrackerMeta
+
+    web_extension_mod_name = ModuleTrackerMeta.get_module()
+    extension_module = importlib.import_module(web_extension_mod_name)
+    web_app_class = extension_module.WebApp
+    web_server_class = extension_module.WebServer
+
+    unused_port = get_unused_tcp_port()
+
+    app = web_app_class()
+    request_type = RequestTrackerMeta.get_request_type()
+
+    @app.route
+    async def catch_all(request: request_type):  # type: ignore
+        invoc_id = request.headers.get(X_MS_INVOCATION_ID)
+        if invoc_id is None:
+            raise ValueError(f"Header {X_MS_INVOCATION_ID} not found")
+        logger.info('Received HTTP request for invocation %s', invoc_id)
+        http_coordinator.set_http_request(invoc_id, request)
+        http_resp = \
+            await http_coordinator.await_http_response_async(invoc_id)
+
+        logger.info('Sending HTTP response for invocation %s', invoc_id)
+        # if http_resp is an python exception, raise it
+        if isinstance(http_resp, Exception):
+            raise http_resp
+
+        return http_resp
+
+    web_server = web_server_class(LOCAL_HOST, unused_port, app)
+    web_server_run_task = web_server.serve()
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(web_server_run_task)
+    logger.info('HTTP server starting on %s:%s', LOCAL_HOST, unused_port)
+
+    return f"http://{LOCAL_HOST}:{unused_port}"
 
 
 http_coordinator = HttpCoordinator()

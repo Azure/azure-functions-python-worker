@@ -27,6 +27,10 @@ DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'
 DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
     'dispatcher_functions_stein'
+DISPATCHER_HTTP_V2_FASTAPI_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
+    'dispatcher_functions' / \
+    'http_v2' / \
+    'fastapi'
 FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
     'dispatcher_functions_stein'
 
@@ -614,6 +618,14 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+
+
+@unittest.skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")
+class TestDispatcherHttpV2(TestDispatcherStein):
+
+    def setUp(self):
+        self._ctrl = testutils.start_mockhost(
+            script_root=DISPATCHER_HTTP_V2_FASTAPI_FUNCTIONS_DIR)
 
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):

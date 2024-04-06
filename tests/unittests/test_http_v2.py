@@ -147,6 +147,10 @@ class TestHttpCoordinator(unittest.TestCase):
 @unittest.skipIf(sys.version_info <= (3, 7), "Skipping tests if <= Python 3.7")
 class TestAsyncContextReference(unittest.TestCase):
 
+    def setUp(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
     def test_init(self):
         ref = AsyncContextReference()
         self.assertIsInstance(ref, AsyncContextReference)

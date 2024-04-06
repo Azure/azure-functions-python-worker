@@ -316,7 +316,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             except Exception as ex:
                 self._function_metadata_exception = ex
 
-            if self._has_http_func:
+            if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION \
+                    and self._has_http_func:
                 from azure.functions.extension.base \
                     import HttpV2FeatureChecker
 
@@ -333,7 +334,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                     status=protos.StatusResult.Success),
             ),
         )
-
 
     async def _handle__worker_status_request(self, request):
         # Logging is not necessary in this request since the response is used

@@ -11,6 +11,7 @@ from . import generic
 from .shared_memory_data_transfer import SharedMemoryManager
 from ..constants import BASE_EXT_SUPPORTED_PY_MINOR_VERSION, \
     PYTHON_ENABLE_INIT_INDEXING
+from ..utils.common import is_envvar_true
 
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'

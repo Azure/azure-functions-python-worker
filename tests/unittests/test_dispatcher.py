@@ -627,6 +627,28 @@ class TestDispatcherHttpV2(TestDispatcherStein):
         self._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_HTTP_V2_FASTAPI_FUNCTIONS_DIR)
 
+    async def test_dispatcher_index_without_init_should_fail(self):
+        """Test if the functions metadata response will be sent correctly
+        when a functions metadata request is received
+        """
+        async with self._ctrl as host:
+            await host.init_worker()
+            r = await host.get_functions_metadata()
+            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
+            self.assertFalse(r.response.use_default_metadata_indexing)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Failure)
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
+    async def test_dispatcher_invoke_function(self):
+        async with self._ctrl as host:
+            await host.init_worker()
+            r = await host.get_functions_metadata()
+            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
+            self.assertFalse(r.response.use_default_metadata_indexing)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
 

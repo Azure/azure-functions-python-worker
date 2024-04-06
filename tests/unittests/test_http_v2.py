@@ -1,10 +1,11 @@
 import asyncio
+import socket
 import sys
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from azure_functions_worker.http_v2 import http_coordinator, \
-    AsyncContextReference, SingletonMeta
+    AsyncContextReference, SingletonMeta, get_unused_tcp_port
 
 
 class MockHttpRequest:
@@ -241,3 +242,25 @@ class TestSingletonMeta(unittest.TestCase):
         self.assertEqual(obj1.kwargs, {'a': 1})
         self.assertEqual(obj2.kwargs,
                          {'a': 1})  # Should still refer to the same instance
+
+
+class TestGetUnusedTCPPort(unittest.TestCase):
+
+    @patch('socket.socket')
+    def test_get_unused_tcp_port(self, mock_socket):
+        # Mock the socket object and its methods
+        mock_socket_instance = mock_socket.return_value
+        mock_socket_instance.getsockname.return_value = ('localhost', 12345)
+
+        # Call the function
+        port = get_unused_tcp_port()
+
+        # Assert that socket.socket was called with the correct arguments
+        mock_socket.assert_called_once_with(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Assert that bind and close methods were called on the socket instance
+        mock_socket_instance.bind.assert_called_once_with(('', 0))
+        mock_socket_instance.close.assert_called_once()
+
+        # Assert that the returned port matches the expected value
+        self.assertEqual(port, 12345)

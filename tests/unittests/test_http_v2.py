@@ -3,7 +3,8 @@ import sys
 import unittest
 from unittest.mock import MagicMock
 
-from azure_functions_worker.http_v2 import http_coordinator
+from azure_functions_worker.http_v2 import http_coordinator, \
+    BaseContextReference, AsyncContextReference, SingletonMeta
 
 
 class MockHttpRequest:
@@ -141,3 +142,97 @@ class TestHttpCoordinator(unittest.TestCase):
             await http_coordinator.await_http_response_async(invoc_id)
         self.assertEqual(str(context.exception),
                          f"No http response found for invocation {invoc_id}")
+
+@unittest.skipIf(sys.version_info <= (3, 7), "Skipping tests if <= Python 3.7")
+class TestAsyncContextReference(unittest.TestCase):
+
+    def test_init(self):
+        ref = AsyncContextReference()
+        self.assertIsInstance(ref, AsyncContextReference)
+        self.assertTrue(ref.is_async)
+
+    def test_http_request_property(self):
+        ref = AsyncContextReference()
+        ref.http_request = object()
+        self.assertIsNotNone(ref.http_request)
+
+    def test_http_response_property(self):
+        ref = AsyncContextReference()
+        ref.http_response = object()
+        self.assertIsNotNone(ref.http_response)
+
+    def test_function_property(self):
+        ref = AsyncContextReference()
+        ref.function = object()
+        self.assertIsNotNone(ref.function)
+
+    def test_fi_context_property(self):
+        ref = AsyncContextReference()
+        ref.fi_context = object()
+        self.assertIsNotNone(ref.fi_context)
+
+    def test_http_trigger_param_name_property(self):
+        ref = AsyncContextReference()
+        ref.http_trigger_param_name = object()
+        self.assertIsNotNone(ref.http_trigger_param_name)
+
+    def test_args_property(self):
+        ref = AsyncContextReference()
+        ref.args = object()
+        self.assertIsNotNone(ref.args)
+
+    def test_http_request_available_event_property(self):
+        ref = AsyncContextReference()
+        self.assertIsNotNone(ref.http_request_available_event)
+
+    def test_http_response_available_event_property(self):
+        ref = AsyncContextReference()
+        self.assertIsNotNone(ref.http_response_available_event)
+
+    def  test_full_args(self):
+        ref = AsyncContextReference(http_request=object(),
+                                    http_response=object(),
+                                    function=object(),
+                                    fi_context=object(),
+                                    args=object())
+        self.assertIsNotNone(ref.http_request)
+        self.assertIsNotNone(ref.http_response)
+        self.assertIsNotNone(ref.function)
+        self.assertIsNotNone(ref.fi_context)
+        self.assertIsNotNone(ref.args)
+
+
+class TestSingletonMeta(unittest.TestCase):
+
+    def test_singleton_instance(self):
+        class TestClass(metaclass=SingletonMeta):
+            pass
+
+        obj1 = TestClass()
+        obj2 = TestClass()
+
+        self.assertIs(obj1, obj2)
+
+    def test_singleton_with_arguments(self):
+        class TestClass(metaclass=SingletonMeta):
+            def __init__(self, arg):
+                self.arg = arg
+
+        obj1 = TestClass(1)
+        obj2 = TestClass(2)
+
+        self.assertEqual(obj1.arg, 1)
+        self.assertEqual(obj2.arg,
+                         1)  # Should still refer to the same instance
+
+    def test_singleton_with_kwargs(self):
+        class TestClass(metaclass=SingletonMeta):
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+
+        obj1 = TestClass(a=1)
+        obj2 = TestClass(b=2)
+
+        self.assertEqual(obj1.kwargs, {'a': 1})
+        self.assertEqual(obj2.kwargs,
+                         {'a': 1})  # Should still refer to the same instance

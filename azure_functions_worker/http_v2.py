@@ -16,7 +16,6 @@ class BaseContextReference(abc.ABC):
         self._http_trigger_param_name = http_trigger_param_name
         self._http_request_available_event = event_class()
         self._http_response_available_event = event_class()
-        self._rpc_invocation_ready_event = event_class()
 
     @property
     def http_request(self):
@@ -75,10 +74,6 @@ class BaseContextReference(abc.ABC):
     @property
     def http_response_available_event(self):
         return self._http_response_available_event
-
-    @property
-    def rpc_invocation_ready_event(self):
-        return self._rpc_invocation_ready_event
 
 
 class AsyncContextReference(BaseContextReference):

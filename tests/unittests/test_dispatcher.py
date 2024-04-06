@@ -621,7 +621,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
 
 
 @unittest.skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")
-class TestDispatcherHttpV2(TestDispatcherStein):
+class TestDispatcherHttpV2(testutils.AsyncTestCase):
 
     def setUp(self):
         self._ctrl = testutils.start_mockhost(

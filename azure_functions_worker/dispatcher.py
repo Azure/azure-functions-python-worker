@@ -568,6 +568,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             http_v2_enabled = False
             if sys.version_info.minor >= \
                     BASE_EXT_SUPPORTED_PY_MINOR_VERSION \
+                    and fi.trigger_metadata is not None \
                     and fi.trigger_metadata.get('type') == HTTP_TRIGGER:
                 from azure.functions.extension.base import HttpV2FeatureChecker
                 http_v2_enabled = HttpV2FeatureChecker.http_v2_enabled()

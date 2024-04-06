@@ -307,6 +307,7 @@ class Registry:
             None
         )
 
+        trigger_metadata = None
         if http_trigger_param_name is not None:
             trigger_metadata = {
                 "type": HTTP_TRIGGER,

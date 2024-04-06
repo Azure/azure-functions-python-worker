@@ -224,7 +224,7 @@ class TestHttpFunctionsWithInitIndexing(TestHttpFunctions):
         super().tearDownClass()
 
 
-@unittest.skipIf(sys.version_info <= (3, 7), "Skipping tests if <= Python 3.7")
+@unittest.skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")
 class TestHttpFunctionsV2FastApiWithInitIndexing(
         TestHttpFunctionsWithInitIndexing):
     @classmethod

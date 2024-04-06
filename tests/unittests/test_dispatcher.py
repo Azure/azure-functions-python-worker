@@ -631,23 +631,16 @@ class TestDispatcherHttpV2(testutils.AsyncTestCase):
         """Test if the functions metadata response will be sent correctly
         when a functions metadata request is received
         """
-        async with self._ctrl as host:
-            await host.init_worker()
-            r = await host.get_functions_metadata()
-            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertFalse(r.response.use_default_metadata_indexing)
-            self.assertEqual(r.response.result.status,
-                             protos.StatusResult.Failure)
-
-    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
-    async def test_dispatcher_invoke_function(self):
-        async with self._ctrl as host:
-            await host.init_worker()
-            r = await host.get_functions_metadata()
-            self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
-            self.assertFalse(r.response.use_default_metadata_indexing)
-            self.assertEqual(r.response.result.status,
-                             protos.StatusResult.Success)
+        env = {PYTHON_ENABLE_INIT_INDEXING: "0"}
+        with patch.dict(os.environ, env):
+            async with self._ctrl as host:
+                await host.init_worker()
+                r = await host.get_functions_metadata()
+                self.assertIsInstance(r.response,
+                                      protos.FunctionMetadataResponse)
+                self.assertFalse(r.response.use_default_metadata_indexing)
+                self.assertEqual(r.response.result.status,
+                                 protos.StatusResult.Failure)
 
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):

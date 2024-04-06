@@ -37,16 +37,18 @@ class TestServiceBusFunctions(testutils.WebHostTestCase):
                 self.assertEqual(r.status_code, 200)
                 msg = r.json()
                 self.assertEqual(msg['body'], data)
-                for attr in {'message_id', 'body', 'content_type', 'delivery_count',
-                             'expiration_time', 'label', 'partition_key', 'reply_to',
-                             'reply_to_session_id', 'scheduled_enqueue_time',
-                             'session_id', 'time_to_live', 'to', 'user_properties',
-                             'application_properties', 'correlation_id',
-                             'dead_letter_error_description', 'dead_letter_reason',
-                             'dead_letter_source', 'enqueued_sequence_number',
-                             'enqueued_time_utc', 'expires_at_utc', 'locked_until',
-                             'lock_token', 'sequence_number', 'state', 'subject',
-                             'transaction_partition_key'}:
+                for attr in {
+                    'message_id', 'body', 'content_type', 'delivery_count',
+                    'expiration_time', 'label', 'partition_key', 'reply_to',
+                    'reply_to_session_id', 'scheduled_enqueue_time',
+                    'session_id', 'time_to_live', 'to', 'user_properties',
+                    'application_properties', 'correlation_id',
+                    'dead_letter_error_description', 'dead_letter_reason',
+                    'dead_letter_source', 'enqueued_sequence_number',
+                    'enqueued_time_utc', 'expires_at_utc', 'locked_until',
+                    'lock_token', 'sequence_number', 'state', 'subject',
+                    'transaction_partition_key'
+                }:
                     self.assertIn(attr, msg)
             except (AssertionError, json.JSONDecodeError):
                 if try_no == max_retries - 1:

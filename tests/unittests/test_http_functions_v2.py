@@ -35,7 +35,7 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'http_functions' / \
                                              'http_v2_functions' / \
-                                              'fastapi'
+            'fastapi'
 
     def test_return_bytes(self):
         r = self.webhost.request('GET', 'return_bytes')
@@ -372,7 +372,6 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
             'response_cookie_header_nullable_timestamp_err')
         self.assertEqual(r.status_code, 200)
 
-
     @skipIf(sys.version_info < (3, 8, 0),
             "Skip the tests for Python 3.7 and below")
     def test_response_cookie_header_nullable_bool_err(self):
@@ -381,7 +380,6 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
             'response_cookie_header_nullable_bool_err')
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Set-Cookie" in r.headers)
-
 
     def test_print_to_console_stderr(self):
         r = self.webhost.request('GET', 'print_logging?console=true'

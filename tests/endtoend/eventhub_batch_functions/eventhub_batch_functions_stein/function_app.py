@@ -50,8 +50,10 @@ def eventhub_output_batch(req: func.HttpRequest, out: func.Out[str]) -> str:
 @app.blob_input(arg_name="testEntities",
                 path="python-worker-tests/test-eventhub-batch-triggered.txt",
                 connection="AzureWebJobsStorage")
-def get_eventhub_batch_triggered(req: func.HttpRequest, testEntities: func.InputStream):
-    return func.HttpResponse(status_code=200, body=testEntities.read().decode('utf-8'))
+def get_eventhub_batch_triggered(req: func.HttpRequest,
+                                 testEntities: func.InputStream):
+    return func.HttpResponse(status_code=200,
+                             body=testEntities.read().decode('utf-8'))
 
 
 # Retrieve the event data from storage blob and return it as Http response

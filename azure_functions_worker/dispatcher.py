@@ -817,7 +817,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             indexed_function_logs: List[str] = []
             for func in indexed_functions:
                 self._has_http_func = self._has_http_func or \
-                                      func.is_http_function()
+                    func.is_http_function()
                 function_log = "Function Name: {}, Function Binding: {}" \
                     .format(func.get_function_name(),
                             [(binding.type, binding.name) for binding in

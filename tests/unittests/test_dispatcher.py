@@ -9,13 +9,14 @@ from typing import Optional, Tuple
 from unittest.mock import patch
 
 from azure_functions_worker import protos
-from azure_functions_worker.constants import (PYTHON_THREADPOOL_THREAD_COUNT,
-                                              PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-                                              PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
-                                              PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                                              PYTHON_ENABLE_INIT_INDEXING,
-                                              METADATA_PROPERTIES_WORKER_INDEXED,
-                                              PYTHON_ENABLE_DEBUG_LOGGING)
+from azure_functions_worker.constants import (
+    PYTHON_THREADPOOL_THREAD_COUNT,
+    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+    PYTHON_ENABLE_INIT_INDEXING,
+    METADATA_PROPERTIES_WORKER_INDEXED,
+    PYTHON_ENABLE_DEBUG_LOGGING)
 from azure_functions_worker.dispatcher import Dispatcher
 from azure_functions_worker.version import VERSION
 from tests.utils import testutils
@@ -682,9 +683,11 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 1
             )
             self.assertEqual(
-                len([log for log in r.logs if log.message.startswith(
-                    "Received WorkerMetadataRequest from _handle__worker_init_request"
-                )]),
+                len([log for log in r.logs if
+                     log.message.startswith(
+                         "Received WorkerMetadataRequest from"
+                         "_handle__worker_init_request"
+                     )]),
                 0
             )
         self.assertIn("azure.functions", sys.modules)
@@ -844,11 +847,14 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertEqual(init_response.worker_init_response.result.status,
                          protos.StatusResult.Success)
 
-        metadata_response = self.loop.run_until_complete(
-            self.dispatcher._handle__functions_metadata_request(metadata_request))
+        metadata_response = \
+            self.loop.run_until_complete(
+                self.dispatcher._handle__functions_metadata_request(
+                    metadata_request))
 
-        self.assertEqual(metadata_response.function_metadata_response.result.status,
-                         protos.StatusResult.Success)
+        self.assertEqual(
+            metadata_response.function_metadata_response.result.status,
+            protos.StatusResult.Success)
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
@@ -875,10 +881,12 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
         metadata_response = self.loop.run_until_complete(
-            self.dispatcher._handle__functions_metadata_request(metadata_request))
+            self.dispatcher._handle__functions_metadata_request(
+                metadata_request))
 
-        self.assertEqual(metadata_response.function_metadata_response.result.status,
-                         protos.StatusResult.Success)
+        self.assertEqual(
+            metadata_response.function_metadata_response.result.status,
+            protos.StatusResult.Success)
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 

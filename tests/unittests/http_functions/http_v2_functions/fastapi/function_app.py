@@ -2,13 +2,12 @@
 # Licensed under the MIT License.
 import asyncio
 import hashlib
-import json
 import logging
 import sys
 import time
 from urllib.request import urlopen
 from azure.functions.extension.fastapi import Request, Response, \
-    PlainTextResponse, HTMLResponse, RedirectResponse
+    HTMLResponse, RedirectResponse
 import azure.functions as func
 from pydantic import BaseModel
 
@@ -273,11 +272,11 @@ def return_http_redirect(req: Request):
 async def return_request(req: Request):
     params = dict(req.query_params)
     params.pop('code', None)  # Remove 'code' parameter if present
-    
+
     # Get the body content and calculate its hash
     body = await req.body()
     body_hash = hashlib.sha256(body).hexdigest() if body else None
-    
+
     # Return a dictionary containing request information
     return {
         'method': req.method,

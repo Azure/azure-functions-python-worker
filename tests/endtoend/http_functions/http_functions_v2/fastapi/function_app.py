@@ -1,14 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import asyncio
 from datetime import datetime
 import logging
 import time
 
 import azure.functions as func
-from azure.functions.extension.fastapi import Request, Response, StreamingResponse, \
-    HTMLResponse, PlainTextResponse, HTMLResponse, JSONResponse, \
-    UJSONResponse, ORJSONResponse, RedirectResponse, FileResponse
+from azure.functions.extension.fastapi import Request, Response, \
+    StreamingResponse, HTMLResponse, \
+    UJSONResponse, ORJSONResponse, FileResponse
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -73,18 +72,22 @@ async def return_streaming(req: Request) -> StreamingResponse:
         yield b"Second chunk\n"
     return StreamingResponse(content())
 
+
 @app.route(route="return_html")
 def return_html(req: Request) -> HTMLResponse:
     html_content = "<html><body><h1>Hello, World!</h1></body></html>"
     return HTMLResponse(content=html_content, status_code=200)
 
+
 @app.route(route="return_ujson")
 def return_ujson(req: Request) -> UJSONResponse:
     return UJSONResponse(content={"message": "Hello, World!"}, status_code=200)
 
+
 @app.route(route="return_orjson")
 def return_orjson(req: Request) -> ORJSONResponse:
     return ORJSONResponse(content={"message": "Hello, World!"}, status_code=200)
+
 
 @app.route(route="return_file")
 def return_file(req: Request) -> FileResponse:

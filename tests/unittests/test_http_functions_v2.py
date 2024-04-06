@@ -18,6 +18,7 @@ from tests.utils import testutils
 class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
     @classmethod
     def setUpClass(cls):
+        cls._pre_env = dict(os.environ)
         os_environ = os.environ.copy()
         # Turn on feature flag
         os_environ[PYTHON_ENABLE_INIT_INDEXING] = '1'
@@ -28,6 +29,8 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        os.environ.clear()
+        os.environ.update(cls._pre_env)
         cls._patch_environ.stop()
         super().tearDownClass()
 

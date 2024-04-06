@@ -249,8 +249,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     cls.host_stdout_logger.error(error_message)
                     raise RuntimeError(error_message)
         except Exception as ex:
-            cls.host_stdout_logger.error(
-                f"WebHost is not started correctly. {ex}")
+            cls.host_stdout_logger.error(f"WebHost is not started correctly. {ex}")
             cls.tearDownClass()
             raise
 

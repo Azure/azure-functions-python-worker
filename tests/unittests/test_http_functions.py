@@ -10,7 +10,6 @@ from unittest import skipIf
 
 from tests.utils import testutils
 
-
 class TestHttpFunctions(testutils.WebHostTestCase):
 
     @classmethod
@@ -462,3 +461,9 @@ class TestHttpFunctionsStein(TestHttpFunctions):
     def test_no_return_returns(self):
         r = self.webhost.request('GET', 'no_return_returns')
         self.assertEqual(r.status_code, 200)
+
+class TestHttpFunctionsV2(TestHttpFunctions):
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.UNIT_TESTS_FOLDER / 'http_functions' / \
+                                             'http_v2_functions'

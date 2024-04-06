@@ -65,6 +65,7 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
+        cls._pre_env = dict(os.environ)
         os_environ = os.environ.copy()
         os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '0'
         cls._patch_environ = patch.dict('os.environ', os_environ)
@@ -73,8 +74,9 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        os.environ.pop(PYTHON_ENABLE_DEBUG_LOGGING)
         super().tearDownClass()
+        os.environ.clear()
+        os.environ.update(cls._pre_env)
         cls._patch_environ.stop()
 
     @classmethod

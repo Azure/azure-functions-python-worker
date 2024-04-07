@@ -72,9 +72,9 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
             self.assertEqual(r.response.worker_metadata.runtime_name,
-                              "python")
+                             "python")
             self.assertEqual(r.response.worker_metadata.worker_version,
-                              VERSION)
+                             VERSION)
 
     async def test_dispatcher_environment_reload(self):
         """Test function environment reload response
@@ -87,9 +87,9 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
             self.assertEqual(r.response.worker_metadata.runtime_name,
-                              "python")
+                             "python")
             self.assertEqual(r.response.worker_metadata.worker_version,
-                              VERSION)
+                             VERSION)
 
     async def test_dispatcher_initialize_worker_logging(self):
         """Test if the dispatcher's log can be flushed out during worker
@@ -664,9 +664,9 @@ class TestDispatcherHttpV2(testutils.AsyncTestCase):
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
             self.assertEqual(r.response.worker_metadata.runtime_name,
-                              "python")
+                             "python")
             self.assertEqual(r.response.worker_metadata.worker_version,
-                              VERSION)
+                             VERSION)
 
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):

@@ -110,8 +110,8 @@ class HttpCoordinator(metaclass=SingletonMeta):
 
     def set_http_response(self, invoc_id, http_response):
         if invoc_id not in self._context_references:
-            raise Exception("No context reference found for invocation %s",
-                            invoc_id)
+            raise Exception("No context reference found for invocation "
+                            f"{invoc_id}")
         context_ref = self._context_references.get(invoc_id)
         context_ref.http_response = http_response
 
@@ -126,8 +126,8 @@ class HttpCoordinator(metaclass=SingletonMeta):
 
     async def await_http_response_async(self, invoc_id):
         if invoc_id not in self._context_references:
-            raise Exception("No context reference found for invocation %s",
-                            invoc_id)
+            raise Exception("No context reference found for invocation "
+                            f"{invoc_id}")
         await asyncio.sleep(0)
         await self._context_references.get(
             invoc_id).http_response_available_event.wait()
@@ -140,7 +140,7 @@ class HttpCoordinator(metaclass=SingletonMeta):
             context_ref.http_request = None
             return request
 
-        raise Exception("No http request found for invocation %s", invoc_id)
+        raise Exception(f"No http request found for invocation {invoc_id}")
 
     def _pop_http_response(self, invoc_id):
         context_ref = self._context_references.get(invoc_id)
@@ -148,7 +148,7 @@ class HttpCoordinator(metaclass=SingletonMeta):
         if response is not None:
             context_ref.http_response = None
             return response
-        raise Exception("No http response found for invocation %s", invoc_id)
+        raise Exception(f"No http response found for invocation {invoc_id}")
 
 
 def get_unused_tcp_port():
@@ -183,12 +183,12 @@ async def initialize_http_server():
         invoc_id = request.headers.get(X_MS_INVOCATION_ID)
         if invoc_id is None:
             raise ValueError(f"Header {X_MS_INVOCATION_ID} not found")
-        logger.info('Received HTTP request for invocation %s', invoc_id)
+        logger.info(f'Received HTTP request for invocation {invoc_id}')
         http_coordinator.set_http_request(invoc_id, request)
         http_resp = \
             await http_coordinator.await_http_response_async(invoc_id)
 
-        logger.info('Sending HTTP response for invocation %s', invoc_id)
+        logger.info(f'Sending HTTP response for invocation {invoc_id}')
         # if http_resp is an python exception, raise it
         if isinstance(http_resp, Exception):
             raise http_resp
@@ -200,9 +200,11 @@ async def initialize_http_server():
 
     loop = asyncio.get_event_loop()
     loop.create_task(web_server_run_task)
-    logger.info('HTTP server starting on %s:%s', LOCAL_HOST, unused_port)
 
-    return f"http://{LOCAL_HOST}:{unused_port}"
+    web_server_address = f"http://{LOCAL_HOST}:{unused_port}"
+    logger.info(f'HTTP server starting on {web_server_address}')
+
+    return web_server_address
 
 
 http_coordinator = HttpCoordinator()

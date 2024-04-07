@@ -37,19 +37,21 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: "8.0.x"
-    - name: get date
+    - name: Get Date
+      id: get-date
       run: |
-        echo "DATE=$(date --rfc-3339=date)" >> ${GITHUB_ENV}
+        echo "todayDate=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_ENV
+      shell: bash
     - uses: actions/cache@v4
-      id: cache
+      id: cache-pip
       with:
         # path: ~/.cache/pip
         path: ${{ env.pythonLocation }}
-        key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}-${{ env.DATE }}
-        # restore-keys: |
+        key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}-${{ env.todayDate }}
+        # restore-keys: | 
         #   ${{ runner.os }}-pip-
     - name: Install the dependencies
-      if: steps.cache.outputs.cache-hit != 'true'
+      if: steps.cache-pip.outputs.cache-hit != 'true'
       run: |
         python -m pip install --upgrade pip
         python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre

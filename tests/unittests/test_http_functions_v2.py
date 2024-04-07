@@ -14,6 +14,7 @@ from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 from tests.utils import testutils
 import pytest
 
+
 @unittest.skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")
 class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
     @classmethod

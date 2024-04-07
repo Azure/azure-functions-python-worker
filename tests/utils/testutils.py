@@ -529,11 +529,14 @@ class _MockWebHost:
     def request_id(self):
         return self._request_id
 
-    async def init_worker(self, host_version: str = '4.28.0'):
+    async def init_worker(self, host_version: str = '4.28.0', **kwargs):
+        include_func_app_dir = kwargs.get('include_func_app_dir', False)
         r = await self.communicate(
             protos.StreamingMessage(
                 worker_init_request=protos.WorkerInitRequest(
-                    host_version=host_version
+                    host_version=host_version,
+                    function_app_directory=
+                    str(self._scripts_dir) if include_func_app_dir else None,
                 )
             ),
             wait_for='worker_init_response'

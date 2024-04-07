@@ -629,6 +629,9 @@ class TestDispatcherHttpV2(testutils.AsyncTestCase):
         self._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_HTTP_V2_FASTAPI_FUNCTIONS_DIR)
 
+    def tearDown(self):
+        self.loop.close()
+
     async def test_dispatcher_index_without_init_should_fail(self):
         env = {PYTHON_ENABLE_INIT_INDEXING: "0"}
         with patch.dict(os.environ, env):

@@ -321,7 +321,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
                 if HttpV2FeatureChecker.http_v2_enabled():
                     capabilities[constants.HTTP_URI] = \
-                    initialize_http_server()
+                        initialize_http_server()
 
         return protos.StreamingMessage(
             request_id=self.request_id,

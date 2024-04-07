@@ -630,7 +630,6 @@ class TestDispatcherHttpV2(testutils.AsyncTestCase):
         self._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_HTTP_V2_FASTAPI_FUNCTIONS_DIR)
 
-
     @patch('azure_functions_worker.dispatcher.initialize_http_server')
     async def test_dispatcher_index_with_init_should_pass(
             self, mock_initiate_http_server):

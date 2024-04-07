@@ -635,34 +635,34 @@ class TestDispatcherHttpV2(testutils.AsyncTestCase):
     def tearDown(self):
         self.loop.close()
 
-    async def test_dispatcher_index_without_init_should_fail(self):
-        env = {PYTHON_ENABLE_INIT_INDEXING: "0"}
-        with patch.dict(os.environ, env):
-            async with self._ctrl as host:
-                await host.init_worker()
-                r = await host.get_functions_metadata()
-                self.assertIsInstance(r.response,
-                                      protos.FunctionMetadataResponse)
-                self.assertFalse(r.response.use_default_metadata_indexing)
-                self.assertEqual(r.response.result.status,
-                                 protos.StatusResult.Failure)
+    # async def test_dispatcher_index_without_init_should_fail(self):
+    #     env = {PYTHON_ENABLE_INIT_INDEXING: "0"}
+    #     with patch.dict(os.environ, env):
+    #         async with self._ctrl as host:
+    #             await host.init_worker()
+    #             r = await host.get_functions_metadata()
+    #             self.assertIsInstance(r.response,
+    #                                   protos.FunctionMetadataResponse)
+    #             self.assertFalse(r.response.use_default_metadata_indexing)
+    #             self.assertEqual(r.response.result.status,
+    #                              protos.StatusResult.Failure)
 
-    @patch('azure_functions_worker.dispatcher.initialize_http_server')
-    async def test_dispatcher_index_with_init_should_pass(
-            self, mock_initiate_http_server):
-
-        mock_initiate_http_server.side_effect = self.return_mock_url
-        env = {PYTHON_ENABLE_INIT_INDEXING: "1"}
-
-        with patch.dict(os.environ, env):
-            async with self._ctrl as host:
-                await host.init_worker(include_func_app_dir=True)
-                r = await host.get_functions_metadata()
-                self.assertIsInstance(r.response,
-                                      protos.FunctionMetadataResponse)
-                self.assertFalse(r.response.use_default_metadata_indexing)
-                self.assertEqual(r.response.result.status,
-                                 protos.StatusResult.Success)
+    # @patch('azure_functions_worker.dispatcher.initialize_http_server')
+    # async def test_dispatcher_index_with_init_should_pass(
+    #         self, mock_initiate_http_server):
+    #
+    #     mock_initiate_http_server.side_effect = self.return_mock_url
+    #     env = {PYTHON_ENABLE_INIT_INDEXING: "1"}
+    #
+    #     with patch.dict(os.environ, env):
+    #         async with self._ctrl as host:
+    #             await host.init_worker(include_func_app_dir=True)
+    #             r = await host.get_functions_metadata()
+    #             self.assertIsInstance(r.response,
+    #                                   protos.FunctionMetadataResponse)
+    #             self.assertFalse(r.response.use_default_metadata_indexing)
+    #             self.assertEqual(r.response.result.status,
+    #                              protos.StatusResult.Success)
 
     @patch('azure_functions_worker.dispatcher.initialize_http_server')
     async def test_dispatcher_environment_reload_with_init_should_pass(

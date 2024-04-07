@@ -66,17 +66,6 @@ class TestHttpCoordinator(unittest.TestCase):
             http_coordinator.get_http_request_async(self.invoc_id))
         self.assertEqual(retrieved_request, self.http_request)
 
-    async def test_get_http_request_async_wait_for_request(self):
-        # Test waiting for an HTTP request to become available
-        async def set_request_after_delay():
-            await asyncio.sleep(1)
-            http_coordinator.set_http_request(self.invoc_id, self.http_request)
-
-        self.loop.run_until_complete(set_request_after_delay())
-        retrieved_request = self.loop.run_until_complete(
-            http_coordinator.get_http_request_async(self.invoc_id))
-        self.assertEqual(retrieved_request, self.http_request)
-
     def test_get_http_request_async_wait_forever(self):
         # Test handling error when invoc_id is not found
         invalid_invoc_id = "invalid_invocation"
@@ -119,15 +108,15 @@ class TestHttpCoordinator(unittest.TestCase):
                          f"No context reference found for invocation "
                          f"{invalid_invoc_id}")
 
-    async def test_await_http_response_async_response_not_set(self):
+    def test_await_http_response_async_response_not_set(self):
         invoc_id = "invocation_with_no_response"
         # Set up a mock context reference without setting the response
-        context_ref = {}
-        context_ref.http_response = None
+        context_ref = AsyncContextReference()
 
         # Add the mock context reference to the coordinator
         http_coordinator._context_references[invoc_id] = context_ref
 
+        http_coordinator.set_http_response(invoc_id, None)
         # Call the method and verify that it raises an exception
         with self.assertRaises(Exception) as context:
             self.loop.run_until_complete(
@@ -140,8 +129,11 @@ class TestHttpCoordinator(unittest.TestCase):
 class TestAsyncContextReference(unittest.TestCase):
 
     def setUp(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self) -> None:
+        self.loop.close()
 
     def test_init(self):
         ref = AsyncContextReference()

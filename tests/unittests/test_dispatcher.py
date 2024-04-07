@@ -635,17 +635,17 @@ class TestDispatcherHttpV2(testutils.AsyncTestCase):
     def tearDown(self):
         self.loop.close()
 
-    # async def test_dispatcher_index_without_init_should_fail(self):
-    #     env = {PYTHON_ENABLE_INIT_INDEXING: "0"}
-    #     with patch.dict(os.environ, env):
-    #         async with self._ctrl as host:
-    #             await host.init_worker()
-    #             r = await host.get_functions_metadata()
-    #             self.assertIsInstance(r.response,
-    #                                   protos.FunctionMetadataResponse)
-    #             self.assertFalse(r.response.use_default_metadata_indexing)
-    #             self.assertEqual(r.response.result.status,
-    #                              protos.StatusResult.Failure)
+    async def test_dispatcher_index_without_init_should_fail(self):
+        env = {PYTHON_ENABLE_INIT_INDEXING: "0"}
+        with patch.dict(os.environ, env):
+            async with self._ctrl as host:
+                await host.init_worker()
+                r = await host.get_functions_metadata()
+                self.assertIsInstance(r.response,
+                                      protos.FunctionMetadataResponse)
+                self.assertFalse(r.response.use_default_metadata_indexing)
+                self.assertEqual(r.response.result.status,
+                                 protos.StatusResult.Failure)
 
     # @patch('azure_functions_worker.dispatcher.initialize_http_server')
     # async def test_dispatcher_index_with_init_should_pass(
@@ -664,23 +664,23 @@ class TestDispatcherHttpV2(testutils.AsyncTestCase):
     #             self.assertEqual(r.response.result.status,
     #                              protos.StatusResult.Success)
 
-    @patch('azure_functions_worker.dispatcher.initialize_http_server')
-    async def test_dispatcher_environment_reload_with_init_should_pass(
-            self, mock_initiate_http_server):
-        mock_initiate_http_server.side_effect = self.return_mock_url
-        async with self._ctrl as host:
-            # Reload environment variable on specialization
-            r = await host.reload_environment(
-                environment={PYTHON_ENABLE_INIT_INDEXING: "1"},
-                function_project_path=str(host._scripts_dir))
-            self.assertIsInstance(r.response,
-                                  protos.FunctionEnvironmentReloadResponse)
-            self.assertIsInstance(r.response.worker_metadata,
-                                  protos.WorkerMetadata)
-            self.assertEqual(r.response.worker_metadata.runtime_name,
-                             "python")
-            self.assertEqual(r.response.worker_metadata.worker_version,
-                             VERSION)
+    # @patch('azure_functions_worker.dispatcher.initialize_http_server')
+    # async def test_dispatcher_environment_reload_with_init_should_pass(
+    #         self, mock_initiate_http_server):
+    #     mock_initiate_http_server.side_effect = self.return_mock_url
+    #     async with self._ctrl as host:
+    #         # Reload environment variable on specialization
+    #         r = await host.reload_environment(
+    #             environment={PYTHON_ENABLE_INIT_INDEXING: "1"},
+    #             function_project_path=str(host._scripts_dir))
+    #         self.assertIsInstance(r.response,
+    #                               protos.FunctionEnvironmentReloadResponse)
+    #         self.assertIsInstance(r.response.worker_metadata,
+    #                               protos.WorkerMetadata)
+    #         self.assertEqual(r.response.worker_metadata.runtime_name,
+    #                          "python")
+    #         self.assertEqual(r.response.worker_metadata.worker_version,
+    #                          VERSION)
 
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):

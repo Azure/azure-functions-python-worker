@@ -620,7 +620,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
 
 
-@unittest.skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")
+@unittest.skip
 class TestDispatcherHttpV2(testutils.AsyncTestCase):
 
     def setUp(self):

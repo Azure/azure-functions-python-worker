@@ -45,12 +45,9 @@ jobs:
     - uses: actions/cache@v4
       id: cache-pip
       with:
-        # path: ~/.cache/pip
         path: ${{ env.pythonLocation }}
         key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}-${{ env.todayDate }}
-        # restore-keys: | 
-        #   ${{ runner.os }}-pip-
-    - name: Install the dependencies
+    - name: Install dependencies
       if: steps.cache-pip.outputs.cache-hit != 'true'
       run: |
         python -m pip install --upgrade pip
@@ -79,12 +76,12 @@ jobs:
         retry 5 python setup.py build
         retry 5 python setup.py webhost --branch-name=dev
         retry 5 python setup.py extension
+        mkdir logs
     - name: Test with pytest
       env:
         AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }} # needed for installing azure-functions-durable while running setup.py
         ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
       run: |
-        mkdir logs
         python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
     - name: Codecov
       uses: codecov/codecov-action@v3

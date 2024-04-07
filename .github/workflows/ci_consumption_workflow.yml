@@ -30,7 +30,18 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "todayDate=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_ENV
+        shell: bash
+      - uses: actions/cache@v4
+        id: cache-pip
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}-${{ env.todayDate }}
       - name: Install dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: |
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
           python -m pip install -U -e .[dev]

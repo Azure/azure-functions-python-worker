@@ -39,6 +39,22 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "todayDate=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_ENV
+        shell: bash
+      - uses: actions/cache@v4
+        id: cache-pip
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}-${{ env.todayDate }}
+      - name: Install dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
+          python -m pip install -U -e .[dev]
       - name: Install dependencies and the worker
         run: |
           retry() {
@@ -57,10 +73,6 @@ jobs:
               fi
             done
           }
-
-          python -m pip install --upgrade pip
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
-          python -m pip install -U -e .[dev]
 
           # Retry a couple times to avoid certificate issue
           retry 5 python setup.py build

@@ -654,6 +654,20 @@ class TestDispatcherHttpV2(testutils.AsyncTestCase):
                 self.assertEqual(r.response.result.status,
                                  protos.StatusResult.Success)
 
+    async def test_dispatcher_environment_reload_with_init_should_pass(self):
+        async with self._ctrl as host:
+            # Reload environment variable on specialization
+            r = await host.reload_environment(
+                environment={PYTHON_ENABLE_INIT_INDEXING: "1"})
+            self.assertIsInstance(r.response,
+                                  protos.FunctionEnvironmentReloadResponse)
+            self.assertIsInstance(r.response.worker_metadata,
+                                  protos.WorkerMetadata)
+            self.assertEquals(r.response.worker_metadata.runtime_name,
+                              "python")
+            self.assertEquals(r.response.worker_metadata.worker_version,
+                              VERSION)
+
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
 

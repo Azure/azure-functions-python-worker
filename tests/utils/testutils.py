@@ -535,8 +535,8 @@ class _MockWebHost:
             protos.StreamingMessage(
                 worker_init_request=protos.WorkerInitRequest(
                     host_version=host_version,
-                    function_app_directory=
-                    str(self._scripts_dir) if include_func_app_dir else None,
+                    function_app_directory=str(
+                        self._scripts_dir) if include_func_app_dir else None,
                 )
             ),
             wait_for='worker_init_response'

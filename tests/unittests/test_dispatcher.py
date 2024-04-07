@@ -627,13 +627,8 @@ class TestDispatcherHttpV2(testutils.AsyncTestCase):
         return 'http://1.0.0.0'
 
     def setUp(self):
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
         self._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_HTTP_V2_FASTAPI_FUNCTIONS_DIR)
-
-    def tearDown(self):
-        self.loop.close()
 
 
     @patch('azure_functions_worker.dispatcher.initialize_http_server')

@@ -55,7 +55,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
           python -m pip install -U -e .[dev]
-      - name: Install dependencies and the worker
+      - name: Install worker
         run: |
           retry() {
             local -r -i max_attempts="$1"; shift

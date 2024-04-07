@@ -46,7 +46,7 @@ jobs:
       id: cache-pip
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}-${{ env.todayDate }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}-${{ env.todayDate }}-${{ matrix.python-version }}
     - name: Install dependencies
       if: steps.cache-pip.outputs.cache-hit != 'true'
       run: |

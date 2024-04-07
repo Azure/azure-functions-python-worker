@@ -71,9 +71,9 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             self.assertIsInstance(r.response, protos.WorkerInitResponse)
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
-            self.assertEquals(r.response.worker_metadata.runtime_name,
+            self.assertEqual(r.response.worker_metadata.runtime_name,
                               "python")
-            self.assertEquals(r.response.worker_metadata.worker_version,
+            self.assertEqual(r.response.worker_metadata.worker_version,
                               VERSION)
 
     async def test_dispatcher_environment_reload(self):
@@ -86,9 +86,9 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                   protos.FunctionEnvironmentReloadResponse)
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
-            self.assertEquals(r.response.worker_metadata.runtime_name,
+            self.assertEqual(r.response.worker_metadata.runtime_name,
                               "python")
-            self.assertEquals(r.response.worker_metadata.worker_version,
+            self.assertEqual(r.response.worker_metadata.worker_version,
                               VERSION)
 
     async def test_dispatcher_initialize_worker_logging(self):
@@ -663,9 +663,9 @@ class TestDispatcherHttpV2(testutils.AsyncTestCase):
                                   protos.FunctionEnvironmentReloadResponse)
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
-            self.assertEquals(r.response.worker_metadata.runtime_name,
+            self.assertEqual(r.response.worker_metadata.runtime_name,
                               "python")
-            self.assertEquals(r.response.worker_metadata.worker_version,
+            self.assertEqual(r.response.worker_metadata.worker_version,
                               VERSION)
 
 

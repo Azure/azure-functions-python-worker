@@ -26,14 +26,14 @@ class TestHttpCoordinator(unittest.TestCase):
     def tearDown(self) -> None:
         http_coordinator._context_references.clear()
 
-    async def test_set_http_request_new_invocation(self):
+    def test_set_http_request_new_invocation(self):
         # Test setting a new HTTP request
         http_coordinator.set_http_request(self.invoc_id, self.http_request)
         context_ref = http_coordinator._context_references.get(self.invoc_id)
         self.assertIsNotNone(context_ref)
         self.assertEqual(context_ref.http_request, self.http_request)
 
-    async def test_set_http_request_existing_invocation(self):
+    def test_set_http_request_existing_invocation(self):
         # Test updating an existing HTTP request
         new_http_request = MagicMock()
         http_coordinator.set_http_request(self.invoc_id, new_http_request)
@@ -41,20 +41,20 @@ class TestHttpCoordinator(unittest.TestCase):
         self.assertIsNotNone(context_ref)
         self.assertEqual(context_ref.http_request, new_http_request)
 
-    async def test_set_http_response_context_ref_null(self):
+    def test_set_http_response_context_ref_null(self):
         with self.assertRaises(Exception) as cm:
             http_coordinator.set_http_response(self.invoc_id,
                                                self.http_response)
         self.assertEqual(cm.exception.args[0],
                          "No context reference found for invocation %s")
 
-    async def test_set_http_response(self):
+    def test_set_http_response(self):
         http_coordinator.set_http_request(self.invoc_id, self.http_request)
         http_coordinator.set_http_response(self.invoc_id, self.http_response)
         context_ref = http_coordinator._context_references[self.invoc_id]
         self.assertEqual(context_ref.http_response, self.http_response)
 
-    async def test_get_http_request_async_existing_invocation(self):
+    def test_get_http_request_async_existing_invocation(self):
         # Test retrieving an existing HTTP request
         http_coordinator.set_http_request(self.invoc_id,
                                           self.http_request)
@@ -86,7 +86,7 @@ class TestHttpCoordinator(unittest.TestCase):
         finally:
             loop.close()  # Close the event loop when done
 
-    async def test_get_http_request_async_wait_forever(self):
+    def test_get_http_request_async_wait_forever(self):
         # Test handling error when invoc_id is not found
         invalid_invoc_id = "invalid_invocation"
         # Create a new event loop in the main thread
@@ -103,7 +103,7 @@ class TestHttpCoordinator(unittest.TestCase):
         finally:
             loop.close()
 
-    async def test_await_http_response_async_valid_invocation(self):
+    def test_await_http_response_async_valid_invocation(self):
         invoc_id = "valid_invocation"
         expected_response = self.http_response
 

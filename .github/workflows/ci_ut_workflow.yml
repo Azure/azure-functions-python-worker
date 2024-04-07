@@ -86,7 +86,8 @@ jobs:
         AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }} # needed for installing azure-functions-durable while running setup.py
         ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
       run: |
-        python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
+        python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch -m "not serial" tests/unittests
+        python -m pytest -q --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch -m "serial" tests/unittests
     - name: Codecov
       uses: codecov/codecov-action@v3
       with:

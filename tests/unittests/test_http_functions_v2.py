@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 from tests.utils import testutils
-
+import pytest
 
 @unittest.skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")
 class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
@@ -201,6 +201,7 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
         self.assertEqual(r_json, {'a': 'abc', 'd': 42})
         self.assertEqual(r.headers['content-type'], 'application/json')
 
+    @pytest.mark.serial
     def test_unhandled_error(self):
         r = self.webhost.request('GET', 'unhandled_error')
         self.assertEqual(r.status_code, 500)

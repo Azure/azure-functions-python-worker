@@ -102,6 +102,7 @@ jobs:
         path: logs/*.log
         if-no-files-found: ignore
     - name: Publish replays to Artifact
+      if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: Test Replays ${{ github.run_id }} ${{ matrix.python-version }}

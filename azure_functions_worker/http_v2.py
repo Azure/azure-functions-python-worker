@@ -164,7 +164,7 @@ def get_unused_tcp_port():
     return port
 
 
-async def initialize_http_server():
+def initialize_http_server():
     from azure.functions.extension.base \
         import ModuleTrackerMeta, RequestTrackerMeta
 

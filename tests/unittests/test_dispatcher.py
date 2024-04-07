@@ -21,6 +21,7 @@ from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from tests.utils.testutils import UNIT_TESTS_ROOT
 
+
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
 DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'
@@ -620,8 +621,10 @@ class TestDispatcherStein(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
 
 
-@unittest.skip
+@unittest.skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")
 class TestDispatcherHttpV2(testutils.AsyncTestCase):
+    def return_mock_url(*args, **kwargs):
+        return 'http://1.0.0.0'
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
@@ -644,9 +647,13 @@ class TestDispatcherHttpV2(testutils.AsyncTestCase):
                 self.assertEqual(r.response.result.status,
                                  protos.StatusResult.Failure)
 
-    async def test_dispatcher_index_with_init_should_pass(self):
+    @patch('azure_functions_worker.dispatcher.initialize_http_server')
+    async def test_dispatcher_index_with_init_should_pass(
+            self, mock_initiate_http_server):
+
+        mock_initiate_http_server.side_effect = self.return_mock_url
         env = {PYTHON_ENABLE_INIT_INDEXING: "1"}
-        sys.path.append(str(DISPATCHER_HTTP_V2_FASTAPI_FUNCTIONS_DIR))
+
         with patch.dict(os.environ, env):
             async with self._ctrl as host:
                 await host.init_worker(include_func_app_dir=True)
@@ -657,11 +664,15 @@ class TestDispatcherHttpV2(testutils.AsyncTestCase):
                 self.assertEqual(r.response.result.status,
                                  protos.StatusResult.Success)
 
-    async def test_dispatcher_environment_reload_with_init_should_pass(self):
+    @patch('azure_functions_worker.dispatcher.initialize_http_server')
+    async def test_dispatcher_environment_reload_with_init_should_pass(
+            self, mock_initiate_http_server):
+        mock_initiate_http_server.side_effect = self.return_mock_url
         async with self._ctrl as host:
             # Reload environment variable on specialization
             r = await host.reload_environment(
-                environment={PYTHON_ENABLE_INIT_INDEXING: "1"})
+                environment={PYTHON_ENABLE_INIT_INDEXING: "1"},
+                function_project_path=str(host._scripts_dir))
             self.assertIsInstance(r.response,
                                   protos.FunctionEnvironmentReloadResponse)
             self.assertIsInstance(r.response.worker_metadata,
@@ -729,7 +740,8 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
             )
             self.assertEqual(
                 len([log for log in r.logs if log.message.startswith(
-                    "Received WorkerMetadataRequest from _handle__worker_init_request"
+                    "Received WorkerMetadataRequest from "
+                    "_handle__worker_init_request"
                 )]),
                 0
             )
@@ -822,7 +834,6 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
 
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     def test_worker_init_request_with_indexing_enabled(self):
-
         request = protos.StreamingMessage(
             worker_init_request=protos.WorkerInitRequest(
                 host_version="2.3.4",
@@ -891,10 +902,12 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
                          protos.StatusResult.Success)
 
         metadata_response = self.loop.run_until_complete(
-            self.dispatcher._handle__functions_metadata_request(metadata_request))
+            self.dispatcher._handle__functions_metadata_request(
+                metadata_request))
 
-        self.assertEqual(metadata_response.function_metadata_response.result.status,
-                         protos.StatusResult.Success)
+        self.assertEqual(
+            metadata_response.function_metadata_response.result.status,
+            protos.StatusResult.Success)
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
@@ -921,10 +934,12 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
         metadata_response = self.loop.run_until_complete(
-            self.dispatcher._handle__functions_metadata_request(metadata_request))
+            self.dispatcher._handle__functions_metadata_request(
+                metadata_request))
 
-        self.assertEqual(metadata_response.function_metadata_response.result.status,
-                         protos.StatusResult.Success)
+        self.assertEqual(
+            metadata_response.function_metadata_response.result.status,
+            protos.StatusResult.Success)
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
@@ -933,7 +948,6 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
     def test_functions_metadata_request_with_indexing_exception(
             self,
             mock_index_functions):
-
         mock_index_functions.side_effect = Exception("Mocked Exception")
 
         request = protos.StreamingMessage(

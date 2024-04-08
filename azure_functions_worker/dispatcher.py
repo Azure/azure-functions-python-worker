@@ -688,7 +688,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 # break this loop down
                 bindings_info = []
                 for binding in func.get_bindings():
-                    deferred_binding_info = bindings_logs.get(binding.name) if bindings_logs.get(binding.name) else ""
+                    deferred_binding_info = bindings_logs.get(binding.name)\
+                        if bindings_logs.get(binding.name) else ""
                     bindings_info.append((binding.type, binding.name,
                                           deferred_binding_info))
 

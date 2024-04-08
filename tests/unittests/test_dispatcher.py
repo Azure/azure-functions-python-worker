@@ -621,51 +621,6 @@ class TestDispatcherStein(testutils.AsyncTestCase):
                              protos.StatusResult.Success)
 
 
-@unittest.skip
-class TestDispatcherHttpV2(testutils.AsyncTestCase):
-    def return_mock_url(*args, **kwargs):
-        return 'http://1.0.0.0'
-
-    def setUp(self):
-        self._ctrl = testutils.start_mockhost(
-            script_root=DISPATCHER_HTTP_V2_FASTAPI_FUNCTIONS_DIR)
-
-    @patch('azure_functions_worker.dispatcher.initialize_http_server')
-    async def test_dispatcher_index_with_init_should_pass(
-            self, mock_initiate_http_server):
-
-        mock_initiate_http_server.side_effect = self.return_mock_url
-        env = {PYTHON_ENABLE_INIT_INDEXING: "1"}
-
-        with patch.dict(os.environ, env):
-            async with self._ctrl as host:
-                await host.init_worker(include_func_app_dir=True)
-                r = await host.get_functions_metadata()
-                self.assertIsInstance(r.response,
-                                      protos.FunctionMetadataResponse)
-                self.assertFalse(r.response.use_default_metadata_indexing)
-                self.assertEqual(r.response.result.status,
-                                 protos.StatusResult.Success)
-
-    @patch('azure_functions_worker.dispatcher.initialize_http_server')
-    async def test_dispatcher_environment_reload_with_init_should_pass(
-            self, mock_initiate_http_server):
-        mock_initiate_http_server.side_effect = self.return_mock_url
-        async with self._ctrl as host:
-            # Reload environment variable on specialization
-            r = await host.reload_environment(
-                environment={PYTHON_ENABLE_INIT_INDEXING: "1"},
-                function_project_path=str(host._scripts_dir))
-            self.assertIsInstance(r.response,
-                                  protos.FunctionEnvironmentReloadResponse)
-            self.assertIsInstance(r.response.worker_metadata,
-                                  protos.WorkerMetadata)
-            self.assertEqual(r.response.worker_metadata.runtime_name,
-                             "python")
-            self.assertEqual(r.response.worker_metadata.worker_version,
-                             VERSION)
-
-
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
 
     def setUp(self):

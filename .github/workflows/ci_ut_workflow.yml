@@ -88,12 +88,13 @@ jobs:
       run: |
         python -m pytest -q -n auto --replay-record-dir=build/tests/replay --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
     - name: Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml # optional
         flags: unittests # optional
         name: codecov # optional
         fail_ci_if_error: false # optional (default = false)
+        token: ${{ secrets.CODECOV_TOKEN }}
     - name: Publish Logs to Artifact
       if: failure()
       uses: actions/upload-artifact@v4

@@ -35,6 +35,7 @@ _CUSTOM_IMAGE = "CUSTOM_IMAGE"
 _EXTENSION_BASE_ZIP = 'https://github.com/Azure/azure-functions-python-' \
                       'extensions/archive/refs/heads/dev.zip'
 
+
 class LinuxConsumptionWebHostController:
     """A controller for spawning mesh Docker container and apply multiple
     test cases on it.

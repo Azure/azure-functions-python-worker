@@ -54,21 +54,18 @@ def load_binding_registry() -> None:
             pass
 
 
-def get_deferred_binding(bind_name: str,
-                         pytype: typing.Optional[type] = None) -> object:
+def get_deferred_binding(bind_name: str) -> object:
     # This will return None if not a supported type
     return DEFERRED_BINDING_REGISTRY.get(bind_name)\
-        if (DEFERRED_BINDING_REGISTRY is not None
-            and DEFERRED_BINDING_REGISTRY.check_supported_type(
-                pytype)) else None
+        if (bind_name[-3:] == '-db') else None
 
 
-def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
-    # Check if binding is deferred binding
-    binding = get_deferred_binding(bind_name=bind_name, pytype=pytype)
-    # Binding is not a deferred binding type
+def get_binding(bind_name: str) -> object:
+    binding = None
     if binding is None:
         binding = BINDING_REGISTRY.get(bind_name)
+    if binding is None:
+        binding = get_deferred_binding(bind_name=bind_name)
     # Binding is generic
     if binding is None:
         binding = generic.GenericBinding
@@ -81,8 +78,7 @@ def is_trigger_binding(bind_name: str) -> bool:
 
 
 def check_input_type_annotation(bind_name: str, pytype: type) -> bool:
-    # check that needs to pass for sdk bindings -- pass in pytype
-    binding = get_binding(bind_name, pytype)
+    binding = get_binding(bind_name)
     return binding.check_input_type_annotation(pytype)
 
 
@@ -106,12 +102,12 @@ def has_implicit_output(bind_name: str) -> bool:
 
 
 def from_incoming_proto(
-        binding: str,
+        bind_name: str,
         pb: protos.ParameterBinding, *,
         pytype: typing.Optional[type],
         trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]],
         shmem_mgr: SharedMemoryManager) -> typing.Any:
-    binding = get_binding(binding, pytype)
+    binding = get_binding(bind_name)
     if trigger_metadata:
         metadata = {
             k: datumdef.Datum.from_typed_data(v)
@@ -133,8 +129,7 @@ def from_incoming_proto(
 
     try:
         # if the binding is an sdk type binding
-        if (DEFERRED_BINDING_REGISTRY is not None
-                and DEFERRED_BINDING_REGISTRY.check_supported_type(pytype)):
+        if bind_name[-3:] == '-db':
             return deferred_bindings_decode(binding=binding,
                                             pb=pb,
                                             pytype=pytype,

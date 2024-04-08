@@ -209,8 +209,13 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
 
     def check_log_unhandled_error(self,
                                   host_out: typing.List[str]):
-        self.assertIn('ZeroDivisionError: division by zero',
-                      host_out)
+        error_substring = 'ZeroDivisionError: division by zero'
+        for item in host_out:
+            if error_substring in item:
+                break
+        else:
+            self.fail(
+                f"{error_substring}' not found in host log.")
 
     def test_unhandled_urllib_error(self):
         r = self.webhost.request(

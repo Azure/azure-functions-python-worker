@@ -60,3 +60,7 @@ CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site-packages"
 PYTHON_ENABLE_INIT_INDEXING = "PYTHON_ENABLE_INIT_INDEXING"
 
 METADATA_PROPERTIES_WORKER_INDEXED = "worker_indexed"
+
+# Opentelemetry variables
+TRACEPARENT = "traceparent"
+TRACESTATE = "tracestate"

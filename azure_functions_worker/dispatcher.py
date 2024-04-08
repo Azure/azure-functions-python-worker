@@ -14,10 +14,9 @@ import queue
 import sys
 import threading
 from asyncio import BaseEventLoop
-from importlib.metadata import distribution, PackageNotFoundError
+from datetime import datetime
 from logging import LogRecord
 from typing import List, Optional
-from datetime import datetime
 
 import grpc
 
@@ -32,7 +31,7 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
-                        METADATA_PROPERTIES_WORKER_INDEXED)
+                        METADATA_PROPERTIES_WORKER_INDEXED, TRACEPARENT, TRACESTATE)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
@@ -82,6 +81,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         # Used for checking if open telemetry is enabled
         self.is_opentelemetry_available = False
+        self.context_api = None
+        self.TraceContextTextMapPropagator = None
 
         # We allow the customer to change synchronous thread pool max worker
         # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
@@ -267,13 +268,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_resp_queue.put_nowait(resp)
 
     def update_opentelemetry_status(self):
-        """Check for OpenTelemetry library availability
-        and update the status attribute."""
-
+        """Check for OpenTelemetry library availability and update the status attribute."""
         try:
-            distribution('opentelemetry')
+            from opentelemetry import context as context_api
+            from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+
+            self.context_api = context_api
+            self.TraceContextTextMapPropagator = TraceContextTextMapPropagator()
             self.is_opentelemetry_available = True
-        except PackageNotFoundError:
+        except ImportError:
             self.is_opentelemetry_available = False
 
     async def _handle__worker_init_request(self, request):
@@ -304,6 +307,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
+
+        self.update_opentelemetry_status()
+
+        if self.is_opentelemetry_available:
+            capabilities["WorkerOpenTelemetryEnabled"] = _TRUE
 
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
@@ -538,13 +546,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
 
             if self.is_opentelemetry_available:
-                from opentelemetry.trace.propagation import _SPAN_KEY
-                from opentelemetry import context as context_api
-                from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator  # NoQA
-
-                carrier = {"traceparent": fi_context.trace_context.Traceparent}
-                span_context = TraceContextTextMapPropagator().extract(carrier)
-                context_api.set_value(_SPAN_KEY, span_context)
+                carrier = {TRACEPARENT: fi_context.trace_context.trace_parent,
+                           TRACESTATE: fi_context.trace_context.trace_state}
+                ctx = self.TraceContextTextMapPropagator.extract(carrier)
+                self.context_api.attach(ctx)
 
             # Use local thread storage to store the invocation ID
             # for a customer's threads

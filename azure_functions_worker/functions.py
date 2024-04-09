@@ -221,10 +221,6 @@ class Registry:
                 param_bind_type = 'generic'
             else:
                 param_bind_type = binding.type
-                if (deferred_bindings_enabled
-                        and bindings_utils.meta.DEFERRED_BINDING_REGISTRY.check_supported_type(
-                            param_py_type)):
-                    param_bind_type += "-db"
 
             if param_has_anno:
                 if is_param_out:

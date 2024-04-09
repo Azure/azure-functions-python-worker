@@ -505,6 +505,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     f'sync threadpool max workers: '
                     f'{self.get_sync_tp_workers_set()}'
                 )
+
             logger.info(', '.join(function_invocation_logs))
 
             args = {}
@@ -877,6 +878,13 @@ class Dispatcher(metaclass=DispatcherMeta):
 
 class AsyncLoggingHandler(logging.Handler):
 
+    def __init__(self, *args, **kwargs):
+        self._logging_tp: concurrent.futures.ThreadPoolExecutor = \
+            concurrent.futures.ThreadPoolExecutor(
+                max_workers=1,
+                thread_name_prefix="logging")
+        super().__init__(*args, **kwargs)
+
     def emit(self, record: LogRecord) -> None:
         # Since we disable console log after gRPC channel is initiated,
         # we should redirect all the messages into dispatcher.
@@ -887,7 +895,10 @@ class AsyncLoggingHandler(logging.Handler):
         # buffered in this handler, not calling the emit yet.
         msg = self.format(record)
         try:
-            Dispatcher.current.on_logging(record, msg)
+            self._logging_tp.submit(
+                Dispatcher.current.on_logging,
+                record,
+                msg)
         except RuntimeError as runtime_error:
             # This will cause 'Dispatcher not found' failure.
             # Logging such of an issue will cause infinite loop of gRPC logging

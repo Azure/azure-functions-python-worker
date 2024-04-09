@@ -109,16 +109,14 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
                 script_root=DEFERRED_BINDINGS_DISABLED_DIR) as host:
             await host.init_worker()
 
-            self.assertFalse(meta.check_deferred_bindings_enabled(
-                func.InputStream,
-                False))
-            self.assertTrue(meta.check_deferred_bindings_enabled(
-                func.InputStream,
-                True))
+            self.assertEqual(meta.check_deferred_bindings_enabled(
+                func.InputStream, False), (False, False))
 
-            self.assertTrue(meta.check_deferred_bindings_enabled(
-                BlobClient,
-                False))
-            self.assertTrue(meta.check_deferred_bindings_enabled(
-                BlobClient,
-                True))
+            self.assertEqual(meta.check_deferred_bindings_enabled(
+                func.InputStream, True), (True, False))
+
+            self.assertEqual(meta.check_deferred_bindings_enabled(
+                BlobClient, False), (True, True))
+
+            self.assertEqual(meta.check_deferred_bindings_enabled(
+                BlobClient, True), (True, True))

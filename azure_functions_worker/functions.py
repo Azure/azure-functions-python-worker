@@ -15,6 +15,7 @@ from .protos import BindingInfo
 class ParamTypeInfo(typing.NamedTuple):
     binding_name: str
     pytype: typing.Optional[type]
+    deferred_bindings_enabled: typing.Optional[bool] = False
 
 
 class FunctionInfo(typing.NamedTuple):
@@ -30,7 +31,6 @@ class FunctionInfo(typing.NamedTuple):
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
     return_type: typing.Optional[ParamTypeInfo]
-
     deferred_bindings_enabled: bool
 
 
@@ -139,7 +139,7 @@ class Registry:
 
         input_types: typing.Dict[str, ParamTypeInfo] = {}
         output_types: typing.Dict[str, ParamTypeInfo] = {}
-        deferred_bindings_enabled = False
+        fx_deferred_bindings_enabled = False
 
         for param in params.values():
             binding = bound_params[param.name]
@@ -148,10 +148,10 @@ class Registry:
             param_anno = annotations.get(param.name)
 
             # Check if deferred bindings is enabled
-            deferred_bindings_enabled = (
+            fx_deferred_bindings_enabled, is_deferred_binding = (
                 bindings_utils.check_deferred_bindings_enabled(
                     param_anno,
-                    deferred_bindings_enabled))
+                    fx_deferred_bindings_enabled))
 
             if param_has_anno:
                 if typing_inspect.is_generic_type(param_anno):
@@ -228,7 +228,7 @@ class Registry:
                         param_bind_type, param_py_type)
                 else:
                     checks_out = bindings_utils.check_input_type_annotation(
-                        param_bind_type, param_py_type)
+                        param_bind_type, param_py_type, is_deferred_binding)
 
                 if not checks_out:
                     if binding.data_type is not protos.BindingInfo.undefined:
@@ -246,12 +246,14 @@ class Registry:
                             f'"{binding.type}" does not match its Python '
                             f'annotation "{param_py_type.__name__}"')
 
-            param_type_info = ParamTypeInfo(param_bind_type, param_py_type)
+            param_type_info = ParamTypeInfo(param_bind_type,
+                                            param_py_type,
+                                            is_deferred_binding)
             if is_binding_out:
                 output_types[param.name] = param_type_info
             else:
                 input_types[param.name] = param_type_info
-        return input_types, output_types, deferred_bindings_enabled
+        return input_types, output_types, fx_deferred_bindings_enabled
 
     @staticmethod
     def get_function_return_type(annotations: dict, has_explicit_return: bool,

@@ -54,21 +54,16 @@ def load_binding_registry() -> None:
             pass
 
 
-def get_deferred_binding(bind_name: str,
-                         pytype: typing.Optional[type] = None) -> object:
-    # This will return None if not a supported type
-    return DEFERRED_BINDING_REGISTRY.get(bind_name)\
-        if (DEFERRED_BINDING_REGISTRY is not None
-            and DEFERRED_BINDING_REGISTRY.check_supported_type(
-                pytype)) else None
-
-
-def get_binding(bind_name: str, pytype: typing.Optional[type] = None) -> object:
-    # Check if binding is deferred binding
-    binding = get_deferred_binding(bind_name=bind_name, pytype=pytype)
-    # Binding is not a deferred binding type
-    if binding is None:
+def get_binding(bind_name: str,
+                is_deferred_binding: typing.Optional[bool] = False)\
+        -> object:
+    binding = None
+    # Common use case
+    if binding is None and not is_deferred_binding:
         binding = BINDING_REGISTRY.get(bind_name)
+    # Binding is deferred binding
+    if binding is None and is_deferred_binding:
+        binding = DEFERRED_BINDING_REGISTRY.get(bind_name)
     # Binding is generic
     if binding is None:
         binding = generic.GenericBinding
@@ -80,9 +75,10 @@ def is_trigger_binding(bind_name: str) -> bool:
     return binding.has_trigger_support()
 
 
-def check_input_type_annotation(bind_name: str, pytype: type) -> bool:
-    # check that needs to pass for sdk bindings -- pass in pytype
-    binding = get_binding(bind_name, pytype)
+def check_input_type_annotation(bind_name: str,
+                                pytype: type,
+                                is_deferred_binding: bool) -> bool:
+    binding = get_binding(bind_name, is_deferred_binding)
     return binding.check_input_type_annotation(pytype)
 
 
@@ -107,11 +103,12 @@ def has_implicit_output(bind_name: str) -> bool:
 
 def from_incoming_proto(
         binding: str,
+        is_deferred_binding: bool,
         pb: protos.ParameterBinding, *,
         pytype: typing.Optional[type],
         trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]],
         shmem_mgr: SharedMemoryManager) -> typing.Any:
-    binding = get_binding(binding, pytype)
+    binding = get_binding(binding, is_deferred_binding)
     if trigger_metadata:
         metadata = {
             k: datumdef.Datum.from_typed_data(v)
@@ -133,8 +130,7 @@ def from_incoming_proto(
 
     try:
         # if the binding is an sdk type binding
-        if (DEFERRED_BINDING_REGISTRY is not None
-                and DEFERRED_BINDING_REGISTRY.check_supported_type(pytype)):
+        if is_deferred_binding:
             return deferred_bindings_decode(binding=binding,
                                             pb=pb,
                                             pytype=pytype,
@@ -259,10 +255,12 @@ def deferred_bindings_decode(binding: typing.Any,
 
 
 def check_deferred_bindings_enabled(param_anno: type,
-                                    deferred_bindings_enabled: bool) -> bool:
-    # If previous binding was SDK type, deferred_bindings_enabled will be
-    # True
-    return (deferred_bindings_enabled
-            or (DEFERRED_BINDING_REGISTRY is not None
-                and DEFERRED_BINDING_REGISTRY.check_supported_type(
-                    param_anno)))
+                                    deferred_bindings_enabled: bool) -> (bool,
+                                                                         bool):
+    # The first bool represents if deferred bindings is enabled at a fx level
+    # The second represents if the current binding is deferred binding
+    if (DEFERRED_BINDING_REGISTRY is not None
+            and DEFERRED_BINDING_REGISTRY.check_supported_type(param_anno)):
+        return True, True
+    else:
+        return deferred_bindings_enabled, False

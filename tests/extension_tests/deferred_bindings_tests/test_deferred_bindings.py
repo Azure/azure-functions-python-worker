@@ -84,24 +84,6 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
                                               "is only supported for 3.9+.")
 class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
 
-    async def test_get_deferred_binding(self):
-        async with testutils.start_mockhost(
-                script_root=DEFERRED_BINDINGS_DISABLED_DIR) as host:
-            await host.init_worker()
-            bind_name = 'blob'
-            pytype = BlobClient
-            binding = meta.get_deferred_binding(bind_name=bind_name, pytype=pytype)
-            self.assertEquals(binding, BlobClientConverter)
-
-    async def test_get_non_deferred_binding(self):
-        async with testutils.start_mockhost(
-                script_root=DEFERRED_BINDINGS_DISABLED_DIR) as host:
-            await host.init_worker()
-            bind_name = 'blob'
-            pytype = str
-            binding = meta.get_deferred_binding(bind_name=bind_name, pytype=pytype)
-            self.assertEquals(binding, None)
-
     def test_deferred_bindings_decode(self):
         binding = BlobClientConverter
         pb = protos.ParameterBinding(name='test',

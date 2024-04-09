@@ -165,7 +165,7 @@ def get_unused_tcp_port():
 
 
 def initialize_http_server():
-    from azure.functions.extension.base \
+    from azurefunctions.extension.base \
         import ModuleTrackerMeta, RequestTrackerMeta
 
     web_extension_mod_name = ModuleTrackerMeta.get_module()

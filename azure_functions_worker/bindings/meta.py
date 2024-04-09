@@ -22,7 +22,7 @@ BINDING_REGISTRY = None
 def _check_http_input_type_annotation(bind_name: str, pytype: type) -> bool:
     if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION and \
             is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
-        import azurefunctions.extension.base as ext_base
+        import azure.functions.extension.base as ext_base
         if ext_base.HttpV2FeatureChecker.http_v2_enabled():
             return ext_base.RequestTrackerMeta.check_type(pytype)
 
@@ -33,7 +33,7 @@ def _check_http_input_type_annotation(bind_name: str, pytype: type) -> bool:
 def _check_http_output_type_annotation(bind_name: str, pytype: type) -> bool:
     if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION and \
             is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
-        import azurefunctions.extension.base as ext_base
+        import azure.functions.extension.base as ext_base
         if ext_base.HttpV2FeatureChecker.http_v2_enabled():
             return ext_base.ResponseTrackerMeta.check_type(pytype)
 

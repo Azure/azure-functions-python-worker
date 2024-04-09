@@ -316,7 +316,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION \
                     and self._has_http_func:
-                from azurefunctions.extension.base \
+                from azure.functions.extension.base \
                     import HttpV2FeatureChecker
 
                 if HttpV2FeatureChecker.http_v2_enabled():
@@ -482,7 +482,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                         status=protos.StatusResult.Success)))
 
         except Exception as ex:
-            logger.warning("VICTORIA Error: {}", ex)
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 function_load_response=protos.FunctionLoadResponse(
@@ -544,14 +543,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                     BASE_EXT_SUPPORTED_PY_MINOR_VERSION \
                     and fi.trigger_metadata is not None \
                     and fi.trigger_metadata.get('type') == HTTP_TRIGGER:
-                from azurefunctions.extension.base import HttpV2FeatureChecker
+                from azure.functions.extension.base import HttpV2FeatureChecker
                 http_v2_enabled = HttpV2FeatureChecker.http_v2_enabled()
 
             if http_v2_enabled:
                 http_request = await http_coordinator.get_http_request_async(
                     invocation_id)
 
-                from azurefunctions.extension.base import RequestTrackerMeta
+                from azure.functions.extension.base import RequestTrackerMeta
                 route_params = {key: item.string for key, item
                                 in trigger_metadata.items() if key not in [
                                     'Headers', 'Query']}
@@ -704,7 +703,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 if sys.version_info.minor >= \
                         BASE_EXT_SUPPORTED_PY_MINOR_VERSION and \
                         self._has_http_func:
-                    from azurefunctions.extension.base \
+                    from azure.functions.extension.base \
                         import HttpV2FeatureChecker
 
                     if HttpV2FeatureChecker.http_v2_enabled():

@@ -687,7 +687,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             indexed_function_logs: List[str] = []
             for func in indexed_functions:
-                # break this loop down
                 bindings_info = []
                 for binding in func.get_bindings():
                     deferred_binding_info = bindings_logs.get(binding.name)\
@@ -701,7 +700,9 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             logger.info(
                 'Successfully processed FunctionMetadataRequest for '
-                'functions: %s', " ".join(indexed_function_logs))
+                'functions: %s. Deferred bindings enabled: %s', " ".join(
+                    indexed_function_logs),
+                bindings_logs != {})
 
             return fx_metadata_results
 

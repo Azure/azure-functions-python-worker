@@ -702,7 +702,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 'Successfully processed FunctionMetadataRequest for '
                 'functions: %s. Deferred bindings enabled: %s', " ".join(
                     indexed_function_logs),
-                bindings_logs != {})
+                    self._functions.deferred_bindings_enabled())
 
             return fx_metadata_results
 

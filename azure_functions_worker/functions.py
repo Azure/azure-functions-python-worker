@@ -43,6 +43,7 @@ class FunctionLoadError(RuntimeError):
 
 class Registry:
     _functions: typing.MutableMapping[str, FunctionInfo]
+    _deferred_bindings_enabled: bool = False
 
     def __init__(self) -> None:
         self._functions = {}
@@ -52,6 +53,9 @@ class Registry:
             return self._functions[function_id]
 
         return None
+
+    def deferred_bindings_enabled(self) -> bool:
+        return self._deferred_bindings_enabled
 
     @staticmethod
     def get_explicit_and_implicit_return(binding_name: str,
@@ -322,6 +326,10 @@ class Registry:
             deferred_bindings_enabled=deferred_bindings_enabled)
 
         self._functions[function_id] = function_info
+
+        if not self._deferred_bindings_enabled:
+            self._deferred_bindings_enabled = deferred_bindings_enabled
+
         return function_info
 
     def add_function(self, function_id: str,

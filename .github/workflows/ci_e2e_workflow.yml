@@ -13,7 +13,7 @@ on:
   push:
     branches: [dev, main, release/*]
   pull_request:
-    branches: [ dev, main, release/* ]
+    branches: [dev, main, release/*]
   schedule:
     # Monday to Thursday 3 AM CST build
     # * is a special character in YAML so you have to quote this string
@@ -41,13 +41,6 @@ jobs:
           dotnet-version: "8.0.x"
       - name: Install dependencies and the worker
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
-          python -m pip install -U -e .[dev]
-          # Conditionally install test dependencies for Python 3.8 and later
-          if [[ "${{ matrix.python-version }}" != "3.7" ]]; then
-            python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --pre -U -e .[test-http-v2]
-          fi
           retry() {
             local -r -i max_attempts="$1"; shift
             local -r cmd="$@"
@@ -64,6 +57,13 @@ jobs:
               fi
             done
           }
+
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
+          python -m pip install -U -e .[dev]
+          if [[ "${{ matrix.python-version }}" != "3.7" ]]; then
+             python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --pre -U -e .[test-http-v2]
+          fi
 
           # Retry a couple times to avoid certificate issue
           retry 5 python setup.py build

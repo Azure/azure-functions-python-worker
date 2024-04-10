@@ -158,7 +158,7 @@ class LinuxConsumptionWebHostController:
         folder = tempfile.gettempdir()
         with urlopen(_EXTENSION_BASE_ZIP) as zipresp:
             with ZipFile(BytesIO(zipresp.read())) as zfile:
-                zfile.extractall(folder)
+                zfile.extractall(tempfile.gettempdir())
 
         return folder
 
@@ -184,13 +184,13 @@ class LinuxConsumptionWebHostController:
 
         base_ext_container_path = (
             f"/azure-functions-host/workers/python/{self._py_version}/"
-            "LINUX/X64/azure/functions/extension/base"
+            "LINUX/X64/azurefunctions/extensions/base"
         )
 
         base_ext_local_path = (
-            f'{ext_folder}\\azure-functions-python'
-            f'-extensions-dev\\azure-functions-extension-base'
-            f'\\azure\\functions\\extension\\base'
+            f'{ext_folder}/azure-functions-python'
+            '-extensions-dev/azurefunctions-extensions-base'
+            '/azurefunctions/extensions/base'
         )
         run_cmd = []
         run_cmd.extend([self._docker_cmd, "run", "-p", "0:80", "-d"])

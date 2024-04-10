@@ -27,11 +27,11 @@ class FunctionInfo(typing.NamedTuple):
     requires_context: bool
     is_async: bool
     has_return: bool
+    deferred_bindings_enabled: bool
 
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
     return_type: typing.Optional[ParamTypeInfo]
-    deferred_bindings_enabled: bool
 
 
 class FunctionLoadError(RuntimeError):
@@ -307,10 +307,10 @@ class Registry:
             requires_context: bool,
             has_explicit_return: bool,
             has_implicit_return: bool,
+            deferred_bindings_enabled: bool,
             input_types: typing.Dict[str, ParamTypeInfo],
             output_types: typing.Dict[str, ParamTypeInfo],
-            return_type: str,
-            deferred_bindings_enabled: bool):
+            return_type: str):
 
         function_info = FunctionInfo(
             func=function,
@@ -320,10 +320,10 @@ class Registry:
             requires_context=requires_context,
             is_async=inspect.iscoroutinefunction(function),
             has_return=has_explicit_return or has_implicit_return,
+            deferred_bindings_enabled=deferred_bindings_enabled,
             input_types=input_types,
             output_types=output_types,
-            return_type=return_type,
-            deferred_bindings_enabled=deferred_bindings_enabled)
+            return_type=return_type)
 
         self._functions[function_id] = function_info
 
@@ -380,9 +380,10 @@ class Registry:
                                                       requires_context,
                                                       has_explicit_return,
                                                       has_implicit_return,
+                                                      _,
                                                       input_types,
                                                       output_types,
-                                                      return_type, _)
+                                                      return_type)
 
     def add_indexed_function(self, function):
         func = function.get_user_function()
@@ -438,5 +439,6 @@ class Registry:
             self.add_func_to_registry_and_return_funcinfo(
                 func, func_name, function_id, func_dir,
                 requires_context, has_explicit_return,
-                has_implicit_return, input_types, output_types,
-                return_type, deferred_bindings_enabled)
+                has_implicit_return, deferred_bindings_enabled,
+                input_types, output_types,
+                return_type)

@@ -21,7 +21,7 @@ from datetime import datetime
 import grpc
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
-from .constants import (HTTP_TRIGGER, PYTHON_ROLLBACK_CWD_PATH,
+from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
@@ -30,10 +30,9 @@ from .constants import (HTTP_TRIGGER, PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
-                        METADATA_PROPERTIES_WORKER_INDEXED,
-                        BASE_EXT_SUPPORTED_PY_MINOR_VERSION)
+                        METADATA_PROPERTIES_WORKER_INDEXED)
 from .extension import ExtensionManager
-from .http_v2 import http_coordinator, initialize_http_server
+from .http_v2 import http_coordinator, initialize_http_server, HttpV2Registry
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
@@ -75,7 +74,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._functions = functions.Registry()
         self._shmem_mgr = SharedMemoryManager()
         self._old_task_factory = None
-        self._has_http_func = False
 
         # Used to store metadata returns
         self._function_metadata_result = None
@@ -314,14 +312,19 @@ class Dispatcher(metaclass=DispatcherMeta):
             except Exception as ex:
                 self._function_metadata_exception = ex
 
-            if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION \
-                    and self._has_http_func:
-                from azure.functions.extension.base \
-                    import HttpV2FeatureChecker
-
-                if HttpV2FeatureChecker.http_v2_enabled():
+            try:
+                if HttpV2Registry.http_v2_enabled(self._functions):
                     capabilities[constants.HTTP_URI] = \
-                        initialize_http_server()
+                        initialize_http_server(self._host)
+            except Exception as ex:
+                return protos.StreamingMessage(
+                    request_id=self.request_id,
+                    worker_init_response=protos.WorkerInitResponse(
+                        result=protos.StatusResult(
+                            status=protos.StatusResult.Failure,
+                            exception=self._serialize_exception(ex))
+                    )
+                )
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -493,7 +496,6 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__invocation_request(self, request):
         invocation_time = datetime.utcnow()
         invoc_request = request.invocation_request
-        trigger_metadata = invoc_request.trigger_metadata
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
 
@@ -528,9 +530,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             for pb in invoc_request.input_data:
                 pb_type_info = fi.input_types[pb.name]
-                trigger_metadata = None
                 if bindings.is_trigger_binding(pb_type_info.binding_name):
                     trigger_metadata = invoc_request.trigger_metadata
+                else:
+                    trigger_metadata = None
 
                 args[pb.name] = bindings.from_incoming_proto(
                     pb_type_info.binding_name, pb,
@@ -538,24 +541,20 @@ class Dispatcher(metaclass=DispatcherMeta):
                     pytype=pb_type_info.pytype,
                     shmem_mgr=self._shmem_mgr)
 
-            http_v2_enabled = False
-            if sys.version_info.minor >= \
-                    BASE_EXT_SUPPORTED_PY_MINOR_VERSION \
-                    and fi.trigger_metadata is not None \
-                    and fi.trigger_metadata.get('type') == HTTP_TRIGGER:
-                from azure.functions.extension.base import HttpV2FeatureChecker
-                http_v2_enabled = HttpV2FeatureChecker.http_v2_enabled()
+            http_v2_enabled = self._functions.get_function(function_id) \
+                                  .is_http_func and \
+                HttpV2Registry.http_v2_enabled()
 
             if http_v2_enabled:
                 http_request = await http_coordinator.get_http_request_async(
                     invocation_id)
 
-                from azure.functions.extension.base import RequestTrackerMeta
                 route_params = {key: item.string for key, item
-                                in trigger_metadata.items() if key not in [
-                                    'Headers', 'Query']}
+                                in invoc_request.trigger_metadata.items()
+                                if key not in ['Headers', 'Query']}
 
-                (RequestTrackerMeta.get_synchronizer()
+                (HttpV2Registry.ext_base().RequestTrackerMeta
+                 .get_synchronizer()
                  .sync_route_params(http_request, route_params))
                 args[fi.trigger_metadata.get('param_name')] = http_request
 
@@ -572,30 +571,22 @@ class Dispatcher(metaclass=DispatcherMeta):
                 for name in fi.output_types:
                     args[name] = bindings.Out()
 
-            call_result = None
-            call_error = None
-            try:
-                if fi.is_async:
-                    call_result = \
-                        await self._run_async_func(fi_context, fi.func, args)
-                else:
-                    call_result = await self._loop.run_in_executor(
-                        self._sync_call_tp,
-                        self._run_sync_func,
-                        invocation_id, fi_context, fi.func, args)
+            if fi.is_async:
+                call_result = \
+                    await self._run_async_func(fi_context, fi.func, args)
+            else:
+                call_result = await self._loop.run_in_executor(
+                    self._sync_call_tp,
+                    self._run_sync_func,
+                    invocation_id, fi_context, fi.func, args)
 
-                if call_result is not None and not fi.has_return:
-                    raise RuntimeError(
-                        f'function {fi.name!r} without a $return binding'
-                        'returned a non-None value')
-            except Exception as e:
-                call_error = e
-                raise
-            finally:
-                if http_v2_enabled:
-                    http_coordinator.set_http_response(
-                        invocation_id, call_result
-                        if call_result is not None else call_error)
+            if call_result is not None and not fi.has_return:
+                raise RuntimeError(
+                    f'function {fi.name!r} without a $return binding'
+                    'returned a non-None value')
+
+            if http_v2_enabled:
+                http_coordinator.set_http_response(invocation_id, call_result)
 
             output_data = []
             cache_enabled = self._function_data_cache_enabled
@@ -635,6 +626,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data=output_data))
 
         except Exception as ex:
+            if http_v2_enabled:
+                http_coordinator.set_http_response(invocation_id, ex)
+
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 invocation_response=protos.InvocationResponse(
@@ -700,15 +694,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                 except Exception as ex:
                     self._function_metadata_exception = ex
 
-                if sys.version_info.minor >= \
-                        BASE_EXT_SUPPORTED_PY_MINOR_VERSION and \
-                        self._has_http_func:
-                    from azure.functions.extension.base \
-                        import HttpV2FeatureChecker
-
-                    if HttpV2FeatureChecker.http_v2_enabled():
-                        capabilities[constants.HTTP_URI] = \
-                            initialize_http_server()
+                if HttpV2Registry.http_v2_enabled(self._functions):
+                    capabilities[constants.HTTP_URI] = \
+                        initialize_http_server(self._host)
 
             # Change function app directory
             if getattr(func_env_reload_request,
@@ -750,8 +738,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             indexed_function_logs: List[str] = []
             for func in indexed_functions:
-                self._has_http_func = self._has_http_func or \
-                    func.is_http_function()
                 function_log = "Function Name: {}, Function Binding: {}" \
                     .format(func.get_function_name(),
                             [(binding.type, binding.name) for binding in

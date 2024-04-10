@@ -28,6 +28,7 @@ class FunctionInfo(typing.NamedTuple):
     requires_context: bool
     is_async: bool
     has_return: bool
+    is_http_func: bool
 
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
@@ -45,6 +46,7 @@ class FunctionLoadError(RuntimeError):
 
 class Registry:
     _functions: typing.MutableMapping[str, FunctionInfo]
+    _has_http_func: bool = False
 
     def __init__(self) -> None:
         self._functions = {}
@@ -54,6 +56,9 @@ class Registry:
             return self._functions[function_id]
 
         return None
+
+    def has_http_func(self) -> bool:
+        return self._has_http_func
 
     @staticmethod
     def get_explicit_and_implicit_return(binding_name: str,
@@ -308,11 +313,13 @@ class Registry:
         )
 
         trigger_metadata = None
+        is_http_func = False
         if http_trigger_param_name is not None:
             trigger_metadata = {
                 "type": HTTP_TRIGGER,
                 "param_name": http_trigger_param_name
             }
+            is_http_func = True
 
         function_info = FunctionInfo(
             func=function,
@@ -322,12 +329,17 @@ class Registry:
             requires_context=requires_context,
             is_async=inspect.iscoroutinefunction(function),
             has_return=has_explicit_return or has_implicit_return,
+            is_http_func=is_http_func,
             input_types=input_types,
             output_types=output_types,
             return_type=return_type,
             trigger_metadata=trigger_metadata)
 
         self._functions[function_id] = function_info
+
+        if not self._has_http_func:
+            self._has_http_func = function_info.is_http_func
+
         return function_info
 
     def add_function(self, function_id: str,

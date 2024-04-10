@@ -9,9 +9,7 @@ from .. import protos
 from . import datumdef
 from . import generic
 from .shared_memory_data_transfer import SharedMemoryManager
-from ..constants import BASE_EXT_SUPPORTED_PY_MINOR_VERSION, \
-    PYTHON_ENABLE_INIT_INDEXING
-from ..utils.common import is_envvar_true
+from ..http_v2 import HttpV2Registry
 
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
@@ -20,22 +18,17 @@ BINDING_REGISTRY = None
 
 
 def _check_http_input_type_annotation(bind_name: str, pytype: type) -> bool:
-    if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION and \
-            is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
-        import azure.functions.extension.base as ext_base
-        if ext_base.HttpV2FeatureChecker.http_v2_enabled():
-            return ext_base.RequestTrackerMeta.check_type(pytype)
+    if HttpV2Registry.http_v2_enabled():
+        return HttpV2Registry.ext_base().RequestTrackerMeta \
+            .check_type(pytype)
 
     binding = get_binding(bind_name)
     return binding.check_input_type_annotation(pytype)
 
 
 def _check_http_output_type_annotation(bind_name: str, pytype: type) -> bool:
-    if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION and \
-            is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
-        import azure.functions.extension.base as ext_base
-        if ext_base.HttpV2FeatureChecker.http_v2_enabled():
-            return ext_base.ResponseTrackerMeta.check_type(pytype)
+    if HttpV2Registry.http_v2_enabled():
+        return HttpV2Registry.ext_base().ResponseTrackerMeta.check_type(pytype)
 
     binding = get_binding(bind_name)
     return binding.check_output_type_annotation(pytype)

@@ -2,10 +2,13 @@ import abc
 import asyncio
 import importlib
 import socket
+import sys
 from typing import Dict
 
-from azure_functions_worker.constants import X_MS_INVOCATION_ID, LOCAL_HOST
+from azure_functions_worker.constants import X_MS_INVOCATION_ID, \
+    BASE_EXT_SUPPORTED_PY_MINOR_VERSION, PYTHON_ENABLE_INIT_INDEXING
 from azure_functions_worker.logging import logger
+from azure_functions_worker.utils.common import is_envvar_false
 
 
 class BaseContextReference(abc.ABC):
@@ -164,11 +167,9 @@ def get_unused_tcp_port():
     return port
 
 
-def initialize_http_server():
-    from azure.functions.extension.base \
-        import ModuleTrackerMeta, RequestTrackerMeta
-
-    web_extension_mod_name = ModuleTrackerMeta.get_module()
+def initialize_http_server(host_addr, **kwargs):
+    ext_base = HttpV2Registry.ext_base()
+    web_extension_mod_name = ext_base.ModuleTrackerMeta.get_module()
     extension_module = importlib.import_module(web_extension_mod_name)
     web_app_class = extension_module.WebApp
     web_server_class = extension_module.WebServer
@@ -176,7 +177,7 @@ def initialize_http_server():
     unused_port = get_unused_tcp_port()
 
     app = web_app_class()
-    request_type = RequestTrackerMeta.get_request_type()
+    request_type = ext_base.RequestTrackerMeta.get_request_type()
 
     @app.route
     async def catch_all(request: request_type):  # type: ignore
@@ -195,16 +196,57 @@ def initialize_http_server():
 
         return http_resp
 
-    web_server = web_server_class(LOCAL_HOST, unused_port, app)
+    web_server = web_server_class(host_addr, unused_port, app)
     web_server_run_task = web_server.serve()
 
     loop = asyncio.get_event_loop()
     loop.create_task(web_server_run_task)
 
-    web_server_address = f"http://{LOCAL_HOST}:{unused_port}"
+    web_server_address = f"http://{host_addr}:{unused_port}"
     logger.info(f'HTTP server starting on {web_server_address}')
 
     return web_server_address
+
+
+class HttpV2Registry:
+    _http_v2_enabled = False
+    _ext_base = None
+    _http_v2_enabled_checked = False
+
+    @classmethod
+    def http_v2_enabled(cls, functions=None, **kwargs):
+        # Check if HTTP/2 enablement has already been checked
+        if not cls._http_v2_enabled_checked:
+            # If not checked yet, mark as checked
+            cls._http_v2_enabled_checked = True
+
+            # Check if there are functions provided and if any of them has
+            # HTTP triggers
+            cls._http_v2_enabled = functions is not None and \
+                functions.has_http_func()
+
+            # If HTTP functions are present, perform additional checks
+            if cls._http_v2_enabled:
+                # Check if HTTP/2 is enabled
+                cls._http_v2_enabled = cls._check_http_v2_enabled()
+
+        # Return the result of HTTP/2 enablement
+        return cls._http_v2_enabled
+
+    @classmethod
+    def ext_base(cls):
+        return cls._ext_base
+
+    @classmethod
+    def _check_http_v2_enabled(cls):
+        if sys.version_info.minor < BASE_EXT_SUPPORTED_PY_MINOR_VERSION or \
+                is_envvar_false(PYTHON_ENABLE_INIT_INDEXING):
+            return False
+
+        import azure.functions.extension.base as ext_base
+        cls._ext_base = ext_base
+
+        return cls._ext_base.HttpV2FeatureChecker.http_v2_enabled()
 
 
 http_coordinator = HttpCoordinator()

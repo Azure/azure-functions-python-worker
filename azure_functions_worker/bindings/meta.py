@@ -240,17 +240,19 @@ def deferred_bindings_decode(binding: typing.Any,
     global deferred_bindings_cache
 
     # If cache is empty or key doesn't exist, deferred_binding_type is None
-    deferred_binding_type = deferred_bindings_cache.get((pb.name, pytype,
-                                                         datum.value.content),
-                                                        None)
-
-    if deferred_binding_type is not None:
-        return deferred_binding_type
+    if deferred_bindings_cache.get((pb.name,
+                                    pytype,
+                                    datum.value.content), None) is not None:
+        return deferred_bindings_cache.get((pb.name,
+                                            pytype,
+                                            datum.value.content))
     else:
-        deferred_binding_type = binding.decode(datum, trigger_metadata=metadata,
+        deferred_binding_type = binding.decode(datum,
+                                               trigger_metadata=metadata,
                                                pytype=pytype)
-        deferred_bindings_cache[(pb.name, pytype, datum.value.content)]\
-            = deferred_binding_type
+        deferred_bindings_cache[(pb.name,
+                                 pytype,
+                                 datum.value.content)] = deferred_binding_type
         return deferred_binding_type
 
 

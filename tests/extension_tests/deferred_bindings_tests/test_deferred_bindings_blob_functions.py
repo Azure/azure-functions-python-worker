@@ -173,3 +173,9 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(meta.deferred_bindings_cache, {})
         r = self.webhost.request('GET', 'blob_cache')
         self.assertEqual(r.status_code, 200)
+
+        r = self.webhost.request('GET', 'blob_cache')
+        self.assertEqual(r.status_code, 200)
+
+        r = self.webhost.request('GET', 'blob_cache')
+        self.assertEqual(r.status_code, 200)

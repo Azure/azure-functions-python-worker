@@ -85,7 +85,7 @@ else:
 
 EXTRA_REQUIRES = {
     "dev": [
-        "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
+        "azure-eventhub",  # Used for EventHub E2E tests
         "azure-functions-durable",  # Used for Durable E2E tests
         "flask",
         "fastapi",  # Used for ASGIMiddleware test

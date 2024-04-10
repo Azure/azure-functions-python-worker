@@ -85,6 +85,7 @@ else:
 
 EXTRA_REQUIRES = {
     "dev": [
+        "importlib_metadata",
         "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
         "azure-functions-durable",  # Used for Durable E2E tests
         "flask",

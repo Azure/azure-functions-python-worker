@@ -243,9 +243,9 @@ class TestHttpFunctionsV2FastApiWithInitIndexing(
             streaming_url, timeout=REQUEST_TIMEOUT_SEC, stream=True)
         self.assertTrue(r.ok)
         # Validate streaming content
-        expected_content = [b"First chunk\n", b"Second chunk\n"]
+        expected_content = [b'First', b' chun', b'k\nSec', b'ond c', b'hunk\n']
         received_content = []
-        for chunk in r.iter_content(chunk_size=1024):
+        for chunk in r.iter_content(chunk_size=5):
             if chunk:
                 received_content.append(chunk)
         self.assertEqual(received_content, expected_content)

@@ -92,6 +92,7 @@ EXTRA_REQUIRES = {
         "fastapi~=0.85.0",  # Used for ASGIMiddleware test
         "pydantic",
         "pycryptodome~=3.10.1",
+        "cmake==3.29.0.1"
         "flake8~=4.0.1",
         "mypy",
         "pytest",

@@ -45,7 +45,7 @@ def load_binding_registry() -> None:
     if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
         # Import the base extension
         try:
-            import azure.functions.extension.base as clients
+            import azurefunctions.extensions.base as clients
             global DEFERRED_BINDING_REGISTRY
             DEFERRED_BINDING_REGISTRY = clients.get_binding_registry()
         except ImportError:

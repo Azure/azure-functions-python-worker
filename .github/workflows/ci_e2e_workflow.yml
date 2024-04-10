@@ -68,7 +68,7 @@ jobs:
           retry 5 python setup.py extension
           mkdir logs
       - name: Install .[test-deferred-bindings] for 3.9, 3.10, 3.11
-        if: matrix.python-version != "3.7" && matrix.python-version != "3.8"
+        if: matrix.python-version != 3.7 && matrix.python-version != 3.8
         run: python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --pre -U -e .[test-deferred-bindings]
       - name: Grant execute permission
         run: chmod +x .github/Scripts/e2e-tests.sh

@@ -220,15 +220,7 @@ class HttpV2Registry:
             # If not checked yet, mark as checked
             cls._http_v2_enabled_checked = True
 
-            # Check if there are functions provided and if any of them has
-            # HTTP triggers
-            cls._http_v2_enabled = functions is not None and \
-                functions.has_http_func()
-
-            # If HTTP functions are present, perform additional checks
-            if cls._http_v2_enabled:
-                # Check if HTTP/2 is enabled
-                cls._http_v2_enabled = cls._check_http_v2_enabled()
+            cls._http_v2_enabled = cls._check_http_v2_enabled()
 
         # Return the result of HTTP/2 enablement
         return cls._http_v2_enabled

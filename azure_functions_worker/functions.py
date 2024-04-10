@@ -46,7 +46,6 @@ class FunctionLoadError(RuntimeError):
 
 class Registry:
     _functions: typing.MutableMapping[str, FunctionInfo]
-    _has_http_func: bool = False
 
     def __init__(self) -> None:
         self._functions = {}
@@ -57,8 +56,6 @@ class Registry:
 
         return None
 
-    def has_http_func(self) -> bool:
-        return self._has_http_func
 
     @staticmethod
     def get_explicit_and_implicit_return(binding_name: str,
@@ -336,9 +333,6 @@ class Registry:
             trigger_metadata=trigger_metadata)
 
         self._functions[function_id] = function_info
-
-        if not self._has_http_func:
-            self._has_http_func = function_info.is_http_func
 
         return function_info
 

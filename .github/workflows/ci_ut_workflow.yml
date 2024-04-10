@@ -89,13 +89,12 @@ jobs:
       run: |
         python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
     - name: Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml # optional
         flags: unittests # optional
         name: codecov # optional
         fail_ci_if_error: false # optional (default = false)
-        token: ${{ secrets.CODECOV_TOKEN }}
     - name: Publish Logs to Artifact
       if: failure()
       uses: actions/upload-artifact@v4
@@ -103,10 +102,4 @@ jobs:
         name: Test WebHost Logs ${{ github.run_id }} ${{ matrix.python-version }}
         path: logs/*.log
         if-no-files-found: ignore
-    - name: Publish replays to Artifact
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: Test Replays ${{ github.run_id }} ${{ matrix.python-version }}
-        path: build/tests/replay
-        if-no-files-found: ignore
+

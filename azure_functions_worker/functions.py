@@ -56,7 +56,6 @@ class Registry:
 
         return None
 
-
     @staticmethod
     def get_explicit_and_implicit_return(binding_name: str,
                                          binding: BindingInfo,

@@ -109,7 +109,8 @@ EXTRA_REQUIRES = {
         "opencv-python",
         "pandas",
         "numpy",
-        "pre-commit"
+        "pre-commit",
+        "importlib-metadata"
     ],
     "test-http-v2": ["azure-functions-extension-fastapi", "ujson", "orjson"]
 }

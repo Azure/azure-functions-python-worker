@@ -143,7 +143,7 @@ class HttpCoordinator(metaclass=SingletonMeta):
             context_ref.http_request = None
             return request
 
-        raise Exception(f"No http request found for invocation {invoc_id}")
+        raise ValueError(f"No http request found for invocation {invoc_id}")
 
     def _pop_http_response(self, invoc_id):
         context_ref = self._context_references.get(invoc_id)
@@ -151,7 +151,8 @@ class HttpCoordinator(metaclass=SingletonMeta):
         if response is not None:
             context_ref.http_response = None
             return response
-        raise Exception(f"No http response found for invocation {invoc_id}")
+
+        raise ValueError(f"No http response found for invocation {invoc_id}")
 
 
 def get_unused_tcp_port():
@@ -184,12 +185,12 @@ def initialize_http_server(host_addr, **kwargs):
         invoc_id = request.headers.get(X_MS_INVOCATION_ID)
         if invoc_id is None:
             raise ValueError(f"Header {X_MS_INVOCATION_ID} not found")
-        logger.info(f'Received HTTP request for invocation {invoc_id}')
+        logger.info('Received HTTP request for invocation %s', invoc_id)
         http_coordinator.set_http_request(invoc_id, request)
         http_resp = \
             await http_coordinator.await_http_response_async(invoc_id)
 
-        logger.info(f'Sending HTTP response for invocation {invoc_id}')
+        logger.info('Sending HTTP response for invocation %s', invoc_id)
         # if http_resp is an python exception, raise it
         if isinstance(http_resp, Exception):
             raise http_resp
@@ -203,7 +204,7 @@ def initialize_http_server(host_addr, **kwargs):
     loop.create_task(web_server_run_task)
 
     web_server_address = f"http://{host_addr}:{unused_port}"
-    logger.info(f'HTTP server starting on {web_server_address}')
+    logger.info('HTTP server starting on %s', web_server_address)
 
     return web_server_address
 
@@ -224,7 +225,7 @@ class HttpV2Registry:
     _http_v2_enabled_checked = False
 
     @classmethod
-    def http_v2_enabled(cls, functions=None, **kwargs):
+    def http_v2_enabled(cls, **kwargs):
         # Check if HTTP/2 enablement has already been checked
         if not cls._http_v2_enabled_checked:
             # If not checked yet, mark as checked

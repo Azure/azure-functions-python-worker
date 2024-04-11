@@ -314,7 +314,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 self._function_metadata_exception = ex
 
             try:
-                if HttpV2Registry.http_v2_enabled(self._functions):
+                if HttpV2Registry.http_v2_enabled():
                     capabilities[constants.HTTP_URI] = \
                         initialize_http_server(self._host)
             except Exception as ex:
@@ -689,7 +689,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 except Exception as ex:
                     self._function_metadata_exception = ex
 
-                if HttpV2Registry.http_v2_enabled(self._functions):
+                if HttpV2Registry.http_v2_enabled():
                     capabilities[constants.HTTP_URI] = \
                         initialize_http_server(self._host)
 

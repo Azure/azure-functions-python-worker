@@ -302,11 +302,7 @@ class Registry:
                                                      str, ParamTypeInfo],
                                                  return_type: str):
 
-        http_trigger_param_name = next(
-            (input_type for input_type, type_info in input_types.items()
-             if type_info.binding_name == HTTP_TRIGGER),
-            None
-        )
+        http_trigger_param_name = self._get_http_trigger_param_name(input_types)
 
         trigger_metadata = None
         is_http_func = False
@@ -334,6 +330,14 @@ class Registry:
         self._functions[function_id] = function_info
 
         return function_info
+
+    def _get_http_trigger_param_name(self, input_types):
+        http_trigger_param_name = next(
+            (input_type for input_type, type_info in input_types.items()
+             if type_info.binding_name == HTTP_TRIGGER),
+            None
+        )
+        return http_trigger_param_name
 
     def add_function(self, function_id: str,
                      func: typing.Callable,

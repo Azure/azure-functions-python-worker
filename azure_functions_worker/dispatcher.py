@@ -32,7 +32,8 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
                         METADATA_PROPERTIES_WORKER_INDEXED)
 from .extension import ExtensionManager
-from .http_v2 import http_coordinator, initialize_http_server, HttpV2Registry
+from .http_v2 import http_coordinator, initialize_http_server, HttpV2Registry, \
+    sync_http_request
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
@@ -549,13 +550,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 http_request = await http_coordinator.get_http_request_async(
                     invocation_id)
 
-                route_params = {key: item.string for key, item
-                                in invoc_request.trigger_metadata.items()
-                                if key not in ['Headers', 'Query']}
-
-                (HttpV2Registry.ext_base().RequestTrackerMeta
-                 .get_synchronizer()
-                 .sync_route_params(http_request, route_params))
+                await sync_http_request(http_request, invoc_request)
                 args[fi.trigger_metadata.get('param_name')] = http_request
 
             fi_context = self._get_context(invoc_request, fi.name,

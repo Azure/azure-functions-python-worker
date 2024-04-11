@@ -31,7 +31,8 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
-                        METADATA_PROPERTIES_WORKER_INDEXED, TRACEPARENT, TRACESTATE)
+                        METADATA_PROPERTIES_WORKER_INDEXED, TRACEPARENT,
+                        TRACESTATE)
 from .extension import ExtensionManager
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
@@ -313,9 +314,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         self.update_opentelemetry_status()
 
         if self.otel_libs_available:
-            # When this capability is enabled, logs are not piped back to the host from
-            # the worker. Logs will directly go to where the user has configured the
-            # logs to go. This is to ensure that the logs are not duplicated.
+            # When this capability is enabled, logs are not piped back to the
+            # host from the worker. Logs will directly go to where the user has
+            # configured them to go. This is to ensure that the logs are not
+            # duplicated.
             capabilities["WorkerOpenTelemetryEnabled"] = _TRUE
 
         if DependencyManager.should_load_cx_dependencies():

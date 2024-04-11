@@ -32,6 +32,8 @@ _FUNC_GITHUB_ZIP = "https://github.com/Azure/azure-functions-python-library" \
                    "/archive/refs/heads/dev.zip"
 _FUNC_FILE_NAME = "azure-functions-python-library-dev"
 _CUSTOM_IMAGE = "CUSTOM_IMAGE"
+_EXTENSION_BASE_ZIP = 'https://github.com/Azure/azure-functions-python-' \
+                      'extensions/archive/refs/heads/dev.zip'
 
 
 class LinuxConsumptionWebHostController:
@@ -151,6 +153,15 @@ class LinuxConsumptionWebHostController:
             with ZipFile(BytesIO(zipresp.read())) as zfile:
                 zfile.extractall(tempfile.gettempdir())
 
+    @staticmethod
+    def _download_extensions() -> str:
+        folder = tempfile.gettempdir()
+        with urlopen(_EXTENSION_BASE_ZIP) as zipresp:
+            with ZipFile(BytesIO(zipresp.read())) as zfile:
+                zfile.extractall(tempfile.gettempdir())
+
+        return folder
+
     def spawn_container(self,
                         image: str,
                         env: Dict[str, str] = {}) -> int:
@@ -163,11 +174,24 @@ class LinuxConsumptionWebHostController:
         # TODO: Mount library in docker container
         # self._download_azure_functions()
 
+        # Download python extension base package
+        ext_folder = self._download_extensions()
+
         container_worker_path = (
             f"/azure-functions-host/workers/python/{self._py_version}/"
             "LINUX/X64/azure_functions_worker"
         )
 
+        base_ext_container_path = (
+            f"/azure-functions-host/workers/python/{self._py_version}/"
+            "LINUX/X64/azurefunctions/extensions/base"
+        )
+
+        base_ext_local_path = (
+            f'{ext_folder}/azure-functions-python'
+            '-extensions-dev/azurefunctions-extensions-base'
+            '/azurefunctions/extensions/base'
+        )
         run_cmd = []
         run_cmd.extend([self._docker_cmd, "run", "-p", "0:80", "-d"])
         run_cmd.extend(["--name", self._uuid, "--privileged"])
@@ -177,6 +201,8 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={_DUMMY_CONT_KEY}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
+        run_cmd.extend(["-v",
+                        f'{base_ext_local_path}:{base_ext_container_path}'])
 
         for key, value in env.items():
             run_cmd.extend(["-e", f"{key}={value}"])

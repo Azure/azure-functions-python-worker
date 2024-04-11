@@ -112,7 +112,7 @@ EXTRA_REQUIRES = {
         "pre-commit"
     ],
     "test-deferred-bindings": [
-        "azure-functions-extension-blob"
+        "azurefunctions-extensions-bindings-blob"
     ]
 }
 

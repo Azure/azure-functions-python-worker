@@ -248,6 +248,11 @@ def index_function_app(function_path: str):
 
 
 def get_fx_raw_bindings(indexed_function, function_info):
+    """
+    If deferred bindings is enabled at the function level,
+    raw bindings are generated through the base extension.
+    If not, raw bindings are generated through azure-functions.
+    """
     if function_info.deferred_bindings_enabled:
         return bindings.meta.DEFERRED_BINDING_REGISTRY.get_raw_bindings(
             indexed_function, function_info.input_types)

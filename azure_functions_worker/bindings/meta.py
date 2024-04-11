@@ -25,9 +25,16 @@ deferred_bindings_cache = {}
 
 
 def load_binding_registry() -> None:
+    """
+    Tries to load azure-functions from the customer's BYO. If it's
+    not found, it loads the builtin. If the BINDING_REGISTRY is None,
+    azure-functions hasn't been loaded in properly.
+
+    Tries to load the base extension only for python 3.8+.
+    """
+
     func = sys.modules.get('azure.functions')
 
-    # If fails to acquire customer's BYO azure-functions, load the builtin
     if func is None:
         import azure.functions as func
 
@@ -35,8 +42,6 @@ def load_binding_registry() -> None:
     BINDING_REGISTRY = func.get_binding_registry()
 
     if BINDING_REGISTRY is None:
-        # If the BINDING_REGISTRY is None, azure-functions hasn't been
-        # loaded in properly.
         raise AttributeError('BINDING_REGISTRY is None. azure-functions '
                              'library not found. Sys Path: %s. '
                              'Sys Modules: %s. '
@@ -44,9 +49,7 @@ def load_binding_registry() -> None:
                              sys.path, sys.modules,
                              os.path.exists(CUSTOMER_PACKAGES_PATH))
 
-    # The base extension supports python 3.8+
     if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
-        # Import the base extension
         try:
             import azurefunctions.extensions.base as clients
             global DEFERRED_BINDING_REGISTRY
@@ -62,14 +65,17 @@ def load_binding_registry() -> None:
 def get_binding(bind_name: str,
                 is_deferred_binding: typing.Optional[bool] = False)\
         -> object:
+    """
+    First checks if the binding is a non-deferred binding. This is
+    the most common case.
+    Second checks if the binding is a deferred binding.
+    If the binding is neither, it's a generic type.
+    """
     binding = None
-    # Common use case
     if binding is None and not is_deferred_binding:
         binding = BINDING_REGISTRY.get(bind_name)
-    # Binding is deferred binding
     if binding is None and is_deferred_binding:
         binding = DEFERRED_BINDING_REGISTRY.get(bind_name)
-    # Binding is generic
     if binding is None:
         binding = generic.GenericBinding
     return binding
@@ -108,11 +114,11 @@ def has_implicit_output(bind_name: str) -> bool:
 
 def from_incoming_proto(
         binding: str,
-        is_deferred_binding: bool,
         pb: protos.ParameterBinding, *,
         pytype: typing.Optional[type],
         trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]],
-        shmem_mgr: SharedMemoryManager) -> typing.Any:
+        shmem_mgr: SharedMemoryManager,
+        is_deferred_binding: typing.Optional[bool] = False) -> typing.Any:
     binding = get_binding(binding, is_deferred_binding)
     if trigger_metadata:
         metadata = {
@@ -239,12 +245,15 @@ def deferred_bindings_decode(binding: typing.Any,
                              pytype: typing.Optional[type],
                              datum: typing.Any,
                              metadata: typing.Any):
-    # This cache holds deferred binding types (ie. BlobClient, ContainerClient)
-    # That have already been created, so that the worker can reuse the
-    # Previously created type without creating a new one.
+    """
+    This cache holds deferred binding types (ie. BlobClient, ContainerClient)
+    That have already been created, so that the worker can reuse the
+    Previously created type without creating a new one.
+
+    If cache is empty or key doesn't exist, deferred_binding_type is None
+    """
     global deferred_bindings_cache
 
-    # If cache is empty or key doesn't exist, deferred_binding_type is None
     if deferred_bindings_cache.get((pb.name,
                                     pytype,
                                     datum.value.content), None) is not None:
@@ -264,8 +273,12 @@ def deferred_bindings_decode(binding: typing.Any,
 def check_deferred_bindings_enabled(param_anno: type,
                                     deferred_bindings_enabled: bool) -> (bool,
                                                                          bool):
-    # The first bool represents if deferred bindings is enabled at a fx level
-    # The second represents if the current binding is deferred binding
+    """
+    Checks if deferred bindings is enabled at fx and single binding level
+
+    The first bool represents if deferred bindings is enabled at a fx level
+    The second represents if the current binding is deferred binding
+    """
     if (DEFERRED_BINDING_REGISTRY is not None
             and DEFERRED_BINDING_REGISTRY.check_supported_type(param_anno)):
         return True, True

@@ -517,11 +517,11 @@ class Dispatcher(metaclass=DispatcherMeta):
 
                 args[pb.name] = bindings.from_incoming_proto(
                     pb_type_info.binding_name,
-                    pb_type_info.deferred_bindings_enabled,
                     pb,
                     trigger_metadata=trigger_metadata,
                     pytype=pb_type_info.pytype,
-                    shmem_mgr=self._shmem_mgr)
+                    shmem_mgr=self._shmem_mgr,
+                    is_deferred_binding=pb_type_info.deferred_bindings_enabled)
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
 

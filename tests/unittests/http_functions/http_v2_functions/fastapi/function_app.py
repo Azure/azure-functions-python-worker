@@ -6,7 +6,7 @@ import logging
 import sys
 import time
 from urllib.request import urlopen
-from azure.functions.extension.fastapi import Request, Response, \
+from azurefunctions.extensions.http.fastapi import Request, Response, \
     HTMLResponse, RedirectResponse
 import azure.functions as func
 from pydantic import BaseModel

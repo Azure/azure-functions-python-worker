@@ -7,7 +7,7 @@ import time
 
 import azure.functions as func
 
-from azure.functions.extension.fastapi import Request, Response
+from azurefunctions.extensions.http.fastapi import Request, Response
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 

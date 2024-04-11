@@ -14,7 +14,7 @@ from typing import Optional, Dict
 
 from google.protobuf.duration_pb2 import Duration
 
-from . import protos, functions
+from . import protos, functions, bindings
 from .bindings.retrycontext import RetryPolicy
 from .utils.common import get_app_setting
 from .constants import MODULE_NOT_FOUND_TS_URL, PYTHON_SCRIPT_FILE_NAME, \
@@ -122,13 +122,29 @@ def build_variable_interval_retry(retry, max_retry_count, retry_strategy):
 
 def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions):
+    """
+    fx_metadata_results is a list of the RpcFunctionMetadata for
+    all the functions in the particular app.
+
+    fx_binding_logs represents a dictionary of each function in
+    the app and its corresponding bindings. The raw bindings and
+    binding logs are generated from the base extension if the
+    function is using deferred bindings. If not, the raw bindings
+    come from the azure-functions sdk and no additional binding
+    logs are generated.
+    """
     fx_metadata_results = []
+    fx_bindings_logs = {}
     for indexed_function in indexed_functions:
         function_info = functions_registry.add_indexed_function(
             function=indexed_function)
 
         binding_protos = build_binding_protos(indexed_function)
         retry_protos = build_retry_protos(indexed_function)
+
+        raw_bindings, bindings_logs = get_fx_raw_bindings(
+            indexed_function=indexed_function,
+            function_info=function_info)
 
         function_metadata = protos.RpcFunctionMetadata(
             name=function_info.name,
@@ -140,13 +156,14 @@ def process_indexed_function(functions_registry: functions.Registry,
             is_proxy=False,  # not supported in V4
             language=PYTHON_LANGUAGE_RUNTIME,
             bindings=binding_protos,
-            raw_bindings=indexed_function.get_raw_bindings(),
+            raw_bindings=raw_bindings,
             retry_options=retry_protos,
             properties={METADATA_PROPERTIES_WORKER_INDEXED: "True"})
 
+        fx_bindings_logs.update({indexed_function: bindings_logs})
         fx_metadata_results.append(function_metadata)
 
-    return fx_metadata_results
+    return fx_metadata_results, fx_bindings_logs
 
 
 @attach_message_to_exception(
@@ -239,3 +256,25 @@ def index_function_app(function_path: str):
                          f"{script_file_name}.")
 
     return app.get_functions()
+
+
+def get_fx_raw_bindings(indexed_function, function_info):
+    """
+    If deferred bindings is enabled at the function level,
+    raw bindings are generated through the base extension.
+    This method returns two things: the raw bindings for that
+    function and a dict the corresponding logs.
+
+
+    If not, raw bindings are generated through azure-functions.
+    An empty dict is returned as we are not logging any
+    additional information if deferred bindings is not enabled
+    for this function.
+    """
+    if function_info.deferred_bindings_enabled:
+        raw_bindings, bindings_logs = bindings.get_deferred_raw_bindings(
+            indexed_function, function_info.input_types)
+        return raw_bindings, bindings_logs
+
+    else:
+        return indexed_function.get_raw_bindings(), {}

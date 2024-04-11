@@ -80,9 +80,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._function_metadata_exception = None
 
         # Used for checking if open telemetry is enabled
-        self.is_opentelemetry_available = False
+        self.otel_libs_available = False
         self.context_api = None
-        self.TraceContextTextMapPropagator = None
+        self.trace_context_propagator = None
 
         # We allow the customer to change synchronous thread pool max worker
         # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
@@ -268,16 +268,18 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_resp_queue.put_nowait(resp)
 
     def update_opentelemetry_status(self):
-        """Check for OpenTelemetry library availability and update the status attribute."""
+        """Check for OpenTelemetry library availability and
+        update the status attribute."""
         try:
             from opentelemetry import context as context_api
-            from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+            from opentelemetry.trace.propagation.tracecontext import (
+                TraceContextTextMapPropagator)
 
             self.context_api = context_api
-            self.TraceContextTextMapPropagator = TraceContextTextMapPropagator()
-            self.is_opentelemetry_available = True
+            self.trace_context_propagator = TraceContextTextMapPropagator()
+            self.otel_libs_available = True
         except ImportError:
-            self.is_opentelemetry_available = False
+            self.otel_libs_available = False
 
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '
@@ -310,7 +312,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         self.update_opentelemetry_status()
 
-        if self.is_opentelemetry_available:
+        if self.otel_libs_available:
+            # When this capability is enabled, logs are not piped back to the host from
+            # the worker. Logs will directly go to where the user has configured the
+            # logs to go. This is to ensure that the logs are not duplicated.
             capabilities["WorkerOpenTelemetryEnabled"] = _TRUE
 
         if DependencyManager.should_load_cx_dependencies():
@@ -545,12 +550,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
 
-            if self.is_opentelemetry_available:
-                carrier = {TRACEPARENT: fi_context.trace_context.trace_parent,
-                           TRACESTATE: fi_context.trace_context.trace_state}
-                ctx = self.TraceContextTextMapPropagator.extract(carrier)
-                self.context_api.attach(ctx)
-
             # Use local thread storage to store the invocation ID
             # for a customer's threads
             fi_context.thread_local_storage.invocation_id = invocation_id
@@ -562,6 +561,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     args[name] = bindings.Out()
 
             if fi.is_async:
+                if self.otel_libs_available:
+                    self.configure_opentelemetry(fi_context, invocation_id)
+
                 call_result = await self._run_async_func(
                     fi_context, fi.func, args
                 )
@@ -570,6 +572,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self._sync_call_tp,
                     self._run_sync_func,
                     invocation_id, fi_context, fi.func, args)
+
             if call_result is not None and not fi.has_return:
                 raise RuntimeError(f'function {fi.name!r} without a $return '
                                    'binding returned a non-None value')
@@ -666,6 +669,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             # reload_customer_libraries call clears the registry
             bindings.load_binding_registry()
 
+            capabilities = {}
+            if self.otel_libs_available:
+                capabilities["WorkerOpenTelemetryEnabled"] = _TRUE
+
             if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
                 try:
                     self.load_function_metadata(
@@ -681,7 +688,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     func_env_reload_request.function_app_directory)
 
             success_response = protos.FunctionEnvironmentReloadResponse(
-                capabilities={},
+                capabilities=capabilities,
                 worker_metadata=self.get_worker_metadata(),
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success))
@@ -758,6 +765,14 @@ class Dispatcher(metaclass=DispatcherMeta):
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 close_shared_memory_resources_response=response)
+
+    def configure_opentelemetry(self, invocation_context, invocation_id: str):
+        logger.info("Configuring opentelemetry for invocation id: %s",
+                    invocation_id)
+        carrier = {TRACEPARENT: invocation_context.trace_context.trace_parent,
+                   TRACESTATE: invocation_context.trace_context.trace_state}
+        ctx = self.trace_context_propagator.extract(carrier)
+        self.context_api.attach(ctx)
 
     @staticmethod
     def _get_context(invoc_request: protos.InvocationRequest, name: str,
@@ -846,6 +861,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         # invocation_id from ThreadPoolExecutor's threads.
         context.thread_local_storage.invocation_id = invocation_id
         try:
+            if self.otel_libs_available:
+                self.configure_opentelemetry(context, invocation_id)
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)
         finally:

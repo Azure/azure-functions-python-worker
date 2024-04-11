@@ -122,6 +122,17 @@ def build_variable_interval_retry(retry, max_retry_count, retry_strategy):
 
 def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions):
+    """
+    fx_metadata_results is a list of the RpcFunctionMetadata for
+    all the functions in the particular app.
+
+    fx_binding_logs represents a dictionary of each function in
+    the app and its corresponding bindings. The raw bindings and
+    binding logs are generated from the base extension if the
+    function is using deferred bindings. If not, the raw bindings
+    come from the azure-functions sdk and no additional binding
+    logs are generated.
+    """
     fx_metadata_results = []
     fx_bindings_logs = {}
     for indexed_function in indexed_functions:
@@ -251,11 +262,19 @@ def get_fx_raw_bindings(indexed_function, function_info):
     """
     If deferred bindings is enabled at the function level,
     raw bindings are generated through the base extension.
+    This method returns two things: the raw bindings for that
+    function and a dict the corresponding logs.
+
+
     If not, raw bindings are generated through azure-functions.
+    An empty dict is returned as we are not logging any
+    additional information if deferred bindings is not enabled
+    for this function.
     """
     if function_info.deferred_bindings_enabled:
-        return bindings.meta.DEFERRED_BINDING_REGISTRY.get_raw_bindings(
+        raw_bindings, bindings_logs = bindings.get_deferred_raw_bindings(
             indexed_function, function_info.input_types)
+        return raw_bindings, bindings_logs
 
     else:
         return indexed_function.get_raw_bindings(), {}

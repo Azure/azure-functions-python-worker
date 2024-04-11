@@ -284,3 +284,15 @@ def check_deferred_bindings_enabled(param_anno: type,
         return True, True
     else:
         return deferred_bindings_enabled, False
+
+
+def get_deferred_raw_bindings(indexed_function, input_types):
+    """
+    Calls a method from the base extension that generates the raw bindings
+    for a given function. It also returns logs for that function including
+    the defined binding type and if deferred bindings is enabled for that
+    binding.
+    """
+    raw_bindings, bindings_logs = DEFERRED_BINDING_REGISTRY.get_raw_bindings(
+        indexed_function, input_types)
+    return raw_bindings, bindings_logs

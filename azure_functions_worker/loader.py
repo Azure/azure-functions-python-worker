@@ -123,7 +123,7 @@ def build_variable_interval_retry(retry, max_retry_count, retry_strategy):
 def process_indexed_function(functions_registry: functions.Registry,
                              indexed_functions):
     fx_metadata_results = []
-    bindings_logs = {}
+    fx_bindings_logs = {}
     for indexed_function in indexed_functions:
         function_info = functions_registry.add_indexed_function(
             function=indexed_function)
@@ -149,9 +149,10 @@ def process_indexed_function(functions_registry: functions.Registry,
             retry_options=retry_protos,
             properties={METADATA_PROPERTIES_WORKER_INDEXED: "True"})
 
+        fx_bindings_logs.update({indexed_function: bindings_logs})
         fx_metadata_results.append(function_metadata)
 
-    return fx_metadata_results, bindings_logs
+    return fx_metadata_results, fx_bindings_logs
 
 
 @attach_message_to_exception(

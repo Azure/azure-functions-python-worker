@@ -105,8 +105,8 @@ class TestHttpCoordinator(unittest.TestCase):
             self.loop.run_until_complete(
                 http_coordinator.await_http_response_async(invalid_invoc_id))
         self.assertEqual(str(context.exception),
-                         f"No context reference found for invocation "
-                         f"{invalid_invoc_id}")
+                         f"'No context reference found for invocation "
+                         f"{invalid_invoc_id}'")
 
     def test_await_http_response_async_response_not_set(self):
         invoc_id = "invocation_with_no_response"

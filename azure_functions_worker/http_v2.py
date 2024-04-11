@@ -14,6 +14,9 @@ from azure_functions_worker.utils.common import is_envvar_false
 
 
 class BaseContextReference(abc.ABC):
+    """
+    Base class for context references.
+    """
     def __init__(self, event_class, http_request=None, http_response=None,
                  function=None, fi_context=None, args=None,
                  http_trigger_param_name=None):
@@ -86,6 +89,9 @@ class BaseContextReference(abc.ABC):
 
 
 class AsyncContextReference(BaseContextReference):
+    """
+    Asynchronous context reference class.
+    """
     def __init__(self, http_request=None, http_response=None, function=None,
                  fi_context=None, args=None):
         super().__init__(event_class=asyncio.Event, http_request=http_request,
@@ -95,6 +101,9 @@ class AsyncContextReference(BaseContextReference):
 
 
 class SingletonMeta(type):
+    """
+    Metaclass for implementing the singleton pattern.
+    """
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
@@ -104,6 +113,9 @@ class SingletonMeta(type):
 
 
 class HttpCoordinator(metaclass=SingletonMeta):
+    """
+    HTTP coordinator class for managing HTTP v2 requests and responses.
+    """
     def __init__(self):
         self._context_references: Dict[str, BaseContextReference] = {}
 
@@ -170,6 +182,9 @@ def get_unused_tcp_port():
 
 
 def initialize_http_server(host_addr, **kwargs):
+    """
+    Initialize HTTP v2 server for handling HTTP requests.
+    """
     try:
         ext_base = HttpV2Registry.ext_base()
         web_extension_mod_name = ext_base.ModuleTrackerMeta.get_module()
@@ -227,6 +242,9 @@ async def sync_http_request(http_request, invoc_request):
 
 
 class HttpV2Registry:
+    """
+    HTTP v2 registry class for managing HTTP v2 states.
+    """
     _http_v2_enabled = False
     _ext_base = None
     _http_v2_enabled_checked = False

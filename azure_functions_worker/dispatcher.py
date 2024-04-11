@@ -701,7 +701,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             logger.info(
                 'Successfully processed FunctionMetadataRequest for '
-                'functions: %s. Deferred bindings enabled: %s', " ".join(
+                'functions: %s. Deferred bindings enabled: %s.', " ".join(
                     indexed_function_logs),
                 self._functions.deferred_bindings_enabled())
 

@@ -105,6 +105,16 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
         self.assertIsNotNone(obj)
 
     async def test_check_deferred_bindings_enabled(self):
+        """
+        check_deferred_bindings_enabled checks if deferred bindings is enabled at fx
+        and single binding level.
+
+        The first bool represents if deferred bindings is enabled at a fx level. This
+        means that at least one binding in the function is a deferred binding type.
+
+        The second represents if the current binding is deferred binding. If this is
+        True, then deferred bindings must also be enabled at the function level.
+        """
         async with testutils.start_mockhost(
                 script_root=DEFERRED_BINDINGS_DISABLED_DIR) as host:
             await host.init_worker()

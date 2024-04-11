@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import azure.functions as func
-import azurefunctions.extensions.bindings.blob as bindings
+import azurefunctions.extensions.bindings.blob as blob
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -12,5 +12,5 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
                 connection="AzureWebJobsStorage")
 @app.route(route="get_bc_blob_triggered")
 def get_bc_blob_triggered(req: func.HttpRequest,
-                          client: bindings.BlobClient) -> str:
+                          client: blob.BlobClient) -> str:
     return client.download_blob(encoding='utf-8').readall()

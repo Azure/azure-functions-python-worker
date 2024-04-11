@@ -686,17 +686,19 @@ class Dispatcher(metaclass=DispatcherMeta):
                     indexed_functions))
 
             indexed_function_logs: List[str] = []
-            bindings_info = []
+            indexed_function_bindings_logs = []
             for func in indexed_functions:
-                fx_bindings = fx_bindings_logs.get(func)
+                func_binding_logs = fx_bindings_logs.get(func)
                 for binding in func.get_bindings():
-                    deferred_binding_info = fx_bindings.get(binding.name)\
-                        if fx_bindings.get(binding.name) else ""
-                    bindings_info.append((binding.type, binding.name,
-                                          deferred_binding_info))
+                    deferred_binding_info = func_binding_logs.get(
+                        binding.name)\
+                        if func_binding_logs.get(binding.name) else ""
+                    indexed_function_bindings_logs.append((
+                        binding.type, binding.name, deferred_binding_info))
 
                 function_log = "Function Name: {}, Function Binding: {}" \
-                    .format(func.get_function_name(), bindings_info)
+                    .format(func.get_function_name(),
+                            indexed_function_bindings_logs)
                 indexed_function_logs.append(function_log)
 
             logger.info(

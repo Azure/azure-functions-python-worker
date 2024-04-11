@@ -31,6 +31,7 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
                         METADATA_PROPERTIES_WORKER_INDEXED)
+from .exceptions import HttpServerInitError
 from .extension import ExtensionManager
 from .http_v2 import http_coordinator, initialize_http_server, HttpV2Registry, \
     sync_http_request
@@ -112,8 +113,7 @@ class Dispatcher(metaclass=DispatcherMeta):
          3.9 scenarios (as we'll start passing only None by default), and we
          need to get that information.
 
-         Ref: concurrent.futures.thread.ThreadPoolExecutor.__init__
-         ._max_workers
+         Ref: concurrent.futures.thread.ThreadPoolExecutor.__init__._max_workers
         """
         return self._sync_call_tp._max_workers
 
@@ -310,22 +310,15 @@ class Dispatcher(metaclass=DispatcherMeta):
                 self.load_function_metadata(
                     worker_init_request.function_app_directory,
                     caller_info="worker_init_request")
-            except Exception as ex:
-                self._function_metadata_exception = ex
 
-            try:
                 if HttpV2Registry.http_v2_enabled():
                     capabilities[constants.HTTP_URI] = \
                         initialize_http_server(self._host)
+
+            except HttpServerInitError:
+                raise
             except Exception as ex:
-                return protos.StreamingMessage(
-                    request_id=self.request_id,
-                    worker_init_response=protos.WorkerInitResponse(
-                        result=protos.StatusResult(
-                            status=protos.StatusResult.Failure,
-                            exception=self._serialize_exception(ex))
-                    )
-                )
+                self._function_metadata_exception = ex
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -333,9 +326,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 capabilities=capabilities,
                 worker_metadata=self.get_worker_metadata(),
                 result=protos.StatusResult(
-                    status=protos.StatusResult.Success),
-            ),
-        )
+                    status=protos.StatusResult.Success)))
 
     async def _handle__worker_status_request(self, request):
         # Logging is not necessary in this request since the response is used
@@ -686,12 +677,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self.load_function_metadata(
                         directory,
                         caller_info="environment_reload_request")
+
+                    if HttpV2Registry.http_v2_enabled():
+                        capabilities[constants.HTTP_URI] = \
+                            initialize_http_server(self._host)
+                except HttpServerInitError:
+                    raise
                 except Exception as ex:
                     self._function_metadata_exception = ex
-
-                if HttpV2Registry.http_v2_enabled():
-                    capabilities[constants.HTTP_URI] = \
-                        initialize_http_server(self._host)
 
             # Change function app directory
             if getattr(func_env_reload_request,

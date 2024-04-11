@@ -7,6 +7,8 @@ from typing import Dict
 
 from azure_functions_worker.constants import X_MS_INVOCATION_ID, \
     BASE_EXT_SUPPORTED_PY_MINOR_VERSION, PYTHON_ENABLE_INIT_INDEXING
+from azure_functions_worker.exceptions import MissingHeaderError, \
+    HttpServerInitError
 from azure_functions_worker.logging import logger
 from azure_functions_worker.utils.common import is_envvar_false
 
@@ -113,8 +115,8 @@ class HttpCoordinator(metaclass=SingletonMeta):
 
     def set_http_response(self, invoc_id, http_response):
         if invoc_id not in self._context_references:
-            raise Exception("No context reference found for invocation "
-                            f"{invoc_id}")
+            raise KeyError("No context reference found for invocation %s"
+                           % invoc_id)
         context_ref = self._context_references.get(invoc_id)
         context_ref.http_response = http_response
 
@@ -122,16 +124,15 @@ class HttpCoordinator(metaclass=SingletonMeta):
         if invoc_id not in self._context_references:
             self._context_references[invoc_id] = AsyncContextReference()
 
-        await asyncio.sleep(0)
         await self._context_references.get(
             invoc_id).http_request_available_event.wait()
         return self._pop_http_request(invoc_id)
 
     async def await_http_response_async(self, invoc_id):
         if invoc_id not in self._context_references:
-            raise Exception("No context reference found for invocation "
-                            f"{invoc_id}")
-        await asyncio.sleep(0)
+            raise KeyError("No context reference found for invocation %s"
+                           % invoc_id)
+
         await self._context_references.get(
             invoc_id).http_response_available_event.wait()
         return self._pop_http_response(invoc_id)
@@ -143,7 +144,7 @@ class HttpCoordinator(metaclass=SingletonMeta):
             context_ref.http_request = None
             return request
 
-        raise ValueError(f"No http request found for invocation {invoc_id}")
+        raise ValueError("No http request found for invocation %s" % invoc_id)
 
     def _pop_http_response(self, invoc_id):
         context_ref = self._context_references.get(invoc_id)
@@ -152,7 +153,7 @@ class HttpCoordinator(metaclass=SingletonMeta):
             context_ref.http_response = None
             return response
 
-        raise ValueError(f"No http response found for invocation {invoc_id}")
+        raise ValueError("No http response found for invocation %s" % invoc_id)
 
 
 def get_unused_tcp_port():
@@ -169,44 +170,50 @@ def get_unused_tcp_port():
 
 
 def initialize_http_server(host_addr, **kwargs):
-    ext_base = HttpV2Registry.ext_base()
-    web_extension_mod_name = ext_base.ModuleTrackerMeta.get_module()
-    extension_module = importlib.import_module(web_extension_mod_name)
-    web_app_class = extension_module.WebApp
-    web_server_class = extension_module.WebServer
+    try:
+        ext_base = HttpV2Registry.ext_base()
+        web_extension_mod_name = ext_base.ModuleTrackerMeta.get_module()
+        extension_module = importlib.import_module(web_extension_mod_name)
+        web_app_class = extension_module.WebApp
+        web_server_class = extension_module.WebServer
 
-    unused_port = get_unused_tcp_port()
+        unused_port = get_unused_tcp_port()
 
-    app = web_app_class()
-    request_type = ext_base.RequestTrackerMeta.get_request_type()
+        app = web_app_class()
+        request_type = ext_base.RequestTrackerMeta.get_request_type()
 
-    @app.route
-    async def catch_all(request: request_type):  # type: ignore
-        invoc_id = request.headers.get(X_MS_INVOCATION_ID)
-        if invoc_id is None:
-            raise ValueError(f"Header {X_MS_INVOCATION_ID} not found")
-        logger.info('Received HTTP request for invocation %s', invoc_id)
-        http_coordinator.set_http_request(invoc_id, request)
-        http_resp = \
-            await http_coordinator.await_http_response_async(invoc_id)
+        @app.route
+        async def catch_all(request: request_type):  # type: ignore
+            invoc_id = request.headers.get(X_MS_INVOCATION_ID)
+            if invoc_id is None:
+                raise MissingHeaderError("Header %s not found" %
+                                         X_MS_INVOCATION_ID)
+            logger.info('Received HTTP request for invocation %s', invoc_id)
+            http_coordinator.set_http_request(invoc_id, request)
+            http_resp = \
+                await http_coordinator.await_http_response_async(invoc_id)
 
-        logger.info('Sending HTTP response for invocation %s', invoc_id)
-        # if http_resp is an python exception, raise it
-        if isinstance(http_resp, Exception):
-            raise http_resp
+            logger.info('Sending HTTP response for invocation %s', invoc_id)
+            # if http_resp is an python exception, raise it
+            if isinstance(http_resp, Exception):
+                raise http_resp
 
-        return http_resp
+            return http_resp
 
-    web_server = web_server_class(host_addr, unused_port, app)
-    web_server_run_task = web_server.serve()
+        web_server = web_server_class(host_addr, unused_port, app)
+        web_server_run_task = web_server.serve()
 
-    loop = asyncio.get_event_loop()
-    loop.create_task(web_server_run_task)
+        loop = asyncio.get_event_loop()
+        loop.create_task(web_server_run_task)
 
-    web_server_address = f"http://{host_addr}:{unused_port}"
-    logger.info('HTTP server starting on %s', web_server_address)
+        web_server_address = f"http://{host_addr}:{unused_port}"
+        logger.info('HTTP server starting on %s', web_server_address)
 
-    return web_server_address
+        return web_server_address
+
+    except Exception as e:
+        raise HttpServerInitError("Error initializing HTTP server: %s" % e) \
+            from e
 
 
 async def sync_http_request(http_request, invoc_request):

@@ -37,10 +37,11 @@ def load_binding_registry() -> None:
     if BINDING_REGISTRY is None:
         # If the BINDING_REGISTRY is None, azure-functions hasn't been
         # loaded in properly.
-        raise AttributeError('BINDING_REGISTRY is None. Sys Path:'
-                             f'{sys.path}, Sys Module: {sys.modules},'
-                             f'python-packages Path exists: '
-                             f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}.')
+        raise AttributeError('BINDING_REGISTRY is None. '
+                             'Sys Path: %s. Sys Module: %s. '
+                             'python-packages Path exists: %s.',
+                             sys.path, sys.modules,
+                             os.path.exists(CUSTOMER_PACKAGES_PATH))
 
     # The base extension supports python 3.8+
     if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
@@ -51,11 +52,10 @@ def load_binding_registry() -> None:
             DEFERRED_BINDING_REGISTRY = clients.get_binding_registry()
         except ImportError:
             logger.info('Base extension not found. '
-                        f'Python version: 3.{sys.version_info.minor}, '
-                        f'Sys path: {sys.path}, '
-                        f'Sys Module: {sys.modules}, '
-                        f'python-packages Path exists: '
-                        f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}.')
+                        'Python version: 3.%s, Sys path: %s, '
+                        'Sys Module: %s, python-packages Path exists: %s.',
+                        sys.version_info.minor, sys.path, 
+                        sys.modules, os.path.exists(CUSTOMER_PACKAGES_PATH))
 
 
 def get_binding(bind_name: str,

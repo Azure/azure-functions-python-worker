@@ -11,6 +11,7 @@ from . import generic
 
 from .shared_memory_data_transfer import SharedMemoryManager
 from ..constants import CUSTOMER_PACKAGES_PATH
+from ..logging import logger
 
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
@@ -38,15 +39,23 @@ def load_binding_registry() -> None:
         # loaded in properly.
         raise AttributeError('BINDING_REGISTRY is None. Sys Path:'
                              f'{sys.path}, Sys Module: {sys.modules},'
-                             f'python-packages Path exists:'
+                             f'python-packages Path exists: '
                              f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}')
 
     # The base extension supports python 3.8+
     if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
         # Import the base extension
-        import azurefunctions.extensions.base as clients
-        global DEFERRED_BINDING_REGISTRY
-        DEFERRED_BINDING_REGISTRY = clients.get_binding_registry()
+        try:
+            import azurefunctions.extensions.base as clients
+            global DEFERRED_BINDING_REGISTRY
+            DEFERRED_BINDING_REGISTRY = clients.get_binding_registry()
+        except ImportError:
+            logger.info('Base extension not found. '
+                        f'Python version: 3.{sys.version_info.minor}'
+                        f'Sys path: {sys.path}, '
+                        f'Sys Module: {sys.modules}, '
+                        f'python-packages Path exists: '
+                        f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}')
 
 
 def get_binding(bind_name: str,

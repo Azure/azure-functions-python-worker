@@ -279,6 +279,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             self.context_api = context_api
             self.trace_context_propagator = TraceContextTextMapPropagator()
             self.otel_libs_available = True
+
+            logger.info("Successfully loaded OpenTelemetry modules. "
+                        "OpenTelemetry is now enabled.")
+
         except ImportError:
             self.otel_libs_available = False
 
@@ -566,7 +570,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             if fi.is_async:
                 if self.otel_libs_available:
-                    self.configure_opentelemetry(fi_context, invocation_id)
+                    self.configure_opentelemetry(fi_context)
 
                 call_result = await self._run_async_func(
                     fi_context, fi.func, args
@@ -781,9 +785,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 close_shared_memory_resources_response=response)
 
-    def configure_opentelemetry(self, invocation_context, invocation_id: str):
-        logger.info("Configuring opentelemetry for invocation id: %s",
-                    invocation_id)
+    def configure_opentelemetry(self, invocation_context):
         carrier = {TRACEPARENT: invocation_context.trace_context.trace_parent,
                    TRACESTATE: invocation_context.trace_context.trace_state}
         ctx = self.trace_context_propagator.extract(carrier)
@@ -877,7 +879,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         context.thread_local_storage.invocation_id = invocation_id
         try:
             if self.otel_libs_available:
-                self.configure_opentelemetry(context, invocation_id)
+                self.configure_opentelemetry(context)
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)
         finally:

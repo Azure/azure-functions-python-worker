@@ -79,12 +79,13 @@ if sys.version_info[:2] == (3, 7):
     )
 else:
     INSTALL_REQUIRES.extend(
-        ("protobuf~=4.22.0", "grpcio-tools~=1.54.2", "grpcio~=1.54.2")
+        ("protobuf~=4.22.0", "grpcio-tools~=1.54.2", "grpcio~=1.54.2",
+         "azurefunctions-extensions-base")
     )
 
 EXTRA_REQUIRES = {
     "dev": [
-        "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
+        "azure-eventhub",  # Used for EventHub E2E tests
         "azure-functions-durable",  # Used for Durable E2E tests
         "flask",
         "fastapi~=0.85.0",  # Used for ASGIMiddleware test
@@ -109,6 +110,9 @@ EXTRA_REQUIRES = {
         "pandas",
         "numpy",
         "pre-commit"
+    ],
+    "test-deferred-bindings": [
+        "azurefunctions-extensions-bindings-blob"
     ]
 }
 

@@ -224,6 +224,7 @@ from tests.utils import testutils
 async def _runner():
     async with testutils.start_mockhost(
             script_root='unittests/test-binding/functions') as host:
+        await host.init_worker()
         func_id, r = await host.load_function('foo')
 
         print(r.response.function_id == func_id)

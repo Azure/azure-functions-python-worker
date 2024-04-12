@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import os
 import sys
 import typing
 
@@ -7,33 +8,76 @@ from .. import protos
 
 from . import datumdef
 from . import generic
+
 from .shared_memory_data_transfer import SharedMemoryManager
+from ..constants import CUSTOMER_PACKAGES_PATH
+from ..logging import logger
 
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
 PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
+# Base extension supported Python minor version
+BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8
+
 BINDING_REGISTRY = None
+DEFERRED_BINDING_REGISTRY = None
+deferred_bindings_cache = {}
 
 
 def load_binding_registry() -> None:
+    """
+    Tries to load azure-functions from the customer's BYO. If it's
+    not found, it loads the builtin. If the BINDING_REGISTRY is None,
+    azure-functions hasn't been loaded in properly.
+
+    Tries to load the base extension only for python 3.8+.
+    """
+
     func = sys.modules.get('azure.functions')
 
-    # If fails to acquire customer's BYO azure-functions, load the builtin
     if func is None:
         import azure.functions as func
 
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()
 
+    if BINDING_REGISTRY is None:
+        raise AttributeError('BINDING_REGISTRY is None. azure-functions '
+                             'library not found. Sys Path: %s. '
+                             'Sys Modules: %s. '
+                             'python-packages Path exists: %s.',
+                             sys.path, sys.modules,
+                             os.path.exists(CUSTOMER_PACKAGES_PATH))
 
-def get_binding(bind_name: str) -> object:
+    if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
+        try:
+            import azurefunctions.extensions.base as clients
+            global DEFERRED_BINDING_REGISTRY
+            DEFERRED_BINDING_REGISTRY = clients.get_binding_registry()
+        except ImportError:
+            logger.debug('Base extension not found. '
+                         'Python version: 3.%s, Sys path: %s, '
+                         'Sys Module: %s, python-packages Path exists: %s.',
+                         sys.version_info.minor, sys.path,
+                         sys.modules, os.path.exists(CUSTOMER_PACKAGES_PATH))
+
+
+def get_binding(bind_name: str,
+                is_deferred_binding: typing.Optional[bool] = False)\
+        -> object:
+    """
+    First checks if the binding is a non-deferred binding. This is
+    the most common case.
+    Second checks if the binding is a deferred binding.
+    If the binding is neither, it's a generic type.
+    """
     binding = None
-    registry = BINDING_REGISTRY
-    if registry is not None:
-        binding = registry.get(bind_name)
+    if binding is None and not is_deferred_binding:
+        binding = BINDING_REGISTRY.get(bind_name)
+    if binding is None and is_deferred_binding:
+        binding = DEFERRED_BINDING_REGISTRY.get(bind_name)
     if binding is None:
         binding = generic.GenericBinding
-
     return binding
 
 
@@ -42,8 +86,10 @@ def is_trigger_binding(bind_name: str) -> bool:
     return binding.has_trigger_support()
 
 
-def check_input_type_annotation(bind_name: str, pytype: type) -> bool:
-    binding = get_binding(bind_name)
+def check_input_type_annotation(bind_name: str,
+                                pytype: type,
+                                is_deferred_binding: bool) -> bool:
+    binding = get_binding(bind_name, is_deferred_binding)
     return binding.check_input_type_annotation(pytype)
 
 
@@ -71,8 +117,9 @@ def from_incoming_proto(
         pb: protos.ParameterBinding, *,
         pytype: typing.Optional[type],
         trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]],
-        shmem_mgr: SharedMemoryManager) -> typing.Any:
-    binding = get_binding(binding)
+        shmem_mgr: SharedMemoryManager,
+        is_deferred_binding: typing.Optional[bool] = False) -> typing.Any:
+    binding = get_binding(binding, is_deferred_binding)
     if trigger_metadata:
         metadata = {
             k: datumdef.Datum.from_typed_data(v)
@@ -93,6 +140,13 @@ def from_incoming_proto(
         raise TypeError(f'Unknown ParameterBindingType: {pb_type}')
 
     try:
+        # if the binding is an sdk type binding
+        if is_deferred_binding:
+            return deferred_bindings_decode(binding=binding,
+                                            pb=pb,
+                                            pytype=pytype,
+                                            datum=datum,
+                                            metadata=metadata)
         return binding.decode(datum, trigger_metadata=metadata)
     except NotImplementedError:
         # Binding does not support the data.
@@ -184,3 +238,61 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
         return protos.ParameterBinding(
             name=out_name,
             data=rpc_val)
+
+
+def deferred_bindings_decode(binding: typing.Any,
+                             pb: protos.ParameterBinding, *,
+                             pytype: typing.Optional[type],
+                             datum: typing.Any,
+                             metadata: typing.Any):
+    """
+    This cache holds deferred binding types (ie. BlobClient, ContainerClient)
+    That have already been created, so that the worker can reuse the
+    Previously created type without creating a new one.
+
+    If cache is empty or key doesn't exist, deferred_binding_type is None
+    """
+    global deferred_bindings_cache
+
+    if deferred_bindings_cache.get((pb.name,
+                                    pytype,
+                                    datum.value.content), None) is not None:
+        return deferred_bindings_cache.get((pb.name,
+                                            pytype,
+                                            datum.value.content))
+    else:
+        deferred_binding_type = binding.decode(datum,
+                                               trigger_metadata=metadata,
+                                               pytype=pytype)
+        deferred_bindings_cache[(pb.name,
+                                 pytype,
+                                 datum.value.content)] = deferred_binding_type
+        return deferred_binding_type
+
+
+def check_deferred_bindings_enabled(param_anno: type,
+                                    deferred_bindings_enabled: bool) -> (bool,
+                                                                         bool):
+    """
+    Checks if deferred bindings is enabled at fx and single binding level
+
+    The first bool represents if deferred bindings is enabled at a fx level
+    The second represents if the current binding is deferred binding
+    """
+    if (DEFERRED_BINDING_REGISTRY is not None
+            and DEFERRED_BINDING_REGISTRY.check_supported_type(param_anno)):
+        return True, True
+    else:
+        return deferred_bindings_enabled, False
+
+
+def get_deferred_raw_bindings(indexed_function, input_types):
+    """
+    Calls a method from the base extension that generates the raw bindings
+    for a given function. It also returns logs for that function including
+    the defined binding type and if deferred bindings is enabled for that
+    binding.
+    """
+    raw_bindings, bindings_logs = DEFERRED_BINDING_REGISTRY.get_raw_bindings(
+        indexed_function, input_types)
+    return raw_bindings, bindings_logs

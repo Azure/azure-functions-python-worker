@@ -516,10 +516,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     trigger_metadata = None
 
                 args[pb.name] = bindings.from_incoming_proto(
-                    pb_type_info.binding_name, pb,
+                    pb_type_info.binding_name,
+                    pb,
                     trigger_metadata=trigger_metadata,
                     pytype=pb_type_info.pytype,
-                    shmem_mgr=self._shmem_mgr)
+                    shmem_mgr=self._shmem_mgr,
+                    is_deferred_binding=pb_type_info.deferred_bindings_enabled)
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
 
@@ -678,21 +680,32 @@ class Dispatcher(metaclass=DispatcherMeta):
                     len(indexed_functions))
 
         if indexed_functions:
-            fx_metadata_results = loader.process_indexed_function(
-                self._functions,
-                indexed_functions)
+            fx_metadata_results, fx_bindings_logs = (
+                loader.process_indexed_function(
+                    self._functions,
+                    indexed_functions))
 
             indexed_function_logs: List[str] = []
+            indexed_function_bindings_logs = []
             for func in indexed_functions:
+                func_binding_logs = fx_bindings_logs.get(func)
+                for binding in func.get_bindings():
+                    deferred_binding_info = func_binding_logs.get(
+                        binding.name)\
+                        if func_binding_logs.get(binding.name) else ""
+                    indexed_function_bindings_logs.append((
+                        binding.type, binding.name, deferred_binding_info))
+
                 function_log = "Function Name: {}, Function Binding: {}" \
                     .format(func.get_function_name(),
-                            [(binding.type, binding.name) for binding in
-                             func.get_bindings()])
+                            indexed_function_bindings_logs)
                 indexed_function_logs.append(function_log)
 
             logger.info(
                 'Successfully processed FunctionMetadataRequest for '
-                'functions: %s', " ".join(indexed_function_logs))
+                'functions: %s. Deferred bindings enabled: %s.', " ".join(
+                    indexed_function_logs),
+                self._functions.deferred_bindings_enabled())
 
             return fx_metadata_results
 

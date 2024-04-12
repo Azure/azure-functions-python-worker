@@ -1,0 +1,71 @@
+name: Python Worker Deferred Bindings Feature Request
+description: File a Deferred Bindings bug report
+title: "[Bug] Bug Title Here"
+labels: ["python", "bug", "deferred-bindings"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form will help you to fill in a bug report for the Azure Functions Python Worker Deferred Bindings feature.
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+      placeholder: What should have occurred?
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: A clear and concise description of what actually happened.
+      placeholder: What went wrong?
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to Reproduce
+      description: Please provide detailed step-by-step instructions on how to reproduce the bug.
+      placeholder: |
+        1. Go to the [specific page or section] in the application.
+        2. Click on [specific button or link].
+        3. Scroll down to [specific location].
+        4. Observe [describe what you see, e.g., an error message or unexpected behavior].
+        5. Include any additional steps or details that may be relevant.
+
+  - type: textarea
+    id: code-snippet
+    attributes:
+      label: Relevant code being tried
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: shell
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: shell
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: requirements.txt file
+      description: Please copy and paste your requirements.txt file. This will be automatically formatted into code, so no need for backticks.
+      render: shell
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Where are you facing this problem?
+      default: 0
+      options:
+        - Local - Core Tools
+        - Production Environment (explain below)
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional Information
+      description: Add any other information about the problem here.

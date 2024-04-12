@@ -115,6 +115,9 @@ EXTRA_REQUIRES = {
         "azurefunctions-extensions-http-fastapi",
         "ujson",
         "orjson"
+    ],
+    "test-deferred-bindings": [
+        "azurefunctions-extensions-bindings-blob"
     ]
 }
 

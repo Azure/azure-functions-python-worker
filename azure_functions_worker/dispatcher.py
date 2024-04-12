@@ -31,10 +31,9 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
                         METADATA_PROPERTIES_WORKER_INDEXED)
-from .exceptions import HttpServerInitError
 from .extension import ExtensionManager
 from .http_v2 import http_coordinator, initialize_http_server, HttpV2Registry, \
-    sync_http_request
+    sync_http_request, HttpServerInitError
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)

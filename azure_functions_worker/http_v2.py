@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 import abc
 import asyncio
 import importlib
@@ -7,10 +10,19 @@ from typing import Dict
 
 from azure_functions_worker.constants import X_MS_INVOCATION_ID, \
     BASE_EXT_SUPPORTED_PY_MINOR_VERSION, PYTHON_ENABLE_INIT_INDEXING
-from azure_functions_worker.exceptions import MissingHeaderError, \
-    HttpServerInitError
 from azure_functions_worker.logging import logger
 from azure_functions_worker.utils.common import is_envvar_false
+
+
+# Http V2 Exceptions
+class HttpServerInitError(Exception):
+    """Exception raised when there is an error during HTTP server
+    initialization."""
+
+
+class MissingHeaderError(ValueError):
+    """Exception raised when a required header is missing in the
+    HTTP request."""
 
 
 class BaseContextReference(abc.ABC):

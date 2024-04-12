@@ -340,7 +340,8 @@ class TestLinuxConsumption(TestCase):
             "This is testing only for python310")
     def test_http_v2_fastapi_streaming_upload_download(self):
         """
-        A function app with init indexing enabled
+        A function app using http v2 fastapi extension with streaming upload and
+         download
         """
         with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
                                                self._py_version) as ctrl:

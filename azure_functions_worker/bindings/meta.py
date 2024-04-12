@@ -4,7 +4,6 @@ import os
 import sys
 import typing
 
-from azure_functions_worker.constants import HTTP, HTTP_TRIGGER
 
 from .. import protos
 from . import datumdef
@@ -12,7 +11,7 @@ from . import generic
 
 from .shared_memory_data_transfer import SharedMemoryManager
 from ..http_v2 import HttpV2Registry
-from ..constants import CUSTOMER_PACKAGES_PATH
+from ..constants import CUSTOMER_PACKAGES_PATH, HTTP, HTTP_TRIGGER
 from ..logging import logger
 
 

@@ -22,14 +22,14 @@ class TestOpenTelemetry(unittest.TestCase):
         with patch('builtins.__import__', side_effect=ImportError):
             self.dispatcher.update_opentelemetry_status()
             # Verify that otel_libs_available is set to False due to ImportError
-            self.assertFalse(self.dispatcher.otel_libs_available)
+            self.assertFalse(self.dispatcher._otel_libs_available)
 
     @patch('builtins.__import__')
     def test_update_opentelemetry_status_success(
             self, mock_imports):
         mock_imports.return_value = MagicMock()
         self.dispatcher.update_opentelemetry_status()
-        self.assertTrue(self.dispatcher.otel_libs_available)
+        self.assertTrue(self.dispatcher._otel_libs_available)
 
     @patch('builtins.__import__')
     def test_init_request_otel_capability_enabled(

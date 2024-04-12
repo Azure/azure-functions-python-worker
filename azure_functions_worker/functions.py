@@ -6,8 +6,7 @@ import pathlib
 import typing
 import uuid
 
-from azure_functions_worker.constants import HTTP_TRIGGER
-
+from .constants import HTTP_TRIGGER
 from . import bindings as bindings_utils
 from . import protos
 from ._thirdparty import typing_inspect

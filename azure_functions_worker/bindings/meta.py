@@ -11,15 +11,14 @@ from . import generic
 
 from .shared_memory_data_transfer import SharedMemoryManager
 from ..http_v2 import HttpV2Registry
-from ..constants import CUSTOMER_PACKAGES_PATH, HTTP, HTTP_TRIGGER
+from ..constants import CUSTOMER_PACKAGES_PATH, HTTP, HTTP_TRIGGER, \
+    BASE_EXT_SUPPORTED_PY_MINOR_VERSION
 from ..logging import logger
 
 
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
 PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
-# Base extension supported Python minor version
-BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8
 
 BINDING_REGISTRY = None
 DEFERRED_BINDING_REGISTRY = None

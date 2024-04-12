@@ -4,24 +4,52 @@ import os
 import sys
 import typing
 
-from .. import protos
 
+from .. import protos
 from . import datumdef
 from . import generic
 
 from .shared_memory_data_transfer import SharedMemoryManager
-from ..constants import CUSTOMER_PACKAGES_PATH
+from ..http_v2 import HttpV2Registry
+from ..constants import CUSTOMER_PACKAGES_PATH, HTTP, HTTP_TRIGGER, \
+    BASE_EXT_SUPPORTED_PY_MINOR_VERSION
 from ..logging import logger
+
 
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
 PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
-# Base extension supported Python minor version
-BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8
 
 BINDING_REGISTRY = None
 DEFERRED_BINDING_REGISTRY = None
 deferred_bindings_cache = {}
+
+
+def _check_http_input_type_annotation(bind_name: str, pytype: type,
+                                      is_deferred_binding: bool) -> bool:
+    if HttpV2Registry.http_v2_enabled():
+        return HttpV2Registry.ext_base().RequestTrackerMeta \
+            .check_type(pytype)
+
+    binding = get_binding(bind_name, is_deferred_binding)
+    return binding.check_input_type_annotation(pytype)
+
+
+def _check_http_output_type_annotation(bind_name: str, pytype: type) -> bool:
+    if HttpV2Registry.http_v2_enabled():
+        return HttpV2Registry.ext_base().ResponseTrackerMeta.check_type(pytype)
+
+    binding = get_binding(bind_name)
+    return binding.check_output_type_annotation(pytype)
+
+
+INPUT_TYPE_CHECK_OVERRIDE_MAP = {
+    HTTP_TRIGGER: _check_http_input_type_annotation
+}
+
+OUTPUT_TYPE_CHECK_OVERRIDE_MAP = {
+    HTTP: _check_http_output_type_annotation
+}
 
 
 def load_binding_registry() -> None:
@@ -89,11 +117,21 @@ def is_trigger_binding(bind_name: str) -> bool:
 def check_input_type_annotation(bind_name: str,
                                 pytype: type,
                                 is_deferred_binding: bool) -> bool:
+    global INPUT_TYPE_CHECK_OVERRIDE_MAP
+    if bind_name in INPUT_TYPE_CHECK_OVERRIDE_MAP:
+        return INPUT_TYPE_CHECK_OVERRIDE_MAP[bind_name](bind_name, pytype,
+                                                        is_deferred_binding)
+
     binding = get_binding(bind_name, is_deferred_binding)
+
     return binding.check_input_type_annotation(pytype)
 
 
 def check_output_type_annotation(bind_name: str, pytype: type) -> bool:
+    global OUTPUT_TYPE_CHECK_OVERRIDE_MAP
+    if bind_name in OUTPUT_TYPE_CHECK_OVERRIDE_MAP:
+        return OUTPUT_TYPE_CHECK_OVERRIDE_MAP[bind_name](bind_name, pytype)
+
     binding = get_binding(bind_name)
     return binding.check_output_type_annotation(pytype)
 

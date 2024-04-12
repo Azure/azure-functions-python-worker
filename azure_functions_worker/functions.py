@@ -6,6 +6,7 @@ import pathlib
 import typing
 import uuid
 
+from .constants import HTTP_TRIGGER
 from . import bindings as bindings_utils
 from . import protos
 from ._thirdparty import typing_inspect
@@ -27,11 +28,14 @@ class FunctionInfo(typing.NamedTuple):
     requires_context: bool
     is_async: bool
     has_return: bool
+    is_http_func: bool
     deferred_bindings_enabled: bool
 
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
     return_type: typing.Optional[ParamTypeInfo]
+
+    trigger_metadata: typing.Optional[typing.Dict[str, typing.Any]]
 
 
 class FunctionLoadError(RuntimeError):
@@ -312,6 +316,17 @@ class Registry:
             output_types: typing.Dict[str, ParamTypeInfo],
             return_type: str):
 
+        http_trigger_param_name = self._get_http_trigger_param_name(input_types)
+
+        trigger_metadata = None
+        is_http_func = False
+        if http_trigger_param_name is not None:
+            trigger_metadata = {
+                "type": HTTP_TRIGGER,
+                "param_name": http_trigger_param_name
+            }
+            is_http_func = True
+
         function_info = FunctionInfo(
             func=function,
             name=function_name,
@@ -320,10 +335,12 @@ class Registry:
             requires_context=requires_context,
             is_async=inspect.iscoroutinefunction(function),
             has_return=has_explicit_return or has_implicit_return,
+            is_http_func=is_http_func,
             deferred_bindings_enabled=deferred_bindings_enabled,
             input_types=input_types,
             output_types=output_types,
-            return_type=return_type)
+            return_type=return_type,
+            trigger_metadata=trigger_metadata)
 
         self._functions[function_id] = function_info
 
@@ -331,6 +348,14 @@ class Registry:
             self._deferred_bindings_enabled = deferred_bindings_enabled
 
         return function_info
+
+    def _get_http_trigger_param_name(self, input_types):
+        http_trigger_param_name = next(
+            (input_type for input_type, type_info in input_types.items()
+             if type_info.binding_name == HTTP_TRIGGER),
+            None
+        )
+        return http_trigger_param_name
 
     def add_function(self, function_id: str,
                      func: typing.Callable,

@@ -58,7 +58,11 @@ jobs:
 
         python -m pip install --upgrade pip
         python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
-        python -m pip install -U -e .[dev]
+
+        python -m pip install -U -e .[dev] 
+        if [[ "${{ matrix.python-version }}" != "3.7" ]]; then
+           python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --pre -U -e .[test-http-v2]
+        fi
 
         # Retry a couple times to avoid certificate issue
         retry 5 python setup.py build

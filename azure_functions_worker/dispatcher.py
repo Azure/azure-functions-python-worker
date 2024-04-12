@@ -707,7 +707,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             capabilities = {}
             self.update_opentelemetry_status()
             if self._otel_libs_available:
-                capabilities["WorkerOpenTelemetryEnabled"] = _TRUE
+                capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
 
             if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
                 try:

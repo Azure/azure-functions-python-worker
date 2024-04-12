@@ -417,7 +417,8 @@ class Webhost(distutils.cmd.Command):
 
         try:
             subprocess.run(
-                args=["dotnet", "build", "WebJobs.Script.sln", "-o", "bin"],
+                args=["dotnet", "build", "WebJobs.Script.sln", "-o", "bin",
+                      "/p:TreatWarningsAsErrors=false"],
                 check=True,
                 cwd=str(webhost_dir),
                 stdout=sys.stdout,

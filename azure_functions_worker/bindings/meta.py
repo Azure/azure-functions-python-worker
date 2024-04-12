@@ -27,7 +27,8 @@ DEFERRED_BINDING_REGISTRY = None
 deferred_bindings_cache = {}
 
 
-def _check_http_input_type_annotation(bind_name: str, pytype: type, is_deferred_binding: bool) -> bool:
+def _check_http_input_type_annotation(bind_name: str, pytype: type,
+                                      is_deferred_binding: bool) -> bool:
     if HttpV2Registry.http_v2_enabled():
         return HttpV2Registry.ext_base().RequestTrackerMeta \
             .check_type(pytype)
@@ -115,10 +116,13 @@ def is_trigger_binding(bind_name: str) -> bool:
     return binding.has_trigger_support()
 
 
-def check_input_type_annotation(bind_name: str, pytype: type) -> bool:
+def check_input_type_annotation(bind_name: str,
+                                pytype: type,
+                                is_deferred_binding: bool) -> bool:
     global INPUT_TYPE_CHECK_OVERRIDE_MAP
     if bind_name in INPUT_TYPE_CHECK_OVERRIDE_MAP:
-        return INPUT_TYPE_CHECK_OVERRIDE_MAP[bind_name](bind_name, pytype, is_deferred_binding)
+        return INPUT_TYPE_CHECK_OVERRIDE_MAP[bind_name](bind_name, pytype,
+                                                        is_deferred_binding)
 
     binding = get_binding(bind_name, is_deferred_binding)
 

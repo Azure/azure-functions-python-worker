@@ -14,9 +14,9 @@ import queue
 import sys
 import threading
 from asyncio import BaseEventLoop
+from datetime import datetime
 from logging import LogRecord
 from typing import List, Optional
-from datetime import datetime
 
 import grpc
 from . import bindings, constants, functions, loader, protos
@@ -46,6 +46,8 @@ from .utils.wrappers import disable_feature_by
 from .version import VERSION
 
 _TRUE = "true"
+_TRACEPARENT = "traceparent"
+_TRACESTATE = "tracestate"
 
 
 class DispatcherMeta(type):
@@ -79,6 +81,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         # Used to store metadata returns
         self._function_metadata_result = None
         self._function_metadata_exception = None
+
+        # Used for checking if open telemetry is enabled
+        self._otel_libs_available = False
+        self._context_api = None
+        self._trace_context_propagator = None
 
         # We allow the customer to change synchronous thread pool max worker
         # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
@@ -265,6 +272,23 @@ class Dispatcher(metaclass=DispatcherMeta):
         resp = await request_handler(request)
         self._grpc_resp_queue.put_nowait(resp)
 
+    def update_opentelemetry_status(self):
+        """Check for OpenTelemetry library availability and
+        update the status attribute."""
+        try:
+            from opentelemetry import context as context_api
+            from opentelemetry.trace.propagation.tracecontext import (
+                TraceContextTextMapPropagator)
+
+            self._context_api = context_api
+            self._trace_context_propagator = TraceContextTextMapPropagator()
+            self._otel_libs_available = True
+
+            logger.info("Successfully loaded OpenTelemetry modules. "
+                        "OpenTelemetry is now enabled.")
+        except ImportError:
+            self._otel_libs_available = False
+
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, '
@@ -293,6 +317,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
+
+        self.update_opentelemetry_status()
+
+        if self._otel_libs_available:
+            capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
 
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
@@ -559,6 +588,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     args[name] = bindings.Out()
 
             if fi.is_async:
+                if self._otel_libs_available:
+                    self.configure_opentelemetry(fi_context)
+
                 call_result = \
                     await self._run_async_func(fi_context, fi.func, args)
             else:
@@ -673,6 +705,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             bindings.load_binding_registry()
 
             capabilities = {}
+            self.update_opentelemetry_status()
+            if self._otel_libs_available:
+                capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
+
             if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
                 try:
                     self.load_function_metadata(
@@ -785,6 +821,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 close_shared_memory_resources_response=response)
 
+    def configure_opentelemetry(self, invocation_context):
+        carrier = {_TRACEPARENT: invocation_context.trace_context.trace_parent,
+                   _TRACESTATE: invocation_context.trace_context.trace_state}
+        ctx = self._trace_context_propagator.extract(carrier)
+        self._context_api.attach(ctx)
+
     @staticmethod
     def _get_context(invoc_request: protos.InvocationRequest, name: str,
                      directory: str) -> bindings.Context:
@@ -873,6 +915,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         # invocation_id from ThreadPoolExecutor's threads.
         context.thread_local_storage.invocation_id = invocation_id
         try:
+            if self._otel_libs_available:
+                self.configure_opentelemetry(context)
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)
         finally:

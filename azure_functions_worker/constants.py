@@ -12,6 +12,12 @@ SHARED_MEMORY_DATA_TRANSFER = "SharedMemoryDataTransfer"
 FUNCTION_DATA_CACHE = "FunctionDataCache"
 HTTP_URI = "HttpUri"
 
+# When this capability is enabled, logs are not piped back to the
+# host from the worker. Logs will directly go to where the user has
+# configured them to go. This is to ensure that the logs are not
+# duplicated.
+WORKER_OPEN_TELEMETRY_ENABLED = "WorkerOpenTelemetryEnabled"
+
 # Platform Environment Variables
 AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
 CONTAINER_NAME = "CONTAINER_NAME"

@@ -111,6 +111,11 @@ EXTRA_REQUIRES = {
         "numpy",
         "pre-commit"
     ],
+    "test-http-v2": [
+        "azurefunctions-extensions-http-fastapi",
+        "ujson",
+        "orjson"
+    ],
     "test-deferred-bindings": [
         "azurefunctions-extensions-bindings-blob"
     ]

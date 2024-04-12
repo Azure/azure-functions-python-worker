@@ -19,7 +19,6 @@ from logging import LogRecord
 from typing import List, Optional
 
 import grpc
-
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (PYTHON_ROLLBACK_CWD_PATH,
@@ -31,9 +30,10 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
-                        METADATA_PROPERTIES_WORKER_INDEXED, TRACEPARENT,
-                        TRACESTATE)
+                        METADATA_PROPERTIES_WORKER_INDEXED)
 from .extension import ExtensionManager
+from .http_v2 import http_coordinator, initialize_http_server, HttpV2Registry, \
+    sync_http_request, HttpServerInitError
 from .logging import disable_console_logging, enable_console_logging
 from .logging import (logger, error_logger, is_system_log_category,
                       CONSOLE_LOG_PREFIX, format_exception)
@@ -46,7 +46,8 @@ from .utils.wrappers import disable_feature_by
 from .version import VERSION
 
 _TRUE = "true"
-
+_TRACEPARENT = "traceparent"
+_TRACESTATE = "tracestate"
 
 class DispatcherMeta(type):
     __current_dispatcher__ = None
@@ -164,6 +165,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             log_level = logging.INFO if not is_envvar_true(
                 PYTHON_ENABLE_DEBUG_LOGGING) else logging.DEBUG
+
             root_logger.setLevel(log_level)
             root_logger.addHandler(logging_handler)
             logger.info('Switched to gRPC logging.')
@@ -195,7 +197,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         self._stop_sync_call_tp()
 
-    def on_logging(self, record: logging.LogRecord, formatted_msg: str) -> None:
+    def on_logging(self, record: logging.LogRecord,
+                   formatted_msg: str) -> None:
         if record.levelno >= logging.CRITICAL:
             log_level = protos.RpcLog.Critical
         elif record.levelno >= logging.ERROR:
@@ -317,11 +320,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self.update_opentelemetry_status()
 
         if self.otel_libs_available:
-            # When this capability is enabled, logs are not piped back to the
-            # host from the worker. Logs will directly go to where the user has
-            # configured them to go. This is to ensure that the logs are not
-            # duplicated.
-            capabilities["WorkerOpenTelemetryEnabled"] = _TRUE
+            capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
 
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
@@ -338,6 +337,13 @@ class Dispatcher(metaclass=DispatcherMeta):
                 self.load_function_metadata(
                     worker_init_request.function_app_directory,
                     caller_info="worker_init_request")
+
+                if HttpV2Registry.http_v2_enabled():
+                    capabilities[constants.HTTP_URI] = \
+                        initialize_http_server(self._host)
+
+            except HttpServerInitError:
+                raise
             except Exception as ex:
                 self._function_metadata_exception = ex
 
@@ -540,6 +546,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             logger.info(', '.join(function_invocation_logs))
 
             args = {}
+
             for pb in invoc_request.input_data:
                 pb_type_info = fi.input_types[pb.name]
                 if bindings.is_trigger_binding(pb_type_info.binding_name):
@@ -555,7 +562,19 @@ class Dispatcher(metaclass=DispatcherMeta):
                     shmem_mgr=self._shmem_mgr,
                     is_deferred_binding=pb_type_info.deferred_bindings_enabled)
 
-            fi_context = self._get_context(invoc_request, fi.name, fi.directory)
+            http_v2_enabled = self._functions.get_function(function_id) \
+                                  .is_http_func and \
+                HttpV2Registry.http_v2_enabled()
+
+            if http_v2_enabled:
+                http_request = await http_coordinator.get_http_request_async(
+                    invocation_id)
+
+                await sync_http_request(http_request, invoc_request)
+                args[fi.trigger_metadata.get('param_name')] = http_request
+
+            fi_context = self._get_context(invoc_request, fi.name,
+                                           fi.directory)
 
             # Use local thread storage to store the invocation ID
             # for a customer's threads
@@ -571,9 +590,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 if self.otel_libs_available:
                     self.configure_opentelemetry(fi_context)
 
-                call_result = await self._run_async_func(
-                    fi_context, fi.func, args
-                )
+                call_result = \
+                    await self._run_async_func(fi_context, fi.func, args)
             else:
                 call_result = await self._loop.run_in_executor(
                     self._sync_call_tp,
@@ -581,8 +599,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     invocation_id, fi_context, fi.func, args)
 
             if call_result is not None and not fi.has_return:
-                raise RuntimeError(f'function {fi.name!r} without a $return '
-                                   'binding returned a non-None value')
+                raise RuntimeError(
+                    f'function {fi.name!r} without a $return binding'
+                    'returned a non-None value')
+
+            if http_v2_enabled:
+                http_coordinator.set_http_response(invocation_id, call_result)
 
             output_data = []
             cache_enabled = self._function_data_cache_enabled
@@ -602,10 +624,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data.append(param_binding)
 
             return_value = None
-            if fi.return_type is not None:
+            if fi.return_type is not None and not http_v2_enabled:
                 return_value = bindings.to_outgoing_proto(
-                    fi.return_type.binding_name, call_result,
-                    pytype=fi.return_type.pytype)
+                    fi.return_type.binding_name,
+                    call_result,
+                    pytype=fi.return_type.pytype,
+                )
 
             # Actively flush customer print() function to console
             sys.stdout.flush()
@@ -620,6 +644,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data=output_data))
 
         except Exception as ex:
+            if http_v2_enabled:
+                http_coordinator.set_http_response(invocation_id, ex)
+
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 invocation_response=protos.InvocationResponse(
@@ -686,6 +713,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self.load_function_metadata(
                         directory,
                         caller_info="environment_reload_request")
+
+                    if HttpV2Registry.http_v2_enabled():
+                        capabilities[constants.HTTP_URI] = \
+                            initialize_http_server(self._host)
+                except HttpServerInitError:
+                    raise
                 except Exception as ex:
                     self._function_metadata_exception = ex
 
@@ -717,8 +750,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     def index_functions(self, function_path: str):
         indexed_functions = loader.index_function_app(function_path)
-        logger.info('Indexed function app and found %s functions',
-                    len(indexed_functions))
+        logger.info(
+            "Indexed function app and found %s functions",
+            len(indexed_functions)
+        )
 
         if indexed_functions:
             fx_metadata_results, fx_bindings_logs = (
@@ -786,15 +821,16 @@ class Dispatcher(metaclass=DispatcherMeta):
                 close_shared_memory_resources_response=response)
 
     def configure_opentelemetry(self, invocation_context):
-        carrier = {TRACEPARENT: invocation_context.trace_context.trace_parent,
-                   TRACESTATE: invocation_context.trace_context.trace_state}
+        carrier = {_TRACEPARENT: invocation_context.trace_context.trace_parent,
+                   _TRACESTATE: invocation_context.trace_context.trace_state}
         ctx = self.trace_context_propagator.extract(carrier)
         self.context_api.attach(ctx)
 
     @staticmethod
     def _get_context(invoc_request: protos.InvocationRequest, name: str,
                      directory: str) -> bindings.Context:
-        """ For more information refer: https://aka.ms/azfunc-invocation-context
+        """ For more information refer:
+        https://aka.ms/azfunc-invocation-context
         """
         trace_context = bindings.TraceContext(
             invoc_request.trace_context.trace_parent,
@@ -938,7 +974,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
 
 class AsyncLoggingHandler(logging.Handler):
-
     def emit(self, record: LogRecord) -> None:
         # Since we disable console log after gRPC channel is initiated,
         # we should redirect all the messages into dispatcher.

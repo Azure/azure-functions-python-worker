@@ -336,6 +336,45 @@ class TestLinuxConsumption(TestCase):
             self.assertNotIn("Failure Exception: ModuleNotFoundError",
                              logs)
 
+    @skipIf(sys.version_info.minor != 10,
+            "This is testing only for python310")
+    def test_http_v2_fastapi_streaming_upload_download(self):
+        """
+        A function app using http v2 fastapi extension with streaming upload and
+         download
+        """
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE":
+                self._get_blob_url("HttpV2FastApiStreaming"),
+                PYTHON_ENABLE_INIT_INDEXING: "true",
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1"
+            })
+
+            def generate_random_bytes_stream():
+                """Generate a stream of random bytes."""
+                yield b'streaming'
+                yield b'testing'
+                yield b'response'
+                yield b'is'
+                yield b'returned'
+
+            req = Request('POST',
+                          f'{ctrl.url}/api/http_v2_fastapi_streaming',
+                          data=generate_random_bytes_stream())
+            resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 200)
+
+            streamed_data = b''
+            for chunk in resp.iter_content(chunk_size=1024):
+                if chunk:
+                    streamed_data += chunk
+
+            self.assertEqual(
+                streamed_data, b'streamingtestingresponseisreturned')
+
     def _get_blob_url(self, scenario_name: str) -> str:
         return (
             f'https://pythonworker{self._py_shortform}sa.blob.core.windows.net/'

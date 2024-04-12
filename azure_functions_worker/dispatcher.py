@@ -282,7 +282,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             logger.info("Successfully loaded OpenTelemetry modules. "
                         "OpenTelemetry is now enabled.")
-
         except ImportError:
             self.otel_libs_available = False
 
@@ -678,6 +677,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             bindings.load_binding_registry()
 
             capabilities = {}
+            self.update_opentelemetry_status()
             if self.otel_libs_available:
                 capabilities["WorkerOpenTelemetryEnabled"] = _TRUE
 

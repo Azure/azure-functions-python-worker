@@ -71,7 +71,7 @@ PACKAGES = [
     "azure_functions_worker._thirdparty",
 ]
 
-INSTALL_REQUIRES = ["azure-functions==1.19.0b3", "python-dateutil~=2.8.2"]
+INSTALL_REQUIRES = ["azure-functions==1.19.0", "python-dateutil~=2.8.2"]
 
 if sys.version_info[:2] == (3, 7):
     INSTALL_REQUIRES.extend(
@@ -110,6 +110,11 @@ EXTRA_REQUIRES = {
         "pandas",
         "numpy",
         "pre-commit"
+    ],
+    "test-http-v2": [
+        "azurefunctions-extensions-http-fastapi",
+        "ujson",
+        "orjson"
     ],
     "test-deferred-bindings": [
         "azurefunctions-extensions-bindings-blob"
@@ -412,7 +417,8 @@ class Webhost(distutils.cmd.Command):
 
         try:
             subprocess.run(
-                args=["dotnet", "build", "WebJobs.Script.sln", "-o", "bin"],
+                args=["dotnet", "build", "WebJobs.Script.sln", "-o", "bin",
+                      "/p:TreatWarningsAsErrors=false"],
                 check=True,
                 cwd=str(webhost_dir),
                 stdout=sys.stdout,

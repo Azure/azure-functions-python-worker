@@ -10,6 +10,13 @@ RPC_HTTP_TRIGGER_METADATA_REMOVED = "RpcHttpTriggerMetadataRemoved"
 WORKER_STATUS = "WorkerStatus"
 SHARED_MEMORY_DATA_TRANSFER = "SharedMemoryDataTransfer"
 FUNCTION_DATA_CACHE = "FunctionDataCache"
+HTTP_URI = "HttpUri"
+
+# When this capability is enabled, logs are not piped back to the
+# host from the worker. Logs will directly go to where the user has
+# configured them to go. This is to ensure that the logs are not
+# duplicated.
+WORKER_OPEN_TELEMETRY_ENABLED = "WorkerOpenTelemetryEnabled"
 
 # Platform Environment Variables
 AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
@@ -54,9 +61,22 @@ PYTHON_LANGUAGE_RUNTIME = "python"
 RETRY_POLICY = "retry_policy"
 
 # Paths
-CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site-packages"
+CUSTOMER_PACKAGES_PATH = "/home/site/wwwroot/.python_packages/lib/site" \
+                         "-packages"
 
 # Flag to index functions in handle init request
 PYTHON_ENABLE_INIT_INDEXING = "PYTHON_ENABLE_INIT_INDEXING"
 
 METADATA_PROPERTIES_WORKER_INDEXED = "worker_indexed"
+
+# Header names
+X_MS_INVOCATION_ID = "x-ms-invocation-id"
+
+# Trigger Names
+HTTP_TRIGGER = "httpTrigger"
+
+# Output Names
+HTTP = "http"
+
+# Base extension supported Python minor version
+BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8

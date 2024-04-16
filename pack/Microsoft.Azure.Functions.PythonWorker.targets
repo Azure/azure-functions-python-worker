@@ -12,7 +12,7 @@
     <_PythonSupportedRuntime Include="osx-arm64" WorkerPath="OSX/Arm64" />
   </ItemGroup>
 
-  <Target Name="GetFunctionsPythonWorkerFiles" BeforeTargets="AssignTargetPaths" DependsOnTargets="_GetFunctionsPythonWorkerFilesNoRuntime;_GetFunctionsPythonWorkerFilesForRuntime">
+  <Target Name="_GetFunctionsPythonWorkerFiles" BeforeTargets="AssignTargetPaths" DependsOnTargets="_GetFunctionsPythonWorkerFilesNoRuntime;_GetFunctionsPythonWorkerFilesForRuntime">
     <ItemGroup>
       <None Include="@(_PythonWorkerFiles)" TargetPath="workers/python/%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>

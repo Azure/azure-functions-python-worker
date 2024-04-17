@@ -27,7 +27,6 @@ _AZURE_NAMESPACE = '__app__'
 _DEFAULT_SCRIPT_FILENAME = '__init__.py'
 _DEFAULT_ENTRY_POINT = 'main'
 _submodule_dirs = []
-_FUNCTION_DIRECTORY = "/home/site/wwwroot"
 
 
 def register_function_dir(path: PathLike) -> None:
@@ -122,7 +121,7 @@ def build_variable_interval_retry(retry, max_retry_count, retry_strategy):
 
 
 def process_indexed_function(functions_registry: functions.Registry,
-                             indexed_functions):
+                             indexed_functions, function_dir):
     """
     fx_metadata_results is a list of the RpcFunctionMetadata for
     all the functions in the particular app.
@@ -151,7 +150,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             name=function_info.name,
             function_id=function_info.function_id,
             managed_dependency_enabled=False,  # only enabled for PowerShell
-            directory=_FUNCTION_DIRECTORY,
+            directory=function_dir,
             script_file=indexed_function.function_script_file,
             entry_point=function_info.name,
             is_proxy=False,  # not supported in V4

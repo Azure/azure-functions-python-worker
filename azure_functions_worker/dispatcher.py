@@ -384,7 +384,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                                      script_file_name)
 
         self._function_metadata_result = (
-            self.index_functions(function_path)) \
+            self.index_functions(function_path, function_app_directory)) \
             if os.path.exists(function_path) else None
 
     async def _handle__functions_metadata_request(self, request):
@@ -439,7 +439,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
-            'function_name: %s, function_app_directory: %s',
+            'function_name: %s, function_app_directory : %s',
             self.request_id, function_id, function_name,
             function_app_directory)
 
@@ -750,7 +750,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
 
-    def index_functions(self, function_path: str):
+    def index_functions(self, function_path: str, function_dir: str):
         indexed_functions = loader.index_function_app(function_path)
         logger.info(
             "Indexed function app and found %s functions",
@@ -761,7 +761,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             fx_metadata_results, fx_bindings_logs = (
                 loader.process_indexed_function(
                     self._functions,
-                    indexed_functions))
+                    indexed_functions,
+                    function_dir))
 
             indexed_function_logs: List[str] = []
             indexed_function_bindings_logs = []

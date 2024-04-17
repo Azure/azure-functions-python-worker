@@ -1,6 +1,6 @@
-import datetime
 import logging
 import time
+from datetime import datetime
 
 import azure.functions as func
 

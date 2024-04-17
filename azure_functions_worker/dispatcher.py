@@ -439,8 +439,9 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
-            'function_name: %s',
-            self.request_id, function_id, function_name)
+            'function_name: %s, function_app_directory: %s',
+            self.request_id, function_id, function_name,
+            function_app_directory)
 
         programming_model = "V2"
         try:

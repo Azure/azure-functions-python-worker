@@ -916,6 +916,34 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
             protos.StatusResult.Failure)
 
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
+    def test_functions_metadata_request_with_filenotfound_exception(self):
+
+        request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        metadata_request = protos.StreamingMessage(
+            functions_metadata_request=protos.FunctionsMetadataRequest(
+                function_app_directory="NonExistentDirectory"
+            )
+        )
+
+        self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(request))
+
+        metadata_response = self.loop.run_until_complete(
+            self.dispatcher._handle__functions_metadata_request(
+                metadata_request))
+
+        self.assertEqual(
+            metadata_response.function_metadata_response.result.exception.message,
+            "FileNotFoundError: function_app.py not "
+            "found in NonExistentDirectory\\function_app.py")
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
     def test_dispatcher_indexing_in_load_request(self):
         init_request = protos.StreamingMessage(
             worker_init_request=protos.WorkerInitRequest(

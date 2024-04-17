@@ -383,12 +383,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_path = os.path.join(function_app_directory,
                                      script_file_name)
 
-        if not os.path.exists(function_path):
-            raise FileNotFoundError("function_app.py not "
-                                    f"found in {function_path}")
-
-        self._function_metadata_result = self.index_functions(
-            function_path, function_app_directory)
+        # For V1, the function path will not exist and
+        # return None.
+        self._function_metadata_result = (
+            self.index_functions(function_path)) \
+            if os.path.exists(function_path) else None
 
     async def _handle__functions_metadata_request(self, request):
         metadata_request = request.functions_metadata_request

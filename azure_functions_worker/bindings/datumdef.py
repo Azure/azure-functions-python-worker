@@ -199,6 +199,8 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
             enable_content_negotiation=False,
             body=datum_as_proto(datum.value['body']),
         ))
+    elif datum.type is None:
+        return None
     else:
         raise NotImplementedError(
             'unexpected Datum type: {!r}'.format(datum.type)

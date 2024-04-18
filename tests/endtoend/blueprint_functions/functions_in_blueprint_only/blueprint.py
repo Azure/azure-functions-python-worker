@@ -1,4 +1,6 @@
 import logging
+import time
+from datetime import datetime
 
 import azure.functions as func
 
@@ -29,3 +31,11 @@ def default_template(req: func.HttpRequest) -> func.HttpResponse:
             " personalized response.",
             status_code=200
         )
+
+
+@bp.route(route="http_func")
+def http_func(req: func.HttpRequest) -> func.HttpResponse:
+    time.sleep(1)
+
+    current_time = datetime.now().strftime("%H:%M:%S")
+    return func.HttpResponse(f"{current_time}")

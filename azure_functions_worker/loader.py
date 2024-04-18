@@ -121,7 +121,7 @@ def build_variable_interval_retry(retry, max_retry_count, retry_strategy):
 
 
 def process_indexed_function(functions_registry: functions.Registry,
-                             indexed_functions):
+                             indexed_functions, function_dir):
     fx_metadata_results = []
     for indexed_function in indexed_functions:
         function_info = functions_registry.add_indexed_function(
@@ -134,7 +134,7 @@ def process_indexed_function(functions_registry: functions.Registry,
             name=function_info.name,
             function_id=function_info.function_id,
             managed_dependency_enabled=False,  # only enabled for PowerShell
-            directory=function_info.directory,
+            directory=function_dir,
             script_file=indexed_function.function_script_file,
             entry_point=function_info.name,
             is_proxy=False,  # not supported in V4

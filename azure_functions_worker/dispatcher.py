@@ -390,7 +390,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # For V1, the function path will not exist and
         # return None.
         self._function_metadata_result = (
-            self.index_functions(function_path)) \
+            self.index_functions(function_path, function_app_directory)) \
             if os.path.exists(function_path) else None
 
     async def _handle__functions_metadata_request(self, request):

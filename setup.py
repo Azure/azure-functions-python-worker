@@ -71,7 +71,7 @@ PACKAGES = [
     "azure_functions_worker._thirdparty",
 ]
 
-INSTALL_REQUIRES = ["azure-functions==1.19.0b3", "python-dateutil~=2.8.2"]
+INSTALL_REQUIRES = ["azure-functions==1.19.0", "python-dateutil~=2.8.2"]
 
 if sys.version_info[:2] == (3, 7):
     INSTALL_REQUIRES.extend(
@@ -79,12 +79,13 @@ if sys.version_info[:2] == (3, 7):
     )
 else:
     INSTALL_REQUIRES.extend(
-        ("protobuf~=4.22.0", "grpcio-tools~=1.54.2", "grpcio~=1.54.2")
+        ("protobuf~=4.22.0", "grpcio-tools~=1.54.2", "grpcio~=1.54.2",
+         "azurefunctions-extensions-base")
     )
 
 EXTRA_REQUIRES = {
     "dev": [
-        "azure-eventhub~=5.7.0",  # Used for EventHub E2E tests
+        "azure-eventhub",  # Used for EventHub E2E tests
         "azure-functions-durable",  # Used for Durable E2E tests
         "flask",
         "fastapi~=0.85.0",  # Used for ASGIMiddleware test
@@ -109,6 +110,14 @@ EXTRA_REQUIRES = {
         "pandas",
         "numpy",
         "pre-commit"
+    ],
+    "test-http-v2": [
+        "azurefunctions-extensions-http-fastapi",
+        "ujson",
+        "orjson"
+    ],
+    "test-deferred-bindings": [
+        "azurefunctions-extensions-bindings-blob"
     ]
 }
 
@@ -408,7 +417,8 @@ class Webhost(distutils.cmd.Command):
 
         try:
             subprocess.run(
-                args=["dotnet", "build", "WebJobs.Script.sln", "-o", "bin"],
+                args=["dotnet", "build", "WebJobs.Script.sln", "-o", "bin",
+                      "/p:TreatWarningsAsErrors=false"],
                 check=True,
                 cwd=str(webhost_dir),
                 stdout=sys.stdout,

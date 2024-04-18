@@ -21,12 +21,17 @@ from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from tests.utils.testutils import UNIT_TESTS_ROOT
 
+
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
 DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'
 DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
     'dispatcher_functions_stein'
+DISPATCHER_HTTP_V2_FASTAPI_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
+    'dispatcher_functions' / \
+    'http_v2' / \
+    'fastapi'
 FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
     'dispatcher_functions_stein'
 
@@ -67,10 +72,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             self.assertIsInstance(r.response, protos.WorkerInitResponse)
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
-            self.assertEquals(r.response.worker_metadata.runtime_name,
-                              "python")
-            self.assertEquals(r.response.worker_metadata.worker_version,
-                              VERSION)
+            self.assertEqual(r.response.worker_metadata.runtime_name,
+                             "python")
+            self.assertEqual(r.response.worker_metadata.worker_version,
+                             VERSION)
 
     async def test_dispatcher_environment_reload(self):
         """Test function environment reload response
@@ -82,10 +87,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                   protos.FunctionEnvironmentReloadResponse)
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
-            self.assertEquals(r.response.worker_metadata.runtime_name,
-                              "python")
-            self.assertEquals(r.response.worker_metadata.worker_version,
-                              VERSION)
+            self.assertEqual(r.response.worker_metadata.runtime_name,
+                             "python")
+            self.assertEqual(r.response.worker_metadata.worker_version,
+                             VERSION)
 
     async def test_dispatcher_initialize_worker_logging(self):
         """Test if the dispatcher's log can be flushed out during worker
@@ -590,16 +595,6 @@ class TestDispatcherStein(testutils.AsyncTestCase):
     def setUp(self):
         self._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_STEIN_FUNCTIONS_DIR)
-        self._pre_env = dict(os.environ)
-        self.mock_version_info = patch(
-            'azure_functions_worker.dispatcher.sys.version_info',
-            SysVersionInfo(3, 9, 0, 'final', 0))
-        self.mock_version_info.start()
-
-    def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self._pre_env)
-        self.mock_version_info.stop()
 
     async def test_dispatcher_functions_metadata_request(self):
         """Test if the functions metadata response will be sent correctly
@@ -683,7 +678,8 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
             )
             self.assertEqual(
                 len([log for log in r.logs if log.message.startswith(
-                    "Received WorkerMetadataRequest from _handle__worker_init_request"
+                    "Received WorkerMetadataRequest from "
+                    "_handle__worker_init_request"
                 )]),
                 0
             )
@@ -776,7 +772,6 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
 
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     def test_worker_init_request_with_indexing_enabled(self):
-
         request = protos.StreamingMessage(
             worker_init_request=protos.WorkerInitRequest(
                 host_version="2.3.4",
@@ -845,10 +840,12 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
                          protos.StatusResult.Success)
 
         metadata_response = self.loop.run_until_complete(
-            self.dispatcher._handle__functions_metadata_request(metadata_request))
+            self.dispatcher._handle__functions_metadata_request(
+                metadata_request))
 
-        self.assertEqual(metadata_response.function_metadata_response.result.status,
-                         protos.StatusResult.Success)
+        self.assertEqual(
+            metadata_response.function_metadata_response.result.status,
+            protos.StatusResult.Success)
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
@@ -875,10 +872,12 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
         metadata_response = self.loop.run_until_complete(
-            self.dispatcher._handle__functions_metadata_request(metadata_request))
+            self.dispatcher._handle__functions_metadata_request(
+                metadata_request))
 
-        self.assertEqual(metadata_response.function_metadata_response.result.status,
-                         protos.StatusResult.Success)
+        self.assertEqual(
+            metadata_response.function_metadata_response.result.status,
+            protos.StatusResult.Success)
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
@@ -887,7 +886,6 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
     def test_functions_metadata_request_with_indexing_exception(
             self,
             mock_index_functions):
-
         mock_index_functions.side_effect = Exception("Mocked Exception")
 
         request = protos.StreamingMessage(

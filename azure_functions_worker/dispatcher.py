@@ -30,7 +30,8 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
-                        METADATA_PROPERTIES_WORKER_INDEXED)
+                        METADATA_PROPERTIES_WORKER_INDEXED, PYTHON_ENABLE_OPENTELEMETRY,
+                        PYTHON_ENABLE_OPENTELEMETRY_DEFAULT)
 from .extension import ExtensionManager
 from .http_v2 import http_coordinator, initialize_http_server, HttpV2Registry, \
     sync_http_request, HttpServerInitError
@@ -318,10 +319,12 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
-        self.update_opentelemetry_status()
+        if get_app_setting(setting=PYTHON_ENABLE_OPENTELEMETRY,
+                           default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
+            self.update_opentelemetry_status()
 
-        if self._otel_libs_available:
-            capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
+            if self._otel_libs_available:
+                capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
 
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
@@ -708,9 +711,12 @@ class Dispatcher(metaclass=DispatcherMeta):
             bindings.load_binding_registry()
 
             capabilities = {}
-            self.update_opentelemetry_status()
-            if self._otel_libs_available:
-                capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
+            if get_app_setting(setting=PYTHON_ENABLE_OPENTELEMETRY,
+                               default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
+                self.update_opentelemetry_status()
+
+                if self._otel_libs_available:
+                    capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
 
             if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
                 try:

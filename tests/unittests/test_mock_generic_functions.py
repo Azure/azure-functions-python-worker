@@ -144,6 +144,8 @@ class TestGenericFunctions(testutils.AsyncTestCase):
             # implicitly
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+            self.assertEqual(r.response.return_value,
+                             protos.TypedData(bytes=b'\x00\x01'))
 
     async def test_mock_generic_should_support_without_datatype(self):
         async with testutils.start_mockhost(
@@ -195,3 +197,28 @@ class TestGenericFunctions(testutils.AsyncTestCase):
             # For the Durable Functions durableClient case
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Failure)
+
+    async def test_mock_generic_as_nil_data(self):
+        async with testutils.start_mockhost(
+                script_root=self.generic_funcs_dir) as host:
+
+            await host.init_worker("4.17.1")
+            func_id, r = await host.load_function('foobar_nil_data')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            _, r = await host.invoke_function(
+                'foobar_nil_data', [
+                    protos.ParameterBinding(
+                        name='input',
+                        data=protos.TypedData()
+                    )
+                ]
+            )
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+            self.assertEqual(
+                r.response.return_value,
+                protos.TypedData())

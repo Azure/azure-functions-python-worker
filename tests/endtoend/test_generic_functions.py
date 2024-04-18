@@ -2,6 +2,9 @@
 # Licensed under the MIT License.
 from unittest import skipIf
 
+import time
+import typing
+
 from azure_functions_worker.utils.common import is_envvar_true
 from tests.utils import testutils
 from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
@@ -40,6 +43,17 @@ class TestGenericFunctions(testutils.WebHostTestCase):
 
         r = self.webhost.request('GET', 'return_not_processed_last')
         self.assertEqual(r.status_code, 200)
+
+    def test_return_none(self):
+        time.sleep(1)
+        # Checking webhost status.
+        r = self.webhost.request('GET', '', no_prefix=True,
+                                 timeout=5)
+        self.assertTrue(r.ok)
+
+    def check_log_timer(self, host_out: typing.List[str]):
+        self.assertEqual(host_out.count("This timer trigger function executed "
+                                        "successfully"), 1)
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)

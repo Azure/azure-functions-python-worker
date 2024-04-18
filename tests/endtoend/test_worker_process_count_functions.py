@@ -71,3 +71,11 @@ class TestWorkerProcessCountStein(TestWorkerProcessCount):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
                                             'http_functions_stein'
+
+
+class TestWorkerProcessCountWithBlueprintStein(TestWorkerProcessCount):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'blueprint_functions' /\
+                                            'functions_in_blueprint_only'

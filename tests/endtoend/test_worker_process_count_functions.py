@@ -61,9 +61,6 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
         time_diff_in_seconds = abs((response[0] - response[1]).total_seconds())
         self.assertTrue(time_diff_in_seconds < 1)
 
-    def test_endtoend_failure(self):
-        self.assertFalse(True)
-
 
 class TestWorkerProcessCountStein(TestWorkerProcessCount):
 

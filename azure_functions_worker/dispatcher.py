@@ -30,7 +30,9 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_SCRIPT_FILE_NAME,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
-                        METADATA_PROPERTIES_WORKER_INDEXED)
+                        METADATA_PROPERTIES_WORKER_INDEXED,
+                        PYTHON_ENABLE_OPENTELEMETRY,
+                        PYTHON_ENABLE_OPENTELEMETRY_DEFAULT)
 from .extension import ExtensionManager
 from .http_v2 import http_coordinator, initialize_http_server, HttpV2Registry, \
     sync_http_request, HttpServerInitError
@@ -318,10 +320,12 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
-        self.update_opentelemetry_status()
+        if get_app_setting(setting=PYTHON_ENABLE_OPENTELEMETRY,
+                           default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
+            self.update_opentelemetry_status()
 
-        if self._otel_libs_available:
-            capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
+            if self._otel_libs_available:
+                capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
 
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
@@ -383,8 +387,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_path = os.path.join(function_app_directory,
                                      script_file_name)
 
+        # For V1, the function path will not exist and
+        # return None.
         self._function_metadata_result = (
-            self.index_functions(function_path)) \
+            self.index_functions(function_path, function_app_directory)) \
             if os.path.exists(function_path) else None
 
     async def _handle__functions_metadata_request(self, request):
@@ -439,8 +445,9 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
-            'function_name: %s',
-            self.request_id, function_id, function_name)
+            'function_name: %s, function_app_directory : %s',
+            self.request_id, function_id, function_name,
+            function_app_directory)
 
         programming_model = "V2"
         try:
@@ -705,9 +712,14 @@ class Dispatcher(metaclass=DispatcherMeta):
             bindings.load_binding_registry()
 
             capabilities = {}
-            self.update_opentelemetry_status()
-            if self._otel_libs_available:
-                capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
+            if get_app_setting(
+                    setting=PYTHON_ENABLE_OPENTELEMETRY,
+                    default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
+                self.update_opentelemetry_status()
+
+                if self._otel_libs_available:
+                    capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = (
+                        _TRUE)
 
             if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
                 try:
@@ -749,7 +761,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
 
-    def index_functions(self, function_path: str):
+    def index_functions(self, function_path: str, function_dir: str):
         indexed_functions = loader.index_function_app(function_path)
         logger.info(
             "Indexed function app and found %s functions",
@@ -760,7 +772,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             fx_metadata_results, fx_bindings_logs = (
                 loader.process_indexed_function(
                     self._functions,
-                    indexed_functions))
+                    indexed_functions,
+                    function_dir))
 
             indexed_function_logs: List[str] = []
             indexed_function_bindings_logs = []

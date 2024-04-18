@@ -21,7 +21,6 @@ from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from tests.utils.testutils import UNIT_TESTS_ROOT
 
-
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
 DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'

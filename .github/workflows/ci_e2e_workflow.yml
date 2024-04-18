@@ -75,7 +75,10 @@ jobs:
           retry 5 python setup.py extension
           mkdir logs
       - name: Grant execute permission
-        run: chmod +x .github/Scripts/e2e-tests.sh
+        run: |
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_worker_process_count_functions.py tests/endtoend/test_threadpool_thread_count_functions.py
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append --ignore=tests/endtoend/test_worker_process_count_functions.py --ignore=tests/endtoend/test_threadpool_thread_count_functions.py tests/endtoend
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/extension_tests/deferred_bindings_tests
       - name: Running 3.7 Tests
         if: matrix.python-version == 3.7
         env:
@@ -87,7 +90,10 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
+        run: |
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_worker_process_count_functions.py tests/endtoend/test_threadpool_thread_count_functions.py
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append --ignore=tests/endtoend/test_worker_process_count_functions.py --ignore=tests/endtoend/test_threadpool_thread_count_functions.py tests/endtoend
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/extension_tests/deferred_bindings_tests
       - name: Running 3.8 Tests
         if: matrix.python-version == 3.8
         env:
@@ -99,7 +105,10 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
+        run: |
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_worker_process_count_functions.py tests/endtoend/test_threadpool_thread_count_functions.py
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append --ignore=tests/endtoend/test_worker_process_count_functions.py --ignore=tests/endtoend/test_threadpool_thread_count_functions.py tests/endtoend
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/extension_tests/deferred_bindings_tests
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
         env:
@@ -111,7 +120,10 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
+        run: |
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_worker_process_count_functions.py tests/endtoend/test_threadpool_thread_count_functions.py
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append --ignore=tests/endtoend/test_worker_process_count_functions.py --ignore=tests/endtoend/test_threadpool_thread_count_functions.py tests/endtoend
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/extension_tests/deferred_bindings_tests
       - name: Running 3.10 Tests
         if: matrix.python-version == 3.10
         env:
@@ -123,7 +135,10 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
+        run: |
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_worker_process_count_functions.py tests/endtoend/test_threadpool_thread_count_functions.py
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append --ignore=tests/endtoend/test_worker_process_count_functions.py --ignore=tests/endtoend/test_threadpool_thread_count_functions.py tests/endtoend
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/extension_tests/deferred_bindings_tests
       - name: Running 3.11 Tests
         if: matrix.python-version == 3.11
         env:

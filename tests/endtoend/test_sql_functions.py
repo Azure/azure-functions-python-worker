@@ -51,6 +51,7 @@ class TestSqlFunctions(testutils.WebHostTestCase):
             else:
                 break
 
+
 class TestSqlFunctionsStein(TestSqlFunctions):
 
     @classmethod

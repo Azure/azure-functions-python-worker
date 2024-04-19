@@ -9,11 +9,12 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 @app.route(route="sql_input/{productid}")
 @app.sql_input(arg_name="products",
-                command_text="SELECT * FROM Products WHERE ProductId = @ProductId",
-                command_type="Text",
-                parameters="@ProductId={productid}"
-                connection_string_setting="AzureWebJobsSqlConnectionString")
-def sql_input(req: func.HttpRequest, products: func.SqlRowList) -> func.HttpResponse:
+               command_text="SELECT * FROM Products WHERE ProductId = @ProductId",
+               command_type="Text",
+               parameters="@ProductId={productid}",
+               connection_string_setting="AzureWebJobsSqlConnectionString")
+def sql_input(req: func.HttpRequest, products: func.SqlRowList) \
+        -> func.HttpResponse:
     rows = list(map(lambda r: json.loads(r.to_json()), products))
 
     return func.HttpResponse(
@@ -21,14 +22,15 @@ def sql_input(req: func.HttpRequest, products: func.SqlRowList) -> func.HttpResp
         status_code=200,
         mimetype="application/json"
     )
+
 
 @app.route(route="sql_input2/{productid}")
-@app.sql_input(arg_name="products",
+@app.sql_input2(arg_name="products",
                 command_text="SELECT * FROM Products2 WHERE ProductId = @ProductId",
                 command_type="Text",
-                parameters="@ProductId={productid}"
+                parameters="@ProductId={productid}",
                 connection_string_setting="AzureWebJobsSqlConnectionString")
-def sql_input(req: func.HttpRequest, products: func.SqlRowList) -> func.HttpResponse:
+def sql_input2(req: func.HttpRequest, products: func.SqlRowList) -> func.HttpResponse:
     rows = list(map(lambda r: json.loads(r.to_json()), products))
 
     return func.HttpResponse(
@@ -36,12 +38,13 @@ def sql_input(req: func.HttpRequest, products: func.SqlRowList) -> func.HttpResp
         status_code=200,
         mimetype="application/json"
     )
+
 
 @app.route()
 @app.sql_output(arg_name="r",
                 command_text="[dbo].[Products]",
                 connection_string_setting="AzureWebJobsSqlConnectionString")
-def sql_output(req: func.HttpRequest, product: func.Out[func.SqlRow]) -> func.HttpResponse:
+def sql_output(req: func.HttpRequest, r: func.Out[func.SqlRow]) -> func.HttpResponse:
     body = json.loads(req.get_body())
     row = func.SqlRow.from_dict(body)
     r.set(row)
@@ -51,6 +54,7 @@ def sql_output(req: func.HttpRequest, product: func.Out[func.SqlRow]) -> func.Ht
         status_code=201,
         mimetype="application/json"
     )
+
 
 @app.sql_trigger(arg_name="changes",
                  table_name="Products",

@@ -71,3 +71,11 @@ class TestWorkerProcessCountWithBlueprintStein(TestWorkerProcessCount):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'blueprint_functions' /\
                                             'functions_in_blueprint_only'
+
+
+class TestWorkerProcessCountWithBlueprintDiffDirStein(TestWorkerProcessCount):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'blueprint_functions' /\
+                                            'blueprint_different_dir'

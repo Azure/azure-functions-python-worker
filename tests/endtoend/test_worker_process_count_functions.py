@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 import os
 from threading import Thread
-from unittest.mock import patch
 from datetime import datetime
 from tests.utils import testutils
 
@@ -15,19 +14,15 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.env_variables['PYTHON_THREADPOOL_THREAD_COUNT'] = '1'
-        cls.env_variables['FUNCTIONS_WORKER_PROCESS_COUNT'] = '2'
+        os.environ["PYTHON_THREADPOOL_THREAD_COUNT"] = "1"
+        os.environ["FUNCTIONS_WORKER_PROCESS_COUNT"] = "2"
 
-        os_environ = os.environ.copy()
-        os_environ.update(cls.env_variables)
-
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
         super().setUpClass()
 
     def tearDown(self):
+        os.environ.pop('PYTHON_THREADPOOL_THREAD_COUNT')
+        os.environ.pop('FUNCTIONS_WORKER_PROCESS_COUNT')
         super().tearDown()
-        self._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):

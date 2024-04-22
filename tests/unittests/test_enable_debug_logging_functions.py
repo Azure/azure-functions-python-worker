@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 import typing
 import os
-from unittest.mock import patch
 
 from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_ENABLE_DEBUG_LOGGING

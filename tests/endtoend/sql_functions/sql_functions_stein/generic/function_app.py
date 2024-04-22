@@ -10,7 +10,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 @app.generic_trigger(arg_name="req", type="httpTrigger", route="sql_input/{productid}")
 @app.generic_output_binding(arg_name="$return", type="http")
 @app.generic_input_binding(arg_name="products", type="sql",
-                           command_text="SELECT * FROM Products"
+                           command_text="SELECT * FROM Products "
                            "WHERE ProductId = @ProductId",
                            command_type="Text",
                            parameters="@ProductId={productid}",
@@ -43,7 +43,7 @@ def sql_input2(req: func.HttpRequest, products: func.SqlRowList) -> func.HttpRes
     )
 
 
-@app.generic_trigger(arg_name="req", type="httpTrigger")
+@app.generic_trigger(arg_name="req", type="httpTrigger", route="sql_output")
 @app.generic_output_binding(arg_name="$return", type="http")
 @app.generic_output_binding(arg_name="r", type="sql",
                             command_text="[dbo].[Products]",

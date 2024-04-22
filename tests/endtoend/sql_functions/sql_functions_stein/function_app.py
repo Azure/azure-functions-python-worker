@@ -25,7 +25,7 @@ def sql_input(req: func.HttpRequest, products: func.SqlRowList) \
 
 
 @app.route(route="sql_input2/{productid}")
-@app.sql_input2(arg_name="products",
+@app.sql_input(arg_name="products",
                 command_text="SELECT * FROM Products2 WHERE ProductId = @ProductId",
                 command_type="Text",
                 parameters="@ProductId={productid}",
@@ -40,7 +40,7 @@ def sql_input2(req: func.HttpRequest, products: func.SqlRowList) -> func.HttpRes
     )
 
 
-@app.route()
+@app.route(route="sql_output")
 @app.sql_output(arg_name="r",
                 command_text="[dbo].[Products]",
                 connection_string_setting="AzureWebJobsSqlConnectionString")

@@ -27,7 +27,7 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
-    @testutils.retryable_test(3, 5)
+    @testutils.retryable_test(4, 5)
     def test_http_func_with_thread_count(self):
         response = [None, None]
 

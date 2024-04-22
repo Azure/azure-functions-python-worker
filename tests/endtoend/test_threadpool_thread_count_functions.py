@@ -21,6 +21,7 @@ class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):
 
     def tearDown(self):
         os.environ.pop('PYTHON_THREADPOOL_THREAD_COUNT')
+
         super().tearDown()
 
     @classmethod

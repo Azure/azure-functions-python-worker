@@ -14,6 +14,9 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
+        cls.env_variables['PYTHON_THREADPOOL_THREAD_COUNT'] = '1'
+        cls.env_variables['FUNCTIONS_WORKER_PROCESS_COUNT'] = '2'
+
         os.environ["PYTHON_THREADPOOL_THREAD_COUNT"] = "1"
         os.environ["FUNCTIONS_WORKER_PROCESS_COUNT"] = "2"
 
@@ -22,6 +25,7 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
     def tearDown(self):
         os.environ.pop('PYTHON_THREADPOOL_THREAD_COUNT')
         os.environ.pop('FUNCTIONS_WORKER_PROCESS_COUNT')
+
         super().tearDown()
 
     @classmethod

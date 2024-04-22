@@ -20,6 +20,7 @@ HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
 """
 
 
+@testutils.retryable_test(4, 5)
 class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
     """
     Tests for cx debug logging enabled case.
@@ -38,7 +39,6 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
 
-    @testutils.retryable_test(4, 5)
     def test_debug_logging_enabled(self):
         """
         Verify when cx debug logging is enabled, cx function debug logs

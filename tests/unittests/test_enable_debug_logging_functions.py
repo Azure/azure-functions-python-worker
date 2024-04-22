@@ -27,17 +27,13 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
+        os.environ.update({PYTHON_ENABLE_DEBUG_LOGGING: '1'})
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         os.environ.pop(PYTHON_ENABLE_DEBUG_LOGGING)
         super().tearDownClass()
-        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -65,17 +61,13 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '0'
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
+        os.environ.update({PYTHON_ENABLE_DEBUG_LOGGING: '0'})
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         os.environ.pop(PYTHON_ENABLE_DEBUG_LOGGING)
         super().tearDownClass()
-        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):
@@ -109,10 +101,7 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         with open(host_json, 'w+') as f:
             f.write(HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO)
 
-        os_environ = os.environ.copy()
-        os_environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
+        os.environ.update({PYTHON_ENABLE_DEBUG_LOGGING: '1'})
         super().setUpClass()
 
     @classmethod
@@ -122,7 +111,6 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
 
         os.environ.pop(PYTHON_ENABLE_DEBUG_LOGGING)
         super().tearDownClass()
-        cls._patch_environ.stop()
 
     @classmethod
     def get_script_dir(cls):

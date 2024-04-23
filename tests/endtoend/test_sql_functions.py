@@ -50,3 +50,19 @@ class TestSqlFunctions(testutils.WebHostTestCase):
                     raise
             else:
                 break
+
+
+class TestSqlFunctionsStein(TestSqlFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'sql_functions' / \
+            'sql_functions_stein'
+
+
+class TestSqlFunctionsSteinGeneric(TestSqlFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'sql_functions' / \
+            'sql_functions_stein' / 'generic'

@@ -86,3 +86,17 @@ def return_bytes(mytimer: func.TimerRequest, testEntity):
 def return_dict(mytimer: func.TimerRequest, testEntity):
     logging.info("Return dict")
     return {"hello": "world"}
+
+
+@app.function_name(name="return_list")
+@app.schedule(schedule="*/1 * * * * *", arg_name="mytimer",
+              run_on_startup=False,
+              use_monitor=False)
+@app.generic_input_binding(
+    arg_name="testEntity",
+    type="table",
+    connection="AzureWebJobsStorage",
+    table_name="EventHubBatchTest")
+def return_list(mytimer: func.TimerRequest, testEntity):
+    logging.info("Return list")
+    return [1, 2, 3]

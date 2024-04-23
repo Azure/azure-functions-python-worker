@@ -32,6 +32,8 @@ class GenericBinding:
             return datumdef.Datum(type=None, value=obj)
         elif isinstance(obj, dict):
             return datumdef.Datum(type='dict', value=obj)
+        elif isinstance(obj, list):
+            return datumdef.Datum(type='list', value=obj)
         else:
             # This isn't a common case so we do it last
             from azure.functions import HttpResponse

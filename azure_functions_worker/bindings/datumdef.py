@@ -199,8 +199,13 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
             enable_content_negotiation=False,
             body=datum_as_proto(datum.value['body']),
         ))
+    elif datum.type is None:
+        return None
     elif datum.type == 'dict':
         # TypedData doesn't support dict, so we return it as json
+        return protos.TypedData(json=json.dumps(datum.value))
+    elif datum.type == 'list':
+        # TypedData doesn't support list, so we return it as json
         return protos.TypedData(json=json.dumps(datum.value))
     elif datum.type == 'http_response':
         return protos.TypedData(http=protos.RpcHttp(
@@ -211,10 +216,9 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
             },
             cookies=parse_to_rpc_http_cookie_list(None),
             enable_content_negotiation=False,
-            body=datum_as_proto(Datum(type="string", value=datum.value.get_body())),
+            body=datum_as_proto(Datum(type="string",
+                                      value=datum.value.get_body())),
         ))
-    elif datum.type is None:
-        return None
     else:
         raise NotImplementedError(
             'unexpected Datum type: {!r}'.format(datum.type)

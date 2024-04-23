@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import azure.functions as func
+
 import logging
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
@@ -43,3 +44,45 @@ def return_not_processed_last(req: func.HttpRequest, testEntities):
     table_name="EventHubBatchTest")
 def mytimer(mytimer: func.TimerRequest, testEntity) -> None:
     logging.info("This timer trigger function executed successfully")
+
+
+@app.function_name(name="return_string")
+@app.schedule(schedule="*/1 * * * * *", arg_name="mytimer",
+              run_on_startup=False,
+              use_monitor=False)
+@app.generic_input_binding(
+    arg_name="testEntity",
+    type="table",
+    connection="AzureWebJobsStorage",
+    table_name="EventHubBatchTest")
+def return_string(mytimer: func.TimerRequest, testEntity):
+    logging.info("Return string")
+    return "hi!"
+
+
+@app.function_name(name="return_bytes")
+@app.schedule(schedule="*/1 * * * * *", arg_name="mytimer",
+              run_on_startup=False,
+              use_monitor=False)
+@app.generic_input_binding(
+    arg_name="testEntity",
+    type="table",
+    connection="AzureWebJobsStorage",
+    table_name="EventHubBatchTest")
+def return_bytes(mytimer: func.TimerRequest, testEntity):
+    logging.info("Return bytes")
+    return "test-dată"
+
+
+@app.function_name(name="return_dict")
+@app.schedule(schedule="*/1 * * * * *", arg_name="mytimer",
+              run_on_startup=False,
+              use_monitor=False)
+@app.generic_input_binding(
+    arg_name="testEntity",
+    type="table",
+    connection="AzureWebJobsStorage",
+    table_name="EventHubBatchTest")
+def return_dict(mytimer: func.TimerRequest, testEntity):
+    logging.info("Return dict")
+    return {"hello": "world"}

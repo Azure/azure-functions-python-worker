@@ -173,6 +173,9 @@ class TestGenericFunctions(testutils.AsyncTestCase):
             # implicitly
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+            self.assertEqual(
+                r.response.return_value,
+                protos.TypedData(bytes=b'\x00\x01'))
 
     async def test_mock_generic_implicit_output_exemption(self):
         async with testutils.start_mockhost(
@@ -223,3 +226,24 @@ class TestGenericFunctions(testutils.AsyncTestCase):
             self.assertEqual(
                 r.response.return_value,
                 protos.TypedData())
+
+    async def test_mock_generic_as_none(self):
+        async with testutils.start_mockhost(
+                script_root=self.generic_funcs_dir) as host:
+
+            await host.init_worker("4.17.1")
+            func_id, r = await host.load_function('foobar_as_none')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            _, r = await host.invoke_function(
+                'foobar_as_none', [
+                ]
+            )
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+            self.assertEqual(
+                r.response.return_value,
+                protos.TypedData(string="hello"))

@@ -45,11 +45,11 @@ class TestGenericFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_return_types(self):
-        time.sleep(3)
+        # Checking that the function app is okay
+        time.sleep(10)
         # Checking webhost status.
         r = self.webhost.request('GET', '', no_prefix=True,
                                  timeout=5)
-        time.sleep(3)
         self.assertTrue(r.ok)
 
     def check_log_return_types(self, host_out: typing.List[str]):
@@ -60,8 +60,10 @@ class TestGenericFunctions(testutils.WebHostTestCase):
         self.assertIn("Return bytes", host_out)
         self.assertIn("Return dict", host_out)
         self.assertIn("Return list", host_out)
+        self.assertIn("Return int", host_out)
+        self.assertIn("Return double", host_out)
 
-        # Checks for failed executions
+        # Checks for failed executions (TypeErrors, etc.)
         errors_found = False
         for log in host_out:
             if "Exception" in log:

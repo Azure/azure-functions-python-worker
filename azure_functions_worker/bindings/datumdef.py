@@ -207,6 +207,10 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
     elif datum.type == 'list':
         # TypedData doesn't support list, so we return it as json
         return protos.TypedData(json=json.dumps(datum.value))
+    elif datum.type == 'int':
+        return protos.TypedData(int=datum.value)
+    elif datum.type == 'double':
+        return protos.TypedData(double=datum.value)
     elif datum.type == 'http_response':
         return protos.TypedData(http=protos.RpcHttp(
             status_code=str(datum.value.status_code),

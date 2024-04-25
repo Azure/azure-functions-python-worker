@@ -7,5 +7,5 @@ import azure.functions as func
 
 
 def main(mytimer: func.TimerRequest, testEntity):
-    logging.info("Return HttpResponse")
-    return func.HttpResponse("Hello world")
+    logging.info("Return bool")
+    return True

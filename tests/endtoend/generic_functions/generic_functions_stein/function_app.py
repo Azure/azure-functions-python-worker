@@ -114,3 +114,31 @@ def return_list(mytimer: func.TimerRequest, testEntity):
 def return_int(mytimer: func.TimerRequest, testEntity):
     logging.info("Return int")
     return 12
+
+
+@app.function_name(name="return_double")
+@app.schedule(schedule="*/1 * * * * *", arg_name="mytimer",
+              run_on_startup=False,
+              use_monitor=False)
+@app.generic_input_binding(
+    arg_name="testEntity",
+    type="table",
+    connection="AzureWebJobsStorage",
+    table_name="EventHubBatchTest")
+def return_double(mytimer: func.TimerRequest, testEntity):
+    logging.info("Return double")
+    return 12.34
+
+
+@app.function_name(name="return_bool")
+@app.schedule(schedule="*/1 * * * * *", arg_name="mytimer",
+              run_on_startup=False,
+              use_monitor=False)
+@app.generic_input_binding(
+    arg_name="testEntity",
+    type="table",
+    connection="AzureWebJobsStorage",
+    table_name="EventHubBatchTest")
+def return_bool(mytimer: func.TimerRequest, testEntity):
+    logging.info("Return bool")
+    return True

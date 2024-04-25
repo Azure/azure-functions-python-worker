@@ -38,13 +38,10 @@ class GenericBinding:
             return datumdef.Datum(type='int', value=obj)
         elif isinstance(obj, float):
             return datumdef.Datum(type='double', value=obj)
+        elif isinstance(obj, bool):
+            return datumdef.Datum(type='bool', value=obj)
         else:
-            # This isn't a common case so we do it last
-            from azure.functions import HttpResponse
-            if isinstance(obj, HttpResponse):
-                return datumdef.Datum(type='http_response', value=obj)
-            else:
-                raise NotImplementedError
+            raise NotImplementedError
 
     @classmethod
     def decode(cls, data: datumdef.Datum, *, trigger_metadata) -> typing.Any:

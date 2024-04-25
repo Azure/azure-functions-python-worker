@@ -62,6 +62,7 @@ class TestGenericFunctions(testutils.WebHostTestCase):
         self.assertIn("Return list", host_out)
         self.assertIn("Return int", host_out)
         self.assertIn("Return double", host_out)
+        self.assertIn("Return bool", host_out)
 
         # Checks for failed executions (TypeErrors, etc.)
         errors_found = False

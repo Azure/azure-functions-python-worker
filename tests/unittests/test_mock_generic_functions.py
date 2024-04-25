@@ -247,3 +247,143 @@ class TestGenericFunctions(testutils.AsyncTestCase):
             self.assertEqual(
                 r.response.return_value,
                 protos.TypedData(string="hello"))
+
+    async def test_mock_generic_return_dict(self):
+        async with testutils.start_mockhost(
+                script_root=self.generic_funcs_dir) as host:
+
+            await host.init_worker("4.17.1")
+            func_id, r = await host.load_function('foobar_return_dict')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            _, r = await host.invoke_function(
+                'foobar_return_dict', [
+                    protos.ParameterBinding(
+                        name='input',
+                        data=protos.TypedData(
+                            string='test'
+                        )
+                    )
+                ]
+            )
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+            self.assertEqual(
+                r.response.return_value,
+                protos.TypedData(json="{\"hello\": \"world\"}")
+            )
+
+    async def test_mock_generic_return_list(self):
+        async with testutils.start_mockhost(
+                script_root=self.generic_funcs_dir) as host:
+
+            await host.init_worker("4.17.1")
+            func_id, r = await host.load_function('foobar_return_list')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            _, r = await host.invoke_function(
+                'foobar_return_list', [
+                    protos.ParameterBinding(
+                        name='input',
+                        data=protos.TypedData(
+                            string='test'
+                        )
+                    )
+                ]
+            )
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+            self.assertEqual(
+                r.response.return_value,
+                protos.TypedData(json="[1, 2, 3]")
+            )
+
+    async def test_mock_generic_return_int(self):
+        async with testutils.start_mockhost(
+                script_root=self.generic_funcs_dir) as host:
+
+            await host.init_worker("4.17.1")
+            func_id, r = await host.load_function('foobar_return_int')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            _, r = await host.invoke_function(
+                'foobar_return_int', [
+                    protos.ParameterBinding(
+                        name='input',
+                        data=protos.TypedData(
+                            string='test'
+                        )
+                    )
+                ]
+            )
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+            self.assertEqual(
+                r.response.return_value,
+                protos.TypedData(int=12)
+            )
+
+    async def test_mock_generic_return_double(self):
+        async with testutils.start_mockhost(
+                script_root=self.generic_funcs_dir) as host:
+
+            await host.init_worker("4.17.1")
+            func_id, r = await host.load_function('foobar_return_double')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            _, r = await host.invoke_function(
+                'foobar_return_double', [
+                    protos.ParameterBinding(
+                        name='input',
+                        data=protos.TypedData(
+                            string='test'
+                        )
+                    )
+                ]
+            )
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+            self.assertEqual(
+                r.response.return_value,
+                protos.TypedData(double=12.34)
+            )
+
+    async def test_mock_generic_return_bool(self):
+        async with testutils.start_mockhost(
+                script_root=self.generic_funcs_dir) as host:
+
+            await host.init_worker("4.17.1")
+            func_id, r = await host.load_function('foobar_return_bool')
+
+            self.assertEqual(r.response.function_id, func_id)
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            _, r = await host.invoke_function(
+                'foobar_return_bool', [
+                    protos.ParameterBinding(
+                        name='input',
+                        data=protos.TypedData(
+                            string='test'
+                        )
+                    )
+                ]
+            )
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+            self.assertEqual(
+                r.response.return_value,
+                protos.TypedData(int=1)
+            )

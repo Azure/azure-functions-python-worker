@@ -211,18 +211,9 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
         return protos.TypedData(int=datum.value)
     elif datum.type == 'double':
         return protos.TypedData(double=datum.value)
-    elif datum.type == 'http_response':
-        return protos.TypedData(http=protos.RpcHttp(
-            status_code=str(datum.value.status_code),
-            headers={
-                k: v.value
-                for k, v in datum.value.headers.items()
-            },
-            cookies=parse_to_rpc_http_cookie_list(None),
-            enable_content_negotiation=False,
-            body=datum_as_proto(Datum(type="string",
-                                      value=datum.value.get_body())),
-        ))
+    elif datum.type == 'bool':
+        # TypedData doesn't support bool, so we return it as an int
+        return protos.TypedData(int=int(datum.value))
     else:
         raise NotImplementedError(
             'unexpected Datum type: {!r}'.format(datum.type)

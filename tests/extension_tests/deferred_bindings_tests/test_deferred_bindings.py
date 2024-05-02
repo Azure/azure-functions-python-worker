@@ -100,7 +100,8 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
         datum = datumdef.Datum(value=sample_mbd, type='model_binding_data')
 
         obj = meta.deferred_bindings_decode(binding=binding, pb=pb,
-                                            pytype=BlobClient, datum=datum, metadata={})
+                                            pytype=BlobClient, datum=datum, metadata={},
+                                            function_name="test_function")
 
         self.assertIsNotNone(obj)
 

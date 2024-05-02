@@ -255,5 +255,15 @@ def put_blob_bytes(req: func.HttpRequest, file: func.Out[bytes]) -> str:
                 connection="AzureWebJobsStorage")
 @app.route(route="blob_cache")
 def blob_cache(req: func.HttpRequest,
-               client: blob.BlobClient) -> str:
-    return client.download_blob(encoding='utf-8').readall()
+               client: blob.BlobClient) -> func.HttpResponse:
+    return func.HttpResponse(repr(client))
+
+
+@app.function_name(name="blob_cache2")
+@app.blob_input(arg_name="client",
+                path="python-worker-tests/test-blobclient-triggered.txt",
+                connection="AzureWebJobsStorage")
+@app.route(route="blob_cache2")
+def blob_cache2(req: func.HttpRequest,
+                client: blob.BlobClient) -> func.HttpResponse:
+    return func.HttpResponse(repr(client))

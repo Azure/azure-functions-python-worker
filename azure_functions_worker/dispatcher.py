@@ -568,6 +568,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     trigger_metadata=trigger_metadata,
                     pytype=pb_type_info.pytype,
                     shmem_mgr=self._shmem_mgr,
+                    function_name=self._functions.get_function(function_id).name,
                     is_deferred_binding=pb_type_info.deferred_bindings_enabled)
 
             http_v2_enabled = self._functions.get_function(function_id) \

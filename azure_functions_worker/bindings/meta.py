@@ -294,6 +294,8 @@ def deferred_bindings_decode(binding: typing.Any,
     This prevents a known SDK issue where reusing a client across functions
     can lose the session context and cause an error.
 
+    The cache key is based on: param name, type, resource, function_name
+
     If cache is empty or key doesn't exist, deferred_binding_type is None
     """
     global deferred_bindings_cache

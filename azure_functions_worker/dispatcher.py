@@ -32,7 +32,8 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
                         METADATA_PROPERTIES_WORKER_INDEXED,
                         PYTHON_ENABLE_OPENTELEMETRY,
-                        PYTHON_ENABLE_OPENTELEMETRY_DEFAULT)
+                        PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
+                        REQUIRES_ROUTE_PARAMETERS)
 from .extension import ExtensionManager
 from .http_v2 import http_coordinator, initialize_http_server, HttpV2Registry, \
     sync_http_request, HttpServerInitError
@@ -346,6 +347,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 if HttpV2Registry.http_v2_enabled():
                     capabilities[constants.HTTP_URI] = \
                         initialize_http_server(self._host)
+                    capabilities[REQUIRES_ROUTE_PARAMETERS] = _TRUE
 
             except HttpServerInitError:
                 raise
@@ -578,8 +580,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                 http_request = await http_coordinator.get_http_request_async(
                     invocation_id)
 
-                await sync_http_request(http_request, invoc_request)
-                args[fi.trigger_metadata.get('param_name')] = http_request
+                trigger_arg_name = fi.trigger_metadata.get('param_name')
+                func_http_request = args[trigger_arg_name]
+                await sync_http_request(http_request, func_http_request)
+                args[trigger_arg_name] = http_request
 
             fi_context = self._get_context(invoc_request, fi.name,
                                            fi.directory)
@@ -730,6 +734,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     if HttpV2Registry.http_v2_enabled():
                         capabilities[constants.HTTP_URI] = \
                             initialize_http_server(self._host)
+                        capabilities[REQUIRES_ROUTE_PARAMETERS] = _TRUE
                 except HttpServerInitError:
                     raise
                 except Exception as ex:

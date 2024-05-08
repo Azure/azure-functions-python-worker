@@ -106,6 +106,19 @@ jobs:
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: |
           .github/Scripts/e2e-tests.sh
+      - name: Running 3.7 Deferred Bindings Tests
+        if: matrix.python-version == 3.7 && matrix.test-type == deferred-bindings
+        env:
+          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
+          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString37 }}
+          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString37 }}
+          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString37 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString37 }}
+          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
+          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
+        run: |
+          .github/Scripts/deferred-bindings-tests.sh
       - name: Running 3.8 FWPC Tests
         if: matrix.python-version == 3.8 && matrix.test-type == fwpc
         env:
@@ -132,6 +145,19 @@ jobs:
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
         run: |
           .github/Scripts/e2e-tests.sh
+      - name: Running 3.8 Deferred Bindings Tests
+        if: matrix.python-version == 3.8 && matrix.test-type == deferred-bindings
+        env:
+          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
+          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString38 }}
+          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString38 }}
+          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString38 }}
+          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString38 }}
+          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
+          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
+          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
+        run: |
+          .github/Scripts/deferred-bindings-tests.sh
       - name: Running 3.9 FWPC Tests
         if: matrix.python-version == 3.9 && matrix.test-type == fwpc
         env:

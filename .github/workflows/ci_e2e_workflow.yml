@@ -81,7 +81,7 @@ jobs:
           chmod +x .github/Scripts/e2e-tests.sh
           chmod +x .github/Scripts/deferred-bindings-tests.sh
       - name: Running 3.7 FWPC Tests
-        if: matrix.python-version == 3.7 && matrix.test-type == "fwpc"
+        if: matrix.python-version == 3.7 && matrix.test-type == fwpc
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString37 }}
@@ -94,7 +94,7 @@ jobs:
         run: |
           .github/Scripts/fwpc-tests.sh
       - name: Running 3.7 E2E Tests
-        if: matrix.python-version == 3.7 && matrix.test-type == "e2e"
+        if: matrix.python-version == 3.7 && matrix.test-type == e2e
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString37 }}
@@ -107,7 +107,7 @@ jobs:
         run: |
           .github/Scripts/e2e-tests.sh
       - name: Running 3.8 FWPC Tests
-        if: matrix.python-version == 3.8 && matrix.test-type == "fwpc"
+        if: matrix.python-version == 3.8 && matrix.test-type == fwpc
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString38 }}
@@ -120,7 +120,7 @@ jobs:
         run: |
           .github/Scripts/fwpc-tests.sh
       - name: Running 3.8 E2E Tests
-        if: matrix.python-version == 3.8 && matrix.test-type == "e2e"
+        if: matrix.python-version == 3.8 && matrix.test-type == e2e
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString38 }}
@@ -133,7 +133,7 @@ jobs:
         run: |
           .github/Scripts/e2e-tests.sh
       - name: Running 3.9 FWPC Tests
-        if: matrix.python-version == 3.9 && matrix.test-type == "fwpc"
+        if: matrix.python-version == 3.9 && matrix.test-type == fwpc
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString39 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString39 }}
@@ -146,7 +146,7 @@ jobs:
         run: |
           .github/Scripts/fwpc-tests.sh
       - name: Running 3.9 E2E Tests
-        if: matrix.python-version == 3.9 && matrix.test-type == "e2e"
+        if: matrix.python-version == 3.9 && matrix.test-type == e2e
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString39 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString39 }}
@@ -159,7 +159,7 @@ jobs:
         run: |
           .github/Scripts/e2e-tests.sh
       - name: Running 3.9 Deferred Bindings Tests
-        if: matrix.python-version == 3.9 && matrix.test-type == "deferred-bindings"
+        if: matrix.python-version == 3.9 && matrix.test-type == deferred-bindings
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString39 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString39 }}
@@ -172,7 +172,7 @@ jobs:
         run: |
           .github/Scripts/deferred-bindings-tests.sh
       - name: Running 3.10 FWPC Tests
-        if: matrix.python-version == 3.10 && matrix.test-type == "fwpc"
+        if: matrix.python-version == 3.10 && matrix.test-type == fwpc
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString310 }}
@@ -185,7 +185,7 @@ jobs:
         run: |
           .github/Scripts/fwpc-tests.sh
       - name: Running 3.10 E2E Tests
-        if: matrix.python-version == 3.10 && matrix.test-type == "e2e"
+        if: matrix.python-version == 3.10 && matrix.test-type == e2e
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString310 }}
@@ -198,7 +198,7 @@ jobs:
         run: |
           .github/Scripts/e2e-tests.sh
       - name: Running 3.10 Deferred Bindings Tests
-        if: matrix.python-version == 3.10 && matrix.test-type == "deferred-bindings"
+        if: matrix.python-version == 3.10 && matrix.test-type == deferred-bindings
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString310 }}
@@ -211,7 +211,7 @@ jobs:
         run: |
           .github/Scripts/deferred-bindings-tests.sh
       - name: Running 3.11 FWPC Tests
-        if: matrix.python-version == 3.11 && matrix.test-type == "fwpc"
+        if: matrix.python-version == 3.11 && matrix.test-type == fwpc
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString311 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString311 }}
@@ -224,7 +224,7 @@ jobs:
         run: |
           .github/Scripts/fwpc-tests.sh
       - name: Running 3.11 E2E Tests
-        if: matrix.python-version == 3.11 && matrix.test-type == "e2e"
+        if: matrix.python-version == 3.11 && matrix.test-type == e2e
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString311 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString311 }}
@@ -237,7 +237,7 @@ jobs:
         run: |
           .github/Scripts/e2e-tests.sh
       - name: Running 3.11 Deferred Bindings Tests
-        if: matrix.python-version == 3.11 && matrix.test-type == "deferred-bindings"
+        if: matrix.python-version == 3.11 && matrix.test-type == deferred-bindings
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString311 }}
           AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString311 }}

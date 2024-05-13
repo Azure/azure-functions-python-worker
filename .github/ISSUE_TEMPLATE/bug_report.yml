@@ -65,6 +65,13 @@ body:
         - Production Environment (explain below)
 
   - type: textarea
+    id: function-app-name
+    attributes:
+      label: Function app name
+      placeholder: https://github.com/Azure/azure-functions-host/wiki/Sharing-Your-Function-App-name-privately
+      description: Optionally share your function app name.
+
+  - type: textarea
     id: additional-info
     attributes:
       label: Additional Information

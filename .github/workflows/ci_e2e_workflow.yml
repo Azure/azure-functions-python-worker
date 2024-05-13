@@ -27,6 +27,8 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
+        # Currently runs FWPC E2E tests, classic E2E tests, and DefBindings E2E tests.
+        # To run tests from another script, add the script name to this matrix
         test-type: [fwpc-e2e-tests, e2e-tests, deferred-bindings-e2e-tests]
     permissions: read-all
     steps:

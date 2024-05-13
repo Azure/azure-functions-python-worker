@@ -150,7 +150,7 @@ def has_implicit_output(bind_name: str) -> bool:
         return getattr(binding, 'has_implicit_output', lambda: False)()
 
 
-def from_incoming_proto(
+async def from_incoming_proto(
         binding: str,
         pb: protos.ParameterBinding, *,
         pytype: typing.Optional[type],
@@ -180,7 +180,7 @@ def from_incoming_proto(
     try:
         # if the binding is an sdk type binding
         if is_deferred_binding:
-            return deferred_bindings_decode(binding=binding,
+            return await deferred_bindings_decode(binding=binding,
                                             pb=pb,
                                             pytype=pytype,
                                             datum=datum,
@@ -277,7 +277,7 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
             data=rpc_val)
 
 
-def deferred_bindings_decode(binding: typing.Any,
+async def deferred_bindings_decode(binding: typing.Any,
                              pb: protos.ParameterBinding, *,
                              pytype: typing.Optional[type],
                              datum: typing.Any,
@@ -298,7 +298,7 @@ def deferred_bindings_decode(binding: typing.Any,
                                             pytype,
                                             datum.value.content))
     else:
-        deferred_binding_type = binding.decode(datum,
+        deferred_binding_type = await binding.decode(datum,
                                                trigger_metadata=metadata,
                                                pytype=pytype)
         deferred_bindings_cache[(pb.name,

@@ -562,7 +562,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 else:
                     trigger_metadata = None
 
-                args[pb.name] = bindings.from_incoming_proto(
+                args[pb.name] = await bindings.from_incoming_proto(
                     pb_type_info.binding_name,
                     pb,
                     trigger_metadata=trigger_metadata,

@@ -4,6 +4,7 @@ import json
 
 import azure.functions as func
 import azurefunctions.extensions.bindings.blob as blob
+import azurefunctions.extensions.bindings.blob.aio as aioblob
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -257,3 +258,40 @@ def put_blob_bytes(req: func.HttpRequest, file: func.Out[bytes]) -> str:
 def blob_cache(req: func.HttpRequest,
                client: blob.BlobClient) -> str:
     return client.download_blob(encoding='utf-8').readall()
+
+
+@app.function_name(name="aio_blob_client")
+@app.blob_input(arg_name="client",
+                path="python-worker-tests/test-blobclient-triggered.txt",
+                connection="AzureWebJobsStorage")
+@app.route(route="aio_blob_client")
+async def aio_blob_client(req: func.HttpRequest,
+                          client: aioblob.BlobClient) -> str:
+    stream = await client.download_blob()
+    data = await stream.readall()
+    return str(data)
+
+
+@app.function_name(name="aio_container_client")
+@app.blob_input(arg_name="client",
+                path="python-worker-tests/test-containerclient-triggered.txt",
+                connection="AzureWebJobsStorage")
+@app.route(route="aio_container_client")
+async def aio_container_client(req: func.HttpRequest,
+                               client: aioblob.ContainerClient) -> str:
+    stream = await client.download_blob("test-containerclient-triggered.txt",
+                                        encoding='utf-8')
+    data = await stream.readall()
+    return str(data)
+
+
+@app.function_name(name="aio_ssd")
+@app.blob_input(arg_name="stream",
+                path="python-worker-tests/test-ssd-triggered.txt",
+                connection="AzureWebJobsStorage")
+@app.route(route="aio_ssd")
+async def aio_ssd(req: func.HttpRequest,
+                  stream: aioblob.StorageStreamDownloader) -> str:
+    file = await stream.readall()
+    decoded = file.decode('utf-8')
+    return str(decoded)

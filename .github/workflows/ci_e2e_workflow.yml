@@ -77,9 +77,9 @@ jobs:
           mkdir logs
       - name: Grant execute permission
         run: |
-          chmod +x .github/Scripts/fwpc-tests.sh 
+          chmod +x .github/Scripts/fwpc-e2e-tests.sh 
           chmod +x .github/Scripts/e2e-tests.sh
-          chmod +x .github/Scripts/deferred-bindings-tests.sh
+          chmod +x .github/Scripts/deferred-bindings-e2e-tests.sh
       - name: Running 3.7 ${{ matrix.test-type }}
         if: matrix.python-version == 3.7
         env:

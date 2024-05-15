@@ -77,6 +77,9 @@ jobs:
           retry 5 python setup.py webhost --branch-name=dev
           retry 5 python setup.py extension
           mkdir logs
+      - name: Grant execute permission
+        run: |
+            chmod +x .github/Scripts/${{ matrix.test-type }}.sh
       - name: Running 3.7 ${{ matrix.test-type }}
         if: matrix.python-version == 3.7
         env:

@@ -1,12 +1,12 @@
-name: Python Worker Deferred Bindings Bug Report
-description: File a Deferred Bindings bug report
+name: Python Worker Bug Report
+description: File a bug report
 title: "[Bug] Bug Title Here"
-labels: ["python", "bug", "deferred-bindings"]
+labels: ["python", "bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        This form will help you to fill in a bug report for the Azure Functions Python Worker Deferred Bindings feature.
+        This form will help you to fill in a bug report for the Azure Functions Python Worker.
 
   - type: textarea
     id: expected-behavior
@@ -63,6 +63,13 @@ body:
       options:
         - Local - Core Tools
         - Production Environment (explain below)
+
+  - type: textarea
+    id: function-app-name
+    attributes:
+      label: Function app name
+      placeholder: https://github.com/Azure/azure-functions-host/wiki/Sharing-Your-Function-App-name-privately
+      description: Optionally share your function app name.
 
   - type: textarea
     id: additional-info

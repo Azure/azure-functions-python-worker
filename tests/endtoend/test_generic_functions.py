@@ -51,9 +51,18 @@ class TestGenericFunctions(testutils.WebHostTestCase):
                                  timeout=5)
         self.assertTrue(r.ok)
 
+    def test_return_none_no_type_hint(self):
+        time.sleep(1)
+        # Checking webhost status.
+        r = self.webhost.request('GET', '', no_prefix=True,
+                                 timeout=5)
+        self.assertTrue(r.ok)
+
     def check_log_timer(self, host_out: typing.List[str]):
         self.assertEqual(host_out.count("This timer trigger function executed "
                                         "successfully"), 1)
+        self.assertEqual(host_out.count("Timer trigger with none return "
+                                        "and no type hint"), 1)
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)

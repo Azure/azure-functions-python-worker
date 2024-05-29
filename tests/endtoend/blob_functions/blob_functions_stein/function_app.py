@@ -391,3 +391,77 @@ def put_get_multiple_blobs_as_bytes_return_http_response(
         mimetype="application/json",
         status_code=200
     )
+
+
+@app.function_name(name="put_blob_trigger_lacs_source")
+@app.blob_output(arg_name="file",
+                 path="python-worker-tests/test-blob-lacs-source-trigger.txt",
+                 connection="AzureWebJobsStorage")
+@app.route(route="put_blob_trigger_lacs_source")
+def put_blob_trigger_lacs_source(req: func.HttpRequest,
+                                 file: func.Out[str]) -> str:
+    file.set(req.get_body())
+    return 'OK'
+
+
+@app.function_name(name="blob_lacs_source_trigger")
+@app.blob_trigger(arg_name="file",
+                  path="python-worker-tests/test-blob-lacs-source-trigger.txt",
+                  connection="AzureWebJobsStorage",
+                  source="LogsAndContainerScan")
+@app.blob_output(arg_name="$return",
+                 path="python-worker-tests/test-blob-lacs-source-triggered.txt",
+                 connection="AzureWebJobsStorage")
+def blob_lacs_source_trigger(file: func.InputStream) -> str:
+    return json.dumps({
+        'name': file.name,
+        'length': file.length,
+        'content': file.read().decode('utf-8')
+    })
+
+
+@app.function_name(name="get_blob_lacs_source_triggered")
+@app.blob_input(arg_name="file",
+                path="python-worker-tests/test-blob-lacs-source-triggered.txt",
+                connection="AzureWebJobsStorage")
+@app.route(route="get_blob_lacs_source_triggered")
+def get_blob_lacs_source_triggered(req: func.HttpRequest,
+                                   file: func.InputStream) -> str:
+    return file.read().decode('utf-8')
+
+
+@app.function_name(name="put_blob_trigger_eg_source")
+@app.blob_output(arg_name="file",
+                 path="python-worker-tests/test-blob-eg-source-trigger.txt",
+                 connection="AzureWebJobsStorage")
+@app.route(route="put_blob_trigger_eg_source")
+def put_blob_trigger_eg_source(req: func.HttpRequest,
+                               file: func.Out[str]) -> str:
+    file.set(req.get_body())
+    return 'OK'
+
+
+@app.function_name(name="blob_eg_source_trigger")
+@app.blob_trigger(arg_name="file",
+                  path="python-worker-tests/test-blob-eg-source-trigger.txt",
+                  connection="AzureWebJobsStorage",
+                  source="EventGrid")
+@app.blob_output(arg_name="$return",
+                 path="python-worker-tests/test-blob-eg-source-triggered.txt",
+                 connection="AzureWebJobsStorage")
+def blob_eg_source_trigger(file: func.InputStream) -> str:
+    return json.dumps({
+        'name': file.name,
+        'length': file.length,
+        'content': file.read().decode('utf-8')
+    })
+
+
+@app.function_name(name="get_blob_eg_source_triggered")
+@app.blob_input(arg_name="file",
+                path="python-worker-tests/test-blob-eg-source-triggered.txt",
+                connection="AzureWebJobsStorage")
+@app.route(route="get_blob_eg_source_triggered")
+def get_blob_eg_source_triggered(req: func.HttpRequest,
+                                 file: func.InputStream) -> str:
+    return file.read().decode('utf-8')

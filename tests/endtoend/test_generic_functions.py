@@ -44,25 +44,33 @@ class TestGenericFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'return_not_processed_last')
         self.assertEqual(r.status_code, 200)
 
-    def test_return_none(self):
-        time.sleep(1)
+    def test_return_types(self):
+        # Checking that the function app is okay
+        time.sleep(10)
         # Checking webhost status.
         r = self.webhost.request('GET', '', no_prefix=True,
                                  timeout=5)
         self.assertTrue(r.ok)
 
-    def test_return_none_no_type_hint(self):
-        time.sleep(1)
-        # Checking webhost status.
-        r = self.webhost.request('GET', '', no_prefix=True,
-                                 timeout=5)
-        self.assertTrue(r.ok)
+    def check_log_return_types(self, host_out: typing.List[str]):
+        # Checks that functions executed correctly
+        self.assertIn("This timer trigger function executed "
+                      "successfully", host_out)
+        self.assertIn("Return string", host_out)
+        self.assertIn("Return bytes", host_out)
+        self.assertIn("Return dict", host_out)
+        self.assertIn("Return list", host_out)
+        self.assertIn("Return int", host_out)
+        self.assertIn("Return double", host_out)
+        self.assertIn("Return bool", host_out)
 
-    def check_log_timer(self, host_out: typing.List[str]):
-        self.assertEqual(host_out.count("This timer trigger function executed "
-                                        "successfully"), 1)
-        self.assertEqual(host_out.count("Timer trigger with none return "
-                                        "and no type hint"), 1)
+        # Checks for failed executions (TypeErrors, etc.)
+        errors_found = False
+        for log in host_out:
+            if "Exception" in log:
+                errors_found = True
+                break
+        self.assertFalse(errors_found)
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)

@@ -114,7 +114,8 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                 self.assertEqual(response['content'], data)
 
                 break
-            except AssertionError:
+            # JSONDecodeError will be thrown if the response is empty.
+            except (AssertionError, JSONDecodeError):
                 if try_no == max_retries - 1:
                     raise
 
@@ -145,7 +146,7 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                 self.assertEqual(response['content'], data)
                 break
             # JSONDecodeError will be thrown if the response is empty.
-            except AssertionError or JSONDecodeError:
+            except (AssertionError, JSONDecodeError):
                 if try_no == max_retries - 1:
                     raise
 

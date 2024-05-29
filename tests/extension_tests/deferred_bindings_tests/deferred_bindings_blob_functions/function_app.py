@@ -295,3 +295,13 @@ async def aio_ssd(req: func.HttpRequest,
     file = await stream.readall()
     decoded = file.decode('utf-8')
     return str(decoded)
+
+  
+@app.function_name(name="invalid_connection_info")
+@app.blob_input(arg_name="client",
+                path="python-worker-tests/test-blobclient-triggered.txt",
+                connection="NotARealConnectionString")
+@app.route(route="invalid_connection_info")
+def invalid_connection_info(req: func.HttpRequest,
+                            client: blob.BlobClient) -> str:
+    return client.download_blob(encoding='utf-8').readall()

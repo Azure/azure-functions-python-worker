@@ -27,6 +27,9 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
+        # Currently runs FWPC E2E tests, classic E2E tests, and DefBindings E2E tests.
+        # To run tests from another script, add the script name to this matrix
+        test-type: [fwpc-e2e-tests, e2e-tests, deferred-bindings-e2e-tests]
     permissions: read-all
     steps:
       - name: Checkout code.
@@ -75,8 +78,9 @@ jobs:
           retry 5 python setup.py extension
           mkdir logs
       - name: Grant execute permission
-        run: chmod +x .github/Scripts/e2e-tests.sh
-      - name: Running 3.7 Tests
+        run: |
+            chmod +x .github/Scripts/${{ matrix.test-type }}.sh
+      - name: Running 3.7 ${{ matrix.test-type }}
         if: matrix.python-version == 3.7
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
@@ -87,8 +91,9 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
-      - name: Running 3.8 Tests
+        run: |
+          .github/Scripts/${{ matrix.test-type }}.sh
+      - name: Running 3.8 ${{ matrix.test-type }}
         if: matrix.python-version == 3.8
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
@@ -99,8 +104,9 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
-      - name: Running 3.9 Tests
+        run: |
+          .github/Scripts/${{ matrix.test-type }}.sh
+      - name: Running 3.9 ${{ matrix.test-type }}
         if: matrix.python-version == 3.9
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString39 }}
@@ -111,8 +117,9 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
-      - name: Running 3.10 Tests
+        run: |
+          .github/Scripts/${{ matrix.test-type }}.sh
+      - name: Running 3.10 ${{ matrix.test-type }}
         if: matrix.python-version == 3.10
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
@@ -123,8 +130,9 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
-      - name: Running 3.11 Tests
+        run: |
+          .github/Scripts/${{ matrix.test-type }}.sh
+      - name: Running 3.11 ${{ matrix.test-type }}
         if: matrix.python-version == 3.11
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString311 }}
@@ -135,7 +143,8 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        run: .github/Scripts/e2e-tests.sh
+        run: |
+          .github/Scripts/${{ matrix.test-type }}.sh
       - name: Codecov
         uses: codecov/codecov-action@v3
         with:

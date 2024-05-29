@@ -183,12 +183,16 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
     def test_aio_clients(self):
         r = self.webhost.request('GET', 'aio_blob_client')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, ('b\'{"name": "test-blobclient-trigger.txt", "length": 9, "content": '
-                                  '"DummyData"}\''))
+        self.assertEqual(r.text,
+                         ('b\'{"name": "test-blobclient-trigger.txt",'
+                          ' "length": 9, "content": '
+                          '"DummyData"}\''))
 
         r = self.webhost.request('GET', 'aio_container_client')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, '{\r\n  "name": "python-worker-tests",\r\n  "content": "DummyData"\r\n}')
+        self.assertEqual(r.text,
+                         '{\r\n  "name": "python-worker-tests",\r\n '
+                         '"content": "DummyData"\r\n}')
 
         r = self.webhost.request('GET', 'aio_ssd')
         self.assertEqual(r.status_code, 200)

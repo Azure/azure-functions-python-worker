@@ -181,10 +181,10 @@ async def from_incoming_proto(
         # if the binding is an sdk type binding
         if is_deferred_binding:
             return await deferred_bindings_decode(binding=binding,
-                                            pb=pb,
-                                            pytype=pytype,
-                                            datum=datum,
-                                            metadata=metadata)
+                                                  pb=pb,
+                                                  pytype=pytype,
+                                                  datum=datum,
+                                                  metadata=metadata)
         return binding.decode(datum, trigger_metadata=metadata)
     except NotImplementedError:
         # Binding does not support the data.
@@ -278,10 +278,10 @@ def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
 
 
 async def deferred_bindings_decode(binding: typing.Any,
-                             pb: protos.ParameterBinding, *,
-                             pytype: typing.Optional[type],
-                             datum: typing.Any,
-                             metadata: typing.Any):
+                                   pb: protos.ParameterBinding, *,
+                                   pytype: typing.Optional[type],
+                                   datum: typing.Any,
+                                   metadata: typing.Any):
     """
     This cache holds deferred binding types (ie. BlobClient, ContainerClient)
     That have already been created, so that the worker can reuse the
@@ -299,8 +299,8 @@ async def deferred_bindings_decode(binding: typing.Any,
                                             datum.value.content))
     else:
         deferred_binding_type = await binding.decode(datum,
-                                               trigger_metadata=metadata,
-                                               pytype=pytype)
+                                                     trigger_metadata=metadata,
+                                                     pytype=pytype)
         deferred_bindings_cache[(pb.name,
                                  pytype,
                                  datum.value.content)] = deferred_binding_type

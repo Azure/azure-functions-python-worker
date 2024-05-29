@@ -296,7 +296,7 @@ async def aio_ssd(req: func.HttpRequest,
     decoded = file.decode('utf-8')
     return str(decoded)
 
-  
+
 @app.function_name(name="invalid_connection_info")
 @app.blob_input(arg_name="client",
                 path="python-worker-tests/test-blobclient-triggered.txt",

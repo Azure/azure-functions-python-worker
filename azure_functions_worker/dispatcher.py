@@ -525,6 +525,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         invoc_request = request.invocation_request
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
+        http_v2_enabled = False
 
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
@@ -555,6 +556,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             args = {}
 
+            http_v2_enabled = self._functions.get_function(function_id) \
+                                  .is_http_func and \
+                HttpV2Registry.http_v2_enabled()
+
             for pb in invoc_request.input_data:
                 pb_type_info = fi.input_types[pb.name]
                 if bindings.is_trigger_binding(pb_type_info.binding_name):
@@ -569,10 +574,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                     pytype=pb_type_info.pytype,
                     shmem_mgr=self._shmem_mgr,
                     is_deferred_binding=pb_type_info.deferred_bindings_enabled)
-
-            http_v2_enabled = self._functions.get_function(function_id) \
-                                  .is_http_func and \
-                HttpV2Registry.http_v2_enabled()
 
             if http_v2_enabled:
                 http_request = await http_coordinator.get_http_request_async(

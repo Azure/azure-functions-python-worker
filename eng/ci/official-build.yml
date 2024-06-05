@@ -2,22 +2,22 @@ trigger:
   batch: true
   branches:
     include:
-    - dev
-    - release/*
+      - dev
+      - release/*
 
 # CI only, does not trigger on PRs.
 pr: none
 
 resources:
   repositories:
-  - repository: 1es
-    type: git
-    name: 1ESPipelineTemplates/1ESPipelineTemplates
-    ref: refs/tags/release
-  - repository: eng
-    type: git
-    name: engineering
-    ref: refs/tags/release
+    - repository: 1es
+      type: git
+      name: 1ESPipelineTemplates/1ESPipelineTemplates
+      ref: refs/tags/release
+    - repository: eng
+      type: git
+      name: engineering
+      ref: refs/tags/release
 
 variables:
   - template: ci/variables/build.yml@eng
@@ -32,21 +32,21 @@ extends:
       os: windows
 
     stages:
-    - stage: Build
+      - stage: Build
 
-      jobs:
-      - template: /eng/ci/templates/official/jobs/build-artifacts.yml@self
+        jobs:
+          - template: /eng/ci/templates/official/jobs/build-artifacts.yml@self
 
-    - stage: TestWindows
-      dependsOn: Build
+      - stage: TestWindows
+        dependsOn: Build
 
-      jobs:
-      - template: /eng/ci/templates/official/jobs/run-e2e-tests-windows.yml@self
+        jobs:
+          - template: /eng/ci/templates/official/jobs/run-e2e-tests-windows.yml@self
 
-    - stage: TestLinux
-      dependsOn:
-      - Build
-      - TestWindows
+      - stage: TestLinux
+        dependsOn:
+          - Build
+          - TestWindows
 
-      jobs:
-      - template: /eng/ci/templates/official/jobs/run-e2e-tests-linux.yml@self
+        jobs:
+          - template: /eng/ci/templates/official/jobs/run-e2e-tests-linux.yml@self

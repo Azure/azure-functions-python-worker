@@ -2,19 +2,19 @@ trigger:
   batch: true
   branches:
     include:
-    - dev
+      - dev
 
 pr:
   branches:
     include:
-    - dev
+      - dev
 
 resources:
   repositories:
-  - repository: 1es
-    type: git
-    name: 1ESPipelineTemplates/1ESPipelineTemplates
-    ref: refs/tags/release
+    - repository: 1es
+      type: git
+      name: 1ESPipelineTemplates/1ESPipelineTemplates
+      ref: refs/tags/release
 
 extends:
   template: v1/1ES.Unofficial.PipelineTemplate.yml@1es

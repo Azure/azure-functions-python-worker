@@ -93,7 +93,7 @@ EXTRA_REQUIRES = {
         "pycryptodome~=3.10.1",
         "flake8~=4.0.1",
         "mypy",
-        "pytest",
+        "pytest~=8.2.1",
         "requests==2.*",
         "coverage",
         "pytest-sugar",

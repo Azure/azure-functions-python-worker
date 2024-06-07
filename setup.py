@@ -71,7 +71,7 @@ PACKAGES = [
     "azure_functions_worker._thirdparty",
 ]
 
-INSTALL_REQUIRES = ["azure-functions==$newLibraryVersion"]
+INSTALL_REQUIRES = ["azure-functions==1.20.0b4", "python-dateutil~=2.8.2"]
 
 if sys.version_info[:2] == (3, 7):
     INSTALL_REQUIRES.extend(

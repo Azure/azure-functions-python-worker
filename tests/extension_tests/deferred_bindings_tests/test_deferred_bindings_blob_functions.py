@@ -179,3 +179,9 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
 
         r = self.webhost.request('GET', 'blob_cache')
         self.assertEqual(r.status_code, 200)
+
+    def test_failed_client_creation(self):
+        r = self.webhost.request('GET', 'invalid_connection_info')
+        # Without the http_v2_enabled default definition, this request would time out.
+        # Instead, it fails immediately
+        self.assertEqual(r.status_code, 500)

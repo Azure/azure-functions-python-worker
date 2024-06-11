@@ -21,7 +21,8 @@ from typing import List, Optional
 import grpc
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
-from .constants import (PYTHON_ROLLBACK_CWD_PATH,
+from .constants import (APPLICATIONINSIGHTS_CONNECTION_STRING,
+                        PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_THREADPOOL_THREAD_COUNT,
                         PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
                         PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
@@ -31,8 +32,10 @@ from .constants import (PYTHON_ROLLBACK_CWD_PATH,
                         PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                         PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
                         METADATA_PROPERTIES_WORKER_INDEXED,
+                        PYTHON_AZURE_MONITOR_LOGGER_NAME,
+                        PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT,
                         PYTHON_ENABLE_OPENTELEMETRY,
-                        PYTHON_ENABLE_OPENTELEMETRY_DEFAULT)
+                        PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,)
 from .extension import ExtensionManager
 from .http_v2 import http_coordinator, initialize_http_server, HttpV2Registry, \
     sync_http_request, HttpServerInitError
@@ -274,6 +277,33 @@ class Dispatcher(metaclass=DispatcherMeta):
         resp = await request_handler(request)
         self._grpc_resp_queue.put_nowait(resp)
 
+    def initialize_opentelemetry(self):
+        """Initializes OpenTelemetry and Azure monitor distro
+        """
+        self.update_opentelemetry_status()
+        try:
+            from azure.monitor.opentelemetry import configure_azure_monitor
+
+            configure_azure_monitor(
+                # Connection string can be explicitly specified in Appsetting
+                # If not set, env var APPLICATIONINSIGHTS_CONNECTION_STRING is used
+                connection_string=get_app_setting(setting=APPLICATIONINSIGHTS_CONNECTION_STRING),
+                logger_name=get_app_setting(setting=PYTHON_AZURE_MONITOR_LOGGER_NAME,
+                           default_value=PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT),
+            )
+
+            logger.info("Successfully configured Azure monitor distro.")
+        except ImportError:
+            logger.exception(
+                "Cannot import Azure Monitor distro."
+            )
+            self._otel_libs_available = False
+        except Exception:
+            logger.exception(
+                "Error initializing Azure monitor distro."
+            )
+            self._otel_libs_available = False
+
     def update_opentelemetry_status(self):
         """Check for OpenTelemetry library availability and
         update the status attribute."""
@@ -322,7 +352,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         if get_app_setting(setting=PYTHON_ENABLE_OPENTELEMETRY,
                            default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
-            self.update_opentelemetry_status()
+            self.initialize_opentelemetry()
 
             if self._otel_libs_available:
                 capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE

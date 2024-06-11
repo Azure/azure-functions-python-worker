@@ -284,6 +284,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             from azure.monitor.opentelemetry import configure_azure_monitor
 
+            # Set resource detector manually until officially supported in distro
+            os.environ.setdefault(
+                "OTEL_EXPERIMENTAL_RESOURCE_DETECTORS",
+                "azure_functions",
+            )
+
             configure_azure_monitor(
                 # Connection string can be explicitly specified in Appsetting
                 # If not set, env var APPLICATIONINSIGHTS_CONNECTION_STRING is used

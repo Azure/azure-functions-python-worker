@@ -8,6 +8,14 @@ trigger:
 # CI only, does not trigger on PRs.
 pr: none
 
+schedules:
+  - cron: '0 0 * * MON'
+    displayName: At 12:00 AM, only on Monday
+    branches:
+      include:
+        - main
+    always: true
+
 resources:
   repositories:
     - repository: 1es
@@ -33,12 +41,10 @@ extends:
 
     stages:
       - stage: Build
-
         jobs:
           - template: /eng/ci/templates/official/jobs/build-artifacts.yml@self
 
       - stage: RunTests
         dependsOn: Build
-
         jobs:
           - template: /eng/ci/templates/official/jobs/ci-e2e-tests.yml@self

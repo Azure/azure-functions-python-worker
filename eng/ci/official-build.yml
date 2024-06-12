@@ -37,16 +37,8 @@ extends:
         jobs:
           - template: /eng/ci/templates/official/jobs/build-artifacts.yml@self
 
-      - stage: TestWindows
+      - stage: RunTests
         dependsOn: Build
 
         jobs:
-          - template: /eng/ci/templates/official/jobs/run-e2e-tests-windows.yml@self
-
-      - stage: TestLinux
-        dependsOn:
-          - Build
-          - TestWindows
-
-        jobs:
-          - template: /eng/ci/templates/official/jobs/run-e2e-tests-linux.yml@self
+          - template: /eng/ci/templates/official/jobs/ci-e2e-tests.yml@self

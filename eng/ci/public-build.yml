@@ -14,7 +14,7 @@ schedules:
     displayName: At 12:00 AM, only on Monday
     branches:
       include:
-        - main
+        - dev
     always: true
 
 resources:
@@ -35,4 +35,4 @@ extends:
     stages:
       - stage: Build
         jobs:
-          - template: /eng/ci/templates/build-artifacts.yml@self
+          - template: /eng/ci/templates/jobs/build.yml@self

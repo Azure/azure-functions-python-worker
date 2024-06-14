@@ -44,28 +44,33 @@ jobs:
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
           CUSTOM_IMAGE: ${{ github.event.inputs.custom_image }}
+          _DUMMY_CONT_KEY: ${{ secrets._DUMMY_CONT_KEY }}
         run: python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.8 Tests
         if: matrix.python-version == 3.8
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
           CUSTOM_IMAGE: ${{ github.event.inputs.custom_image }}
+          _DUMMY_CONT_KEY: ${{ secrets._DUMMY_CONT_KEY }}
         run: python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.9 Tests
         if: matrix.python-version == 3.9
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString39 }}
           CUSTOM_IMAGE: ${{ github.event.inputs.custom_image }}
+          _DUMMY_CONT_KEY: ${{ secrets._DUMMY_CONT_KEY }}
         run: python -m pytest -n auto --dist loadfile -vv --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.10 Tests
         if: matrix.python-version == 3.10
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
           CUSTOM_IMAGE: ${{ github.event.inputs.custom_image }}
+          _DUMMY_CONT_KEY: ${{ secrets._DUMMY_CONT_KEY }}
         run: python -m pytest -n auto --dist loadfile -vv --reruns 4 --instafail tests/consumption_tests
       - name: Running 3.11 Tests
         if: matrix.python-version == 3.11
         env:
           AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString311 }}
           CUSTOM_IMAGE: ${{ github.event.inputs.custom_image }}
+          _DUMMY_CONT_KEY: ${{ secrets._DUMMY_CONT_KEY }}
         run: python -m pytest -n auto --dist loadfile -vv --reruns 4 --instafail tests/consumption_tests

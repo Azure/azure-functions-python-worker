@@ -91,7 +91,6 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-          _DUMMY_CONT_KEY: ${{ secrets._DUMMY_CONT_KEY }}
         run: |
           .github/Scripts/${{ matrix.test-type }}.sh
       - name: Running 3.8 ${{ matrix.test-type }}
@@ -105,7 +104,6 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-          _DUMMY_CONT_KEY: ${{ secrets._DUMMY_CONT_KEY }}
         run: |
           .github/Scripts/${{ matrix.test-type }}.sh
       - name: Running 3.9 ${{ matrix.test-type }}
@@ -119,7 +117,6 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-          _DUMMY_CONT_KEY: ${{ secrets._DUMMY_CONT_KEY }}
         run: |
           .github/Scripts/${{ matrix.test-type }}.sh
       - name: Running 3.10 ${{ matrix.test-type }}
@@ -133,7 +130,6 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-          _DUMMY_CONT_KEY: ${{ secrets._DUMMY_CONT_KEY }}
         run: |
           .github/Scripts/${{ matrix.test-type }}.sh
       - name: Running 3.11 ${{ matrix.test-type }}
@@ -147,7 +143,6 @@ jobs:
           AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
           AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
           ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-          _DUMMY_CONT_KEY: ${{ secrets._DUMMY_CONT_KEY }}
         run: |
           .github/Scripts/${{ matrix.test-type }}.sh
       - name: Codecov

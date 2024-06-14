@@ -1,18 +1,18 @@
 trigger:
   branches:
     include:
-      - dev
-      - release/*
+    - dev
+    - release/*
 
 resources:
   repositories:
-    - repository: eng
-      type: git
-      name: engineering
-      ref: refs/tags/release
+  - repository: eng
+    type: git
+    name: engineering
+    ref: refs/tags/release
 
 variables:
   - template: ci/variables/cfs.yml@eng
 
 extends:
-  template: ci/code-mirror.yml@eng
+  template: ci/code-mirror.yml@en

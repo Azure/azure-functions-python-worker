@@ -64,14 +64,14 @@ jobs:
           version: 8.0.x
       - bash: |
           python -m pip install --upgrade pip
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -U azure-functions --pre
+          python -m pip install azure-functions --pre
           python -m pip install -U -e .[dev]
 
           if [[ "${{ PYTHON_VERSION }}" != "3.7" ]]; then
-             python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --pre -U -e .[test-http-v2]
+             python -m pip install -e .[test-http-v2]
           fi
           if [[ "${{ PYTHON_VERSION }}" != "3.7" && "${{ PYTHON_VERSION }}" != "3.8" ]]; then
-              python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --pre -U -e .[test-deferred-bindings]
+              python -m pip install -e .[test-deferred-bindings]
           fi
 
           # Retry a couple times to avoid certificate issue

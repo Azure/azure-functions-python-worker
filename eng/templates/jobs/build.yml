@@ -16,7 +16,7 @@ jobs:
         displayName: 'Check python version'
       - bash: |
           python -m venv .env
-          source .env/bin/activate
+          .env\Scripts\Activate.ps1
           python -m pip install --upgrade pip==23.0
           python -m pip install .
         displayName: 'Build python worker'

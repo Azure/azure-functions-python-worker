@@ -42,9 +42,9 @@ extends:
     stages:
       - stage: Build
         jobs:
-          - template: /eng/ci/templates/official/jobs/build-artifacts.yml@self
+          - template: /eng/templates/official/jobs/build-artifacts.yml@self
 
       - stage: RunTests
         dependsOn: Build
         jobs:
-          - template: /eng/ci/templates/official/jobs/ci-e2e-tests.yml@self
+          - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self

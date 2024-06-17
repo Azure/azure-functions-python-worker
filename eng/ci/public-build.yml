@@ -35,4 +35,4 @@ extends:
     stages:
       - stage: Build
         jobs:
-          - template: /eng/ci/templates/jobs/build.yml@self
+          - template: /eng/templates/jobs/build.yml@self

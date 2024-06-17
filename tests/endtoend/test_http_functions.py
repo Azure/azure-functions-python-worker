@@ -155,9 +155,7 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'numpy_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
-        res = "array: [1.+0.j 2.+0.j]"
-
-        self.assertEqual(r.content.decode("UTF-8"), res)
+        self.assertIn("numpy version", r.content.decode("UTF-8"))
 
     def test_requests(self):
         r = self.webhost.request('GET', 'requests_func',

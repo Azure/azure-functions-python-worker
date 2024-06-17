@@ -108,7 +108,7 @@ EXTRA_REQUIRES = {
         "scikit-learn",
         "opencv-python",
         "pandas",
-        "numpy~=1.24.4",
+        "numpy~=1.21.6",
         "pre-commit"
     ],
     "test-http-v2": [

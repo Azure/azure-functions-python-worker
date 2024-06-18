@@ -1,0 +1,50 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - dev
+      - release/*
+
+# CI only, does not trigger on PRs.
+pr: none
+
+schedules:
+  - cron: '0 0 * * MON'
+    displayName: At 12:00 AM, only on Monday
+    branches:
+      include:
+        - dev
+    always: true
+
+resources:
+  repositories:
+    - repository: 1es
+      type: git
+      name: 1ESPipelineTemplates/1ESPipelineTemplates
+      ref: refs/tags/release
+    - repository: eng
+      type: git
+      name: engineering
+      ref: refs/tags/release
+
+variables:
+  - template: ci/variables/build.yml@eng
+  - template: ci/variables/cfs.yml@eng
+
+extends:
+  template: v1/1ES.Official.PipelineTemplate.yml@1es
+  parameters:
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-windows-2022
+      os: windows
+
+    stages:
+      - stage: Build
+        jobs:
+          - template: /eng/ci/templates/official/jobs/build-artifacts.yml@self
+
+      - stage: RunTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/ci/templates/official/jobs/ci-e2e-tests.yml@self

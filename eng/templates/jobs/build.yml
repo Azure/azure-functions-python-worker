@@ -1,0 +1,22 @@
+jobs:
+  - job: "Build"
+    displayName: 'Build python worker'
+
+    pool:
+      name: 1es-pool-azfunc-public
+      image: 1es-windows-2022
+      os: windows
+
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.11"
+      - bash: |
+          python --version
+        displayName: 'Check python version'
+      - bash: |
+          python -m venv .env
+          .env\Scripts\Activate.ps1
+          python -m pip install --upgrade pip==23.0
+          python -m pip install .
+        displayName: 'Build python worker'

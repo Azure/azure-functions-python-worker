@@ -4,10 +4,6 @@ parameters:
   workerPath: ''
 
 steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: ${{ parameters.pythonVersion }}
-    addToPath: true
 - task: ShellScript@2
   inputs:
     disableAutoCwd: true
@@ -26,7 +22,3 @@ steps:
       !grpc_tools/**/*
       !grpcio_tools*/*
     targetFolder: '$(Build.ArtifactStagingDirectory)'
-- task: PublishBuildArtifacts@1
-  inputs:
-    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    artifactName: ${{ parameters.artifactName }}

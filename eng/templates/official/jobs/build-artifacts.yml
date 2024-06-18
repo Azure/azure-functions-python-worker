@@ -2,12 +2,30 @@ jobs:
   - job: "Build"
     displayName: "Build python worker"
 
+    strategy:
+      matrix:
+        Python37V4:
+          pythonVersion: "3.7"
+          workerPath: $(PROD_V4_WORKER_PY)
+        Python38V4:
+          pythonVersion: "3.8"
+          workerPath: $(PROD_V4_WORKER_PY)
+        Python39V4:
+          pythonVersion: "3.9"
+          workerPath: $(PROD_V4_WORKER_PY)
+        Python310V4:
+          pythonVersion: "3.10"
+          workerPath: $(PROD_V4_WORKER_PY)
+        Python311V4:
+          pythonVersion: "3.11"
+          workerPath: $(PROD_V4_WORKER_PY)
+
     templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:
         - output: pipelineArtifact
           targetPath: $(Build.ArtifactStagingDirectory)
-          artifactName: "drop"
+          artifactName: "drop python $(pythonVersion)"
         - output: nuget
           condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'), eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true))
           useDotNetTask: false
@@ -27,53 +45,30 @@ jobs:
         isTagTemp: true
       isTag: $[variables.isTagTemp]
 
-    strategy:
-      matrix:
-        Python37V4:
-          pythonVersion: "3.7"
-          workerPath: $(PROD_V4_WORKER_PY)
-        Python38V4:
-          pythonVersion: "3.8"
-          workerPath: $(PROD_V4_WORKER_PY)
-        Python39V4:
-          pythonVersion: "3.9"
-          workerPath: $(PROD_V4_WORKER_PY)
-        Python310V4:
-          pythonVersion: "3.10"
-          workerPath: $(PROD_V4_WORKER_PY)
-        Python311V4:
-          pythonVersion: "3.11"
-          workerPath: $(PROD_V4_WORKER_PY)
-
     steps:
-      - template: pack/templates/win_env_gen.yml
-        displayName: "Build Windows x64"
+      - template: ../../../../pack/templates/win_env_gen.yml
         parameters:
           pythonVersion: "$(pythonVersion)"
           workerPath: "$(workerPath)"
           architecture: "x64"
           artifactName: "$(pythonVersion)_WINDOWS_X64"
-      - template: pack/templates/win_env_gen.yml
-        displayName: "Build Windows x86"
+      - template: ../../../../pack/templates/win_env_gen.yml
         parameters:
           pythonVersion: "$(pythonVersion)"
           workerPath: "$(workerPath)"
           architecture: "x86"
           artifactName: "$(pythonVersion)_WINDOWS_x86"
-      - template: pack/templates/nix_env_gen.yml
-        displayName: "Build Linux x64"
+      - template: ../../../../pack/templates/nix_env_gen.yml
         parameters:
           pythonVersion: "$(pythonVersion)"
           workerPath: "$(workerPath)"
           artifactName: "$(pythonVersion)_LINUX_X64"
-      - template: pack/templates/nix_env_gen.yml
-        displayName: "Build OSX X64"
+      - template: ../../../../pack/templates/nix_env_gen.yml
         parameters:
           pythonVersion: "$(pythonVersion)"
           workerPath: "$(workerPath)"
           artifactName: "$(pythonVersion)_OSX_X64"
-      - template: pack/templates/macos_64_env_gen.yml
-        displayName: "Build OSX ARM64"
+      - template: ../../../../pack/templates/macos_64_env_gen.yml
         parameters:
           pythonVersion: "$(pythonVersion)"
           workerPath: "$(workerPath)"

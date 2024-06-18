@@ -36,3 +36,7 @@ extends:
       - stage: Build
         jobs:
           - template: /eng/templates/jobs/build.yml@self
+      - stage: RunUnitTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/jobs/ci-unit-tests.yml@self

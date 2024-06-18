@@ -11,48 +11,63 @@ jobs:
       matrix:
         python-37-fwpc:
           PYTHON_VERSION: '3.7'
+          SIMPLIFIED_PYTHON_VERSION: '37'
           TEST_TYPE: 'fwpc-e2e-tests'
         python-37-e2e:
           PYTHON_VERSION: '3.7'
+          SIMPLIFIED_PYTHON_VERSION: '37'
           TEST_TYPE: 'e2e-tests'
         python-37-deferred-bindings:
           PYTHON_VERSION: '3.7'
+          SIMPLIFIED_PYTHON_VERSION: '37'
           TEST_TYPE: 'deferred-bindings-e2e-tests'
         python-38-fwpc:
           PYTHON_VERSION: '3.8'
+          SIMPLIFIED_PYTHON_VERSION: '38'
           TEST_TYPE: 'fwpc-e2e-tests'
         python-38-e2e:
           PYTHON_VERSION: '3.8'
+          SIMPLIFIED_PYTHON_VERSION: '38'
           TEST_TYPE: 'e2e-tests'
         python-38-deferred-bindings:
           PYTHON_VERSION: '3.8'
+          SIMPLIFIED_PYTHON_VERSION: '38'
           TEST_TYPE: 'deferred-bindings-e2e-tests'
         python-39-fwpc:
           PYTHON_VERSION: '3.9'
+          SIMPLIFIED_PYTHON_VERSION: '39'
           TEST_TYPE: 'fwpc-e2e-tests'
         python-39-e2e:
           PYTHON_VERSION: '3.9'
+          SIMPLIFIED_PYTHON_VERSION: '39'
           TEST_TYPE: 'e2e-tests'
         python-39-deferred-bindings:
           PYTHON_VERSION: '3.9'
+          SIMPLIFIED_PYTHON_VERSION: '39'
           TEST_TYPE: 'deferred-bindings-e2e-tests'
         python-310-fwpc:
           PYTHON_VERSION: '3.10'
+          SIMPLIFIED_PYTHON_VERSION: '310'
           TEST_TYPE: 'fwpc-e2e-tests'
         python-310-e2e:
           PYTHON_VERSION: '3.10'
+          SIMPLIFIED_PYTHON_VERSION: '310'
           TEST_TYPE: 'e2e-tests'
         python-310-deferred-bindings:
           PYTHON_VERSION: '3.10'
+          SIMPLIFIED_PYTHON_VERSION: '310'
           TEST_TYPE: 'deferred-bindings-e2e-tests'
         python-311-fwpc:
           PYTHON_VERSION: '3.11'
+          SIMPLIFIED_PYTHON_VERSION: '311'
           TEST_TYPE: 'fwpc-e2e-tests'
         python-311-e2e:
           PYTHON_VERSION: '3.11'
+          SIMPLIFIED_PYTHON_VERSION: '311'
           TEST_TYPE: 'e2e-tests'
         python-311-deferred-bindings:
           PYTHON_VERSION: '3.11'
+          SIMPLIFIED_PYTHON_VERSION: '311'
           TEST_TYPE: 'deferred-bindings-e2e-tests'
     steps:
       - task: UsePythonVersion@0
@@ -64,92 +79,33 @@ jobs:
           version: 8.0.x
       - bash: |
           python -m pip install --upgrade pip
-          python -m pip install azure-functions --pre
+          python -m pip install -U azure-functions --pre
           python -m pip install -U -e .[dev]
 
-          if [[ "${{ PYTHON_VERSION }}" != "3.7" ]]; then
-             python -m pip install -e .[test-http-v2]
+          if [[ $(PYTHON_VERSION) != "3.7" ]]; then
+             python -m pip install --pre -U -e .[test-http-v2]
           fi
-          if [[ "${{ PYTHON_VERSION }}" != "3.7" && "${{ PYTHON_VERSION }}" != "3.8" ]]; then
-              python -m pip install -e .[test-deferred-bindings]
+          if [[ $(PYTHON_VERSION) != "3.7" && $(PYTHON_VERSION) != "3.8" ]]; then
+              python -m pip install --pre -U -e .[test-deferred-bindings]
           fi
 
-          # Retry a couple times to avoid certificate issue
-          retry 5 python setup.py build
-          retry 5 python setup.py webhost --branch-name=dev
-          retry 5 python setup.py extension
+          python setup.py build
+          python setup.py webhost --branch-name=dev
+          python setup.py extension
           mkdir logs
         displayName: 'Install dependencies and the worker'
       - bash: |
-          chmod +x .github/Scripts/${{ TEST_TYPE }}.sh
+          chmod +x .github/Scripts/$(TEST_TYPE).sh
         displayName: 'Grant execute permission'
+    
       - bash: |
-          if [[ "${{ PYTHON_VERSION }}" == "3.7" ]]; then
-             .github/Scripts/${{ TEST_TYPE }}.sh
-          fi
+             .github/Scripts/$(TEST_TYPE).sh
         env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString37 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString37 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString37 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString37 }}
-          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString37 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString37 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString37 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        displayName: "Running 3.7 $(TEST_TYPE) tests"
-      - bash: |
-          if [[ "${{ PYTHON_VERSION }}" == "3.8" ]]; then
-             .github/Scripts/${{ TEST_TYPE }}.sh
-          fi
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString38 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString38 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString38 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString38 }}
-          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString38 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString38 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString38 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        displayName: "Running 3.8 $(TEST_TYPE) tests"
-      - bash: |
-          if [[ "${{ PYTHON_VERSION }}" == "3.9" ]]; then
-             .github/Scripts/${{ TEST_TYPE }}.sh
-          fi
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString39 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString39 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString39 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString39 }}
-          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString39 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString39 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString39 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        displayName: "Running 3.9 $(TEST_TYPE) tests"
-      - bash: |
-          if [[ "${{ PYTHON_VERSION }}" == "3.10" ]]; then
-             .github/Scripts/${{ TEST_TYPE }}.sh
-          fi
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString310 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString310 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString310 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString310 }}
-          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString310 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString310 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString310 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        displayName: "Running 3.10 $(TEST_TYPE) tests"
-      - bash: |
-          if [[ "${{ PYTHON_VERSION }}" == "3.11" ]]; then
-             .github/Scripts/${{ TEST_TYPE }}.sh
-          fi
-        env:
-          AzureWebJobsStorage: ${{ secrets.LinuxStorageConnectionString311 }}
-          AzureWebJobsCosmosDBConnectionString: ${{ secrets.LinuxCosmosDBConnectionString311 }}
-          AzureWebJobsEventHubConnectionString: ${{ secrets.LinuxEventHubConnectionString311 }}
-          AzureWebJobsServiceBusConnectionString: ${{ secrets.LinuxServiceBusConnectionString311 }}
-          AzureWebJobsSqlConnectionString: ${{ secrets.LinuxSqlConnectionString311 }}
-          AzureWebJobsEventGridTopicUri: ${{ secrets.LinuxEventGridTopicUriString311 }}
-          AzureWebJobsEventGridConnectionKey: ${{ secrets.LinuxEventGridConnectionKeyString311 }}
-          ARCHIVE_WEBHOST_LOGS: ${{ github.event.inputs.archive_webhost_logging }}
-        displayName: "Running 3.11 $(TEST_TYPE) tests"
+          AzureWebJobsStorage: $(LinuxStorageConnectionString$(SIMPLIFIED_PYTHON_VERSION)))
+          AzureWebJobsCosmosDBConnectionString: $(LinuxCosmosDBConnectionString$(SIMPLIFIED_PYTHON_VERSION))
+          AzureWebJobsEventHubConnectionString: $(LinuxEventHubConnectionString$(SIMPLIFIED_PYTHON_VERSION))
+          AzureWebJobsServiceBusConnectionString: $(LinuxServiceBusConnectionString$(SIMPLIFIED_PYTHON_VERSION))
+          AzureWebJobsSqlConnectionString: $(LinuxSqlConnectionString$(SIMPLIFIED_PYTHON_VERSION))
+          AzureWebJobsEventGridTopicUri: $(LinuxEventGridTopicUriString$(SIMPLIFIED_PYTHON_VERSION))
+          AzureWebJobsEventGridConnectionKey: $(LinuxEventGridConnectionKeyString$(SIMPLIFIED_PYTHON_VERSION))
+        displayName: "Running $(PYTHON_VERSION) $(TEST_TYPE) tests"

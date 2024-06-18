@@ -1,0 +1,53 @@
+jobs:
+  - job: "TestPython"
+    displayName: "Run Python Linux Consumption Tests"
+
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-ubuntu-22.04
+      os: linux
+    
+    strategy:
+      maxParallel: 1
+      matrix:
+        Python37:
+          PYTHON_VERSION: '3.7'
+        Python38:
+          PYTHON_VERSION: '3.8'
+        Python39:
+          PYTHON_VERSION: '3.9'
+        Python310:
+          PYTHON_VERSION: '3.10'
+        Python311:
+          PYTHON_VERSION: '3.11'
+    
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(PYTHON_VERSION)
+      - bash: |
+          python -m pip install --upgrade pip
+          python -m pip install -U azure-functions --pre
+          python -m pip install -U -e .[dev]
+
+          if [[ $(PYTHON_VERSION) != "3.7" ]]; then
+             python -m pip install --pre -U -e .[test-http-v2]
+          fi
+          if [[ $(PYTHON_VERSION) != "3.7" && $(PYTHON_VERSION) != "3.8" ]]; then
+              python -m pip install --pre -U -e .[test-deferred-bindings]
+          fi
+
+          # Retry a couple times to avoid certificate issue
+          retry 5 python .\setup.py build
+        displayName: 'Install dependencies and the worker'
+      - bash: |
+             python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests
+        env:
+          AzureWebJobsStorage: $(LinuxStorageConnectionString37)
+          AzureWebJobsCosmosDBConnectionString: $(LinuxCosmosDBConnectionString37)
+          AzureWebJobsEventHubConnectionString: $(LinuxEventHubConnectionString37)
+          AzureWebJobsServiceBusConnectionString: $(LinuxServiceBusConnectionString37)
+          AzureWebJobsSqlConnectionString: $(LinuxSqlConnectionString37)
+          AzureWebJobsEventGridTopicUri: $(LinuxEventGridTopicUriString37)
+          AzureWebJobsEventGridConnectionKey: $(LinuxEventGridConnectionKeyString37)
+        displayName: "Running $(PYTHON_VERSION) Linux Consumption tests"

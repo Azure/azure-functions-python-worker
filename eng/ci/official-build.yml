@@ -44,7 +44,23 @@ extends:
         jobs:
           - template: /eng/templates/official/jobs/build-artifacts.yml@self
 
-      - stage: RunTests
+      - stage: RunE2ETests
         dependsOn: Build
         jobs:
           - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self
+      - stage: RunCoreToolsTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-core-tools-tests.yml@self
+      - stage: RunDockerConsumptionTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-consumption-tests.yml@self
+      - stage: RunDockerDedicatedTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-dedicated-tests.yml@self
+      - stage: RunLinuxConsumptionTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-lc-tests.yml@self

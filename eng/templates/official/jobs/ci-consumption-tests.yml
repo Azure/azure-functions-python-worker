@@ -1,0 +1,43 @@
+jobs:
+  - job: "TestPython"
+    displayName: "Run Python Linux Consumption Tests"
+
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-ubuntu-22.04
+      os: linux
+    
+    strategy:
+      maxParallel: 1
+      matrix:
+        Python37:
+          PYTHON_VERSION: '3.7'
+        Python38:
+          PYTHON_VERSION: '3.8'
+        Python39:
+          PYTHON_VERSION: '3.9'
+        Python310:
+          PYTHON_VERSION: '3.10'
+        Python311:
+          PYTHON_VERSION: '3.11'
+    env:
+        CONSUMPTION_DOCKER_TEST: "true"
+    
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(PYTHON_VERSION)
+      - bash: |
+          python .\setup.py build
+        displayName: 'Install dependencies'
+      - bash: |
+             python -m pytest --reruns 4 -vv --instafail tests/endtoend
+        env:
+          AzureWebJobsStorage: $(LinuxStorageConnectionString37)
+          AzureWebJobsCosmosDBConnectionString: $(LinuxCosmosDBConnectionString37)
+          AzureWebJobsEventHubConnectionString: $(LinuxEventHubConnectionString37)
+          AzureWebJobsServiceBusConnectionString: $(LinuxServiceBusConnectionString37)
+          AzureWebJobsSqlConnectionString: $(LinuxSqlConnectionString37)
+          AzureWebJobsEventGridTopicUri: $(LinuxEventGridTopicUriString37)
+          AzureWebJobsEventGridConnectionKey: $(LinuxEventGridConnectionKeyString37)
+        displayName: "Running $(PYTHON_VERSION) Docker Dedicated tests"

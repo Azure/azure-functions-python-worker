@@ -97,7 +97,7 @@ async def async_return_str(req: Request):
 
 
 @app.route(route="debug_logging")
-def debug_logging(req: Request):
+async def debug_logging(req: Request):
     logging.critical('logging critical', exc_info=True)
     logging.info('logging info', exc_info=True)
     logging.warning('logging warning', exc_info=True)
@@ -107,7 +107,7 @@ def debug_logging(req: Request):
 
 
 @app.route(route="debug_user_logging")
-def debug_user_logging(req: Request):
+async def debug_user_logging(req: Request):
     logger.setLevel(logging.DEBUG)
 
     logging.critical('logging critical', exc_info=True)

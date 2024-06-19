@@ -8,7 +8,6 @@ jobs:
       os: linux
     
     strategy:
-      maxParallel: 1
       matrix:
         Python37:
           PYTHON_VERSION: '3.7'
@@ -73,7 +72,7 @@ jobs:
           fi
 
           # Retry a couple times to avoid certificate issue
-          retry 5 python .\setup.py build
+          python setup.py build
         displayName: 'Install dependencies and the worker'
       - bash: |
              python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests

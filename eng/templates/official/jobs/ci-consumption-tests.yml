@@ -1,6 +1,6 @@
 jobs:
   - job: "TestPython"
-    displayName: "Run Python Linux Consumption Tests"
+    displayName: "Run Python Docker Consumption Tests"
 
     pool:
       name: 1es-pool-azfunc
@@ -8,7 +8,6 @@ jobs:
       os: linux
     
     strategy:
-      maxParallel: 1
       matrix:
         Python37:
           PYTHON_VERSION: '3.7'
@@ -61,7 +60,7 @@ jobs:
         inputs:
           versionSpec: $(PYTHON_VERSION)
       - bash: |
-          python .\setup.py build
+          python setup.py build
         displayName: 'Install dependencies'
       - bash: |
              python -m pytest --reruns 4 -vv --instafail tests/endtoend

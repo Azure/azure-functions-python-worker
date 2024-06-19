@@ -11,7 +11,7 @@ jobs:
     - task: UsePythonVersion@0
       displayName: 'Install Python'
       inputs:
-        versionSpec: "3.11"
+        versionSpec: "3.10"
         addToPath: true
     - task: UseDotNet@2
       displayName: 'Install DotNet 3'

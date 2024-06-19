@@ -11,64 +11,168 @@ jobs:
       matrix:
         python-37-fwpc:
           PYTHON_VERSION: '3.7'
-          SIMPLIFIED_PYTHON_VERSION: '37'
           TEST_TYPE: 'fwpc-e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString37)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString37)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString37)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString37)
+          SQL_CONNECTION: $(LinuxSqlConnectionString37)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString37)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString37)
         python-37-e2e:
           PYTHON_VERSION: '3.7'
           SIMPLIFIED_PYTHON_VERSION: '37'
           TEST_TYPE: 'e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString37)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString37)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString37)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString37)
+          SQL_CONNECTION: $(LinuxSqlConnectionString37)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString37)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString37)
         python-37-deferred-bindings:
           PYTHON_VERSION: '3.7'
           SIMPLIFIED_PYTHON_VERSION: '37'
           TEST_TYPE: 'deferred-bindings-e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString37)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString37)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString37)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString37)
+          SQL_CONNECTION: $(LinuxSqlConnectionString37)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString37)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString37)
         python-38-fwpc:
           PYTHON_VERSION: '3.8'
           SIMPLIFIED_PYTHON_VERSION: '38'
           TEST_TYPE: 'fwpc-e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString38)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString38)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString38)
+          SQL_CONNECTION: $(LinuxSqlConnectionString38)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)
         python-38-e2e:
           PYTHON_VERSION: '3.8'
           SIMPLIFIED_PYTHON_VERSION: '38'
           TEST_TYPE: 'e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString38)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString38)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString38)
+          SQL_CONNECTION: $(LinuxSqlConnectionString38)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)
         python-38-deferred-bindings:
           PYTHON_VERSION: '3.8'
           SIMPLIFIED_PYTHON_VERSION: '38'
           TEST_TYPE: 'deferred-bindings-e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString38)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString38)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString38)
+          SQL_CONNECTION: $(LinuxSqlConnectionString38)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)
         python-39-fwpc:
           PYTHON_VERSION: '3.9'
           SIMPLIFIED_PYTHON_VERSION: '39'
           TEST_TYPE: 'fwpc-e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString39)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString39)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString39)
+          SQL_CONNECTION: $(LinuxSqlConnectionString39)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString39)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString39)
         python-39-e2e:
           PYTHON_VERSION: '3.9'
           SIMPLIFIED_PYTHON_VERSION: '39'
           TEST_TYPE: 'e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString39)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString39)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString39)
+          SQL_CONNECTION: $(LinuxSqlConnectionString39)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString39)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString39)
         python-39-deferred-bindings:
           PYTHON_VERSION: '3.9'
           SIMPLIFIED_PYTHON_VERSION: '39'
           TEST_TYPE: 'deferred-bindings-e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString39)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString39)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString39)
+          SQL_CONNECTION: $(LinuxSqlConnectionString39)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString39)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString39)
         python-310-fwpc:
           PYTHON_VERSION: '3.10'
           SIMPLIFIED_PYTHON_VERSION: '310'
           TEST_TYPE: 'fwpc-e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString310)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString310)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString310)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString310)
+          SQL_CONNECTION: $(LinuxSqlConnectionString310)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString310)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString310)
         python-310-e2e:
           PYTHON_VERSION: '3.10'
           SIMPLIFIED_PYTHON_VERSION: '310'
           TEST_TYPE: 'e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString310)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString310)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString310)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString310)
+          SQL_CONNECTION: $(LinuxSqlConnectionString310)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString310)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString310)
         python-310-deferred-bindings:
           PYTHON_VERSION: '3.10'
           SIMPLIFIED_PYTHON_VERSION: '310'
           TEST_TYPE: 'deferred-bindings-e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString310)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString310)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString310)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString310)
+          SQL_CONNECTION: $(LinuxSqlConnectionString310)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString310)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString310)
         python-311-fwpc:
           PYTHON_VERSION: '3.11'
           SIMPLIFIED_PYTHON_VERSION: '311'
           TEST_TYPE: 'fwpc-e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString311)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString311)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString311)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString311)
+          SQL_CONNECTION: $(LinuxSqlConnectionString311)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString311)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString311)
         python-311-e2e:
           PYTHON_VERSION: '3.11'
           SIMPLIFIED_PYTHON_VERSION: '311'
           TEST_TYPE: 'e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString311)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString311)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString311)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString311)
+          SQL_CONNECTION: $(LinuxSqlConnectionString311)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString311)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString311)
         python-311-deferred-bindings:
           PYTHON_VERSION: '3.11'
           SIMPLIFIED_PYTHON_VERSION: '311'
           TEST_TYPE: 'deferred-bindings-e2e-tests'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString311)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString311)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString311)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString311)
+          SQL_CONNECTION: $(LinuxSqlConnectionString311)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString311)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString311)
     steps:
       - task: UsePythonVersion@0
         inputs:
@@ -101,11 +205,11 @@ jobs:
       - bash: |
              .github/Scripts/$(TEST_TYPE).sh
         env:
-          AzureWebJobsStorage: $(LinuxStorageConnectionString$(SIMPLIFIED_PYTHON_VERSION)))
-          AzureWebJobsCosmosDBConnectionString: $(LinuxCosmosDBConnectionString$(SIMPLIFIED_PYTHON_VERSION))
-          AzureWebJobsEventHubConnectionString: $(LinuxEventHubConnectionString$(SIMPLIFIED_PYTHON_VERSION))
-          AzureWebJobsServiceBusConnectionString: $(LinuxServiceBusConnectionString$(SIMPLIFIED_PYTHON_VERSION))
-          AzureWebJobsSqlConnectionString: $(LinuxSqlConnectionString$(SIMPLIFIED_PYTHON_VERSION))
-          AzureWebJobsEventGridTopicUri: $(LinuxEventGridTopicUriString$(SIMPLIFIED_PYTHON_VERSION))
-          AzureWebJobsEventGridConnectionKey: $(LinuxEventGridConnectionKeyString$(SIMPLIFIED_PYTHON_VERSION))
+          AzureWebJobsStorage: $(STORAGE_CONNECTION)
+          AzureWebJobsCosmosDBConnectionString: $(COSMOSDB_CONNECTION)
+          AzureWebJobsEventHubConnectionString: $(EVENTHUB_CONNECTION)
+          AzureWebJobsServiceBusConnectionString: $(SERVICEBUS_CONNECTION)
+          AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
+          AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
+          AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
         displayName: "Running $(PYTHON_VERSION) $(TEST_TYPE) tests"

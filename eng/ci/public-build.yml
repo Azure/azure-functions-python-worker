@@ -14,7 +14,7 @@ schedules:
   displayName: At 12:00 AM, only on Monday
   branches:
     include:
-    - dev
+      - dev
   always: true
 
 resources:

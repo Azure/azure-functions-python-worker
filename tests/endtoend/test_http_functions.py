@@ -212,14 +212,18 @@ class TestHttpFunctionsWithInitIndexing(TestHttpFunctions):
 
     @classmethod
     def setUpClass(cls):
+        cls.env_variables[PYTHON_ENABLE_INIT_INDEXING] = '1'
         os.environ[PYTHON_ENABLE_INIT_INDEXING] = "1"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
         os.environ.pop(PYTHON_ENABLE_INIT_INDEXING)
         super().tearDownClass()
+
+    @classmethod
+    def get_environment_variables(cls):
+        return cls.env_variables
 
 
 @unittest.skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")

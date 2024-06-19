@@ -3,7 +3,6 @@ jobs:
     displayName: "Run Python Unit Tests"
     
     strategy:
-      maxParallel: 1
       matrix:
         Python37:
           PYTHON_VERSION: '3.7'

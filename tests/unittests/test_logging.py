@@ -56,5 +56,9 @@ class TestLogging(unittest.TestCase):
             self.assertIn("call1", processed_exception)
             self.assertIn("call2", processed_exception)
             self.assertIn("f", processed_exception)
-            self.assertIn("tests/unittests/test_logging.py",
-                          processed_exception)
+            file_path_present = False
+            for line in processed_exception:
+                if "tests/unittests/test_logging.py" in line:
+                    file_path_present = True
+                    break
+            self.assertTrue(file_path_present)

@@ -133,7 +133,9 @@ class WebHostDockerContainerBase(unittest.TestCase):
 
         function_path = "/home/site/wwwroot"
 
-        if not configs.libraries:
+        if configs.libraries:
+            configs.libraries.append('azurefunctions-extensions-base')
+        else:
             configs.libraries = ['azurefunctions-extensions-base']
         install_libraries_cmd = []
         install_libraries_cmd.extend(['pip', 'install'])

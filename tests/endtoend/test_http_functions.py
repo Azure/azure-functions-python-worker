@@ -229,6 +229,22 @@ class TestHttpFunctionsWithInitIndexing(TestHttpFunctions):
 @unittest.skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")
 class TestHttpFunctionsV2FastApiWithInitIndexing(
         TestHttpFunctionsWithInitIndexing):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.env_variables[PYTHON_ENABLE_INIT_INDEXING] = '1'
+        os.environ[PYTHON_ENABLE_INIT_INDEXING] = "1"
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        os.environ.pop(PYTHON_ENABLE_INIT_INDEXING)
+        super().tearDownClass()
+
+    @classmethod
+    def get_environment_variables(cls):
+        return cls.env_variables
+
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \

@@ -235,6 +235,10 @@ class TestHttpFunctionsV2FastApiWithInitIndexing(
                                             'http_functions_v2' / \
                                             'fastapi'
 
+    @classmethod
+    def get_libraries_to_install(cls):
+        return ['azurefunctions-extensions-http-fastapi', 'orjson', 'ujson']
+
     @testutils.retryable_test(3, 5)
     def test_return_streaming(self):
         """Test if the return_streaming function returns a streaming

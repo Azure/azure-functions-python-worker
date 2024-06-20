@@ -52,10 +52,14 @@ jobs:
           versionSpec: $(PYTHON_VERSION)
       - bash: |
           python -m pip install -U -e .[dev]
+          python -m pip install --pre -U -e .[test-http-v2]
+          if [[ $(PYTHON_VERSION) != "3.8" ]]; then
+              python -m pip install --pre -U -e .[test-deferred-bindings]
+          fi
           python setup.py build
         displayName: 'Install dependencies'
       - bash: |
-             python -m pytest --reruns 4 -vv --instafail tests/endtoend
+             python -m pytest --reruns 4 -vv --instafail tests/endtoend tests/extension_tests/deferred_bindings_tests
         env:
           CONSUMPTION_DOCKER_TEST: "true"
           AzureWebJobsStorage: $(STORAGE_CONNECTION)

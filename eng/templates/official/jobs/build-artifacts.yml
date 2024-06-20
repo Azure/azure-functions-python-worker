@@ -73,3 +73,54 @@ jobs:
           pythonVersion: "$(pythonVersion)"
           workerPath: "$(workerPath)"
           artifactName: "$(pythonVersion)_OSX_ARM64"
+      - bash: |
+            echo "Releasing from $BUILD_SOURCEBRANCHNAME"
+            sudo apt-get install -y jq
+
+            if [[ $BUILD_SOURCEBRANCHNAME = 4\.* ]]
+            then
+              echo "Generating V4 Release Package for $BUILD_SOURCEBRANCHNAME"
+              NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+              WKVERSION="$BUILD_SOURCEBRANCHNAME"
+            elif [[ $BUILD_SOURCEBRANCHNAME = dev ]]
+            then
+              echo "Generating V4 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
+              VERSION=$(cat azure_functions_worker/version.py | tail -1 | cut -d' ' -f3 | sed  "s/'//g")
+              NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+              WKVERSION="$VERSION-$(patchBuildNumberForDev)"
+            else
+              # this is only to test nuget related workflow because we are setting nuspec here
+              echo "Generating Integration Test Package for $BUILD_SOURCEBRANCHNAME for testing purpose"
+              LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
+              NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+              # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
+              WKVERSION="3.$LATEST_TAG-$(BUILD_BUILDID)-TEST"
+              echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
+            fi
+
+            echo "##vso[task.setvariable variable=nuspec_path]$NUSPEC"
+            echo "##vso[task.setvariable variable=worker_version]$WKVERSION"
+        displayName: "Generate Worker NuGet Package for Release $BUILD_SOURCEBRANCHNAME"
+      - task: DownloadBuildArtifacts@0
+        inputs:
+          buildType: 'current'
+          downloadType: 'specific'
+          downloadPath: '$(Build.SourcesDirectory)'
+      - task: ManifestGeneratorTask@0
+        displayName: 'SBOM Generation Task'
+        inputs:
+          BuildDropPath: '$(Build.ArtifactStagingDirectory)'
+          BuildComponentPath: '$(Build.SourcesDirectory)'
+          Verbosity: 'Verbose'
+      - task: CopyFiles@2
+        inputs:
+          SourceFolder: '$(Build.ArtifactStagingDirectory)'
+          Contents: '**'
+          TargetFolder: '$(Build.SourcesDirectory)'
+      - task: NuGetCommand@2
+        inputs:
+          command: pack
+          packagesToPack: '$(nuspec_path)'
+          packDestination: $(Build.ArtifactStagingDirectory) 
+          versioningScheme: 'byEnvVar'
+          versionEnvVar: WORKER_VERSION

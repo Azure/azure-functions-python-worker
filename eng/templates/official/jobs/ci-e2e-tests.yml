@@ -89,4 +89,4 @@ jobs:
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
-        displayName: "Running $(PYTHON_VERSION)"
+        displayName: "Running $(PYTHON_VERSION) Python E2E Tests"

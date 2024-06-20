@@ -1,0 +1,41 @@
+trigger: none # ensure this is not ran as a CI build
+
+pr:
+  branches:
+    include:
+    - dev
+    - release/*
+
+resources:
+  repositories:
+  - repository: 1es
+    type: git
+    name: 1ESPipelineTemplates/1ESPipelineTemplates
+    ref: refs/tags/release
+  - repository: eng
+    type: git
+    name: engineering
+    ref: refs/tags/release
+
+variables:
+  - template: ci/variables/build.yml@eng
+  - template: /ci/variables/cfs.yml@eng
+
+extends:
+  template: v1/1ES.Unofficial.PipelineTemplate.yml@1es
+  parameters:
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-windows-2022
+      os: windows
+
+    stages:
+    - stage: RunE2ETests
+      jobs:
+      - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self
+    - stage: RunLCTests
+      jobs:
+      - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
+    - stage: RunUnitTests
+      jobs:
+        - template: /eng/templates/jobs/ci-unit-tests.yml@self

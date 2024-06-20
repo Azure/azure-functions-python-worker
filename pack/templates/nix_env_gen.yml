@@ -4,6 +4,10 @@ parameters:
   workerPath: ''
 
 steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: ${{ parameters.pythonVersion }}
+    addToPath: true
 - task: ShellScript@2
   inputs:
     disableAutoCwd: true

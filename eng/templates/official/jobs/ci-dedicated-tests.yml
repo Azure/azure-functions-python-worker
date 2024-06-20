@@ -9,15 +9,6 @@ jobs:
     
     strategy:
       matrix:
-        Python37:
-          PYTHON_VERSION: '3.7'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString37)
-          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString37)
-          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString37)
-          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString37)
-          SQL_CONNECTION: $(LinuxSqlConnectionString37)
-          EVENTGRID_URI: $(LinuxEventGridTopicUriString37)
-          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString37)
         Python38:
           PYTHON_VERSION: '3.8'
           STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
@@ -60,6 +51,7 @@ jobs:
         inputs:
           versionSpec: $(PYTHON_VERSION)
       - bash: |
+          python -m pip install -U -e .[dev]
           python setup.py build
         displayName: 'Install dependencies'
       - bash: |

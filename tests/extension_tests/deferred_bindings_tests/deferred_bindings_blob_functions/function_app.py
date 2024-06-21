@@ -255,8 +255,8 @@ def put_blob_bytes(req: func.HttpRequest, file: func.Out[bytes]) -> str:
                 connection="AzureWebJobsStorage")
 @app.route(route="blob_cache")
 def blob_cache(req: func.HttpRequest,
-               client: blob.BlobClient) -> str:
-    return client.download_blob(encoding='utf-8').readall()
+               cached_client: blob.BlobClient) -> str:
+    return cached_client.download_blob(encoding='utf-8').readall()
 
 
 @app.function_name(name="invalid_connection_info")

@@ -231,21 +231,6 @@ class TestHttpFunctionsV2FastApiWithInitIndexing(
         TestHttpFunctionsWithInitIndexing):
 
     @classmethod
-    def setUpClass(cls):
-        cls.env_variables[PYTHON_ENABLE_INIT_INDEXING] = '1'
-        os.environ[PYTHON_ENABLE_INIT_INDEXING] = "1"
-        super().setUpClass()
-
-    @classmethod
-    def tearDownClass(cls):
-        os.environ.pop(PYTHON_ENABLE_INIT_INDEXING)
-        super().tearDownClass()
-
-    @classmethod
-    def get_environment_variables(cls):
-        return cls.env_variables
-
-    @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'http_functions_v2' / \

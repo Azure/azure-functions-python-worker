@@ -31,6 +31,12 @@ extends:
       name: 1es-pool-azfunc-public
       image: 1es-windows-2022
       os: windows
+    parameters:
+    sdl:
+      codeql:
+         compiled:
+           enabled: true # still only runs for default branch
+         runSourceLanguagesInSourceAnalysis: true
 
     stages:
     - stage: Build

@@ -80,7 +80,7 @@ jobs:
           mkdir logs
         displayName: 'Install dependencies and the worker'
       - bash: |
-             python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend tests/extension_tests/deferred_bindings_tests
+             python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
         env:
           AzureWebJobsStorage: $(STORAGE_CONNECTION)
           AzureWebJobsCosmosDBConnectionString: $(COSMOSDB_CONNECTION)

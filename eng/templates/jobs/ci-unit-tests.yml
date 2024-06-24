@@ -32,7 +32,6 @@ jobs:
             python -m pip install --pre -U -e .[test-http-v2]
           fi
 
-          # Retry a couple times to avoid certificate issue
           python setup.py build
           python setup.py webhost --branch-name=dev
           python setup.py extension

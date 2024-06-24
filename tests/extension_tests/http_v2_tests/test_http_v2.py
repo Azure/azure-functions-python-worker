@@ -2,30 +2,30 @@
 # Licensed under the MIT License.
 import concurrent
 import os
+import sys
+import unittest
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
-from azure_functions_worker.constants import (
-    PYTHON_ENABLE_INIT_INDEXING, PYTHON_ISOLATE_WORKER_DEPENDENCIES)
+from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 from tests.utils import testutils
 
 REQUEST_TIMEOUT_SEC = 5
 
 
-class TestHttpV2FunctionsWithInitIndexing(testutils.WebHostTestCase):
+@unittest.skipIf(sys.version_info.minor < 8, "HTTPv2"
+                                             "is only supported for 3.8+.")
+class TestHttpFunctionsWithInitIndexing(testutils.WebHostTestCase):
     @classmethod
     def setUpClass(cls):
         cls.env_variables[PYTHON_ENABLE_INIT_INDEXING] = '1'
-        cls.env_variables[PYTHON_ISOLATE_WORKER_DEPENDENCIES] = '1'
         os.environ[PYTHON_ENABLE_INIT_INDEXING] = "1"
-        os.environ[PYTHON_ISOLATE_WORKER_DEPENDENCIES] = "1"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         os.environ.pop(PYTHON_ENABLE_INIT_INDEXING)
-        os.environ.pop(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
         super().tearDownClass()
 
     @classmethod

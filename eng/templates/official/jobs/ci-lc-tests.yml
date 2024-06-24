@@ -44,4 +44,5 @@ jobs:
              python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests
         env:
           AzureWebJobsStorage: $(STORAGE_CONNECTION)
+          _DUMMY_CONT_KEY: $(_DUMMY_CONT_KEY)
         displayName: "Running $(PYTHON_VERSION) Linux Consumption tests"

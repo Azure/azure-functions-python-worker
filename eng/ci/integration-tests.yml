@@ -6,6 +6,14 @@ pr:
     - dev
     - release/*
 
+schedules:
+  - cron: "0 8 * * 1,2,3,4,5"
+    displayName: Monday to Friday 3 AM CST build
+    branches:
+      include:
+        - dev
+    always: true
+
 resources:
   repositories:
   - repository: 1es

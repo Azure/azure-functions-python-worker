@@ -28,7 +28,7 @@ jobs:
         targetPath: $(Build.SourcesDirectory)
         artifactName: "$(pythonVersion)_WINDOWS_X64"
   steps:
-  - template: ../../../../pack/templates/win_env_gen.yml
+  - template: /../../../../pack/templates/win_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
@@ -63,7 +63,7 @@ jobs:
         targetPath: $(Build.SourcesDirectory)
         artifactName: "$(pythonVersion)_WINDOWS_X86"
   steps:
-  - template: ../../../../pack/templates/win_env_gen.yml
+  - template: /../../../../pack/templates/win_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
@@ -98,7 +98,7 @@ jobs:
         targetPath: $(Build.SourcesDirectory)
         artifactName: "$(pythonVersion)_LINUX_X64"
   steps:
-  - template: ../../../../pack/templates/nix_env_gen.yml
+  - template: /../../../../pack/templates/nix_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
@@ -132,7 +132,7 @@ jobs:
         targetPath: $(Build.SourcesDirectory)
         artifactName: "$(pythonVersion)_OSX_X64"
   steps:
-  - template: ../../../../pack/templates/nix_env_gen.yml
+  - template: /../../../../pack/templates/nix_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
@@ -160,7 +160,7 @@ jobs:
         targetPath: $(Build.SourcesDirectory)
         artifactName: "$(pythonVersion)_OSX_ARM4"
   steps:
-  - template: ../../../../pack/templates/macos_64_env_gen.yml
+  - template: /../../../../pack/templates/macos_64_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'

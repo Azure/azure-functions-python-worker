@@ -31,7 +31,6 @@ extends:
       name: 1es-pool-azfunc-public
       image: 1es-windows-2022
       os: windows
-    parameters:
     sdl:
       codeql:
          compiled:

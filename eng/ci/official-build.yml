@@ -29,7 +29,7 @@ resources:
 
 variables:
   - template: /ci/variables/build.yml@eng
-  - template: ci/variables/cfs.yml@eng
+  - template: /ci/variables/cfs.yml@eng
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1es

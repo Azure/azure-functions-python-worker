@@ -26,7 +26,3 @@ steps:
       !grpc_tools\**\*
       !grpcio_tools*\*
     targetFolder: '$(Build.ArtifactStagingDirectory)'
-- task: PublishBuildArtifacts@1
-  inputs:
-    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    artifactName: ${{ parameters.artifactName }}

@@ -9,6 +9,6 @@ import numpy as np
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
-    res = "array: {}".format(np.array([1, 2], dtype=complex))
+    res = "numpy version: {}".format(np.__version__)
 
     return func.HttpResponse(res)

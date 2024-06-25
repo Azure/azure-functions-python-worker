@@ -1,5 +1,9 @@
 jobs:
 - job: Build_WINDOWS_X64
+  pool:
+    name: 1es-pool-azfunc-public
+    image: 1es-windows-2022
+    os: windows
   strategy:
     matrix:
       Python37V4:
@@ -31,6 +35,10 @@ jobs:
       architecture: 'x64'
       artifactName: '$(pythonVersion)_WINDOWS_X64'
 - job: Build_WINDOWS_X86
+  pool:
+    name: 1es-pool-azfunc-public
+    image: 1es-windows-2022
+    os: windows
   strategy:
     matrix:
       Python37V4:
@@ -62,6 +70,10 @@ jobs:
       architecture: 'x86'
       artifactName: '$(pythonVersion)_WINDOWS_x86'
 - job: Build_LINUX_X64
+  pool:
+    name: 1es-pool-azfunc
+    image: 1es-ubuntu-22.04
+    os: linux
   strategy:
     matrix:
       Python37V4:
@@ -92,6 +104,10 @@ jobs:
       workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_LINUX_X64'
 - job: Build_OSX_X64
+  pool:
+    name: Azure Pipelines
+    image: macOS-latest
+    os: macOS
   strategy:
     matrix:
       Python37V4:
@@ -122,6 +138,10 @@ jobs:
       workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_OSX_X64'
 - job: Build_OSX_ARM64
+  pool:
+    name: Azure Pipelines
+    image: macOS-latest
+    os: macOS
   strategy:
     matrix:
       Python39V4:

@@ -1,10 +1,3 @@
-trigger:
-  batch: true
-  branches:
-    include:
-      - dev
-      - release/*
-
 # CI only, does not trigger on PRs.
 pr: none
 
@@ -42,7 +35,4 @@ extends:
     stages:
     - stage: RunDockerConsumptionTests
       jobs:
-        - template: /eng/templates/official/jobs/ci-consumption-tests.yml@self
-    - stage: RunDockerDedicatedTests
-      jobs:
-        - template: /eng/templates/official/jobs/ci-dedicated-tests.yml@self
+        - template: /eng/templates/official/jobs/ci-docker-consumption-tests.yml@self

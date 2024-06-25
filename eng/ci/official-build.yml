@@ -55,11 +55,11 @@ extends:
       - stage: RunDockerConsumptionTests
         dependsOn: Build
         jobs:
-          - template: /eng/templates/official/jobs/ci-consumption-tests.yml@self
+          - template: /eng/templates/official/jobs/ci-docker-consumption-tests.yml@self
       - stage: RunDockerDedicatedTests
         dependsOn: Build
         jobs:
-          - template: /eng/templates/official/jobs/ci-dedicated-tests.yml@self
+          - template: /eng/templates/official/jobs/ci-docker-dedicated-tests.yml@self
       - stage: RunLinuxConsumptionTests
         dependsOn: Build
         jobs:

@@ -297,6 +297,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 logger_name=get_app_setting(setting=PYTHON_AZURE_MONITOR_LOGGER_NAME,
                            default_value=PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT),
             )
+            self._otel_libs_available = True
 
             logger.info("Successfully configured Azure monitor distro.")
         except ImportError:
@@ -355,7 +356,6 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
-
         if get_app_setting(setting=PYTHON_ENABLE_OPENTELEMETRY,
                            default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
             self.initialize_opentelemetry()

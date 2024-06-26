@@ -79,6 +79,66 @@ jobs:
           python setup.py extension
           mkdir logs
         displayName: 'Install dependencies and the worker'
+        condition: and(eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download Python SDK Artifact'
+        inputs:
+          buildType: specific
+          artifactName: 'azure-functions'
+          project: '3f99e810-c336-441f-8892-84983093ad7f'
+          definition: 679
+          buildVersionToDownload: specific
+          pipelineId: 170384
+          targetPath: '$(Pipeline.Workspace)/PythonSdkArtifact'
+        condition: eq(variables['USETESTPYTHONSDK'], true)
+      - bash: |
+          python -m pip install --upgrade pip
+          python -m pip install -e $(Pipeline.Workspace)/PythonSdkArtifact
+          python -m pip install -U -e .[dev]
+
+          if [[ $(PYTHON_VERSION) != "3.7" ]]; then
+             python -m pip install --pre -U -e .[test-http-v2]
+          fi
+          if [[ $(PYTHON_VERSION) != "3.7" && $(PYTHON_VERSION) != "3.8" ]]; then
+              python -m pip install --pre -U -e .[test-deferred-bindings]
+          fi
+
+          python setup.py build
+          python setup.py webhost --branch-name=dev
+          python setup.py extension
+          mkdir logs
+        displayName: 'Install test python sdk, dependencies and the worker'
+        condition: eq(variables['USETESTPYTHONSDK'], true)
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download Python Extension Artifact'
+        inputs:
+          buildType: specific
+          artifactName: $(PYTHONEXTENSIONNAME)
+          project: '3f99e810-c336-441f-8892-84983093ad7f'
+          definition: 798
+          buildVersionToDownload: specific
+          pipelineId: 170439
+          targetPath: '$(Pipeline.Workspace)/PythonExtensionArtifact'
+        condition: eq(variables['USETESTPYTHONEXTENSIONS'], true)
+      - bash: |
+          python -m pip install --upgrade pip
+          python -m pip install -U -e .[dev]
+
+          if [[ $(PYTHON_VERSION) != "3.7" ]]; then
+             python -m pip install -e $(Pipeline.Workspace)/PythonExtensionArtifact
+             python -m pip install --pre -U -e .[test-http-v2]
+          fi
+          if [[ $(PYTHON_VERSION) != "3.7" && $(PYTHON_VERSION) != "3.8" ]]; then
+              python -m pip install -e $(Pipeline.Workspace)/PythonExtensionArtifact
+              python -m pip install --pre -U -e .[test-deferred-bindings]
+          fi
+
+          python setup.py build
+          python setup.py webhost --branch-name=dev
+          python setup.py extension
+          mkdir logs
+        displayName: 'Install test python extension, dependencies and the worker'
+        condition: eq(variables['USETESTPYTHONEXTENSIONS'], true)
       - bash: |
              python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
         env:

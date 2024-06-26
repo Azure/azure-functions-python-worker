@@ -56,5 +56,5 @@ class TestLogging(unittest.TestCase):
             self.assertIn("call1", processed_exception)
             self.assertIn("call2", processed_exception)
             self.assertIn("f", processed_exception)
-            self.assertIn("tests/unittests/test_logging.py",
-                          processed_exception)
+            self.assertRegex(processed_exception,
+                             r".*tests\\unittests\\test_logging.py.*")

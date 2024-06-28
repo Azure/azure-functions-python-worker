@@ -27,7 +27,6 @@ _DOCKER_PATH = "DOCKER_PATH"
 _DOCKER_DEFAULT_PATH = "docker"
 _MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
 _MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
-_DUMMY_CONT_KEY = "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY="
 _FUNC_GITHUB_ZIP = "https://github.com/Azure/azure-functions-python-library" \
                    "/archive/refs/heads/dev.zip"
 _FUNC_FILE_NAME = "azure-functions-python-library-dev"
@@ -198,7 +197,8 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["--cap-add", "SYS_ADMIN"])
         run_cmd.extend(["--device", "/dev/fuse"])
         run_cmd.extend(["-e", f"CONTAINER_NAME={self._uuid}"])
-        run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={_DUMMY_CONT_KEY}"])
+        run_cmd.extend(["-e",
+                        f"CONTAINER_ENCRYPTION_KEY={os.getenv('_DUMMY_CONT_KEY')}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
         run_cmd.extend(["-v",
@@ -266,7 +266,7 @@ class LinuxConsumptionWebHostController:
         which expires in one day.
         """
         exp_ns = int(time.time() + 24 * 60 * 60) * 1000000000
-        return cls._encrypt_context(_DUMMY_CONT_KEY, f'exp={exp_ns}')
+        return cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), f'exp={exp_ns}')
 
     @classmethod
     def _get_site_encrypted_context(cls,
@@ -281,7 +281,7 @@ class LinuxConsumptionWebHostController:
 
         # Ensure WEBSITE_SITE_NAME is set to simulate production mode
         ctx["Environment"]["WEBSITE_SITE_NAME"] = site_name
-        return cls._encrypt_context(_DUMMY_CONT_KEY, json.dumps(ctx))
+        return cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), json.dumps(ctx))
 
     @classmethod
     def _encrypt_context(cls, encryption_key: str, plain_text: str) -> str:

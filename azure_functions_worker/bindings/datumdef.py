@@ -201,6 +201,19 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
         ))
     elif datum.type is None:
         return None
+    elif datum.type == 'dict':
+        # TypedData doesn't support dict, so we return it as json
+        return protos.TypedData(json=json.dumps(datum.value))
+    elif datum.type == 'list':
+        # TypedData doesn't support list, so we return it as json
+        return protos.TypedData(json=json.dumps(datum.value))
+    elif datum.type == 'int':
+        return protos.TypedData(int=datum.value)
+    elif datum.type == 'double':
+        return protos.TypedData(double=datum.value)
+    elif datum.type == 'bool':
+        # TypedData doesn't support bool, so we return it as an int
+        return protos.TypedData(int=int(datum.value))
     else:
         raise NotImplementedError(
             'unexpected Datum type: {!r}'.format(datum.type)

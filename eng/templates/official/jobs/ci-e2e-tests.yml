@@ -115,7 +115,8 @@ jobs:
           artifactName: $(PYTHONEXTENSIONNAME)
           project: '3f99e810-c336-441f-8892-84983093ad7f'
           definition: 798
-          buildVersionToDownload: latestFromBranch
+          buildVersionToDownload: specific
+          pipelineId: 170779
           targetPath: '$(Pipeline.Workspace)/PythonExtensionArtifact'
         condition: eq(variables['USETESTPYTHONEXTENSIONS'], true)
       - bash: |

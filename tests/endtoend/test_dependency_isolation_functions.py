@@ -125,7 +125,7 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         """
         r: Response = self.webhost.request('GET', 'report_dependencies')
         libraries = r.json()['libraries']
-
+        self.assertEqual("", r.text)
         self.assertEqual(
             libraries['proto.expected.version'], libraries['proto.version']
         )

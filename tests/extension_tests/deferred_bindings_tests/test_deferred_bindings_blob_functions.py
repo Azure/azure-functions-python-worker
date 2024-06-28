@@ -17,6 +17,10 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
         return testutils.EXTENSION_TESTS_FOLDER / 'deferred_bindings_tests' / \
             'deferred_bindings_blob_functions'
 
+    @classmethod
+    def get_libraries_to_install(cls):
+        return ['azurefunctions-extensions-bindings-blob']
+
     def test_blob_str(self):
         r = self.webhost.request('POST', 'put_blob_str', data='test-data')
         self.assertEqual(r.status_code, 200)

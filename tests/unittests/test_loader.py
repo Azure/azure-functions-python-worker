@@ -6,6 +6,7 @@ import pathlib
 import subprocess
 import sys
 import textwrap
+from unittest import skipIf
 from unittest.mock import Mock, patch
 
 from azure.functions import Function
@@ -205,6 +206,7 @@ class TestLoader(testutils.WebHostTestCase):
 
 class TestPluginLoader(testutils.AsyncTestCase):
 
+    @skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")
     async def test_entry_point_plugin(self):
         test_binding = pathlib.Path(__file__).parent / 'test-binding'
         subprocess.run([

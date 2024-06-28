@@ -132,21 +132,23 @@ class WebHostDockerContainerBase(unittest.TestCase):
         )
 
         function_path = "/home/site/wwwroot"
+        configs.libraries = ((configs.libraries or [])
+                             + ['azurefunctions-extensions-base'])
+        install_libraries_cmd = []
+        install_libraries_cmd.extend(['pip', 'install'])
+        install_libraries_cmd.extend(['--platform=manylinux2014_x86_64'])
+        install_libraries_cmd.extend(configs.libraries)
+        install_libraries_cmd.extend(['-t',
+                                      f'{script_path}/{_libraries_path}'])
+        install_libraries_cmd.extend(['--only-binary=:all:'])
 
-        if configs.libraries:
-            install_libraries_cmd = []
-            install_libraries_cmd.extend(['pip', 'install'])
-            install_libraries_cmd.extend(configs.libraries)
-            install_libraries_cmd.extend(['-t',
-                                          f'{script_path}/{_libraries_path}'])
+        install_libraries_process = \
+            subprocess.run(args=install_libraries_cmd,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
 
-            install_libraries_process = \
-                subprocess.run(args=install_libraries_cmd,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-
-            if install_libraries_process.returncode != 0:
-                raise RuntimeError('Failed to install libraries')
+        if install_libraries_process.returncode != 0:
+            raise RuntimeError('Failed to install libraries')
 
         run_cmd = []
         run_cmd.extend([_docker_cmd, "run", "-p", "0:80", "-d"])

@@ -22,11 +22,12 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
 
         super().setUpClass()
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         os.environ.pop('PYTHON_THREADPOOL_THREAD_COUNT')
         os.environ.pop('FUNCTIONS_WORKER_PROCESS_COUNT')
 
-        super().tearDown()
+        super().tearDownClass()
 
     @classmethod
     def get_script_dir(cls):

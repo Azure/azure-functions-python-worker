@@ -1,0 +1,37 @@
+jobs:
+  - job: "TestPython"
+    displayName: "Run Python Docker Custom Tests"
+
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-ubuntu-22.04
+      os: linux
+    
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(CUSTOM_PYTHON_VERSION)
+      - bash: |
+          python -m pip install -U -e .[dev]
+          if [[ $(PYTHON_VERSION) != "3.7" ]]; then
+             python -m pip install --pre -U -e .[test-http-v2]
+          fi
+          if [[ $(PYTHON_VERSION) != "3.7" && $(PYTHON_VERSION) != "3.8" ]]; then
+              python -m pip install --pre -U -e .[test-deferred-bindings]
+          fi
+          python setup.py build
+        displayName: 'Install dependencies'
+      - bash: |
+             python -m pytest --reruns 4 -vv --instafail tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
+        env:
+          DEDICATED_DOCKER_TEST: $(CUSTOM_DED_IMAGE)
+          CONSUMPTION_DOCKER_TEST: $(CUSTOM_CON_IMAGE)
+          IMAGE_NAME: $(CUSTOM_IMAGE_NAME)
+          AzureWebJobsStorage: $(LinuxStorageConnectionString311)
+          AzureWebJobsCosmosDBConnectionString: $(LinuxCosmosDBConnectionString311)
+          AzureWebJobsEventHubConnectionString: $(LinuxEventHubConnectionString311)
+          AzureWebJobsServiceBusConnectionString: $(LinuxServiceBusConnectionString311)
+          AzureWebJobsSqlConnectionString: $(LinuxSqlConnectionString311)
+          AzureWebJobsEventGridTopicUri: $(LinuxEventGridTopicUriString311)
+          AzureWebJobsEventGridConnectionKey: $(LinuxEventGridConnectionKeyString311)
+        displayName: "Running Python DockerCustom tests"

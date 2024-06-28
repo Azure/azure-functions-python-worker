@@ -28,8 +28,8 @@ resources:
       ref: refs/tags/release
 
 variables:
-  - template: ci/variables/build.yml@eng
-  - template: ci/variables/cfs.yml@eng
+  - template: /ci/variables/build.yml@eng
+  - template: /ci/variables/cfs.yml@eng
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1es
@@ -42,9 +42,25 @@ extends:
     stages:
       - stage: Build
         jobs:
-          - template: /eng/ci/templates/official/jobs/build-artifacts.yml@self
+          - template: /eng/templates/official/jobs/build-artifacts.yml@self
 
-      - stage: RunTests
+      - stage: RunE2ETests
         dependsOn: Build
         jobs:
-          - template: /eng/ci/templates/official/jobs/ci-e2e-tests.yml@self
+          - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self
+      - stage: RunUnitTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/jobs/ci-unit-tests.yml@self
+      - stage: RunDockerConsumptionTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-docker-consumption-tests.yml@self
+      - stage: RunDockerDedicatedTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-docker-dedicated-tests.yml@self
+      - stage: RunLinuxConsumptionTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-lc-tests.yml@self

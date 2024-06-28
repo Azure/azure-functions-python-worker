@@ -24,6 +24,15 @@ resources:
     type: git
     name: engineering
     ref: refs/tags/release
+  pipelines:
+  - pipeline: Python SDK # Name of the pipeline resource. This is not pipeline name.
+    source: \azure\azure-functions-python-library\python-library.public # The name of the pipeline referenced by this pipeline resource.
+    project: public # Required only if the source pipeline is in another project
+    trigger: true # Set to true to enable automatic triggering of this pipeline when the source pipeline is run.
+  - pipeline: Python Extensions
+    source: \azure\azure-functions-python-extensions\python-extensions.public
+    project: public
+    trigger: true
 
 variables:
   - template: /ci/variables/build.yml@eng

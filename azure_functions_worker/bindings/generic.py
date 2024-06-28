@@ -30,6 +30,16 @@ class GenericBinding:
             return datumdef.Datum(type='bytes', value=bytes(obj))
         elif obj is None:
             return datumdef.Datum(type=None, value=obj)
+        elif isinstance(obj, dict):
+            return datumdef.Datum(type='dict', value=obj)
+        elif isinstance(obj, list):
+            return datumdef.Datum(type='list', value=obj)
+        elif isinstance(obj, int):
+            return datumdef.Datum(type='int', value=obj)
+        elif isinstance(obj, float):
+            return datumdef.Datum(type='double', value=obj)
+        elif isinstance(obj, bool):
+            return datumdef.Datum(type='bool', value=obj)
         else:
             raise NotImplementedError
 

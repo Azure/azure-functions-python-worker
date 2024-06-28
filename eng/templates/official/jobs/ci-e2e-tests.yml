@@ -87,8 +87,7 @@ jobs:
           artifactName: 'azure-functions'
           project: '3f99e810-c336-441f-8892-84983093ad7f'
           definition: 679
-          buildVersionToDownload: specific
-          pipelineId: 170384
+          buildVersionToDownload: latestFromBranch
           targetPath: '$(Pipeline.Workspace)/PythonSdkArtifact'
         condition: eq(variables['USETESTPYTHONSDK'], true)
       - bash: |
@@ -116,8 +115,7 @@ jobs:
           artifactName: $(PYTHONEXTENSIONNAME)
           project: '3f99e810-c336-441f-8892-84983093ad7f'
           definition: 798
-          buildVersionToDownload: specific
-          pipelineId: 170439
+          buildVersionToDownload: latestFromBranch
           targetPath: '$(Pipeline.Workspace)/PythonExtensionArtifact'
         condition: eq(variables['USETESTPYTHONEXTENSIONS'], true)
       - bash: |

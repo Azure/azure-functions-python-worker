@@ -37,8 +37,7 @@ extends:
            enabled: true # still only runs for default branch
          runSourceLanguagesInSourceAnalysis: true
     settings:
-      skipBuildTagsForGitHubPullRequests: $(System.PullRequest.IsFork)
-
+      skipBuildTagsForGitHubPullRequests: ${{ variables['System.PullRequest.IsFork'] }}
     stages:
     - stage: Build
       jobs:

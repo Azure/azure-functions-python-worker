@@ -120,7 +120,6 @@ jobs:
         condition: eq(variables['USETESTPYTHONEXTENSIONS'], true)
       - bash: |
           python -m pip install --upgrade pip
-          python -m pip install -U -e .[dev]
 
           if [[ $(PYTHON_VERSION) != "3.7" ]]; then
              python -m pip install -e $(Pipeline.Workspace)/PythonExtensionArtifact
@@ -130,6 +129,8 @@ jobs:
               python -m pip install -e $(Pipeline.Workspace)/PythonExtensionArtifact
               python -m pip install --pre -U -e .[test-deferred-bindings]
           fi
+          
+          python -m pip install -U -e .[dev]
 
           python setup.py build
           python setup.py webhost --branch-name=dev
@@ -147,4 +148,5 @@ jobs:
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
+          USETESTPYTHONSDK: $(USETESTPYTHONSDK)
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"

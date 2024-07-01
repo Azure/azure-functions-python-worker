@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import asyncio
 import collections as col
+import contextvars
 import os
 import sys
 import unittest
@@ -16,7 +17,7 @@ from azure_functions_worker.constants import (PYTHON_THREADPOOL_THREAD_COUNT,
                                               PYTHON_ENABLE_INIT_INDEXING,
                                               METADATA_PROPERTIES_WORKER_INDEXED,
                                               PYTHON_ENABLE_DEBUG_LOGGING)
-from azure_functions_worker.dispatcher import Dispatcher
+from azure_functions_worker.dispatcher import Dispatcher, ContextEnabledTask
 from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from tests.utils.testutils import UNIT_TESTS_ROOT
@@ -980,3 +981,35 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertEqual(
             response.function_load_response.result.exception.message,
             "Exception: Mocked Exception")
+
+
+class TestContextEnabledTask(unittest.TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.loop.close()
+
+    def test_init_with_context(self):
+        num = contextvars.ContextVar('num')
+        num.set(5)
+        ctx = contextvars.copy_context()
+        exception_raised = False
+        try:
+            self.loop.set_task_factory(
+                lambda loop, coro, context=None: ContextEnabledTask(
+                    coro, loop=loop, context=ctx))
+        except TypeError:
+            exception_raised = True
+        self.assertFalse(exception_raised)
+
+    async def test_init_without_context(self):
+        exception_raised = False
+        try:
+            self.loop.set_task_factory(
+                lambda loop, coro, context=None: ContextEnabledTask(
+                    coro, loop=loop))
+        except TypeError:
+            exception_raised = True
+        self.assertFalse(exception_raised)

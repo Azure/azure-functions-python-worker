@@ -155,7 +155,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                         worker_id=self.worker_id)))
 
             self._loop.set_task_factory(
-                lambda loop, coro: ContextEnabledTask(coro, loop=loop))
+                lambda loop, coro, context=None: ContextEnabledTask(
+                    coro, loop=loop, context=context))
 
             # Detach console logging before enabling GRPC channel logging
             logger.info('Detaching console logging.')
@@ -1012,8 +1013,8 @@ class AsyncLoggingHandler(logging.Handler):
 class ContextEnabledTask(asyncio.Task):
     AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
 
-    def __init__(self, coro, loop):
-        super().__init__(coro, loop=loop)
+    def __init__(self, coro, loop, context=None):
+        super().__init__(coro, loop=loop, context=context)
 
         current_task = asyncio.current_task(loop)
         if current_task is not None:

@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import asyncio
+import contextvars
 import hashlib
 import json
 import logging
@@ -13,6 +14,22 @@ import azure.functions as func
 app = func.FunctionApp()
 
 logger = logging.getLogger("my-function")
+
+num = contextvars.ContextVar('num')
+num.set(5)
+ctx = contextvars.copy_context()
+
+
+async def count_with_context(name: str):
+    for i in range(ctx[num]):
+        await asyncio.sleep(0.5)
+    return f"Finished {name} in {ctx[num]}"
+
+
+async def count_without_context(name: str, number: int):
+    for i in range(number):
+        await asyncio.sleep(0.5)
+    return f"Finished {name} in {number}"
 
 
 @app.route(route="return_str")
@@ -404,3 +421,17 @@ def set_cookie_resp_header_empty(
     resp.headers.add("Set-Cookie", '')
 
     return resp
+
+
+@app.route('create_task_with_context')
+async def create_task_with_context(req: func.HttpRequest):
+    count_task = asyncio.create_task(count_with_context("Hello World"), context=ctx)
+    count_val = await count_task
+    return f'{count_val}'
+
+
+@app.route('create_task_without_context')
+async def create_task_without_context(req: func.HttpRequest):
+    count_task = asyncio.create_task(count_without_context("Hello World", 5))
+    count_val = await count_task
+    return f'{count_val}'

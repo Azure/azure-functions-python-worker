@@ -442,6 +442,18 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # System logs should not exist in host_out
         self.assertNotIn('parallelly_log_system at disguised_logger', host_out)
 
+    def test_create_task_with_context(self):
+        r = self.webhost.request('GET', 'create_task_with_context')
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'Finished Hello World in 5')
+
+    def test_create_task_without_context(self):
+        r = self.webhost.request('GET', 'create_task_without_context')
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'Finished Hello World in 5')
+
 
 class TestHttpFunctionsStein(TestHttpFunctions):
 

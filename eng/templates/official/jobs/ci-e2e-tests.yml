@@ -134,7 +134,6 @@ jobs:
           python setup.py build
           python setup.py webhost --branch-name=dev
           python setup.py extension
-          mkdir logs
         displayName: 'Install test python extension, dependencies and the worker'
         condition: eq(variables['USETESTPYTHONEXTENSIONS'], true)
       - bash: |

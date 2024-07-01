@@ -292,6 +292,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._otel_libs_available = False
 
     async def _handle__worker_init_request(self, request):
+        # hello from the worker
         logger.info('Received WorkerInitRequest, '
                     'python version %s, '
                     'worker version %s, '

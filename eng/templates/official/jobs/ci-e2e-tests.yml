@@ -77,7 +77,6 @@ jobs:
           python setup.py build
           python setup.py webhost --branch-name=dev
           python setup.py extension
-          mkdir logs
         displayName: 'Install dependencies and the worker'
         condition: and(eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - task: DownloadPipelineArtifact@2
@@ -85,7 +84,7 @@ jobs:
         inputs:
           buildType: specific
           artifactName: 'azure-functions'
-          project: '3f99e810-c336-441f-8892-84983093ad7f'
+          project: 'internal'
           definition: 679
           buildVersionToDownload: latest
           targetPath: '$(Pipeline.Workspace)/PythonSdkArtifact'
@@ -113,7 +112,7 @@ jobs:
         inputs:
           buildType: specific
           artifactName: $(PYTHONEXTENSIONNAME)
-          project: '3f99e810-c336-441f-8892-84983093ad7f'
+          project: 'internal'
           definition: 798
           buildVersionToDownload: latest
           targetPath: '$(Pipeline.Workspace)/PythonExtensionArtifact'

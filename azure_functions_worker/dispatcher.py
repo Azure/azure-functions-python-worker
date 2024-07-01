@@ -154,9 +154,17 @@ class Dispatcher(metaclass=DispatcherMeta):
                     start_stream=protos.StartStream(
                         worker_id=self.worker_id)))
 
-            self._loop.set_task_factory(
-                lambda loop, coro, context=None: ContextEnabledTask(
-                    coro, loop=loop, context=context))
+            # In Python 3.11+, constructing a task has an optional context
+            # parameter
+            # https://github.com/Azure/azure-functions-python-worker/issues/1508
+            if sys.version_info.minor >= 11:
+                self._loop.set_task_factory(
+                    lambda loop, coro, context=None: ContextEnabledTask(
+                        coro, loop=loop, context=context))
+            else:
+                self._loop.set_task_factory(
+                    lambda loop, coro: ContextEnabledTask(coro, loop=loop))
+
 
             # Detach console logging before enabling GRPC channel logging
             logger.info('Detaching console logging.')
@@ -1014,7 +1022,10 @@ class ContextEnabledTask(asyncio.Task):
     AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
 
     def __init__(self, coro, loop, context=None):
-        super().__init__(coro, loop=loop, context=context)
+        if sys.version_info.minor >= 11:
+            super().__init__(coro, loop=loop, context=context)
+        else:
+            super().__init__(coro, loop=loop)
 
         current_task = asyncio.current_task(loop)
         if current_task is not None:

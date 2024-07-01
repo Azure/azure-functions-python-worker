@@ -16,6 +16,10 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
         return testutils.EXTENSION_TESTS_FOLDER / 'deferred_bindings_tests' / \
             'deferred_bindings_blob_functions'
 
+    @classmethod
+    def get_libraries_to_install(cls):
+        return ['azurefunctions-extensions-bindings-blob']
+
     def test_blob_str(self):
         r = self.webhost.request('POST', 'put_blob_str', data='test-data')
         self.assertEqual(r.status_code, 200)
@@ -199,3 +203,9 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.text, client)
         self.assertEqual(r2.text, client2)
         self.assertNotEqual(r.text, r2.text)
+
+    def test_failed_client_creation(self):
+        r = self.webhost.request('GET', 'invalid_connection_info')
+        # Without the http_v2_enabled default definition, this request would time out.
+        # Instead, it fails immediately
+        self.assertEqual(r.status_code, 500)

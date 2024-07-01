@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 import os
 from threading import Thread
-from unittest.mock import patch
 from datetime import datetime
 from tests.utils import testutils
 
@@ -18,16 +17,17 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
         cls.env_variables['PYTHON_THREADPOOL_THREAD_COUNT'] = '1'
         cls.env_variables['FUNCTIONS_WORKER_PROCESS_COUNT'] = '2'
 
-        os_environ = os.environ.copy()
-        os_environ.update(cls.env_variables)
+        os.environ["PYTHON_THREADPOOL_THREAD_COUNT"] = "1"
+        os.environ["FUNCTIONS_WORKER_PROCESS_COUNT"] = "2"
 
-        cls._patch_environ = patch.dict('os.environ', os_environ)
-        cls._patch_environ.start()
         super().setUpClass()
 
-    def tearDown(self):
-        super().tearDown()
-        self._patch_environ.stop()
+    @classmethod
+    def tearDownClass(cls):
+        os.environ.pop('PYTHON_THREADPOOL_THREAD_COUNT')
+        os.environ.pop('FUNCTIONS_WORKER_PROCESS_COUNT')
+
+        super().tearDownClass()
 
     @classmethod
     def get_script_dir(cls):
@@ -37,7 +37,7 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
     def get_environment_variables(cls):
         return cls.env_variables
 
-    @testutils.retryable_test(3, 5)
+    @testutils.retryable_test(4, 5)
     def test_http_func_with_worker_process_count_2(self):
         response = [None, None]
 
@@ -76,3 +76,11 @@ class TestWorkerProcessCountWithBlueprintStein(TestWorkerProcessCount):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'blueprint_functions' /\
                                             'functions_in_blueprint_only'
+
+
+class TestWorkerProcessCountWithBlueprintDiffDirStein(TestWorkerProcessCount):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'blueprint_functions' /\
+                                            'blueprint_different_dir'

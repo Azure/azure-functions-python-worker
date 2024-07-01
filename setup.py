@@ -71,7 +71,7 @@ PACKAGES = [
     "azure_functions_worker._thirdparty",
 ]
 
-INSTALL_REQUIRES = ["azure-functions==1.20.0b1", "python-dateutil~=2.8.2"]
+INSTALL_REQUIRES = ["azure-functions==1.20.0", "python-dateutil~=2.8.2"]
 
 if sys.version_info[:2] == (3, 7):
     INSTALL_REQUIRES.extend(
@@ -93,7 +93,7 @@ EXTRA_REQUIRES = {
         "pycryptodome~=3.10.1",
         "flake8~=4.0.1",
         "mypy",
-        "pytest",
+        "pytest~=7.4.4",
         "requests==2.*",
         "coverage",
         "pytest-sugar",

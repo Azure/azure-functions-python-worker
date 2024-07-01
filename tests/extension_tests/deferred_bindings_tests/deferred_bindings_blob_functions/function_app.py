@@ -250,20 +250,30 @@ def put_blob_bytes(req: func.HttpRequest, file: func.Out[bytes]) -> str:
 
 
 @app.function_name(name="blob_cache")
-@app.blob_input(arg_name="client",
+@app.blob_input(arg_name="cachedClient",
                 path="python-worker-tests/test-blobclient-triggered.txt",
                 connection="AzureWebJobsStorage")
 @app.route(route="blob_cache")
 def blob_cache(req: func.HttpRequest,
-               client: blob.BlobClient) -> func.HttpResponse:
-    return func.HttpResponse(repr(client))
+               cachedClient: blob.BlobClient) -> str:
+    return func.HttpResponse(repr(cachedClient))
 
 
 @app.function_name(name="blob_cache2")
-@app.blob_input(arg_name="client",
+@app.blob_input(arg_name="cachedClient",
                 path="python-worker-tests/test-blobclient-triggered.txt",
                 connection="AzureWebJobsStorage")
 @app.route(route="blob_cache2")
 def blob_cache2(req: func.HttpRequest,
-                client: blob.BlobClient) -> func.HttpResponse:
+                cachedClient: blob.BlobClient) -> func.HttpResponse:
+    return func.HttpResponse(repr(cachedClient))
+
+
+@app.function_name(name="invalid_connection_info")
+@app.blob_input(arg_name="client",
+                path="python-worker-tests/test-blobclient-triggered.txt",
+                connection="NotARealConnectionString")
+@app.route(route="invalid_connection_info")
+def invalid_connection_info(req: func.HttpRequest,
+                            client: blob.BlobClient) -> func.HttpResponse:
     return func.HttpResponse(repr(client))

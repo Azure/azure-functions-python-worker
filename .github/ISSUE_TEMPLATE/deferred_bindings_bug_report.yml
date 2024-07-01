@@ -1,4 +1,4 @@
-name: Python Worker Deferred Bindings Feature Request
+name: Python Worker Deferred Bindings Bug Report
 description: File a Deferred Bindings bug report
 title: "[Bug] Bug Title Here"
 labels: ["python", "bug", "deferred-bindings"]

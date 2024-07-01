@@ -53,3 +53,17 @@ class TestOnlyBlueprint(testutils.WebHostTestCase):
         """
         r = self.webhost.request('GET', 'default_template')
         self.assertEqual(r.status_code, 404)
+
+
+class TestBlueprintDifferentDirectory(testutils.WebHostTestCase):
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'blueprint_functions' / \
+            'blueprint_different_dir'
+
+    def test_blueprint_in_different_dir(self):
+        r = self.webhost.request('GET', 'default_template')
+        self.assertTrue(r.ok)
+
+        r = self.webhost.request('GET', 'http_func')
+        self.assertTrue(r.ok)

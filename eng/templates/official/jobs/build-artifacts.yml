@@ -1,0 +1,232 @@
+jobs:
+- job: Build_WINDOWS_X64
+  pool:
+    name: 1es-pool-azfunc-public
+    image: 1es-windows-2022
+    os: windows
+  strategy:
+    matrix:
+      Python37V4:
+        pythonVersion: '3.7'
+        workerPath: 'python/prodV4/worker.py'
+      Python38V4:
+        pythonVersion: '3.8'
+        workerPath: 'python/prodV4/worker.py'
+      Python39V4:
+        pythonVersion: '3.9'
+        workerPath: 'python/prodV4/worker.py'
+      Python310V4:
+        pythonVersion: '3.10'
+        workerPath: 'python/prodV4/worker.py'
+      Python311V4:
+        pythonVersion: '3.11'
+        workerPath: 'python/prodV4/worker.py'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.SourcesDirectory)
+        artifactName: "$(pythonVersion)_WINDOWS_X64"
+  steps:
+  - template: ../../../../pack/templates/win_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
+      architecture: 'x64'
+      artifactName: '$(pythonVersion)_WINDOWS_X64'
+- job: Build_WINDOWS_X86
+  pool:
+    name: 1es-pool-azfunc-public
+    image: 1es-windows-2022
+    os: windows
+  strategy:
+    matrix:
+      Python37V4:
+        pythonVersion: '3.7'
+        workerPath: 'python/prodV4/worker.py'
+      Python38V4:
+        pythonVersion: '3.8'
+        workerPath: 'python/prodV4/worker.py'
+      Python39V4:
+        pythonVersion: '3.9'
+        workerPath: 'python/prodV4/worker.py'
+      Python310V4:
+        pythonVersion: '3.10'
+        workerPath: 'python/prodV4/worker.py'
+      Python311V4:
+        pythonVersion: '3.11'
+        workerPath: 'python/prodV4/worker.py'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.SourcesDirectory)
+        artifactName: "$(pythonVersion)_WINDOWS_X86"
+  steps:
+  - template: ../../../../pack/templates/win_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
+      architecture: 'x86'
+      artifactName: '$(pythonVersion)_WINDOWS_x86'
+- job: Build_LINUX_X64
+  pool:
+    name: 1es-pool-azfunc
+    image: 1es-ubuntu-22.04
+    os: linux
+  strategy:
+    matrix:
+      Python37V4:
+        pythonVersion: '3.7'
+        workerPath: 'python/prodV4/worker.py'
+      Python38V4:
+        pythonVersion: '3.8'
+        workerPath: 'python/prodV4/worker.py'
+      Python39V4:
+        pythonVersion: '3.9'
+        workerPath: 'python/prodV4/worker.py'
+      Python310V4:
+        pythonVersion: '3.10'
+        workerPath: 'python/prodV4/worker.py'
+      Python311V4:
+        pythonVersion: '3.11'
+        workerPath: 'python/prodV4/worker.py'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.SourcesDirectory)
+        artifactName: "$(pythonVersion)_LINUX_X64"
+  steps:
+  - template: ../../../../pack/templates/nix_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
+      artifactName: '$(pythonVersion)_LINUX_X64'
+- job: Build_OSX_X64
+  pool:
+    name: Azure Pipelines
+    image: macOS-latest
+    os: macOS
+  strategy:
+    matrix:
+      Python37V4:
+        pythonVersion: '3.7'
+        workerPath: 'python/prodV4/worker.py'
+      Python38V4:
+        pythonVersion: '3.8'
+        workerPath: 'python/prodV4/worker.py'
+      Python39V4:
+        pythonVersion: '3.9'
+        workerPath: 'python/prodV4/worker.py'
+      Python310V4:
+        pythonVersion: '3.10'
+        workerPath: 'python/prodV4/worker.py'
+      Python311V4:
+        pythonVersion: '3.11'
+        workerPath: 'python/prodV4/worker.py'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.SourcesDirectory)
+        artifactName: "$(pythonVersion)_OSX_X64"
+  steps:
+  - template: ../../../../pack/templates/nix_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
+      artifactName: '$(pythonVersion)_OSX_X64'
+- job: Build_OSX_ARM64
+  pool:
+    name: Azure Pipelines
+    image: macOS-latest
+    os: macOS
+  strategy:
+    matrix:
+      Python39V4:
+        pythonVersion: '3.9'
+        workerPath: 'python/prodV4/worker.py'
+      Python310V4:
+        pythonVersion: '3.10'
+        workerPath: 'python/prodV4/worker.py'
+      Python311V4:
+        pythonVersion: '3.11'
+        workerPath: 'python/prodV4/worker.py'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.SourcesDirectory)
+        artifactName: "$(pythonVersion)_OSX_ARM4"
+  steps:
+  - template: ../../../../pack/templates/macos_64_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
+      artifactName: '$(pythonVersion)_OSX_ARM64'
+
+- job: PackageWorkers
+  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64']
+  templateContext:
+      outputParentDirectory: $(Build.ArtifactStagingDirectory)
+      outputs:
+        - output: nuget
+          condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'), eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true))
+          useDotNetTask: false
+          packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+          packageParentPath: "$(Build.ArtifactStagingDirectory)"
+          publishVstsFeed: "e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df"
+          nuGetFeedType: "internal"
+          allowPackageConflicts: true
+  steps:
+  - bash: |
+      echo "Releasing from $BUILD_SOURCEBRANCHNAME"
+      sudo apt-get install -y jq
+
+      if [[ $BUILD_SOURCEBRANCHNAME = 4\.* ]]
+      then
+        echo "Generating V4 Release Package for $BUILD_SOURCEBRANCHNAME"
+        NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+        WKVERSION="$BUILD_SOURCEBRANCHNAME"
+      elif [[ $BUILD_SOURCEBRANCHNAME = dev ]]
+      then
+        echo "Generating V4 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
+        VERSION=$(cat azure_functions_worker/version.py | tail -1 | cut -d' ' -f3 | sed  "s/'//g")
+        NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+        WKVERSION="$VERSION-$(Build.BuildNumber)"
+      else
+        # this is only to test nuget related workflow because we are setting nuspec here
+        echo "Generating Integration Test Package for $BUILD_SOURCEBRANCHNAME for testing purpose"
+        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
+        NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+        # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
+        WKVERSION="3.$LATEST_TAG-$(BUILD_BUILDID)-TEST"
+        echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
+      fi
+
+      echo "##vso[task.setvariable variable=nuspec_path]$NUSPEC"
+      echo "##vso[task.setvariable variable=worker_version]$WKVERSION"
+    displayName: "Generate Worker NuGet Package for Release $BUILD_SOURCEBRANCHNAME"
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      buildType: 'current'
+      targetPath: '$(Build.SourcesDirectory)'
+  - task: ManifestGeneratorTask@0
+    displayName: 'SBOM Generation Task'
+    inputs:
+      BuildDropPath: '$(Build.ArtifactStagingDirectory)'
+      BuildComponentPath: '$(Build.SourcesDirectory)'
+      Verbosity: 'Verbose'
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.ArtifactStagingDirectory)'
+      Contents: '**'
+      TargetFolder: '$(Build.SourcesDirectory)'
+  - task: NuGetCommand@2
+    inputs:
+      command: pack
+      packagesToPack: '$(nuspec_path)'
+      packDestination: $(Build.ArtifactStagingDirectory) 
+      versioningScheme: 'byEnvVar'
+      versionEnvVar: WORKER_VERSION

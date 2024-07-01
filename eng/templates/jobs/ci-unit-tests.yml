@@ -1,0 +1,42 @@
+jobs:
+  - job: "TestPython"
+    displayName: "Run Python Unit Tests"
+    
+    strategy:
+      matrix:
+        Python37:
+          PYTHON_VERSION: '3.7'
+        Python38:
+          PYTHON_VERSION: '3.8'
+        Python39:
+          PYTHON_VERSION: '3.9'
+        Python310:
+          PYTHON_VERSION: '3.10'
+        Python311:
+          PYTHON_VERSION: '3.11'
+    
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(PYTHON_VERSION)
+      - task: UseDotNet@2
+        displayName: 'Install .NET 8'
+        inputs:
+          version: 8.0.x
+      - bash: |
+          python -m pip install --upgrade pip
+          python -m pip install -U azure-functions --pre
+
+          python -m pip install -U -e .[dev] 
+          if [[ $(PYTHON_VERSION) != "3.7" ]]; then
+            python -m pip install --pre -U -e .[test-http-v2]
+          fi
+
+          python setup.py build
+          python setup.py webhost --branch-name=dev
+          python setup.py extension
+        displayName: "Install dependencies"
+      - bash: |
+             python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
+        displayName: "Running $(PYTHON_VERSION) Unit Tests"
+  

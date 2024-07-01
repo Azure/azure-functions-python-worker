@@ -104,7 +104,6 @@ jobs:
           python setup.py build
           python setup.py webhost --branch-name=dev
           python setup.py extension
-          mkdir logs
         displayName: 'Install test python sdk, dependencies and the worker'
         condition: eq(variables['USETESTPYTHONSDK'], true)
       - task: DownloadPipelineArtifact@2

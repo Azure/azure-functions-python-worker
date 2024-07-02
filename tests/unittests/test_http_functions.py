@@ -442,6 +442,8 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # System logs should not exist in host_out
         self.assertNotIn('parallelly_log_system at disguised_logger', host_out)
 
+    @skipIf(sys.version_info.minor < 11,
+            "The context param is only available for 3.11+")
     def test_create_task_with_context(self):
         r = self.webhost.request('GET', 'create_task_with_context')
 

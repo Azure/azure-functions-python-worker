@@ -165,7 +165,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                 self._loop.set_task_factory(
                     lambda loop, coro: ContextEnabledTask(coro, loop=loop))
 
-
             # Detach console logging before enabling GRPC channel logging
             logger.info('Detaching console logging.')
             disable_console_logging()

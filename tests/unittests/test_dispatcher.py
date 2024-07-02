@@ -999,7 +999,7 @@ class TestContextEnabledTask(unittest.TestCase):
         try:
             self.loop.set_task_factory(
                 lambda loop, coro, context=None: ContextEnabledTask(
-                    coro, loop=loop, context=context))
+                    coro, loop=loop, context=ctx))
         except TypeError:
             exception_raised = True
         self.assertFalse(exception_raised)

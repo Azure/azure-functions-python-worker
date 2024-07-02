@@ -284,7 +284,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             from azure.monitor.opentelemetry import configure_azure_monitor
 
-            # Set resource detector manually until officially supported in distro
+            # Set functions resource detector manually until officially
+            # include in Azure monitor distro
             os.environ.setdefault(
                 "OTEL_EXPERIMENTAL_RESOURCE_DETECTORS",
                 "azure_functions",
@@ -292,10 +293,15 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             configure_azure_monitor(
                 # Connection string can be explicitly specified in Appsetting
-                # If not set, env var APPLICATIONINSIGHTS_CONNECTION_STRING is used
-                connection_string=get_app_setting(setting=APPLICATIONINSIGHTS_CONNECTION_STRING),
-                logger_name=get_app_setting(setting=PYTHON_AZURE_MONITOR_LOGGER_NAME,
-                           default_value=PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT),
+                # If not set, defaults to env var
+                # APPLICATIONINSIGHTS_CONNECTION_STRING
+                connection_string=get_app_setting(
+                    setting=APPLICATIONINSIGHTS_CONNECTION_STRING
+                ),
+                logger_name=get_app_setting(
+                    setting=PYTHON_AZURE_MONITOR_LOGGER_NAME,
+                    default_value=PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT
+                ),
             )
             self._otel_libs_available = True
 

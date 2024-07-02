@@ -157,13 +157,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             # In Python 3.11+, constructing a task has an optional context
             # parameter
             # https://github.com/Azure/azure-functions-python-worker/issues/1508
-            if sys.version_info.minor >= 11:
-                self._loop.set_task_factory(
+            self._loop.set_task_factory(
                     lambda loop, coro, context=None: ContextEnabledTask(
                         coro, loop=loop, context=context))
-            else:
-                self._loop.set_task_factory(
-                    lambda loop, coro: ContextEnabledTask(coro, loop=loop))
 
             # Detach console logging before enabling GRPC channel logging
             logger.info('Detaching console logging.')

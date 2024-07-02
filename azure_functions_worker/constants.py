@@ -82,7 +82,7 @@ HTTP = "http"
 BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8
 
 # Appsetting to turn on OpenTelemetry support/features
-# Includes turning on Azure monitor distro to send telemetry to Application Insights
+# Includes turning on Azure monitor distro to send telemetry to AppInsights
 PYTHON_ENABLE_OPENTELEMETRY = "PYTHON_ENABLE_OPENTELEMETRY"
 PYTHON_ENABLE_OPENTELEMETRY_DEFAULT = False
 

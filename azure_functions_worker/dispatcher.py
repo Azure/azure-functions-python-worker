@@ -155,11 +155,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                         worker_id=self.worker_id)))
 
             # In Python 3.11+, constructing a task has an optional context
-            # parameter
+            # parameter. Allow for this param to be passed to ContextEnabledTask
             # https://github.com/Azure/azure-functions-python-worker/issues/1508
             self._loop.set_task_factory(
-                    lambda loop, coro, context=None: ContextEnabledTask(
-                        coro, loop=loop, context=context))
+                lambda loop, coro, context=None: ContextEnabledTask(
+                    coro, loop=loop, context=context))
 
             # Detach console logging before enabling GRPC channel logging
             logger.info('Detaching console logging.')
@@ -1017,6 +1017,8 @@ class ContextEnabledTask(asyncio.Task):
     AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
 
     def __init__(self, coro, loop, context=None):
+        # The context param is only available for 3.11+. If
+        # not, it can't be sent in the init() call.
         if sys.version_info.minor >= 11:
             super().__init__(coro, loop=loop, context=context)
         else:

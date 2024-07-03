@@ -1,4 +1,5 @@
 import asyncio
+import os
 import unittest
 from unittest.mock import patch, MagicMock
 
@@ -53,16 +54,16 @@ class TestOpenTelemetry(unittest.TestCase):
             mock_update_ot.assert_called_once()
             # Verify that otel_libs_available is set to False due to ImportError
             self.assertFalse(self.dispatcher._otel_libs_available)
-        
-    @patch("os.environ.setdefault")
+
     @patch("azure_functions_worker.dispatcher.get_app_setting")
     @patch('builtins.__import__')
     def test_init_request_otel_capability_enabled_app_setting(
-            self, 
+            self,
             mock_imports,
             mock_app_setting,
-            mock_environ,
-        ):
+    ):
+        if "OTEL_EXPERIMENTAL_RESOURCE_DETECTORS" in os.environ:
+            del os.environ["OTEL_EXPERIMENTAL_RESOURCE_DETECTORS"]
         mock_imports.return_value = MagicMock()
         mock_app_setting.return_value = True
 
@@ -80,15 +81,15 @@ class TestOpenTelemetry(unittest.TestCase):
                          protos.StatusResult.Success)
 
         # Verify that Azure functions resource detector is set in env
-        mock_environ.assert_called_with(
-            "OTEL_EXPERIMENTAL_RESOURCE_DETECTORS",
-            "azure_functions",
-        )
+        self.assertEqual(os.environ.get("OTEL_EXPERIMENTAL_RESOURCE_DETECTORS"), "azure_functions")
 
         # Verify that WorkerOpenTelemetryEnabled capability is set to _TRUE
         capabilities = init_response.worker_init_response.capabilities
         self.assertIn("WorkerOpenTelemetryEnabled", capabilities)
         self.assertEqual(capabilities["WorkerOpenTelemetryEnabled"], "true")
+
+        if "OTEL_EXPERIMENTAL_RESOURCE_DETECTORS" in os.environ:
+            del os.environ["OTEL_EXPERIMENTAL_RESOURCE_DETECTORS"]
 
     @patch("azure_functions_worker.dispatcher.Dispatcher.initialize_opentelemetry")
     @patch("azure_functions_worker.dispatcher.get_app_setting")

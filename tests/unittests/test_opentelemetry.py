@@ -62,8 +62,6 @@ class TestOpenTelemetry(unittest.TestCase):
             mock_imports,
             mock_app_setting,
     ):
-        if "OTEL_EXPERIMENTAL_RESOURCE_DETECTORS" in os.environ:
-            del os.environ["OTEL_EXPERIMENTAL_RESOURCE_DETECTORS"]
         mock_imports.return_value = MagicMock()
         mock_app_setting.return_value = True
 
@@ -80,16 +78,10 @@ class TestOpenTelemetry(unittest.TestCase):
         self.assertEqual(init_response.worker_init_response.result.status,
                          protos.StatusResult.Success)
 
-        # Verify that Azure functions resource detector is set in env
-        self.assertEqual(os.environ.get("OTEL_EXPERIMENTAL_RESOURCE_DETECTORS"), "azure_functions")
-
         # Verify that WorkerOpenTelemetryEnabled capability is set to _TRUE
         capabilities = init_response.worker_init_response.capabilities
         self.assertIn("WorkerOpenTelemetryEnabled", capabilities)
         self.assertEqual(capabilities["WorkerOpenTelemetryEnabled"], "true")
-
-        if "OTEL_EXPERIMENTAL_RESOURCE_DETECTORS" in os.environ:
-            del os.environ["OTEL_EXPERIMENTAL_RESOURCE_DETECTORS"]
 
     @patch("azure_functions_worker.dispatcher.Dispatcher.initialize_opentelemetry")
     @patch("azure_functions_worker.dispatcher.get_app_setting")

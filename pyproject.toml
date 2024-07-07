@@ -1,0 +1,26 @@
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+known_first_party = ["azure_functions_worker"]
+default_section = "THIRDPARTY"
+src_paths = ["azure_functions_worker"]
+skip_glob = [
+    "build",
+    "dist",
+    "env",
+    "venv",
+    "*venv*",
+    "*.egg-info",
+    ".tox",
+    ".nox",
+    ".git",
+    "__pycache__",
+    ".ci",
+    ".devcontainer",
+    ".github",
+    "eng",
+    "pack",
+    "*protos/*"
+]

@@ -1,8 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import os
 import json
+import os
 
 import azure.functions as func
 from azure.eventhub import EventData

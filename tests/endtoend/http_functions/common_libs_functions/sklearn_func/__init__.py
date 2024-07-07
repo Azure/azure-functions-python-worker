@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import logging
+
 import azure.functions as func
 from sklearn.datasets import load_iris
 

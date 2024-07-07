@@ -6,8 +6,9 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from azure_functions_worker.utils.dependency import DependencyManager
 from tests.utils import testutils
+
+from azure_functions_worker.utils.dependency import DependencyManager
 
 
 class TestDependencyManager(unittest.TestCase):
@@ -219,7 +220,7 @@ class TestDependencyManager(unittest.TestCase):
 
     def test_add_to_sys_path_import_module(self):
         DependencyManager._add_to_sys_path(self._customer_deps_path, True)
-        import common_module # NoQA
+        import common_module  # NoQA
         self.assertEqual(
             common_module.package_location,
             os.path.join(self._customer_deps_path, 'common_module')
@@ -230,7 +231,7 @@ class TestDependencyManager(unittest.TestCase):
         into sys.path
         """
         DependencyManager._add_to_sys_path(self._customer_deps_path, True)
-        import common_namespace # NoQA
+        import common_namespace  # NoQA
         self.assertEqual(len(common_namespace.__path__), 1)
         self.assertEqual(
             common_namespace.__path__[0],
@@ -507,7 +508,7 @@ class TestDependencyManager(unittest.TestCase):
         sys.path.insert(0, self._worker_deps_path)
 
         # Ensure new import is from _worker_deps_path
-        import common_module as worker_mod # NoQA
+        import common_module as worker_mod  # NoQA
         self.assertIn('common_module', sys.modules)
         self.assertEqual(
             worker_mod.package_location,

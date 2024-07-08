@@ -879,7 +879,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             ' * run the following command from the root folder of',
             '   the project:',
             '',
-            f'       $ {sys.executable} setup.py webhost',
+            f'       $ {sys.executable} -m invoke -c test_setup webhost',
             '',
             ' * or download or build the Azure Functions Host and'
             '   then write the full path to WebHost.dll'
@@ -892,7 +892,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             '      dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
             ' * or download Azure Functions Core Tools binaries and',
             '   then write the full path to func.exe into the ',
-            '   `CORE_TOOLS_EXE_PATH` envrionment variable.',
+            '   `CORE_TOOLS_EXE_PATH` environment variable.',
             '',
             'Setting "export PYAZURE_WEBHOST_DEBUG=true" to get the full',
             'stdout and stderr from function host.'

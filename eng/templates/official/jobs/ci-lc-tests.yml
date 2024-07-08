@@ -38,7 +38,8 @@ jobs:
              python -m pip install --pre -U -e .[test-http-v2]
           fi
 
-          python setup.py build
+          cd tests
+          python -m invoke -c test_setup build-protos
         displayName: 'Install dependencies and the worker'
       - bash: |
              python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests

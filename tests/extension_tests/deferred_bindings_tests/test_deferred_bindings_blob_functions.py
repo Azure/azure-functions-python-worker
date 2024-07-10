@@ -204,6 +204,27 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r2.text, client2)
         self.assertNotEqual(r.text, r2.text)
 
+    def test_caching_same_resource(self):
+        '''
+        The cache returns the same type based on param name.
+        One functions with two clients that access the same resource
+        will have two different clients. This tests that the same clients
+        are returned for each invocation and that the clients are different
+        between the two bindings.
+        '''
+
+        r = self.webhost.request('GET', 'blob_cache3')
+        self.assertEqual(r.status_code, 200)
+        clients = r.text.split(" | ")
+        self.assertNotEqual(clients[0], clients[1])
+
+        r2 = self.webhost.request('GET', 'blob_cache3')
+        self.assertEqual(r2.status_code, 200)
+        clients_second_call = r2.text.split(" | ")
+        self.assertEqual(clients[0], clients_second_call[0])
+        self.assertEqual(clients[1], clients_second_call[1])
+        self.assertNotEqual(clients_second_call[0], clients_second_call[1])
+
     def test_failed_client_creation(self):
         r = self.webhost.request('GET', 'invalid_connection_info')
         # Without the http_v2_enabled default definition, this request would time out.

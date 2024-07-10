@@ -269,6 +269,21 @@ def blob_cache2(req: func.HttpRequest,
     return func.HttpResponse(repr(cachedClient))
 
 
+@app.function_name(name="blob_cache3")
+@app.blob_input(arg_name="cachedClient",
+                path="python-worker-tests/test-blobclient-triggered.txt",
+                connection="AzureWebJobsStorage")
+@app.blob_input(arg_name="cachedClient2",
+                path="python-worker-tests/test-blobclient-triggered.txt",
+                connection="AzureWebJobsStorage")
+@app.route(route="blob_cache3")
+def blob_cache3(req: func.HttpRequest,
+                cachedClient: blob.BlobClient,
+                cachedClient2: blob.BlobClient) -> func.HttpResponse:
+    return func.HttpResponse("Client 1: " + repr(cachedClient)
+                             + " | Client 2: " + repr(cachedClient2))
+
+
 @app.function_name(name="invalid_connection_info")
 @app.blob_input(arg_name="client",
                 path="python-worker-tests/test-blobclient-triggered.txt",

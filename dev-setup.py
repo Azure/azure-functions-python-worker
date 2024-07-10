@@ -474,32 +474,32 @@ class Clean(distutils.cmd.Command):
                         f"Exception: {ex}"
                     )
 
+#
+# COMMAND_CLASS = {
+#     "develop": Development,
+#     "build": BuildProtos,
+#     "webhost": Webhost,
+#     "webhost --branch-name={branch-name}": Webhost,
+#     "extension": Extension,
+#     "clean": Clean,
+# }
 
-COMMAND_CLASS = {
-    "develop": Development,
-    "build": BuildProtos,
-    "webhost": Webhost,
-    "webhost --branch-name={branch-name}": Webhost,
-    "extension": Extension,
-    "clean": Clean,
-}
-
-setup(
-    name="azure-functions-worker",
-    version=VERSION,
-    description="Python Language Worker for Azure Functions Host",
-    author="Azure Functions team at Microsoft Corp.",
-    author_email="azurefunctions@microsoft.com",
-    keywords="azure functions azurefunctions python serverless",
-    url="https://github.com/Azure/azure-functions-python-worker",
-    long_description=open("README.md").read(),
-    long_description_content_type="text/markdown",
-    classifiers=CLASSIFIERS,
-    license="MIT",
-    packages=PACKAGES,
-    install_requires=INSTALL_REQUIRES,
-    extras_require=EXTRA_REQUIRES,
-    include_package_data=True,
-    cmdclass=COMMAND_CLASS,
-    test_suite="tests",
-)
+# setup(
+#     name="azure-functions-worker",
+#     version=VERSION,
+#     description="Python Language Worker for Azure Functions Host",
+#     author="Azure Functions team at Microsoft Corp.",
+#     author_email="azurefunctions@microsoft.com",
+#     keywords="azure functions azurefunctions python serverless",
+#     url="https://github.com/Azure/azure-functions-python-worker",
+#     long_description=open("README.md").read(),
+#     long_description_content_type="text/markdown",
+#     classifiers=CLASSIFIERS,
+#     license="MIT",
+#     packages=PACKAGES,
+#     install_requires=INSTALL_REQUIRES,
+#     extras_require=EXTRA_REQUIRES,
+#     include_package_data=True,
+#     cmdclass=COMMAND_CLASS,
+#     test_suite="tests",
+# )

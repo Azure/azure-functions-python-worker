@@ -84,8 +84,8 @@ test-deferred-bindings = [
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.distutils.bdist_wheel]
-universal = true
+[tool.setuptools]
+package-dir = {"" = "azure_functions_worker"}
 
 [tool.isort]
 profile = "black"
@@ -109,7 +109,7 @@ skip_glob = [
     ".ci",
     ".devcontainer",
     ".github",
-    "eng",
-    "pack",
+#    "eng",
+#    "pack",
     "*protos/*"
 ]

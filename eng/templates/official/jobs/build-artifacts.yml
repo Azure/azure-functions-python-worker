@@ -1,7 +1,7 @@
 jobs:
 - job: Build_WINDOWS_X64
   pool:
-    name: 1es-pool-azfunc-public
+    name: 1es-pool-azfunc
     image: 1es-windows-2022
     os: windows
   strategy:
@@ -36,7 +36,7 @@ jobs:
       artifactName: '$(pythonVersion)_WINDOWS_X64'
 - job: Build_WINDOWS_X86
   pool:
-    name: 1es-pool-azfunc-public
+    name: 1es-pool-azfunc
     image: 1es-windows-2022
     os: windows
   strategy:

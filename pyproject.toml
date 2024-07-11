@@ -43,15 +43,15 @@ Repository = "https://github.com/Azure/azure-functions-python-worker"
 
 [project.optional-dependencies]
 dev = [
-    "azure-eventhub",
-    "azure-functions-durable",
+    "azure-eventhub", # Used for EventHub E2E tests
+    "azure-functions-durable", # Used for Durable E2E tests
     "flask",
-    "fastapi~=0.111.0",
+    "fastapi~=0.103.2",
     "pydantic",
     "pycryptodome==3.*",
-    "flake8==7.*",
+    "flake8==5.*",
     "mypy",
-    "pytest==8.*",
+    "pytest~=7.4.4",
     "requests==2.*",
     "coverage",
     "pytest-sugar",

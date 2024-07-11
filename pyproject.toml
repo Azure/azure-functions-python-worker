@@ -1,6 +1,6 @@
 [project]
 name = "azure-functions-worker"
-version = "4.29.0"
+dynamic = ["version"]
 description = "Python Language Worker for Azure Functions Runtime"
 authors = [
     { name = "Azure Functions team at Microsoft Corp.", email = "azurefunctions@microsoft.com" }
@@ -25,25 +25,23 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Intended Audience :: Developers"
 ]
-
 dependencies = [
-    "azure-functions==1.20.0",
-    "python-dateutil~=2.9.0"
+     "azure-functions==1.20.0",
+     "python-dateutil ~=2.9.0",
+     "protobuf~=3.19.3; python_version == '3.7'",
+     "protobuf~=4.22.0; python_version >= '3.8'",
+     "grpcio-tools~=1.43.0; python_version == '3.7'",
+     "grpcio-tools~=1.54.2; python_version >= '3.8'",
+     "grpcio~=1.43.0; python_version == '3.7'",
+     "grpcio~=1.54.2; python_version >= '3.8'",
+     "azurefunctions-extensions-base; python_version >= '3.8'"
 ]
 
-# Python version-specific dependencies
+[project.urls]
+Documentation = "https://github.com/Azure/azure-functions-python-worker?tab=readme-ov-file#-azure-functions-python-worker"
+Repository = "https://github.com/Azure/azure-functions-python-worker"
+
 [project.optional-dependencies]
-python37 = [
-    "protobuf~=3.19.3",
-    "grpcio-tools~=1.43.0",
-    "grpcio~=1.43.0"
-]
-python38_plus = [
-    "protobuf~=4.22.0",
-    "grpcio-tools~=1.54.2",
-    "grpcio~=1.54.2",
-    "azurefunctions-extensions-base"
-]
 dev = [
     "azure-eventhub",
     "azure-functions-durable",
@@ -84,8 +82,11 @@ test-deferred-bindings = [
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-package-dir = {"" = "azure_functions_worker"}
+
+[tool.setuptools.packages.find]
+exclude = [
+    'eng', 'tests', 'pack'
+    ]
 
 [tool.isort]
 profile = "black"
@@ -109,7 +110,10 @@ skip_glob = [
     ".ci",
     ".devcontainer",
     ".github",
-#    "eng",
-#    "pack",
+    "eng",
+    "pack",
     "*protos/*"
 ]
+
+[tool.setuptools.dynamic]
+version = {attr = "azure_functions_worker.version.VERSION"}

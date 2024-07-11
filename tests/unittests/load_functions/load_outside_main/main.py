@@ -7,16 +7,19 @@ import azure.functions as func
 def main(req: func.HttpRequest):
     if req.params['from'] == 'init':
         # Ensure the module can still be loaded from package.__init__
-        from ..stub_http_trigger.__init__ import main  # NoQA
         from __app__.stub_http_trigger.__init__ import main  # NoQA
+
+        from ..stub_http_trigger.__init__ import main  # NoQA
 
     elif req.params['from'] == 'package':
         # Ensure the module can still be loaded from package
-        from ..stub_http_trigger import main
         from __app__.stub_http_trigger import main  # NoQA
 
+        from ..stub_http_trigger import main
+
     # Ensure submodules can also be imported
-    from ..stub_http_trigger.stub_tools import FOO  # NoQA
     from __app__.stub_http_trigger.stub_tools import FOO  # NoQA
+
+    from ..stub_http_trigger.stub_tools import FOO  # NoQA
 
     return 'OK'

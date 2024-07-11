@@ -5,6 +5,7 @@ import unittest
 from azure import functions as azf
 from azure.functions import http as bind_http
 from azure.functions import meta as bind_meta
+
 from azure_functions_worker import protos
 from azure_functions_worker.bindings import datumdef
 

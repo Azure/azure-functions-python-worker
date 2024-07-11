@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 import os
 
-
 FUNCTION_APP = "function_app"
 __version__: str == FUNCTION_APP
 

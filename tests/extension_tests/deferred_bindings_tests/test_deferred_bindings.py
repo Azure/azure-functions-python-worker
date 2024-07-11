@@ -1,13 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import unittest
 import sys
+import unittest
 
 import azure.functions as func
+from tests.utils import testutils
 
 from azure_functions_worker import protos
 from azure_functions_worker.bindings import datumdef, meta
-from tests.utils import testutils
 
 # Even if the tests are skipped for <=3.8, the library is still imported as
 # it is used for these tests.

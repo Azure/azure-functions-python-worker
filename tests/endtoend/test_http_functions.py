@@ -5,9 +5,9 @@ import typing
 from unittest.mock import patch
 
 import requests
+from tests.utils import testutils
 
 from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
-from tests.utils import testutils
 
 REQUEST_TIMEOUT_SEC = 5
 

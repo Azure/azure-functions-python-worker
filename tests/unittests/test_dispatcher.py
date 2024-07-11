@@ -8,18 +8,21 @@ import unittest
 from typing import Optional, Tuple
 from unittest.mock import patch
 
-from azure_functions_worker import protos
-from azure_functions_worker.constants import (PYTHON_THREADPOOL_THREAD_COUNT,
-                                              PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-                                              PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
-                                              PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                                              PYTHON_ENABLE_INIT_INDEXING,
-                                              METADATA_PROPERTIES_WORKER_INDEXED,
-                                              PYTHON_ENABLE_DEBUG_LOGGING)
-from azure_functions_worker.dispatcher import Dispatcher
-from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from tests.utils.testutils import UNIT_TESTS_ROOT
+
+from azure_functions_worker import protos
+from azure_functions_worker.constants import (
+    METADATA_PROPERTIES_WORKER_INDEXED,
+    PYTHON_ENABLE_DEBUG_LOGGING,
+    PYTHON_ENABLE_INIT_INDEXING,
+    PYTHON_THREADPOOL_THREAD_COUNT,
+    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+)
+from azure_functions_worker.dispatcher import Dispatcher
+from azure_functions_worker.version import VERSION
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])

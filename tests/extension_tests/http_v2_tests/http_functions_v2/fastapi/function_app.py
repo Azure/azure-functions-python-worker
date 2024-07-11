@@ -1,13 +1,19 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from datetime import datetime
 import logging
 import time
+from datetime import datetime
 
 import azure.functions as func
-from azurefunctions.extensions.http.fastapi import Request, Response, \
-    StreamingResponse, HTMLResponse, \
-    UJSONResponse, ORJSONResponse, FileResponse
+from azurefunctions.extensions.http.fastapi import (
+    FileResponse,
+    HTMLResponse,
+    ORJSONResponse,
+    Request,
+    Response,
+    StreamingResponse,
+    UJSONResponse,
+)
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 

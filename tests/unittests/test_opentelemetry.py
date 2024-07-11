@@ -1,10 +1,11 @@
 import asyncio
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from azure_functions_worker import protos
 from tests.unittests.test_dispatcher import FUNCTION_APP_DIRECTORY
 from tests.utils import testutils
+
+from azure_functions_worker import protos
 
 
 class TestOpenTelemetry(unittest.TestCase):

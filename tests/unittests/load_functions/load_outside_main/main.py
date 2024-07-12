@@ -15,8 +15,6 @@ def main(req: func.HttpRequest):
         # Ensure the module can still be loaded from package
         from __app__.stub_http_trigger import main  # NoQA
 
-        from ..stub_http_trigger import main
-
     # Ensure submodules can also be imported
     from __app__.stub_http_trigger.stub_tools import FOO  # NoQA
 

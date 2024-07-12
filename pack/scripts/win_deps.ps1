@@ -1,6 +1,6 @@
 python -m venv .env
 .env\Scripts\Activate.ps1
-python -m pip install --upgrade pip==23.0
+python -m pip install --upgrade pip
 
 python -m pip install .
 

@@ -67,7 +67,8 @@ dev = [
     "opencv-python",
     "pandas",
     "numpy",
-    "pre-commit"
+    "pre-commit",
+    "invoke"
 ]
 test-http-v2 = [
     "azurefunctions-extensions-http-fastapi",

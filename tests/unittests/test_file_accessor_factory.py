@@ -9,10 +9,10 @@ from unittest.mock import patch
 from azure_functions_worker.bindings.shared_memory_data_transfer import (
     FileAccessorFactory,
 )
-from azure_functions_worker.bindings.shared_memory_data_transfer.file_accessor_unix import (
+from azure_functions_worker.bindings.shared_memory_data_transfer.file_accessor_unix import (  # NoQA
     FileAccessorUnix,
 )
-from azure_functions_worker.bindings.shared_memory_data_transfer.file_accessor_windows import (
+from azure_functions_worker.bindings.shared_memory_data_transfer.file_accessor_windows import (  # NoQA
     FileAccessorWindows,
 )
 

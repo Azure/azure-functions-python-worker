@@ -54,6 +54,15 @@ jobs:
           SQL_CONNECTION: $(LinuxSqlConnectionString311)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString311)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString311)
+        Python312:
+          PYTHON_VERSION: '3.12'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString312)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString312)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString312)
+          SQL_CONNECTION: $(LinuxSqlConnectionString312
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
     steps:
       - task: UsePythonVersion@0
         inputs:

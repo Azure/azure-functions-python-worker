@@ -21,6 +21,9 @@ jobs:
       Python311V4:
         pythonVersion: '3.11'
         workerPath: 'python/prodV4/worker.py'
+      Python312V4:
+        pythonVersion: '3.12'
+        workerPath: 'python/prodV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:

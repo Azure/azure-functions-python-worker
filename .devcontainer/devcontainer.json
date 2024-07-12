@@ -46,7 +46,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "sudo python -m pip install -U pip && sudo python -m pip install -U -e .[dev] && sudo python -m invoke -c test_setup webhost",
+	"postCreateCommand": "sudo python -m pip install -U pip && sudo python -m pip install -U -e .[dev] && cd tests && sudo python -m invoke -c test_setup webhost",
 
 	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode",

@@ -80,7 +80,3 @@ ARCHIVE_WEBHOST_LOGS = "ARCHIVE_WEBHOST_LOGS"
 # CI test constants
 CONSUMPTION_DOCKER_TEST = "CONSUMPTION_DOCKER_TEST"
 DEDICATED_DOCKER_TEST = "DEDICATED_DOCKER_TEST"
-
-WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
-WEBHOST_TAG_PREFIX = "v4."
-WEBHOST_GIT_REPO = "https://github.com/Azure/azure-functions-host/archive"

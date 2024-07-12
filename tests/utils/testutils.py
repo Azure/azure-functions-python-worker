@@ -879,7 +879,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             ' * run the following command from the root folder of',
             '   the project:',
             '',
-            f'       $ {sys.executable} -m invoke -c test_setup webhost',
+            f'cd tests && $ {sys.executable} -m invoke -c test_setup webhost',
             '',
             ' * or download or build the Azure Functions Host and'
             '   then write the full path to WebHost.dll'

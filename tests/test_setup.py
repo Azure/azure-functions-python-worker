@@ -7,7 +7,7 @@ This file defines tasks for building Protos, webhost and extensions
 To use these tasks, you can run the following commands:
 
 1. Build protos:
-   invoke -c test_setup build_protos
+   invoke -c test_setup build-protos
 
 2. Set up the Azure Functions Web Host:
    invoke -c test_setup webhost

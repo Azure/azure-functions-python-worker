@@ -77,7 +77,7 @@ jobs:
           cd tests
           python -m invoke -c test_setup build-protos
           python -m invoke -c test_setup webhost --branch-name=dev
-          python -m invoke -c test_setup extension
+          python -m invoke -c test_setup extensions
         displayName: 'Install dependencies and the worker'
         condition: and(eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - task: DownloadPipelineArtifact@2
@@ -105,7 +105,7 @@ jobs:
           cd tests
           python -m invoke -c test_setup build-protos
           python -m invoke -c test_setup webhost --branch-name=dev
-          python -m invoke -c test_setup extension
+          python -m invoke -c test_setup extensions
         displayName: 'Install test python sdk, dependencies and the worker'
         condition: eq(variables['USETESTPYTHONSDK'], true)
       - task: DownloadPipelineArtifact@2
@@ -135,7 +135,7 @@ jobs:
           cd tests
           python -m invoke -c test_setup build-protos
           python -m invoke -c test_setup webhost --branch-name=dev
-          python -m invoke -c test_setup extension
+          python -m invoke -c test_setup extensions
         displayName: 'Install test python extension, dependencies and the worker'
         condition: eq(variables['USETESTPYTHONEXTENSIONS'], true)
       - bash: |

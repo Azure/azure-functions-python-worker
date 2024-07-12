@@ -91,7 +91,7 @@ python -m pip install -U pip
 python -m pip install -U -e .[dev]
 cd tests
 python -m invoke -c test_setup build-protos
-python -m invoke -c test_setup extension
+python -m invoke -c test_setup extensions
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green

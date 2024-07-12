@@ -35,7 +35,7 @@ jobs:
           cd tests
           python -m invoke -c test_setup build-protos
           python -m invoke -c test_setup webhost --branch-name=dev
-          python -m invoke -c test_setup extension
+          python -m invoke -c test_setup extensions
         displayName: "Install dependencies"
       - bash: |
              python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests

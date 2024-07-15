@@ -2,19 +2,6 @@ jobs:
   - job: "TestPython"
     displayName: "Run Python Unit Tests"
     
-    strategy:
-      matrix:
-        Python37:
-          PYTHON_VERSION: '3.7'
-        Python38:
-          PYTHON_VERSION: '3.8'
-        Python39:
-          PYTHON_VERSION: '3.9'
-        Python310:
-          PYTHON_VERSION: '3.10'
-        Python311:
-          PYTHON_VERSION: '3.11'
-    
     steps:
       - task: UsePythonVersion@0
         inputs:

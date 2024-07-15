@@ -7,24 +7,6 @@ jobs:
       image: 1es-ubuntu-22.04
       os: linux
     
-    strategy:
-      matrix:
-        Python37:
-          PYTHON_VERSION: '3.7'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString37)
-        Python38:
-          PYTHON_VERSION: '3.8'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
-        Python39:
-          PYTHON_VERSION: '3.9'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
-        Python310:
-          PYTHON_VERSION: '3.10'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString310)
-        Python311:
-          PYTHON_VERSION: '3.11'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString311)
-    
     steps:
       - task: UsePythonVersion@0
         inputs:

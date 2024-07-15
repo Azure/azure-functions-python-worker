@@ -23,6 +23,7 @@ resources:
 variables:
   - template: /ci/variables/build.yml@eng
   - template: /ci/variables/cfs.yml@eng
+  - group: python-integration-resources
 
 extends:
   template: v1/1ES.Unofficial.PipelineTemplate.yml@1es

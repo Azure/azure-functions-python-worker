@@ -99,7 +99,6 @@ jobs:
           python -m invoke -c test_setup extensions
         displayName: 'Install test python extension, dependencies and the worker'
         condition: eq(variables['Build.SourceBranch'], 'refs/heads/extensions/*')
-        displayName: "Install dependencies"
       - bash: |
              python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
         displayName: "Running $(PYTHON_VERSION) Unit Tests"

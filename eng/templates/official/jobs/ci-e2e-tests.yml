@@ -8,6 +8,7 @@ jobs:
       os: linux
 
     steps:
+      - template: /eng/templates/common/integration-test-strategy.yml@self
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
@@ -101,5 +102,4 @@ jobs:
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
-          USETESTPYTHONSDK: $(USETESTPYTHONSDK)
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"

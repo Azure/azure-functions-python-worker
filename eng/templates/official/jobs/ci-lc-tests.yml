@@ -7,6 +7,8 @@ jobs:
       image: 1es-ubuntu-22.04
       os: linux
     
+    strategy: *strategy
+
     steps:
       - task: UsePythonVersion@0
         inputs:

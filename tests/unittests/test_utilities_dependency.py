@@ -691,7 +691,7 @@ class TestDependencyManager(unittest.TestCase):
 
         protobuf_version = tuple(int(v) for v in __version__.split("."))
         self.assertIsNotNone(protobuf_version)
-        self.assertEqual(protobuf_version[0], 4)
+        self.assertEqual(protobuf_version[0], 5)
 
     @unittest.skipIf(sys.version_info.minor > 7,
                      "The worker brings different protobuf versions"
@@ -721,7 +721,7 @@ class TestDependencyManager(unittest.TestCase):
         self.assertEqual(protobuf_version[0], 3)
 
         # newrelic tries to import protobuf v4
-        self.assertNotEqual(protobuf_version[0], 4)
+        self.assertNotEqual(protobuf_version[0], 5)
 
     @unittest.skipIf(sys.version_info.minor <= 7,
                      "The worker brings different protobuf versions"
@@ -748,7 +748,7 @@ class TestDependencyManager(unittest.TestCase):
         self.assertIsNotNone(protobuf_version)
 
         # newrelic tries to import protobuf v4
-        self.assertEqual(protobuf_version[0], 4)
+        self.assertEqual(protobuf_version[0], 5)
 
         # newrelic tries to import protobuf v3
         self.assertNotEqual(protobuf_version[0], 3)

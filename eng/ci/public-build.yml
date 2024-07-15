@@ -26,7 +26,6 @@ resources:
 
 extends:
   template: v1/1ES.Unofficial.PipelineTemplate.yml@1es
-  template: /eng/templates/common/non-integration-test-strategy.yml@self
   parameters:
     pool:
       name: 1es-pool-azfunc-public

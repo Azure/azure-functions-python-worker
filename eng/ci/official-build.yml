@@ -34,7 +34,6 @@ variables:
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1es
-  template: /eng/templates/common/integration-test-strategy.yml@self
   parameters:
     pool:
       name: 1es-pool-azfunc

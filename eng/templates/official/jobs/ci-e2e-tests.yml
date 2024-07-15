@@ -1,3 +1,6 @@
+extends:
+  template: /eng/templates/common/integration-test-strategy.yml@self
+
 jobs:
   - job: "TestPython"
     displayName: "Run Python E2E Tests"
@@ -8,7 +11,6 @@ jobs:
       os: linux
 
     steps:
-      - template: /eng/templates/common/integration-test-strategy.yml@self
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)

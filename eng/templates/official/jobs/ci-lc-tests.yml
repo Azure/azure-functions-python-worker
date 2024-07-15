@@ -7,7 +7,53 @@ jobs:
       image: 1es-ubuntu-22.04
       os: linux
     
-    strategy: *strategy
+    strategy:
+      matrix:
+        Python37:
+          PYTHON_VERSION: '3.7'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString37)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString37)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString37)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString37)
+          SQL_CONNECTION: $(LinuxSqlConnectionString37)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString37)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString37)
+        Python38:
+          PYTHON_VERSION: '3.8'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString38)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString38)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString38)
+          SQL_CONNECTION: $(LinuxSqlConnectionString38)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)
+        Python39:
+          PYTHON_VERSION: '3.9'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString39)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString39)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString39)
+          SQL_CONNECTION: $(LinuxSqlConnectionString39)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString39)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString39)
+        Python310:
+          PYTHON_VERSION: '3.10'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString310)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString310)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString310)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString310)
+          SQL_CONNECTION: $(LinuxSqlConnectionString310)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString310)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString310)
+        Python311:
+          PYTHON_VERSION: '3.11'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString311)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString311)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString311)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString311)
+          SQL_CONNECTION: $(LinuxSqlConnectionString311)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString311)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString311)
 
     steps:
       - task: UsePythonVersion@0

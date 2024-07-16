@@ -46,7 +46,7 @@ jobs:
           EVENTGRID_URI: $(LinuxEventGridTopicUriString311)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString311)
         Python312:
-          PYTHON_VERSION: '3.121'
+          PYTHON_VERSION: '3.12'
           STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
           COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString312)
           EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString312)

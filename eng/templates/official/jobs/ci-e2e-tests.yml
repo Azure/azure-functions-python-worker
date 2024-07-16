@@ -79,7 +79,7 @@ jobs:
           python -m invoke -c test_setup webhost --branch-name=dev
           python -m invoke -c test_setup extensions
         displayName: 'Install dependencies and the worker'
-        condition: and(eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+        condition: and(ne(variables['Build.SourceBranch'], 'refs/heads/sdk/*'), ne(variables['Build.SourceBranch'], 'refs/heads/extensions/*'))
       - task: DownloadPipelineArtifact@2
         displayName: 'Download Python SDK Artifact'
         inputs:
@@ -89,7 +89,7 @@ jobs:
           definition: 679
           buildVersionToDownload: latest
           targetPath: '$(Pipeline.Workspace)/PythonSdkArtifact'
-        condition: eq(variables['USETESTPYTHONSDK'], true)
+        condition: eq(variables['Build.SourceBranch'], 'refs/heads/sdk/*')
       - bash: |
           python -m pip install --upgrade pip
           python -m pip install -e $(Pipeline.Workspace)/PythonSdkArtifact
@@ -107,7 +107,7 @@ jobs:
           python -m invoke -c test_setup webhost --branch-name=dev
           python -m invoke -c test_setup extensions
         displayName: 'Install test python sdk, dependencies and the worker'
-        condition: eq(variables['USETESTPYTHONSDK'], true)
+        condition: eq(variables['Build.SourceBranch'], 'refs/heads/sdk/*')
       - task: DownloadPipelineArtifact@2
         displayName: 'Download Python Extension Artifact'
         inputs:
@@ -117,7 +117,7 @@ jobs:
           definition: 798
           buildVersionToDownload: latest
           targetPath: '$(Pipeline.Workspace)/PythonExtensionArtifact'
-        condition: eq(variables['USETESTPYTHONEXTENSIONS'], true)
+        condition: eq(variables['Build.SourceBranch'], 'refs/heads/extensions/*')
       - bash: |
           python -m pip install --upgrade pip
 
@@ -137,7 +137,7 @@ jobs:
           python -m invoke -c test_setup webhost --branch-name=dev
           python -m invoke -c test_setup extensions
         displayName: 'Install test python extension, dependencies and the worker'
-        condition: eq(variables['USETESTPYTHONEXTENSIONS'], true)
+        condition: eq(variables['Build.SourceBranch'], 'refs/heads/extensions/*')
       - bash: |
              python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
         env:
@@ -148,5 +148,5 @@ jobs:
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
-          USETESTPYTHONSDK: $(USETESTPYTHONSDK)
+          USETESTPYTHONSDK: eq(variables['Build.SourceBranch'], 'refs/heads/sdk/*')
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"

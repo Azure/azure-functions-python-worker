@@ -19,8 +19,6 @@ jobs:
           PYTHON_VERSION: '3.10'
         Python311:
           PYTHON_VERSION: '3.11'
-        Python312:
-          PYTHON_VERSION: '3.12'
 
     steps:
       - task: UsePythonVersion@0

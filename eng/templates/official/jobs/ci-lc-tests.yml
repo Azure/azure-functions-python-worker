@@ -11,20 +11,15 @@ jobs:
       matrix:
         Python37:
           PYTHON_VERSION: '3.7'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString37)
         Python38:
           PYTHON_VERSION: '3.8'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
         Python39:
           PYTHON_VERSION: '3.9'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
         Python310:
           PYTHON_VERSION: '3.10'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString310)
         Python311:
           PYTHON_VERSION: '3.11'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString311)
-    
+
     steps:
       - task: UsePythonVersion@0
         inputs:
@@ -39,6 +34,6 @@ jobs:
       - bash: |
              python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests
         env:
-          AzureWebJobsStorage: $(STORAGE_CONNECTION)
+          AzureWebJobsStorage: $(LinuxStorageConnectionString312)
           _DUMMY_CONT_KEY: $(_DUMMY_CONT_KEY)
         displayName: "Running $(PYTHON_VERSION) Linux Consumption tests"

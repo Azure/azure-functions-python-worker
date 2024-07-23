@@ -187,7 +187,7 @@ jobs:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:
         - output: pipelineArtifact
-          targetPath: $(Build.SourcesDirectory)
+          targetPath: $(Build.ArtifactStagingDirectory)
           artifactName: "PythonWorker"
   steps:
   - bash: |

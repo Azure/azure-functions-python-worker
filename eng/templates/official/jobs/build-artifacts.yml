@@ -186,14 +186,9 @@ jobs:
   templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:
-        - output: nuget
-          condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'), eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true))
-          useDotNetTask: false
-          packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
-          packageParentPath: "$(Build.ArtifactStagingDirectory)"
-          publishVstsFeed: "e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df"
-          nuGetFeedType: "internal"
-          allowPackageConflicts: true
+        - output: pipelineArtifact
+          targetPath: $(Build.ArtifactStagingDirectory)
+          artifactName: "PythonWorker"
   steps:
   - bash: |
       echo "Releasing from $BUILD_SOURCEBRANCHNAME"

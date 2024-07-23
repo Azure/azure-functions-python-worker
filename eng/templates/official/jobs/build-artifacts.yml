@@ -194,6 +194,9 @@ jobs:
           publishVstsFeed: "e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df"
           nuGetFeedType: "internal"
           allowPackageConflicts: true
+        - output: pipelineArtifact
+          targetPath: $(Build.SourcesDirectory)
+          artifactName: "PythonWorker"
   steps:
   - bash: |
       echo "Releasing from $BUILD_SOURCEBRANCHNAME"

@@ -45,7 +45,7 @@ jobs:
           SQL_CONNECTION: $(LinuxSqlConnectionString311)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString311)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString311)
-    
+
     steps:
       - task: UsePythonVersion@0
         inputs:

@@ -31,7 +31,7 @@ from distutils import dir_util
 
 from invoke import task
 
-from tests.utils.constants import EXTENSIONS_CSPROJ_TEMPLATE, NUGET_CONFIG
+from utils.constants import EXTENSIONS_CSPROJ_TEMPLATE, NUGET_CONFIG
 
 ROOT_DIR = pathlib.Path(__file__).parent.parent
 BUILD_DIR = ROOT_DIR / 'build'

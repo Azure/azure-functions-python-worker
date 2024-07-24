@@ -25,4 +25,16 @@ steps:
       **
       !grpc_tools/**/*
       !grpcio_tools*/*
+      !_manifest/*
+      !bcde_output/*
+      !build/*
+      !docs/*
+      !pack/*
+      !python/*
+      !tests/*
+      !Experiment_PipReport_*
+      !GovCompDisc_Log_*
+      !GovCompDisc_Manifest_*
+      !GovCompDisc_Metadata_*
+      !ScanTelemetry_*
     targetFolder: '$(Build.ArtifactStagingDirectory)'

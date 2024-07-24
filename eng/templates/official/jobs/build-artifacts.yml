@@ -28,7 +28,7 @@ jobs:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
-        targetPath: $(Build.SourcesDirectory)
+        targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_WINDOWS_X64"
   steps:
   - template: ../../../../pack/templates/win_env_gen.yml
@@ -66,7 +66,7 @@ jobs:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
-        targetPath: $(Build.SourcesDirectory)
+        targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_WINDOWS_X86"
   steps:
   - template: ../../../../pack/templates/win_env_gen.yml
@@ -104,7 +104,7 @@ jobs:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
-        targetPath: $(Build.SourcesDirectory)
+        targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_LINUX_X64"
   steps:
   - template: ../../../../pack/templates/nix_env_gen.yml
@@ -141,7 +141,7 @@ jobs:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
-        targetPath: $(Build.SourcesDirectory)
+        targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_OSX_X64"
   steps:
   - template: ../../../../pack/templates/nix_env_gen.yml
@@ -172,7 +172,7 @@ jobs:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
-        targetPath: $(Build.SourcesDirectory)
+        targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_OSX_ARM4"
   steps:
   - template: ../../../../pack/templates/macos_64_env_gen.yml

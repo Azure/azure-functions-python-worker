@@ -23,11 +23,11 @@ steps:
     sourceFolder: '$(Build.SourcesDirectory)/deps'
     contents: |
       **
-      !grpc_tools/**/*
-      !grpcio_tools*/*
-      !build/*
-      !docs/*
-      !pack/*
-      !python/*
-      !tests/*
+      !grpc_tools\**\*
+      !grpcio_tools*\*
+      !build\**
+      !docs\**
+      !pack\**
+      !python\**
+      !tests\**
     targetFolder: '$(Build.ArtifactStagingDirectory)'

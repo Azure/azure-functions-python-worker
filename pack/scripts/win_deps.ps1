@@ -14,5 +14,5 @@ python -m invoke -c test_setup build-protos
 
 cd ..
 Copy-Item -Path ".artifactignore" -Destination $depsPath.ToString()
-Copy-Item -Path "azure_functions_worker/protos/FunctionRpc_pb2_grpc.py" -Destination $depsPath.ToString()
+Copy-Item -Path "azure_functions_worker/protos/FunctionRpc_pb2_grpc.py" -Destination $protosPath.ToString()
 Copy-Item -Path "azure_functions_worker/protos/FunctionRpc_pb2.py" -Destination $protosPath.ToString()

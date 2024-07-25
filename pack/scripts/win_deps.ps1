@@ -9,6 +9,7 @@ $protosPath = Join-Path -Path $depsPath -ChildPath "azure_functions_worker/proto
 
 python -m pip install . azure-functions --no-compile --target $depsPath.ToString()
 
+python -m pip install invoke
 cd tests
 python -m invoke -c test_setup build-protos
 

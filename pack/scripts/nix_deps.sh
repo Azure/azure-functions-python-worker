@@ -9,6 +9,8 @@ python -m pip install . --no-compile --target "$BUILD_SOURCESDIRECTORY/deps"
 
 cd tests
 python -m invoke -c test_setup build-protos
-python -m invoke -c test_setup build-protos --no-compile --target "$BUILD_SOURCESDIRECTORY/deps"
 
+cd ..
 cp .artifactignore "$BUILD_SOURCESDIRECTORY/deps"
+cp azure_functions_worker/protos/FunctionRpc_pb2_grpc.py "$BUILD_SOURCESDIRECTORY/deps/azure_functions_worker/protos"
+cp azure_functions_worker/protos/FunctionRpc_pb2.py "$BUILD_SOURCESDIRECTORY/deps/azure_functions_worker/protos"

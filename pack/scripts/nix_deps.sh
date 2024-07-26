@@ -13,5 +13,4 @@ python -m invoke -c test_setup build-protos
 
 cd ..
 cp .artifactignore "$BUILD_SOURCESDIRECTORY/deps"
-cp azure_functions_worker/protos/FunctionRpc_pb2_grpc.py "$BUILD_SOURCESDIRECTORY/deps/azure_functions_worker/protos"
-cp azure_functions_worker/protos/FunctionRpc_pb2.py "$BUILD_SOURCESDIRECTORY/deps/azure_functions_worker/protos"
+cp -r azure_functions_worker/protos "$BUILD_SOURCESDIRECTORY/deps/azure_functions_worker"

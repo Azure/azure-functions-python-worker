@@ -72,8 +72,8 @@ jobs:
         inputs:
           version: 8.0.x
       - bash: |
-          .eng/scripts/install-dependencies.sh
-          .eng/scripts/test-setup.sh
+          eng/scripts/install-dependencies.sh
+          eng/scripts/test-setup.sh
         displayName: 'Install dependencies and the worker'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - task: DownloadPipelineArtifact@2
@@ -98,7 +98,7 @@ jobs:
               python -m pip install --pre -U -e .[test-deferred-bindings]
           fi
 
-          .eng/scripts/test-setup.sh
+          eng/scripts/test-setup.sh
         displayName: 'Install test python sdk, dependencies and the worker'
         condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
       - task: DownloadPipelineArtifact@2
@@ -125,7 +125,7 @@ jobs:
           
           python -m pip install -U -e .[dev]
 
-          .eng/scripts/test-setup.sh
+          eng/scripts/test-setup.sh
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |

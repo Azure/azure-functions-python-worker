@@ -26,8 +26,8 @@ jobs:
         inputs:
           version: 8.0.x
       - bash: |
-          .eng/scripts/install-dependencies.sh
-          .eng/scripts/test-setup.sh
+          eng/scripts/install-dependencies.sh
+          eng/scripts/test-setup.sh
         displayName: 'Install dependencies'
       - bash: |
           python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests

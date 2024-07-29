@@ -72,21 +72,8 @@ jobs:
         inputs:
           version: 8.0.x
       - bash: |
-          python -m pip install --upgrade pip
-          python -m pip install -U azure-functions --pre
-          python -m pip install -U -e .[dev]
-
-          if [[ $(PYTHON_VERSION) != "3.7" ]]; then
-             python -m pip install --pre -U -e .[test-http-v2]
-          fi
-          if [[ $(PYTHON_VERSION) != "3.7" && $(PYTHON_VERSION) != "3.8" ]]; then
-              python -m pip install --pre -U -e .[test-deferred-bindings]
-          fi
-
-          cd tests
-          python -m invoke -c test_setup build-protos
-          python -m invoke -c test_setup webhost --branch-name=dev
-          python -m invoke -c test_setup extensions
+          .eng/scripts/install-dependencies.sh
+          .eng/scripts/test-setup.sh
         displayName: 'Install dependencies and the worker'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - task: DownloadPipelineArtifact@2
@@ -111,10 +98,7 @@ jobs:
               python -m pip install --pre -U -e .[test-deferred-bindings]
           fi
 
-          cd tests
-          python -m invoke -c test_setup build-protos
-          python -m invoke -c test_setup webhost --branch-name=dev
-          python -m invoke -c test_setup extensions
+          .eng/scripts/test-setup.sh
         displayName: 'Install test python sdk, dependencies and the worker'
         condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
       - task: DownloadPipelineArtifact@2
@@ -141,10 +125,7 @@ jobs:
           
           python -m pip install -U -e .[dev]
 
-          cd tests
-          python -m invoke -c test_setup build-protos
-          python -m invoke -c test_setup webhost --branch-name=dev
-          python -m invoke -c test_setup extensions
+          .eng/scripts/test-setup.sh
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |

@@ -26,6 +26,9 @@ jobs:
         inputs:
           version: 8.0.x
       - bash: |
+          chmod +x eng/scripts/install-dependencies.sh
+          chmod +x eng/scripts/test-setup.sh
+          
           eng/scripts/install-dependencies.sh
           eng/scripts/test-setup.sh
         displayName: 'Install dependencies'

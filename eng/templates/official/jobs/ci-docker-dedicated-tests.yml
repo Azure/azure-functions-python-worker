@@ -51,6 +51,8 @@ jobs:
         inputs:
           versionSpec: $(PYTHON_VERSION)
       - bash: |
+          chmod +x eng/scripts/install-dependencies.sh
+
           eng/scripts/install-dependencies.sh
           cd tests
           python -m invoke -c test_setup build-protos

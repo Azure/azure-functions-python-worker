@@ -26,7 +26,7 @@ classifiers = [
     "Intended Audience :: Developers"
 ]
 dependencies = [
-     "azure-functions==1.20.0",
+     "azure-functions==$newLibraryVersion",
      "python-dateutil ~=2.9.0",
      "protobuf~=3.19.3; python_version == '3.7'",
      "protobuf~=4.25.3; python_version >= '3.8'",

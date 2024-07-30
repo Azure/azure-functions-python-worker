@@ -54,6 +54,15 @@ jobs:
           SQL_CONNECTION: $(LinuxSqlConnectionString311)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString311)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString311)
+        Python312:
+          PYTHON_VERSION: '3.12'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
+          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString312)
+          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString312)
+          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString312)
+          SQL_CONNECTION: $(LinuxSqlConnectionString312)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
     steps:
       - task: UsePythonVersion@0
         inputs:
@@ -63,22 +72,13 @@ jobs:
         inputs:
           version: 8.0.x
       - bash: |
-          python -m pip install --upgrade pip
-          python -m pip install -U azure-functions --pre
-          python -m pip install -U -e .[dev]
-
-          if [[ $(PYTHON_VERSION) != "3.7" ]]; then
-             python -m pip install --pre -U -e .[test-http-v2]
-          fi
-          if [[ $(PYTHON_VERSION) != "3.7" && $(PYTHON_VERSION) != "3.8" ]]; then
-              python -m pip install --pre -U -e .[test-deferred-bindings]
-          fi
-
-          python setup.py build
-          python setup.py webhost --branch-name=dev
-          python setup.py extension
+          chmod +x eng/scripts/install-dependencies.sh
+          chmod +x eng/scripts/test-setup.sh
+          
+          eng/scripts/install-dependencies.sh $(PYTHON_VERSION)
+          eng/scripts/test-setup.sh
         displayName: 'Install dependencies and the worker'
-        condition: and(eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - task: DownloadPipelineArtifact@2
         displayName: 'Download Python SDK Artifact'
         inputs:
@@ -88,7 +88,7 @@ jobs:
           definition: 679
           buildVersionToDownload: latest
           targetPath: '$(Pipeline.Workspace)/PythonSdkArtifact'
-        condition: eq(variables['USETESTPYTHONSDK'], true)
+        condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
       - bash: |
           python -m pip install --upgrade pip
           python -m pip install -e $(Pipeline.Workspace)/PythonSdkArtifact
@@ -101,11 +101,10 @@ jobs:
               python -m pip install --pre -U -e .[test-deferred-bindings]
           fi
 
-          python setup.py build
-          python setup.py webhost --branch-name=dev
-          python setup.py extension
+          chmod +x eng/scripts/test-setup.sh
+          eng/scripts/test-setup.sh
         displayName: 'Install test python sdk, dependencies and the worker'
-        condition: eq(variables['USETESTPYTHONSDK'], true)
+        condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
       - task: DownloadPipelineArtifact@2
         displayName: 'Download Python Extension Artifact'
         inputs:
@@ -115,7 +114,7 @@ jobs:
           definition: 798
           buildVersionToDownload: latest
           targetPath: '$(Pipeline.Workspace)/PythonExtensionArtifact'
-        condition: eq(variables['USETESTPYTHONEXTENSIONS'], true)
+        condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |
           python -m pip install --upgrade pip
 
@@ -130,11 +129,11 @@ jobs:
           
           python -m pip install -U -e .[dev]
 
-          python setup.py build
-          python setup.py webhost --branch-name=dev
-          python setup.py extension
+
+          chmod +x eng/scripts/test-setup.sh
+          eng/scripts/test-setup.sh
         displayName: 'Install test python extension, dependencies and the worker'
-        condition: eq(variables['USETESTPYTHONEXTENSIONS'], true)
+        condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |
              python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
         env:
@@ -145,5 +144,5 @@ jobs:
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
-          USETESTPYTHONSDK: $(USETESTPYTHONSDK)
+          USETESTPYTHONSDK: eq(variables.isSdkRelease, true)
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"

@@ -19,32 +19,43 @@ from logging import LogRecord
 from typing import List, Optional
 
 import grpc
+
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
-from .constants import (APPLICATIONINSIGHTS_CONNECTION_STRING,
-                        PYTHON_ROLLBACK_CWD_PATH,
-                        PYTHON_THREADPOOL_THREAD_COUNT,
-                        PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-                        PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
-                        PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING,
-                        PYTHON_SCRIPT_FILE_NAME,
-                        PYTHON_SCRIPT_FILE_NAME_DEFAULT,
-                        PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
-                        METADATA_PROPERTIES_WORKER_INDEXED,
-                        PYTHON_AZURE_MONITOR_LOGGER_NAME,
-                        PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT,
-                        PYTHON_ENABLE_OPENTELEMETRY,
-                        PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,)
+from .constants import (
+    METADATA_PROPERTIES_WORKER_INDEXED,
+    PYTHON_ENABLE_DEBUG_LOGGING,
+    PYTHON_ENABLE_INIT_INDEXING,
+    PYTHON_ENABLE_OPENTELEMETRY,
+    PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
+    PYTHON_LANGUAGE_RUNTIME,
+    PYTHON_ROLLBACK_CWD_PATH,
+    PYTHON_SCRIPT_FILE_NAME,
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT,
+    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+)
 from .extension import ExtensionManager
-from .http_v2 import http_coordinator, initialize_http_server, HttpV2Registry, \
-    sync_http_request, HttpServerInitError
-from .logging import disable_console_logging, enable_console_logging
-from .logging import (logger, error_logger, is_system_log_category,
-                      CONSOLE_LOG_PREFIX, format_exception)
+from .http_v2 import (
+    HttpServerInitError,
+    HttpV2Registry,
+    http_coordinator,
+    initialize_http_server,
+    sync_http_request,
+)
+from .logging import (
+    CONSOLE_LOG_PREFIX,
+    disable_console_logging,
+    enable_console_logging,
+    error_logger,
+    format_exception,
+    is_system_log_category,
+    logger,
+)
 from .utils.app_setting_manager import get_python_appsetting_state
-from .utils.common import (get_app_setting, is_envvar_true,
-                           validate_script_file_name)
+from .utils.common import get_app_setting, is_envvar_true, validate_script_file_name
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
@@ -323,7 +334,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             from opentelemetry import context as context_api
             from opentelemetry.trace.propagation.tracecontext import (
-                TraceContextTextMapPropagator)
+                TraceContextTextMapPropagator,
+            )
 
             self._context_api = context_api
             self._trace_context_propagator = TraceContextTextMapPropagator()

@@ -3,8 +3,11 @@
 import os
 
 from tests.utils import testutils
-from azure_functions_worker.constants import \
-    PYTHON_SCRIPT_FILE_NAME, PYTHON_SCRIPT_FILE_NAME_DEFAULT
+
+from azure_functions_worker.constants import (
+    PYTHON_SCRIPT_FILE_NAME,
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+)
 
 DEFAULT_SCRIPT_FILE_NAME_DIR = testutils.UNIT_TESTS_FOLDER / \
     'file_name_functions' / \

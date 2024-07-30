@@ -1,5 +1,6 @@
-from azure.functions import FunctionApp, TimerRequest, Context, AuthLevel
 import logging
+
+from azure.functions import AuthLevel, Context, FunctionApp, TimerRequest
 
 app = FunctionApp(http_auth_level=AuthLevel.ANONYMOUS)
 

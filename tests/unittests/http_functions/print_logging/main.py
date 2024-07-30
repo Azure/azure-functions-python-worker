@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import sys
+
 import azure.functions
 
 

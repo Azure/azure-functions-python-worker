@@ -28,6 +28,11 @@ resources:
 variables:
   - template: /ci/variables/build.yml@eng
   - template: /ci/variables/cfs.yml@eng
+  - group: python-integration-resources
+  - name: isSdkRelease
+    value: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/sdk/')] 
+  - name: isExtensionsRelease
+    value: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/extensions/')] 
 
 extends:
   template: v1/1ES.Unofficial.PipelineTemplate.yml@1es
@@ -39,11 +44,10 @@ extends:
 
     stages:
     - stage: RunE2ETests
+      dependsOn: []
       jobs:
       - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self
     - stage: RunLCTests
+      dependsOn: []
       jobs:
       - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
-    - stage: RunUnitTests
-      jobs:
-        - template: /eng/templates/jobs/ci-unit-tests.yml@self

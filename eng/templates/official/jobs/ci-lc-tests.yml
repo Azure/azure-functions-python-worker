@@ -37,3 +37,4 @@ jobs:
           AzureWebJobsStorage: $(LinuxStorageConnectionString312)
           _DUMMY_CONT_KEY: $(_DUMMY_CONT_KEY)
         displayName: "Running $(PYTHON_VERSION) Linux Consumption tests"
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))

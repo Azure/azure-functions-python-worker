@@ -102,7 +102,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._function_metadata_exception = None
 
         # Used for checking if open telemetry is enabled
-        self._otel_libs_available = False
+        self._azure_monitor_available = False
         self._context_api = None
         self._trace_context_propagator = None
 
@@ -291,7 +291,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         resp = await request_handler(request)
         self._grpc_resp_queue.put_nowait(resp)
 
-    def initialize_opentelemetry(self):
+    def initialize_azure_monitor(self):
         """Initializes OpenTelemetry and Azure monitor distro
         """
         self.update_opentelemetry_status()
@@ -317,19 +317,19 @@ class Dispatcher(metaclass=DispatcherMeta):
                     default_value=PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT
                 ),
             )
-            self._otel_libs_available = True
+            self._azure_monitor_available = True
 
             logger.info("Successfully configured Azure monitor distro.")
         except ImportError:
             logger.exception(
                 "Cannot import Azure Monitor distro."
             )
-            self._otel_libs_available = False
+            self._azure_monitor_available = False
         except Exception:
             logger.exception(
                 "Error initializing Azure monitor distro."
             )
-            self._otel_libs_available = False
+            self._azure_monitor_available = False
 
     def update_opentelemetry_status(self):
         """Check for OpenTelemetry library availability and
@@ -342,12 +342,11 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             self._context_api = context_api
             self._trace_context_propagator = TraceContextTextMapPropagator()
-            self._otel_libs_available = True
 
             logger.info("Successfully loaded OpenTelemetry modules. "
                         "OpenTelemetry is now enabled.")
         except ImportError:
-            self._otel_libs_available = False
+            self._azure_monitor_available = False
 
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '
@@ -379,9 +378,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         }
         if get_app_setting(setting=PYTHON_ENABLE_OPENTELEMETRY,
                            default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
-            self.initialize_opentelemetry()
+            self.initialize_azure_monitor()
 
-            if self._otel_libs_available:
+            if self._azure_monitor_available:
                 capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
 
         if DependencyManager.should_load_cx_dependencies():
@@ -653,7 +652,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     args[name] = bindings.Out()
 
             if fi.is_async:
-                if self._otel_libs_available:
+                if self._azure_monitor_available:
                     self.configure_opentelemetry(fi_context)
 
                 call_result = \
@@ -773,9 +772,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             if get_app_setting(
                     setting=PYTHON_ENABLE_OPENTELEMETRY,
                     default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
-                self.update_opentelemetry_status()
+                self.initialize_azure_monitor()
 
-                if self._otel_libs_available:
+                if self._azure_monitor_available:
                     capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = (
                         _TRUE)
 
@@ -986,7 +985,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # invocation_id from ThreadPoolExecutor's threads.
         context.thread_local_storage.invocation_id = invocation_id
         try:
-            if self._otel_libs_available:
+            if self._azure_monitor_available:
                 self.configure_opentelemetry(context)
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)

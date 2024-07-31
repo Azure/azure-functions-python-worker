@@ -23,37 +23,38 @@ class TestOpenTelemetry(unittest.TestCase):
         with patch('builtins.__import__', side_effect=ImportError):
             self.dispatcher.update_opentelemetry_status()
             # Verify that otel_libs_available is set to False due to ImportError
-            self.assertFalse(self.dispatcher._otel_libs_available)
+            self.assertFalse(self.dispatcher._azure_monitor_available)
 
     @patch('builtins.__import__')
     def test_update_opentelemetry_status_success(
             self, mock_imports):
         mock_imports.return_value = MagicMock()
         self.dispatcher.update_opentelemetry_status()
-        self.assertTrue(self.dispatcher._otel_libs_available)
+        self.assertIsNotNone(self.dispatcher._context_api)
+        self.assertIsNotNone(self.dispatcher._trace_context_propagator)
 
     @patch('builtins.__import__')
     @patch("azure_functions_worker.dispatcher.Dispatcher.update_opentelemetry_status")
-    def test_initialize_opentelemetry_success(
+    def test_initialize_azure_monitor_success(
         self,
         mock_update_ot,
         mock_imports,
     ):
         mock_imports.return_value = MagicMock()
-        self.dispatcher.initialize_opentelemetry()
+        self.dispatcher.initialize_azure_monitor()
         mock_update_ot.assert_called_once()
-        self.assertTrue(self.dispatcher._otel_libs_available)
+        self.assertTrue(self.dispatcher._azure_monitor_available)
 
     @patch("azure_functions_worker.dispatcher.Dispatcher.update_opentelemetry_status")
-    def test_initialize_opentelemetry_import_error(
+    def test_initialize_azure_monitor_import_error(
         self,
         mock_update_ot,
     ):
         with patch('builtins.__import__', side_effect=ImportError):
-            self.dispatcher.initialize_opentelemetry()
+            self.dispatcher.initialize_azure_monitor()
             mock_update_ot.assert_called_once()
             # Verify that otel_libs_available is set to False due to ImportError
-            self.assertFalse(self.dispatcher._otel_libs_available)
+            self.assertFalse(self.dispatcher._azure_monitor_available)
 
     @patch("azure_functions_worker.dispatcher.get_app_setting")
     @patch('builtins.__import__')
@@ -83,12 +84,12 @@ class TestOpenTelemetry(unittest.TestCase):
         self.assertIn("WorkerOpenTelemetryEnabled", capabilities)
         self.assertEqual(capabilities["WorkerOpenTelemetryEnabled"], "true")
 
-    @patch("azure_functions_worker.dispatcher.Dispatcher.initialize_opentelemetry")
+    @patch("azure_functions_worker.dispatcher.Dispatcher.initialize_azure_monitor")
     @patch("azure_functions_worker.dispatcher.get_app_setting")
     def test_init_request_otel_capability_disabled_app_setting(
         self,
         mock_app_setting,
-        mock_initialize_ot,
+        mock_initialize_azmon,
     ):
         mock_app_setting.return_value = False
 
@@ -105,8 +106,8 @@ class TestOpenTelemetry(unittest.TestCase):
         self.assertEqual(init_response.worker_init_response.result.status,
                          protos.StatusResult.Success)
 
-        # OpenTelemetry initialized not called
-        mock_initialize_ot.assert_not_called()
+        # Azure monitor initialized not called
+        mock_initialize_azmon.assert_not_called()
 
         # Verify that WorkerOpenTelemetryEnabled capability is not set
         capabilities = init_response.worker_init_response.capabilities

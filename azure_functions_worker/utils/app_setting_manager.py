@@ -14,6 +14,7 @@ from ..constants import (
     PYTHON_ROLLBACK_CWD_PATH,
     PYTHON_SCRIPT_FILE_NAME,
     PYTHON_THREADPOOL_THREAD_COUNT,
+    PYTHON_ENABLE_OPENTELEMETRY
 )
 
 
@@ -27,7 +28,8 @@ def get_python_appsetting_state():
          PYTHON_ENABLE_WORKER_EXTENSIONS,
          FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
          PYTHON_SCRIPT_FILE_NAME,
-         PYTHON_ENABLE_INIT_INDEXING]
+         PYTHON_ENABLE_INIT_INDEXING,
+         PYTHON_ENABLE_OPENTELEMETRY]
 
     app_setting_states = "".join(
         f"{app_setting}: {current_vars[app_setting]} | "

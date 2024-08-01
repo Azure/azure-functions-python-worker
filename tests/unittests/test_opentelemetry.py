@@ -1,4 +1,5 @@
 import asyncio
+import os
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -56,15 +57,13 @@ class TestOpenTelemetry(unittest.TestCase):
             # Verify that otel_libs_available is set to False due to ImportError
             self.assertFalse(self.dispatcher._azure_monitor_available)
 
-    @patch("azure_functions_worker.dispatcher.get_app_setting")
+    @patch.dict(os.environ, {'PYTHON_ENABLE_OPENTELEMETRY': 'true'})
     @patch('builtins.__import__')
     def test_init_request_otel_capability_enabled_app_setting(
             self,
             mock_imports,
-            mock_app_setting,
     ):
         mock_imports.return_value = MagicMock()
-        mock_app_setting.return_value = True
 
         init_request = protos.StreamingMessage(
             worker_init_request=protos.WorkerInitRequest(
@@ -85,13 +84,10 @@ class TestOpenTelemetry(unittest.TestCase):
         self.assertEqual(capabilities["WorkerOpenTelemetryEnabled"], "true")
 
     @patch("azure_functions_worker.dispatcher.Dispatcher.initialize_azure_monitor")
-    @patch("azure_functions_worker.dispatcher.get_app_setting")
     def test_init_request_otel_capability_disabled_app_setting(
         self,
-        mock_app_setting,
         mock_initialize_azmon,
     ):
-        mock_app_setting.return_value = False
 
         init_request = protos.StreamingMessage(
             worker_init_request=protos.WorkerInitRequest(

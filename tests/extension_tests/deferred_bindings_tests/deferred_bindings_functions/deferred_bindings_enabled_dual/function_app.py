@@ -14,7 +14,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
                 connection="AzureWebJobsStorage")
 @app.route(route="get_bc_blob_triggered_dual")
 def get_bc_blob_triggered_dual(req: func.HttpRequest,
-                          client: blob.BlobClient) -> str:
+                               client: blob.BlobClient) -> str:
     return client.download_blob(encoding='utf-8').readall()
 
 

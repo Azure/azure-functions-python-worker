@@ -346,7 +346,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             logger.info("Successfully loaded OpenTelemetry modules. "
                         "OpenTelemetry is now enabled.")
         except ImportError:
-            self._azure_monitor_available = False
+            logger.exception(
+                "Cannot import OpenTelemetry libraries."
+            )
 
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '

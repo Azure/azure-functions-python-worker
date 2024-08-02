@@ -20,3 +20,4 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install .
         displayName: 'Build python worker'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))

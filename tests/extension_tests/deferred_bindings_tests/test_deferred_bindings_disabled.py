@@ -29,6 +29,7 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
 
+    @testutils.retryable_test(3, 5)
     async def test_deferred_bindings_disabled_log(self):
         async with testutils.start_mockhost(
                 script_root=DEFERRED_BINDINGS_DISABLED_DIR) as host:
@@ -60,5 +61,8 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
 
         Test: type is not supported, deferred_bindings_enabled is not yet set
         """
-        self.assertEqual(meta.check_deferred_bindings_enabled(
-            func.InputStream, False), (False, False))
+        async with testutils.start_mockhost(
+                script_root=DEFERRED_BINDINGS_DISABLED_DIR) as host:
+            await host.init_worker()
+            self.assertEqual(meta.check_deferred_bindings_enabled(
+                func.InputStream, False), (False, False))

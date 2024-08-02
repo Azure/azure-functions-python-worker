@@ -96,20 +96,23 @@ class TestDeferredBindingsEnabledHelpers(testutils.AsyncTestCase):
         Test type 1: type is supported, deferred_bindings_enabled is not yet set
         Test type 2: type is supported, deferred_bindings_enabled is already set
         """
-        self.assertEqual(meta.check_deferred_bindings_enabled(
-            BlobClient, False), (True, True))
+        async with testutils.start_mockhost(
+                script_root=DEFERRED_BINDINGS_ENABLED_DIR) as host:
+            await host.init_worker()
+            self.assertEqual(meta.check_deferred_bindings_enabled(
+                BlobClient, False), (True, True))
 
-        self.assertEqual(meta.check_deferred_bindings_enabled(
-            BlobClient, True), (True, True))
+            self.assertEqual(meta.check_deferred_bindings_enabled(
+                BlobClient, True), (True, True))
 
-        self.assertEqual(meta.check_deferred_bindings_enabled(
-            ContainerClient, False), (True, True))
+            self.assertEqual(meta.check_deferred_bindings_enabled(
+                ContainerClient, False), (True, True))
 
-        self.assertEqual(meta.check_deferred_bindings_enabled(
-            ContainerClient, True), (True, True))
+            self.assertEqual(meta.check_deferred_bindings_enabled(
+                ContainerClient, True), (True, True))
 
-        self.assertEqual(meta.check_deferred_bindings_enabled(
-            StorageStreamDownloader, False), (True, True))
+            self.assertEqual(meta.check_deferred_bindings_enabled(
+                StorageStreamDownloader, False), (True, True))
 
-        self.assertEqual(meta.check_deferred_bindings_enabled(
-            StorageStreamDownloader, True), (True, True))
+            self.assertEqual(meta.check_deferred_bindings_enabled(
+                StorageStreamDownloader, True), (True, True))

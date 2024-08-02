@@ -68,5 +68,8 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
 
         Test: type is not supported, deferred_bindings_enabled already set
         """
-        self.assertEqual(meta.check_deferred_bindings_enabled(
-            func.InputStream, True), (True, False))
+        async with testutils.start_mockhost(
+                script_root=DEFERRED_BINDINGS_ENABLED_DUAL_DIR) as host:
+            await host.init_worker()
+            self.assertEqual(meta.check_deferred_bindings_enabled(
+                func.InputStream, True), (True, False))

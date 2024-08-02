@@ -3,6 +3,8 @@ trigger:
   branches:
     include:
     - dev
+    - sdk/*
+    - extensions/*
 
 pr:
   branches:
@@ -23,6 +25,12 @@ resources:
     type: git
     name: 1ESPipelineTemplates/1ESPipelineTemplates
     ref: refs/tags/release
+
+variables:
+  - name: isSdkRelease
+    value: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/sdk/')] 
+  - name: isExtensionsRelease
+    value: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/extensions/')] 
 
 extends:
   template: v1/1ES.Unofficial.PipelineTemplate.yml@1es

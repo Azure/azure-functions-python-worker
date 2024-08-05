@@ -343,8 +343,6 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._context_api = context_api
             self._trace_context_propagator = TraceContextTextMapPropagator()
 
-            logger.info("Successfully loaded OpenTelemetry modules. "
-                        "OpenTelemetry is now enabled.")
         except ImportError:
             logger.exception(
                 "Cannot import OpenTelemetry libraries."

@@ -38,7 +38,7 @@ jobs:
         inputs:
           buildType: specific
           artifactName: 'azure-functions'
-          project: 'internal'
+          project: '3f99e810-c336-441f-8892-84983093ad7f'
           definition: 679
           buildVersionToDownload: latest
           targetPath: '$(Pipeline.Workspace)/PythonSdkArtifact'

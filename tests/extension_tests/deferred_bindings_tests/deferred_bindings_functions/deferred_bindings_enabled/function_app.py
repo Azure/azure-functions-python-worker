@@ -6,11 +6,11 @@ import azurefunctions.extensions.bindings.blob as blob
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
-@app.function_name(name="get_bc_blob_triggered")
+@app.function_name(name="blob_input_only")
 @app.blob_input(arg_name="client",
                 path="python-worker-tests/test-blobclient-triggered.txt",
                 connection="AzureWebJobsStorage")
-@app.route(route="get_bc_blob_triggered")
-def get_bc_blob_triggered(req: func.HttpRequest,
-                          client: blob.BlobClient) -> str:
+@app.route(route="blob_input_only")
+def blob_input_only(req: func.HttpRequest,
+                    client: blob.BlobClient) -> str:
     return client.download_blob(encoding='utf-8').readall()

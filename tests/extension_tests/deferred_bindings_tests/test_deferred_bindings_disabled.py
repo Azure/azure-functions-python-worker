@@ -46,7 +46,7 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
                                               "is only supported for 3.9+.")
-class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
+class TestDeferredBindingsDisabledHelpers(testutils.AsyncTestCase):
 
     async def test_check_deferred_bindings_disabled(self):
         """

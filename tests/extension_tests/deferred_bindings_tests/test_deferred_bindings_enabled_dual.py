@@ -53,9 +53,9 @@ class TestDeferredBindingsEnabledDual(testutils.AsyncTestCase):
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
                                               "is only supported for 3.9+.")
-class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
+class TestDeferredBindingsDualHelpers(testutils.AsyncTestCase):
 
-    async def test_check_deferred_bindings_enabled(self):
+    async def test_check_deferred_bindings_dual_enabled(self):
         """
         check_deferred_bindings_enabled checks if deferred bindings is enabled at fx
         and single binding level.

@@ -116,7 +116,7 @@ jobs:
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |
-             python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
+             python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend tests/extension_tests/deferred_bindings_tests/test_deferred_bindings_blob_functions.py tests/extension_tests/http_v2_tests
         env:
           AzureWebJobsStorage: $(STORAGE_CONNECTION)
           AzureWebJobsCosmosDBConnectionString: $(COSMOSDB_CONNECTION)

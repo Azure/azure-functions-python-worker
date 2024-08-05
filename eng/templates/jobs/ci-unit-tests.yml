@@ -33,43 +33,9 @@ jobs:
           eng/scripts/test-setup.sh
         displayName: 'Install dependencies'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
-      - task: DownloadPipelineArtifact@2
-        displayName: 'Download Python SDK Artifact'
-        inputs:
-          buildType: specific
-          artifactName: 'azure-functions'
-          project: 'internal'
-          definition: 679
-          buildVersionToDownload: latest
-          targetPath: '$(Pipeline.Workspace)/PythonSdkArtifact'
-        condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
-      - bash: |
-          chmod +x eng/scripts/test-sdk.sh
-          chmod +x eng/scripts/test-setup.sh
-
-          eng/scripts/test-sdk.sh $(Pipeline.Workspace) $(PYTHON_VERSION)
-          eng/scripts/test-setup.sh
-        displayName: 'Install test python sdk, dependencies and the worker'
-        condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
-      - task: DownloadPipelineArtifact@2
-        displayName: 'Download Python Extension Artifact'
-        inputs:
-          buildType: specific
-          artifactName: $(PYTHONEXTENSIONNAME)
-          project: 'internal'
-          definition: 798
-          buildVersionToDownload: latest
-          targetPath: '$(Pipeline.Workspace)/PythonExtensionArtifact'
-        condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
-      - bash: |
-          chmod +x eng/scripts/test-setup.sh
-          chmod +x eng/scripts/test-extensions.sh
-
-          eng/scripts/test-extensions.sh $(Pipeline.Workspace) $(PYTHON_VERSION)
-          eng/scripts/test-setup.sh
-        displayName: 'Install test python extension, dependencies and the worker'
-        condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |
           python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
         displayName: "Running $(PYTHON_VERSION) Unit Tests"
+        # Skip running tests for SDK and Extensions release branches. Public pipeline doesn't have permissions to download artifact.
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
   

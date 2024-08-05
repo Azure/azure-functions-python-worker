@@ -28,6 +28,7 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+        del sys.modules['function_app']
 
     @testutils.retryable_test(3, 5)
     async def test_deferred_bindings_disabled_log(self):
@@ -42,6 +43,7 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
                     disabled_log_present = True
                     break
             self.assertTrue(disabled_log_present)
+        del sys.modules['function_app']
 
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
@@ -66,3 +68,4 @@ class TestDeferredBindingsDisabledHelpers(testutils.AsyncTestCase):
             await host.init_worker()
             self.assertEqual(meta.check_deferred_bindings_enabled(
                 func.InputStream, False), (False, False))
+        del sys.modules['function_app']

@@ -43,6 +43,7 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
             self.assertIsInstance(r.response, protos.FunctionMetadataResponse)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+        del sys.modules['function_app']
 
     async def test_deferred_bindings_enabled_log(self):
         async with testutils.start_mockhost(
@@ -56,6 +57,7 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
                     enabled_log_present = True
                     break
             self.assertTrue(enabled_log_present)
+        del sys.modules['function_app']
 
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
@@ -81,6 +83,7 @@ class TestDeferredBindingsEnabledHelpers(testutils.AsyncTestCase):
                                             pytype=BlobClient, datum=datum, metadata={})
 
         self.assertIsNotNone(obj)
+        del sys.modules['function_app']
 
     async def test_check_deferred_bindings_enabled(self):
         """
@@ -116,3 +119,4 @@ class TestDeferredBindingsEnabledHelpers(testutils.AsyncTestCase):
 
             self.assertEqual(meta.check_deferred_bindings_enabled(
                 StorageStreamDownloader, True), (True, True))
+        del sys.modules['function_app']

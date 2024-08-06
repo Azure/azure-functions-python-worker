@@ -28,8 +28,8 @@ resources:
       ref: refs/tags/release
 
 variables:
-  - template: eng/templates/utils/variables.yml
-  - template: eng/templates/utils/official-variables.yml
+  - template: eng/templates/utils/variables.yml@self
+  - template: eng/templates/utils/official-variables.yml@self
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1es

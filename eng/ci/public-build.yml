@@ -27,10 +27,7 @@ resources:
     ref: refs/tags/release
 
 variables:
-  - name: isSdkRelease
-    value: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/sdk/')] 
-  - name: isExtensionsRelease
-    value: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/extensions/')] 
+  - template: eng/templates/utils/variables.yml
 
 extends:
   template: v1/1ES.Unofficial.PipelineTemplate.yml@1es

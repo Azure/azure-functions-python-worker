@@ -759,7 +759,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 " Placeholder: False", logs)
 
 
-class TestDispatcherIndexinginInit(unittest.TestCase):
+class TestDispatcherIndexingInInit(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()

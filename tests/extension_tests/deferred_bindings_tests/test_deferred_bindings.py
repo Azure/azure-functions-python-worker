@@ -156,7 +156,6 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
                                             pytype=BlobClient, datum=datum, metadata={})
 
         self.assertIsNotNone(obj)
-        del sys.modules['function_app']
 
     async def test_check_deferred_bindings_enabled(self):
         """

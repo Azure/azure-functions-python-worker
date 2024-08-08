@@ -605,6 +605,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+        del sys.modules['function_app']
 
     async def test_dispatcher_functions_metadata_request_with_retry(self):
         """Test if the functions metadata response will be sent correctly
@@ -617,6 +618,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+        del sys.modules['function_app']
 
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
@@ -757,7 +759,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 " Placeholder: False", logs)
 
 
-class TestDispatcherIndexinginInit(unittest.TestCase):
+class TestDispatcherIndexingInInit(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
@@ -782,6 +784,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
 
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+        del sys.modules['function_app']
 
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
     def test_worker_init_request_with_indexing_disabled(self):
@@ -847,6 +851,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
+        del sys.modules['function_app']
+
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
     def test_functions_metadata_request_with_init_indexing_disabled(self):
         init_request = protos.StreamingMessage(
@@ -878,6 +884,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
             protos.StatusResult.Success)
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+        del sys.modules['function_app']
 
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     @patch.object(Dispatcher, 'index_functions')
@@ -940,6 +948,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
 
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+        del sys.modules['function_app']
 
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     @patch.object(Dispatcher, 'index_functions')

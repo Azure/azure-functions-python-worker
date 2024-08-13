@@ -1,11 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import os
 import json
+import os
 
 import azure.functions as func
-from azure.eventhub import EventHubProducerClient, EventData
+from azure.eventhub import EventData, EventHubProducerClient
 
 
 # An HttpTrigger to generating EventHub event from azure-eventhub SDK.

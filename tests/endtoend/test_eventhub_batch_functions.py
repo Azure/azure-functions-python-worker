@@ -6,10 +6,10 @@ from datetime import datetime
 from unittest import skipIf
 
 from dateutil import parser
+from tests.utils import testutils
+from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
 from azure_functions_worker.utils.common import is_envvar_true
-from tests.utils import testutils
-from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)

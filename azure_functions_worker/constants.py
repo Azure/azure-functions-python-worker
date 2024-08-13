@@ -81,5 +81,15 @@ HTTP = "http"
 # Base extension supported Python minor version
 BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8
 
+# Appsetting to turn on OpenTelemetry support/features
+# Includes turning on Azure monitor distro to send telemetry to AppInsights
 PYTHON_ENABLE_OPENTELEMETRY = "PYTHON_ENABLE_OPENTELEMETRY"
-PYTHON_ENABLE_OPENTELEMETRY_DEFAULT = True
+PYTHON_ENABLE_OPENTELEMETRY_DEFAULT = False
+
+# Appsetting to specify root logger name of logger to collect telemetry for
+# Used by Azure monitor distro
+PYTHON_AZURE_MONITOR_LOGGER_NAME = "PYTHON_AZURE_MONITOR_LOGGER_NAME"
+PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT = ""
+
+# Appsetting to specify AppInsights connection string
+APPLICATIONINSIGHTS_CONNECTION_STRING = "APPLICATIONINSIGHTS_CONNECTION_STRING"

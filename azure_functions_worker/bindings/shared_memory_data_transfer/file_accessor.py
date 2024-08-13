@@ -4,6 +4,7 @@
 import mmap
 from abc import ABCMeta, abstractmethod
 from typing import Optional
+
 from .shared_memory_constants import SharedMemoryConstants as consts
 
 

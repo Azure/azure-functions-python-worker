@@ -1,6 +1,7 @@
-import azure.functions as func
-import azure.durable_functions as df
 import logging
+
+import azure.durable_functions as df
+import azure.functions as func
 
 app = df.DFApp()
 

@@ -1,11 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import sys
-import logging
 import asyncio
+import logging
+import sys
 
 import azure.functions as func
-
 
 logger = logging.getLogger('custom_logger')
 

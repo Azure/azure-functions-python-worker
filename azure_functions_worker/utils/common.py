@@ -2,13 +2,15 @@
 # Licensed under the MIT License.
 import importlib
 import os
-import sys
 import re
+import sys
 from types import ModuleType
-from typing import Optional, Callable
+from typing import Callable, Optional
 
-from azure_functions_worker.constants import CUSTOMER_PACKAGES_PATH, \
-    PYTHON_EXTENSIONS_RELOAD_FUNCTIONS
+from azure_functions_worker.constants import (
+    CUSTOMER_PACKAGES_PATH,
+    PYTHON_EXTENSIONS_RELOAD_FUNCTIONS,
+)
 
 
 def is_true_like(setting: str) -> bool:

@@ -157,6 +157,27 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
 
         self.assertIsNotNone(obj)
 
+    def test_deferred_bindings_enabled_decode_failed(self):
+        binding = BlobClientConverter
+        pb = protos.ParameterBinding(name='test',
+                                     data=protos.TypedData(
+                                         string='test'))
+        sample_mbd = MockMBD(version="1.0",
+                             source="AzureStorageBlobs",
+                             content_type="application/json",
+                             content="{\"Connection\":\"NotARealConnectionString\","
+                                     "\"ContainerName\":"
+                                     "\"python-worker-tests\","
+                                     "\"BlobName\":"
+                                     "\"nonexistent-blob.txt\"}")
+        datum = datumdef.Datum(value=sample_mbd, type='model_binding_data')
+
+        with self.assertRaises(AttributeError):
+            # Decode will fail here because the connection string does not exist
+            meta.deferred_bindings_decode(binding=binding, pb=pb,
+                                          pytype=BlobClient, datum=datum,
+                                          metadata={})
+
     async def test_check_deferred_bindings_enabled(self):
         """
         check_deferred_bindings_enabled checks if deferred bindings is enabled at fx

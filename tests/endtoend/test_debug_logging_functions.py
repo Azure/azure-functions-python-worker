@@ -38,7 +38,7 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
+        return testutils.E2E_TESTS_FOLDER / 'debug_logging_functions'
 
     def test_debug_logging_enabled(self):
         """
@@ -72,7 +72,7 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
+        return testutils.E2E_TESTS_FOLDER / 'debug_logging_functions'
 
     def test_debug_logging_disabled(self):
         """
@@ -115,7 +115,7 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
+        return testutils.E2E_TESTS_FOLDER / 'debug_logging_functions'
 
     def test_debug_logging_filtered(self):
         """
@@ -131,3 +131,24 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         self.assertIn('logging warning', host_out)
         self.assertNotIn('logging debug', host_out)
         self.assertIn('logging error', host_out)
+
+
+class TestDebugLoggingEnabledFunctionsStein(TestDebugLoggingEnabledFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'debug_logging_functions_stein'
+
+
+class TestDebugLoggingDisabledFunctionsStein(TestDebugLoggingDisabledFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'debug_logging_functions_stein'
+
+
+class TestDebugLogEnabledHostFilteringFunctionsStein(TestDebugLogEnabledHostFilteringFunctions):  # noqa
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.E2E_TESTS_FOLDER / 'debug_logging_functions_stein'

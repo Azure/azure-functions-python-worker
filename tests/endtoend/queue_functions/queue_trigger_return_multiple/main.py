@@ -1,8 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import logging
-import azure.functions as azf
 
+import azure.functions as azf
 
 logger = logging.getLogger(__name__)
 

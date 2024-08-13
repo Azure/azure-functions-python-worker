@@ -19,7 +19,6 @@ import requests
 from Crypto.Cipher import AES
 from Crypto.Hash.SHA256 import SHA256Hash
 from Crypto.Util.Padding import pad
-
 from tests.utils.constants import PROJECT_ROOT
 
 # Linux Consumption Testing Constants

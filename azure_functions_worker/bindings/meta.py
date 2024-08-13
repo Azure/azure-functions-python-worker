@@ -4,17 +4,17 @@ import os
 import sys
 import typing
 
-
 from .. import protos
-from . import datumdef
-from . import generic
-
-from .shared_memory_data_transfer import SharedMemoryManager
+from ..constants import (
+    BASE_EXT_SUPPORTED_PY_MINOR_VERSION,
+    CUSTOMER_PACKAGES_PATH,
+    HTTP,
+    HTTP_TRIGGER,
+)
 from ..http_v2 import HttpV2Registry
-from ..constants import CUSTOMER_PACKAGES_PATH, HTTP, HTTP_TRIGGER, \
-    BASE_EXT_SUPPORTED_PY_MINOR_VERSION
 from ..logging import logger
-
+from . import datumdef, generic
+from .shared_memory_data_transfer import SharedMemoryManager
 
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'

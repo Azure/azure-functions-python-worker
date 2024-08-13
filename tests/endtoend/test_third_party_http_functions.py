@@ -3,7 +3,6 @@
 import os
 
 import requests
-
 from tests.utils import testutils as utils
 from tests.utils.testutils import E2E_TESTS_ROOT
 

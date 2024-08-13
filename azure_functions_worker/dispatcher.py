@@ -19,29 +19,46 @@ from logging import LogRecord
 from typing import List, Optional
 
 import grpc
+
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
-from .constants import (PYTHON_ROLLBACK_CWD_PATH,
-                        PYTHON_THREADPOOL_THREAD_COUNT,
-                        PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-                        PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
-                        PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING,
-                        PYTHON_SCRIPT_FILE_NAME,
-                        PYTHON_SCRIPT_FILE_NAME_DEFAULT,
-                        PYTHON_LANGUAGE_RUNTIME, PYTHON_ENABLE_INIT_INDEXING,
-                        METADATA_PROPERTIES_WORKER_INDEXED,
-                        PYTHON_ENABLE_OPENTELEMETRY,
-                        PYTHON_ENABLE_OPENTELEMETRY_DEFAULT)
+from .constants import (
+    APPLICATIONINSIGHTS_CONNECTION_STRING,
+    METADATA_PROPERTIES_WORKER_INDEXED,
+    PYTHON_AZURE_MONITOR_LOGGER_NAME,
+    PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT,
+    PYTHON_ENABLE_DEBUG_LOGGING,
+    PYTHON_ENABLE_INIT_INDEXING,
+    PYTHON_ENABLE_OPENTELEMETRY,
+    PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
+    PYTHON_LANGUAGE_RUNTIME,
+    PYTHON_ROLLBACK_CWD_PATH,
+    PYTHON_SCRIPT_FILE_NAME,
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT,
+    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+)
 from .extension import ExtensionManager
-from .http_v2 import http_coordinator, initialize_http_server, HttpV2Registry, \
-    sync_http_request, HttpServerInitError
-from .logging import disable_console_logging, enable_console_logging
-from .logging import (logger, error_logger, is_system_log_category,
-                      CONSOLE_LOG_PREFIX, format_exception)
+from .http_v2 import (
+    HttpServerInitError,
+    HttpV2Registry,
+    http_coordinator,
+    initialize_http_server,
+    sync_http_request,
+)
+from .logging import (
+    CONSOLE_LOG_PREFIX,
+    disable_console_logging,
+    enable_console_logging,
+    error_logger,
+    format_exception,
+    is_system_log_category,
+    logger,
+)
 from .utils.app_setting_manager import get_python_appsetting_state
-from .utils.common import (get_app_setting, is_envvar_true,
-                           validate_script_file_name)
+from .utils.common import get_app_setting, is_envvar_true, validate_script_file_name
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
@@ -85,7 +102,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._function_metadata_exception = None
 
         # Used for checking if open telemetry is enabled
-        self._otel_libs_available = False
+        self._azure_monitor_available = False
         self._context_api = None
         self._trace_context_propagator = None
 
@@ -274,22 +291,62 @@ class Dispatcher(metaclass=DispatcherMeta):
         resp = await request_handler(request)
         self._grpc_resp_queue.put_nowait(resp)
 
+    def initialize_azure_monitor(self):
+        """Initializes OpenTelemetry and Azure monitor distro
+        """
+        self.update_opentelemetry_status()
+        try:
+            from azure.monitor.opentelemetry import configure_azure_monitor
+
+            # Set functions resource detector manually until officially
+            # include in Azure monitor distro
+            os.environ.setdefault(
+                "OTEL_EXPERIMENTAL_RESOURCE_DETECTORS",
+                "azure_functions",
+            )
+
+            configure_azure_monitor(
+                # Connection string can be explicitly specified in Appsetting
+                # If not set, defaults to env var
+                # APPLICATIONINSIGHTS_CONNECTION_STRING
+                connection_string=get_app_setting(
+                    setting=APPLICATIONINSIGHTS_CONNECTION_STRING
+                ),
+                logger_name=get_app_setting(
+                    setting=PYTHON_AZURE_MONITOR_LOGGER_NAME,
+                    default_value=PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT
+                ),
+            )
+            self._azure_monitor_available = True
+
+            logger.info("Successfully configured Azure monitor distro.")
+        except ImportError:
+            logger.exception(
+                "Cannot import Azure Monitor distro."
+            )
+            self._azure_monitor_available = False
+        except Exception:
+            logger.exception(
+                "Error initializing Azure monitor distro."
+            )
+            self._azure_monitor_available = False
+
     def update_opentelemetry_status(self):
         """Check for OpenTelemetry library availability and
         update the status attribute."""
         try:
             from opentelemetry import context as context_api
             from opentelemetry.trace.propagation.tracecontext import (
-                TraceContextTextMapPropagator)
+                TraceContextTextMapPropagator,
+            )
 
             self._context_api = context_api
             self._trace_context_propagator = TraceContextTextMapPropagator()
-            self._otel_libs_available = True
 
-            logger.info("Successfully loaded OpenTelemetry modules. "
-                        "OpenTelemetry is now enabled.")
         except ImportError:
-            self._otel_libs_available = False
+            logger.exception(
+                "Cannot import OpenTelemetry libraries."
+            )
 
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '
@@ -319,12 +376,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
-
         if get_app_setting(setting=PYTHON_ENABLE_OPENTELEMETRY,
                            default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
-            self.update_opentelemetry_status()
+            self.initialize_azure_monitor()
 
-            if self._otel_libs_available:
+            if self._azure_monitor_available:
                 capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
 
         if DependencyManager.should_load_cx_dependencies():
@@ -598,7 +654,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     args[name] = bindings.Out()
 
             if fi.is_async:
-                if self._otel_libs_available:
+                if self._azure_monitor_available:
                     self.configure_opentelemetry(fi_context)
 
                 call_result = \
@@ -718,9 +774,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             if get_app_setting(
                     setting=PYTHON_ENABLE_OPENTELEMETRY,
                     default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
-                self.update_opentelemetry_status()
+                self.initialize_azure_monitor()
 
-                if self._otel_libs_available:
+                if self._azure_monitor_available:
                     capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = (
                         _TRUE)
 
@@ -931,7 +987,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # invocation_id from ThreadPoolExecutor's threads.
         context.thread_local_storage.invocation_id = invocation_id
         try:
-            if self._otel_libs_available:
+            if self._azure_monitor_available:
                 self.configure_opentelemetry(context)
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)

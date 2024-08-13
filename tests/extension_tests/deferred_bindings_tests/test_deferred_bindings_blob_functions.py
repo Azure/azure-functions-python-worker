@@ -1,8 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import sys
 import time
 import unittest
-import sys
 
 from tests.utils import testutils
 

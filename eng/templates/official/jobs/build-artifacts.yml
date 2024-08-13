@@ -1,7 +1,7 @@
 jobs:
 - job: Build_WINDOWS_X64
   pool:
-    name: 1es-pool-azfunc-public
+    name: 1es-pool-azfunc
     image: 1es-windows-2022
     os: windows
   strategy:
@@ -21,11 +21,14 @@ jobs:
       Python311V4:
         pythonVersion: '3.11'
         workerPath: 'python/prodV4/worker.py'
+      Python312V4:
+        pythonVersion: '3.12'
+        workerPath: 'python/prodV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
-        targetPath: $(Build.SourcesDirectory)
+        targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_WINDOWS_X64"
   steps:
   - template: ../../../../pack/templates/win_env_gen.yml
@@ -36,7 +39,7 @@ jobs:
       artifactName: '$(pythonVersion)_WINDOWS_X64'
 - job: Build_WINDOWS_X86
   pool:
-    name: 1es-pool-azfunc-public
+    name: 1es-pool-azfunc
     image: 1es-windows-2022
     os: windows
   strategy:
@@ -56,11 +59,14 @@ jobs:
       Python311V4:
         pythonVersion: '3.11'
         workerPath: 'python/prodV4/worker.py'
+      Python312V4:
+        pythonVersion: '3.12'
+        workerPath: 'python/prodV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
-        targetPath: $(Build.SourcesDirectory)
+        targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_WINDOWS_X86"
   steps:
   - template: ../../../../pack/templates/win_env_gen.yml
@@ -91,11 +97,14 @@ jobs:
       Python311V4:
         pythonVersion: '3.11'
         workerPath: 'python/prodV4/worker.py'
+      Python312V4:
+        pythonVersion: '3.12'
+        workerPath: 'python/prodV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
-        targetPath: $(Build.SourcesDirectory)
+        targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_LINUX_X64"
   steps:
   - template: ../../../../pack/templates/nix_env_gen.yml
@@ -125,11 +134,14 @@ jobs:
       Python311V4:
         pythonVersion: '3.11'
         workerPath: 'python/prodV4/worker.py'
+      Python312V4:
+        pythonVersion: '3.12'
+        workerPath: 'python/prodV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
-        targetPath: $(Build.SourcesDirectory)
+        targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_OSX_X64"
   steps:
   - template: ../../../../pack/templates/nix_env_gen.yml
@@ -153,11 +165,14 @@ jobs:
       Python311V4:
         pythonVersion: '3.11'
         workerPath: 'python/prodV4/worker.py'
+      Python312V4:
+        pythonVersion: '3.12'
+        workerPath: 'python/prodV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
-        targetPath: $(Build.SourcesDirectory)
+        targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_OSX_ARM4"
   steps:
   - template: ../../../../pack/templates/macos_64_env_gen.yml
@@ -171,14 +186,9 @@ jobs:
   templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:
-        - output: nuget
-          condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'), eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true))
-          useDotNetTask: false
-          packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
-          packageParentPath: "$(Build.ArtifactStagingDirectory)"
-          publishVstsFeed: "e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df"
-          nuGetFeedType: "internal"
-          allowPackageConflicts: true
+        - output: pipelineArtifact
+          targetPath: $(Build.ArtifactStagingDirectory)
+          artifactName: "PythonWorker"
   steps:
   - bash: |
       echo "Releasing from $BUILD_SOURCEBRANCHNAME"

@@ -7,12 +7,18 @@ from dateutil import parser
 from dateutil.parser import ParserError
 
 from azure_functions_worker import protos
-from azure_functions_worker.bindings.datumdef import \
-    parse_cookie_attr_expires, \
-    parse_cookie_attr_same_site, parse_to_rpc_http_cookie_list, Datum
-from azure_functions_worker.bindings.nullable_converters import \
-    to_nullable_bool, to_nullable_string, to_nullable_double, \
-    to_nullable_timestamp
+from azure_functions_worker.bindings.datumdef import (
+    Datum,
+    parse_cookie_attr_expires,
+    parse_cookie_attr_same_site,
+    parse_to_rpc_http_cookie_list,
+)
+from azure_functions_worker.bindings.nullable_converters import (
+    to_nullable_bool,
+    to_nullable_double,
+    to_nullable_string,
+    to_nullable_timestamp,
+)
 from azure_functions_worker.protos import RpcHttpCookie
 
 

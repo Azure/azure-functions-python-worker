@@ -1,10 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import string
-import random
-import json
 import hashlib
+import json
+import random
+import string
+
 import azure.functions as azf
 
 

@@ -2,15 +2,15 @@
 # Licensed under the MIT License.
 
 import logging
+
 import azure.functions as func
-import numpy as np
-import requests
 import cv2
+import dotenv
+import numpy as np
+import plotly
+import requests
 from pandas import DataFrame
 from sklearn.datasets import load_iris
-import plotly
-import dotenv
-
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 

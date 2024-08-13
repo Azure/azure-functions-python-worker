@@ -1,8 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from typing import List
 import traceback
 from traceback import StackSummary, extract_tb
+from typing import List
 
 
 def extend_exception_message(exc: Exception, msg: str) -> Exception:

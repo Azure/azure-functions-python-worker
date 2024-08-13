@@ -4,8 +4,12 @@ import sys
 import unittest
 from unittest.mock import MagicMock, patch
 
-from azure_functions_worker.http_v2 import http_coordinator, \
-    AsyncContextReference, SingletonMeta, get_unused_tcp_port
+from azure_functions_worker.http_v2 import (
+    AsyncContextReference,
+    SingletonMeta,
+    get_unused_tcp_port,
+    http_coordinator,
+)
 
 
 class MockHttpRequest:

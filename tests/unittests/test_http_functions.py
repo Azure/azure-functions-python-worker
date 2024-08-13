@@ -452,7 +452,8 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'create_task_with_context')
 
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'Finished Hello World in 5')
+        self.assertEqual(r.text, 'Finished Hello World in 5'
+                                 ' | Finished Hello World in 10')
 
     def test_create_task_without_context(self):
         r = self.webhost.request('GET', 'create_task_without_context')

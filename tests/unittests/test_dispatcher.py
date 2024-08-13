@@ -22,7 +22,7 @@ from azure_functions_worker.constants import (
     PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
     PYTHON_THREADPOOL_THREAD_COUNT_MIN,
 )
-from azure_functions_worker.dispatcher import Dispatcher
+from azure_functions_worker.dispatcher import Dispatcher, ContextEnabledTask
 from azure_functions_worker.version import VERSION
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
@@ -1001,6 +1001,8 @@ class TestContextEnabledTask(unittest.TestCase):
         self.loop.close()
 
     def test_init_with_context(self):
+        # Since ContextEnabledTask accepts the context param,
+        # no errors will be thrown here
         num = contextvars.ContextVar('num')
         num.set(5)
         ctx = contextvars.copy_context()
@@ -1014,6 +1016,8 @@ class TestContextEnabledTask(unittest.TestCase):
         self.assertFalse(exception_raised)
 
     async def test_init_without_context(self):
+        # If the context param is not defined,
+        # no errors will be thrown for backwards compatibility
         exception_raised = False
         try:
             self.loop.set_task_factory(

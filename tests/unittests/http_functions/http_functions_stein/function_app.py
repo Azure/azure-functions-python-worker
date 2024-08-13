@@ -16,17 +16,20 @@ app = func.FunctionApp()
 logger = logging.getLogger("my-function")
 
 num = contextvars.ContextVar('num')
-num.set(5)
-ctx = contextvars.copy_context()
 
 
 async def count_with_context(name: str):
-    for i in range(ctx[num]):
+    # The number of times the loop is executed
+    # depends on the val set in context
+    val = num.get()
+    for i in range(val):
         await asyncio.sleep(0.5)
-    return f"Finished {name} in {ctx[num]}"
+    return f"Finished {name} in {val}"
 
 
 async def count_without_context(name: str, number: int):
+    # The number of times the loop executes is decided by a
+    # user-defined param
     for i in range(number):
         await asyncio.sleep(0.5)
     return f"Finished {name} in {number}"
@@ -425,13 +428,28 @@ def set_cookie_resp_header_empty(
 
 @app.route('create_task_with_context')
 async def create_task_with_context(req: func.HttpRequest):
-    count_task = asyncio.create_task(count_with_context("Hello World"), context=ctx)
-    count_val = await count_task
-    return f'{count_val}'
+    # Create first task with context num = 5
+    num.set(5)
+    first_ctx = contextvars.copy_context()
+    first_count_task = asyncio.create_task(
+        count_with_context("Hello World"), context=first_ctx)
+
+    # Create second task with context num = 10
+    num.set(10)
+    second_ctx = contextvars.copy_context()
+    second_count_task = asyncio.create_task(
+        count_with_context("Hello World"), context=second_ctx)
+
+    # Execute tasks
+    first_count_val = await first_count_task
+    second_count_val = await second_count_task
+
+    return f'{first_count_val + " | " + second_count_val}'
 
 
 @app.route('create_task_without_context')
 async def create_task_without_context(req: func.HttpRequest):
+    # No context is being sent into asyncio.create_task
     count_task = asyncio.create_task(count_without_context("Hello World", 5))
     count_val = await count_task
     return f'{count_val}'

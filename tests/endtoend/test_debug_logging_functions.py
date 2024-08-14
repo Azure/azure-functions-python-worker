@@ -102,7 +102,6 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         with open(host_json, 'w+') as f:
             f.write(HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO)
 
-        os.environ["PYTHON_ENABLE_DEBUG_LOGGING"] = "1"
         super().setUpClass()
 
     @classmethod
@@ -110,7 +109,6 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         host_json = TESTS_ROOT / cls.get_script_dir() / 'host.json'
         remove_path(host_json)
 
-        os.environ.pop(PYTHON_ENABLE_DEBUG_LOGGING)
         super().tearDownClass()
 
     @classmethod

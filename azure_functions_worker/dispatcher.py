@@ -173,7 +173,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             # In Python 3.11+, constructing a task has an optional context
             # parameter. Allow for this param to be passed to ContextEnabledTask
-            # https://github.com/Azure/azure-functions-python-worker/issues/1508
             self._loop.set_task_factory(
                 lambda loop, coro, context=None: ContextEnabledTask(
                     coro, loop=loop, context=context))

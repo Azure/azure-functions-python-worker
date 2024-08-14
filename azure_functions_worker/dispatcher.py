@@ -171,8 +171,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                     start_stream=protos.StartStream(
                         worker_id=self.worker_id)))
 
+            # In Python 3.11+, constructing a task has an optional context
+            # parameter. Allow for this param to be passed to ContextEnabledTask
             self._loop.set_task_factory(
-                lambda loop, coro: ContextEnabledTask(coro, loop=loop))
+                lambda loop, coro, context=None: ContextEnabledTask(
+                    coro, loop=loop, context=context))
 
             # Detach console logging before enabling GRPC channel logging
             logger.info('Detaching console logging.')
@@ -1068,8 +1071,13 @@ class AsyncLoggingHandler(logging.Handler):
 class ContextEnabledTask(asyncio.Task):
     AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
 
-    def __init__(self, coro, loop):
-        super().__init__(coro, loop=loop)
+    def __init__(self, coro, loop, context=None):
+        # The context param is only available for 3.11+. If
+        # not, it can't be sent in the init() call.
+        if sys.version_info.minor >= 11:
+            super().__init__(coro, loop=loop, context=context)
+        else:
+            super().__init__(coro, loop=loop)
 
         current_task = asyncio.current_task(loop)
         if current_task is not None:

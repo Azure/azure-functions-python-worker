@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import asyncio
 import collections as col
+import contextvars
 import os
 import sys
 import unittest
@@ -21,7 +22,7 @@ from azure_functions_worker.constants import (
     PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
     PYTHON_THREADPOOL_THREAD_COUNT_MIN,
 )
-from azure_functions_worker.dispatcher import Dispatcher
+from azure_functions_worker.dispatcher import Dispatcher, ContextEnabledTask
 from azure_functions_worker.version import VERSION
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
@@ -989,3 +990,39 @@ class TestDispatcherIndexingInInit(unittest.TestCase):
         self.assertEqual(
             response.function_load_response.result.exception.message,
             "Exception: Mocked Exception")
+
+
+class TestContextEnabledTask(unittest.TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.loop.close()
+
+    def test_init_with_context(self):
+        # Since ContextEnabledTask accepts the context param,
+        # no errors will be thrown here
+        num = contextvars.ContextVar('num')
+        num.set(5)
+        ctx = contextvars.copy_context()
+        exception_raised = False
+        try:
+            self.loop.set_task_factory(
+                lambda loop, coro, context=None: ContextEnabledTask(
+                    coro, loop=loop, context=ctx))
+        except TypeError:
+            exception_raised = True
+        self.assertFalse(exception_raised)
+
+    async def test_init_without_context(self):
+        # If the context param is not defined,
+        # no errors will be thrown for backwards compatibility
+        exception_raised = False
+        try:
+            self.loop.set_task_factory(
+                lambda loop, coro: ContextEnabledTask(
+                    coro, loop=loop))
+        except TypeError:
+            exception_raised = True
+        self.assertFalse(exception_raised)

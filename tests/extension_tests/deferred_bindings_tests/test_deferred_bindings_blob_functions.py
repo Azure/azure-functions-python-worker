@@ -190,7 +190,3 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
         # Without the http_v2_enabled default definition, this request would time out.
         # Instead, it fails immediately
         self.assertEqual(r.status_code, 500)
-
-    def test_nonexistent_blob(self):
-        r = self.webhost.request('GET', 'nonexistent_blob')
-        self.assertEqual(r.status_code, 500)

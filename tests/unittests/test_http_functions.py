@@ -23,6 +23,44 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.text, 'Hello World!')
         self.assertTrue(r.headers['content-type'].startswith('text/plain'))
 
+    def test_return_out(self):
+        r = self.webhost.request('GET', 'return_out')
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.text, 'hello')
+        self.assertTrue(r.headers['content-type'].startswith('text/plain'))
+
+    def test_return_bytes(self):
+        r = self.webhost.request('GET', 'return_bytes')
+        self.assertEqual(r.status_code, 500)
+        # https://github.com/Azure/azure-functions-host/issues/2706
+        # self.assertRegex(
+        #    r.text, r'.*unsupported type .*http.* for Python type .*bytes.*')
+
+    def test_return_http_200(self):
+        r = self.webhost.request('GET', 'return_http')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '<h1>Hello World™</h1>')
+        self.assertEqual(r.headers['content-type'], 'text/html; charset=utf-8')
+
+    def test_return_http_no_body(self):
+        r = self.webhost.request('GET', 'return_http_no_body')
+        self.assertEqual(r.text, '')
+        self.assertEqual(r.status_code, 200)
+
+    def test_return_http_auth_level_admin(self):
+        r = self.webhost.request('GET', 'return_http_auth_admin',
+                                 params={'code': 'testMasterKey'})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '<h1>Hello World™</h1>')
+        self.assertEqual(r.headers['content-type'], 'text/html; charset=utf-8')
+
+    def test_return_http_404(self):
+        r = self.webhost.request('GET', 'return_http_404')
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.text, 'bye')
+        self.assertEqual(r.headers['content-type'],
+                         'text/plain; charset=utf-8')
+
     def test_return_http_redirect(self):
         r = self.webhost.request('GET', 'return_http_redirect')
         self.assertEqual(r.text, '<h1>Hello World™</h1>')
@@ -43,6 +81,66 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # self.assertRegex(r.text,
         #                  r'.*function .+no_return_returns.+ without a '
         #                  r'\$return binding returned a non-None value.*')
+
+    def test_async_return_str(self):
+        r = self.webhost.request('GET', 'async_return_str')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'Hello Async World!')
+
+    def test_async_logging(self):
+        # Test that logging doesn't *break* things.
+        r = self.webhost.request('GET', 'async_logging')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-async')
+
+    def check_log_async_logging(self, host_out: typing.List[str]):
+        # Host out only contains user logs
+        self.assertIn('hello info', host_out)
+        self.assertIn('and another error', host_out)
+
+    def test_debug_logging(self):
+        r = self.webhost.request('GET', 'debug_logging')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-debug')
+
+    def check_log_debug_logging(self, host_out: typing.List[str]):
+        self.assertIn('logging info', host_out)
+        self.assertIn('logging warning', host_out)
+        self.assertIn('logging error', host_out)
+        self.assertNotIn('logging debug', host_out)
+
+    def check_log_debug_with_user_logging(self, host_out: typing.List[str]):
+        self.assertIn('logging info', host_out)
+        self.assertIn('logging warning', host_out)
+        self.assertIn('logging debug', host_out)
+        self.assertIn('logging error', host_out)
+
+    def test_sync_logging(self):
+        # Test that logging doesn't *break* things.
+        r = self.webhost.request('GET', 'sync_logging')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK-sync')
+
+    def check_log_sync_logging(self, host_out: typing.List[str]):
+        # Host out only contains user logs
+        self.assertIn('a gracefully handled error', host_out)
+
+    def test_return_context(self):
+        r = self.webhost.request('GET', 'return_context')
+        self.assertEqual(r.status_code, 200)
+
+        data = r.json()
+
+        self.assertEqual(data['method'], 'GET')
+        self.assertEqual(data['ctx_func_name'], 'return_context')
+        self.assertIn('ctx_invocation_id', data)
+        self.assertIn('ctx_trace_context_Tracestate', data)
+        self.assertIn('ctx_trace_context_Traceparent', data)
+
+    def test_remapped_context(self):
+        r = self.webhost.request('GET', 'remapped_context')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'GET')
 
     def test_return_request(self):
         r = self.webhost.request(
@@ -104,10 +202,26 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
         self.assertIn('accept_json', req['url'])
 
+    def test_unhandled_error(self):
+        r = self.webhost.request('GET', 'unhandled_error')
+        self.assertEqual(r.status_code, 500)
+        # https://github.com/Azure/azure-functions-host/issues/2706
+        # self.assertIn('Exception: ZeroDivisionError', r.text)
+
+    def check_log_unhandled_error(self,
+                                  host_out: typing.List[str]):
+        self.assertIn('Exception: ZeroDivisionError: division by zero',
+                      host_out)
+
     def test_unhandled_urllib_error(self):
         r = self.webhost.request(
             'GET', 'unhandled_urllib_error',
             params={'img': 'http://example.com/nonexistent.jpg'})
+        self.assertEqual(r.status_code, 500)
+
+    def test_unhandled_unserializable_error(self):
+        r = self.webhost.request(
+            'GET', 'unhandled_unserializable_error')
         self.assertEqual(r.status_code, 500)
 
     def test_return_route_params(self):
@@ -187,7 +301,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
     def test_user_event_loop_error(self):
         # User event loop is not supported in HTTP trigger
-        r = self.webhost.request('GET', 'user_event_loop')
+        r = self.webhost.request('GET', 'user_event_loop/')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-user-event-loop')
 

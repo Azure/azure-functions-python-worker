@@ -133,4 +133,3 @@ class TestLoader(testutils.WebHostTestCase):
             if exception_message in log:
                 passed = True
         self.assertTrue(passed)
-

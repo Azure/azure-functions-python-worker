@@ -3,24 +3,10 @@
 import os
 import unittest
 
-from tests.utils import testutils
-
 from azure_functions_worker.constants import (
     PYTHON_SCRIPT_FILE_NAME,
     PYTHON_SCRIPT_FILE_NAME_DEFAULT,
 )
-
-DEFAULT_SCRIPT_FILE_NAME_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'file_name_functions' / \
-    'default_file_name'
-
-NEW_SCRIPT_FILE_NAME_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'file_name_functions' / \
-    'new_file_name'
-
-INVALID_SCRIPT_FILE_NAME_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'file_name_functions' / \
-    'invalid_file_name'
 
 
 class TestDefaultScriptFileName(unittest.TestCase):
@@ -38,10 +24,6 @@ class TestDefaultScriptFileName(unittest.TestCase):
         # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
         os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
         super().tearDownClass()
-
-    @classmethod
-    def get_script_dir(cls):
-        return DEFAULT_SCRIPT_FILE_NAME_DIR
 
     def test_default_file_name(self):
         """
@@ -68,10 +50,6 @@ class TestNewScriptFileName(unittest.TestCase):
         os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
         super().tearDownClass()
 
-    @classmethod
-    def get_script_dir(cls):
-        return NEW_SCRIPT_FILE_NAME_DIR
-
     def test_new_file_name(self):
         """
         Test the new file name
@@ -96,10 +74,6 @@ class TestInvalidScriptFileName(unittest.TestCase):
         # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
         os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
         super().tearDownClass()
-
-    @classmethod
-    def get_script_dir(cls):
-        return INVALID_SCRIPT_FILE_NAME_DIR
 
     def test_invalid_file_name(self):
         """

@@ -36,6 +36,7 @@ def get_path_param(id):
 def raise_http_exception():
     return {"detail": "Item not found"}, 404
 
+
 @flask_app.get("/debug_logging")
 def debug_logging():
     logging.critical('logging critical', exc_info=True)

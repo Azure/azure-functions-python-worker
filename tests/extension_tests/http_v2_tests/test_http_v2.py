@@ -217,8 +217,8 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.EXTENSION_TESTS_FOLDER / 'http_functions_v2' / \
-            'fastapi'
+        return testutils.EXTENSION_TESTS_FOLDER / 'http_functions_v2_tests' / \
+            'http_functions_v2' / 'fastapi'
 
     def test_return_bytes(self):
         r = self.webhost.request('GET', 'return_bytes')

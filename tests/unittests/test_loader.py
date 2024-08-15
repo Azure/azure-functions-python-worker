@@ -1,11 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import asyncio
-import os
 import pathlib
 import subprocess
 import sys
 import textwrap
+import unittest
 from unittest import skipIf
 from unittest.mock import Mock, patch
 
@@ -15,14 +15,10 @@ from azure.functions.decorators.timer import TimerTrigger
 from tests.utils import testutils
 
 from azure_functions_worker import functions
-from azure_functions_worker.constants import (
-    PYTHON_SCRIPT_FILE_NAME,
-    PYTHON_SCRIPT_FILE_NAME_DEFAULT,
-)
 from azure_functions_worker.loader import build_retry_protos
 
 
-class TestLoader(testutils.WebHostTestCase):
+class TestLoader(unittest.TestCase):
 
     def setUp(self) -> None:
         def test_function():
@@ -131,26 +127,3 @@ asyncio.get_event_loop().run_until_complete(_runner())
                 '--disable-pip-version-check',
                 'uninstall', '-y', '--quiet', 'foo-binding'
             ], check=True)
-
-
-class TestConfigurableFileName(testutils.WebHostTestCase):
-
-    def setUp(self) -> None:
-        def test_function():
-            return "Test"
-
-        self.file_name = PYTHON_SCRIPT_FILE_NAME_DEFAULT
-        self.test_function = test_function
-        self.func = Function(self.test_function, script_file="function_app.py")
-        self.function_registry = functions.Registry()
-
-    @classmethod
-    def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'http_functions' / \
-                                             'http_functions_stein'
-
-    def test_correct_file_name(self):
-        os.environ.update({PYTHON_SCRIPT_FILE_NAME: self.file_name})
-        self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
-        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
-                         'function_app.py')

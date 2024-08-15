@@ -177,7 +177,8 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
             # Decode will fail here because the connection string does not exist
             meta.deferred_bindings_decode(binding=binding, pb=pb,
                                           pytype=BlobClient, datum=datum,
-                                          metadata={})
+                                          metadata={},
+                                          function_name="test_function")
 
     async def test_check_deferred_bindings_enabled(self):
         """

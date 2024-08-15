@@ -45,6 +45,7 @@ async def get_path_param(id):
 async def raise_http_exception():
     raise HTTPException(status_code=404, detail="Item not found")
 
+
 async def parallelly_print():
     await asyncio.sleep(0.1)
     print('parallelly_print')

@@ -267,3 +267,12 @@ def blob_cache(req: func.HttpRequest,
 def invalid_connection_info(req: func.HttpRequest,
                             client: blob.BlobClient) -> str:
     return client.download_blob(encoding='utf-8').readall()
+
+
+@app.function_name(name="nonexistent_blob")
+@app.route(route="nonexistent_blob")
+@app.blob_input(arg_name="client",
+                path="python-worker-tests/nonexistent-file.txt",
+                connection="AzureWebJobsStorage")
+def nonexistent_blob(req: func.HttpRequest, client: blob.BlobClient) -> str:
+    return client.download_blob(encoding='utf-8').readall()

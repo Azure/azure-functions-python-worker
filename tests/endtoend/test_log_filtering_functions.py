@@ -46,19 +46,7 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
-
-    def test_debug_logging(self):
-        r = self.webhost.request('GET', 'debug_logging')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-debug')
-
-    def check_log_debug_logging(self, host_out: typing.List[str]):
-        self.assertIn('logging info', host_out)
-        self.assertIn('logging warning', host_out)
-        self.assertIn('logging error', host_out)
-        # See HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO, debug log is disabled
-        self.assertNotIn('logging debug', host_out)
+        return testutils.E2E_TESTS_ROOT / 'log_filtering_functions'
 
     def test_debug_with_user_logging(self):
         r = self.webhost.request('GET', 'debug_user_logging')

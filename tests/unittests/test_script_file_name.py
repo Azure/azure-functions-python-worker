@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+import unittest
 
 from tests.utils import testutils
 
@@ -22,7 +23,7 @@ INVALID_SCRIPT_FILE_NAME_DIR = testutils.UNIT_TESTS_FOLDER / \
     'invalid_file_name'
 
 
-class TestDefaultScriptFileName(testutils.WebHostTestCase):
+class TestDefaultScriptFileName(unittest.TestCase):
     """
     Tests for default file name
     """
@@ -51,7 +52,7 @@ class TestDefaultScriptFileName(testutils.WebHostTestCase):
                          PYTHON_SCRIPT_FILE_NAME_DEFAULT)
 
 
-class TestNewScriptFileName(testutils.WebHostTestCase):
+class TestNewScriptFileName(unittest.TestCase):
     """
     Tests for changed file name
     """
@@ -80,7 +81,7 @@ class TestNewScriptFileName(testutils.WebHostTestCase):
                          'test.py')
 
 
-class TestInvalidScriptFileName(testutils.WebHostTestCase):
+class TestInvalidScriptFileName(unittest.TestCase):
     """
     Tests for invalid file name
     """

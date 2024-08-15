@@ -38,7 +38,7 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
+        return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
     def test_debug_logging_enabled(self):
         """
@@ -72,7 +72,7 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
+        return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
     def test_debug_logging_disabled(self):
         """
@@ -115,7 +115,7 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.UNIT_TESTS_FOLDER / 'log_filtering_functions'
+        return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
     def test_debug_logging_filtered(self):
         """

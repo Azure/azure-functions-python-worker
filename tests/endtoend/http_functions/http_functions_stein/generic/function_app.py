@@ -246,7 +246,6 @@ async def hijack_current_event_loop(req: func.HttpRequest) -> func.HttpResponse:
 @app.generic_trigger(arg_name="req",
                      type="httpTrigger",
                      route="no_return")
-@app.generic_output_binding(arg_name="$return", type="http")
 def no_return(req: func.HttpRequest):
     logger.info('hi')
 
@@ -255,7 +254,6 @@ def no_return(req: func.HttpRequest):
 @app.generic_trigger(arg_name="req",
                      type="httpTrigger",
                      route="no_return_returns")
-@app.generic_output_binding(arg_name="$return", type="http")
 def no_return_returns(req):
     return 'ABC'
 
@@ -425,10 +423,10 @@ def return_route_params(req: func.HttpRequest) -> str:
     return json.dumps(dict(req.route_params))
 
 
-@app.function_name(name="main")
+@app.function_name(name="sync_logging")
 @app.generic_trigger(arg_name="req",
                      type="httpTrigger",
-                     route="main")
+                     route="sync_logging")
 @app.generic_output_binding(arg_name="$return", type="http")
 def main(req: func.HttpRequest):
     try:

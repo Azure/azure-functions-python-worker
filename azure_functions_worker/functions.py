@@ -6,10 +6,10 @@ import pathlib
 import typing
 import uuid
 
-from .constants import HTTP_TRIGGER
 from . import bindings as bindings_utils
 from . import protos
 from ._thirdparty import typing_inspect
+from .constants import HTTP_TRIGGER
 from .protos import BindingInfo
 
 

@@ -11,11 +11,9 @@ Example usage::
 
 # NOTE: This module must support Python 2.7 in addition to Python 3.x
 
-import sys
 import collections.abc
-from typing import (
-    Generic, Callable, Union, TypeVar, ClassVar, Tuple, _GenericAlias
-)
+import sys
+from typing import Callable, ClassVar, Generic, Tuple, TypeVar, Union, _GenericAlias
 
 NEW_39_TYPING = sys.version_info[:3] >= (3, 9, 0)  # PEP 560
 if NEW_39_TYPING:

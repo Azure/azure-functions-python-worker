@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import json
+
 import azure.functions as func
 
 

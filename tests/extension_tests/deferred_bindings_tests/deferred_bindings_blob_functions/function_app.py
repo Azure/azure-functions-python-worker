@@ -256,7 +256,32 @@ def put_blob_bytes(req: func.HttpRequest, file: func.Out[bytes]) -> str:
 @app.route(route="blob_cache")
 def blob_cache(req: func.HttpRequest,
                cachedClient: blob.BlobClient) -> str:
-    return cachedClient.download_blob(encoding='utf-8').readall()
+    return func.HttpResponse(repr(cachedClient))
+
+
+@app.function_name(name="blob_cache2")
+@app.blob_input(arg_name="cachedClient",
+                path="python-worker-tests/test-blobclient-triggered.txt",
+                connection="AzureWebJobsStorage")
+@app.route(route="blob_cache2")
+def blob_cache2(req: func.HttpRequest,
+                cachedClient: blob.BlobClient) -> func.HttpResponse:
+    return func.HttpResponse(repr(cachedClient))
+
+
+@app.function_name(name="blob_cache3")
+@app.blob_input(arg_name="cachedClient",
+                path="python-worker-tests/test-blobclient-triggered.txt",
+                connection="AzureWebJobsStorage")
+@app.blob_input(arg_name="cachedClient2",
+                path="python-worker-tests/test-blobclient-triggered.txt",
+                connection="AzureWebJobsStorage")
+@app.route(route="blob_cache3")
+def blob_cache3(req: func.HttpRequest,
+                cachedClient: blob.BlobClient,
+                cachedClient2: blob.BlobClient) -> func.HttpResponse:
+    return func.HttpResponse("Client 1: " + repr(cachedClient)
+                             + " | Client 2: " + repr(cachedClient2))
 
 
 @app.function_name(name="invalid_connection_info")
@@ -265,5 +290,5 @@ def blob_cache(req: func.HttpRequest,
                 connection="NotARealConnectionString")
 @app.route(route="invalid_connection_info")
 def invalid_connection_info(req: func.HttpRequest,
-                            client: blob.BlobClient) -> str:
-    return client.download_blob(encoding='utf-8').readall()
+                            client: blob.BlobClient) -> func.HttpResponse:
+    return func.HttpResponse(repr(client))

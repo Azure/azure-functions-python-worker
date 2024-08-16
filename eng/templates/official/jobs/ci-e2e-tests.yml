@@ -127,3 +127,14 @@ jobs:
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
           USETESTPYTHONSDK: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"
+      - bash: |
+          python eng/scripts/clean-up-resources.py
+        env:
+          AzureWebJobsStorage: $(STORAGE_CONNECTION)
+          AzureWebJobsCosmosDBConnectionString: $(COSMOSDB_CONNECTION)
+          AzureWebJobsEventHubConnectionString: $(EVENTHUB_CONNECTION)
+          AzureWebJobsServiceBusConnectionString: $(SERVICEBUS_CONNECTION)
+          AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
+          AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
+          AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
+        displayName: "Clean Up Test Resources"

@@ -17,7 +17,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'eventhub_functions'
+        return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions'
 
     @classmethod
     def get_libraries_to_install(cls):
@@ -106,7 +106,7 @@ class TestEventHubFunctionsStein(TestEventHubFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'eventhub_functions' / \
+        return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions' / \
                                             'eventhub_functions_stein'
 
 
@@ -114,5 +114,5 @@ class TestEventHubFunctionsSteinGeneric(TestEventHubFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'eventhub_functions' / \
+        return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions' / \
             'eventhub_functions_stein' / 'generic'

@@ -51,3 +51,7 @@ extends:
       dependsOn: Build
       jobs:
         - template: /eng/templates/jobs/ci-unit-tests.yml@self
+    - stage: RunEmulatorTests
+      dependsOn: Build
+      jobs:
+        - template: /eng/templates/official/jobs/ci-emulator-tests.yml@self

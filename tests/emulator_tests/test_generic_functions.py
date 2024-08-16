@@ -26,7 +26,7 @@ class TestGenericFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'generic_functions'
+        return testutils.EMULATOR_TESTS_FOLDER / 'generic_functions'
 
     def test_return_processed_last(self):
         # Tests the case where implicit and explicit return are true
@@ -81,5 +81,5 @@ class TestGenericFunctionsStein(TestGenericFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'generic_functions' / \
+        return testutils.EMULATOR_TESTS_FOLDER / 'generic_functions' / \
             'generic_functions_stein'

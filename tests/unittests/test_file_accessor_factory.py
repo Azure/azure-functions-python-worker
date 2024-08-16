@@ -6,12 +6,15 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from azure_functions_worker.bindings.shared_memory_data_transfer \
-    import FileAccessorFactory
-from azure_functions_worker.bindings.\
-    shared_memory_data_transfer.file_accessor_unix import FileAccessorUnix
-from azure_functions_worker.bindings.\
-    shared_memory_data_transfer.file_accessor_windows import FileAccessorWindows
+from azure_functions_worker.bindings.shared_memory_data_transfer import (
+    FileAccessorFactory,
+)
+from azure_functions_worker.bindings.shared_memory_data_transfer.file_accessor_unix import (  # NoQA
+    FileAccessorUnix,
+)
+from azure_functions_worker.bindings.shared_memory_data_transfer.file_accessor_windows import (  # NoQA
+    FileAccessorWindows,
+)
 
 
 class TestFileAccessorFactory(unittest.TestCase):

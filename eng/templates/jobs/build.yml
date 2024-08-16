@@ -17,6 +17,8 @@ jobs:
       - bash: |
           python -m venv .env
           .env\Scripts\Activate.ps1
-          python -m pip install --upgrade pip==23.0
+          python -m pip install --upgrade pip
           python -m pip install .
         displayName: 'Build python worker'
+        # Skip the build stage for SDK and Extensions release branches. This stage will fail because pyproject.toml contains the updated (and unreleased) library version
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))

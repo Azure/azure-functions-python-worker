@@ -1,12 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import os
-import sys
-import shutil
 import asyncio
+import os
+import shutil
+import sys
+
+from tests.utils import testutils
 
 from azure_functions_worker import protos
-from tests.utils import testutils
 
 
 async def verify_path_imports():

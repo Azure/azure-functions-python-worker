@@ -45,6 +45,23 @@ EXTENSIONS_CSPROJ_TEMPLATE = """\
 </Project>
 """
 
+NUGET_CONFIG = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+   <packageSources>
+      <add key="nuget.org"
+        value="https://www.nuget.org/api/v2/" />
+      <add key="azure_app_service"
+        value="https://www.myget.org/F/azure-appservice/api/v2" />
+      <add key="azure_app_service_staging"
+        value="https://www.myget.org/F/azure-appservice-staging/api/v2" />
+      <add key="buildTools"
+        value="https://www.myget.org/F/30de4ee06dd54956a82013fa17a3accb/" />
+      <add key="AspNetVNext"
+        value="https://www.myget.org/F/aspnetcore-dev/api/v3/index.json" />
+   </packageSources>
+</configuration>
+"""
 
 # PROJECT_ROOT refers to the path to azure-functions-python-worker
 # TODO: Find root folder without .parent

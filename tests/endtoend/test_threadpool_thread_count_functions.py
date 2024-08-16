@@ -1,8 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
-from threading import Thread
 from datetime import datetime
+from threading import Thread
+
 from tests.utils import testutils
 
 

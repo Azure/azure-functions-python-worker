@@ -2,24 +2,28 @@
 # Licensed under the MIT License.
 import asyncio
 import collections as col
+import contextvars
 import os
 import sys
 import unittest
 from typing import Optional, Tuple
 from unittest.mock import patch
 
-from azure_functions_worker import protos
-from azure_functions_worker.constants import (PYTHON_THREADPOOL_THREAD_COUNT,
-                                              PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-                                              PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
-                                              PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                                              PYTHON_ENABLE_INIT_INDEXING,
-                                              METADATA_PROPERTIES_WORKER_INDEXED,
-                                              PYTHON_ENABLE_DEBUG_LOGGING)
-from azure_functions_worker.dispatcher import Dispatcher
-from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from tests.utils.testutils import UNIT_TESTS_ROOT
+
+from azure_functions_worker import protos
+from azure_functions_worker.constants import (
+    METADATA_PROPERTIES_WORKER_INDEXED,
+    PYTHON_ENABLE_DEBUG_LOGGING,
+    PYTHON_ENABLE_INIT_INDEXING,
+    PYTHON_THREADPOOL_THREAD_COUNT,
+    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+)
+from azure_functions_worker.dispatcher import Dispatcher, ContextEnabledTask
+from azure_functions_worker.version import VERSION
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
@@ -27,10 +31,6 @@ DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'
 DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
     'dispatcher_functions_stein'
-DISPATCHER_HTTP_V2_FASTAPI_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'dispatcher_functions' / \
-    'http_v2' / \
-    'fastapi'
 FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
     'dispatcher_functions_stein'
 
@@ -606,6 +606,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+        del sys.modules['function_app']
 
     async def test_dispatcher_functions_metadata_request_with_retry(self):
         """Test if the functions metadata response will be sent correctly
@@ -618,6 +619,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+        del sys.modules['function_app']
 
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
@@ -758,7 +760,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 " Placeholder: False", logs)
 
 
-class TestDispatcherIndexinginInit(unittest.TestCase):
+class TestDispatcherIndexingInInit(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
@@ -783,6 +785,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
 
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+        del sys.modules['function_app']
 
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
     def test_worker_init_request_with_indexing_disabled(self):
@@ -848,6 +852,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
+        del sys.modules['function_app']
+
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
     def test_functions_metadata_request_with_init_indexing_disabled(self):
         init_request = protos.StreamingMessage(
@@ -879,6 +885,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
             protos.StatusResult.Success)
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+        del sys.modules['function_app']
 
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     @patch.object(Dispatcher, 'index_functions')
@@ -942,6 +950,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
+        del sys.modules['function_app']
+
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     @patch.object(Dispatcher, 'index_functions')
     def test_dispatcher_indexing_in_load_request_with_exception(
@@ -980,3 +990,39 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertEqual(
             response.function_load_response.result.exception.message,
             "Exception: Mocked Exception")
+
+
+class TestContextEnabledTask(unittest.TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.loop.close()
+
+    def test_init_with_context(self):
+        # Since ContextEnabledTask accepts the context param,
+        # no errors will be thrown here
+        num = contextvars.ContextVar('num')
+        num.set(5)
+        ctx = contextvars.copy_context()
+        exception_raised = False
+        try:
+            self.loop.set_task_factory(
+                lambda loop, coro, context=None: ContextEnabledTask(
+                    coro, loop=loop, context=ctx))
+        except TypeError:
+            exception_raised = True
+        self.assertFalse(exception_raised)
+
+    async def test_init_without_context(self):
+        # If the context param is not defined,
+        # no errors will be thrown for backwards compatibility
+        exception_raised = False
+        try:
+            self.loop.set_task_factory(
+                lambda loop, coro: ContextEnabledTask(
+                    coro, loop=loop))
+        except TypeError:
+            exception_raised = True
+        self.assertFalse(exception_raised)

@@ -4,14 +4,39 @@
 # Author: Ivan Levkivskyi
 # License: MIT
 
-from azure_functions_worker._thirdparty.typing_inspect import (
-    is_generic_type, is_callable_type, is_tuple_type, is_union_type,
-    is_typevar, is_classvar, get_origin, get_parameters, get_last_args, get_args,
-    get_generic_type, get_generic_bases, get_last_origin, )
-from unittest import TestCase, main, skipIf
 from typing import (
-    Union, ClassVar, Callable, Optional, TypeVar, Sequence, Mapping,
-    MutableMapping, Iterable, Generic, List, Any, Dict, Tuple, NamedTuple,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Mapping,
+    MutableMapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
+from unittest import TestCase, main, skipIf
+
+from azure_functions_worker._thirdparty.typing_inspect import (
+    get_args,
+    get_generic_bases,
+    get_generic_type,
+    get_last_args,
+    get_last_origin,
+    get_origin,
+    get_parameters,
+    is_callable_type,
+    is_classvar,
+    is_generic_type,
+    is_tuple_type,
+    is_typevar,
+    is_union_type,
 )
 
 

@@ -3,7 +3,7 @@ import sys
 from urllib.request import urlopen
 
 import azure.functions as func
-from flask import Flask, request, Response, redirect, url_for
+from flask import Flask, Response, redirect, request, url_for
 
 flask_app = Flask(__name__)
 logger = logging.getLogger("my-function")

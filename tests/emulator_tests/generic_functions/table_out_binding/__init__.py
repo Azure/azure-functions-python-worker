@@ -3,6 +3,8 @@
 import json
 import uuid
 import azure.functions as func
+
+
 def main(req: func.HttpRequest, resp: func.Out[func.HttpResponse]):
     row_key_uuid = str(uuid.uuid4())
     table_dict = {'PartitionKey': 'test', 'RowKey': row_key_uuid}

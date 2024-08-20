@@ -1,0 +1,24 @@
+{
+    "UserConfig": {
+        "NamespaceConfig": [
+        {
+            "Type": "EventHub",
+            "Name": "emulatorNs1",
+            "Entities": [
+            {
+                "Name": "python-worker-ci-eventhub-batch",
+                "PartitionCount": 2,
+                "ConsumerGroups": [
+                {
+                    "Name": "cg1"
+                }
+                ]
+            }
+            ]
+        }
+        ],
+        "LoggingConfig": {
+            "Type": "File"
+        }
+    }
+}

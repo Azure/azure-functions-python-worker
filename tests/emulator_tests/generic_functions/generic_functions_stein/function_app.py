@@ -1,6 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import json
 import logging
+import uuid
 
 import azure.functions as func
 
@@ -15,7 +17,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
     arg_name="testEntity",
     type="table",
     connection="AzureWebJobsStorage",
-    table_name="EventHubBatchTest")
+    table_name="BindingTestTable")
 def return_processed_last(req: func.HttpRequest, testEntity):
     return func.HttpResponse(status_code=200)
 
@@ -28,7 +30,7 @@ def return_processed_last(req: func.HttpRequest, testEntity):
     arg_name="testEntities",
     type="table",
     connection="AzureWebJobsStorage",
-    table_name="EventHubBatchTest")
+    table_name="BindingTestTable")
 def return_not_processed_last(req: func.HttpRequest, testEntities):
     return func.HttpResponse(status_code=200)
 
@@ -41,7 +43,7 @@ def return_not_processed_last(req: func.HttpRequest, testEntities):
     arg_name="testEntity",
     type="table",
     connection="AzureWebJobsStorage",
-    table_name="EventHubBatchTest")
+    table_name="BindingTestTable")
 def mytimer(mytimer: func.TimerRequest, testEntity) -> None:
     logging.info("This timer trigger function executed successfully")
 
@@ -54,7 +56,7 @@ def mytimer(mytimer: func.TimerRequest, testEntity) -> None:
     arg_name="testEntity",
     type="table",
     connection="AzureWebJobsStorage",
-    table_name="EventHubBatchTest")
+    table_name="BindingTestTable")
 def return_string(mytimer: func.TimerRequest, testEntity):
     logging.info("Return string")
     return "hi!"
@@ -68,7 +70,7 @@ def return_string(mytimer: func.TimerRequest, testEntity):
     arg_name="testEntity",
     type="table",
     connection="AzureWebJobsStorage",
-    table_name="EventHubBatchTest")
+    table_name="BindingTestTable")
 def return_bytes(mytimer: func.TimerRequest, testEntity):
     logging.info("Return bytes")
     return "test-dată"
@@ -82,7 +84,7 @@ def return_bytes(mytimer: func.TimerRequest, testEntity):
     arg_name="testEntity",
     type="table",
     connection="AzureWebJobsStorage",
-    table_name="EventHubBatchTest")
+    table_name="BindingTestTable")
 def return_dict(mytimer: func.TimerRequest, testEntity):
     logging.info("Return dict")
     return {"hello": "world"}
@@ -96,7 +98,7 @@ def return_dict(mytimer: func.TimerRequest, testEntity):
     arg_name="testEntity",
     type="table",
     connection="AzureWebJobsStorage",
-    table_name="EventHubBatchTest")
+    table_name="BindingTestTable")
 def return_list(mytimer: func.TimerRequest, testEntity):
     logging.info("Return list")
     return [1, 2, 3]
@@ -110,7 +112,7 @@ def return_list(mytimer: func.TimerRequest, testEntity):
     arg_name="testEntity",
     type="table",
     connection="AzureWebJobsStorage",
-    table_name="EventHubBatchTest")
+    table_name="BindingTestTable")
 def return_int(mytimer: func.TimerRequest, testEntity):
     logging.info("Return int")
     return 12
@@ -124,7 +126,7 @@ def return_int(mytimer: func.TimerRequest, testEntity):
     arg_name="testEntity",
     type="table",
     connection="AzureWebJobsStorage",
-    table_name="EventHubBatchTest")
+    table_name="BindingTestTable")
 def return_double(mytimer: func.TimerRequest, testEntity):
     logging.info("Return double")
     return 12.34
@@ -138,7 +140,20 @@ def return_double(mytimer: func.TimerRequest, testEntity):
     arg_name="testEntity",
     type="table",
     connection="AzureWebJobsStorage",
-    table_name="EventHubBatchTest")
+    table_name="BindingTestTable")
 def return_bool(mytimer: func.TimerRequest, testEntity):
     logging.info("Return bool")
     return True
+
+
+@app.function_name(name="table_out_binding")
+@app.route(route="table_out_binding", binding_arg_name="resp")
+@app.table_output(arg_name="$return",
+                  connection="AzureWebJobsStorage",
+                  table_name="BindingTestTable")
+def table_out_binding(req: func.HttpRequest, resp: func.Out[func.HttpResponse]):
+    row_key_uuid = str(uuid.uuid4())
+    table_dict = {'PartitionKey': 'test', 'RowKey': row_key_uuid}
+    table_json = json.dumps(table_dict)
+    resp.set(table_json)
+    return table_json

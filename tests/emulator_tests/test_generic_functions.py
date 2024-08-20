@@ -32,6 +32,8 @@ class TestGenericFunctions(testutils.WebHostTestCase):
         # Tests the case where implicit and explicit return are true
         # in the same function and $return is processed before
         # the generic binding is
+        out_resp = self.webhost.request('POST', 'table_out_binding')
+        self.assertEqual(out_resp.status_code, 200)
 
         r = self.webhost.request('GET', 'return_processed_last')
         self.assertEqual(r.status_code, 200)
@@ -40,11 +42,15 @@ class TestGenericFunctions(testutils.WebHostTestCase):
         # Tests the case where implicit and explicit return are true
         # in the same function and the generic binding is processed
         # before $return
+        out_resp = self.webhost.request('POST', 'table_out_binding')
+        self.assertEqual(out_resp.status_code, 200)
 
         r = self.webhost.request('GET', 'return_not_processed_last')
         self.assertEqual(r.status_code, 200)
 
     def test_return_types(self):
+        out_resp = self.webhost.request('POST', 'table_out_binding')
+        self.assertEqual(out_resp.status_code, 200)
         # Checking that the function app is okay
         time.sleep(10)
         # Checking webhost status.

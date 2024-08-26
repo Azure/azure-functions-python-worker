@@ -14,7 +14,7 @@
       "direction": "in",
       "type": "table",
       "name": "testEntities",
-      "tableName": "EventHubBatchTest",
+      "tableName": "BindingTestTable",
       "connection": "AzureWebJobsStorage"
     },
     {

@@ -92,7 +92,7 @@ class TestQueueFunctionsStein(TestQueueFunctions):
     @classmethod
     def get_script_dir(cls):
         return testutils.EMULATOR_TESTS_FOLDER / 'queue_functions' / \
-                                            'queue_functions_stein'
+            'queue_functions_stein'
 
 
 class TestQueueFunctionsSteinGeneric(TestQueueFunctions):

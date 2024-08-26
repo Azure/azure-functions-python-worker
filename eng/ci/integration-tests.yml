@@ -51,7 +51,3 @@ extends:
       dependsOn: []
       jobs:
       - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
-    - stage: RunEmulatorTests
-      dependsOn: []
-      jobs:
-        - template: /eng/templates/jobs/ci-emulator-tests.yml@self

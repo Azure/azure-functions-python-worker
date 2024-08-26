@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import asyncio
+import os
 import pathlib
 import subprocess
 import sys
@@ -19,8 +20,6 @@ from azure_functions_worker.constants import (
     PYTHON_SCRIPT_FILE_NAME_DEFAULT,
 )
 from azure_functions_worker.loader import build_retry_protos
-from tests.utils import testutils
-from azure_functions_worker.utils import config_manager
 
 
 class TestLoader(testutils.WebHostTestCase):
@@ -276,8 +275,7 @@ class TestConfigurableFileName(testutils.WebHostTestCase):
                                              'http_functions_stein'
 
     def test_correct_file_name(self):
-        config_manager.set_env_var(PYTHON_SCRIPT_FILE_NAME, self.file_name)
-        self.assertIsNotNone(config_manager.get_app_setting(PYTHON_SCRIPT_FILE_NAME))
-        self.assertEqual(config_manager.get_app_setting(PYTHON_SCRIPT_FILE_NAME),
+        os.environ.update({PYTHON_SCRIPT_FILE_NAME: self.file_name})
+        self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
+        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
                          'function_app.py')
-        config_manager.del_env_var(PYTHON_SCRIPT_FILE_NAME)

@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 import os
 import typing
-import os
 
 from tests.utils import testutils
 from tests.utils.testutils import TESTS_ROOT, remove_path
@@ -29,7 +28,7 @@ class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        os.environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
+        os.environ[PYTHON_ENABLE_DEBUG_LOGGING] = "1"
         super().setUpClass()
 
     @classmethod
@@ -63,7 +62,7 @@ class TestDebugLoggingDisabledFunctions(testutils.WebHostTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        os.environ[PYTHON_ENABLE_DEBUG_LOGGING] = '0'
+        os.environ[PYTHON_ENABLE_DEBUG_LOGGING] = "0"
         super().setUpClass()
 
     @classmethod
@@ -103,7 +102,7 @@ class TestDebugLogEnabledHostFilteringFunctions(testutils.WebHostTestCase):
         with open(host_json, 'w+') as f:
             f.write(HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO)
 
-        os.environ[PYTHON_ENABLE_DEBUG_LOGGING] = '1'
+        os.environ[PYTHON_ENABLE_DEBUG_LOGGING] = "1"
         super().setUpClass()
 
     @classmethod

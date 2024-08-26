@@ -63,12 +63,6 @@ from azure_functions_worker.constants import (
 )
 from azure_functions_worker.utils.config_manager import (is_envvar_true,
                                                          get_app_setting)
-from tests.utils.constants import PYAZURE_WORKER_DIR, \
-    PYAZURE_INTEGRATION_TEST, PROJECT_ROOT, WORKER_CONFIG, \
-    CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST, PYAZURE_WEBHOST_DEBUG, \
-    ARCHIVE_WEBHOST_LOGS, EXTENSIONS_CSPROJ_TEMPLATE
-from tests.utils.testutils_docker import WebHostConsumption, WebHostDedicated, \
-    DockerConfigs
 
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')

@@ -3,6 +3,7 @@
 
 import json
 import math
+import os
 import sys
 from unittest import skipIf
 from unittest.mock import patch
@@ -19,7 +20,7 @@ from azure_functions_worker.bindings.shared_memory_data_transfer import (
 from azure_functions_worker.constants import (
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
 )
-from azure_functions_worker.utils import config_manager
+from azure_functions_worker.utils.config_manager import is_envvar_true
 
 
 @skipIf(sys.platform == 'darwin', 'MacOS M1 machines do not correctly test the'
@@ -30,18 +31,19 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
     Tests for SharedMemoryManager.
     """
     def setUp(self):
-        config_manager.set_env_var(
-            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED, "true")
+        env = os.environ.copy()
+        env['FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED'] = "true"
+        self.mock_environ = patch.dict('os.environ', env)
         self.mock_sys_module = patch.dict('sys.modules', sys.modules.copy())
         self.mock_sys_path = patch('sys.path', sys.path.copy())
+        self.mock_environ.start()
         self.mock_sys_module.start()
         self.mock_sys_path.start()
 
     def tearDown(self):
-        config_manager.del_env_var(
-            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
         self.mock_sys_path.stop()
         self.mock_sys_module.stop()
+        self.mock_environ.stop()
 
     def test_is_enabled(self):
         """
@@ -49,8 +51,17 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         enabled.
         """
 
+        # Make sure shared memory data transfer is enabled
+        was_shmem_env_true = is_envvar_true(
+            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
+        os.environ.update(
+            {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '1'})
         manager = SharedMemoryManager()
         self.assertTrue(manager.is_enabled())
+        # Restore the env variable to original value
+        if not was_shmem_env_true:
+            os.environ.update(
+                {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '0'})
 
     def test_is_disabled(self):
         """
@@ -58,13 +69,16 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         disabled.
         """
         # Make sure shared memory data transfer is disabled
-        config_manager.set_env_var(
-            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED, '0')
+        was_shmem_env_true = is_envvar_true(
+            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
+        os.environ.update(
+            {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '0'})
         manager = SharedMemoryManager()
         self.assertFalse(manager.is_enabled())
         # Restore the env variable to original value
-        config_manager.set_env_var(
-            FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED, '1')
+        if was_shmem_env_true:
+            os.environ.update(
+                {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '1'})
 
     def test_bytes_input_support(self):
         """

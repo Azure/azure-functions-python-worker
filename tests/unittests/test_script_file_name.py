@@ -1,13 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
+import os
 from tests.utils import testutils
 
 from azure_functions_worker.constants import (
     PYTHON_SCRIPT_FILE_NAME,
     PYTHON_SCRIPT_FILE_NAME_DEFAULT,
 )
-from azure_functions_worker.utils import config_manager
 
 DEFAULT_SCRIPT_FILE_NAME_DIR = testutils.UNIT_TESTS_FOLDER / \
     'file_name_functions' / \
@@ -29,13 +28,13 @@ class TestDefaultScriptFileName(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        config_manager.set_env_var("PYTHON_SCRIPT_FILE_NAME", "function_app.py")
+        os.environ[PYTHON_SCRIPT_FILE_NAME] = "function_app.py"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
-        config_manager.del_env_var("PYTHON_SCRIPT_FILE_NAME")
+        os.environ.pop(PYTHON_SCRIPT_FILE_NAME)
         super().tearDownClass()
 
     @classmethod
@@ -46,8 +45,8 @@ class TestDefaultScriptFileName(testutils.WebHostTestCase):
         """
         Test the default file name
         """
-        self.assertIsNotNone(config_manager.get_app_setting(PYTHON_SCRIPT_FILE_NAME))
-        self.assertEqual(config_manager.get_app_setting(PYTHON_SCRIPT_FILE_NAME),
+        self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
+        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
                          PYTHON_SCRIPT_FILE_NAME_DEFAULT)
 
 
@@ -58,13 +57,13 @@ class TestNewScriptFileName(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        config_manager.set_env_var("PYTHON_SCRIPT_FILE_NAME", "test.py")
+        os.environ[PYTHON_SCRIPT_FILE_NAME] = "test.py"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
-        config_manager.del_env_var("PYTHON_SCRIPT_FILE_NAME")
+        os.environ.pop(PYTHON_SCRIPT_FILE_NAME)
         super().tearDownClass()
 
     @classmethod
@@ -75,8 +74,8 @@ class TestNewScriptFileName(testutils.WebHostTestCase):
         """
         Test the new file name
         """
-        self.assertIsNotNone(config_manager.get_app_setting(PYTHON_SCRIPT_FILE_NAME))
-        self.assertEqual(config_manager.get_app_setting(PYTHON_SCRIPT_FILE_NAME),
+        self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
+        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
                          'test.py')
 
 
@@ -87,13 +86,13 @@ class TestInvalidScriptFileName(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        config_manager.set_env_var("PYTHON_SCRIPT_FILE_NAME", "main")
+        os.environ[PYTHON_SCRIPT_FILE_NAME] = "main"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
-        config_manager.del_env_var("PYTHON_SCRIPT_FILE_NAME")
+        os.environ.pop(PYTHON_SCRIPT_FILE_NAME)
         super().tearDownClass()
 
     @classmethod
@@ -104,6 +103,6 @@ class TestInvalidScriptFileName(testutils.WebHostTestCase):
         """
         Test the invalid file name
         """
-        self.assertIsNotNone(config_manager.get_app_setting(PYTHON_SCRIPT_FILE_NAME))
-        self.assertEqual(config_manager.get_app_setting(PYTHON_SCRIPT_FILE_NAME),
+        self.assertIsNotNone(os.environ.get(PYTHON_SCRIPT_FILE_NAME))
+        self.assertEqual(os.environ.get(PYTHON_SCRIPT_FILE_NAME),
                          'main')

@@ -14,7 +14,7 @@ from azure_functions_worker.constants import (
     X_MS_INVOCATION_ID,
 )
 from azure_functions_worker.logging import logger
-from azure_functions_worker.utils.common import is_envvar_false
+from azure_functions_worker.utils.config_manager import is_envvar_false
 
 
 # Http V2 Exceptions

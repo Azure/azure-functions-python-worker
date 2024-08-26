@@ -9,12 +9,14 @@ import uuid
 from . import bindings as bindings_utils
 from . import protos
 from ._thirdparty import typing_inspect
+from .constants import HTTP_TRIGGER
 from .protos import BindingInfo
 
 
 class ParamTypeInfo(typing.NamedTuple):
     binding_name: str
     pytype: typing.Optional[type]
+    deferred_bindings_enabled: typing.Optional[bool] = False
 
 
 class FunctionInfo(typing.NamedTuple):
@@ -26,10 +28,14 @@ class FunctionInfo(typing.NamedTuple):
     requires_context: bool
     is_async: bool
     has_return: bool
+    is_http_func: bool
+    deferred_bindings_enabled: bool
 
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
     return_type: typing.Optional[ParamTypeInfo]
+
+    trigger_metadata: typing.Optional[typing.Dict[str, typing.Any]]
 
 
 class FunctionLoadError(RuntimeError):
@@ -41,6 +47,7 @@ class FunctionLoadError(RuntimeError):
 
 class Registry:
     _functions: typing.MutableMapping[str, FunctionInfo]
+    _deferred_bindings_enabled: bool = False
 
     def __init__(self) -> None:
         self._functions = {}
@@ -50,6 +57,9 @@ class Registry:
             return self._functions[function_id]
 
         return None
+
+    def deferred_bindings_enabled(self) -> bool:
+        return self._deferred_bindings_enabled
 
     @staticmethod
     def get_explicit_and_implicit_return(binding_name: str,
@@ -71,14 +81,20 @@ class Registry:
     @staticmethod
     def get_return_binding(binding_name: str,
                            binding_type: str,
-                           return_binding_name: str) -> str:
+                           return_binding_name: str,
+                           explicit_return_val_set: bool) \
+            -> typing.Tuple[str, bool]:
+        # prioritize explicit return value
+        if explicit_return_val_set:
+            return return_binding_name, explicit_return_val_set
         if binding_name == "$return":
             return_binding_name = binding_type
             assert return_binding_name is not None
+            explicit_return_val_set = True
         elif bindings_utils.has_implicit_output(binding_type):
             return_binding_name = binding_type
 
-        return return_binding_name
+        return return_binding_name, explicit_return_val_set
 
     @staticmethod
     def validate_binding_direction(binding_name: str,
@@ -131,12 +147,19 @@ class Registry:
 
         input_types: typing.Dict[str, ParamTypeInfo] = {}
         output_types: typing.Dict[str, ParamTypeInfo] = {}
+        fx_deferred_bindings_enabled = False
 
         for param in params.values():
             binding = bound_params[param.name]
 
             param_has_anno = param.name in annotations
             param_anno = annotations.get(param.name)
+
+            # Check if deferred bindings is enabled
+            fx_deferred_bindings_enabled, is_deferred_binding = (
+                bindings_utils.check_deferred_bindings_enabled(
+                    param_anno,
+                    fx_deferred_bindings_enabled))
 
             if param_has_anno:
                 if typing_inspect.is_generic_type(param_anno):
@@ -213,7 +236,7 @@ class Registry:
                         param_bind_type, param_py_type)
                 else:
                     checks_out = bindings_utils.check_input_type_annotation(
-                        param_bind_type, param_py_type)
+                        param_bind_type, param_py_type, is_deferred_binding)
 
                 if not checks_out:
                     if binding.data_type is not protos.BindingInfo.undefined:
@@ -231,12 +254,14 @@ class Registry:
                             f'"{binding.type}" does not match its Python '
                             f'annotation "{param_py_type.__name__}"')
 
-            param_type_info = ParamTypeInfo(param_bind_type, param_py_type)
+            param_type_info = ParamTypeInfo(param_bind_type,
+                                            param_py_type,
+                                            is_deferred_binding)
             if is_binding_out:
                 output_types[param.name] = param_type_info
             else:
                 input_types[param.name] = param_type_info
-        return input_types, output_types
+        return input_types, output_types, fx_deferred_bindings_enabled
 
     @staticmethod
     def get_function_return_type(annotations: dict, has_explicit_return: bool,
@@ -278,18 +303,29 @@ class Registry:
 
         return return_type
 
-    def add_func_to_registry_and_return_funcinfo(self, function,
-                                                 function_name: str,
-                                                 function_id: str,
-                                                 directory: str,
-                                                 requires_context: bool,
-                                                 has_explicit_return: bool,
-                                                 has_implicit_return: bool,
-                                                 input_types: typing.Dict[
-                                                     str, ParamTypeInfo],
-                                                 output_types: typing.Dict[
-                                                     str, ParamTypeInfo],
-                                                 return_type: str):
+    def add_func_to_registry_and_return_funcinfo(
+            self, function,
+            function_name: str,
+            function_id: str,
+            directory: str,
+            requires_context: bool,
+            has_explicit_return: bool,
+            has_implicit_return: bool,
+            deferred_bindings_enabled: bool,
+            input_types: typing.Dict[str, ParamTypeInfo],
+            output_types: typing.Dict[str, ParamTypeInfo],
+            return_type: str):
+
+        http_trigger_param_name = self._get_http_trigger_param_name(input_types)
+
+        trigger_metadata = None
+        is_http_func = False
+        if http_trigger_param_name is not None:
+            trigger_metadata = {
+                "type": HTTP_TRIGGER,
+                "param_name": http_trigger_param_name
+            }
+            is_http_func = True
 
         function_info = FunctionInfo(
             func=function,
@@ -299,12 +335,27 @@ class Registry:
             requires_context=requires_context,
             is_async=inspect.iscoroutinefunction(function),
             has_return=has_explicit_return or has_implicit_return,
+            is_http_func=is_http_func,
+            deferred_bindings_enabled=deferred_bindings_enabled,
             input_types=input_types,
             output_types=output_types,
-            return_type=return_type)
+            return_type=return_type,
+            trigger_metadata=trigger_metadata)
 
         self._functions[function_id] = function_info
+
+        if not self._deferred_bindings_enabled:
+            self._deferred_bindings_enabled = deferred_bindings_enabled
+
         return function_info
+
+    def _get_http_trigger_param_name(self, input_types):
+        http_trigger_param_name = next(
+            (input_type for input_type, type_info in input_types.items()
+             if type_info.binding_name == HTTP_TRIGGER),
+            None
+        )
+        return http_trigger_param_name
 
     def add_function(self, function_id: str,
                      func: typing.Callable,
@@ -314,6 +365,7 @@ class Registry:
         params = dict(sig.parameters)
         annotations = typing.get_type_hints(func)
         return_binding_name: typing.Optional[str] = None
+        explicit_return_val_set = False
         has_explicit_return = False
         has_implicit_return = False
 
@@ -327,18 +379,18 @@ class Registry:
                     binding_name, binding_info, has_explicit_return,
                     has_implicit_return, bound_params)
 
-            return_binding_name = self.get_return_binding(binding_name,
-                                                          binding_info.type,
-                                                          return_binding_name)
+            return_binding_name, explicit_return_val_set = \
+                self.get_return_binding(binding_name,
+                                        binding_info.type,
+                                        return_binding_name,
+                                        explicit_return_val_set)
 
         requires_context = self.is_context_required(params, bound_params,
                                                     annotations,
                                                     func_name)
 
-        input_types, output_types = self.validate_function_params(params,
-                                                                  bound_params,
-                                                                  annotations,
-                                                                  func_name)
+        input_types, output_types, _ = self.validate_function_params(
+            params, bound_params, annotations, func_name)
 
         return_type = \
             self.get_function_return_type(annotations,
@@ -353,8 +405,10 @@ class Registry:
                                                       requires_context,
                                                       has_explicit_return,
                                                       has_implicit_return,
+                                                      _,
                                                       input_types,
-                                                      output_types, return_type)
+                                                      output_types,
+                                                      return_type)
 
     def add_indexed_function(self, function):
         func = function.get_user_function()
@@ -362,6 +416,7 @@ class Registry:
         function_id = str(uuid.uuid5(namespace=uuid.NAMESPACE_OID,
                                      name=func_name))
         return_binding_name: typing.Optional[str] = None
+        explicit_return_val_set = False
         has_explicit_return = False
         has_implicit_return = False
 
@@ -381,18 +436,22 @@ class Registry:
                     binding.name, binding, has_explicit_return,
                     has_implicit_return, bound_params)
 
-            return_binding_name = self.get_return_binding(binding.name,
-                                                          binding.type,
-                                                          return_binding_name)
+            return_binding_name, explicit_return_val_set = \
+                self.get_return_binding(binding.name,
+                                        binding.type,
+                                        return_binding_name,
+                                        explicit_return_val_set)
 
         requires_context = self.is_context_required(params, bound_params,
                                                     annotations,
                                                     func_name)
 
-        input_types, output_types = self.validate_function_params(params,
-                                                                  bound_params,
-                                                                  annotations,
-                                                                  func_name)
+        (input_types, output_types,
+         deferred_bindings_enabled) = self.validate_function_params(
+            params,
+            bound_params,
+            annotations,
+            func_name)
 
         return_type = \
             self.get_function_return_type(annotations,
@@ -402,12 +461,9 @@ class Registry:
                                           func_name)
 
         return \
-            self.add_func_to_registry_and_return_funcinfo(func, func_name,
-                                                          function_id,
-                                                          func_dir,
-                                                          requires_context,
-                                                          has_explicit_return,
-                                                          has_implicit_return,
-                                                          input_types,
-                                                          output_types,
-                                                          return_type)
+            self.add_func_to_registry_and_return_funcinfo(
+                func, func_name, function_id, func_dir,
+                requires_context, has_explicit_return,
+                has_implicit_return, deferred_bindings_enabled,
+                input_types, output_types,
+                return_type)

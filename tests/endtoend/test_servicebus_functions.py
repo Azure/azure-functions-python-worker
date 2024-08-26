@@ -2,10 +2,17 @@
 # Licensed under the MIT License.
 import json
 import time
+from unittest import skipIf
 
 from tests.utils import testutils
+from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
+
+from azure_functions_worker.utils.common import is_envvar_true
 
 
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Skipping SB tests till docker image is updated with host 4.33")
 class TestServiceBusFunctions(testutils.WebHostTestCase):
 
     @classmethod

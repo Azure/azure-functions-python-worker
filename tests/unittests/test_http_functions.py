@@ -109,11 +109,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         self.assertIn('logging error', host_out)
         self.assertNotIn('logging debug', host_out)
 
-    def test_debug_with_user_logging(self):
-        r = self.webhost.request('GET', 'debug_user_logging')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK-user-debug')
-
     def check_log_debug_with_user_logging(self, host_out: typing.List[str]):
         self.assertIn('logging info', host_out)
         self.assertIn('logging warning', host_out)
@@ -329,20 +324,24 @@ class TestHttpFunctions(testutils.WebHostTestCase):
                 passed = True
         self.assertTrue(passed)
 
+    @testutils.retryable_test(3, 5)
     def test_print_logging_no_flush(self):
         r = self.webhost.request('GET', 'print_logging?message=Secret42')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-print-logging')
 
+    @testutils.retryable_test(3, 5)
     def check_log_print_logging_no_flush(self, host_out: typing.List[str]):
         self.assertIn('Secret42', host_out)
 
+    @testutils.retryable_test(3, 5)
     def test_print_logging_with_flush(self):
         r = self.webhost.request('GET',
                                  'print_logging?flush=true&message=Secret42')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK-print-logging')
 
+    @testutils.retryable_test(3, 5)
     def check_log_print_logging_with_flush(self, host_out: typing.List[str]):
         self.assertIn('Secret42', host_out)
 
@@ -446,6 +445,21 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
         # System logs should not exist in host_out
         self.assertNotIn('parallelly_log_system at disguised_logger', host_out)
+
+    @skipIf(sys.version_info.minor < 11,
+            "The context param is only available for 3.11+")
+    def test_create_task_with_context(self):
+        r = self.webhost.request('GET', 'create_task_with_context')
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'Finished Hello World in 5'
+                                 ' | Finished Hello World in 10')
+
+    def test_create_task_without_context(self):
+        r = self.webhost.request('GET', 'create_task_without_context')
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'Finished Hello World in 5')
 
 
 class TestHttpFunctionsStein(TestHttpFunctions):

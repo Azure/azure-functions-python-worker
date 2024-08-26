@@ -6,9 +6,13 @@ from time import sleep
 from unittest import TestCase, skipIf
 
 from requests import Request
+from tests.utils.testutils_lc import LinuxConsumptionWebHostController
 
-from tests.utils.testutils_lc import (
-    LinuxConsumptionWebHostController
+from azure_functions_worker.constants import (
+    PYTHON_ENABLE_DEBUG_LOGGING,
+    PYTHON_ENABLE_INIT_INDEXING,
+    PYTHON_ENABLE_WORKER_EXTENSIONS,
+    PYTHON_ISOLATE_WORKER_DEPENDENCIES,
 )
 
 _DEFAULT_HOST_VERSION = "4"
@@ -107,7 +111,7 @@ class TestLinuxConsumption(TestCase):
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url("NewProtobuf"),
-                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1"
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
@@ -137,7 +141,7 @@ class TestLinuxConsumption(TestCase):
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url("OldProtobuf"),
-                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1"
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
@@ -189,7 +193,7 @@ class TestLinuxConsumption(TestCase):
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
                     "EnableDebugLogging"),
-                "PYTHON_ENABLE_DEBUG_LOGGING": "1"
+                PYTHON_ENABLE_DEBUG_LOGGING: "1"
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
             resp = ctrl.send_request(req)
@@ -218,7 +222,7 @@ class TestLinuxConsumption(TestCase):
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
                     "PinningFunctions"),
-                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1",
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
             resp = ctrl.send_request(req)
@@ -232,8 +236,7 @@ class TestLinuxConsumption(TestCase):
         """A function app with extensions enabled containing the
          following libraries:
 
-        azure-functions, azure-eventhub, azure-storage-blob, numpy,
-        cryptography, pyodbc, requests
+        azure-functions, opencensus
 
         should return 200 after importing all libraries.
         """
@@ -242,8 +245,25 @@ class TestLinuxConsumption(TestCase):
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url("Opencensus"),
-                "PYTHON_ENABLE_WORKER_EXTENSIONS": "1",
-                "AzureWebJobsFeatureFlags": "EnableWorkerIndexing"
+                PYTHON_ENABLE_WORKER_EXTENSIONS: "1"
+            })
+            req = Request('GET', f'{ctrl.url}/api/opencensus')
+            resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 200)
+
+    @skipIf(sys.version_info.minor != 10,
+            "This is testing only for python310")
+    def test_opencensus_with_extensions_enabled_init_indexing(self):
+        """
+        A function app with init indexing enabled
+        """
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("Opencensus"),
+                PYTHON_ENABLE_WORKER_EXTENSIONS: "1",
+                PYTHON_ENABLE_INIT_INDEXING: "true"
             })
             req = Request('GET', f'{ctrl.url}/api/opencensus')
             resp = ctrl.send_request(req)
@@ -263,8 +283,7 @@ class TestLinuxConsumption(TestCase):
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
                     "TimeoutError"),
-                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
-                "AzureWebJobsFeatureFlags": "EnableWorkerIndexing"
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1"
             })
             req = Request('GET', f'{ctrl.url}/api/hello')
             resp = ctrl.send_request(req)
@@ -297,8 +316,7 @@ class TestLinuxConsumption(TestCase):
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
                     "OOMError"),
-                "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
-                "AzureWebJobsFeatureFlags": "EnableWorkerIndexing"
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1"
             })
             req = Request('GET', f'{ctrl.url}/api/httptrigger')
             resp = ctrl.send_request(req)
@@ -318,6 +336,45 @@ class TestLinuxConsumption(TestCase):
 
             self.assertNotIn("Failure Exception: ModuleNotFoundError",
                              logs)
+
+    @skipIf(sys.version_info.minor != 10,
+            "This is testing only for python310")
+    def test_http_v2_fastapi_streaming_upload_download(self):
+        """
+        A function app using http v2 fastapi extension with streaming upload and
+         download
+        """
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE":
+                self._get_blob_url("HttpV2FastApiStreaming"),
+                PYTHON_ENABLE_INIT_INDEXING: "true",
+                PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1"
+            })
+
+            def generate_random_bytes_stream():
+                """Generate a stream of random bytes."""
+                yield b'streaming'
+                yield b'testing'
+                yield b'response'
+                yield b'is'
+                yield b'returned'
+
+            req = Request('POST',
+                          f'{ctrl.url}/api/http_v2_fastapi_streaming',
+                          data=generate_random_bytes_stream())
+            resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 200)
+
+            streamed_data = b''
+            for chunk in resp.iter_content(chunk_size=1024):
+                if chunk:
+                    streamed_data += chunk
+
+            self.assertEqual(
+                streamed_data, b'streamingtestingresponseisreturned')
 
     def _get_blob_url(self, scenario_name: str) -> str:
         return (

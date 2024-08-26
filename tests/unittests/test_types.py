@@ -6,6 +6,18 @@ from azure import functions as azf
 from azure.functions import http as bind_http
 from azure.functions import meta as bind_meta
 
+from azure_functions_worker import protos
+from azure_functions_worker.bindings import datumdef
+
+
+class MockMBD:
+    def __init__(self, version: str, source: str,
+                 content_type: str, content: str):
+        self.version = version
+        self.source = source
+        self.content_type = content_type
+        self.content = content
+
 
 class TestFunctions(unittest.TestCase):
 
@@ -162,3 +174,23 @@ class TestTriggerMetadataDecoder(unittest.TestCase):
                 with self.assertRaisesRegex(exc, msg):
                     Converter._decode_trigger_metadata_field(
                         metadata, field, python_type=pytype)
+
+    def test_model_binding_data_datum_ok(self):
+        sample_mbd = MockMBD(version="1.0",
+                             source="AzureStorageBlobs",
+                             content_type="application/json",
+                             content="{\"Connection\":\"python-worker-tests\","
+                                     "\"ContainerName\":\"test-blob\","
+                                     "\"BlobName\":\"test.txt\"}")
+
+        datum: bind_meta.Datum = bind_meta.Datum(value=sample_mbd,
+                                                 type='model_binding_data')
+
+        self.assertEqual(datum.value, sample_mbd)
+        self.assertEqual(datum.type, "model_binding_data")
+
+    def test_model_binding_data_td_ok(self):
+        mock_mbd = protos.TypedData(model_binding_data={'version': '1.0'})
+        mbd_datum = datumdef.Datum.from_typed_data(mock_mbd)
+
+        self.assertEqual(mbd_datum.type, 'model_binding_data')

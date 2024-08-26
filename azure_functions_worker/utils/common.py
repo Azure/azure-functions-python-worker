@@ -1,13 +1,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import importlib
-import sys
 import re
+import sys
 from types import ModuleType
 import azure_functions_worker.utils.config_manager as config_manager
 
-from azure_functions_worker.constants import CUSTOMER_PACKAGES_PATH, \
-    PYTHON_EXTENSIONS_RELOAD_FUNCTIONS
+from azure_functions_worker.constants import (
+    CUSTOMER_PACKAGES_PATH,
+    PYTHON_EXTENSIONS_RELOAD_FUNCTIONS,
+)
 
 
 def is_python_version(version: str) -> bool:
@@ -81,4 +83,3 @@ def validate_script_file_name(file_name: str):
     pattern = re.compile(r'^[a-zA-Z0-9_][a-zA-Z0-9_\-]*\.py$')
     if not pattern.match(file_name):
         raise InvalidFileNameError(file_name)
-    return True

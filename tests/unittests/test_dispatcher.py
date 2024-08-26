@@ -1,13 +1,28 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import asyncio
 import collections as col
+import contextvars
 import os
 import sys
 import unittest
 from typing import Optional, Tuple
 from unittest.mock import patch
 
+from tests.utils import testutils
+from tests.utils.testutils import UNIT_TESTS_ROOT
+
 from azure_functions_worker import protos
+from azure_functions_worker.constants import (
+    METADATA_PROPERTIES_WORKER_INDEXED,
+    PYTHON_ENABLE_DEBUG_LOGGING,
+    PYTHON_ENABLE_INIT_INDEXING,
+    PYTHON_THREADPOOL_THREAD_COUNT,
+    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+)
+from azure_functions_worker.dispatcher import Dispatcher, ContextEnabledTask
 from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_THREADPOOL_THREAD_COUNT, \
@@ -20,6 +35,8 @@ SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
 DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'
 DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
+    'dispatcher_functions_stein'
+FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
     'dispatcher_functions_stein'
 
 
@@ -59,10 +76,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             self.assertIsInstance(r.response, protos.WorkerInitResponse)
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
-            self.assertEquals(r.response.worker_metadata.runtime_name,
-                              "python")
-            self.assertEquals(r.response.worker_metadata.worker_version,
-                              VERSION)
+            self.assertEqual(r.response.worker_metadata.runtime_name,
+                             "python")
+            self.assertEqual(r.response.worker_metadata.worker_version,
+                             VERSION)
 
     async def test_dispatcher_environment_reload(self):
         """Test function environment reload response
@@ -74,10 +91,10 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                   protos.FunctionEnvironmentReloadResponse)
             self.assertIsInstance(r.response.worker_metadata,
                                   protos.WorkerMetadata)
-            self.assertEquals(r.response.worker_metadata.runtime_name,
-                              "python")
-            self.assertEquals(r.response.worker_metadata.worker_version,
-                              VERSION)
+            self.assertEqual(r.response.worker_metadata.runtime_name,
+                             "python")
+            self.assertEqual(r.response.worker_metadata.worker_version,
+                             VERSION)
 
     async def test_dispatcher_initialize_worker_logging(self):
         """Test if the dispatcher's log can be flushed out during worker
@@ -595,16 +612,6 @@ class TestDispatcherStein(testutils.AsyncTestCase):
     def setUp(self):
         self._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_STEIN_FUNCTIONS_DIR)
-        self._pre_env = dict(os.environ)
-        self.mock_version_info = patch(
-            'azure_functions_worker.dispatcher.sys.version_info',
-            SysVersionInfo(3, 9, 0, 'final', 0))
-        self.mock_version_info.start()
-
-    def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self._pre_env)
-        self.mock_version_info.stop()
 
     async def test_dispatcher_functions_metadata_request(self):
         """Test if the functions metadata response will be sent correctly
@@ -617,6 +624,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+        del sys.modules['function_app']
 
     async def test_dispatcher_functions_metadata_request_with_retry(self):
         """Test if the functions metadata response will be sent correctly
@@ -629,6 +637,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+        del sys.modules['function_app']
 
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
@@ -686,7 +695,37 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 )]),
                 1
             )
+            self.assertEqual(
+                len([log for log in r.logs if log.message.startswith(
+                    "Received WorkerMetadataRequest from "
+                    "_handle__worker_init_request"
+                )]),
+                0
+            )
         self.assertIn("azure.functions", sys.modules)
+
+    async def test_dispatcher_indexing_in_init_request(self):
+        """Test if azure functions is loaded during init
+        """
+        env = {PYTHON_ENABLE_INIT_INDEXING: "1",
+               PYTHON_ENABLE_DEBUG_LOGGING: "1"}
+        with patch.dict(os.environ, env):
+            async with self._ctrl as host:
+                r = await host.init_worker()
+                self.assertEqual(
+                    len([log for log in r.logs if log.message.startswith(
+                        "Received WorkerInitRequest"
+                    )]),
+                    1
+                )
+
+                self.assertEqual(
+                    len([log for log in r.logs if log.message.startswith(
+                        "Received load metadata request from "
+                        "worker_init_request"
+                    )]),
+                    1
+                )
 
     async def test_dispatcher_load_modules_dedicated_app(self):
         """Test modules are loaded in dedicated apps

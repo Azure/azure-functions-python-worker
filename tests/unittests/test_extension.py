@@ -8,15 +8,20 @@ import pathlib
 import sys
 import unittest
 from importlib import import_module
-from unittest.mock import patch, Mock, call
+from unittest.mock import Mock, call, patch
 
-from azure_functions_worker.constants import PYTHON_ENABLE_WORKER_EXTENSIONS, \
-    CUSTOMER_PACKAGES_PATH
+from azure_functions_worker.constants import (
+    CUSTOMER_PACKAGES_PATH,
+    PYTHON_ENABLE_WORKER_EXTENSIONS,
+)
 from azure_functions_worker.extension import (
+    APP_EXT_POST_FUNCTION_LOAD,
+    APP_EXT_POST_INVOCATION,
+    APP_EXT_PRE_INVOCATION,
+    FUNC_EXT_POST_FUNCTION_LOAD,
+    FUNC_EXT_POST_INVOCATION,
+    FUNC_EXT_PRE_INVOCATION,
     ExtensionManager,
-    APP_EXT_POST_FUNCTION_LOAD, FUNC_EXT_POST_FUNCTION_LOAD,
-    APP_EXT_PRE_INVOCATION, FUNC_EXT_PRE_INVOCATION,
-    APP_EXT_POST_INVOCATION, FUNC_EXT_POST_INVOCATION
 )
 from azure_functions_worker.utils.common import get_sdk_from_sys_path
 from azure_functions_worker.utils import config_manager

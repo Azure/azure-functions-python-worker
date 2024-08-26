@@ -1,19 +1,26 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import logging
-from typing import Any, Optional
 import json
+import logging
+from typing import Any, List, Optional
+
 from .. import protos
 from ..logging import logger
-from typing import List
+
 try:
     from http.cookies import SimpleCookie
 except ImportError:
     from Cookie import SimpleCookie
+
 from dateutil import parser
 from dateutil.parser import ParserError
-from .nullable_converters import to_nullable_bool, to_nullable_string, \
-    to_nullable_double, to_nullable_timestamp
+
+from .nullable_converters import (
+    to_nullable_bool,
+    to_nullable_double,
+    to_nullable_string,
+    to_nullable_timestamp,
+)
 
 
 class Datum:
@@ -93,6 +100,8 @@ class Datum:
             val = td.collection_string
         elif tt == 'collection_sint64':
             val = td.collection_sint64
+        elif tt == 'model_binding_data':
+            val = td.model_binding_data
         elif tt is None:
             return None
         else:
@@ -197,6 +206,21 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
             enable_content_negotiation=False,
             body=datum_as_proto(datum.value['body']),
         ))
+    elif datum.type is None:
+        return None
+    elif datum.type == 'dict':
+        # TypedData doesn't support dict, so we return it as json
+        return protos.TypedData(json=json.dumps(datum.value))
+    elif datum.type == 'list':
+        # TypedData doesn't support list, so we return it as json
+        return protos.TypedData(json=json.dumps(datum.value))
+    elif datum.type == 'int':
+        return protos.TypedData(int=datum.value)
+    elif datum.type == 'double':
+        return protos.TypedData(double=datum.value)
+    elif datum.type == 'bool':
+        # TypedData doesn't support bool, so we return it as an int
+        return protos.TypedData(int=int(datum.value))
     else:
         raise NotImplementedError(
             'unexpected Datum type: {!r}'.format(datum.type)

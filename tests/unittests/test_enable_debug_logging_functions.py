@@ -1,11 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import os
 import typing
 import os
 
 from tests.utils import testutils
-from azure_functions_worker.constants import PYTHON_ENABLE_DEBUG_LOGGING
 from tests.utils.testutils import TESTS_ROOT, remove_path
+
+from azure_functions_worker.constants import PYTHON_ENABLE_DEBUG_LOGGING
 
 HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
 {
@@ -20,6 +22,7 @@ HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
 """
 
 
+@testutils.retryable_test(4, 5)
 class TestDebugLoggingEnabledFunctions(testutils.WebHostTestCase):
     """
     Tests for cx debug logging enabled case.

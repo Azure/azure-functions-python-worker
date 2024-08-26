@@ -12,6 +12,8 @@ from azure_functions_worker.utils.config_manager import (read_config,
                                                          is_envvar_true)
 from tests.utils import testutils
 
+from azure_functions_worker.utils.dependency import DependencyManager
+
 
 class TestDependencyManager(unittest.TestCase):
 
@@ -231,7 +233,7 @@ class TestDependencyManager(unittest.TestCase):
 
     def test_add_to_sys_path_import_module(self):
         DependencyManager._add_to_sys_path(self._customer_deps_path, True)
-        import common_module # NoQA
+        import common_module  # NoQA
         self.assertEqual(
             common_module.package_location,
             os.path.join(self._customer_deps_path, 'common_module')
@@ -242,7 +244,7 @@ class TestDependencyManager(unittest.TestCase):
         into sys.path
         """
         DependencyManager._add_to_sys_path(self._customer_deps_path, True)
-        import common_namespace # NoQA
+        import common_namespace  # NoQA
         self.assertEqual(len(common_namespace.__path__), 1)
         self.assertEqual(
             common_namespace.__path__[0],
@@ -525,7 +527,7 @@ class TestDependencyManager(unittest.TestCase):
         sys.path.insert(0, self._worker_deps_path)
 
         # Ensure new import is from _worker_deps_path
-        import common_module as worker_mod # NoQA
+        import common_module as worker_mod  # NoQA
         self.assertIn('common_module', sys.modules)
         self.assertEqual(
             worker_mod.package_location,
@@ -670,6 +672,116 @@ class TestDependencyManager(unittest.TestCase):
         # Ensure namespace remains after module cache is removed
         DependencyManager._remove_module_cache(self._customer_deps_path)
         self.assertIsNotNone(common_module)
+
+    @unittest.skipIf(sys.version_info.minor > 7,
+                     "The worker brings different protobuf versions"
+                     "between 3.7 and 3.8+.")
+    def test_newrelic_protobuf_import_scenario_worker_deps_37(self):
+        # https://github.com/Azure/azure-functions-python-worker/issues/1339
+        # newrelic checks if protobuf has been imported and based on the
+        # version it finds, imports a specific pb2 file.
+
+        # PIWD = 0. protobuf is brought through the worker's deps.
+        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'false'
+
+        # Setup paths
+        DependencyManager.worker_deps_path = self._worker_deps_path
+        DependencyManager.cx_deps_path = self._customer_deps_path
+        DependencyManager.cx_working_dir = self._customer_func_path
+
+        DependencyManager.prioritize_customer_dependencies()
+
+        # protobuf v3 is found
+        from google.protobuf import __version__
+
+        protobuf_version = tuple(int(v) for v in __version__.split("."))
+        self.assertIsNotNone(protobuf_version)
+        self.assertEqual(protobuf_version[0], 3)
+
+    @unittest.skipIf(sys.version_info.minor <= 7,
+                     "The worker brings different protobuf versions"
+                     "between 3.7 and 3.8+.")
+    def test_newrelic_protobuf_import_scenario_worker_deps(self):
+        # https://github.com/Azure/azure-functions-python-worker/issues/1339
+        # newrelic checks if protobuf has been imported and based on the
+        # version it finds, imports a specific pb2 file.
+
+        # PIWD = 0. protobuf is brought through the worker's deps.
+        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'false'
+
+        # Setup paths
+        DependencyManager.worker_deps_path = self._worker_deps_path
+        DependencyManager.cx_deps_path = self._customer_deps_path
+        DependencyManager.cx_working_dir = self._customer_func_path
+
+        DependencyManager.prioritize_customer_dependencies()
+
+        # protobuf v4 is found
+        from google.protobuf import __version__
+
+        protobuf_version = tuple(int(v) for v in __version__.split("."))
+        self.assertIsNotNone(protobuf_version)
+        self.assertEqual(protobuf_version[0], 4)
+
+    @unittest.skipIf(sys.version_info.minor > 7,
+                     "The worker brings different protobuf versions"
+                     "between 3.7 and 3.8+.")
+    def test_newrelic_protobuf_import_scenario_user_deps_37(self):
+        # https://github.com/Azure/azure-functions-python-worker/issues/1339
+        # newrelic checks if protobuf has been imported and based on the
+        # version it finds, imports a specific pb2 file.
+
+        # PIWD = 1. protobuf is brought through the user's deps.
+        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
+
+        # Setup paths
+        DependencyManager.worker_deps_path = self._worker_deps_path
+        DependencyManager.cx_deps_path = self._customer_deps_path
+        DependencyManager.cx_working_dir = self._customer_func_path
+
+        DependencyManager.prioritize_customer_dependencies()
+
+        # protobuf is found from worker deps, but newrelic won't find it
+        from google.protobuf import __version__
+
+        protobuf_version = tuple(int(v) for v in __version__.split("."))
+        self.assertIsNotNone(protobuf_version)
+
+        # newrelic tries to import protobuf v3
+        self.assertEqual(protobuf_version[0], 3)
+
+        # newrelic tries to import protobuf v4
+        self.assertNotEqual(protobuf_version[0], 4)
+
+    @unittest.skipIf(sys.version_info.minor <= 7,
+                     "The worker brings different protobuf versions"
+                     "between 3.7 and 3.8+.")
+    def test_newrelic_protobuf_import_scenario_user_deps(self):
+        # https://github.com/Azure/azure-functions-python-worker/issues/1339
+        # newrelic checks if protobuf has been imported and based on the
+        # version it finds, imports a specific pb2 file.
+
+        # PIWD = 1. protobuf is brought through the user's deps.
+        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
+
+        # Setup paths
+        DependencyManager.worker_deps_path = self._worker_deps_path
+        DependencyManager.cx_deps_path = self._customer_deps_path
+        DependencyManager.cx_working_dir = self._customer_func_path
+
+        DependencyManager.prioritize_customer_dependencies()
+
+        # protobuf is found from worker deps, but newrelic won't find it
+        from google.protobuf import __version__
+
+        protobuf_version = tuple(int(v) for v in __version__.split("."))
+        self.assertIsNotNone(protobuf_version)
+
+        # newrelic tries to import protobuf v4
+        self.assertEqual(protobuf_version[0], 4)
+
+        # newrelic tries to import protobuf v3
+        self.assertNotEqual(protobuf_version[0], 3)
 
     def _initialize_scenario(self):
         # Setup app settings

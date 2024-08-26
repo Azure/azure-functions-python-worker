@@ -14,27 +14,49 @@ import queue
 import sys
 import threading
 from asyncio import BaseEventLoop
+from datetime import datetime
 from logging import LogRecord
 from typing import List, Optional
-from datetime import datetime
 
 import grpc
 
 from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
-from .constants import (PYTHON_ROLLBACK_CWD_PATH,
-                        PYTHON_THREADPOOL_THREAD_COUNT,
-                        PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-                        PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
-                        PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                        PYTHON_ENABLE_DEBUG_LOGGING,
-                        PYTHON_SCRIPT_FILE_NAME,
-                        PYTHON_SCRIPT_FILE_NAME_DEFAULT,
-                        PYTHON_LANGUAGE_RUNTIME)
+from .constants import (
+    APPLICATIONINSIGHTS_CONNECTION_STRING,
+    METADATA_PROPERTIES_WORKER_INDEXED,
+    PYTHON_AZURE_MONITOR_LOGGER_NAME,
+    PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT,
+    PYTHON_ENABLE_DEBUG_LOGGING,
+    PYTHON_ENABLE_INIT_INDEXING,
+    PYTHON_ENABLE_OPENTELEMETRY,
+    PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
+    PYTHON_LANGUAGE_RUNTIME,
+    PYTHON_ROLLBACK_CWD_PATH,
+    PYTHON_SCRIPT_FILE_NAME,
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT,
+    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+)
 from .extension import ExtensionManager
-from .logging import disable_console_logging, enable_console_logging
-from .logging import (logger, error_logger, is_system_log_category,
-                      CONSOLE_LOG_PREFIX, format_exception)
+from .http_v2 import (
+    HttpServerInitError,
+    HttpV2Registry,
+    http_coordinator,
+    initialize_http_server,
+    sync_http_request,
+)
+from .logging import (
+    CONSOLE_LOG_PREFIX,
+    disable_console_logging,
+    enable_console_logging,
+    error_logger,
+    format_exception,
+    is_system_log_category,
+    logger,
+)
 from .utils.app_setting_manager import get_python_appsetting_state
 from .utils.common import validate_script_file_name
 from .utils.config_manager import (read_config, is_envvar_true,
@@ -45,6 +67,8 @@ from .utils.wrappers import disable_feature_by
 from .version import VERSION
 
 _TRUE = "true"
+_TRACEPARENT = "traceparent"
+_TRACESTATE = "tracestate"
 
 
 class DispatcherMeta(type):
@@ -73,8 +97,16 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._function_data_cache_enabled = False
         self._functions = functions.Registry()
         self._shmem_mgr = SharedMemoryManager()
-
         self._old_task_factory = None
+
+        # Used to store metadata returns
+        self._function_metadata_result = None
+        self._function_metadata_exception = None
+
+        # Used for checking if open telemetry is enabled
+        self._azure_monitor_available = False
+        self._context_api = None
+        self._trace_context_propagator = None
 
         # We allow the customer to change synchronous thread pool max worker
         # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
@@ -141,8 +173,11 @@ class Dispatcher(metaclass=DispatcherMeta):
                     start_stream=protos.StartStream(
                         worker_id=self.worker_id)))
 
+            # In Python 3.11+, constructing a task has an optional context
+            # parameter. Allow for this param to be passed to ContextEnabledTask
             self._loop.set_task_factory(
-                lambda loop, coro: ContextEnabledTask(coro, loop=loop))
+                lambda loop, coro, context=None: ContextEnabledTask(
+                    coro, loop=loop, context=context))
 
             # Detach console logging before enabling GRPC channel logging
             logger.info('Detaching console logging.')
@@ -155,6 +190,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             log_level = logging.INFO if not is_envvar_true(
                 PYTHON_ENABLE_DEBUG_LOGGING) else logging.DEBUG
+
             root_logger.setLevel(log_level)
             root_logger.addHandler(logging_handler)
             logger.info('Switched to gRPC logging.')
@@ -186,7 +222,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         self._stop_sync_call_tp()
 
-    def on_logging(self, record: logging.LogRecord, formatted_msg: str) -> None:
+    def on_logging(self, record: logging.LogRecord,
+                   formatted_msg: str) -> None:
         if record.levelno >= logging.CRITICAL:
             log_level = protos.RpcLog.Critical
         elif record.levelno >= logging.ERROR:
@@ -259,6 +296,63 @@ class Dispatcher(metaclass=DispatcherMeta):
         resp = await request_handler(request)
         self._grpc_resp_queue.put_nowait(resp)
 
+    def initialize_azure_monitor(self):
+        """Initializes OpenTelemetry and Azure monitor distro
+        """
+        self.update_opentelemetry_status()
+        try:
+            from azure.monitor.opentelemetry import configure_azure_monitor
+
+            # Set functions resource detector manually until officially
+            # include in Azure monitor distro
+            os.environ.setdefault(
+                "OTEL_EXPERIMENTAL_RESOURCE_DETECTORS",
+                "azure_functions",
+            )
+
+            configure_azure_monitor(
+                # Connection string can be explicitly specified in Appsetting
+                # If not set, defaults to env var
+                # APPLICATIONINSIGHTS_CONNECTION_STRING
+                connection_string=get_app_setting(
+                    setting=APPLICATIONINSIGHTS_CONNECTION_STRING
+                ),
+                logger_name=get_app_setting(
+                    setting=PYTHON_AZURE_MONITOR_LOGGER_NAME,
+                    default_value=PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT
+                ),
+            )
+            self._azure_monitor_available = True
+
+            logger.info("Successfully configured Azure monitor distro.")
+        except ImportError:
+            logger.exception(
+                "Cannot import Azure Monitor distro."
+            )
+            self._azure_monitor_available = False
+        except Exception:
+            logger.exception(
+                "Error initializing Azure monitor distro."
+            )
+            self._azure_monitor_available = False
+
+    def update_opentelemetry_status(self):
+        """Check for OpenTelemetry library availability and
+        update the status attribute."""
+        try:
+            from opentelemetry import context as context_api
+            from opentelemetry.trace.propagation.tracecontext import (
+                TraceContextTextMapPropagator,
+            )
+
+            self._context_api = context_api
+            self._trace_context_propagator = TraceContextTextMapPropagator()
+
+        except ImportError:
+            logger.exception(
+                "Cannot import OpenTelemetry libraries."
+            )
+
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, '
@@ -287,9 +381,14 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
-
         read_config(os.path.join(worker_init_request.function_app_directory,
                                  "az-config.json"))
+        if get_app_setting(setting=PYTHON_ENABLE_OPENTELEMETRY,
+                           default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
+            self.initialize_azure_monitor()
+
+            if self._azure_monitor_available:
+                capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
 
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
@@ -300,6 +399,21 @@ class Dispatcher(metaclass=DispatcherMeta):
         # loading bindings registry and saving results to a static
         # dictionary which will be later used in the invocation request
         bindings.load_binding_registry()
+
+        if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
+            try:
+                self.load_function_metadata(
+                    worker_init_request.function_app_directory,
+                    caller_info="worker_init_request")
+
+                if HttpV2Registry.http_v2_enabled():
+                    capabilities[constants.HTTP_URI] = \
+                        initialize_http_server(self._host)
+
+            except HttpServerInitError:
+                raise
+            except Exception as ex:
+                self._function_metadata_exception = ex
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -317,82 +431,117 @@ class Dispatcher(metaclass=DispatcherMeta):
             request_id=request.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
-    async def _handle__functions_metadata_request(self, request):
-        metadata_request = request.functions_metadata_request
-        directory = metadata_request.function_app_directory
+    def load_function_metadata(self, function_app_directory, caller_info):
+        """
+        This method is called to index the functions in the function app
+        directory and save the results in function_metadata_result or
+        function_metadata_exception in case of an exception.
+        """
         script_file_name = get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
             default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
-        function_path = os.path.join(directory, script_file_name)
+
+        logger.debug(
+            'Received load metadata request from %s, request ID %s, '
+            'script_file_name: %s',
+            caller_info, self.request_id, script_file_name)
+
+        validate_script_file_name(script_file_name)
+        function_path = os.path.join(function_app_directory,
+                                     script_file_name)
+
+        # For V1, the function path will not exist and
+        # return None.
+        self._function_metadata_result = (
+            self.index_functions(function_path, function_app_directory)) \
+            if os.path.exists(function_path) else None
+
+    async def _handle__functions_metadata_request(self, request):
+        metadata_request = request.functions_metadata_request
+        function_app_directory = metadata_request.function_app_directory
+
+        script_file_name = get_app_setting(
+            setting=PYTHON_SCRIPT_FILE_NAME,
+            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
+        function_path = os.path.join(function_app_directory,
+                                     script_file_name)
 
         logger.info(
-            'Received WorkerMetadataRequest, request ID %s, function_path: %s',
+            'Received WorkerMetadataRequest, request ID %s, '
+            'function_path: %s',
             self.request_id, function_path)
 
-        try:
-            validate_script_file_name(script_file_name)
+        if not is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
+            try:
+                self.load_function_metadata(
+                    function_app_directory,
+                    caller_info="functions_metadata_request")
+            except Exception as ex:
+                self._function_metadata_exception = ex
 
-            if not os.path.exists(function_path):
-                # Fallback to legacy model
-                return protos.StreamingMessage(
-                    request_id=request.request_id,
-                    function_metadata_response=protos.FunctionMetadataResponse(
-                        use_default_metadata_indexing=True,
-                        result=protos.StatusResult(
-                            status=protos.StatusResult.Success)))
-
-            fx_metadata_results = self.index_functions(function_path)
+        if self._function_metadata_exception:
+            return protos.StreamingMessage(
+                request_id=request.request_id,
+                function_metadata_response=protos.FunctionMetadataResponse(
+                    result=protos.StatusResult(
+                        status=protos.StatusResult.Failure,
+                        exception=self._serialize_exception(
+                            self._function_metadata_exception))))
+        else:
+            metadata_result = self._function_metadata_result
 
             return protos.StreamingMessage(
                 request_id=request.request_id,
                 function_metadata_response=protos.FunctionMetadataResponse(
-                    function_metadata_results=fx_metadata_results,
+                    use_default_metadata_indexing=False if metadata_result else
+                    True,
+                    function_metadata_results=metadata_result,
                     result=protos.StatusResult(
                         status=protos.StatusResult.Success)))
-
-        except Exception as ex:
-            return protos.StreamingMessage(
-                request_id=self.request_id,
-                function_metadata_response=protos.FunctionMetadataResponse(
-                    result=protos.StatusResult(
-                        status=protos.StatusResult.Failure,
-                        exception=self._serialize_exception(ex))))
 
     async def _handle__function_load_request(self, request):
         func_request = request.function_load_request
         function_id = func_request.function_id
         function_metadata = func_request.metadata
         function_name = function_metadata.name
+        function_app_directory = function_metadata.directory
 
         logger.info(
             'Received WorkerLoadRequest, request ID %s, function_id: %s,'
-            'function_name: %s,', self.request_id, function_id, function_name)
+            'function_name: %s, function_app_directory : %s',
+            self.request_id, function_id, function_name,
+            function_app_directory)
 
         programming_model = "V2"
         try:
             if not self._functions.get_function(function_id):
-                script_file_name = get_app_setting(
-                    setting=PYTHON_SCRIPT_FILE_NAME,
-                    default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
-                validate_script_file_name(script_file_name)
-                function_path = os.path.join(
-                    function_metadata.directory,
-                    script_file_name)
 
-                if function_metadata.properties.get("worker_indexed", False) \
-                        or os.path.exists(function_path):
+                if function_metadata.properties.get(
+                        METADATA_PROPERTIES_WORKER_INDEXED, False):
                     # This is for the second worker and above where the worker
                     # indexing is enabled and load request is called without
                     # calling the metadata request. In this case we index the
                     # function and update the workers registry
-                    _ = self.index_functions(function_path)
+
+                    try:
+                        self.load_function_metadata(
+                            function_app_directory,
+                            caller_info="functions_load_request")
+                    except Exception as ex:
+                        self._function_metadata_exception = ex
+
+                    # For the second worker, if there was an exception in
+                    # indexing, we raise it here
+                    if self._function_metadata_exception:
+                        raise Exception(self._function_metadata_exception)
+
                 else:
                     # legacy function
                     programming_model = "V1"
 
                     func = loader.load_function(
-                        func_request.metadata.name,
-                        func_request.metadata.directory,
+                        function_name,
+                        function_app_directory,
                         func_request.metadata.script_file,
                         func_request.metadata.entry_point)
 
@@ -439,6 +588,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         invoc_request = request.invocation_request
         invocation_id = invoc_request.invocation_id
         function_id = invoc_request.function_id
+        http_v2_enabled = False
 
         # Set the current `invocation_id` to the current task so
         # that our logging handler can find it.
@@ -468,6 +618,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             logger.info(', '.join(function_invocation_logs))
 
             args = {}
+
+            http_v2_enabled = self._functions.get_function(function_id) \
+                                  .is_http_func and \
+                HttpV2Registry.http_v2_enabled()
+
             for pb in invoc_request.input_data:
                 pb_type_info = fi.input_types[pb.name]
                 if bindings.is_trigger_binding(pb_type_info.binding_name):
@@ -476,12 +631,24 @@ class Dispatcher(metaclass=DispatcherMeta):
                     trigger_metadata = None
 
                 args[pb.name] = bindings.from_incoming_proto(
-                    pb_type_info.binding_name, pb,
+                    pb_type_info.binding_name,
+                    pb,
                     trigger_metadata=trigger_metadata,
                     pytype=pb_type_info.pytype,
-                    shmem_mgr=self._shmem_mgr)
+                    shmem_mgr=self._shmem_mgr,
+                    function_name=self._functions.get_function(
+                        function_id).name,
+                    is_deferred_binding=pb_type_info.deferred_bindings_enabled)
 
-            fi_context = self._get_context(invoc_request, fi.name, fi.directory)
+            if http_v2_enabled:
+                http_request = await http_coordinator.get_http_request_async(
+                    invocation_id)
+
+                await sync_http_request(http_request, invoc_request)
+                args[fi.trigger_metadata.get('param_name')] = http_request
+
+            fi_context = self._get_context(invoc_request, fi.name,
+                                           fi.directory)
 
             # Use local thread storage to store the invocation ID
             # for a customer's threads
@@ -494,17 +661,24 @@ class Dispatcher(metaclass=DispatcherMeta):
                     args[name] = bindings.Out()
 
             if fi.is_async:
-                call_result = await self._run_async_func(
-                    fi_context, fi.func, args
-                )
+                if self._azure_monitor_available:
+                    self.configure_opentelemetry(fi_context)
+
+                call_result = \
+                    await self._run_async_func(fi_context, fi.func, args)
             else:
                 call_result = await self._loop.run_in_executor(
                     self._sync_call_tp,
                     self._run_sync_func,
                     invocation_id, fi_context, fi.func, args)
+
             if call_result is not None and not fi.has_return:
-                raise RuntimeError(f'function {fi.name!r} without a $return '
-                                   'binding returned a non-None value')
+                raise RuntimeError(
+                    f'function {fi.name!r} without a $return binding'
+                    'returned a non-None value')
+
+            if http_v2_enabled:
+                http_coordinator.set_http_response(invocation_id, call_result)
 
             output_data = []
             cache_enabled = self._function_data_cache_enabled
@@ -524,10 +698,12 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data.append(param_binding)
 
             return_value = None
-            if fi.return_type is not None:
+            if fi.return_type is not None and not http_v2_enabled:
                 return_value = bindings.to_outgoing_proto(
-                    fi.return_type.binding_name, call_result,
-                    pytype=fi.return_type.pytype)
+                    fi.return_type.binding_name,
+                    call_result,
+                    pytype=fi.return_type.pytype,
+                )
 
             # Actively flush customer print() function to console
             sys.stdout.flush()
@@ -542,6 +718,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     output_data=output_data))
 
         except Exception as ex:
+            if http_v2_enabled:
+                http_coordinator.set_http_response(invocation_id, ex)
+
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 invocation_response=protos.InvocationResponse(
@@ -566,6 +745,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             func_env_reload_request = \
                 request.function_environment_reload_request
+            directory = func_env_reload_request.function_app_directory
 
             # Append function project root to module finding sys.path
             if func_env_reload_request.function_app_directory:
@@ -594,13 +774,35 @@ class Dispatcher(metaclass=DispatcherMeta):
                 root_logger.setLevel(logging.DEBUG)
 
             # Reload azure google namespaces
-            DependencyManager.reload_customer_libraries(
-                func_env_reload_request.function_app_directory
-            )
+            DependencyManager.reload_customer_libraries(directory)
 
             # calling load_binding_registry again since the
             # reload_customer_libraries call clears the registry
             bindings.load_binding_registry()
+
+            capabilities = {}
+            if get_app_setting(
+                    setting=PYTHON_ENABLE_OPENTELEMETRY,
+                    default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
+                self.initialize_azure_monitor()
+
+                if self._azure_monitor_available:
+                    capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = (
+                        _TRUE)
+
+            if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
+                try:
+                    self.load_function_metadata(
+                        directory,
+                        caller_info="environment_reload_request")
+
+                    if HttpV2Registry.http_v2_enabled():
+                        capabilities[constants.HTTP_URI] = \
+                            initialize_http_server(self._host)
+                except HttpServerInitError:
+                    raise
+                except Exception as ex:
+                    self._function_metadata_exception = ex
 
             # Change function app directory
             if getattr(func_env_reload_request,
@@ -609,7 +811,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     func_env_reload_request.function_app_directory)
 
             success_response = protos.FunctionEnvironmentReloadResponse(
-                capabilities={},
+                capabilities=capabilities,
                 worker_metadata=self.get_worker_metadata(),
                 result=protos.StatusResult(
                     status=protos.StatusResult.Success))
@@ -628,27 +830,41 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 function_environment_reload_response=failure_response)
 
-    def index_functions(self, function_path: str):
+    def index_functions(self, function_path: str, function_dir: str):
         indexed_functions = loader.index_function_app(function_path)
-        logger.info('Indexed function app and found %s functions',
-                    len(indexed_functions))
+        logger.info(
+            "Indexed function app and found %s functions",
+            len(indexed_functions)
+        )
 
         if indexed_functions:
-            fx_metadata_results = loader.process_indexed_function(
-                self._functions,
-                indexed_functions)
+            fx_metadata_results, fx_bindings_logs = (
+                loader.process_indexed_function(
+                    self._functions,
+                    indexed_functions,
+                    function_dir))
 
             indexed_function_logs: List[str] = []
+            indexed_function_bindings_logs = []
             for func in indexed_functions:
+                func_binding_logs = fx_bindings_logs.get(func)
+                for binding in func.get_bindings():
+                    deferred_binding_info = func_binding_logs.get(
+                        binding.name)\
+                        if func_binding_logs.get(binding.name) else ""
+                    indexed_function_bindings_logs.append((
+                        binding.type, binding.name, deferred_binding_info))
+
                 function_log = "Function Name: {}, Function Binding: {}" \
                     .format(func.get_function_name(),
-                            [(binding.type, binding.name) for binding in
-                             func.get_bindings()])
+                            indexed_function_bindings_logs)
                 indexed_function_logs.append(function_log)
 
             logger.info(
                 'Successfully processed FunctionMetadataRequest for '
-                'functions: %s', " ".join(indexed_function_logs))
+                'functions: %s. Deferred bindings enabled: %s.', " ".join(
+                    indexed_function_logs),
+                self._functions.deferred_bindings_enabled())
 
             return fx_metadata_results
 
@@ -687,10 +903,17 @@ class Dispatcher(metaclass=DispatcherMeta):
                 request_id=self.request_id,
                 close_shared_memory_resources_response=response)
 
+    def configure_opentelemetry(self, invocation_context):
+        carrier = {_TRACEPARENT: invocation_context.trace_context.trace_parent,
+                   _TRACESTATE: invocation_context.trace_context.trace_state}
+        ctx = self._trace_context_propagator.extract(carrier)
+        self._context_api.attach(ctx)
+
     @staticmethod
     def _get_context(invoc_request: protos.InvocationRequest, name: str,
                      directory: str) -> bindings.Context:
-        """ For more information refer: https://aka.ms/azfunc-invocation-context
+        """ For more information refer:
+        https://aka.ms/azfunc-invocation-context
         """
         trace_context = bindings.TraceContext(
             invoc_request.trace_context.trace_parent,
@@ -774,6 +997,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         # invocation_id from ThreadPoolExecutor's threads.
         context.thread_local_storage.invocation_id = invocation_id
         try:
+            if self._azure_monitor_available:
+                self.configure_opentelemetry(context)
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)
         finally:
@@ -832,7 +1057,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
 
 class AsyncLoggingHandler(logging.Handler):
-
     def emit(self, record: LogRecord) -> None:
         # Since we disable console log after gRPC channel is initiated,
         # we should redirect all the messages into dispatcher.
@@ -856,8 +1080,13 @@ class AsyncLoggingHandler(logging.Handler):
 class ContextEnabledTask(asyncio.Task):
     AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
 
-    def __init__(self, coro, loop):
-        super().__init__(coro, loop=loop)
+    def __init__(self, coro, loop, context=None):
+        # The context param is only available for 3.11+. If
+        # not, it can't be sent in the init() call.
+        if sys.version_info.minor >= 11:
+            super().__init__(coro, loop=loop, context=context)
+        else:
+            super().__init__(coro, loop=loop)
 
         current_task = asyncio.current_task(loop)
         if current_task is not None:

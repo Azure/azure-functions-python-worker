@@ -19,7 +19,6 @@ import requests
 from Crypto.Cipher import AES
 from Crypto.Hash.SHA256 import SHA256Hash
 from Crypto.Util.Padding import pad
-
 from tests.utils.constants import PROJECT_ROOT
 
 # Linux Consumption Testing Constants
@@ -27,10 +26,12 @@ _DOCKER_PATH = "DOCKER_PATH"
 _DOCKER_DEFAULT_PATH = "docker"
 _MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
 _MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
-_DUMMY_CONT_KEY = "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY="
 _FUNC_GITHUB_ZIP = "https://github.com/Azure/azure-functions-python-library" \
                    "/archive/refs/heads/dev.zip"
 _FUNC_FILE_NAME = "azure-functions-python-library-dev"
+_CUSTOM_IMAGE = "CUSTOM_IMAGE"
+_EXTENSION_BASE_ZIP = 'https://github.com/Azure/azure-functions-python-' \
+                      'extensions/archive/refs/heads/dev.zip'
 
 
 class LinuxConsumptionWebHostController:
@@ -150,6 +151,15 @@ class LinuxConsumptionWebHostController:
             with ZipFile(BytesIO(zipresp.read())) as zfile:
                 zfile.extractall(tempfile.gettempdir())
 
+    @staticmethod
+    def _download_extensions() -> str:
+        folder = tempfile.gettempdir()
+        with urlopen(_EXTENSION_BASE_ZIP) as zipresp:
+            with ZipFile(BytesIO(zipresp.read())) as zfile:
+                zfile.extractall(tempfile.gettempdir())
+
+        return folder
+
     def spawn_container(self,
                         image: str,
                         env: Dict[str, str] = {}) -> int:
@@ -162,20 +172,36 @@ class LinuxConsumptionWebHostController:
         # TODO: Mount library in docker container
         # self._download_azure_functions()
 
+        # Download python extension base package
+        ext_folder = self._download_extensions()
+
         container_worker_path = (
             f"/azure-functions-host/workers/python/{self._py_version}/"
             "LINUX/X64/azure_functions_worker"
         )
 
+        base_ext_container_path = (
+            f"/azure-functions-host/workers/python/{self._py_version}/"
+            "LINUX/X64/azurefunctions/extensions/base"
+        )
+
+        base_ext_local_path = (
+            f'{ext_folder}/azure-functions-python'
+            '-extensions-dev/azurefunctions-extensions-base'
+            '/azurefunctions/extensions/base'
+        )
         run_cmd = []
         run_cmd.extend([self._docker_cmd, "run", "-p", "0:80", "-d"])
         run_cmd.extend(["--name", self._uuid, "--privileged"])
         run_cmd.extend(["--cap-add", "SYS_ADMIN"])
         run_cmd.extend(["--device", "/dev/fuse"])
         run_cmd.extend(["-e", f"CONTAINER_NAME={self._uuid}"])
-        run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={_DUMMY_CONT_KEY}"])
+        run_cmd.extend(["-e",
+                        f"CONTAINER_ENCRYPTION_KEY={os.getenv('_DUMMY_CONT_KEY')}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
+        run_cmd.extend(["-v",
+                        f'{base_ext_local_path}:{base_ext_container_path}'])
 
         for key, value in env.items():
             run_cmd.extend(["-e", f"{key}={value}"])
@@ -239,7 +265,7 @@ class LinuxConsumptionWebHostController:
         which expires in one day.
         """
         exp_ns = int(time.time() + 24 * 60 * 60) * 1000000000
-        return cls._encrypt_context(_DUMMY_CONT_KEY, f'exp={exp_ns}')
+        return cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), f'exp={exp_ns}')
 
     @classmethod
     def _get_site_encrypted_context(cls,
@@ -254,7 +280,7 @@ class LinuxConsumptionWebHostController:
 
         # Ensure WEBSITE_SITE_NAME is set to simulate production mode
         ctx["Environment"]["WEBSITE_SITE_NAME"] = site_name
-        return cls._encrypt_context(_DUMMY_CONT_KEY, json.dumps(ctx))
+        return cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), json.dumps(ctx))
 
     @classmethod
     def _encrypt_context(cls, encryption_key: str, plain_text: str) -> str:
@@ -277,8 +303,9 @@ class LinuxConsumptionWebHostController:
         return f'{iv_base64}.{encrypted_base64}.{key_sha256_base64}'
 
     def __enter__(self):
-        mesh_image = self._find_latest_mesh_image(self._host_version,
-                                                  self._py_version)
+        mesh_image = (os.environ.get(_CUSTOM_IMAGE)
+                      or self._find_latest_mesh_image(self._host_version,
+                                                      self._py_version))
         self.spawn_container(image=mesh_image)
         return self
 

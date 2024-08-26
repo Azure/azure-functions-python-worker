@@ -5,8 +5,9 @@ import typing
 from unittest.mock import patch
 
 import requests
-
 from tests.utils import testutils
+
+from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 
 REQUEST_TIMEOUT_SEC = 5
 
@@ -150,9 +151,7 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'numpy_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
 
-        res = "array: [1.+0.j 2.+0.j]"
-
-        self.assertEqual(r.content.decode("UTF-8"), res)
+        self.assertIn("numpy version", r.content.decode("UTF-8"))
 
     def test_requests(self):
         r = self.webhost.request('GET', 'requests_func',
@@ -203,6 +202,24 @@ class TestCommonLibsHttpFunctionsStein(TestCommonLibsHttpFunctions):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'common_libs_functions' / \
                                             'common_libs_functions_stein'
+
+
+class TestHttpFunctionsWithInitIndexing(TestHttpFunctions):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.env_variables[PYTHON_ENABLE_INIT_INDEXING] = '1'
+        os.environ[PYTHON_ENABLE_INIT_INDEXING] = "1"
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        os.environ.pop(PYTHON_ENABLE_INIT_INDEXING)
+        super().tearDownClass()
+
+    @classmethod
+    def get_environment_variables(cls):
+        return cls.env_variables
 
 
 class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):

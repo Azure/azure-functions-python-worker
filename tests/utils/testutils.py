@@ -33,16 +33,33 @@ import uuid
 
 import grpc
 import requests
+from tests.utils.constants import (
+    ARCHIVE_WEBHOST_LOGS,
+    CONSUMPTION_DOCKER_TEST,
+    DEDICATED_DOCKER_TEST,
+    EXTENSIONS_CSPROJ_TEMPLATE,
+    PROJECT_ROOT,
+    PYAZURE_INTEGRATION_TEST,
+    PYAZURE_WEBHOST_DEBUG,
+    PYAZURE_WORKER_DIR,
+    WORKER_CONFIG,
+)
+from tests.utils.testutils_docker import (
+    DockerConfigs,
+    WebHostConsumption,
+    WebHostDedicated,
+)
 
-from azure_functions_worker import dispatcher
-from azure_functions_worker import protos
-from azure_functions_worker.bindings.shared_memory_data_transfer \
-    import FileAccessorFactory
-from azure_functions_worker.bindings.shared_memory_data_transfer \
-    import SharedMemoryConstants as consts
+from azure_functions_worker import dispatcher, protos
+from azure_functions_worker.bindings.shared_memory_data_transfer import (
+    FileAccessorFactory,
+)
+from azure_functions_worker.bindings.shared_memory_data_transfer import (
+    SharedMemoryConstants as consts,
+)
 from azure_functions_worker.constants import (
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
-    UNIX_SHARED_MEMORY_DIRECTORIES
+    UNIX_SHARED_MEMORY_DIRECTORIES,
 )
 from azure_functions_worker.utils.config_manager import (is_envvar_true,
                                                          get_app_setting)
@@ -58,6 +75,7 @@ E2E_TESTS_FOLDER = pathlib.Path('endtoend')
 E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
 UNIT_TESTS_FOLDER = pathlib.Path('unittests')
 UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
+EXTENSION_TESTS_FOLDER = pathlib.Path('extension_tests')
 WEBHOST_DLL = "Microsoft.Azure.WebJobs.Script.WebHost.dll"
 DEFAULT_WEBHOST_DLL_PATH = (
     PROJECT_ROOT / 'build' / 'webhost' / 'bin' / WEBHOST_DLL
@@ -242,7 +260,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 except Exception:
                     raise
 
-            if not cls.webhost.is_healthy():
+            if not cls.webhost.is_healthy() and cls.host_stdout is not None:
                 cls.host_out = cls.host_stdout.read()
                 if cls.host_out is not None and len(cls.host_out) > 0:
                     error_message = 'WebHost is not started correctly.'
@@ -868,7 +886,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             ' * run the following command from the root folder of',
             '   the project:',
             '',
-            f'       $ {sys.executable} setup.py webhost',
+            f'cd tests && $ {sys.executable} -m invoke -c test_setup webhost',
             '',
             ' * or download or build the Azure Functions Host and'
             '   then write the full path to WebHost.dll'
@@ -881,7 +899,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             '      dll = /path/Microsoft.Azure.WebJobs.Script.WebHost.dll',
             ' * or download Azure Functions Core Tools binaries and',
             '   then write the full path to func.exe into the ',
-            '   `CORE_TOOLS_EXE_PATH` envrionment variable.',
+            '   `CORE_TOOLS_EXE_PATH` environment variable.',
             '',
             'Setting "export PYAZURE_WEBHOST_DEBUG=true" to get the full',
             'stdout and stderr from function host.'

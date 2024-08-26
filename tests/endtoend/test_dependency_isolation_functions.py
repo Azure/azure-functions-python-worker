@@ -7,6 +7,12 @@ from unittest.case import skipIf
 from unittest.mock import patch
 
 from requests import Response
+from tests.utils import testutils
+from tests.utils.constants import (
+    CONSUMPTION_DOCKER_TEST,
+    DEDICATED_DOCKER_TEST,
+    PYAZURE_INTEGRATION_TEST,
+)
 
 from azure_functions_worker.utils.config_manager import is_envvar_true
 from tests.utils import testutils
@@ -118,6 +124,8 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
             ).lower()
         )
 
+    @skipIf(is_envvar_true('USETESTPYTHONSDK'),
+            'Running tests using an editable azure-functions package.')
     def test_loading_libraries_from_customers_package(self):
         """Since the Python now loaded the customer's dependencies, the
         libraries version should match the ones in
@@ -125,7 +133,6 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         """
         r: Response = self.webhost.request('GET', 'report_dependencies')
         libraries = r.json()['libraries']
-
         self.assertEqual(
             libraries['proto.expected.version'], libraries['proto.version']
         )

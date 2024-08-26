@@ -1,0 +1,4 @@
+variables:
+  - template: /ci/variables/build.yml@eng
+  - template: /ci/variables/cfs.yml@eng
+  - group: python-integration-resources

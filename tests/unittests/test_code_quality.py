@@ -5,7 +5,6 @@ import subprocess
 import sys
 import unittest
 
-
 ROOT_PATH = pathlib.Path(__file__).parent.parent.parent
 
 
@@ -36,7 +35,7 @@ class TestCodeQuality(unittest.TestCase):
         try:
             import flake8  # NoQA
         except ImportError as e:
-            raise unittest.SkipTest('flake8 moudule is missing') from e
+            raise unittest.SkipTest('flake8 module is missing') from e
 
         config_path = ROOT_PATH / '.flake8'
         if not config_path.exists():

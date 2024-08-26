@@ -6,6 +6,8 @@ import time
 from unittest import skipIf
 
 import requests
+from tests.utils import testutils
+from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
 from azure_functions_worker.utils.config_manager import is_envvar_true
 from tests.utils import testutils

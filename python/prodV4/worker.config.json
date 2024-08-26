@@ -1,9 +1,9 @@
 {
     "description":{
         "language":"python",
-        "defaultRuntimeVersion":"3.10",
+        "defaultRuntimeVersion":"3.11",
         "supportedOperatingSystems":["LINUX", "OSX", "WINDOWS"],
-        "supportedRuntimeVersions":["3.7", "3.8", "3.9", "3.10", "3.11"],
+        "supportedRuntimeVersions":["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"],
         "supportedArchitectures":["X64", "X86", "Arm64"],
         "extensions":[".py"],
         "defaultExecutablePath":"python",

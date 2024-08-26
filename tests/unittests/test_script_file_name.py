@@ -2,8 +2,11 @@
 # Licensed under the MIT License.
 
 from tests.utils import testutils
-from azure_functions_worker.constants import \
-    PYTHON_SCRIPT_FILE_NAME, PYTHON_SCRIPT_FILE_NAME_DEFAULT
+
+from azure_functions_worker.constants import (
+    PYTHON_SCRIPT_FILE_NAME,
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+)
 from azure_functions_worker.utils import config_manager
 
 DEFAULT_SCRIPT_FILE_NAME_DIR = testutils.UNIT_TESTS_FOLDER / \

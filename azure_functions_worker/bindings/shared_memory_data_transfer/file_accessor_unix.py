@@ -8,11 +8,11 @@ from typing import List, Optional
 
 from azure_functions_worker import constants
 
+from ...logging import logger
+from ...utils.config_manager import get_app_setting
 from .file_accessor import FileAccessor
 from .shared_memory_constants import SharedMemoryConstants as consts
 from .shared_memory_exception import SharedMemoryException
-from ...utils.config_manager import get_app_setting
-from ...logging import logger
 
 
 class FileAccessorUnix(FileAccessor):

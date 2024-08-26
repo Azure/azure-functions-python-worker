@@ -194,8 +194,8 @@ class DependencyManager:
         cx_working_dir: str
             The path which contains customer's project file (e.g. wwwroot).
         """
-        use_new_env = is_envvar_true(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
-        if use_new_env is False:
+        use_new_env = get_app_setting(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
+        if use_new_env is None:
             use_new = (
                 PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
                 is_python_version('3.10') else

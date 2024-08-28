@@ -10,11 +10,6 @@ from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 from azure_functions_worker.utils.common import is_envvar_true
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "Table functions which are used in the bindings in these tests"
-        " has a bug with the table extension 1.0.0. "
-        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
 class TestGenericFunctions(testutils.WebHostTestCase):
     """Test Generic Functions with implicit output enabled
 
@@ -73,10 +68,6 @@ class TestGenericFunctions(testutils.WebHostTestCase):
         self.assertFalse(errors_found)
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "Table functions has a bug with the table extension 1.0.0."
-        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
 class TestGenericFunctionsStein(TestGenericFunctions):
 
     @classmethod

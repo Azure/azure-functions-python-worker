@@ -38,7 +38,7 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
     def get_environment_variables(cls):
         return cls.env_variables
 
-    @testutils.retryable_test(4, 5)
+    @testutils.retryable_test(5, 5)
     def test_http_func_with_worker_process_count_2(self):
         response = [None, None]
 

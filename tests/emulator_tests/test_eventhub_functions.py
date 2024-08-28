@@ -1,7 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import json
+import sys
 import time
+
+from unittest import skipIf
 
 from tests.utils import testutils
 
@@ -52,6 +55,9 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         # Check if the event body matches the initial data
         self.assertEqual(response, doc)
 
+    @skipIf(sys.version_info.minor == 7,
+            "Using azure-eventhub SDK with the EventHub Emulator"
+            "requires Python 3.8+")
     @testutils.retryable_test(3, 5)
     def test_eventhub_trigger_with_metadata(self):
         # Generate a unique event body for EventHub event

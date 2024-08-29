@@ -30,4 +30,6 @@ steps:
       !pack/**
       !python/**
       !tests/**
+      !setuptools*/**
+      !setuptools/**
     targetFolder: '$(Build.ArtifactStagingDirectory)'

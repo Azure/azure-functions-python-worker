@@ -31,5 +31,4 @@ steps:
       !python/**
       !tests/**
       !setuptools*/**
-      !setuptools/**
     targetFolder: '$(Build.ArtifactStagingDirectory)'

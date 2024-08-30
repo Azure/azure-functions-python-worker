@@ -2,15 +2,18 @@
 # Licensed under the MIT License.
 import os
 import json
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict
 
-config_data = {}
+# Initialize to None
+config_data: Optional[Dict[str, str]] = None
 
 
 def read_config(function_path: str):
+    global config_data
+    if config_data is None:
+        config_data = {}
     try:
         with open(function_path, "r") as stream:
-            global config_data
             # loads the entire json file
             full_config_data = json.load(stream)
             # gets the python section of the json file
@@ -24,27 +27,34 @@ def read_config(function_path: str):
 
 
 def config_exists() -> bool:
+    global config_data
+    if config_data is None:
+        read_config("")
     return config_data is not {}
+
+
+def get_config() -> dict:
+    return config_data
 
 
 def is_true_like(setting: str) -> bool:
     if setting is None:
         return False
 
-    return setting.lower().strip() in {'1', 'true', 't', 'yes', 'y'}
+    return setting.lower().strip() in {"1", "true", "t", "yes", "y"}
 
 
 def is_false_like(setting: str) -> bool:
     if setting is None:
         return False
 
-    return setting.lower().strip() in {'0', 'false', 'f', 'no', 'n'}
+    return setting.lower().strip() in {"0", "false", "f", "no", "n"}
 
 
 def is_envvar_true(key: str) -> bool:
     # special case for PYTHON_ENABLE_DEBUG_LOGGING
     # This is read by the host and must be set in os.environ
-    if key == 'PYTHON_ENABLE_DEBUG_LOGGING':
+    if key == "PYTHON_ENABLE_DEBUG_LOGGING":
         val = os.getenv(key)
         return is_true_like(val)
     if config_exists() and config_data.get(key) is not None:
@@ -61,7 +71,7 @@ def is_envvar_false(key: str) -> bool:
 def get_app_setting(
     setting: str,
     default_value: Optional[str] = None,
-    validator: Optional[Callable[[str], bool]] = None
+    validator: Optional[Callable[[str], bool]] = None,
 ) -> Optional[str]:
     """Returns the application setting from environment variable.
 

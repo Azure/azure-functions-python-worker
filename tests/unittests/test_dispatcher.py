@@ -24,7 +24,6 @@ from azure_functions_worker.constants import (
 )
 from azure_functions_worker.dispatcher import Dispatcher, ContextEnabledTask
 from azure_functions_worker.version import VERSION
-from azure_functions_worker.utils import config_manager
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])

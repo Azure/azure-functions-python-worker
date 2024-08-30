@@ -368,6 +368,11 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     async def _handle__worker_init_request(self, request):
         worker_init_request = request.worker_init_request
+        # Apply PYTHON_THREADPOOL_THREAD_COUNT
+        self._stop_sync_call_tp()
+        self._sync_call_tp = self._create_sync_call_tp(
+            self._get_sync_tp_max_workers()
+        )
         read_config(
             os.path.join(worker_init_request.function_app_directory, "az-config.json")
         )
@@ -1051,6 +1056,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             default_value=default_value,
             validator=tp_max_workers_validator,
         )
+        logger.info(f"max_workers: {max_workers}")
 
         if sys.version_info.minor <= 7:
             max_workers = min(int(max_workers), PYTHON_THREADPOOL_THREAD_COUNT_MAX_37)

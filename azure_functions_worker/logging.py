@@ -13,6 +13,7 @@ SYSTEM_LOG_PREFIX = "azure_functions_worker"
 SDK_LOG_PREFIX = "azure.functions"
 SYSTEM_ERROR_LOG_PREFIX = "azure_functions_worker_errors"
 
+local_handler = logging.FileHandler("C:\\Users\\victoriahall\\Documents\\repos\\azure-functions-python-worker\\mylog.txt")
 
 logger: logging.Logger = logging.getLogger(SYSTEM_LOG_PREFIX)
 error_logger: logging.Logger = (
@@ -54,6 +55,7 @@ def setup(log_level, log_destination):
         error_handler = logging.StreamHandler(sys.stderr)
         error_handler.setFormatter(formatter)
         error_handler.setLevel(getattr(logging, log_level))
+        logger.addHandler(local_handler)
 
         handler = logging.StreamHandler(sys.stdout)
 

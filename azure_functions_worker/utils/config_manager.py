@@ -4,6 +4,8 @@ import os
 import json
 from typing import Optional, Callable, Dict
 
+from ..logging import logger
+
 # Initialize to None
 config_data: Optional[Dict[str, str]] = None
 
@@ -73,6 +75,7 @@ def get_app_setting(
     default_value: Optional[str] = None,
     validator: Optional[Callable[[str], bool]] = None,
 ) -> Optional[str]:
+    logger.error("Setting: %s, Config data at setting %s", setting, config_data.get(setting))
     """Returns the application setting from environment variable.
 
     Parameters
@@ -109,6 +112,7 @@ def get_app_setting(
 
     # Setting is not configured or validator is false
     # Return default value
+    logger.info("Returning default value: %s", default_value)
     return default_value
 
 

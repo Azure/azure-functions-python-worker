@@ -4,6 +4,7 @@ import json
 import sys
 import time
 from datetime import datetime
+from unittest.case import skipIf
 
 from dateutil import parser
 from tests.utils import testutils

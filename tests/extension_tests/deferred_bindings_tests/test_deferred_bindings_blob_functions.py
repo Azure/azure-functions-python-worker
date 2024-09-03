@@ -13,7 +13,7 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.EMULATOR_TESTS_FOLDER / \
+        return testutils.EXTENSION_TESTS_FOLDER / 'deferred_bindings_tests' / \
             'deferred_bindings_blob_functions'
 
     @classmethod

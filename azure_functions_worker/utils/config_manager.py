@@ -30,7 +30,7 @@ def config_exists() -> bool:
     global config_data
     if config_data is None:
         read_config("")
-    return config_data is not {}
+    return config_data is not None
 
 
 def get_config() -> dict:
@@ -52,20 +52,22 @@ def is_false_like(setting: str) -> bool:
 
 
 def is_envvar_true(key: str) -> bool:
+    key_upper = key.upper()
     # special case for PYTHON_ENABLE_DEBUG_LOGGING
     # This is read by the host and must be set in os.environ
-    if key == "PYTHON_ENABLE_DEBUG_LOGGING":
-        val = os.getenv(key)
+    if key_upper == "PYTHON_ENABLE_DEBUG_LOGGING":
+        val = os.getenv(key_upper)
         return is_true_like(val)
-    if config_exists() and config_data.get(key) is not None:
-        return is_true_like(config_data.get(key))
-    return False
+    if config_exists() and not config_data.get(key_upper):
+        return False
+    return is_true_like(config_data.get(key_upper))
 
 
 def is_envvar_false(key: str) -> bool:
-    if config_exists() and config_data.get(key) is not None:
-        return is_false_like(config_data.get(key))
-    return False
+    key_upper = key.upper()
+    if config_exists() and not config_data.get(key_upper):
+        return False
+    return is_false_like(config_data.get(key_upper))
 
 
 def get_app_setting(
@@ -93,9 +95,10 @@ def get_app_setting(
     Optional[str]
         A string value that is set in the application setting
     """
-    if config_exists() and config_data.get(setting) is not None:
+    setting_upper = setting.upper()
+    if config_exists() and config_data.get(setting_upper) is not None:
         # Setting exists, check with validator
-        app_setting_value = config_data.get(setting)
+        app_setting_value = config_data.get(setting_upper)
 
         # If there's no validator, return the app setting value directly
         if validator is None:
@@ -120,3 +123,10 @@ def set_env_var(setting: str, value: str):
 def del_env_var(setting: str):
     global config_data
     config_data.pop(setting, None)
+
+
+def clear_config():
+    global config_data
+    if config_data is not None:
+        config_data.clear()
+        config_data = None

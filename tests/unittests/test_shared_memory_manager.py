@@ -9,6 +9,7 @@ from unittest import skipIf
 from unittest.mock import patch
 
 from azure.functions import meta as bind_meta
+from azure_functions_worker.utils import config_manager
 from tests.utils import testutils
 
 from azure_functions_worker.bindings.shared_memory_data_transfer import (
@@ -31,6 +32,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
     Tests for SharedMemoryManager.
     """
     def setUp(self):
+        config_manager.clear_config()
         env = os.environ.copy()
         env['FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED'] = "true"
         self.mock_environ = patch.dict('os.environ', env)

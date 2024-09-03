@@ -87,6 +87,7 @@ class TestUtilities(unittest.TestCase):
         self.mock_sys_path.stop()
         self.mock_sys_module.stop()
         self.mock_environ.stop()
+        config_manager.clear_config()
 
     def test_is_true_like_accepted(self):
         self.assertTrue(config_manager.is_true_like('1'))
@@ -113,7 +114,7 @@ class TestUtilities(unittest.TestCase):
         self.assertFalse(config_manager.is_false_like('secret'))
 
     def test_is_envvar_true(self):
-        config_manager.set_env_var(TEST_FEATURE_FLAG, 'true')
+        os.environ[TEST_FEATURE_FLAG] = 'true'
         self.assertTrue(config_manager.is_envvar_true(TEST_FEATURE_FLAG))
 
     def test_is_envvar_not_true_on_unset(self):
@@ -121,7 +122,7 @@ class TestUtilities(unittest.TestCase):
         self.assertFalse(config_manager.is_envvar_true(TEST_FEATURE_FLAG))
 
     def test_is_envvar_false(self):
-        config_manager.set_env_var(TEST_FEATURE_FLAG, 'false')
+        os.environ[TEST_FEATURE_FLAG] = 'false'
         self.assertTrue(config_manager.is_envvar_false(TEST_FEATURE_FLAG))
 
     def test_is_envvar_not_false_on_unset(self):

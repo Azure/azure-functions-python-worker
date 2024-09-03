@@ -23,6 +23,7 @@ from azure_functions_worker.constants import (
     PYTHON_THREADPOOL_THREAD_COUNT_MIN,
 )
 from azure_functions_worker.dispatcher import Dispatcher, ContextEnabledTask
+from azure_functions_worker.utils import config_manager
 from azure_functions_worker.version import VERSION
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
@@ -62,6 +63,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         os.environ.clear()
         os.environ.update(self._pre_env)
         self.mock_version_info.stop()
+        config_manager.clear_config()
 
     async def test_dispatcher_initialize_worker(self):
         """Test if the dispatcher can be initialized worker successfully

@@ -3,18 +3,10 @@
 import json
 import pathlib
 import time
-from unittest import skipIf
 
 from tests.utils import testutils
-from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
-
-from azure_functions_worker.utils.config_manager import is_envvar_true
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "Table functions has a bug with the table extension 1.0.0."
-        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
 class TestTableFunctions(testutils.WebHostTestCase):
 
     @classmethod
@@ -50,10 +42,6 @@ class TestTableFunctions(testutils.WebHostTestCase):
         self.assertTrue(row_key_present)
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "Table functions has a bug with the table extension 1.0.0."
-        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
 class TestTableFunctionsStein(testutils.WebHostTestCase):
 
     @classmethod
@@ -76,10 +64,6 @@ class TestTableFunctionsStein(testutils.WebHostTestCase):
         self.assertTrue(row_key_present)
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "Table functions has a bug with the table extension 1.0.0."
-        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
 class TestTableFunctionsGeneric(TestTableFunctionsStein):
 
     @classmethod

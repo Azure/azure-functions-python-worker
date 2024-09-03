@@ -31,4 +31,8 @@ steps:
       !python/**
       !tests/**
       !setuptools*/**
+      !_distutils_hack/**
+      !distutils-precedence.pth
+      !pkg_resources/**
+      !*.dist-info/**
     targetFolder: '$(Build.ArtifactStagingDirectory)'

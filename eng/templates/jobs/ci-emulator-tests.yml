@@ -74,7 +74,6 @@ jobs:
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |
-          yes | git clone https://github.com/Azure/azure-event-hubs-emulator-installer.git
           docker compose -f tests/emulator_tests/eventhub_batch_functions/docker-compose.yml pull
           docker compose -f tests/emulator_tests/eventhub_batch_functions/docker-compose.yml up -d
         displayName: 'Install and Run Azure Event Hubs Emulator'

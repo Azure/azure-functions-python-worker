@@ -20,10 +20,12 @@ def read_config(function_path: str):
             config_data = full_config_data.get("PYTHON")
     except FileNotFoundError:
         pass
-    env_copy = os.environ
-    # updates the config dictionary with the environment variables
+
+        # updates the config dictionary with the environment variables
     # this prioritizes set env variables over the config file
-    config_data.update(env_copy)
+    env_copy = os.environ
+    for k, v in env_copy.items():
+        config_data.update({k.upper(): v})
 
 
 def config_exists() -> bool:

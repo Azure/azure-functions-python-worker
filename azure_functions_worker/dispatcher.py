@@ -59,7 +59,8 @@ from .logging import (
 )
 from .utils.app_setting_manager import get_python_appsetting_state
 from .utils.common import validate_script_file_name
-from .utils.config_manager import read_config, is_envvar_true, get_app_setting
+from .utils.config_manager import (clear_config, read_config,
+                                   is_envvar_true, get_app_setting)
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
@@ -814,6 +815,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             # Reload environment variables
             os.environ.clear()
+            clear_config()
             env_vars = func_env_reload_request.environment_variables
             for var in env_vars:
                 os.environ[var] = env_vars[var]

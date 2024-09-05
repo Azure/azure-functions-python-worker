@@ -602,6 +602,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
     def setUp(self):
         self._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_STEIN_FUNCTIONS_DIR)
+        config_manager.clear_config()
 
     async def test_dispatcher_functions_metadata_request(self):
         """Test if the functions metadata response will be sent correctly
@@ -668,6 +669,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
             'azure_functions_worker.dispatcher.sys.version_info',
             SysVersionInfo(3, 9, 0, 'final', 0))
         self.mock_version_info.start()
+        config_manager.clear_config()
 
     def tearDown(self):
         os.environ.clear()

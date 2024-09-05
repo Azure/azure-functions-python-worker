@@ -32,7 +32,6 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
     Tests for SharedMemoryManager.
     """
     def setUp(self):
-        config_manager.clear_config()
         env = os.environ.copy()
         env['FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED'] = "true"
         self.mock_environ = patch.dict('os.environ', env)
@@ -41,6 +40,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         self.mock_environ.start()
         self.mock_sys_module.start()
         self.mock_sys_path.start()
+        config_manager.clear_config()
 
     def tearDown(self):
         self.mock_sys_path.stop()
@@ -73,6 +73,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         # Make sure shared memory data transfer is disabled
         was_shmem_env_true = is_envvar_true(
             FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
+        config_manager.clear_config()
         os.environ.update(
             {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '0'})
         manager = SharedMemoryManager()

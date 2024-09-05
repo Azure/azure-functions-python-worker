@@ -7,6 +7,7 @@ from tests.unittests.test_dispatcher import FUNCTION_APP_DIRECTORY
 from tests.utils import testutils
 
 from azure_functions_worker import protos
+from azure_functions_worker.utils import config_manager
 
 
 class TestOpenTelemetry(unittest.TestCase):
@@ -15,6 +16,7 @@ class TestOpenTelemetry(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.dispatcher = testutils.create_dummy_dispatcher()
+        config_manager.clear_config()
 
     def tearDown(self):
         self.loop.close()

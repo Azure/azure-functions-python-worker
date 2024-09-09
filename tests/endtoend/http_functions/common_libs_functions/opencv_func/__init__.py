@@ -2,8 +2,9 @@
 # Licensed under the MIT License.
 
 import logging
-import cv2
+
 import azure.functions as func
+import cv2
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:

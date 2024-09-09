@@ -1,8 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
-from threading import Thread
 from datetime import datetime
+from threading import Thread
+
 from tests.utils import testutils
 
 
@@ -22,11 +23,12 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
 
         super().setUpClass()
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         os.environ.pop('PYTHON_THREADPOOL_THREAD_COUNT')
         os.environ.pop('FUNCTIONS_WORKER_PROCESS_COUNT')
 
-        super().tearDown()
+        super().tearDownClass()
 
     @classmethod
     def get_script_dir(cls):

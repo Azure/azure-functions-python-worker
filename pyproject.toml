@@ -1,0 +1,121 @@
+[project]
+name = "azure-functions-worker"
+dynamic = ["version"]
+description = "Python Language Worker for Azure Functions Runtime"
+authors = [
+    { name = "Azure Functions team at Microsoft Corp.", email = "azurefunctions@microsoft.com" }
+]
+keywords = ["azure", "functions", "azurefunctions",
+            "python", "serverless"]
+license = { name = "MIT", file = "LICENSE" }
+readme = { file = "README.md", content-type = "text/markdown" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS :: MacOS X",
+    "Environment :: Web Environment",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers"
+]
+dependencies = [
+     "azure-functions==1.21.0b3",
+     "python-dateutil ~=2.9.0",
+     "protobuf~=3.19.3; python_version == '3.7'",
+     "protobuf~=4.25.3; python_version >= '3.8'",
+     "grpcio-tools~=1.43.0; python_version == '3.7'",
+     "grpcio-tools~=1.59.0; python_version >= '3.8'",
+     "grpcio~=1.43.0; python_version == '3.7'",
+     "grpcio~=1.59.0; python_version >= '3.8'",
+     "azurefunctions-extensions-base; python_version >= '3.8'"
+]
+
+[project.urls]
+Documentation = "https://github.com/Azure/azure-functions-python-worker?tab=readme-ov-file#-azure-functions-python-worker"
+Repository = "https://github.com/Azure/azure-functions-python-worker"
+
+[project.optional-dependencies]
+dev = [
+    "azure-eventhub", # Used for EventHub E2E tests
+    "azure-functions-durable", # Used for Durable E2E tests
+    "flask",
+    "fastapi~=0.103.2",
+    "pydantic",
+    "pycryptodome==3.*",
+    "flake8==5.*; python_version == '3.7'",
+    "flake8==6.*; python_version >= '3.8'",
+    "mypy",
+    "pytest~=7.4.4",
+    "requests==2.*",
+    "coverage",
+    "pytest-sugar",
+    "pytest-cov",
+    "pytest-xdist",
+    "pytest-randomly",
+    "pytest-instafail",
+    "pytest-rerunfailures",
+    "ptvsd",
+    "python-dotenv",
+    "plotly",
+    "scikit-learn",
+    "opencv-python",
+    "pandas",
+    "numpy",
+    "pre-commit",
+    "invoke"
+]
+test-http-v2 = [
+    "azurefunctions-extensions-http-fastapi",
+    "ujson",
+    "orjson"
+]
+test-deferred-bindings = [
+    "azurefunctions-extensions-bindings-blob"
+]
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.setuptools.packages.find]
+exclude = [
+    'eng', 'tests', 'pack'
+    ]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+known_first_party = ["azure_functions_worker"]
+default_section = "THIRDPARTY"
+src_paths = ["azure_functions_worker"]
+skip_glob = [
+    "build",
+    "dist",
+    "env",
+    "venv",
+    "*venv*",
+    "*.egg-info",
+    ".tox",
+    ".nox",
+    ".git",
+    "__pycache__",
+    ".ci",
+    ".devcontainer",
+    ".github",
+    "eng",
+    "pack",
+    "*protos/*"
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "azure_functions_worker.version.VERSION"}

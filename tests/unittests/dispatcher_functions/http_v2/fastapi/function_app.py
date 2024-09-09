@@ -1,6 +1,5 @@
-from azurefunctions.extensions.http.fastapi import Request, Response
 import azure.functions as func
-
+from azurefunctions.extensions.http.fastapi import Request, Response
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 

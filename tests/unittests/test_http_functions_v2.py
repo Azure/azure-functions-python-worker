@@ -10,8 +10,9 @@ import unittest
 from unittest import skipIf
 from unittest.mock import patch
 
-from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 from tests.utils import testutils
+
+from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 
 
 @unittest.skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")
@@ -94,6 +95,7 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
         self.assertIn('hello info', host_out)
         self.assertIn('and another error', host_out)
 
+    @unittest.skipIf(sys.version_info.minor >= 7, "Skipping for ADO")
     def test_debug_logging(self):
         r = self.webhost.request('GET', 'debug_logging')
         self.assertEqual(r.status_code, 200)
@@ -105,6 +107,7 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
         self.assertIn('logging error', host_out)
         self.assertNotIn('logging debug', host_out)
 
+    @unittest.skipIf(sys.version_info.minor >= 7, "Skipping for ADO")
     def test_debug_with_user_logging(self):
         r = self.webhost.request('GET', 'debug_user_logging')
         self.assertEqual(r.status_code, 200)

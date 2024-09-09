@@ -1,0 +1,70 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - dev
+      - release/*
+
+# CI only, does not trigger on PRs.
+pr: none
+
+schedules:
+  - cron: '0 0 * * MON'
+    displayName: At 12:00 AM, only on Monday
+    branches:
+      include:
+        - dev
+    always: true
+
+resources:
+  repositories:
+    - repository: 1es
+      type: git
+      name: 1ESPipelineTemplates/1ESPipelineTemplates
+      ref: refs/tags/release
+    - repository: eng
+      type: git
+      name: engineering
+      ref: refs/tags/release
+
+variables:
+  - template: /eng/templates/utils/variables.yml@self
+  - template: /eng/templates/utils/official-variables.yml@self
+
+extends:
+  template: v1/1ES.Official.PipelineTemplate.yml@1es
+  parameters:
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-windows-2022
+      os: windows
+    sdl:
+      codeSignValidation:
+        enabled: true
+        break: true
+
+    stages:
+      - stage: Build
+        jobs:
+          - template: /eng/templates/official/jobs/build-artifacts.yml@self
+
+      - stage: RunE2ETests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self
+      - stage: RunUnitTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/jobs/ci-unit-tests.yml@self
+      - stage: RunDockerConsumptionTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-docker-consumption-tests.yml@self
+      - stage: RunDockerDedicatedTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-docker-dedicated-tests.yml@self
+      - stage: RunLinuxConsumptionTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-lc-tests.yml@self

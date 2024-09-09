@@ -1,7 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from azure_functions_worker import protos
 from tests.utils import testutils
+
+from azure_functions_worker import protos
 
 
 class TestGenericFunctions(testutils.AsyncTestCase):

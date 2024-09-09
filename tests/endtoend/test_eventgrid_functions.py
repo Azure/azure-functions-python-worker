@@ -5,7 +5,6 @@ import unittest
 import uuid
 
 import requests
-
 from tests.utils import testutils
 
 

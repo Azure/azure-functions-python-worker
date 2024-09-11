@@ -32,9 +32,9 @@ DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
     'dispatcher_functions_stein'
 FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
-                         'dispatcher_functions_stein'
+    'dispatcher_functions_stein'
 HTTPV2_FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
-                                'http_v2' / 'fastapi'
+    'http_v2' / 'fastapi'
 
 
 class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):

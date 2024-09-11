@@ -39,7 +39,8 @@ from .constants import (
     PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
     PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
     PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-    REQUIRES_ROUTE_PARAMETERS
+    REQUIRES_ROUTE_PARAMETERS,
+    HTTP_URI
 )
 from .extension import ExtensionManager
 from .http_v2 import (
@@ -404,7 +405,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     caller_info="worker_init_request")
 
                 if HttpV2Registry.http_v2_enabled():
-                    capabilities[constants.HTTP_URI] = \
+                    capabilities[HTTP_URI] = \
                         initialize_http_server(self._host)
                     capabilities[REQUIRES_ROUTE_PARAMETERS] = _TRUE
 
@@ -794,7 +795,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         caller_info="environment_reload_request")
 
                     if HttpV2Registry.http_v2_enabled():
-                        capabilities[constants.HTTP_URI] = \
+                        capabilities[HTTP_URI] = \
                             initialize_http_server(self._host)
                         capabilities[REQUIRES_ROUTE_PARAMETERS] = _TRUE
                 except HttpServerInitError:

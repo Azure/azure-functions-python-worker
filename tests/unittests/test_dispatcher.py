@@ -20,7 +20,7 @@ from azure_functions_worker.constants import (
     PYTHON_THREADPOOL_THREAD_COUNT,
     PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
     PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
-    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN, HTTP_URI, REQUIRES_ROUTE_PARAMETERS,
 )
 from azure_functions_worker.dispatcher import Dispatcher, ContextEnabledTask
 from azure_functions_worker.version import VERSION
@@ -32,7 +32,9 @@ DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
     'dispatcher_functions_stein'
 FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
-    'dispatcher_functions_stein'
+                         'dispatcher_functions_stein'
+HTTPV2_FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
+                                'http_v2' / 'fastapi'
 
 
 class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
@@ -767,6 +769,7 @@ class TestDispatcherIndexingInInit(unittest.TestCase):
         asyncio.set_event_loop(self.loop)
         self.dispatcher = testutils.create_dummy_dispatcher()
         sys.path.append(str(FUNCTION_APP_DIRECTORY))
+        sys.path.append(str(HTTPV2_FUNCTION_APP_DIRECTORY))
 
     def tearDown(self):
         self.loop.close()
@@ -990,6 +993,63 @@ class TestDispatcherIndexingInInit(unittest.TestCase):
         self.assertEqual(
             response.function_load_response.result.exception.message,
             "Exception: Mocked Exception")
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
+    @patch("azure_functions_worker.http_v2.HttpV2Registry.http_v2_enabled",
+           return_value=True)
+    def test_dispatcher_http_v2_init_request_fail(self, mock_http_v2_enabled):
+        request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(HTTPV2_FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        resp = self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(request)
+        )
+
+        mock_http_v2_enabled.assert_called_once()
+        self.assertIsNotNone(self.dispatcher._function_metadata_exception)
+
+        capabilities = resp.worker_init_response.capabilities
+        self.assertNotIn(HTTP_URI, capabilities)
+        self.assertNotIn(REQUIRES_ROUTE_PARAMETERS, capabilities)
+
+        # Cleanup
+        del sys.modules['function_app']
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
+    @patch("azure_functions_worker.http_v2.HttpV2Registry.http_v2_enabled",
+           return_value=True)
+    @patch("azure_functions_worker.dispatcher.initialize_http_server",
+           return_value="http://localhost:8080")
+    @patch("azure_functions_worker.dispatcher.Dispatcher"
+           ".load_function_metadata")
+    def test_dispatcher_http_v2_init_request_pass(self, mock_http_v2_enabled,
+                                                  mock_init_http_server,
+                                                  mock_load_func_metadata):
+        request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(HTTPV2_FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        resp = self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(request)
+        )
+
+        mock_http_v2_enabled.assert_called_once()
+        mock_init_http_server.assert_called_once()
+        mock_load_func_metadata.assert_called_once()
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+        capabilities = resp.worker_init_response.capabilities
+        self.assertIn(HTTP_URI, capabilities)
+        self.assertEqual(capabilities[HTTP_URI], "http://localhost:8080")
+        self.assertIn(REQUIRES_ROUTE_PARAMETERS, capabilities)
+        self.assertEqual(capabilities[REQUIRES_ROUTE_PARAMETERS], "true")
 
 
 class TestContextEnabledTask(unittest.TestCase):

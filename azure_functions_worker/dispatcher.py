@@ -960,7 +960,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         # Starting Python 3.9, worker won't be putting a limit on the
         # max_workers count in the created threadpool.
-        default_value = None if sys.version_info.minor == 9 \
+        default_value = None if sys.version_info.minor >= 9 \
             else f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}'
 
         max_workers = get_app_setting(setting=PYTHON_THREADPOOL_THREAD_COUNT,

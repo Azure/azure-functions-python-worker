@@ -1,5 +1,6 @@
 name: microsoft-azure-eventhubs
 services:
+  # Service for the Event Hubs Emulator
   emulator:
     container_name: "eventhubs-emulator"
     image: "mcr.microsoft.com/azure-messaging/eventhubs-emulator:latest"
@@ -17,6 +18,7 @@ services:
       eh-emulator:
         aliases:
           - "eventhubs-emulator"
+  # Service for the Azurite Storage Emulator
   azurite:
     container_name: "azurite"
     image: "mcr.microsoft.com/azure-storage/azurite:latest"

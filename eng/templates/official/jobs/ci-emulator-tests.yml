@@ -74,14 +74,9 @@ jobs:
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |
-          docker compose -f tests/emulator_tests/eventhub_batch_functions/docker-compose.yml pull
-          docker compose -f tests/emulator_tests/eventhub_batch_functions/docker-compose.yml up -d
-        displayName: 'Install and Run Azure Event Hubs Emulator'
-      - bash: |
-          sudo npm install -g azurite
-          sudo mkdir azurite
-          sudo azurite --silent --location azurite --debug azurite\debug.log &
-        displayName: 'Install and Run Azurite'
+          docker compose -f tests/emulator_tests/utils/docker-compose.yml pull
+          docker compose -f tests/emulator_tests/utils/docker-compose.yml up -d
+        displayName: 'Install Azurite and Start Emulators'
       - bash: |
             python -m pytest -q -n auto --dist loadfile --reruns 4 tests/emulator_tests
         env:

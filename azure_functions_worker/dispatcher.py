@@ -39,6 +39,8 @@ from .constants import (
     PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
     PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
     PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+    REQUIRES_ROUTE_PARAMETERS,
+    HTTP_URI
 )
 from .extension import ExtensionManager
 from .http_v2 import (
@@ -431,9 +433,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                 )
 
                 if HttpV2Registry.http_v2_enabled():
-                    capabilities[constants.HTTP_URI] = initialize_http_server(
-                        self._host
-                    )
+                    capabilities[HTTP_URI] = \
+                        initialize_http_server(self._host)
+                    capabilities[REQUIRES_ROUTE_PARAMETERS] = _TRUE
 
             except HttpServerInitError:
                 raise
@@ -692,8 +694,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                     invocation_id
                 )
 
-                await sync_http_request(http_request, invoc_request)
-                args[fi.trigger_metadata.get("param_name")] = http_request
+                trigger_arg_name = fi.trigger_metadata.get('param_name')
+                func_http_request = args[trigger_arg_name]
+                await sync_http_request(http_request, func_http_request)
+                args[trigger_arg_name] = http_request
 
             fi_context = self._get_context(invoc_request, fi.name, fi.directory)
 
@@ -859,9 +863,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     )
 
                     if HttpV2Registry.http_v2_enabled():
-                        capabilities[constants.HTTP_URI] = initialize_http_server(
-                            self._host
-                        )
+                        capabilities[HTTP_URI] = \
+                            initialize_http_server(self._host)
+                        capabilities[REQUIRES_ROUTE_PARAMETERS] = _TRUE
                 except HttpServerInitError:
                     raise
                 except Exception as ex:

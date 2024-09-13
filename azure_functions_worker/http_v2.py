@@ -246,14 +246,11 @@ def initialize_http_server(host_addr, **kwargs):
             from e
 
 
-async def sync_http_request(http_request, invoc_request):
+async def sync_http_request(http_request, func_http_request):
     # Sync http request route params from invoc_request to http_request
-    route_params = {key: item.string for key, item
-                    in invoc_request.trigger_metadata.items()
-                    if key not in ['Headers', 'Query']}
     (HttpV2Registry.ext_base().RequestTrackerMeta
      .get_synchronizer()
-     .sync_route_params(http_request, route_params))
+     .sync_route_params(http_request, func_http_request.route_params))
 
 
 class HttpV2Registry:

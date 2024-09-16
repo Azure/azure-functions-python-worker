@@ -6,7 +6,7 @@ from typing import Dict, Optional
 
 from ...constants import FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED
 from ...logging import logger
-from ...utils.config_manager import is_envvar_true
+from ...utils.config_manager import config_manager
 from ..datumdef import Datum
 from .file_accessor_factory import FileAccessorFactory
 from .shared_memory_constants import SharedMemoryConstants as consts
@@ -55,7 +55,7 @@ class SharedMemoryManager:
         Whether supported types should be transferred between functions host and
         the worker using shared memory.
         """
-        return is_envvar_true(
+        return config_manager.is_envvar_true(
             FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
 
     def is_supported(self, datum: Datum) -> bool:

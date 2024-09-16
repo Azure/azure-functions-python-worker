@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from azure_functions_worker.utils.dependency import DependencyManager
-from azure_functions_worker.utils.config_manager import clear_config
+from azure_functions_worker.utils.config_manager import config_manager
 from tests.utils import testutils
 
 
@@ -38,7 +38,7 @@ class TestDependencyManager(unittest.TestCase):
         self._patch_sys_path.start()
         self._patch_importer_cache.start()
         self._patch_modules.start()
-        clear_config()
+        config_manager.clear_config()
 
     def tearDown(self):
         self._patch_environ.stop()

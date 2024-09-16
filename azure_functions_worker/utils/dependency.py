@@ -8,9 +8,7 @@ import sys
 from types import ModuleType
 from typing import List, Optional
 
-from azure_functions_worker.utils.config_manager import (is_true_like,
-                                                         is_envvar_true,
-                                                         get_app_setting)
+from azure_functions_worker.utils.config_manager import config_manager
 from ..constants import (
     AZURE_WEBJOBS_SCRIPT_ROOT,
     CONTAINER_NAME,
@@ -74,7 +72,7 @@ class DependencyManager:
 
     @classmethod
     def is_in_linux_consumption(cls):
-        return get_app_setting(CONTAINER_NAME) is not None
+        return config_manager.get_app_setting(CONTAINER_NAME) is not None
 
     @classmethod
     def should_load_cx_dependencies(cls):
@@ -87,7 +85,7 @@ class DependencyManager:
          (OOM, timeouts etc) and env reload request is not called.
         """
         return not (DependencyManager.is_in_linux_consumption()
-                    and is_envvar_true("WEBSITE_PLACEHOLDER_MODE"))
+                    and config_manager.is_envvar_true("WEBSITE_PLACEHOLDER_MODE"))
 
     @classmethod
     @enable_feature_by(
@@ -146,7 +144,8 @@ class DependencyManager:
         if not working_directory:
             working_directory = cls.cx_working_dir
         if not working_directory:
-            working_directory = get_app_setting(AZURE_WEBJOBS_SCRIPT_ROOT, '')
+            working_directory = config_manager.get_app_setting(
+                AZURE_WEBJOBS_SCRIPT_ROOT, '')
 
         # Try to get the latest customer's dependency path
         cx_deps_path: str = cls._get_cx_deps_path()
@@ -159,7 +158,7 @@ class DependencyManager:
             'working_directory: %s, Linux Consumption: %s, Placeholder: %s',
             cls.worker_deps_path, cx_deps_path, working_directory,
             DependencyManager.is_in_linux_consumption(),
-            is_envvar_true("WEBSITE_PLACEHOLDER_MODE"))
+            config_manager.is_envvar_true("WEBSITE_PLACEHOLDER_MODE"))
 
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.cx_deps_path, True)
@@ -194,7 +193,7 @@ class DependencyManager:
         cx_working_dir: str
             The path which contains customer's project file (e.g. wwwroot).
         """
-        use_new_env = get_app_setting(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
+        use_new_env = config_manager.get_app_setting(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
         if use_new_env is None:
             use_new = (
                 PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT_310 if
@@ -202,7 +201,7 @@ class DependencyManager:
                 PYTHON_ISOLATE_WORKER_DEPENDENCIES_DEFAULT
             )
         else:
-            use_new = is_true_like(use_new_env)
+            use_new = config_manager.is_true_like(use_new_env)
 
         if use_new:
             cls.prioritize_customer_dependencies(cx_working_dir)
@@ -315,7 +314,8 @@ class DependencyManager:
             Linux Dedicated/Premium: path to customer's site pacakges
             Linux Consumption: empty string
         """
-        prefix: Optional[str] = get_app_setting(AZURE_WEBJOBS_SCRIPT_ROOT)
+        prefix: Optional[str] = config_manager.get_app_setting(
+            AZURE_WEBJOBS_SCRIPT_ROOT)
         cx_paths: List[str] = [
             p for p in sys.path
             if prefix and p.startswith(prefix) and ('site-packages' in p)
@@ -334,7 +334,7 @@ class DependencyManager:
             Linux Dedicated/Premium: AzureWebJobsScriptRoot env variable
             Linux Consumption: empty string
         """
-        return get_app_setting(AZURE_WEBJOBS_SCRIPT_ROOT, '')
+        return config_manager.get_app_setting(AZURE_WEBJOBS_SCRIPT_ROOT, '')
 
     @staticmethod
     def _get_worker_deps_path() -> str:

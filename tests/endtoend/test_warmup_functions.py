@@ -7,11 +7,11 @@ from unittest import skipIf
 from tests.utils import testutils
 from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
-from azure_functions_worker.utils.config_manager import is_envvar_true
+from azure_functions_worker.utils.config_manager import config_manager
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+@skipIf(config_manager.is_envvar_true(DEDICATED_DOCKER_TEST)
+        or config_manager.is_envvar_true(CONSUMPTION_DOCKER_TEST),
         "Docker tests cannot call admin functions")
 class TestWarmupFunctions(testutils.WebHostTestCase):
     """Test the Warmup Trigger in the local webhost.
@@ -36,8 +36,8 @@ class TestWarmupFunctions(testutils.WebHostTestCase):
         self.assertEqual(host_out.count("Function App instance is warm"), 1)
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+@skipIf(config_manager.is_envvar_true(DEDICATED_DOCKER_TEST)
+        or config_manager.is_envvar_true(CONSUMPTION_DOCKER_TEST),
         "Docker tests cannot call admin functions")
 class TestWarmupFunctionsStein(TestWarmupFunctions):
 

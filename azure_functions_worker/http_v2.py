@@ -14,7 +14,7 @@ from azure_functions_worker.constants import (
     X_MS_INVOCATION_ID,
 )
 from azure_functions_worker.logging import logger
-from azure_functions_worker.utils.config_manager import is_envvar_false
+from azure_functions_worker.utils.config_manager import config_manager
 
 
 # Http V2 Exceptions
@@ -280,7 +280,7 @@ class HttpV2Registry:
     @classmethod
     def _check_http_v2_enabled(cls):
         if sys.version_info.minor < BASE_EXT_SUPPORTED_PY_MINOR_VERSION or \
-                is_envvar_false(PYTHON_ENABLE_INIT_INDEXING):
+                config_manager.is_envvar_false(PYTHON_ENABLE_INIT_INDEXING):
             return False
 
         import azurefunctions.extensions.base as ext_base

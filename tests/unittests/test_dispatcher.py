@@ -23,7 +23,7 @@ from azure_functions_worker.constants import (
     PYTHON_THREADPOOL_THREAD_COUNT_MIN, HTTP_URI, REQUIRES_ROUTE_PARAMETERS,
 )
 from azure_functions_worker.dispatcher import Dispatcher, ContextEnabledTask
-from azure_functions_worker.utils import config_manager
+from azure_functions_worker.utils.config_manager import config_manager
 from azure_functions_worker.version import VERSION
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",

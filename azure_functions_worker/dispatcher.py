@@ -61,8 +61,7 @@ from .logging import (
 )
 from .utils.app_setting_manager import get_python_appsetting_state
 from .utils.common import validate_script_file_name
-from .utils.config_manager import (clear_config, read_config,
-                                   is_envvar_true, get_app_setting)
+from .utils.config_manager import config_manager
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
@@ -209,7 +208,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             log_level = (
                 logging.INFO
-                if not is_envvar_true(PYTHON_ENABLE_DEBUG_LOGGING)
+                if not config_manager.is_envvar_true(PYTHON_ENABLE_DEBUG_LOGGING)
                 else logging.DEBUG
             )
 
@@ -336,10 +335,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                 # Connection string can be explicitly specified in Appsetting
                 # If not set, defaults to env var
                 # APPLICATIONINSIGHTS_CONNECTION_STRING
-                connection_string=get_app_setting(
+                connection_string=config_manager.get_app_setting(
                     setting=APPLICATIONINSIGHTS_CONNECTION_STRING
                 ),
-                logger_name=get_app_setting(
+                logger_name=config_manager.get_app_setting(
                     setting=PYTHON_AZURE_MONITOR_LOGGER_NAME,
                     default_value=PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT,
                 ),
@@ -376,7 +375,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._sync_call_tp = self._create_sync_call_tp(
             self._get_sync_tp_max_workers()
         )
-        read_config(
+        config_manager.read_config(
             os.path.join(worker_init_request.function_app_directory, "az-config.json")
         )
         logger.info(
@@ -406,7 +405,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
-        if get_app_setting(
+        if config_manager.get_app_setting(
             setting=PYTHON_ENABLE_OPENTELEMETRY,
             default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
         ):
@@ -425,7 +424,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # dictionary which will be later used in the invocation request
         bindings.load_binding_registry()
 
-        if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
+        if config_manager.is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
             try:
                 self.load_function_metadata(
                     worker_init_request.function_app_directory,
@@ -466,7 +465,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         directory and save the results in function_metadata_result or
         function_metadata_exception in case of an exception.
         """
-        script_file_name = get_app_setting(
+        script_file_name = config_manager.get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
             default_value=f"{PYTHON_SCRIPT_FILE_NAME_DEFAULT}",
         )
@@ -494,7 +493,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         metadata_request = request.functions_metadata_request
         function_app_directory = metadata_request.function_app_directory
 
-        script_file_name = get_app_setting(
+        script_file_name = config_manager.get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
             default_value=f"{PYTHON_SCRIPT_FILE_NAME_DEFAULT}",
         )
@@ -506,7 +505,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             function_path,
         )
 
-        if not is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
+        if not config_manager.is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
             try:
                 self.load_function_metadata(
                     function_app_directory, caller_info="functions_metadata_request"
@@ -819,11 +818,11 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             # Reload environment variables
             os.environ.clear()
-            clear_config()
+            config_manager.clear_config()
             env_vars = func_env_reload_request.environment_variables
             for var in env_vars:
                 os.environ[var] = env_vars[var]
-            read_config(
+            config_manager.read_config(
                 os.path.join(
                     func_env_reload_request.function_app_directory, "az-config.json"
                 )
@@ -835,7 +834,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 self._get_sync_tp_max_workers()
             )
 
-            if is_envvar_true(PYTHON_ENABLE_DEBUG_LOGGING):
+            if config_manager.is_envvar_true(PYTHON_ENABLE_DEBUG_LOGGING):
                 root_logger = logging.getLogger()
                 root_logger.setLevel(logging.DEBUG)
 
@@ -847,7 +846,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             bindings.load_binding_registry()
 
             capabilities = {}
-            if get_app_setting(
+            if config_manager.get_app_setting(
                 setting=PYTHON_ENABLE_OPENTELEMETRY,
                 default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
             ):
@@ -856,7 +855,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 if self._azure_monitor_available:
                     capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
 
-            if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
+            if config_manager.is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
                 try:
                     self.load_function_metadata(
                         directory, caller_info="environment_reload_request"
@@ -1057,7 +1056,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             else f"{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}"
         )
 
-        max_workers = get_app_setting(
+        max_workers = config_manager.get_app_setting(
             setting=PYTHON_THREADPOOL_THREAD_COUNT,
             default_value=default_value,
             validator=tp_max_workers_validator,

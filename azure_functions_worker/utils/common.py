@@ -4,7 +4,7 @@ import importlib
 import re
 import sys
 from types import ModuleType
-import azure_functions_worker.utils.config_manager as config_manager
+from azure_functions_worker.utils.config_manager import config_manager
 
 from azure_functions_worker.constants import (
     CUSTOMER_PACKAGES_PATH,

@@ -8,7 +8,8 @@ import unittest
 from unittest.mock import patch
 
 from azure_functions_worker.constants import PYTHON_EXTENSIONS_RELOAD_FUNCTIONS
-from azure_functions_worker.utils import common, config_manager, wrappers
+from azure_functions_worker.utils import common, wrappers
+from azure_functions_worker.utils.config_manager import config_manager
 
 TEST_APP_SETTING_NAME = "TEST_APP_SETTING_NAME"
 TEST_FEATURE_FLAG = "APP_SETTING_FEATURE_FLAG"
@@ -82,6 +83,7 @@ class TestUtilities(unittest.TestCase):
         self.mock_environ.start()
         self.mock_sys_module.start()
         self.mock_sys_path.start()
+        config_manager.clear_config()
 
     def tearDown(self):
         self.mock_sys_path.stop()

@@ -24,7 +24,7 @@ from azure_functions_worker.extension import (
     ExtensionManager,
 )
 from azure_functions_worker.utils.common import get_sdk_from_sys_path
-from azure_functions_worker.utils.config_manager import clear_config
+from azure_functions_worker.utils.config_manager import config_manager
 
 
 class MockContext:
@@ -76,7 +76,7 @@ class TestExtension(unittest.TestCase):
 
         # Set feature flag to on
         os.environ[PYTHON_ENABLE_WORKER_EXTENSIONS] = 'true'
-        clear_config()
+        config_manager.clear_config()
 
     def tearDown(self) -> None:
         os.environ.pop(PYTHON_ENABLE_WORKER_EXTENSIONS)

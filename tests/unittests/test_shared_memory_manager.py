@@ -9,7 +9,6 @@ from unittest import skipIf
 from unittest.mock import patch
 
 from azure.functions import meta as bind_meta
-from azure_functions_worker.utils import config_manager
 from tests.utils import testutils
 
 from azure_functions_worker.bindings.shared_memory_data_transfer import (
@@ -21,7 +20,7 @@ from azure_functions_worker.bindings.shared_memory_data_transfer import (
 from azure_functions_worker.constants import (
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
 )
-from azure_functions_worker.utils.config_manager import is_envvar_true
+from azure_functions_worker.utils.config_manager import config_manager
 
 
 @skipIf(sys.platform == 'darwin', 'MacOS M1 machines do not correctly test the'
@@ -54,7 +53,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         """
 
         # Make sure shared memory data transfer is enabled
-        was_shmem_env_true = is_envvar_true(
+        was_shmem_env_true = config_manager.is_envvar_true(
             FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
         os.environ.update(
             {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '1'})
@@ -71,7 +70,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         disabled.
         """
         # Make sure shared memory data transfer is disabled
-        was_shmem_env_true = is_envvar_true(
+        was_shmem_env_true = config_manager.is_envvar_true(
             FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
         config_manager.clear_config()
         os.environ.update(

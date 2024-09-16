@@ -7,7 +7,7 @@ from tests.unittests.test_dispatcher import FUNCTION_APP_DIRECTORY
 from tests.utils import testutils
 
 from azure_functions_worker import protos
-from azure_functions_worker.utils import config_manager
+from azure_functions_worker.utils.config_manager import config_manager
 
 
 class TestOpenTelemetry(unittest.TestCase):

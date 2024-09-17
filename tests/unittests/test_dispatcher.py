@@ -20,7 +20,6 @@ from azure_functions_worker.constants import (
     PYTHON_ENABLE_INIT_INDEXING,
     PYTHON_THREADPOOL_THREAD_COUNT,
     PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-    PYTHON_THREADPOOL_THREAD_COUNT_MAX,
     PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
     PYTHON_THREADPOOL_THREAD_COUNT_MIN,
     REQUIRES_ROUTE_PARAMETERS
@@ -50,15 +49,13 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
     NEW_TYPING = sys.version_info[:3] >= (3, 7, 0)  # PEP 560
     """
 
-    def setUp(self,
-              version: Optional[any] = SysVersionInfo(3, 7, 0, 'final', 0),
-              default_workers: Optional[int] = PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-              max_workers: Optional[int] = PYTHON_THREADPOOL_THREAD_COUNT_MAX_37):
+    def setUp(self, version=SysVersionInfo(3, 7, 0, 'final', 0)):
         self._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_FUNCTIONS_DIR)
-        self._default_workers: int = default_workers
+        self._default_workers: Optional[
+            int] = PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT
         self._over_max_workers: int = 10000
-        self._allowed_max_workers: int = max_workers
+        self._allowed_max_workers: int = PYTHON_THREADPOOL_THREAD_COUNT_MAX_37
         self._pre_env = dict(os.environ)
         self.mock_version_info = patch(
             'azure_functions_worker.dispatcher.sys.version_info',
@@ -68,6 +65,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
     def tearDown(self):
         os.environ.clear()
         os.environ.update(self._pre_env)
+        self.mock_version_info.stop()
 
     async def test_dispatcher_initialize_worker(self):
         """Test if the dispatcher can be initialized worker successfully
@@ -518,14 +516,13 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
 
 
 @unittest.skipIf(sys.version_info.minor != 8,
-                 "Run the tests only for Python 3.8.")
+                 "Run the tests only for Python 3.8. In other platforms, "
+                 "as the default passed is None, the cpu_count determines the "
+                 "number of max_workers and we cannot mock the os.cpu_count() "
+                 "in the concurrent.futures.ThreadPoolExecutor")
 class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):
-    def setUp(self, version=None, default_workers=None, max_workers=None):
-        version = sys.version_info
-        super(TestThreadPoolSettingsPython38, self).setUp(
-            version,
-            PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-            PYTHON_THREADPOOL_THREAD_COUNT_MAX)
+    def setUp(self, version=SysVersionInfo(3, 8, 0, 'final', 0)):
+        super(TestThreadPoolSettingsPython38, self).setUp(version)
         self._allowed_max_workers: int = self._over_max_workers
 
     def tearDown(self):
@@ -550,43 +547,87 @@ class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):
                     self._default_workers)
 
 
-@unittest.skipIf(sys.version_info.minor < 9,
-                 "Run the tests only for Python 3.9+.")
+@unittest.skipIf(sys.version_info.minor != 9,
+                 "Run the tests only for Python 3.9. In other platforms, "
+                 "as the default passed is None, the cpu_count determines the "
+                 "number of max_workers and we cannot mock the os.cpu_count() "
+                 "in the concurrent.futures.ThreadPoolExecutor")
 class TestThreadPoolSettingsPython39(TestThreadPoolSettingsPython37):
-    """
-    For 3.9 and above, there is no limit on the max_workers count in the
-    created threadpool. The default value is set to None in the worker.
-    Therefore, the default thread count will be set by the Python
-    ThreadPoolExecutor, which does so by the formula
-    min(32, (os.cpu_count() or 1) + 4).
-    """
-    def setUp(self, version=None, default_workers=None, max_workers=None):
-        version = sys.version_info
-        default_workers = min(32, (os.cpu_count() or 1) + 4)
-        super(TestThreadPoolSettingsPython39, self).setUp(
-            version, default_workers, PYTHON_THREADPOOL_THREAD_COUNT_MAX)
+    def setUp(self, version=SysVersionInfo(3, 9, 0, 'final', 0)):
+        super(TestThreadPoolSettingsPython39, self).setUp(version)
+        self.mock_os_cpu = patch(
+            'os.cpu_count', return_value=2)
+        # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
+        self._default_workers: Optional[int] = 6
+        self.mock_os_cpu.start()
         self._allowed_max_workers: int = self._over_max_workers
 
     def tearDown(self):
+        self.mock_os_cpu.stop()
         super(TestThreadPoolSettingsPython39, self).tearDown()
 
-    async def test_dispatcher_sync_threadpool_in_placeholder_above_max(self):
-        """Test if the sync threadpool will use any value and there isn't any
-        artificial max value set.
-        """
-        with patch('azure_functions_worker.dispatcher.logger'):
-            async with self._ctrl as host:
-                await self._check_if_function_is_ok(host)
 
-                # Reload environment variable on specialization
-                await host.reload_environment(environment={
-                    PYTHON_THREADPOOL_THREAD_COUNT: f'{self._over_max_workers}'
-                })
-                await self._assert_workers_threadpool(self._ctrl, host,
-                                                      self._allowed_max_workers)
-                self.assertNotEqual(
-                    self._ctrl._worker.get_sync_tp_workers_set(),
-                    self._default_workers)
+@unittest.skipIf(sys.version_info.minor != 10,
+                 "Run the tests only for Python 3.10. In other platforms, "
+                 "as the default passed is None, the cpu_count determines the "
+                 "number of max_workers and we cannot mock the os.cpu_count() "
+                 "in the concurrent.futures.ThreadPoolExecutor")
+class TestThreadPoolSettingsPython310(TestThreadPoolSettingsPython37):
+    def setUp(self, version=SysVersionInfo(3, 10, 0, 'final', 0)):
+        super(TestThreadPoolSettingsPython310, self).setUp(version)
+        self._allowed_max_workers: int = self._over_max_workers
+        self.mock_os_cpu = patch(
+            'os.cpu_count', return_value=2)
+        # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
+        self._default_workers: Optional[int] = 6
+        self.mock_os_cpu.start()
+        self._allowed_max_workers: int = self._over_max_workers
+
+    def tearDown(self):
+        self.mock_os_cpu.stop()
+        super(TestThreadPoolSettingsPython310, self).tearDown()
+
+
+@unittest.skipIf(sys.version_info.minor != 11,
+                 "Run the tests only for Python 3.11. In other platforms, "
+                 "as the default passed is None, the cpu_count determines the "
+                 "number of max_workers and we cannot mock the os.cpu_count() "
+                 "in the concurrent.futures.ThreadPoolExecutor")
+class TestThreadPoolSettingsPython311(TestThreadPoolSettingsPython37):
+    def setUp(self, version=SysVersionInfo(3, 11, 0, 'final', 0)):
+        super(TestThreadPoolSettingsPython311, self).setUp(version)
+        self._allowed_max_workers: int = self._over_max_workers
+        self.mock_os_cpu = patch(
+            'os.cpu_count', return_value=2)
+        # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
+        self._default_workers: Optional[int] = 6
+        self.mock_os_cpu.start()
+        self._allowed_max_workers: int = self._over_max_workers
+
+    def tearDown(self):
+        self.mock_os_cpu.stop()
+        super(TestThreadPoolSettingsPython311, self).tearDown()
+
+
+@unittest.skipIf(sys.version_info.minor != 12,
+                 "Run the tests only for Python 3.12. In other platforms, "
+                 "as the default passed is None, the cpu_count determines the "
+                 "number of max_workers and we cannot mock the os.cpu_count() "
+                 "in the concurrent.futures.ThreadPoolExecutor")
+class TestThreadPoolSettingsPython312(TestThreadPoolSettingsPython37):
+    def setUp(self, version=SysVersionInfo(3, 12, 0, 'final', 0)):
+        super(TestThreadPoolSettingsPython312, self).setUp(version)
+        self._allowed_max_workers: int = self._over_max_workers
+        self.mock_os_cpu = patch(
+            'os.cpu_count', return_value=2)
+        # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
+        self._default_workers: Optional[int] = 6
+        self.mock_os_cpu.start()
+        self._allowed_max_workers: int = self._over_max_workers
+
+    def tearDown(self):
+        self.mock_os_cpu.stop()
+        super(TestThreadPoolSettingsPython312, self).tearDown()
 
 
 class TestDispatcherStein(testutils.AsyncTestCase):

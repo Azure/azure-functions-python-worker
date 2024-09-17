@@ -115,6 +115,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._context_api = None
         self._trace_context_propagator = None
 
+        config_manager.read_environment_variables()
         # We allow the customer to change synchronous thread pool max worker
         # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
         #   For 3.[6|7|8] The default value is 1.
@@ -375,7 +376,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._sync_call_tp = self._create_sync_call_tp(
             self._get_sync_tp_max_workers()
         )
-        config_manager.read_config(
+        config_manager.set_config(
             os.path.join(worker_init_request.function_app_directory, "az-config.json")
         )
         logger.info(
@@ -822,7 +823,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             env_vars = func_env_reload_request.environment_variables
             for var in env_vars:
                 os.environ[var] = env_vars[var]
-            config_manager.read_config(
+            config_manager.set_config(
                 os.path.join(
                     func_env_reload_request.function_app_directory, "az-config.json"
                 )

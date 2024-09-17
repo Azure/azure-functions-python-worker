@@ -15,6 +15,13 @@ class ConfigManager(object):
         """
         self.config_data: Optional[Dict[str, str]] = None
 
+    def read_environment_variables(self):
+        if self.config_data is None:
+            self.config_data = {}
+        env_copy = os.environ
+        for k, v in env_copy.items():
+            self.config_data.update({k.upper(): v})
+
     def read_config(self, function_path: str):
         if self.config_data is None:
             self.config_data = {}
@@ -29,13 +36,17 @@ class ConfigManager(object):
 
         # updates the config dictionary with the environment variables
         # this prioritizes set env variables over the config file
-        env_copy = os.environ
-        for k, v in env_copy.items():
-            self.config_data.update({k.upper(): v})
+        # env_copy = os.environ
+        # for k, v in env_copy.items():
+        #     self.config_data.update({k.upper(): v})
+
+    def set_config(self, function_path: str):
+        self.read_config(function_path)
+        self.read_environment_variables()
 
     def config_exists(self) -> bool:
         if self.config_data is None:
-            self.read_config("")
+            self.set_config("")
         return self.config_data is not None
 
     def get_config(self) -> dict:

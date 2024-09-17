@@ -141,6 +141,7 @@ class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
 class WebHostTestCaseMeta(type(unittest.TestCase)):
 
     def __new__(mcls, name, bases, dct):
+        config_manager.read_environment_variables()
         if config_manager.is_envvar_true(DEDICATED_DOCKER_TEST) \
                 or config_manager.is_envvar_true(CONSUMPTION_DOCKER_TEST):
             return super().__new__(mcls, name, bases, dct)

@@ -72,7 +72,6 @@ class TestNonDefaultAppSettingsLogs(testutils.AsyncTestCase):
         cls._patch_environ = patch.dict('os.environ', os_environ)
         cls._patch_environ.start()
         super().setUpClass()
-        config_manager.clear_config()
         config_manager.read_environment_variables()
 
     @classmethod

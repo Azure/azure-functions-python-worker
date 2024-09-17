@@ -83,7 +83,6 @@ class TestUtilities(unittest.TestCase):
         self.mock_environ.start()
         self.mock_sys_module.start()
         self.mock_sys_path.start()
-        config_manager.clear_config()
 
     def tearDown(self):
         self.mock_sys_path.stop()

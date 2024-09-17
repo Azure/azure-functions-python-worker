@@ -5,7 +5,6 @@ import os
 import pathlib
 import re
 import typing
-
 from unittest.mock import patch
 
 from tests.utils import testutils

@@ -80,7 +80,6 @@ class TestExtension(unittest.TestCase):
 
     def tearDown(self) -> None:
         os.environ.pop(PYTHON_ENABLE_WORKER_EXTENSIONS)
-
         self.mock_sys_path.stop()
         self.mock_sys_module.stop()
         self.mock_environ.stop()

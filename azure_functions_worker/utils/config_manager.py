@@ -34,23 +34,9 @@ class ConfigManager(object):
         except FileNotFoundError:
             pass
 
-        # updates the config dictionary with the environment variables
-        # this prioritizes set env variables over the config file
-        # env_copy = os.environ
-        # for k, v in env_copy.items():
-        #     self.config_data.update({k.upper(): v})
-
     def set_config(self, function_path: str):
         self.read_config(function_path)
         self.read_environment_variables()
-
-    def config_exists(self) -> bool:
-        if self.config_data is None:
-            self.set_config("")
-        return self.config_data is not None
-
-    def get_config(self) -> dict:
-        return self.config_data
 
     def is_true_like(self, setting: str) -> bool:
         if setting is None:
@@ -66,11 +52,6 @@ class ConfigManager(object):
 
     def is_envvar_true(self, key: str) -> bool:
         key_upper = key.upper()
-        # special case for PYTHON_ENABLE_DEBUG_LOGGING
-        # This is read by the host and must be set in os.environ
-        if key_upper == "PYTHON_ENABLE_DEBUG_LOGGING":
-            val = os.getenv(key_upper)
-            return self.is_true_like(val)
         if self.config_exists() and not self.config_data.get(key_upper):
             return False
         return self.is_true_like(self.config_data.get(key_upper))
@@ -136,6 +117,14 @@ class ConfigManager(object):
         if self.config_data is not None:
             self.config_data.clear()
             self.config_data = None
+
+    def config_exists(self) -> bool:
+        if self.config_data is None:
+            self.set_config("")
+        return self.config_data is not None
+
+    def get_config(self) -> dict:
+        return self.config_data
 
 
 config_manager = ConfigManager()

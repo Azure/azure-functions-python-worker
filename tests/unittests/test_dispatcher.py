@@ -176,7 +176,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
             await self._check_if_function_is_ok(host)
             await self._assert_workers_threadpool(self._ctrl, host,
                                                   self._allowed_max_workers)
-        os.environ.pop(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_dispatcher_sync_threadpool_invalid_worker_count(self):
         """Test when sync threadpool maximum worker is set to an invalid value,
@@ -197,7 +196,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                                       self._default_workers)
             mock_logger.warning.assert_any_call(
                 '%s must be an integer', PYTHON_THREADPOOL_THREAD_COUNT)
-        os.environ.pop(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_dispatcher_sync_threadpool_below_min_setting(self):
         """Test if the sync threadpool will pick up default value when the
@@ -216,7 +214,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 'Reverting to default value for max_workers',
                 PYTHON_THREADPOOL_THREAD_COUNT,
                 PYTHON_THREADPOOL_THREAD_COUNT_MIN)
-            os.environ.pop(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_dispatcher_sync_threadpool_exceed_max_setting(self):
         """Test if the sync threadpool will pick up default max value when the
@@ -233,7 +230,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                 # Ensure the dispatcher sync threadpool should fallback to max
                 await self._assert_workers_threadpool(self._ctrl, host,
                                                       self._allowed_max_workers)
-        os.environ.pop(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_dispatcher_sync_threadpool_in_placeholder(self):
         """Test if the sync threadpool will pick up app setting in placeholder
@@ -381,7 +377,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  r'\d{2}:\d{2}:\d{2}.\d{6}), '
                                  'sync threadpool max workers: 5'
                                  )
-        os.environ.pop(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_async_invocation_request_log_threads(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
@@ -406,7 +401,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
                                  r'(\d{4}-\d{2}-\d{2} '
                                  r'\d{2}:\d{2}:\d{2}.\d{6})'
                                  )
-        os.environ.pop(PYTHON_THREADPOOL_THREAD_COUNT)
 
     async def test_sync_invocation_request_log_in_placeholder_threads(self):
         with patch('azure_functions_worker.dispatcher.logger') as mock_logger:
@@ -604,7 +598,6 @@ class TestDispatcherStein(testutils.AsyncTestCase):
     def setUp(self):
         self._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_STEIN_FUNCTIONS_DIR)
-        config_manager.clear_config()
 
     async def test_dispatcher_functions_metadata_request(self):
         """Test if the functions metadata response will be sent correctly
@@ -736,7 +729,6 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 "working_directory: , Linux Consumption: False,"
                 " Placeholder: False", logs
             )
-        os.environ.pop("PYTHON_ISOLATE_WORKER_DEPENDENCIES")
 
     async def test_dispatcher_load_modules_con_placeholder_enabled(self):
         """Test modules are loaded in consumption apps with placeholder mode

@@ -140,6 +140,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         """We don't know the exact value of the threadcount set for the Python
          3.9 scenarios (as we'll start passing only None by default), and we
          need to get that information.
+
          Ref: concurrent.futures.thread.ThreadPoolExecutor.__init__._max_workers
         """
         return self._sync_call_tp._max_workers
@@ -193,19 +194,19 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             root_logger.setLevel(log_level)
             root_logger.addHandler(logging_handler)
-            logger.info("Switched to gRPC logging.")
+            logger.info('Switched to gRPC logging.')
             logging_handler.flush()
 
             try:
                 await forever
             finally:
-                logger.warning("Detaching gRPC logging due to exception.")
+                logger.warning('Detaching gRPC logging due to exception.')
                 logging_handler.flush()
                 root_logger.removeHandler(logging_handler)
 
                 # Reenable console logging when there's an exception
                 enable_console_logging()
-                logger.warning("Switched to console logging due to exception.")
+                logger.warning('Switched to console logging due to exception.')
         finally:
             DispatcherMeta.__current_dispatcher__ = None
 
@@ -235,12 +236,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         elif record.levelno >= logging.DEBUG:
             log_level = protos.RpcLog.Debug
         else:
-            log_level = getattr(protos.RpcLog, "None")
+            log_level = getattr(protos.RpcLog, 'None')
 
         if is_system_log_category(record.name):
-            log_category = protos.RpcLog.RpcLogCategory.Value("System")
+            log_category = protos.RpcLog.RpcLogCategory.Value('System')
         else:  # customers using logging will yield 'root' in record.name
-            log_category = protos.RpcLog.RpcLogCategory.Value("User")
+            log_category = protos.RpcLog.RpcLogCategory.Value('User')
 
         log = dict(
             level=log_level,
@@ -251,7 +252,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         invocation_id = get_current_invocation_id()
         if invocation_id is not None:
-            log["invocation_id"] = invocation_id
+            log['invocation_id'] = invocation_id
 
         self._grpc_resp_queue.put_nowait(
             protos.StreamingMessage(
@@ -270,7 +271,7 @@ class Dispatcher(metaclass=DispatcherMeta):
     @staticmethod
     def _serialize_exception(exc: Exception):
         try:
-            message = f"{type(exc).__name__}: {exc}"
+            message = f'{type(exc).__name__}: {exc}'
         except Exception:
             message = ('Unhandled exception in function. '
                        'Could not serialize original exception message.')
@@ -278,13 +279,13 @@ class Dispatcher(metaclass=DispatcherMeta):
         try:
             stack_trace = marshall_exception_trace(exc)
         except Exception:
-            stack_trace = ""
+            stack_trace = ''
 
         return protos.RpcException(message=message, stack_trace=stack_trace)
 
     async def _dispatch_grpc_request(self, request):
-        content_type = request.WhichOneof("content")
-        request_handler = getattr(self, f"_handle__{content_type}", None)
+        content_type = request.WhichOneof('content')
+        request_handler = getattr(self, f'_handle__{content_type}', None)
         if request_handler is None:
             # Don't crash on unknown messages.  Some of them can be ignored;
             # and if something goes really wrong the host can always just
@@ -356,16 +357,16 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _handle__worker_init_request(self, request):
         worker_init_request = request.worker_init_request
         config_manager.set_config(
-            os.path.join(worker_init_request.function_app_directory, "az-config.json")
+            os.path.join(worker_init_request.function_app_directory, 'az-config.json')
         )
         logger.info(
-            "Received WorkerInitRequest, "
-            "python version %s, "
-            "worker version %s, "
-            "request ID %s. "
-            "App Settings state: %s. "
-            "To enable debug level logging, please refer to "
-            "https://aka.ms/python-enable-debug-logging",
+            'Received WorkerInitRequest, '
+            'python version %s, '
+            'worker version %s, '
+            'request ID %s. '
+            'App Settings state: %s. '
+            'To enable debug level logging, please refer to '
+            'https://aka.ms/python-enable-debug-logging',
             sys.version,
             VERSION,
             self.request_id,
@@ -441,7 +442,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         """
         script_file_name = config_manager.get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
-            default_value=f"{PYTHON_SCRIPT_FILE_NAME_DEFAULT}")
+            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
 
         logger.debug(
             'Received load metadata request from %s, request ID %s, '
@@ -469,7 +470,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                                      script_file_name)
 
         logger.info(
-            "Received WorkerMetadataRequest, request ID %s, " "function_path: %s",
+            'Received WorkerMetadataRequest, request ID %s, ' 'function_path: %s',
             self.request_id,
             function_path,
         )
@@ -659,7 +660,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             # for a customer's threads
             fi_context.thread_local_storage.invocation_id = invocation_id
             if fi.requires_context:
-                args["context"] = fi_context
+                args['context'] = fi_context
 
             if fi.output_types:
                 for name in fi.output_types:
@@ -767,7 +768,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 os.environ[var] = env_vars[var]
             config_manager.set_config(
                 os.path.join(
-                    func_env_reload_request.function_app_directory, "az-config.json"
+                    func_env_reload_request.function_app_directory, 'az-config.json'
                 )
             )
 
@@ -799,7 +800,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             if config_manager.is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
                 try:
                     self.load_function_metadata(
-                        directory, caller_info="environment_reload_request")
+                        directory,
+                        caller_info="environment_reload_request")
 
                     if HttpV2Registry.http_v2_enabled():
                         capabilities[HTTP_URI] = \
@@ -819,7 +821,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             success_response = protos.FunctionEnvironmentReloadResponse(
                 capabilities=capabilities,
                 worker_metadata=self.get_worker_metadata(),
-                result=protos.StatusResult(status=protos.StatusResult.Success))
+                result=protos.StatusResult(
+                    status=protos.StatusResult.Success))
 
             return protos.StreamingMessage(
                 request_id=self.request_id,
@@ -855,7 +858,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 func_binding_logs = fx_bindings_logs.get(func)
                 for binding in func.get_bindings():
                     deferred_binding_info = func_binding_logs.get(
-                        binding.name) \
+                        binding.name)\
                         if func_binding_logs.get(binding.name) else ""
                     indexed_function_bindings_logs.append((
                         binding.type, binding.name, deferred_binding_info))

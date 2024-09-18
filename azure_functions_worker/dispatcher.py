@@ -24,6 +24,7 @@ from . import bindings, constants, functions, loader, protos
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (
     APPLICATIONINSIGHTS_CONNECTION_STRING,
+    HTTP_URI,
     METADATA_PROPERTIES_WORKER_INDEXED,
     PYTHON_AZURE_MONITOR_LOGGER_NAME,
     PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT,
@@ -39,8 +40,7 @@ from .constants import (
     PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
     PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
     PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-    REQUIRES_ROUTE_PARAMETERS,
-    HTTP_URI
+    REQUIRES_ROUTE_PARAMETERS
 )
 from .extension import ExtensionManager
 from .http_v2 import (
@@ -966,7 +966,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         # Starting Python 3.9, worker won't be putting a limit on the
         # max_workers count in the created threadpool.
-        default_value = None if sys.version_info.minor == 9 \
+        default_value = None if sys.version_info.minor >= 9 \
             else f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}'
 
         max_workers = get_app_setting(setting=PYTHON_THREADPOOL_THREAD_COUNT,

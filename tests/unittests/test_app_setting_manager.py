@@ -12,6 +12,7 @@ from azure_functions_worker.constants import (
     PYTHON_THREADPOOL_THREAD_COUNT,
 )
 from azure_functions_worker.utils.app_setting_manager import get_python_appsetting_state
+from azure_functions_worker.utils.config_manager import config_manager
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
@@ -71,6 +72,7 @@ class TestNonDefaultAppSettingsLogs(testutils.AsyncTestCase):
         cls._patch_environ = patch.dict('os.environ', os_environ)
         cls._patch_environ.start()
         super().setUpClass()
+        config_manager.read_environment_variables()
 
     @classmethod
     def tearDownClass(cls):

@@ -9,7 +9,7 @@ from typing import List, Optional
 from azure_functions_worker import constants
 
 from ...logging import logger
-from ...utils.common import get_app_setting
+from ...utils.config_manager import config_manager
 from .file_accessor import FileAccessor
 from .shared_memory_constants import SharedMemoryConstants as consts
 from .shared_memory_exception import SharedMemoryException
@@ -95,7 +95,7 @@ class FileAccessorUnix(FileAccessor):
         Otherwise, the default value will be used.
         """
         setting = constants.UNIX_SHARED_MEMORY_DIRECTORIES
-        allowed_mem_map_dirs_str = get_app_setting(setting)
+        allowed_mem_map_dirs_str = config_manager.get_app_setting(setting)
         if allowed_mem_map_dirs_str is None:
             allowed_mem_map_dirs = consts.UNIX_TEMP_DIRS
             logger.info(

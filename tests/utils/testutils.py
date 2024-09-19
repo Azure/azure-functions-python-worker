@@ -61,7 +61,7 @@ from azure_functions_worker.constants import (
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
     UNIX_SHARED_MEMORY_DIRECTORIES,
 )
-from azure_functions_worker.utils.common import get_app_setting, is_envvar_true
+from azure_functions_worker.utils.config_manager import config_manager
 
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')
@@ -141,8 +141,9 @@ class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
 class WebHostTestCaseMeta(type(unittest.TestCase)):
 
     def __new__(mcls, name, bases, dct):
-        if is_envvar_true(DEDICATED_DOCKER_TEST) \
-                or is_envvar_true(CONSUMPTION_DOCKER_TEST):
+        config_manager.read_environment_variables()
+        if config_manager.is_envvar_true(DEDICATED_DOCKER_TEST) \
+                or config_manager.is_envvar_true(CONSUMPTION_DOCKER_TEST):
             return super().__new__(mcls, name, bases, dct)
 
         for attrname, attr in dct.items():
@@ -156,7 +157,8 @@ class WebHostTestCaseMeta(type(unittest.TestCase)):
                             __check_log__=check_log_case, **kwargs):
                     if (__check_log__ is not None
                             and callable(__check_log__)
-                            and not is_envvar_true(PYAZURE_WEBHOST_DEBUG)):
+                            and not config_manager.is_envvar_true(
+                                PYAZURE_WEBHOST_DEBUG)):
 
                         # Check logging output for unit test scenarios
                         result = self._run_test(__meth__, *args, **kwargs)
@@ -216,9 +218,9 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         CONSUMPTION_DOCKER_TEST or DEDICATED_DOCKER_TEST
         is enabled else returns False
         """
-        if is_envvar_true(CONSUMPTION_DOCKER_TEST):
+        if config_manager.is_envvar_true(CONSUMPTION_DOCKER_TEST):
             return True, CONSUMPTION_DOCKER_TEST
-        elif is_envvar_true(DEDICATED_DOCKER_TEST):
+        elif config_manager.is_envvar_true(DEDICATED_DOCKER_TEST):
             return True, DEDICATED_DOCKER_TEST
         else:
             return False, None
@@ -230,7 +232,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         docker_tests_enabled, sku = cls.docker_tests_enabled()
 
-        cls.host_stdout = None if is_envvar_true(PYAZURE_WEBHOST_DEBUG) \
+        cls.host_stdout = None if config_manager.is_envvar_true(PYAZURE_WEBHOST_DEBUG) \
             else tempfile.NamedTemporaryFile('w+t')
 
         try:
@@ -271,7 +273,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         cls.webhost = None
 
         if cls.host_stdout is not None:
-            if is_envvar_true(ARCHIVE_WEBHOST_LOGS):
+            if config_manager.is_envvar_true(ARCHIVE_WEBHOST_LOGS):
                 cls.host_stdout.seek(0)
                 content = cls.host_stdout.read()
                 if content is not None and len(content) > 0:
@@ -326,7 +328,7 @@ class SharedMemoryTestCase(unittest.TestCase):
     """
 
     def setUp(self):
-        self.was_shmem_env_true = is_envvar_true(
+        self.was_shmem_env_true = config_manager.is_envvar_true(
             FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
         os.environ.update(
             {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '1'})
@@ -335,7 +337,7 @@ class SharedMemoryTestCase(unittest.TestCase):
         if os_name == 'Darwin':
             # If an existing AppSetting is specified, save it so it can be
             # restored later
-            self.was_shmem_dirs = get_app_setting(
+            self.was_shmem_dirs = config_manager.get_app_setting(
                 UNIX_SHARED_MEMORY_DIRECTORIES
             )
             self._setUpDarwin()
@@ -916,7 +918,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
 
     # In E2E Integration mode, we should use the core tools worker
     # from the latest artifact instead of the azure_functions_worker module
-    if is_envvar_true(PYAZURE_INTEGRATION_TEST):
+    if config_manager.is_envvar_true(PYAZURE_INTEGRATION_TEST):
         extra_env.pop('languageWorkers:python:workerDirectory')
 
     if testconfig and 'azure' in testconfig:
@@ -966,7 +968,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
 def start_webhost(*, script_dir=None, stdout=None):
     script_root = TESTS_ROOT / script_dir if script_dir else FUNCS_PATH
     if stdout is None:
-        if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
+        if config_manager.is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             stdout = sys.stdout
         else:
             stdout = subprocess.DEVNULL

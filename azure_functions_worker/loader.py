@@ -26,7 +26,7 @@ from .constants import (
     RETRY_POLICY,
 )
 from .logging import logger
-from .utils.common import get_app_setting
+from .utils.config_manager import config_manager
 from .utils.wrappers import attach_message_to_exception
 
 _AZURE_NAMESPACE = '__app__'
@@ -255,7 +255,7 @@ def index_function_app(function_path: str):
                     f"level function app instances are defined.")
 
     if not app:
-        script_file_name = get_app_setting(
+        script_file_name = config_manager.get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
             default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
         raise ValueError("Could not find top level function app instances in "

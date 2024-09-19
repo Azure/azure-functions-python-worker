@@ -4,7 +4,7 @@
 from typing import Any, Callable
 
 from ..logging import error_logger, logger
-from .common import is_envvar_false, is_envvar_true
+from .config_manager import config_manager
 from .tracing import extend_exception_message
 
 
@@ -13,9 +13,9 @@ def enable_feature_by(flag: str,
                       flag_default: bool = False) -> Callable:
     def decorate(func):
         def call(*args, **kwargs):
-            if is_envvar_true(flag):
+            if config_manager.is_envvar_true(flag):
                 return func(*args, **kwargs)
-            if flag_default and not is_envvar_false(flag):
+            if flag_default and not config_manager.is_envvar_false(flag):
                 return func(*args, **kwargs)
             return default
         return call
@@ -27,9 +27,9 @@ def disable_feature_by(flag: str,
                        flag_default: bool = False) -> Callable:
     def decorate(func):
         def call(*args, **kwargs):
-            if is_envvar_true(flag):
+            if config_manager.is_envvar_true(flag):
                 return default
-            if flag_default and not is_envvar_false(flag):
+            if flag_default and not config_manager.is_envvar_false(flag):
                 return default
             return func(*args, **kwargs)
         return call

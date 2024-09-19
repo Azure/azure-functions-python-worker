@@ -29,13 +29,13 @@ class TestDefaultScriptFileName(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        os.environ["PYTHON_SCRIPT_FILE_NAME"] = "function_app.py"
+        os.environ[PYTHON_SCRIPT_FILE_NAME] = "function_app.py"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
-        os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
+        os.environ.pop(PYTHON_SCRIPT_FILE_NAME)
         super().tearDownClass()
 
     @classmethod
@@ -58,13 +58,13 @@ class TestNewScriptFileName(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        os.environ["PYTHON_SCRIPT_FILE_NAME"] = "test.py"
+        os.environ[PYTHON_SCRIPT_FILE_NAME] = "test.py"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
-        os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
+        os.environ.pop(PYTHON_SCRIPT_FILE_NAME)
         super().tearDownClass()
 
     @classmethod
@@ -87,13 +87,13 @@ class TestInvalidScriptFileName(testutils.WebHostTestCase):
 
     @classmethod
     def setUpClass(cls):
-        os.environ["PYTHON_SCRIPT_FILE_NAME"] = "main"
+        os.environ[PYTHON_SCRIPT_FILE_NAME] = "main"
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         # Remove the PYTHON_SCRIPT_FILE_NAME environment variable
-        os.environ.pop('PYTHON_SCRIPT_FILE_NAME')
+        os.environ.pop(PYTHON_SCRIPT_FILE_NAME)
         super().tearDownClass()
 
     @classmethod

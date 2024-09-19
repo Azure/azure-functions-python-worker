@@ -25,6 +25,7 @@ from azure_functions_worker.constants import (
     REQUIRES_ROUTE_PARAMETERS
 )
 from azure_functions_worker.dispatcher import Dispatcher, ContextEnabledTask
+from azure_functions_worker.utils.config_manager import config_manager
 from azure_functions_worker.version import VERSION
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
@@ -66,6 +67,7 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         os.environ.clear()
         os.environ.update(self._pre_env)
         self.mock_version_info.stop()
+        config_manager.clear_config()
 
     async def test_dispatcher_initialize_worker(self):
         """Test if the dispatcher can be initialized worker successfully
@@ -635,6 +637,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
     def setUp(self):
         self._ctrl = testutils.start_mockhost(
             script_root=DISPATCHER_STEIN_FUNCTIONS_DIR)
+        config_manager.clear_config()
 
     async def test_dispatcher_functions_metadata_request(self):
         """Test if the functions metadata response will be sent correctly
@@ -701,6 +704,7 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
             'azure_functions_worker.dispatcher.sys.version_info',
             SysVersionInfo(3, 9, 0, 'final', 0))
         self.mock_version_info.start()
+        config_manager.clear_config()
 
     def tearDown(self):
         os.environ.clear()

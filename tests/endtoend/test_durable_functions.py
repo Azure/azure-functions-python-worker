@@ -9,11 +9,11 @@ import requests
 from tests.utils import testutils
 from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
-from azure_functions_worker.utils.common import is_envvar_true
+from azure_functions_worker.utils.config_manager import config_manager
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+@skipIf(config_manager.is_envvar_true(DEDICATED_DOCKER_TEST)
+        or config_manager.is_envvar_true(CONSUMPTION_DOCKER_TEST),
         "Docker tests cannot retrieve port needed for a webhook")
 class TestDurableFunctions(testutils.WebHostTestCase):
 

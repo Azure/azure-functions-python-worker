@@ -14,13 +14,13 @@ from tests.utils.constants import (
     PYAZURE_INTEGRATION_TEST,
 )
 
-from azure_functions_worker.utils.common import is_envvar_true
+from azure_functions_worker.utils.config_manager import config_manager
 
 REQUEST_TIMEOUT_SEC = 5
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+@skipIf(config_manager.is_envvar_true(DEDICATED_DOCKER_TEST)
+        or config_manager.is_envvar_true(CONSUMPTION_DOCKER_TEST),
         'Docker tests do not work with dependency isolation ')
 class TestGRPCandProtobufDependencyIsolationOnDedicated(
         testutils.WebHostTestCase):
@@ -95,7 +95,7 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
             os.path.join(dir, 'dependency_isolation_functions').lower()
         )
 
-    @skipIf(is_envvar_true(PYAZURE_INTEGRATION_TEST),
+    @skipIf(config_manager.is_envvar_true(PYAZURE_INTEGRATION_TEST),
             'Integration test expects dependencies derived from core '
             'tools folder')
     def test_paths_resolution(self):
@@ -121,7 +121,7 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
             ).lower()
         )
 
-    @skipIf(is_envvar_true('USETESTPYTHONSDK'),
+    @skipIf(config_manager.is_envvar_true('USETESTPYTHONSDK'),
             'Running tests using an editable azure-functions package.')
     def test_loading_libraries_from_customers_package(self):
         """Since the Python now loaded the customer's dependencies, the

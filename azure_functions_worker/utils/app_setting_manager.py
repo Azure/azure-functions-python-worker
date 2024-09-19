@@ -1,8 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import os
 import sys
 
+from .config_manager import config_manager
 from ..constants import (
     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
     PYTHON_ENABLE_DEBUG_LOGGING,
@@ -19,7 +19,7 @@ from ..constants import (
 
 
 def get_python_appsetting_state():
-    current_vars = os.environ.copy()
+    current_vars = config_manager.get_config()
     python_specific_settings = \
         [PYTHON_ROLLBACK_CWD_PATH,
          PYTHON_THREADPOOL_THREAD_COUNT,

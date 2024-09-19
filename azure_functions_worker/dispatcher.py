@@ -470,7 +470,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                                      script_file_name)
 
         logger.info(
-            'Received WorkerMetadataRequest, request ID %s, ' 'function_path: %s',
+            'Received WorkerMetadataRequest, request ID %s, '
+            'function_path: %s',
             self.request_id,
             function_path,
         )

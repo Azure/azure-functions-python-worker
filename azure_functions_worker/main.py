@@ -103,7 +103,7 @@ def register_sigterm_handler():
 
         loader.uninstall()
 
-        flush_logger()
+        flush_logger(logger)
 
         dispatcher.Dispatcher.stop()
         sys.exit(0)  # Exit the program gracefully

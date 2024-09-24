@@ -356,14 +356,15 @@ class Dispatcher(metaclass=DispatcherMeta):
                 "Cannot import OpenTelemetry libraries."
             )
 
-
     def _setup_event_loop_profiling(self):
         if is_envvar_true(PYTHON_ENABLE_EVENT_LOOP_DEBUGGING):
             self._loop.set_debug(True)
-            self._loop.slow_callback_duration = get_app_setting(PYTHON_DEBUGGING_EVENT_LOOP_SLOW_CALLBACK_THRESHOLD, 
-                                                                PYTHON_DEBUGGING_EVENT_LOOP_SLOW_CALLBACK_THRESHOLD_DEFAULT)  # 10 minutes in seconds
-            logger.info("Event loop debug mode enabled with 10-minute slow callback detection")
-
+            self._loop.slow_callback_duration = \
+                get_app_setting(
+                    PYTHON_DEBUGGING_EVENT_LOOP_SLOW_CALLBACK_THRESHOLD,
+                    PYTHON_DEBUGGING_EVENT_LOOP_SLOW_CALLBACK_THRESHOLD_DEFAULT)
+            logger.info('Event loop debug mode enabled with 10-minute slow '
+                        'callback detection')
 
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '
@@ -778,7 +779,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 os.environ[var] = env_vars[var]
             # Enable event loop debug mode
             self._setup_event_loop_profiling()
-            
+
             # Apply PYTHON_THREADPOOL_THREAD_COUNT
             self._stop_sync_call_tp()
             self._sync_call_tp = (

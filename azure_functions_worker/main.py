@@ -47,7 +47,6 @@ def main():
 
     import asyncio
 
-
     from . import logging
     from .logging import error_logger, format_exception, logger
 
@@ -69,6 +68,7 @@ def main():
             'unhandled error in functions worker: {0}'.format(
                 format_exception(ex)))
         raise
+
 
 def register_sigterm_handler():
     import signal
@@ -94,10 +94,10 @@ def register_sigterm_handler():
         # Log the received signal
         logger.info(f"SIGTERM received (signal: {signum}). "
                     "Shutting down gracefully...")
-        
+
         # Log the frame details to see whats executed when the signal was received
         logger.info("Frame details at signal receipt:"
-                     f"\n{''.join(traceback.format_stack(frame))}")
+                    f"\n{''.join(traceback.format_stack(frame))}")
 
         DispatcherMeta.__current_dispatcher__ = None
 

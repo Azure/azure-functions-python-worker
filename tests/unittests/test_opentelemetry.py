@@ -84,6 +84,33 @@ class TestOpenTelemetry(unittest.TestCase):
         self.assertEqual(capabilities["WorkerOpenTelemetryEnabled"], "true")
 
     @patch("azure_functions_worker.dispatcher.Dispatcher.initialize_azure_monitor")
+    def test_init_request_otel_capability_default_app_setting(
+        self,
+        mock_initialize_azmon,
+    ):
+
+        init_request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        init_response = self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(init_request))
+
+        self.assertEqual(init_response.worker_init_response.result.status,
+                         protos.StatusResult.Success)
+
+        # Azure monitor initialized not called
+        mock_initialize_azmon.assert_not_called()
+
+        # Verify that WorkerOpenTelemetryEnabled capability is not set
+        capabilities = init_response.worker_init_response.capabilities
+        self.assertNotIn("WorkerOpenTelemetryEnabled", capabilities)
+
+    @patch.dict(os.environ, {'PYTHON_ENABLE_OPENTELEMETRY': 'false'})
+    @patch("azure_functions_worker.dispatcher.Dispatcher.initialize_azure_monitor")
     def test_init_request_otel_capability_disabled_app_setting(
         self,
         mock_initialize_azmon,

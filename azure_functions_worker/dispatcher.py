@@ -381,8 +381,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
-        if get_app_setting(setting=PYTHON_ENABLE_OPENTELEMETRY,
-                           default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
+        opentelemetry_app_setting = get_app_setting(
+            setting=PYTHON_ENABLE_OPENTELEMETRY,
+            default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
+        )
+        if opentelemetry_app_setting and  opentelemetry_app_setting.lower() == "true":
             self.initialize_azure_monitor()
 
             if self._azure_monitor_available:

@@ -77,7 +77,7 @@ test-http-v2 = [
     "orjson"
 ]
 test-deferred-bindings = [
-    "azurefunctions-extensions-bindings-blob"
+    "azurefunctions-extensions-bindings-blob==1.0.0b2"
 ]
 
 [build-system]

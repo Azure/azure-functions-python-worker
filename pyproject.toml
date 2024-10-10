@@ -72,12 +72,12 @@ dev = [
     "invoke"
 ]
 test-http-v2 = [
-    "azurefunctions-extensions-http-fastapi",
+    "azurefunctions-extensions-http-fastapi==1.0.0b1",
     "ujson",
     "orjson"
 ]
 test-deferred-bindings = [
-    "azurefunctions-extensions-bindings-blob"
+    "azurefunctions-extensions-bindings-blob==1.0.0b2"
 ]
 
 [build-system]

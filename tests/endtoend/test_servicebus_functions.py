@@ -56,6 +56,21 @@ class TestServiceBusFunctionsStein(TestServiceBusFunctions):
         return testutils.E2E_TESTS_FOLDER / 'servicebus_functions' / \
                                             'servicebus_functions_stein'
 
+    @testutils.retryable_test(3, 5)
+    def test_servicebus_batch(self):
+        data = '{"value": "2024-01-19T12:50:41.250941Z"}'
+        r = self.webhost.request('POST', 'put_message_batch',
+                                 data=data)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK')
+
+        time.sleep(2)
+
+        r = self.webhost.request('GET', 'get_servicebus_triggered_batch')
+        self.assertEqual(r.status_code, 200)
+        msg = r.json()
+        self.assertEqual(msg["body"], data)
+
 
 class TestServiceBusFunctionsSteinGeneric(TestServiceBusFunctions):
 

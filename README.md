@@ -1,35 +1,36 @@
 # <img src="https://raw.githubusercontent.com/Azure/azure-functions-python-worker/dev/docs/Azure.Functions.svg" width = "30" alt="Functions Header Image - Lightning Logo"> Azure Functions Python Worker
 
-| Branch | Status                                                                                                                                                                                                                                       | CodeCov                                                                                                                                                        | Unittests                                                                                                                  | E2E tests                                                                                                                |
-|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| main   | [![Build Status](https://azfunc.visualstudio.com/Azure%20Functions/_apis/build/status/Azure.azure-functions-python-worker?branchName=main)](https://azfunc.visualstudio.com/Azure%20Functions/_build/latest?definitionId=57&branchName=main) | [![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/main/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker) | ![CI Unit tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20Unit%20tests/badge.svg?branch=main) | ![CI E2E tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20E2E%20tests/badge.svg?branch=main) |
-| dev    | [![Build Status](https://azfunc.visualstudio.com/Azure%20Functions/_apis/build/status/Azure.azure-functions-python-worker?branchName=dev)](https://azfunc.visualstudio.com/Azure%20Functions/_build/latest?definitionId=57&branchName=dev)   | [![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/dev/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)  | ![CI Unit tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20Unit%20tests/badge.svg?branch=dev)  | ![CI E2E tests](https://github.com/Azure/azure-functions-python-worker/workflows/CI%20E2E%20tests/badge.svg?branch=dev)  |
+| Branch | Status                                                                                                                                                                                                                  | CodeCov                                                                                                                                                        | Public tests                                                                                                                                                                                                             |
+|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| main   | [![Build Status](https://azfunc.visualstudio.com/public/_apis/build/status/Azure.azure-functions-python-worker?branchName=main)](https://azfunc.visualstudio.com/public/_build/latest?definitionId=658&branchName=main) | [![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/main/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker) | [![CI Unit tests](https://azfunc.visualstudio.com/public/_apis/build/status/Azure.azure-functions-python-worker?branchName=main)](https://azfunc.visualstudio.com/public/_build/latest?definitionId=658&branchName=main) |
+| dev    | [![Build Status](https://azfunc.visualstudio.com/public/_apis/build/status/Azure.azure-functions-python-worker?branchName=dev)](https://azfunc.visualstudio.com/public/_build/latest?definitionId=658&branchName=dev)   | [![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/dev/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)  | [![CI Unit tests](https://azfunc.visualstudio.com/public/_apis/build/status/Azure.azure-functions-python-worker?branchName=dev)](https://azfunc.visualstudio.com/public/_build/latest?definitionId=658&branchName=dev)   |
 
-Python support for Azure Functions is based on Python 3.6, 3.7, 3.8, 3.9, and 3.10 serverless hosting on Linux and the Functions 2.0, 3.0 and 4.0 runtime.
+Python support for Azure Functions is based on Python 3.8, 3.9, 3.10, 3.11, and 3.12 serverless hosting on Linux and the Functions 2.0, 3.0 and 4.0 runtime.
 
 Here is the current status of Python in Azure Functions:
 
 What are the supported Python versions?
 
-| Azure Functions Runtime          | Python 3.6 | Python 3.7 | Python 3.8 | Python 3.9 | Python 3.10 | Python 3.11 |
-|----------------------------------|------------|------------|------------|------------|-------------|-------------|
-| Azure Functions 2.0 (deprecated) | ✔          | ✔          | -          | -          | -           | -           |
-| Azure Functions 3.0 (deprecated)             | ✔          | ✔          | ✔          | ✔          | -           | -           |
-| Azure Functions 4.0              | -          | -          | ✔          | ✔          | ✔           | ✔           |     
+| Azure Functions Runtime          | Python 3.8 | Python 3.9 | Python 3.10 | Python 3.11 | Python 3.12 |
+|----------------------------------|------------|------------|-------------|-------------|-------------|
+| Azure Functions 2.0 (deprecated) | -          | -          | -           | -           | -           |
+| Azure Functions 3.0 (deprecated) | ✔          | ✔          | -           | -           | -           |
+| Azure Functions 4.0              | ✔          | ✔          | ✔           | ✔           | ✔           |     
 
 For information about Azure Functions Runtime, please refer to [Azure Functions runtime versions overview](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) page.
 
 ### What's available?
 
-- Build, test, debug and publish using Azure Functions Core Tools (CLI) or Visual Studio Code
-- Deploy Python Function project onto consumption, dedicated, or elastic premium plan.
-- Deploy Python Function project in a custom docker image onto dedicated, or elastic premium plan.
-- Triggers / Bindings : HTTP, Blob, Queue, Timer, Cosmos DB, Event Grid, Event Hubs and Service Bus
+- Build, test, debug, and publish using Azure Functions Core Tools (CLI) or Visual Studio Code
+- Deploy Python Function project onto consumption, dedicated, elastic premium, or flex consumption plan.
+- Deploy Python Function project in a custom docker image onto dedicated or elastic premium plan.
+- Triggers / Bindings : Blob, Cosmos DB, Event Grid, Event Hub, HTTP, Kafka, MySQL, Queue, ServiceBus, SQL, Timer, and Warmup
 - Triggers / Bindings : Custom binding support
 
-What's coming?
+### What's new?
 
-- [Durable Functions For Python](https://github.com/Azure/azure-functions-durable-python)
+- [SDK Type Bindings for Blob](https://techcommunity.microsoft.com/t5/azure-compute-blog/azure-functions-sdk-type-bindings-for-azure-blob-storage-with/ba-p/4146744)
+- [HTTP Streaming](https://techcommunity.microsoft.com/t5/azure-compute-blog/azure-functions-support-for-http-streams-in-python-is-now-in/ba-p/4146697)
 
 ### Get Started
 

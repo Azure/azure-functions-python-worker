@@ -411,7 +411,10 @@ class Registry:
                                                       return_type)
 
     def add_indexed_function(self, function):
-        func = function.get_user_function()
+        if callable(getattr(function.__class__, '_get_function', None)):
+            func = function._get_function()
+        else:
+            func = function.get_function()
         func_name = function.get_function_name()
         function_id = str(uuid.uuid5(namespace=uuid.NAMESPACE_OID,
                                      name=func_name))

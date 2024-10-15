@@ -133,6 +133,7 @@ jobs:
       - powershell: |
           Write-Host "skipDependencyIsolationTests: $(skipDependencyIsolationTests)"
         displayName: 'Display SkipDependencyIsolationTests variable'
+        condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
       - bash: |
              python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
         env:

@@ -115,6 +115,24 @@ jobs:
           eng/scripts/test-setup.sh
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
+      - powershell: |
+          $pipelineVarSet = "$(USETESTPYTHONSDK)"
+          Write-Host "pipelineVarSet: $pipelineVarSet"
+          $branch = "$(Build.SourceBranch)"
+          Write-Host "Branch: $branch"
+          if($branch.StartsWith("refs/heads/sdk/") -or $pipelineVarSet -eq "true")
+          {
+            Write-Host "##vso[task.setvariable variable=skipDependencyIsolationTests;]true"
+          }
+          else
+          {
+            Write-Host "##vso[task.setvariable variable=skipDependencyIsolationTests;]false"
+          }
+        displayName: 'Set SkipDependencyIsolationTests variable'
+        condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
+      - powershell: |
+          Write-Host "skipDependencyIsolationTests: $(skipDependencyIsolationTests)"
+        displayName: 'Display SkipDependencyIsolationTests variable'
       - bash: |
              python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
         env:
@@ -125,5 +143,5 @@ jobs:
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
-          USETESTPYTHONSDK: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
+          skipDependencyIsolationTests: $(skipDependencyIsolationTests)
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"

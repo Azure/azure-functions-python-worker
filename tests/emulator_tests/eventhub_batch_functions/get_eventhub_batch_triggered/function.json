@@ -12,9 +12,9 @@
     },
     {
       "direction": "in",
-      "type": "table",
+      "type": "blob",
       "name": "testEntities",
-      "tableName": "EventHubBatchTest",
+      "path": "python-worker-tests/test-eventhub-batch-triggered.txt",
       "connection": "AzureWebJobsStorage"
     },
     {

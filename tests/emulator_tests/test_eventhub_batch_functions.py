@@ -1,8 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import json
+import sys
 import time
 from datetime import datetime
+from unittest.case import skipIf
 
 from dateutil import parser
 from tests.utils import testutils
@@ -19,7 +21,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'eventhub_batch_functions'
+        return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_batch_functions'
 
     @classmethod
     def get_libraries_to_install(cls):
@@ -64,6 +66,9 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
 
         self.assertDictEqual(all_row_keys_seen, row_keys_seen)
 
+    @skipIf(sys.version_info.minor == 7,
+            "Using azure-eventhub SDK with the EventHub Emulator"
+            "requires Python 3.8+")
     @testutils.retryable_test(3, 5)
     def test_eventhub_multiple_with_metadata(self):
         # Generate a unique event body for EventHub event
@@ -130,7 +135,7 @@ class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'eventhub_batch_functions' / \
+        return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_batch_functions' / \
             'eventhub_batch_functions_stein'
 
     @classmethod
@@ -171,6 +176,9 @@ class TestEventHubBatchFunctionsStein(testutils.WebHostTestCase):
 
         self.assertDictEqual(all_row_keys_seen, row_keys_seen)
 
+    @skipIf(sys.version_info.minor == 7,
+            "Using azure-eventhub SDK with the EventHub Emulator"
+            "requires Python 3.8+")
     @testutils.retryable_test(3, 5)
     def test_eventhub_multiple_with_metadata(self):
         # Generate a unique event body for EventHub event

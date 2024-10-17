@@ -11,7 +11,7 @@ class TestTableFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'table_functions'
+        return testutils.EMULATOR_TESTS_FOLDER / 'table_functions'
 
     def test_table_bindings(self):
         out_resp = self.webhost.request('POST', 'table_out_binding')
@@ -46,8 +46,8 @@ class TestTableFunctionsStein(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'table_functions' / \
-                                            'table_functions_stein'
+        return testutils.EMULATOR_TESTS_FOLDER / 'table_functions' / \
+            'table_functions_stein'
 
     def test_table_bindings(self):
         out_resp = self.webhost.request('POST', 'table_out_binding')
@@ -68,6 +68,6 @@ class TestTableFunctionsGeneric(TestTableFunctionsStein):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'table_functions' / \
-                                            'table_functions_stein' /\
-                                            'generic'
+        return testutils.EMULATOR_TESTS_FOLDER / 'table_functions' / \
+            'table_functions_stein' / \
+            'generic'

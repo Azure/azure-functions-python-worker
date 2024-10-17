@@ -68,6 +68,7 @@ E2E_TESTS_FOLDER = pathlib.Path('endtoend')
 E2E_TESTS_ROOT = TESTS_ROOT / E2E_TESTS_FOLDER
 UNIT_TESTS_FOLDER = pathlib.Path('unittests')
 UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
+EMULATOR_TESTS_FOLDER = pathlib.Path('emulator_tests')
 EXTENSION_TESTS_FOLDER = pathlib.Path('extension_tests')
 WEBHOST_DLL = "Microsoft.Azure.WebJobs.Script.WebHost.dll"
 DEFAULT_WEBHOST_DLL_PATH = (

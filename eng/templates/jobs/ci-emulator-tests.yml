@@ -1,0 +1,85 @@
+jobs:
+  - job: "TestPython"
+    displayName: "Run Python Emulator Tests"
+
+    pool:
+      name: 1es-pool-azfunc-public
+      image: 1es-ubuntu-22.04
+      os: linux
+
+    strategy:
+      matrix:
+        Python37:
+          PYTHON_VERSION: '3.7'
+        Python38:
+          PYTHON_VERSION: '3.8'
+        Python39:
+          PYTHON_VERSION: '3.9'
+        Python310:
+          PYTHON_VERSION: '3.10'
+        Python311:
+          PYTHON_VERSION: '3.11'
+        Python312:
+          PYTHON_VERSION: '3.12'
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(PYTHON_VERSION)
+      - task: UseDotNet@2
+        displayName: 'Install .NET 8'
+        inputs:
+          version: 8.0.x
+      - bash: |
+          chmod +x eng/scripts/install-dependencies.sh
+          chmod +x eng/scripts/test-setup.sh
+
+          eng/scripts/install-dependencies.sh $(PYTHON_VERSION)
+          eng/scripts/test-setup.sh
+        displayName: 'Install dependencies and the worker'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download Python SDK Artifact'
+        inputs:
+          buildType: specific
+          artifactName: 'azure-functions'
+          project: 'internal'
+          definition: 679
+          buildVersionToDownload: latest
+          targetPath: '$(Pipeline.Workspace)/PythonSdkArtifact'
+        condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
+      - bash: |
+          chmod +x eng/scripts/test-sdk.sh
+          chmod +x eng/scripts/test-setup.sh
+
+          eng/scripts/test-sdk.sh $(Pipeline.Workspace) $(PYTHON_VERSION)
+          eng/scripts/test-setup.sh
+        displayName: 'Install test python sdk, dependencies and the worker'
+        condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download Python Extension Artifact'
+        inputs:
+          buildType: specific
+          artifactName: $(PYTHONEXTENSIONNAME)
+          project: 'internal'
+          definition: 798
+          buildVersionToDownload: latest
+          targetPath: '$(Pipeline.Workspace)/PythonExtensionArtifact'
+        condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
+      - bash: |
+          chmod +x eng/scripts/test-setup.sh
+          chmod +x eng/scripts/test-extensions.sh
+
+          eng/scripts/test-extensions.sh $(Pipeline.Workspace) $(PYTHON_VERSION)
+          eng/scripts/test-setup.sh
+        displayName: 'Install test python extension, dependencies and the worker'
+        condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
+      - bash: |
+          docker compose -f tests/emulator_tests/utils/docker-compose.yml pull
+          docker compose -f tests/emulator_tests/utils/docker-compose.yml up -d
+        displayName: 'Install Azurite and Start Emulators'
+      - bash: |
+            python -m pytest -q -n auto --dist loadfile --reruns 4 tests/emulator_tests
+        env:
+          AzureWebJobsStorage: "UseDevelopmentStorage=true"
+          AzureWebJobsEventHubConnectionString: "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
+        displayName: "Running $(PYTHON_VERSION) Python Emulator Tests"

@@ -9,7 +9,7 @@ class TestQueueFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'queue_functions'
+        return testutils.EMULATOR_TESTS_FOLDER / 'queue_functions'
 
     def test_queue_basic(self):
         r = self.webhost.request('POST', 'put_queue',
@@ -91,13 +91,13 @@ class TestQueueFunctionsStein(TestQueueFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'queue_functions' / \
-                                            'queue_functions_stein'
+        return testutils.EMULATOR_TESTS_FOLDER / 'queue_functions' / \
+            'queue_functions_stein'
 
 
 class TestQueueFunctionsSteinGeneric(TestQueueFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'queue_functions' / \
+        return testutils.EMULATOR_TESTS_FOLDER / 'queue_functions' / \
             'queue_functions_stein' / 'generic'

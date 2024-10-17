@@ -121,7 +121,7 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
             ).lower()
         )
 
-    @skipIf(is_envvar_true('USETESTPYTHONSDK'),
+    @skipIf(is_envvar_true('skipDependencyIsolationTests'),
             'Running tests using an editable azure-functions package.')
     def test_loading_libraries_from_customers_package(self):
         """Since the Python now loaded the customer's dependencies, the

@@ -53,6 +53,9 @@ def main():
     args = parse_args()
     logging.setup(log_level=args.log_level, log_destination=args.log_to)
 
+    # register sigterm handler
+    register_sigterm_handler()
+
     logger.info('Starting Azure Functions Python Worker.')
     logger.info('Worker ID: %s, Request ID: %s, Host Address: %s:%s',
                 args.worker_id, args.request_id, args.host, args.port)
@@ -65,6 +68,47 @@ def main():
             'unhandled error in functions worker: {0}'.format(
                 format_exception(ex)))
         raise
+
+
+def register_sigterm_handler():
+    import signal
+    """
+    Registers a custom handler for the SIGTERM signal.
+
+    This function will set up a signal handler to intercept the SIGTERM signal,
+    which is typically sent to gracefully terminate a process. When SIGTERM is
+    received, the program will log the signal and perform a graceful shutdown
+    by calling sys.exit().
+
+    Windows Python Function is not supported and Windows does not support
+    SIGTERM.
+    """
+
+    def handle_sigterm(signum, frame):
+        from . import dispatcher
+        import sys
+        from .logging import logger, flush_logger
+        import traceback
+        from azure_functions_worker.dispatcher import DispatcherMeta
+        from azure_functions_worker import loader
+        # Log the received signal
+        logger.info(f"SIGTERM received (signal: {signum}). "
+                    "Shutting down gracefully...")
+
+        # Log the frame details to see whats executed when the signal was received
+        logger.info("Frame details at signal receipt:"
+                    f"\n{''.join(traceback.format_stack(frame))}")
+
+        DispatcherMeta.__current_dispatcher__ = None
+
+        loader.uninstall()
+
+        flush_logger(logger)
+
+        dispatcher.Dispatcher.stop()
+        sys.exit(0)  # Exit the program gracefully
+
+    signal.signal(signal.SIGTERM, handle_sigterm)
 
 
 async def start_async(host, port, worker_id, request_id):

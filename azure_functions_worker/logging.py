@@ -92,6 +92,11 @@ def enable_console_logging() -> None:
         logger.addHandler(handler)
 
 
+def flush_logger(logger: logging.Logger):
+    for handler in logger.handlers:
+        handler.flush()
+
+
 def is_system_log_category(ctg: str) -> bool:
     """Check if the logging namespace belongs to system logs. Category starts
     with the following name will be treated as system logs.

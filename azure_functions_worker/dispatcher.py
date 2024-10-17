@@ -28,7 +28,10 @@ from .constants import (
     METADATA_PROPERTIES_WORKER_INDEXED,
     PYTHON_AZURE_MONITOR_LOGGER_NAME,
     PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT,
+    PYTHON_DEBUGGING_EVENT_LOOP_SLOW_CALLBACK_THRESHOLD,
+    PYTHON_DEBUGGING_EVENT_LOOP_SLOW_CALLBACK_THRESHOLD_DEFAULT,
     PYTHON_ENABLE_DEBUG_LOGGING,
+    PYTHON_ENABLE_EVENT_LOOP_DEBUGGING,
     PYTHON_ENABLE_INIT_INDEXING,
     PYTHON_ENABLE_OPENTELEMETRY,
     PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
@@ -353,6 +356,16 @@ class Dispatcher(metaclass=DispatcherMeta):
                 "Cannot import OpenTelemetry libraries."
             )
 
+    def _setup_event_loop_profiling(self):
+        if is_envvar_true(PYTHON_ENABLE_EVENT_LOOP_DEBUGGING):
+            self._loop.set_debug(True)
+            self._loop.slow_callback_duration = \
+                get_app_setting(
+                    PYTHON_DEBUGGING_EVENT_LOOP_SLOW_CALLBACK_THRESHOLD,
+                    PYTHON_DEBUGGING_EVENT_LOOP_SLOW_CALLBACK_THRESHOLD_DEFAULT)
+            logger.info('Event loop debug mode enabled with 10-minute slow '
+                        'callback detection')
+
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, '
@@ -381,6 +394,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
+
+        # Set up event loop profiling
+        self._setup_event_loop_profiling()
+
         if get_app_setting(setting=PYTHON_ENABLE_OPENTELEMETRY,
                            default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
             self.initialize_azure_monitor()
@@ -760,6 +777,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             env_vars = func_env_reload_request.environment_variables
             for var in env_vars:
                 os.environ[var] = env_vars[var]
+            # Enable event loop debug mode
+            self._setup_event_loop_profiling()
 
             # Apply PYTHON_THREADPOOL_THREAD_COUNT
             self._stop_sync_call_tp()

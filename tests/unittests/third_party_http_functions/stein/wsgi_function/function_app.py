@@ -62,8 +62,8 @@ def print_logging():
 def raw_body_bytes():
     body = request.get_data()
 
-    #sanitized_body = urllib.parse.quote(body)
-    return Response(body, headers={'body-len': str(len(body))})
+    sanitized_body = urllib.parse.quote(body)
+    return Response(sanitized_body, headers={'body-len': str(len(sanitized_body))})
 
 
 @flask_app.get("/return_http_no_body")

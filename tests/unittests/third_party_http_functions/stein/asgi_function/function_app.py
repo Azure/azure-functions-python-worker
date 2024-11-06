@@ -1,8 +1,9 @@
 import asyncio
 import logging
+import re
 import sys
 from urllib.request import urlopen
-from urllib.parse import urlparse
+import urllib.parse
 
 import azure.functions as func
 from fastapi import FastAPI, Request, Response
@@ -132,7 +133,9 @@ async def print_logging(message: str = "", flush: str = 'false',
 @fast_app.post("/raw_body_bytes")
 async def raw_body_bytes(request: Request):
     raw_body = await request.body()
-    return Response(content=raw_body, headers={'body-len': str(len(raw_body))})
+    sanitized_body = urllib.parse.quote(raw_body)
+    return Response(content=sanitized_body,
+                    headers={'body-len': str(len(sanitized_body))})
 
 
 @fast_app.get("/return_http_no_body")
@@ -147,10 +150,17 @@ async def return_http(request: Request):
 
 @fast_app.get("/return_http_redirect")
 async def return_http_redirect(request: Request, code: str = ''):
+    allowed_url_pattern = r"^http://.+"
+
     location = 'return_http?code={}'.format(code)
     redirect_url = f"http://{request.url.components[1]}/{location}"
+    if re.match(allowed_url_pattern, redirect_url):
+        # Redirect URL is in the expected format
+        return RedirectResponse(status_code=302,
+                                url=redirect_url)
+    # Redirect URL was not in the expected format
     return RedirectResponse(status_code=302,
-                            url=redirect_url)
+                            url='/')
 
 
 @fast_app.get("/unhandled_error")

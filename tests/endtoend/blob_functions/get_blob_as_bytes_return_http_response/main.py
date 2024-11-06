@@ -15,11 +15,11 @@ def main(req: azf.HttpRequest, file: bytes) -> azf.HttpResponse:
     assert isinstance(file, bytes)
 
     content_size = len(file)
-    content_md5 = hashlib.md5(file).hexdigest()
+    content_sha256 = hashlib.sha256(file).hexdigest()
 
     response_dict = {
         'content_size': content_size,
-        'content_md5': content_md5
+        'content_sha256': content_sha256
     }
 
     response_body = json.dumps(response_dict, indent=2)

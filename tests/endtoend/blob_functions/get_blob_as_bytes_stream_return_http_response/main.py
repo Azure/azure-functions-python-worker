@@ -15,11 +15,11 @@ def main(req: azf.HttpRequest, file: azf.InputStream) -> azf.HttpResponse:
     file_bytes = file.read()
 
     content_size = len(file_bytes)
-    content_md5 = hashlib.md5(file_bytes).hexdigest()
+    content_sha256 = hashlib.sha256(file_bytes).hexdigest()
 
     response_dict = {
         'content_size': content_size,
-        'content_md5': content_md5
+        'content_sha256': content_sha256
     }
 
     response_body = json.dumps(response_dict, indent=2)

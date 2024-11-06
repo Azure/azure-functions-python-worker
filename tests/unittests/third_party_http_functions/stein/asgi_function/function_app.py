@@ -2,6 +2,7 @@ import asyncio
 import logging
 import sys
 from urllib.request import urlopen
+from urllib.parse import urlparse
 
 import azure.functions as func
 from fastapi import FastAPI, Request, Response
@@ -147,9 +148,9 @@ async def return_http(request: Request):
 @fast_app.get("/return_http_redirect")
 async def return_http_redirect(request: Request, code: str = ''):
     location = 'return_http?code={}'.format(code)
+    redirect_url = f"http://{request.url.components[1]}/{location}"
     return RedirectResponse(status_code=302,
-                            url=f"http://{request.url.components[1]}/"
-                                f"{location}")
+                            url=redirect_url)
 
 
 @fast_app.get("/unhandled_error")

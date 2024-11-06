@@ -10,8 +10,8 @@ import azure.functions as azf
 
 def _generate_content_and_digest(content_size):
     content = bytearray(random.getrandbits(8) for _ in range(content_size))
-    content_md5 = hashlib.md5(content).hexdigest()
-    return content, content_md5
+    content_sha256 = hashlib.sha256(content).hexdigest()
+    return content, content_sha256
 
 
 def main(
@@ -30,15 +30,15 @@ def main(
     input_content_size_1 = len(inputfile1)
     input_content_size_2 = len(inputfile2)
 
-    input_content_md5_1 = hashlib.md5(inputfile1).hexdigest()
-    input_content_md5_2 = hashlib.md5(inputfile2).hexdigest()
+    input_content_sha256_1 = hashlib.sha256(inputfile1).hexdigest()
+    input_content_sha256_2 = hashlib.sha256(inputfile2).hexdigest()
 
     output_content_size_1 = int(req.params['output_content_size_1'])
     output_content_size_2 = int(req.params['output_content_size_2'])
 
-    output_content_1, output_content_md5_1 = \
+    output_content_1, output_content_sha256_1 = \
         _generate_content_and_digest(output_content_size_1)
-    output_content_2, output_content_md5_2 = \
+    output_content_2, output_content_sha256_2 = \
         _generate_content_and_digest(output_content_size_2)
 
     outputfile1.set(output_content_1)
@@ -47,12 +47,12 @@ def main(
     response_dict = {
         'input_content_size_1': input_content_size_1,
         'input_content_size_2': input_content_size_2,
-        'input_content_md5_1': input_content_md5_1,
-        'input_content_md5_2': input_content_md5_2,
+        'input_content_sha256_1': input_content_sha256_1,
+        'input_content_sha256_2': input_content_sha256_2,
         'output_content_size_1': output_content_size_1,
         'output_content_size_2': output_content_size_2,
-        'output_content_md5_1': output_content_md5_1,
-        'output_content_md5_2': output_content_md5_2
+        'output_content_sha256_1': output_content_sha256_1,
+        'output_content_sha256_2': output_content_sha256_2
     }
 
     response_body = json.dumps(response_dict, indent=2)

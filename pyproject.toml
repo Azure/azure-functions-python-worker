@@ -64,6 +64,7 @@ dev = [
     "ptvsd",
     "python-dotenv",
     "plotly",
+    "pycryptodome",
     "scikit-learn",
     "opencv-python",
     "pandas",

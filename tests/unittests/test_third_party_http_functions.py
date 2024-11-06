@@ -5,6 +5,8 @@ import os
 import pathlib
 import re
 import typing
+import urllib.parse
+
 from unittest.mock import patch
 
 from tests.utils import testutils
@@ -131,12 +133,13 @@ class ThirdPartyHttpFunctionsTestBase:
             image_file = parent_dir / 'unittests/resources/functions.png'
             with open(image_file, 'rb') as image:
                 img = image.read()
-                img_len = len(img)
+                sanitized_image = urllib.parse.quote(img)
+                sanitized_img_len = len(img)
                 r = self.webhost.request('POST', 'raw_body_bytes', data=img,
                                          no_prefix=True)
 
             received_body_len = int(r.headers['body-len'])
-            self.assertEqual(received_body_len, img_len)
+            self.assertEqual(received_body_len, sanitized_img_len)
 
             body = r.content
             try:

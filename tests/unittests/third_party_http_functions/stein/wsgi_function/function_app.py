@@ -1,7 +1,7 @@
 import logging
 import sys
 from urllib.request import urlopen
-import urllib.parse
+import base64
 
 import azure.functions as func
 from flask import Flask, Response, redirect, request, url_for
@@ -62,8 +62,11 @@ def print_logging():
 def raw_body_bytes():
     body = request.get_data()
 
-    sanitized_body = urllib.parse.quote(body)
-    return Response(sanitized_body, headers={'body-len': str(len(sanitized_body))})
+    base64_encoded = base64.b64encode(body).decode('utf-8')
+    html_img_tag = \
+        f'<img src="data:image/png;base64,{base64_encoded}" alt="PNG Image"/>'
+
+    return Response(html_img_tag, headers={'body-len': str(len(html_img_tag))})
 
 
 @flask_app.get("/return_http_no_body")

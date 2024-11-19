@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 import typing
-import urllib.parse
+import base64
 
 from unittest.mock import patch
 
@@ -133,15 +133,18 @@ class ThirdPartyHttpFunctionsTestBase:
             image_file = parent_dir / 'unittests/resources/functions.png'
             with open(image_file, 'rb') as image:
                 img = image.read()
-                sanitized_image = urllib.parse.quote(img)
-                sanitized_img_len = len(sanitized_image)
+                encoded_image = base64.b64encode(img).decode('utf-8')
+                html_img_tag = \
+                    f'<img src="data:image/png;base64,{encoded_image}" alt="PNG Image"/>'  # noqa
+                sanitized_img_len = len(html_img_tag)
                 r = self.webhost.request('POST', 'raw_body_bytes', data=img,
                                          no_prefix=True)
 
             received_body_len = int(r.headers['body-len'])
             self.assertEqual(received_body_len, sanitized_img_len)
 
-            body = urllib.parse.unquote_to_bytes(r.content)
+            encoded_image_data = encoded_image.split(",")[0]
+            body = base64.b64decode(encoded_image_data)
             try:
                 received_img_file = parent_dir / 'received_img.png'
                 with open(received_img_file, 'wb') as received_img:

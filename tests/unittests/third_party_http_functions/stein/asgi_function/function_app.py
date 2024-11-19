@@ -150,10 +150,10 @@ async def return_http(request: Request):
 
 @fast_app.get("/return_http_redirect")
 async def return_http_redirect(request: Request, code: str = ''):
-    allowed_url_pattern = r"^http://.+"
+    allowed_url_pattern = r"^http://127\.0\.0\.1:\d+/return_http_redirect\?code=*"
 
     location = 'return_http?code={}'.format(code)
-    redirect_url = f"http://{request.url.components[1]}/{location}"
+    redirect_url = f"http://127.0.0.1/{location}"
     if re.match(allowed_url_pattern, redirect_url):
         # Redirect URL is in the expected format
         return RedirectResponse(status_code=302,

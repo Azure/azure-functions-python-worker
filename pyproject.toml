@@ -48,7 +48,6 @@ dev = [
     "flask",
     "fastapi~=0.103.2",
     "pydantic",
-    "pycryptodome==3.*",
     "flake8==5.*; python_version == '3.7'",
     "flake8==6.*; python_version >= '3.8'",
     "mypy",
@@ -70,6 +69,7 @@ dev = [
     "numpy",
     "pre-commit",
     "invoke",
+    "cryptography"
 ]
 test-http-v2 = [
     "azurefunctions-extensions-http-fastapi",

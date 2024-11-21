@@ -12,6 +12,10 @@ steps:
   inputs:
     disableAutoCwd: true
     scriptPath: 'pack/scripts/nix_deps.sh'
+- bash: |
+    pip install pip-audit
+    pip-audit -r requirements.txt
+  displayName: 'Run vulnerability scan'
 - task: CopyFiles@2
   inputs:
     contents: |

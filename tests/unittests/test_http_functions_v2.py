@@ -392,6 +392,8 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Set-Cookie" in r.headers)
 
+    @skipIf(sys.version_info < (3, 9, 0),
+            "Skip the tests for Python 3.8 and below")
     def test_print_to_console_stderr(self):
         r = self.webhost.request('GET', 'print_logging?console=true'
                                         '&message=Secret42&is_stderr=true')

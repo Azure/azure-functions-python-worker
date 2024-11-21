@@ -87,7 +87,7 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
         self.assertIn('sdk_logger info', host_out)
         self.assertIn('sdk_logger warning', host_out)
         self.assertIn('sdk_logger error', host_out)
-        self.assertIn('sdk_logger debug', host_out)
+        self.assertNotIn('sdk_logger debug', host_out)
 
     def test_info_with_sdk_submodule_logging(self):
         """Invoke a HttpTrigger sdk_submodule_logging which contains logging
@@ -105,4 +105,4 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
         self.assertIn('sdk_submodule_logger info', host_out)
         self.assertIn('sdk_submodule_logger warning', host_out)
         self.assertIn('sdk_submodule_logger error', host_out)
-        self.assertIn('sdk_submodule_logger debug', host_out)
+        self.assertNotIn('sdk_submodule_logger debug', host_out)

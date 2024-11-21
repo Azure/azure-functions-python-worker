@@ -113,8 +113,8 @@ class ThirdPartyHttpFunctionsTestBase:
 
         def check_log_print_to_console_stdout(self,
                                               host_out: typing.List[str]):
-            # System logs stdout should not exist in host_out
-            self.assertNotIn('Secret42', host_out)
+            # System logs stdout now exist in host_out
+            self.assertIn('Secret42', host_out)
 
         def test_print_to_console_stderr(self):
             r = self.webhost.request('GET', 'print_logging?console=true'
@@ -125,8 +125,8 @@ class ThirdPartyHttpFunctionsTestBase:
 
         def check_log_print_to_console_stderr(self,
                                               host_out: typing.List[str], ):
-            # System logs stderr should not exist in host_out
-            self.assertNotIn('Secret42', host_out)
+            # System logs stderr now exist in host_out
+            self.assertIn('Secret42', host_out)
 
         def test_raw_body_bytes(self):
             parent_dir = pathlib.Path(__file__).parent.parent
@@ -220,9 +220,9 @@ class TestAsgiHttpFunctions(
         self.assertIn('parallelly_log_custom at custom_logger', host_out)
         self.assertIn('callsoon_log', host_out)
 
-        # System logs should not exist in host_out
-        self.assertNotIn('parallelly_log_system at disguised_logger',
-                         host_out)
+        # System logs now exist in host_out
+        self.assertIn('parallelly_log_system at disguised_logger',
+                      host_out)
 
 
 class TestWsgiHttpFunctions(

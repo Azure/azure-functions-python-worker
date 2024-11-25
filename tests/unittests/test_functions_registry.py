@@ -1,11 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from tests.utils import testutils
-
 from azure.functions import Function
 from azure.functions.decorators.blob import BlobInput
 from azure.functions.decorators.http import HttpTrigger
+from tests.utils import testutils
 
 from azure_functions_worker import functions
 from azure_functions_worker.functions import FunctionLoadError

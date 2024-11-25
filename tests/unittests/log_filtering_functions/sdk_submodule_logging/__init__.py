@@ -4,7 +4,6 @@ import logging
 
 import azure.functions as func
 
-
 sdk_submodule_logger = logging.getLogger('azure.functions.submodule')
 
 

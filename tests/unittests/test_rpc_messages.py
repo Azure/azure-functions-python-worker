@@ -7,9 +7,10 @@ import tempfile
 import typing
 import unittest
 
+from tests.utils import testutils
+
 from azure_functions_worker import protos
 from azure_functions_worker.utils.common import is_python_version
-from tests.utils import testutils
 
 
 class TestGRPC(testutils.AsyncTestCase):

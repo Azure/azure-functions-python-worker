@@ -1,10 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+
 import requests
+from tests.utils import testutils
 
 from azure_functions_worker.constants import PYTHON_SCRIPT_FILE_NAME
-from tests.utils import testutils
 
 REQUEST_TIMEOUT_SEC = 10
 

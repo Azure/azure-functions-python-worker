@@ -1,12 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import os
-import sys
-import shutil
 import asyncio
+import os
+import shutil
+import sys
 
 from azure_functions_worker import protos
-from ...utils.testutils import create_dummy_dispatcher, UNIT_TESTS_ROOT
+
+from ...utils.testutils import UNIT_TESTS_ROOT, create_dummy_dispatcher
 
 
 async def verify_nested_namespace_import():

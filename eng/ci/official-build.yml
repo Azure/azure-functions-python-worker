@@ -28,8 +28,8 @@ resources:
       ref: refs/tags/release
 
 variables:
-  - template: /ci/variables/build.yml@eng
-  - template: /ci/variables/cfs.yml@eng
+  - template: /eng/templates/utils/variables.yml@self
+  - template: /eng/templates/utils/official-variables.yml@self
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1es
@@ -38,6 +38,10 @@ extends:
       name: 1es-pool-azfunc
       image: 1es-windows-2022
       os: windows
+    sdl:
+      codeSignValidation:
+        enabled: true
+        break: true
 
     stages:
       - stage: Build

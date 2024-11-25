@@ -7,17 +7,13 @@ from types import ModuleType
 from typing import Any, Callable, List, Optional
 
 from .constants import (
-    PYTHON_ISOLATE_WORKER_DEPENDENCIES,
     PYTHON_ENABLE_WORKER_EXTENSIONS,
     PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT,
-    PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39
+    PYTHON_ENABLE_WORKER_EXTENSIONS_DEFAULT_39,
+    PYTHON_ISOLATE_WORKER_DEPENDENCIES,
 )
-from .logging import logger, SYSTEM_LOG_PREFIX
-from .utils.common import (
-    is_python_version,
-    get_sdk_from_sys_path,
-    get_sdk_version
-)
+from .logging import SYSTEM_LOG_PREFIX, logger
+from .utils.common import get_sdk_from_sys_path, get_sdk_version, is_python_version
 from .utils.wrappers import enable_feature_by
 
 # Extension Hooks

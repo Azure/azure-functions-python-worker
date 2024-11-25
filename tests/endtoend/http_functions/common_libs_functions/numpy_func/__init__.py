@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import logging
+
 import azure.functions as func
 import numpy as np
 

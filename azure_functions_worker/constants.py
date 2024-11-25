@@ -11,7 +11,7 @@ WORKER_STATUS = "WorkerStatus"
 SHARED_MEMORY_DATA_TRANSFER = "SharedMemoryDataTransfer"
 FUNCTION_DATA_CACHE = "FunctionDataCache"
 HTTP_URI = "HttpUri"
-
+REQUIRES_ROUTE_PARAMETERS = "RequiresRouteParameters"
 # When this capability is enabled, logs are not piped back to the
 # host from the worker. Logs will directly go to where the user has
 # configured them to go. This is to ensure that the logs are not
@@ -81,5 +81,15 @@ HTTP = "http"
 # Base extension supported Python minor version
 BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8
 
+# Appsetting to turn on OpenTelemetry support/features
+# Includes turning on Azure monitor distro to send telemetry to AppInsights
 PYTHON_ENABLE_OPENTELEMETRY = "PYTHON_ENABLE_OPENTELEMETRY"
-PYTHON_ENABLE_OPENTELEMETRY_DEFAULT = True
+PYTHON_ENABLE_OPENTELEMETRY_DEFAULT = False
+
+# Appsetting to specify root logger name of logger to collect telemetry for
+# Used by Azure monitor distro
+PYTHON_AZURE_MONITOR_LOGGER_NAME = "PYTHON_AZURE_MONITOR_LOGGER_NAME"
+PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT = ""
+
+# Appsetting to specify AppInsights connection string
+APPLICATIONINSIGHTS_CONNECTION_STRING = "APPLICATIONINSIGHTS_CONNECTION_STRING"

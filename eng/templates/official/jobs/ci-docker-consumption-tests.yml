@@ -51,12 +51,11 @@ jobs:
         inputs:
           versionSpec: $(PYTHON_VERSION)
       - bash: |
-          python -m pip install -U -e .[dev]
-          python -m pip install --pre -U -e .[test-http-v2]
-          if [[ $(PYTHON_VERSION) != "3.8" ]]; then
-              python -m pip install --pre -U -e .[test-deferred-bindings]
-          fi
-          python setup.py build
+          chmod +x eng/scripts/install-dependencies.sh
+
+          eng/scripts/install-dependencies.sh $(PYTHON_VERSION)
+          cd tests
+          python -m invoke -c test_setup build-protos
         displayName: 'Install dependencies'
       - bash: |
              python -m pytest --reruns 4 -vv --instafail tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests

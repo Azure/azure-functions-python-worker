@@ -2,8 +2,9 @@
 # Licensed under the MIT License.
 
 import logging
-import dotenv
+
 import azure.functions as func
+import dotenv
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:

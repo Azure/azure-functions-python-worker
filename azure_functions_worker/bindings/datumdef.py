@@ -1,19 +1,26 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import logging
-from typing import Any, Optional
 import json
+import logging
+from typing import Any, List, Optional
+
 from .. import protos
 from ..logging import logger
-from typing import List
+
 try:
     from http.cookies import SimpleCookie
 except ImportError:
     from Cookie import SimpleCookie
+
 from dateutil import parser
 from dateutil.parser import ParserError
-from .nullable_converters import to_nullable_bool, to_nullable_string, \
-    to_nullable_double, to_nullable_timestamp
+
+from .nullable_converters import (
+    to_nullable_bool,
+    to_nullable_double,
+    to_nullable_string,
+    to_nullable_timestamp,
+)
 
 
 class Datum:

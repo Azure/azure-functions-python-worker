@@ -1,7 +1,7 @@
 from typing import Optional
 
 import azure.functions as func
-from fastapi import FastAPI, Response, Body, HTTPException
+from fastapi import Body, FastAPI, HTTPException, Response
 from pydantic import BaseModel
 
 fast_app = FastAPI()

@@ -3,8 +3,7 @@
 import threading
 from typing import Type
 
-from . import TraceContext
-from . import RetryContext
+from . import RetryContext, TraceContext
 
 
 class Context:

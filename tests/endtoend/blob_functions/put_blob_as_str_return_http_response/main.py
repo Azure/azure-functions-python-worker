@@ -1,10 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import string
-import random
-import json
 import hashlib
+import json
+import random
+import string
+
 import azure.functions as azf
 
 
@@ -20,14 +21,14 @@ def main(req: azf.HttpRequest, file: azf.Out[str]) -> azf.HttpResponse:
                                      k=num_chars))
     content_bytes = content.encode('utf-8')
     content_size = len(content_bytes)
-    content_md5 = hashlib.md5(content_bytes).hexdigest()
+    content_sha256 = hashlib.sha256(content_bytes).hexdigest()
 
     file.set(content)
 
     response_dict = {
         'num_chars': num_chars,
         'content_size': content_size,
-        'content_md5': content_md5
+        'content_sha256': content_sha256
     }
 
     response_body = json.dumps(response_dict, indent=2)

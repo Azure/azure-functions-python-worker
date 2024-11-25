@@ -1,7 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from azure_functions_worker import protos
 from tests.utils import testutils
+
+from azure_functions_worker import protos
 
 STEIN_INVALID_APP_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'broken_functions' / \

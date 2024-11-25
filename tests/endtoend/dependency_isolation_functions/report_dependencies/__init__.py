@@ -1,6 +1,7 @@
-import sys
-import os
 import json
+import os
+import sys
+
 import azure.functions as func
 import google.protobuf as proto
 import grpc

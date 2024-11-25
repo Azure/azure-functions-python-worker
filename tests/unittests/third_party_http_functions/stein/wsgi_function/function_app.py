@@ -1,9 +1,10 @@
 import logging
 import sys
 from urllib.request import urlopen
+import urllib.parse
 
 import azure.functions as func
-from flask import Flask, request, Response, redirect, url_for
+from flask import Flask, Response, redirect, request, url_for
 
 flask_app = Flask(__name__)
 logger = logging.getLogger("my-function")
@@ -61,7 +62,8 @@ def print_logging():
 def raw_body_bytes():
     body = request.get_data()
 
-    return Response(body, headers={'body-len': str(len(body))})
+    sanitized_body = urllib.parse.quote(body)
+    return Response(sanitized_body, headers={'body-len': str(len(sanitized_body))})
 
 
 @flask_app.get("/return_http_no_body")

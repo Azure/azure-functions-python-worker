@@ -5,9 +5,12 @@ import pytest
 from google.protobuf.timestamp_pb2 import Timestamp
 
 from azure_functions_worker import protos
-from azure_functions_worker.bindings.nullable_converters import \
-    to_nullable_string, to_nullable_bool, to_nullable_double, \
-    to_nullable_timestamp
+from azure_functions_worker.bindings.nullable_converters import (
+    to_nullable_bool,
+    to_nullable_double,
+    to_nullable_string,
+    to_nullable_timestamp,
+)
 
 try:
     from http.cookies import SimpleCookie

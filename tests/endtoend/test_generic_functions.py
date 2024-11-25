@@ -1,20 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from unittest import skipIf
-
 import time
 import typing
 
-from azure_functions_worker.utils.common import is_envvar_true
 from tests.utils import testutils
-from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "Table functions which are used in the bindings in these tests"
-        " has a bug with the table extension 1.0.0. "
-        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
 class TestGenericFunctions(testutils.WebHostTestCase):
     """Test Generic Functions with implicit output enabled
 
@@ -73,10 +64,6 @@ class TestGenericFunctions(testutils.WebHostTestCase):
         self.assertFalse(errors_found)
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "Table functions has a bug with the table extension 1.0.0."
-        "https://github.com/Azure/azure-sdk-for-net/issues/33902.")
 class TestGenericFunctionsStein(TestGenericFunctions):
 
     @classmethod

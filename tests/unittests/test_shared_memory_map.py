@@ -7,12 +7,14 @@ import unittest
 from unittest import skipIf
 
 from tests.utils import testutils
-from azure_functions_worker.bindings.shared_memory_data_transfer \
-    import SharedMemoryMap
-from azure_functions_worker.bindings.shared_memory_data_transfer \
-    import SharedMemoryConstants as consts
-from azure_functions_worker.bindings.shared_memory_data_transfer \
-    import SharedMemoryException
+
+from azure_functions_worker.bindings.shared_memory_data_transfer import (
+    SharedMemoryConstants as consts,
+)
+from azure_functions_worker.bindings.shared_memory_data_transfer import (
+    SharedMemoryException,
+    SharedMemoryMap,
+)
 
 
 @skipIf(sys.platform == 'darwin', 'MacOS M1 machines do not correctly test the'

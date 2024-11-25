@@ -6,10 +6,11 @@ import os
 import struct
 import sys
 from typing import Optional
+
+from ...logging import logger
+from .file_accessor import FileAccessor
 from .shared_memory_constants import SharedMemoryConstants as consts
 from .shared_memory_exception import SharedMemoryException
-from .file_accessor import FileAccessor
-from ...logging import logger
 
 
 class SharedMemoryMap:

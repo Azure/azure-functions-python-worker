@@ -3,8 +3,9 @@
 import json
 import os
 import typing
+
 import azure.functions as func
-from azure.eventhub import EventHubProducerClient, EventData
+from azure.eventhub import EventData, EventHubProducerClient
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 

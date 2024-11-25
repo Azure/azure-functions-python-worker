@@ -2,24 +2,30 @@
 # Licensed under the MIT License.
 import asyncio
 import collections as col
+import contextvars
 import os
 import sys
 import unittest
 from typing import Optional, Tuple
 from unittest.mock import patch
 
-from azure_functions_worker import protos
-from azure_functions_worker.constants import (PYTHON_THREADPOOL_THREAD_COUNT,
-                                              PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
-                                              PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
-                                              PYTHON_THREADPOOL_THREAD_COUNT_MIN,
-                                              PYTHON_ENABLE_INIT_INDEXING,
-                                              METADATA_PROPERTIES_WORKER_INDEXED,
-                                              PYTHON_ENABLE_DEBUG_LOGGING)
-from azure_functions_worker.dispatcher import Dispatcher
-from azure_functions_worker.version import VERSION
 from tests.utils import testutils
 from tests.utils.testutils import UNIT_TESTS_ROOT
+
+from azure_functions_worker import protos
+from azure_functions_worker.constants import (
+    HTTP_URI,
+    METADATA_PROPERTIES_WORKER_INDEXED,
+    PYTHON_ENABLE_DEBUG_LOGGING,
+    PYTHON_ENABLE_INIT_INDEXING,
+    PYTHON_THREADPOOL_THREAD_COUNT,
+    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
+    PYTHON_THREADPOOL_THREAD_COUNT_MIN,
+    REQUIRES_ROUTE_PARAMETERS
+)
+from azure_functions_worker.dispatcher import Dispatcher, ContextEnabledTask
+from azure_functions_worker.version import VERSION
 
 SysVersionInfo = col.namedtuple("VersionInfo", ["major", "minor", "micro",
                                                 "releaselevel", "serial"])
@@ -27,12 +33,10 @@ DISPATCHER_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / 'dispatcher_functions'
 DISPATCHER_STEIN_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
     'dispatcher_functions' / \
     'dispatcher_functions_stein'
-DISPATCHER_HTTP_V2_FASTAPI_FUNCTIONS_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'dispatcher_functions' / \
-    'http_v2' / \
-    'fastapi'
 FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
     'dispatcher_functions_stein'
+HTTPV2_FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
+    'http_v2' / 'fastapi'
 
 
 class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
@@ -548,15 +552,15 @@ class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):
                  "as the default passed is None, the cpu_count determines the "
                  "number of max_workers and we cannot mock the os.cpu_count() "
                  "in the concurrent.futures.ThreadPoolExecutor")
-class TestThreadPoolSettingsPython39(TestThreadPoolSettingsPython38):
+class TestThreadPoolSettingsPython39(TestThreadPoolSettingsPython37):
     def setUp(self, version=SysVersionInfo(3, 9, 0, 'final', 0)):
         super(TestThreadPoolSettingsPython39, self).setUp(version)
-
         self.mock_os_cpu = patch(
             'os.cpu_count', return_value=2)
         # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
         self._default_workers: Optional[int] = 6
         self.mock_os_cpu.start()
+        self._allowed_max_workers: int = self._over_max_workers
 
     def tearDown(self):
         self.mock_os_cpu.stop()
@@ -568,11 +572,19 @@ class TestThreadPoolSettingsPython39(TestThreadPoolSettingsPython38):
                  "as the default passed is None, the cpu_count determines the "
                  "number of max_workers and we cannot mock the os.cpu_count() "
                  "in the concurrent.futures.ThreadPoolExecutor")
-class TestThreadPoolSettingsPython310(TestThreadPoolSettingsPython39):
+class TestThreadPoolSettingsPython310(TestThreadPoolSettingsPython37):
     def setUp(self, version=SysVersionInfo(3, 10, 0, 'final', 0)):
         super(TestThreadPoolSettingsPython310, self).setUp(version)
+        self._allowed_max_workers: int = self._over_max_workers
+        self.mock_os_cpu = patch(
+            'os.cpu_count', return_value=2)
+        # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
+        self._default_workers: Optional[int] = 6
+        self.mock_os_cpu.start()
+        self._allowed_max_workers: int = self._over_max_workers
 
     def tearDown(self):
+        self.mock_os_cpu.stop()
         super(TestThreadPoolSettingsPython310, self).tearDown()
 
 
@@ -581,12 +593,41 @@ class TestThreadPoolSettingsPython310(TestThreadPoolSettingsPython39):
                  "as the default passed is None, the cpu_count determines the "
                  "number of max_workers and we cannot mock the os.cpu_count() "
                  "in the concurrent.futures.ThreadPoolExecutor")
-class TestThreadPoolSettingsPython311(TestThreadPoolSettingsPython310):
+class TestThreadPoolSettingsPython311(TestThreadPoolSettingsPython37):
     def setUp(self, version=SysVersionInfo(3, 11, 0, 'final', 0)):
         super(TestThreadPoolSettingsPython311, self).setUp(version)
+        self._allowed_max_workers: int = self._over_max_workers
+        self.mock_os_cpu = patch(
+            'os.cpu_count', return_value=2)
+        # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
+        self._default_workers: Optional[int] = 6
+        self.mock_os_cpu.start()
+        self._allowed_max_workers: int = self._over_max_workers
 
     def tearDown(self):
-        super(TestThreadPoolSettingsPython310, self).tearDown()
+        self.mock_os_cpu.stop()
+        super(TestThreadPoolSettingsPython311, self).tearDown()
+
+
+@unittest.skipIf(sys.version_info.minor != 12,
+                 "Run the tests only for Python 3.12. In other platforms, "
+                 "as the default passed is None, the cpu_count determines the "
+                 "number of max_workers and we cannot mock the os.cpu_count() "
+                 "in the concurrent.futures.ThreadPoolExecutor")
+class TestThreadPoolSettingsPython312(TestThreadPoolSettingsPython37):
+    def setUp(self, version=SysVersionInfo(3, 12, 0, 'final', 0)):
+        super(TestThreadPoolSettingsPython312, self).setUp(version)
+        self._allowed_max_workers: int = self._over_max_workers
+        self.mock_os_cpu = patch(
+            'os.cpu_count', return_value=2)
+        # 6 - based on 2 cores - min(32, (os.cpu_count() or 1) + 4) - 2 + 4
+        self._default_workers: Optional[int] = 6
+        self.mock_os_cpu.start()
+        self._allowed_max_workers: int = self._over_max_workers
+
+    def tearDown(self):
+        self.mock_os_cpu.stop()
+        super(TestThreadPoolSettingsPython312, self).tearDown()
 
 
 class TestDispatcherStein(testutils.AsyncTestCase):
@@ -606,6 +647,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+        del sys.modules['function_app']
 
     async def test_dispatcher_functions_metadata_request_with_retry(self):
         """Test if the functions metadata response will be sent correctly
@@ -618,6 +660,7 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertFalse(r.response.use_default_metadata_indexing)
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
+        del sys.modules['function_app']
 
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):
@@ -758,13 +801,14 @@ class TestDispatcherInitRequest(testutils.AsyncTestCase):
                 " Placeholder: False", logs)
 
 
-class TestDispatcherIndexinginInit(unittest.TestCase):
+class TestDispatcherIndexingInInit(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.dispatcher = testutils.create_dummy_dispatcher()
         sys.path.append(str(FUNCTION_APP_DIRECTORY))
+        sys.path.append(str(HTTPV2_FUNCTION_APP_DIRECTORY))
 
     def tearDown(self):
         self.loop.close()
@@ -783,6 +827,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
 
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+        del sys.modules['function_app']
 
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
     def test_worker_init_request_with_indexing_disabled(self):
@@ -848,6 +894,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
+        del sys.modules['function_app']
+
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'false'})
     def test_functions_metadata_request_with_init_indexing_disabled(self):
         init_request = protos.StreamingMessage(
@@ -879,6 +927,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
             protos.StatusResult.Success)
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+        del sys.modules['function_app']
 
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     @patch.object(Dispatcher, 'index_functions')
@@ -942,6 +992,8 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertIsNotNone(self.dispatcher._function_metadata_result)
         self.assertIsNone(self.dispatcher._function_metadata_exception)
 
+        del sys.modules['function_app']
+
     @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
     @patch.object(Dispatcher, 'index_functions')
     def test_dispatcher_indexing_in_load_request_with_exception(
@@ -980,3 +1032,96 @@ class TestDispatcherIndexinginInit(unittest.TestCase):
         self.assertEqual(
             response.function_load_response.result.exception.message,
             "Exception: Mocked Exception")
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
+    @patch("azure_functions_worker.http_v2.HttpV2Registry.http_v2_enabled",
+           return_value=True)
+    def test_dispatcher_http_v2_init_request_fail(self, mock_http_v2_enabled):
+        request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(HTTPV2_FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        resp = self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(request)
+        )
+
+        mock_http_v2_enabled.assert_called_once()
+        self.assertIsNotNone(self.dispatcher._function_metadata_exception)
+
+        capabilities = resp.worker_init_response.capabilities
+        self.assertNotIn(HTTP_URI, capabilities)
+        self.assertNotIn(REQUIRES_ROUTE_PARAMETERS, capabilities)
+
+        # Cleanup
+        del sys.modules['function_app']
+
+    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: 'true'})
+    @patch("azure_functions_worker.http_v2.HttpV2Registry.http_v2_enabled",
+           return_value=True)
+    @patch("azure_functions_worker.dispatcher.initialize_http_server",
+           return_value="http://localhost:8080")
+    @patch("azure_functions_worker.dispatcher.Dispatcher"
+           ".load_function_metadata")
+    def test_dispatcher_http_v2_init_request_pass(self, mock_http_v2_enabled,
+                                                  mock_init_http_server,
+                                                  mock_load_func_metadata):
+        request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(HTTPV2_FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        resp = self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(request)
+        )
+
+        mock_http_v2_enabled.assert_called_once()
+        mock_init_http_server.assert_called_once()
+        mock_load_func_metadata.assert_called_once()
+        self.assertIsNone(self.dispatcher._function_metadata_exception)
+
+        capabilities = resp.worker_init_response.capabilities
+        self.assertIn(HTTP_URI, capabilities)
+        self.assertEqual(capabilities[HTTP_URI], "http://localhost:8080")
+        self.assertIn(REQUIRES_ROUTE_PARAMETERS, capabilities)
+        self.assertEqual(capabilities[REQUIRES_ROUTE_PARAMETERS], "true")
+
+
+class TestContextEnabledTask(unittest.TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        self.loop.close()
+
+    def test_init_with_context(self):
+        # Since ContextEnabledTask accepts the context param,
+        # no errors will be thrown here
+        num = contextvars.ContextVar('num')
+        num.set(5)
+        ctx = contextvars.copy_context()
+        exception_raised = False
+        try:
+            self.loop.set_task_factory(
+                lambda loop, coro, context=None: ContextEnabledTask(
+                    coro, loop=loop, context=ctx))
+        except TypeError:
+            exception_raised = True
+        self.assertFalse(exception_raised)
+
+    async def test_init_without_context(self):
+        # If the context param is not defined,
+        # no errors will be thrown for backwards compatibility
+        exception_raised = False
+        try:
+            self.loop.set_task_factory(
+                lambda loop, coro: ContextEnabledTask(
+                    coro, loop=loop))
+        except TypeError:
+            exception_raised = True
+        self.assertFalse(exception_raised)

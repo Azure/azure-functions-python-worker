@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import json
 import uuid
+
 import azure.functions as func
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)

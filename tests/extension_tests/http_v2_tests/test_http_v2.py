@@ -7,9 +7,9 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
+from tests.utils import testutils
 
 from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
-from tests.utils import testutils
 
 REQUEST_TIMEOUT_SEC = 5
 

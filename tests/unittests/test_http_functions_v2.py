@@ -10,8 +10,9 @@ import unittest
 from unittest import skipIf
 from unittest.mock import patch
 
-from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 from tests.utils import testutils
+
+from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 
 
 @unittest.skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")

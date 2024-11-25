@@ -1,9 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import concurrent.futures
+
 # flake8: noqa
 import logging
-import concurrent.futures
 
 import azure.functions as func
 

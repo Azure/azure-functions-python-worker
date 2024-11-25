@@ -3,6 +3,8 @@ trigger:
     include:
       - dev
       - release/*
+      - sdk/* # run for sdk and extension release branches
+      - extensions/*
 
 resources:
   repositories:

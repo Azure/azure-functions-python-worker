@@ -10,17 +10,23 @@ import sys
 import time
 from datetime import timedelta
 from os import PathLike, fspath
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 from google.protobuf.duration_pb2 import Duration
 
-from . import protos, functions, bindings
+from . import bindings, functions, protos
 from .bindings.retrycontext import RetryPolicy
-from .utils.common import get_app_setting
-from .constants import MODULE_NOT_FOUND_TS_URL, PYTHON_SCRIPT_FILE_NAME, \
-    PYTHON_SCRIPT_FILE_NAME_DEFAULT, PYTHON_LANGUAGE_RUNTIME, \
-    CUSTOMER_PACKAGES_PATH, RETRY_POLICY, METADATA_PROPERTIES_WORKER_INDEXED
+from .constants import (
+    CUSTOMER_PACKAGES_PATH,
+    METADATA_PROPERTIES_WORKER_INDEXED,
+    MODULE_NOT_FOUND_TS_URL,
+    PYTHON_LANGUAGE_RUNTIME,
+    PYTHON_SCRIPT_FILE_NAME,
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+    RETRY_POLICY,
+)
 from .logging import logger
+from .utils.common import get_app_setting
 from .utils.wrappers import attach_message_to_exception
 
 _AZURE_NAMESPACE = '__app__'

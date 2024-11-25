@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 from setuptools import setup
 
-
 setup(
     name='foo-binding',
     version='1.0',

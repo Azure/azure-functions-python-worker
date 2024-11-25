@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import time
 import typing
+
 from tests.utils import testutils
 
 REQUEST_TIMEOUT_SEC = 5

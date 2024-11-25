@@ -6,9 +6,14 @@ import logging
 import sys
 import time
 from urllib.request import urlopen
-from azurefunctions.extensions.http.fastapi import Request, Response, \
-    HTMLResponse, RedirectResponse
+
 import azure.functions as func
+from azurefunctions.extensions.http.fastapi import (
+    HTMLResponse,
+    RedirectResponse,
+    Request,
+    Response,
+)
 from pydantic import BaseModel
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)

@@ -4,7 +4,6 @@ import logging
 
 import azure.functions
 
-
 logger = logging.getLogger('my function')
 
 

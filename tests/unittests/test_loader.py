@@ -12,12 +12,14 @@ from unittest.mock import Mock, patch
 from azure.functions import Function
 from azure.functions.decorators.retry_policy import RetryPolicy
 from azure.functions.decorators.timer import TimerTrigger
+from tests.utils import testutils
 
 from azure_functions_worker import functions
-from azure_functions_worker.constants import PYTHON_SCRIPT_FILE_NAME, \
-    PYTHON_SCRIPT_FILE_NAME_DEFAULT
+from azure_functions_worker.constants import (
+    PYTHON_SCRIPT_FILE_NAME,
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+)
 from azure_functions_worker.loader import build_retry_protos
-from tests.utils import testutils
 
 
 class TestLoader(testutils.WebHostTestCase):

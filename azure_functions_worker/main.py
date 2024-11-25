@@ -46,8 +46,9 @@ def main():
     DependencyManager.use_worker_dependencies()
 
     import asyncio
+
     from . import logging
-    from .logging import error_logger, logger, format_exception
+    from .logging import error_logger, format_exception, logger
 
     args = parse_args()
     logging.setup(log_level=args.log_level, log_destination=args.log_to)

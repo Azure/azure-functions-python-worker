@@ -3,7 +3,6 @@
 import time
 
 from requests import JSONDecodeError
-
 from tests.utils import testutils
 
 

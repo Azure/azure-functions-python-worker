@@ -1,6 +1,7 @@
-import unittest
 import sys
+import unittest
 from unittest.mock import patch
+
 from azure_functions_worker.main import parse_args
 
 

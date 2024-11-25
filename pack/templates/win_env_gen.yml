@@ -25,4 +25,14 @@ steps:
       **
       !grpc_tools\**\*
       !grpcio_tools*\*
+      !build\**
+      !docs\**
+      !pack\**
+      !python\**
+      !tests\**
+      !setuptools*\**
+      !_distutils_hack\**
+      !distutils-precedence.pth
+      !pkg_resources\**
+      !*.dist-info\**
     targetFolder: '$(Build.ArtifactStagingDirectory)'

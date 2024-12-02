@@ -52,11 +52,11 @@ def get_blob_as_bytes_return_http_response(req: func.HttpRequest, file: bytes) \
     assert isinstance(file, bytes)
 
     content_size = len(file)
-    content_md5 = hashlib.md5(file).hexdigest()
+    content_sha256 = hashlib.sha256(file).hexdigest()
 
     response_dict = {
         'content_size': content_size,
-        'content_md5': content_md5
+        'content_sha256': content_sha256
     }
 
     response_body = json.dumps(response_dict, indent=2)
@@ -84,11 +84,11 @@ def get_blob_as_bytes_stream_return_http_response(req: func.HttpRequest,
     file_bytes = file.read()
 
     content_size = len(file_bytes)
-    content_md5 = hashlib.md5(file_bytes).hexdigest()
+    content_sha256 = hashlib.sha256(file_bytes).hexdigest()
 
     response_dict = {
         'content_size': content_size,
-        'content_md5': content_md5
+        'content_sha256': content_sha256
     }
 
     response_body = json.dumps(response_dict, indent=2)
@@ -127,11 +127,11 @@ def get_blob_as_str_return_http_response(req: func.HttpRequest,
 
     num_chars = len(file)
     content_bytes = file.encode('utf-8')
-    content_md5 = hashlib.md5(content_bytes).hexdigest()
+    content_sha256 = hashlib.sha256(content_bytes).hexdigest()
 
     response_dict = {
         'num_chars': num_chars,
-        'content_md5': content_md5
+        'content_sha256': content_sha256
     }
 
     response_body = json.dumps(response_dict, indent=2)
@@ -212,13 +212,13 @@ def put_blob_as_bytes_return_http_response(req: func.HttpRequest,
         content = b'\x01' * content_size
     else:
         content = bytearray(random.getrandbits(8) for _ in range(content_size))
-    content_md5 = hashlib.md5(content).hexdigest()
+    content_sha256 = hashlib.sha256(content).hexdigest()
 
     file.set(content)
 
     response_dict = {
         'content_size': content_size,
-        'content_md5': content_md5
+        'content_sha256': content_sha256
     }
 
     response_body = json.dumps(response_dict, indent=2)
@@ -249,14 +249,14 @@ def put_blob_as_str_return_http_response(req: func.HttpRequest, file: func.Out[
                                      k=num_chars))
     content_bytes = content.encode('utf-8')
     content_size = len(content_bytes)
-    content_md5 = hashlib.md5(content_bytes).hexdigest()
+    content_sha256 = hashlib.sha256(content_bytes).hexdigest()
 
     file.set(content)
 
     response_dict = {
         'num_chars': num_chars,
         'content_size': content_size,
-        'content_md5': content_md5
+        'content_sha256': content_sha256
     }
 
     response_body = json.dumps(response_dict, indent=2)
@@ -321,8 +321,8 @@ def put_blob_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
 
 def _generate_content_and_digest(content_size):
     content = bytearray(random.getrandbits(8) for _ in range(content_size))
-    content_md5 = hashlib.md5(content).hexdigest()
-    return content, content_md5
+    content_sha256 = hashlib.sha256(content).hexdigest()
+    return content, content_sha256
 
 
 @app.function_name(name="put_get_multiple_blobs_as_bytes_return_http_response")
@@ -359,15 +359,15 @@ def put_get_multiple_blobs_as_bytes_return_http_response(
     input_content_size_1 = len(inputfile1)
     input_content_size_2 = len(inputfile2)
 
-    input_content_md5_1 = hashlib.md5(inputfile1).hexdigest()
-    input_content_md5_2 = hashlib.md5(inputfile2).hexdigest()
+    input_content_sha256_1 = hashlib.sha256(inputfile1).hexdigest()
+    input_content_sha256_2 = hashlib.sha256(inputfile2).hexdigest()
 
     output_content_size_1 = int(req.params['output_content_size_1'])
     output_content_size_2 = int(req.params['output_content_size_2'])
 
-    output_content_1, output_content_md5_1 = \
+    output_content_1, output_content_sha256_1 = \
         _generate_content_and_digest(output_content_size_1)
-    output_content_2, output_content_md5_2 = \
+    output_content_2, output_content_sha256_2 = \
         _generate_content_and_digest(output_content_size_2)
 
     outputfile1.set(output_content_1)
@@ -376,12 +376,12 @@ def put_get_multiple_blobs_as_bytes_return_http_response(
     response_dict = {
         'input_content_size_1': input_content_size_1,
         'input_content_size_2': input_content_size_2,
-        'input_content_md5_1': input_content_md5_1,
-        'input_content_md5_2': input_content_md5_2,
+        'input_content_sha256_1': input_content_sha256_1,
+        'input_content_sha256_2': input_content_sha256_2,
         'output_content_size_1': output_content_size_1,
         'output_content_size_2': output_content_size_2,
-        'output_content_md5_1': output_content_md5_1,
-        'output_content_md5_2': output_content_md5_2
+        'output_content_sha256_1': output_content_sha256_1,
+        'output_content_sha256_2': output_content_sha256_2
     }
 
     response_body = json.dumps(response_dict, indent=2)

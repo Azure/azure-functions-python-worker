@@ -122,17 +122,17 @@ jobs:
           Write-Host "Branch: $branch"
           if($branch.StartsWith("refs/heads/sdk/") -or $pipelineVarSet -eq "true")
           {
-            Write-Host "##vso[task.setvariable variable=skipDependencyIsolationTests;]true"
+            Write-Host "##vso[task.setvariable variable=skipTest;]true"
           }
           else
           {
-            Write-Host "##vso[task.setvariable variable=skipDependencyIsolationTests;]false"
+            Write-Host "##vso[task.setvariable variable=skipTest;]false"
           }
-        displayName: 'Set SkipDependencyIsolationTests variable'
+        displayName: 'Set skipTest variable'
         condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
       - powershell: |
-          Write-Host "skipDependencyIsolationTests: $(skipDependencyIsolationTests)"
-        displayName: 'Display SkipDependencyIsolationTests variable'
+          Write-Host "skipTest: $(skipTest)"
+        displayName: 'Display skipTest variable'
         condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
       - bash: |
              python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
@@ -144,5 +144,5 @@ jobs:
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
-          skipDependencyIsolationTests: $(skipDependencyIsolationTests)
+          skipTest: $(skipTest)
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"

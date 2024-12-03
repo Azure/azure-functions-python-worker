@@ -39,4 +39,5 @@ steps:
       !distutils-precedence.pth
       !pkg_resources/**
       !*.dist-info/**
+      !werkzeug/debug/shared/debugger.js
     targetFolder: '$(Build.ArtifactStagingDirectory)'

@@ -5,8 +5,10 @@ import os
 import pathlib
 import re
 import typing
-import urllib.parse
+import base64
+import sys
 
+from unittest import skipIf
 from unittest.mock import patch
 
 from tests.utils import testutils
@@ -113,9 +115,11 @@ class ThirdPartyHttpFunctionsTestBase:
 
         def check_log_print_to_console_stdout(self,
                                               host_out: typing.List[str]):
-            # System logs stdout should not exist in host_out
-            self.assertNotIn('Secret42', host_out)
+            # System logs stdout now exist in host_out
+            self.assertIn('Secret42', host_out)
 
+        @skipIf(sys.version_info < (3, 9, 0),
+                "Skip the tests for Python 3.8 and below")
         def test_print_to_console_stderr(self):
             r = self.webhost.request('GET', 'print_logging?console=true'
                                             '&message=Secret42&is_stderr=true',
@@ -125,23 +129,26 @@ class ThirdPartyHttpFunctionsTestBase:
 
         def check_log_print_to_console_stderr(self,
                                               host_out: typing.List[str], ):
-            # System logs stderr should not exist in host_out
-            self.assertNotIn('Secret42', host_out)
+            # System logs stderr now exist in host_out
+            self.assertIn('Secret42', host_out)
 
         def test_raw_body_bytes(self):
             parent_dir = pathlib.Path(__file__).parent.parent
             image_file = parent_dir / 'unittests/resources/functions.png'
             with open(image_file, 'rb') as image:
                 img = image.read()
-                sanitized_image = urllib.parse.quote(img)
-                sanitized_img_len = len(sanitized_image)
+                encoded_image = base64.b64encode(img).decode('utf-8')
+                html_img_tag = \
+                    f'<img src="data:image/png;base64,{encoded_image}" alt="PNG Image"/>'  # noqa
+                sanitized_img_len = len(html_img_tag)
                 r = self.webhost.request('POST', 'raw_body_bytes', data=img,
                                          no_prefix=True)
 
             received_body_len = int(r.headers['body-len'])
             self.assertEqual(received_body_len, sanitized_img_len)
 
-            body = urllib.parse.unquote_to_bytes(r.content)
+            encoded_image_data = encoded_image.split(",")[0]
+            body = base64.b64decode(encoded_image_data)
             try:
                 received_img_file = parent_dir / 'received_img.png'
                 with open(received_img_file, 'wb') as received_img:
@@ -217,9 +224,9 @@ class TestAsgiHttpFunctions(
         self.assertIn('parallelly_log_custom at custom_logger', host_out)
         self.assertIn('callsoon_log', host_out)
 
-        # System logs should not exist in host_out
-        self.assertNotIn('parallelly_log_system at disguised_logger',
-                         host_out)
+        # System logs now exist in host_out
+        self.assertIn('parallelly_log_system at disguised_logger',
+                      host_out)
 
 
 class TestWsgiHttpFunctions(

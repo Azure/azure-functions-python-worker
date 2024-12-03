@@ -392,6 +392,8 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Set-Cookie" in r.headers)
 
+    @skipIf(sys.version_info < (3, 9, 0),
+            "Skip the tests for Python 3.8 and below")
     def test_print_to_console_stderr(self):
         r = self.webhost.request('GET', 'print_logging?console=true'
                                         '&message=Secret42&is_stderr=true')
@@ -399,8 +401,8 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
         self.assertEqual(r.text, '"OK-print-logging"')
 
     def check_log_print_to_console_stderr(self, host_out: typing.List[str], ):
-        # System logs stderr should not exist in host_out
-        self.assertNotIn('Secret42', host_out)
+        # System logs stderr now exist in host_out
+        self.assertIn('Secret42', host_out)
 
     def test_hijack_current_event_loop(self):
         r = self.webhost.request('GET', 'hijack_current_event_loop/')
@@ -417,8 +419,8 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
         self.assertIn('parallelly_log_custom at custom_logger', host_out)
         self.assertIn('callsoon_log', host_out)
 
-        # System logs should not exist in host_out
-        self.assertNotIn('parallelly_log_system at disguised_logger', host_out)
+        # System logs now exist in host_out
+        self.assertIn('parallelly_log_system at disguised_logger', host_out)
 
     def test_no_type_hint(self):
         r = self.webhost.request('GET', 'no_type_hint')

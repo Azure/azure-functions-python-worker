@@ -41,6 +41,7 @@ extends:
          compiled:
            enabled: true # still only runs for default branch
          runSourceLanguagesInSourceAnalysis: true
+         excludePathPatterns: '/deps'
     settings:
       skipBuildTagsForGitHubPullRequests: ${{ variables['System.PullRequest.IsFork'] }}
     stages:

@@ -12,6 +12,10 @@ steps:
   inputs:
     disableAutoCwd: true
     scriptPath: 'pack/scripts/mac_arm64_deps.sh'
+- bash: |
+    pip install pip-audit
+    pip-audit -r requirements.txt
+  displayName: 'Run vulnerability scan'
 - task: CopyFiles@2
   inputs:
     contents: |
@@ -35,4 +39,5 @@ steps:
       !distutils-precedence.pth
       !pkg_resources/**
       !*.dist-info/**
+      !werkzeug/debug/shared/debugger.js
     targetFolder: '$(Build.ArtifactStagingDirectory)'

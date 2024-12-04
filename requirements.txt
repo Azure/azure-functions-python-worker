@@ -1,3 +1,2 @@
-# Please list runtime dependencies in setup.py 'install_requires' and
-# 'extras_require'.
+# Required dependencies listed in pyproject.toml
 .

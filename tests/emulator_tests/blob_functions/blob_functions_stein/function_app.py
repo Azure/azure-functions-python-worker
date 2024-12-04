@@ -391,3 +391,55 @@ def put_get_multiple_blobs_as_bytes_return_http_response(
         mimetype="application/json",
         status_code=200
     )
+
+
+@app.function_name(name="blob_trigger_default_source_enum")
+@app.blob_trigger(arg_name="file",
+                  path="python-worker-tests/test-blob-trigger.txt",
+                  connection="AzureWebJobsStorage",
+                  source=func.BlobSource.LOGS_AND_CONTAINER_SCAN)
+def blob_trigger_default_source_enum(file: func.InputStream) -> str:
+    return json.dumps({
+        'name': file.name,
+        'length': file.length,
+        'content': file.read().decode('utf-8')
+    })
+
+
+@app.function_name(name="blob_trigger_eventgrid_source_enum")
+@app.blob_trigger(arg_name="file",
+                  path="python-worker-tests/test-blob-trigger.txt",
+                  connection="AzureWebJobsStorage",
+                  source=func.BlobSource.EVENT_GRID)
+def blob_trigger_eventgrid_source_enum(file: func.InputStream) -> str:
+    return json.dumps({
+        'name': file.name,
+        'length': file.length,
+        'content': file.read().decode('utf-8')
+    })
+
+
+@app.function_name(name="blob_trigger_default_source_str")
+@app.blob_trigger(arg_name="file",
+                  path="python-worker-tests/test-blob-trigger.txt",
+                  connection="AzureWebJobsStorage",
+                  source="LogsAndContainerScan")
+def blob_trigger_default_source_str(file: func.InputStream) -> str:
+    return json.dumps({
+        'name': file.name,
+        'length': file.length,
+        'content': file.read().decode('utf-8')
+    })
+
+
+@app.function_name(name="blob_trigger_eventgrid_source_str")
+@app.blob_trigger(arg_name="file",
+                  path="python-worker-tests/test-blob-trigger.txt",
+                  connection="AzureWebJobsStorage",
+                  source="EventGrid")
+def blob_trigger_eventgrid_source_str(file: func.InputStream) -> str:
+    return json.dumps({
+        'name': file.name,
+        'length': file.length,
+        'content': file.read().decode('utf-8')
+    })

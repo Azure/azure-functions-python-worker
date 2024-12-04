@@ -78,12 +78,12 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             self.assertEqual(protos.StatusResult.Success,
                              response_msg.response.result.status)
 
-            # The function responds back in the HTTP body with the md5 digest of
+            # The function responds back in the HTTP body with the sha256 digest of
             # the output it created along with its size
             response_bytes = response_msg.response.return_value.http.body.bytes
             json_response = json.loads(response_bytes)
             func_created_content_size = json_response['content_size']
-            func_created_content_md5 = json_response['content_md5']
+            func_created_content_sha256 = json_response['content_sha256']
 
             # Verify if the worker produced an output blob which was written
             # in shared memory
@@ -122,8 +122,8 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
 
             # Verify if we were able to read the correct output that the
             # function has produced
-            read_content_md5 = hashlib.md5(read_content).hexdigest()
-            self.assertEqual(func_created_content_md5, read_content_md5)
+            read_content_sha256 = hashlib.sha256(read_content).hexdigest()
+            self.assertEqual(func_created_content_sha256, read_content_sha256)
             self.assertEqual(len(read_content), func_created_content_size)
 
     async def test_str_blob_read_function(self):
@@ -144,7 +144,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             num_chars = int(content_size / consts.SIZE_OF_CHAR_BYTES)
             content = self.get_random_string(num_chars)
             content_bytes = content.encode('utf-8')
-            content_md5 = hashlib.md5(content_bytes).hexdigest()
+            content_sha256 = hashlib.sha256(content_bytes).hexdigest()
             mem_map_size = consts.CONTENT_HEADER_TOTAL_BYTES + content_size
             mem_map = self.file_accessor.create_mem_map(mem_map_name,
                                                         mem_map_size)
@@ -187,12 +187,12 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             response_bytes = response_msg.response.return_value.http.body.bytes
             json_response = json.loads(response_bytes)
             func_received_num_chars = json_response['num_chars']
-            func_received_content_md5 = json_response['content_md5']
+            func_received_content_sha256 = json_response['content_sha256']
 
             # Check the function response to ensure that it read the complete
-            # input that we provided and the md5 matches
+            # input that we provided and the sha256 matches
             self.assertEqual(num_chars, func_received_num_chars)
-            self.assertEqual(content_md5, func_received_content_md5)
+            self.assertEqual(content_sha256, func_received_content_sha256)
 
     async def test_str_blob_write_function(self):
         """
@@ -226,12 +226,12 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             self.assertEqual(protos.StatusResult.Success,
                              response_msg.response.result.status)
 
-            # The function responds back in the HTTP body with the md5 digest of
+            # The function responds back in the HTTP body with the sha256 digest of
             # the output it created along with its size
             response_bytes = response_msg.response.return_value.http.body.bytes
             json_response = json.loads(response_bytes)
             func_created_num_chars = json_response['num_chars']
-            func_created_content_md5 = json_response['content_md5']
+            func_created_content_sha256 = json_response['content_sha256']
 
             # Verify if the worker produced an output blob which was written
             # in shared memory
@@ -270,8 +270,8 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
 
             # Verify if we were able to read the correct output that the
             # function has produced
-            read_content_md5 = hashlib.md5(read_content_bytes).hexdigest()
-            self.assertEqual(func_created_content_md5, read_content_md5)
+            read_content_sha256 = hashlib.sha256(read_content_bytes).hexdigest()
+            self.assertEqual(func_created_content_sha256, read_content_sha256)
             read_content = read_content_bytes.decode('utf-8')
             self.assertEqual(len(read_content), func_created_num_chars)
 
@@ -386,7 +386,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             mem_map_name_1 = self.get_new_mem_map_name()
             input_content_size_1 = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
             input_content_1 = self.get_random_bytes(input_content_size_1)
-            input_content_md5_1 = hashlib.md5(input_content_1).hexdigest()
+            input_content_sha256_1 = hashlib.sha256(input_content_1).hexdigest()
             input_mem_map_size_1 = \
                 consts.CONTENT_HEADER_TOTAL_BYTES + input_content_size_1
             input_mem_map_1 = \
@@ -412,7 +412,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             mem_map_name_2 = self.get_new_mem_map_name()
             input_content_size_2 = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 20
             input_content_2 = self.get_random_bytes(input_content_size_2)
-            input_content_md5_2 = hashlib.md5(input_content_2).hexdigest()
+            input_content_sha256_2 = hashlib.sha256(input_content_2).hexdigest()
             input_mem_map_size_2 = \
                 consts.CONTENT_HEADER_TOTAL_BYTES + input_content_size_2
             input_mem_map_2 = \
@@ -476,20 +476,20 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             json_response = json.loads(response_bytes)
 
             func_received_content_size_1 = json_response['input_content_size_1']
-            func_received_content_md5_1 = json_response['input_content_md5_1']
+            func_received_content_sha256_1 = json_response['input_content_sha256_1']
             func_received_content_size_2 = json_response['input_content_size_2']
-            func_received_content_md5_2 = json_response['input_content_md5_2']
+            func_received_content_sha256_2 = json_response['input_content_sha256_2']
             func_created_content_size_1 = json_response['output_content_size_1']
             func_created_content_size_2 = json_response['output_content_size_2']
-            func_created_content_md5_1 = json_response['output_content_md5_1']
-            func_created_content_md5_2 = json_response['output_content_md5_2']
+            func_created_content_sha256_1 = json_response['output_content_sha256_1']
+            func_created_content_sha256_2 = json_response['output_content_sha256_2']
 
             # Check the function response to ensure that it read the complete
-            # input that we provided and the md5 matches
+            # input that we provided and the sha256 matches
             self.assertEqual(input_content_size_1, func_received_content_size_1)
-            self.assertEqual(input_content_md5_1, func_received_content_md5_1)
+            self.assertEqual(input_content_sha256_1, func_received_content_sha256_1)
             self.assertEqual(input_content_size_2, func_received_content_size_2)
-            self.assertEqual(input_content_md5_2, func_received_content_md5_2)
+            self.assertEqual(input_content_sha256_2, func_received_content_sha256_2)
 
             # Verify if the worker produced two output blobs which were written
             # in shared memory
@@ -503,7 +503,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
 
             shmem_1 = output_binding_1.rpc_shared_memory
             self._verify_function_output(shmem_1, func_created_content_size_1,
-                                         func_created_content_md5_1)
+                                         func_created_content_sha256_1)
 
             # Output 2
             output_binding_2 = output_data[1]
@@ -512,7 +512,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
 
             shmem_2 = output_binding_2.rpc_shared_memory
             self._verify_function_output(shmem_2, func_created_content_size_2,
-                                         func_created_content_md5_2)
+                                         func_created_content_sha256_2)
 
     async def _test_binary_blob_read_function(self, func_name):
         """
@@ -528,7 +528,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             mem_map_name = self.get_new_mem_map_name()
             content_size = consts.MIN_BYTES_FOR_SHARED_MEM_TRANSFER + 10
             content = self.get_random_bytes(content_size)
-            content_md5 = hashlib.md5(content).hexdigest()
+            content_sha256 = hashlib.sha256(content).hexdigest()
             mem_map_size = consts.CONTENT_HEADER_TOTAL_BYTES + content_size
             mem_map = self.file_accessor.create_mem_map(mem_map_name,
                                                         mem_map_size)
@@ -571,18 +571,18 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
             response_bytes = response_msg.response.return_value.http.body.bytes
             json_response = json.loads(response_bytes)
             func_received_content_size = json_response['content_size']
-            func_received_content_md5 = json_response['content_md5']
+            func_received_content_sha256 = json_response['content_sha256']
 
             # Check the function response to ensure that it read the complete
-            # input that we provided and the md5 matches
+            # input that we provided and the sha256 matches
             self.assertEqual(content_size, func_received_content_size)
-            self.assertEqual(content_md5, func_received_content_md5)
+            self.assertEqual(content_sha256, func_received_content_sha256)
 
     def _verify_function_output(
             self,
             shmem: protos.RpcSharedMemory,
             expected_size: int,
-            expected_md5: str):
+            expected_sha256: str):
         """
         Verify if the output produced by the worker is what we expect it to be
         based on the size and MD5 digest.
@@ -615,6 +615,6 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
 
         # Verify if we were able to read the correct output that the
         # function has produced
-        output_read_content_md5 = hashlib.md5(output_read_content).hexdigest()
-        self.assertEqual(expected_md5, output_read_content_md5)
+        output_read_content_sha256 = hashlib.sha256(output_read_content).hexdigest()
+        self.assertEqual(expected_sha256, output_read_content_sha256)
         self.assertEqual(len(output_read_content), expected_size)

@@ -16,9 +16,11 @@ from urllib.request import urlopen
 from zipfile import ZipFile
 
 import requests
-from Crypto.Cipher import AES
-from Crypto.Hash.SHA256 import SHA256Hash
-from Crypto.Util.Padding import pad
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import padding
+
 from tests.utils.constants import PROJECT_ROOT
 
 # Linux Consumption Testing Constants
@@ -287,19 +289,35 @@ class LinuxConsumptionWebHostController:
         """Encrypt plain text context into a encrypted message which can
         be accepted by the host
         """
+        # Decode the encryption key
         encryption_key_bytes = base64.b64decode(encryption_key.encode())
-        plain_text_bytes = pad(plain_text.encode(), 16)
+
+        # Pad the plaintext to be a multiple of the AES block size
+        padder = padding.PKCS7(algorithms.AES.block_size).padder()
+        plain_text_bytes = padder.update(plain_text.encode()) + padder.finalize()
+
+        # Initialization vector (IV) (fixed value for simplicity)
         iv_bytes = '0123456789abcedf'.encode()
 
-        # Start encryption
-        cipher = AES.new(encryption_key_bytes, AES.MODE_CBC, iv=iv_bytes)
-        encrypted_bytes = cipher.encrypt(plain_text_bytes)
+        # Create AES cipher with CBC mode
+        cipher = Cipher(algorithms.AES(encryption_key_bytes),
+                        modes.CBC(iv_bytes), backend=default_backend())
 
-        # Prepare final result
+        # Perform encryption
+        encryptor = cipher.encryptor()
+        encrypted_bytes = encryptor.update(plain_text_bytes) + encryptor.finalize()
+
+        # Compute SHA256 hash of the encryption key
+        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+        digest.update(encryption_key_bytes)
+        key_sha256 = digest.finalize()
+
+        # Encode IV, encrypted message, and SHA256 hash in base64
         iv_base64 = base64.b64encode(iv_bytes).decode()
         encrypted_base64 = base64.b64encode(encrypted_bytes).decode()
-        key_sha256 = SHA256Hash(encryption_key_bytes).digest()
         key_sha256_base64 = base64.b64encode(key_sha256).decode()
+
+        # Return the final result
         return f'{iv_base64}.{encrypted_base64}.{key_sha256_base64}'
 
     def __enter__(self):

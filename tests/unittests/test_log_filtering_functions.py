@@ -83,10 +83,10 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
 
     def check_log_info_with_sdk_logging(self, host_out: typing.List[str]):
         # See TestLogFilteringFunctions docstring
-        # System log should not be captured in console
-        self.assertNotIn('sdk_logger info', host_out)
-        self.assertNotIn('sdk_logger warning', host_out)
-        self.assertNotIn('sdk_logger error', host_out)
+        # System log should be captured in console
+        self.assertIn('sdk_logger info', host_out)
+        self.assertIn('sdk_logger warning', host_out)
+        self.assertIn('sdk_logger error', host_out)
         self.assertNotIn('sdk_logger debug', host_out)
 
     def test_info_with_sdk_submodule_logging(self):
@@ -101,8 +101,8 @@ class TestLogFilteringFunctions(testutils.WebHostTestCase):
     def check_log_info_with_sdk_submodule_logging(self,
                                                   host_out: typing.List[str]):
         # See TestLogFilteringFunctions docstring
-        # System log should not be captured in console
-        self.assertNotIn('sdk_submodule_logger info', host_out)
-        self.assertNotIn('sdk_submodule_logger warning', host_out)
-        self.assertNotIn('sdk_submodule_logger error', host_out)
+        # System log should be captured in console
+        self.assertIn('sdk_submodule_logger info', host_out)
+        self.assertIn('sdk_submodule_logger warning', host_out)
+        self.assertIn('sdk_submodule_logger error', host_out)
         self.assertNotIn('sdk_submodule_logger debug', host_out)

@@ -1,13 +1,11 @@
 import asyncio
 import logging
-import re
 import sys
 from urllib.request import urlopen
 import base64
 
 import azure.functions as func
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import RedirectResponse
 
 fast_app = FastAPI()
 logger = logging.getLogger("my-function")
@@ -149,33 +147,6 @@ async def return_http_no_body():
 @fast_app.get("/return_http")
 async def return_http(request: Request):
     return Response('<h1>Hello World™</h1>', media_type='text/html')
-
-
-@fast_app.get("/return_http_redirect")
-async def return_http_redirect(request: Request, code: str = ''):
-    # Expected format: 127.0.0.1:<port>
-    host_and_port = request.url.components[1]
-
-    # Validate to ensure it's a valid host and port structure
-    match = re.match(r'^127\.0\.0\.1:(\d+)$', host_and_port)
-    if not match:
-        return Response("Invalid request", status_code=400)
-
-    # Validate port is within specific range
-    port = int(match.group(1))
-    if port < 50000 or port > 65999:
-        return Response("Invalid port", status_code=400)
-
-    # Validate the code param
-    allowed_codes = ['', 'testFunctionKey']
-    if code not in allowed_codes:
-        return Response("Invalid code", status_code=400)
-
-    # Return after all validation succeeds
-    location = 'return_http?code={}'.format(code)
-    return RedirectResponse(status_code=302,
-                            url=f"http://{host_and_port}/"
-                                f"{location}")
 
 
 @fast_app.get("/unhandled_error")

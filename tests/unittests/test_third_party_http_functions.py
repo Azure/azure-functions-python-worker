@@ -132,47 +132,11 @@ class ThirdPartyHttpFunctionsTestBase:
             # System logs stderr now exist in host_out
             self.assertIn('Secret42', host_out)
 
-        def test_raw_body_bytes(self):
-            parent_dir = pathlib.Path(__file__).parent.parent
-            image_file = parent_dir / 'unittests/resources/functions.png'
-            with open(image_file, 'rb') as image:
-                img = image.read()
-                encoded_image = base64.b64encode(img).decode('utf-8')
-                html_img_tag = \
-                    f'<img src="data:image/png;base64,{encoded_image}" alt="PNG Image"/>'  # noqa
-                sanitized_img_len = len(html_img_tag)
-                r = self.webhost.request('POST', 'raw_body_bytes', data=img,
-                                         no_prefix=True)
-
-            received_body_len = int(r.headers['body-len'])
-            self.assertEqual(received_body_len, sanitized_img_len)
-
-            encoded_image_data = encoded_image.split(",")[0]
-            body = base64.b64decode(encoded_image_data)
-            try:
-                received_img_file = parent_dir / 'received_img.png'
-                with open(received_img_file, 'wb') as received_img:
-                    received_img.write(body)
-                self.assertTrue(filecmp.cmp(received_img_file, image_file))
-            finally:
-                if (os.path.exists(received_img_file)):
-                    os.remove(received_img_file)
-
         def test_return_http_no_body(self):
             r = self.webhost.request('GET', 'return_http_no_body',
                                      no_prefix=True)
             self.assertEqual(r.text, '')
             self.assertEqual(r.status_code, 200)
-
-        def test_return_http_redirect(self):
-            r = self.webhost.request('GET', 'return_http_redirect',
-                                     no_prefix=True)
-            self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.text, '<h1>Hello World™</h1>')
-
-            r = self.webhost.request('GET', 'return_http_redirect',
-                                     allow_redirects=False, no_prefix=True)
-            self.assertEqual(r.status_code, 302)
 
         def test_unhandled_error(self):
             r = self.webhost.request('GET', 'unhandled_error', no_prefix=True)
@@ -228,6 +192,32 @@ class TestAsgiHttpFunctions(
         self.assertIn('parallelly_log_system at disguised_logger',
                       host_out)
 
+    def test_raw_body_bytes(self):
+        parent_dir = pathlib.Path(__file__).parent.parent
+        image_file = parent_dir / 'unittests/resources/functions.png'
+        with open(image_file, 'rb') as image:
+            img = image.read()
+            encoded_image = base64.b64encode(img).decode('utf-8')
+            html_img_tag = \
+                f'<img src="data:image/png;base64,{encoded_image}" alt="PNG Image"/>'  # noqa
+            sanitized_img_len = len(html_img_tag)
+            r = self.webhost.request('POST', 'raw_body_bytes', data=img,
+                                     no_prefix=True)
+
+        received_body_len = int(r.headers['body-len'])
+        self.assertEqual(received_body_len, sanitized_img_len)
+
+        encoded_image_data = encoded_image.split(",")[0]
+        body = base64.b64decode(encoded_image_data)
+        try:
+            received_img_file = parent_dir / 'received_img.png'
+            with open(received_img_file, 'wb') as received_img:
+                received_img.write(body)
+            self.assertTrue(filecmp.cmp(received_img_file, image_file))
+        finally:
+            if (os.path.exists(received_img_file)):
+                os.remove(received_img_file)
+
 
 class TestWsgiHttpFunctions(
         ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
@@ -235,3 +225,13 @@ class TestWsgiHttpFunctions(
     def get_script_dir(cls):
         return UNIT_TESTS_ROOT / 'third_party_http_functions' / 'stein' / \
             'wsgi_function'
+
+    def test_return_http_redirect(self):
+        r = self.webhost.request('GET', 'return_http_redirect',
+                                 no_prefix=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '<h1>Hello World™</h1>')
+
+        r = self.webhost.request('GET', 'return_http_redirect',
+                                 allow_redirects=False, no_prefix=True)
+        self.assertEqual(r.status_code, 302)

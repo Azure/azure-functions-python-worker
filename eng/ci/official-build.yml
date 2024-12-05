@@ -41,7 +41,7 @@ extends:
     sdl:
       codeql:
         # Exclude dependencies from CodeQL analysis
-        excludePathPatterns: ['/deps', '/build/webhost/bin/workers/python']
+        excludePathPatterns: '/deps,/build/webhost/bin/workers/python'
       codeSignValidation:
         enabled: true
         break: true

@@ -42,7 +42,7 @@ extends:
            enabled: true # still only runs for default branch
          runSourceLanguagesInSourceAnalysis: true
          # Exclude dependencies from CodeQL analysis
-         excludePathPatterns: ['/deps', '/build/webhost/bin/workers/python']
+         excludePathPatterns: '/deps,/build/webhost/bin/workers/python'
     settings:
       skipBuildTagsForGitHubPullRequests: ${{ variables['System.PullRequest.IsFork'] }}
     stages:

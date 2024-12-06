@@ -30,6 +30,8 @@ resources:
 variables:
   - template: /eng/templates/utils/variables.yml@self
   - template: /eng/templates/utils/official-variables.yml@self
+  - name: codeql.excludePathPatterns
+    value: deps/,build/
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1es
@@ -39,9 +41,6 @@ extends:
       image: 1es-windows-2022
       os: windows
     sdl:
-      codeql:
-        # Exclude dependencies from CodeQL analysis
-        excludePathPatterns: '/deps,/build'
       codeSignValidation:
         enabled: true
         break: true

@@ -28,6 +28,12 @@ resources:
 
 variables:
   - template: /eng/templates/utils/variables.yml@self
+  - name: codeql.excludePathPatterns
+    value: deps/,build/
+  - name: codeql.compiled.enabled
+    value: true
+  - name: codeql.runSourceLanguagesInSourceAnalysis
+    value: true
 
 extends:
   template: v1/1ES.Unofficial.PipelineTemplate.yml@1es
@@ -36,13 +42,6 @@ extends:
       name: 1es-pool-azfunc-public
       image: 1es-windows-2022
       os: windows
-    sdl:
-      codeql:
-         compiled:
-           enabled: true # still only runs for default branch
-         runSourceLanguagesInSourceAnalysis: true
-         # Exclude dependencies from CodeQL analysis
-         excludePathPatterns: '/deps,/build'
     settings:
       skipBuildTagsForGitHubPullRequests: ${{ variables['System.PullRequest.IsFork'] }}
     stages:

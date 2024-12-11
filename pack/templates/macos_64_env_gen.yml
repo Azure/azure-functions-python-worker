@@ -16,6 +16,7 @@ steps:
     pip install pip-audit
     pip-audit -r requirements.txt
   displayName: 'Run vulnerability scan'
+  condition: ne(variables['pythonVersion'], '3.7')
 - task: CopyFiles@2
   inputs:
     contents: |

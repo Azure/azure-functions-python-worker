@@ -60,6 +60,14 @@ extends:
         dependsOn: Build
         jobs:
           - template: /eng/templates/jobs/ci-unit-tests.yml@self
+      - stage: RunDockerConsumptionTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-docker-consumption-tests.yml@self
+      - stage: RunDockerDedicatedTests
+        dependsOn: Build
+        jobs:
+          - template: /eng/templates/official/jobs/ci-docker-dedicated-tests.yml@self
       - stage: RunLinuxConsumptionTests
         dependsOn: Build
         jobs:

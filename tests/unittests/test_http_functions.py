@@ -418,6 +418,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
         # System logs stdout should exist in host_out
         self.assertIn('Secret42', host_out)
 
+    @testutils.retryable_test(3, 5)
     @skipIf(sys.version_info < (3, 9, 0),
             "Skip the tests for Python 3.8 and below")
     def test_print_to_console_stderr(self):

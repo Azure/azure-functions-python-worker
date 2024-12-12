@@ -34,6 +34,8 @@ variables:
     value: true
   - name: codeql.runSourceLanguagesInSourceAnalysis
     value: true
+  - name: codeql.language
+    value: python
 
 extends:
   template: v1/1ES.Unofficial.PipelineTemplate.yml@1es

@@ -143,3 +143,76 @@ class TestOpenTelemetry(unittest.TestCase):
         # Verify that WorkerOpenTelemetryEnabled capability is not set
         capabilities = init_response.worker_init_response.capabilities
         self.assertNotIn("WorkerOpenTelemetryEnabled", capabilities)
+
+    @patch.dict(os.environ, {'PYTHON_ENABLE_OPENTELEMETRY': 'true'})
+    def test_init_request_enable_opentelemetry_enabled_app_setting(
+        self,
+    ):
+
+        init_request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        init_response = self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(init_request))
+
+        self.assertEqual(init_response.worker_init_response.result.status,
+                         protos.StatusResult.Success)
+
+        # Verify otel_libs_available is set to True
+        self.assertTrue(self.dispatcher._otel_libs_available)
+        # Verify that WorkerOpenTelemetryEnabled capability is set to _TRUE
+        capabilities = init_response.worker_init_response.capabilities
+        self.assertIn("WorkerOpenTelemetryEnabled", capabilities)
+        self.assertEqual(capabilities["WorkerOpenTelemetryEnabled"], "true")
+
+    @patch.dict(os.environ, {})
+    def test_init_request_enable_opentelemetry_default_app_setting(
+        self,
+    ):
+
+        init_request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        init_response = self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(init_request))
+
+        self.assertEqual(init_response.worker_init_response.result.status,
+                         protos.StatusResult.Success)
+
+        # Verify otel_libs_available is set to False by default
+        self.assertFalse(self.dispatcher._otel_libs_available)
+        # Verify that WorkerOpenTelemetryEnabled capability is not set
+        capabilities = init_response.worker_init_response.capabilities
+        self.assertNotIn("WorkerOpenTelemetryEnabled", capabilities)
+
+    @patch.dict(os.environ, {'PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY': 'false'})
+    def test_init_request_initialize_azure_monitor_disabled_app_setting(
+        self,
+    ):
+
+        init_request = protos.StreamingMessage(
+            worker_init_request=protos.WorkerInitRequest(
+                host_version="2.3.4",
+                function_app_directory=str(FUNCTION_APP_DIRECTORY)
+            )
+        )
+
+        init_response = self.loop.run_until_complete(
+            self.dispatcher._handle__worker_init_request(init_request))
+
+        self.assertEqual(init_response.worker_init_response.result.status,
+                         protos.StatusResult.Success)
+
+        # Verify otel_libs_available is set to False by default
+        self.assertFalse(self.dispatcher._otel_libs_available)
+        # Verify that WorkerOpenTelemetryEnabled capability is not set
+        capabilities = init_response.worker_init_response.capabilities
+        self.assertNotIn("WorkerOpenTelemetryEnabled", capabilities)

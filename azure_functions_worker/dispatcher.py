@@ -26,12 +26,12 @@ from .constants import (
     APPLICATIONINSIGHTS_CONNECTION_STRING,
     HTTP_URI,
     METADATA_PROPERTIES_WORKER_INDEXED,
-    PYTHON_AZURE_MONITOR_LOGGER_NAME,
-    PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT,
+    PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME,
+    PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME_DEFAULT,
     PYTHON_ENABLE_DEBUG_LOGGING,
     PYTHON_ENABLE_INIT_INDEXING,
-    PYTHON_ENABLE_OPENTELEMETRY,
-    PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
+    PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY,
+    PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY_DEFAULT,
     PYTHON_LANGUAGE_RUNTIME,
     PYTHON_ROLLBACK_CWD_PATH,
     PYTHON_SCRIPT_FILE_NAME,
@@ -103,8 +103,10 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._function_metadata_result = None
         self._function_metadata_exception = None
 
-        # Used for checking if open telemetry is enabled
+        # Used for checking if appinsights is enabled
         self._azure_monitor_available = False
+        # Used for checking if open telemetry is enabled
+        self._otel_libs_available = False
         self._context_api = None
         self._trace_context_propagator = None
 
@@ -318,8 +320,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                     setting=APPLICATIONINSIGHTS_CONNECTION_STRING
                 ),
                 logger_name=get_app_setting(
-                    setting=PYTHON_AZURE_MONITOR_LOGGER_NAME,
-                    default_value=PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT
+                    setting=PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME,
+                    default_value=PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME_DEFAULT
                 ),
             )
             self._azure_monitor_available = True
@@ -381,15 +383,16 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.RPC_HTTP_TRIGGER_METADATA_REMOVED: _TRUE,
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
+
         opentelemetry_app_setting = get_app_setting(
-            setting=PYTHON_ENABLE_OPENTELEMETRY,
-            default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
+            setting=PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY,
+            default_value=PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY_DEFAULT,
         )
         if opentelemetry_app_setting and  opentelemetry_app_setting.lower() == "true":
             self.initialize_azure_monitor()
 
-            if self._azure_monitor_available:
-                capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
+        if self._azure_monitor_available or self._otel_libs_available:
+            capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
 
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
@@ -665,7 +668,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     args[name] = bindings.Out()
 
             if fi.is_async:
-                if self._azure_monitor_available:
+                if self._azure_monitor_available or self._otel_libs_available:
                     self.configure_opentelemetry(fi_context)
 
                 call_result = \
@@ -783,13 +786,13 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             capabilities = {}
             if get_app_setting(
-                    setting=PYTHON_ENABLE_OPENTELEMETRY,
-                    default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
+                    setting=PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY,
+                    default_value=PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY_DEFAULT):
                 self.initialize_azure_monitor()
 
-                if self._azure_monitor_available:
-                    capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = (
-                        _TRUE)
+            if self._azure_monitor_available or self._otel_libs_available:
+                capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = (
+                    _TRUE)
 
             if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
                 try:
@@ -999,7 +1002,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         # invocation_id from ThreadPoolExecutor's threads.
         context.thread_local_storage.invocation_id = invocation_id
         try:
-            if self._azure_monitor_available:
+            if self._azure_monitor_available or self._otel_libs_available:
                 self.configure_opentelemetry(context)
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)

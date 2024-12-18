@@ -30,6 +30,8 @@ resources:
 variables:
   - template: /eng/templates/utils/variables.yml@self
   - template: /eng/templates/utils/official-variables.yml@self
+  - name: codeql.excludePathPatterns
+    value: deps/,build/
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1es

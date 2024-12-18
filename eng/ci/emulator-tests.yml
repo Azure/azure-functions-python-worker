@@ -43,4 +43,4 @@ extends:
       jobs:
       - template: /eng/templates/jobs/ci-emulator-tests.yml@self
         parameters:
-              PoolName: 1es-pool-azfunc
+          PoolName: 1es-pool-azfunc

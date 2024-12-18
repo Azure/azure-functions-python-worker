@@ -2,7 +2,7 @@
     "description":{
         "language":"python",
         "extensions":[".py"],
-        "defaultExecutablePath":"python",
+        "defaultExecutablePath":"C:\\Users\\victoriahall\\Documents\\repos\\azure-functions-python-worker\\.venv\\Scripts\\python.exe",
         "defaultWorkerPath":"worker.py",
         "workerIndexing": "true"
     }

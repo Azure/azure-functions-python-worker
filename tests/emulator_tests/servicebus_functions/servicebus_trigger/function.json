@@ -1,0 +1,20 @@
+{
+  "scriptFile": "__init__.py",
+
+  "bindings": [
+    {
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "name": "msg",
+      "queueName": "testqueue",
+      "connection": "AzureWebJobsServiceBusConnectionString",
+    },
+    {
+      "type": "blob",
+      "direction": "out",
+      "name": "$return",
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/test-servicebus-triggered.txt"
+    }
+  ]
+}

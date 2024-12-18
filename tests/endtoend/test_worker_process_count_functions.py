@@ -12,8 +12,8 @@ from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
 
 @unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "Tests are flaky when running on Docker")
+                 or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+                 "Tests are flaky when running on Docker")
 class TestWorkerProcessCount(testutils.WebHostTestCase):
     """Test the Http Trigger with setting up the python worker process count
     to 2. this test will check if both requests should be processed at the
@@ -71,8 +71,8 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
 
 
 @unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "Tests are flaky when running on Docker")
+                 or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+                 "Tests are flaky when running on Docker")
 class TestWorkerProcessCountStein(TestWorkerProcessCount):
     @classmethod
     def get_script_dir(cls):
@@ -81,8 +81,8 @@ class TestWorkerProcessCountStein(TestWorkerProcessCount):
 
 
 @unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "Tests are flaky when running on Docker")
+                 or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+                 "Tests are flaky when running on Docker")
 class TestWorkerProcessCountWithBlueprintStein(TestWorkerProcessCount):
     @classmethod
     def get_script_dir(cls):
@@ -91,8 +91,8 @@ class TestWorkerProcessCountWithBlueprintStein(TestWorkerProcessCount):
 
 
 @unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
-        "Tests are flaky when running on Docker")
+                 or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+                 "Tests are flaky when running on Docker")
 class TestWorkerProcessCountWithBlueprintDiffDirStein(TestWorkerProcessCount):
     @classmethod
     def get_script_dir(cls):

@@ -85,8 +85,8 @@ jobs:
         displayName: "Running $(PYTHON_VERSION) Python Linux Emulator Tests"
       - bash: |
           # Stop and remove EventHub Emulator container to free up the port
-          docker stop microsoft-azure-eventhub-emulator
-          docker container rm --force microsoft-azure-eventhub-emulator
+          docker stop eventhubs-emulator
+          docker container rm --force eventhubs-emulator
           docker compose -f tests/emulator_tests/utils/servicebus/docker-compose.yml pull
           docker compose -f tests/emulator_tests/utils/servicebus/docker-compose.yml up -d
         env:

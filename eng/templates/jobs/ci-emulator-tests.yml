@@ -89,6 +89,8 @@ jobs:
           docker container rm --force microsoft-azure-eventhub-emulator
           docker compose -f tests/emulator_tests/utils/servicebus/docker-compose.yml pull
           docker compose -f tests/emulator_tests/utils/servicebus/docker-compose.yml up -d
+        env:
+          AzureWebJobsSQLPassword: $(AzureWebJobsSQLPassword)
         displayName: 'Install Azurite and Start ServiceBus Emulator'
       - bash: |
             python -m pytest -q -n auto --dist loadfile --reruns 4 tests/emulator_tests/test_servicebus_functions.py

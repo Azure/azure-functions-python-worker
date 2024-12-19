@@ -81,7 +81,7 @@ test-deferred-bindings = [
 ]
 
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=62", "wheel"]
 build-backend = "setuptools.build_meta"
 
 

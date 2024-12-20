@@ -1,0 +1,51 @@
+{
+    "UserConfig": {
+        "NamespaceConfig": [
+        {
+            "Type": "EventHub",
+            "Name": "emulatorNs1",
+            "Entities": [
+            {
+                "Name": "python-worker-ci-eventhub-batch",
+                "PartitionCount": 2,
+                "ConsumerGroups": [
+                {
+                    "Name": "cg1"
+                }
+                ]
+            },
+            {
+                "Name": "python-worker-ci-eventhub-batch-metadata",
+                "PartitionCount": 2,
+                "ConsumerGroups": [
+                {
+                    "Name": "cg1"
+                }
+                ]
+            },
+            {
+                "Name": "python-worker-ci-eventhub-one",
+                "PartitionCount": 2,
+                "ConsumerGroups": [
+                {
+                    "Name": "cg1"
+                }
+                ]
+            },
+            {
+                "Name": "python-worker-ci-eventhub-one-metadata",
+                "PartitionCount": 2,
+                "ConsumerGroups": [
+                {
+                    "Name": "cg1"
+                }
+                ]
+            }
+            ]
+        }
+        ],
+        "LoggingConfig": {
+            "Type": "File"
+        }
+    }
+}

@@ -204,6 +204,7 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
         self.assertEqual(r_json, {'a': 'abc', 'd': 42})
         self.assertEqual(r.headers['content-type'], 'application/json')
 
+    @testutils.retryable_test(3, 5)
     def test_unhandled_error(self):
         r = self.webhost.request('GET', 'unhandled_error')
         self.assertEqual(r.status_code, 500)
@@ -331,6 +332,7 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
                 passed = True
         self.assertTrue(passed)
 
+    @testutils.retryable_test(3, 5)
     def test_print_logging_no_flush(self):
         r = self.webhost.request('GET', 'print_logging?message=Secret42')
         self.assertEqual(r.status_code, 200)

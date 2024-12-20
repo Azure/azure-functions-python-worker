@@ -1,0 +1,40 @@
+name: microsoft-azure-servicebus
+services:
+  # Service for the Service Bus Emulator
+  sbemulator:
+    container_name: "servicebus-emulator"
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+    volumes:
+      - "./config.json:/ServiceBus_Emulator/ConfigFiles/Config.json"
+    ports:
+      - "5672:5672"
+    environment:
+      SQL_SERVER: sqledge  
+      MSSQL_SA_PASSWORD: ${AzureWebJobsSQLPassword}
+      ACCEPT_EULA: Y
+    depends_on:
+      - sqledge
+    networks:
+      sb-emulator:
+        aliases:
+          - "sb-emulator"
+  sqledge:
+        container_name: "sqledge"
+        image: "mcr.microsoft.com/azure-sql-edge:latest"
+        networks:
+          sb-emulator:
+            aliases:
+              - "sqledge"
+        environment:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: ${AzureWebJobsSQLPassword}
+  # Service for the Azurite Storage Emulator
+  azurite:
+    container_name: "azurite-sb"
+    image: "mcr.microsoft.com/azure-storage/azurite:latest"
+    ports:
+      - "10003:10003"
+      - "10004:10004"
+      - "10005:10005"
+networks:
+  sb-emulator:

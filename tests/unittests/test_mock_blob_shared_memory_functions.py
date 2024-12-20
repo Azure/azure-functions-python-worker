@@ -27,7 +27,7 @@ class TestMockBlobSharedMemoryFunctions(testutils.SharedMemoryTestCase,
     """
     def setUp(self):
         super().setUp()
-        self.blob_funcs_dir = testutils.E2E_TESTS_FOLDER / 'blob_functions'
+        self.blob_funcs_dir = testutils.EMULATOR_TESTS_FOLDER / 'blob_functions'
 
     async def test_binary_blob_read_as_bytes_function(self):
         """

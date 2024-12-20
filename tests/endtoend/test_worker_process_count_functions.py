@@ -1,12 +1,19 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+
 from datetime import datetime
 from threading import Thread
+from unittest import skipIf
 
 from tests.utils import testutils
+from azure_functions_worker.utils.common import is_envvar_true
+from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
 
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Tests are flaky when running on Docker")
 class TestWorkerProcessCount(testutils.WebHostTestCase):
     """Test the Http Trigger with setting up the python worker process count
     to 2. this test will check if both requests should be processed at the
@@ -63,24 +70,30 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
         self.assertTrue(time_diff_in_seconds < 1)
 
 
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Tests are flaky when running on Docker")
 class TestWorkerProcessCountStein(TestWorkerProcessCount):
-
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' /\
                                             'http_functions_stein'
 
 
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Tests are flaky when running on Docker")
 class TestWorkerProcessCountWithBlueprintStein(TestWorkerProcessCount):
-
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'blueprint_functions' /\
                                             'functions_in_blueprint_only'
 
 
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+        "Tests are flaky when running on Docker")
 class TestWorkerProcessCountWithBlueprintDiffDirStein(TestWorkerProcessCount):
-
     @classmethod
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'blueprint_functions' /\

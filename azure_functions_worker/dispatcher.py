@@ -397,7 +397,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         )
         if appinsights_app_setting and appinsights_app_setting.lower() == "true":
             self.initialize_azure_monitor()
-        
+
         if opentelemetry_app_setting and opentelemetry_app_setting.lower() == "true":
             self._otel_libs_available = True
 

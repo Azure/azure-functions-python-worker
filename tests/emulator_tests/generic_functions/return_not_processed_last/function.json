@@ -1,0 +1,26 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "authLevel": "anonymous",
+      "methods": [
+        "get"
+      ],
+      "name": "req"
+    },
+    {
+      "direction": "in",
+      "type": "table",
+      "name": "testEntities",
+      "tableName": "BindingTestTable",
+      "connection": "AzureWebJobsStorage"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "$return"
+    }
+  ]
+}

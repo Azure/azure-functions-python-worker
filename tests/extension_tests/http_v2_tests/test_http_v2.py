@@ -8,12 +8,17 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from tests.utils import testutils
+from azure_functions_worker.utils.common import is_envvar_true
+from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
 from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 
 REQUEST_TIMEOUT_SEC = 5
 
 
+@unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+                 or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+                 "Tests are flaky when running on Docker")
 @unittest.skipIf(sys.version_info.minor < 8, "HTTPv2"
                                              "is only supported for 3.8+.")
 class TestHttpFunctionsWithInitIndexing(testutils.WebHostTestCase):

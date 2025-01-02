@@ -2,10 +2,10 @@ import asyncio
 import logging
 import sys
 from urllib.request import urlopen
+import base64
 
 import azure.functions as func
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import RedirectResponse
 
 fast_app = FastAPI()
 logger = logging.getLogger("my-function")
@@ -130,8 +130,13 @@ async def print_logging(message: str = "", flush: str = 'false',
 
 @fast_app.post("/raw_body_bytes")
 async def raw_body_bytes(request: Request):
-    raw_body = await request.body()
-    return Response(content=raw_body, headers={'body-len': str(len(raw_body))})
+    body = await request.body()
+
+    base64_encoded = base64.b64encode(body).decode('utf-8')
+    html_img_tag = \
+        f'<img src="data:image/png;base64,{base64_encoded}" alt="PNG Image"/>'
+
+    return Response(html_img_tag, headers={'body-len': str(len(html_img_tag))})
 
 
 @fast_app.get("/return_http_no_body")
@@ -142,14 +147,6 @@ async def return_http_no_body():
 @fast_app.get("/return_http")
 async def return_http(request: Request):
     return Response('<h1>Hello World™</h1>', media_type='text/html')
-
-
-@fast_app.get("/return_http_redirect")
-async def return_http_redirect(request: Request, code: str = ''):
-    location = 'return_http?code={}'.format(code)
-    return RedirectResponse(status_code=302,
-                            url=f"http://{request.url.components[1]}/"
-                                f"{location}")
 
 
 @fast_app.get("/unhandled_error")

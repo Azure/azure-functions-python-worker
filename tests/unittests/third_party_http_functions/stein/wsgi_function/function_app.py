@@ -57,13 +57,6 @@ def print_logging():
     return 'OK-print-logging'
 
 
-@flask_app.post("/raw_body_bytes")
-def raw_body_bytes():
-    body = request.get_data()
-
-    return Response(body, headers={'body-len': str(len(body))})
-
-
 @flask_app.get("/return_http_no_body")
 def return_http_no_body():
     return ''

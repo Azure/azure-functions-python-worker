@@ -1,25 +1,43 @@
 <Project>
-  <Target Name="Initialize" AfterTargets="Publish;Build">
-    <CreateItem Include="$(MSBuildThisFileDirectory)\..\">
-      <Output ItemName="MSBuildThisFileDirectoryParentDirectory" TaskParameter="Include"/>
-    </CreateItem>
 
-    <CreateProperty Value="%(MSBuildThisFileDirectoryParentDirectory.Fullpath)">
-        <Output PropertyName="NugetRoot" TaskParameter="Value"/>
-    </CreateProperty>
+  <PropertyGroup>
+    <_PythonWorkerToolsDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../tools'))</_PythonWorkerToolsDir>
+  </PropertyGroup>
 
+  <ItemGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <_PythonSupportedRuntime Include="win-x86" WorkerPath="WINDOWS/X86" />
+    <_PythonSupportedRuntime Include="win-x64" WorkerPath="WINDOWS/X64" />
+    <_PythonSupportedRuntime Include="linux-x64" WorkerPath="LINUX/X64" />
+    <_PythonSupportedRuntime Include="osx-x64" WorkerPath="OSX/X64" />
+    <_PythonSupportedRuntime Include="osx-arm64" WorkerPath="OSX/Arm64" />
+  </ItemGroup>
+
+  <Target Name="_GetFunctionsPythonWorkerFiles" BeforeTargets="AssignTargetPaths" DependsOnTargets="_GetFunctionsPythonWorkerFilesNoRuntime;_GetFunctionsPythonWorkerFilesForRuntime">
     <ItemGroup>
-        <SourceFiles Include="$(NugetRoot)tools\**\*.*"/>
+      <None Include="@(_PythonWorkerFiles)" TargetPath="workers/python/%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
   </Target>
 
-  <Target Name="CopyOnPublish" DependsOnTargets="Initialize" AfterTargets="Publish">
-        <Copy SourceFiles="@(SourceFiles)"
-            DestinationFiles="@(SourceFiles->'$(PublishDir)\workers\python\%(RecursiveDir)%(Filename)%(Extension)')" />
+  <!-- When no runtime is specified, copy all runtimes. -->
+  <Target Name="_GetFunctionsPythonWorkerFilesNoRuntime" Condition="'$(RuntimeIdentifier)' == ''">
+    <ItemGroup>
+      <_PythonWorkerFiles Include="$(_PythonWorkerToolsDir)/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
   </Target>
 
-  <Target Name="CopyOnBuild" DependsOnTargets="Initialize" AfterTargets="Build">
-        <Copy SourceFiles="@(SourceFiles)"
-            DestinationFiles="@(SourceFiles->'$(OutDir)\workers\python\%(RecursiveDir)%(Filename)%(Extension)')" />
+  <!-- When a runtime is specified, copy only that runtimes files. -->
+  <Target Name="_GetFunctionsPythonWorkerFilesForRuntime" Condition="'$(RuntimeIdentifier)' != ''">
+    <PropertyGroup>
+      <_PythonWorkersRuntimeFolder>@(_PythonSupportedRuntime->WithMetadataValue('Identity', '$(RuntimeIdentifier)')->Metadata('WorkerPath'))</_PythonWorkersRuntimeFolder>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_PythonWorkerFiles Include="$(_PythonWorkerToolsDir)/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+      <_PythonWorkerFiles Include="$(_PythonWorkerToolsDir)/**/$(_PythonWorkersRuntimeFolder)/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <!-- Error out if runtime is not supported. -->
+    <Error Condition="'$(_PythonWorkersRuntimeFolder)' == ''" Text="Runtime '$(RuntimeIdentifier)' is not supported by the Python worker. Supported runtimes are @(_PythonSupportedRuntime)." />
   </Target>
+
 </Project>

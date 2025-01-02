@@ -194,7 +194,7 @@ class TestOpenTelemetry(unittest.TestCase):
         self.assertNotIn("WorkerOpenTelemetryEnabled", capabilities)
 
     @patch.dict(os.environ, {'PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY': 'false'})
-    def test_init_request_initialize_azure_monitor_disabled_app_setting(
+    def test_init_request_enable_azure_monitor_disabled_app_setting(
         self,
     ):
 

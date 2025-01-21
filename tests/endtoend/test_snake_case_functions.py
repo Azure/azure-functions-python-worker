@@ -56,8 +56,8 @@ class TestValidSnakeCaseFunctions(testutils.WebHostTestCase):
         )
 
     @testutils.retryable_test(3, 5)
-    def test_underscore_sufffix(self):
-        r = self.webhost.request('GET', 'underscore_sufffix',
+    def test_underscore_suffix(self):
+        r = self.webhost.request('GET', 'underscore_suffix',
                                  params={'name': 'query'},
                                  timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)

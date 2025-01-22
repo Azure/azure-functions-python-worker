@@ -41,7 +41,7 @@ extends:
       codeql:
         compiled:
           enabled: true # still only runs for default branch
-        language: python, powershell
+        sourceLanguages: python, powershell
         excludePathPatterns: deps/,build/
         runSourceLanguagesInSourceAnalysis: true
 

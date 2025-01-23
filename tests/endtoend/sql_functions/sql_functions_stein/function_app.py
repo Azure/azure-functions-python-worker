@@ -45,7 +45,8 @@ def sql_input2(req: func.HttpRequest, products: func.SqlRowList) -> func.HttpRes
 @app.sql_output(arg_name="r_snake",
                 command_text="[dbo].[Products]",
                 connection_string_setting="AzureWebJobsSqlConnectionString")
-def sql_output(req: func.HttpRequest, r_snake: func.Out[func.SqlRow]) -> func.HttpResponse:
+def sql_output(req: func.HttpRequest, r_snake: func.Out[func.SqlRow])\
+        -> func.HttpResponse:
     body = json.loads(req.get_body())
     row = func.SqlRow.from_dict(body)
     r_snake.set(row)

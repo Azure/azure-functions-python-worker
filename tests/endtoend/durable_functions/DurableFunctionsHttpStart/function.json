@@ -18,7 +18,7 @@
       "direction": "out"
     },
     {
-      "name": "starter_snake",
+      "name": "starter",
       "type": "durableClient",
       "direction": "in"
     }

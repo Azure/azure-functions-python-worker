@@ -6,5 +6,5 @@
 # - add azure-functions-durable to requirements.txt
 # - run pip install -r requirements.txt
 
-def main(name_snake: str) -> str:
-    return f"Hello {name_snake}!"
+def main(name: str) -> str:
+    return f"Hello {name}!"

@@ -2,7 +2,7 @@
   "scriptFile": "__init__.py",
   "bindings": [
     {
-      "name": "context_snake",
+      "name": "context",
       "type": "orchestrationTrigger",
       "direction": "in"
     }

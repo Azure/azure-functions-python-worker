@@ -5,9 +5,9 @@ import azure.functions as func
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
-@app.route(route="classic_snake_case", trigger_arg_name="req_snake")
-def classic_snake_case(req_snake: func.HttpRequest) -> func.HttpResponse:
-    name = req_snake.params.get('name')
+@app.route(route="classic_snake_case", trigger_arg_name="req_snake_snake_snake_snake")
+def classic_snake_case(req_snake_snake_snake_snake: func.HttpRequest) -> func.HttpResponse:
+    name = req_snake_snake_snake_snake.params.get('name')
     return func.HttpResponse(f"Hello, {name}.")
 
 @app.route(route="single_underscore", trigger_arg_name="_")

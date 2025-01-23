@@ -8,7 +8,7 @@ import random
 import azure.functions as azf
 
 
-def main(req: azf.HttpRequest, file: azf.Out[bytes]) -> azf.HttpResponse:
+def main(req: azf.HttpRequest, file_snake: azf.Out[bytes]) -> azf.HttpResponse:
     """
     Write a blob (bytes) and respond back (in HTTP response) with the number of
     bytes written and the MD5 digest of the content.
@@ -26,7 +26,7 @@ def main(req: azf.HttpRequest, file: azf.Out[bytes]) -> azf.HttpResponse:
         content = bytearray(random.getrandbits(8) for _ in range(content_size))
     content_sha256 = hashlib.sha256(content).hexdigest()
 
-    file.set(content)
+    file_snake.set(content)
 
     response_dict = {
         'content_size': content_size,

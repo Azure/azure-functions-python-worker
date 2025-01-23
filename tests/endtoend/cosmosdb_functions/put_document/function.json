@@ -11,7 +11,7 @@
     {
       "direction": "out",
       "type": "cosmosDB",
-      "name": "doc",
+      "name": "doc_snake",
       "databaseName": "test",
       "containerName": "items",
       "leaseContainerName": "leases",

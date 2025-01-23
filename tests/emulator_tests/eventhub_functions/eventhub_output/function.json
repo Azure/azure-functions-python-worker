@@ -10,7 +10,7 @@
     },
     {
       "type": "eventHub",
-      "name": "event",
+      "name": "event_snake",
       "direction": "out",
       "eventHubName": "python-worker-ci-eventhub-one",
       "connection": "AzureWebJobsEventHubConnectionString"

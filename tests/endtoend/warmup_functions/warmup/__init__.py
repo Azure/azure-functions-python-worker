@@ -4,5 +4,5 @@
 import logging
 
 
-def main(warmupContext) -> None:
+def main(warmupContext_snake) -> None:
     logging.info('Function App instance is warm')

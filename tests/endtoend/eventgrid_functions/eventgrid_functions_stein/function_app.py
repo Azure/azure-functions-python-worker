@@ -9,30 +9,30 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
 @app.function_name(name="eventGridTrigger")
-@app.event_grid_trigger(arg_name="event")
+@app.event_grid_trigger(arg_name="event_snake")
 @app.blob_output(arg_name="$return",
                  path="python-worker-tests/test-eventgrid-triggered.txt",
                  connection="AzureWebJobsStorage")
-def event_grid_trigger(event: func.EventGridEvent) -> str:
+def event_grid_trigger(event_snake: func.EventGridEvent) -> str:
     logging.info("Event grid function is triggered!")
     return json.dumps({
-        'id': event.id,
-        'data': event.get_json(),
-        'topic': event.topic,
-        'subject': event.subject,
-        'event_type': event.event_type,
+        'id': event_snake.id,
+        'data': event_snake.get_json(),
+        'topic': event_snake.topic,
+        'subject': event_snake.subject,
+        'event_type': event_snake.event_type,
     })
 
 
 @app.function_name(name="eventgrid_output_binding")
 @app.route(route="eventgrid_output_binding")
 @app.event_grid_output(
-    arg_name="outputEvent",
+    arg_name="outputEvent_snake",
     topic_endpoint_uri="AzureWebJobsEventGridTopicUri",
     topic_key_setting="AzureWebJobsEventGridConnectionKey")
 def eventgrid_output_binding(
         req: func.HttpRequest,
-        outputEvent: func.Out[func.EventGridOutputEvent]) -> func.HttpResponse:
+        outputEvent_snake: func.Out[func.EventGridOutputEvent]) -> func.HttpResponse:
     test_uuid = req.params.get('test_uuid')
     data_to_event_grid = func.EventGridOutputEvent(id="test-id",
                                                    data={
@@ -43,7 +43,7 @@ def eventgrid_output_binding(
                                                    event_time=datetime.utcnow(),
                                                    data_version="1.0")
 
-    outputEvent.set(data_to_event_grid)
+    outputEvent_snake.set(data_to_event_grid)
     r_value = "Sent event with subject: {}, id: {}, data: {}, event_type: {} " \
               "to EventGrid!".format(data_to_event_grid.subject,
                                      data_to_event_grid.id,

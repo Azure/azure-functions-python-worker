@@ -10,7 +10,7 @@
         "connectionStringSetting": "AzureWebJobsSqlConnectionString"
     },
     {
-        "name": "r",
+        "name": "r_snake",
         "type": "sql",
         "direction": "out",
         "commandText": "[dbo].[Products2]",

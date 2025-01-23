@@ -10,7 +10,7 @@
     {
       "type": "blob",
       "direction": "out",
-      "name": "file",
+      "name": "file_snake",
       "dataType": "binary",
       "connection": "AzureWebJobsStorage",
       "path": "python-worker-tests/shmem-test-bytes-out.txt"

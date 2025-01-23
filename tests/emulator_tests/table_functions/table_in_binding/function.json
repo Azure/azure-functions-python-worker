@@ -13,7 +13,7 @@
     {
       "direction": "in",
       "type": "table",
-      "name": "testEntity",
+      "name": "testEntity_snake",
       "partitionKey": "test",
       "rowKey": "WillBePopulatedWithGuid",
       "tableName": "BindingTestTable",

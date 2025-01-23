@@ -5,7 +5,7 @@ import json
 import azure.functions as func
 
 
-def main(changes, r: func.Out[func.SqlRow]) -> str:
+def main(changes, r_snake: func.Out[func.SqlRow]) -> str:
     row = func.SqlRow.from_dict(json.loads(changes)[0]["Item"])
-    r.set(row)
+    r_snake.set(row)
     return "OK"

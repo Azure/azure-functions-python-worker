@@ -4,7 +4,7 @@
     {
       "type": "blobTrigger",
       "direction": "in",
-      "name": "file",
+      "name": "file_snake",
       "connection": "AzureWebJobsStorage",
       "path": "python-worker-tests/test-blob-trigger.txt"
     },

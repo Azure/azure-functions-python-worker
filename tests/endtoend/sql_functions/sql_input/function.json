@@ -17,7 +17,7 @@
       "direction": "out"
     },
     {
-      "name": "products",
+      "name": "products_snake",
       "type": "sql",
       "direction": "in",
       "commandText": "SELECT * FROM Products WHERE ProductId = @ProductId",

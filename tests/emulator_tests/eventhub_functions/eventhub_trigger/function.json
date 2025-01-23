@@ -4,7 +4,7 @@
   "bindings": [
     {
       "type": "eventHubTrigger",
-      "name": "event",
+      "name": "event_snake",
       "direction": "in",
       "eventHubName": "python-worker-ci-eventhub-one",
       "connection": "AzureWebJobsEventHubConnectionString"

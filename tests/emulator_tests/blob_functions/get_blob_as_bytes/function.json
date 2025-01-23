@@ -10,7 +10,7 @@
     {
       "type": "blob",
       "direction": "in",
-      "name": "file",
+      "name": "file_snake",
       "dataType": "binary",
       "connection": "AzureWebJobsStorage",
       "path": "python-worker-tests/test-bytes.txt"

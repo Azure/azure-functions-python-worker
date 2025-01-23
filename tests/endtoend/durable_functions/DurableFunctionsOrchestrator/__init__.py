@@ -8,10 +8,10 @@
 import azure.durable_functions as df
 
 
-def orchestrator_function(context: df.DurableOrchestrationContext):
-    result1 = yield context.call_activity('Hello', "Tokyo")
-    result2 = yield context.call_activity('Hello', "Seattle")
-    result3 = yield context.call_activity('Hello', "London")
+def orchestrator_function(context_snake: df.DurableOrchestrationContext):
+    result1 = yield context_snake.call_activity('Hello', "Tokyo")
+    result2 = yield context_snake.call_activity('Hello', "Seattle")
+    result3 = yield context_snake.call_activity('Hello', "London")
     return [result1, result2, result3]
 
 

@@ -49,11 +49,11 @@ def get_queue_untyped_blob_return(req: func.HttpRequest,
 
 @app.function_name(name="put_queue")
 @app.route(route="put_queue")
-@app.queue_output(arg_name="msg",
+@app.queue_output(arg_name="msg_snake",
                   connection="AzureWebJobsStorage",
                   queue_name="testqueue")
-def put_queue(req: func.HttpRequest, msg: func.Out[str]):
-    msg.set(req.get_body())
+def put_queue(req: func.HttpRequest, msg_snake: func.Out[str]):
+    msg_snake.set(req.get_body())
 
     return 'OK'
 
@@ -110,24 +110,24 @@ def put_queue_untyped_return(req: func.HttpRequest,
 
 
 @app.function_name(name="queue_trigger")
-@app.queue_trigger(arg_name="msg",
+@app.queue_trigger(arg_name="msg_snake",
                    queue_name="testqueue",
                    connection="AzureWebJobsStorage")
 @app.blob_output(arg_name="$return",
                  connection="AzureWebJobsStorage",
                  path="python-worker-tests/test-queue-blob.txt")
-def queue_trigger(msg: func.QueueMessage) -> str:
+def queue_trigger(msg_snake: func.QueueMessage) -> str:
     result = json.dumps({
-        'id': msg.id,
-        'body': msg.get_body().decode('utf-8'),
-        'expiration_time': (msg.expiration_time.isoformat()
-                            if msg.expiration_time else None),
-        'insertion_time': (msg.insertion_time.isoformat()
-                           if msg.insertion_time else None),
-        'time_next_visible': (msg.time_next_visible.isoformat()
-                              if msg.time_next_visible else None),
-        'pop_receipt': msg.pop_receipt,
-        'dequeue_count': msg.dequeue_count
+        'id': msg_snake.id,
+        'body': msg_snake.get_body().decode('utf-8'),
+        'expiration_time': (msg_snake.expiration_time.isoformat()
+                            if msg_snake.expiration_time else None),
+        'insertion_time': (msg_snake.insertion_time.isoformat()
+                           if msg_snake.insertion_time else None),
+        'time_next_visible': (msg_snake.time_next_visible.isoformat()
+                              if msg_snake.time_next_visible else None),
+        'pop_receipt': msg_snake.pop_receipt,
+        'dequeue_count': msg_snake.dequeue_count
     })
 
     return result

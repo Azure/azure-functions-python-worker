@@ -3,7 +3,7 @@
 import azure.functions as azf
 
 
-def main(req: azf.HttpRequest, msg: azf.Out[str]):
-    msg.set(req.get_body().decode('utf-8'))
+def main(req: azf.HttpRequest, msg_snake: azf.Out[str]):
+    msg_snake.set(req.get_body().decode('utf-8'))
 
     return 'OK'

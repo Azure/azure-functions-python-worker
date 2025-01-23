@@ -2,7 +2,7 @@
   "scriptFile": "__init__.py",
   "bindings": [
     {
-      "name": "mytimer",
+      "name": "mytimer_snake",
       "type": "timerTrigger",
       "direction": "in",
       "schedule": "*/1 * * * * *",

@@ -3,6 +3,6 @@
 import azure.functions as azf
 
 
-def main(req: azf.HttpRequest, file: bytes) -> str:
-    assert isinstance(file, bytes)
-    return file.decode('utf-8')
+def main(req: azf.HttpRequest, file_snake: bytes) -> str:
+    assert isinstance(file_snake, bytes)
+    return file_snake.decode('utf-8')

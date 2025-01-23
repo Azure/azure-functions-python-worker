@@ -12,26 +12,26 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 # An HttpTrigger to generating EventHub event from EventHub Output Binding
 @app.function_name(name="eventhub_output")
 @app.route(route="eventhub_output")
-@app.event_hub_output(arg_name="event",
+@app.event_hub_output(arg_name="event_snake",
                       event_hub_name="python-worker-ci-eventhub-one",
                       connection="AzureWebJobsEventHubConnectionString")
-def eventhub_output(req: func.HttpRequest, event: func.Out[str]):
-    event.set(req.get_body().decode('utf-8'))
+def eventhub_output(req: func.HttpRequest, event_snake: func.Out[str]):
+    event_snake.set(req.get_body().decode('utf-8'))
     return 'OK'
 
 
 # This is an actual EventHub trigger which will convert the event data
 # into a storage blob.
 @app.function_name(name="eventhub_trigger")
-@app.event_hub_message_trigger(arg_name="event",
+@app.event_hub_message_trigger(arg_name="event_snake",
                                event_hub_name="python-worker-ci-eventhub-one",
                                connection="AzureWebJobsEventHubConnectionString"
                                )
 @app.blob_output(arg_name="$return",
                  path="python-worker-tests/test-eventhub-triggered.txt",
                  connection="AzureWebJobsStorage")
-def eventhub_trigger(event: func.EventHubEvent) -> bytes:
-    return event.get_body()
+def eventhub_trigger(event_snake: func.EventHubEvent) -> bytes:
+    return event_snake.get_body()
 
 
 # Retrieve the event data from storage blob and return it as Http response

@@ -5,9 +5,9 @@ import json
 import azure.functions as azf
 
 
-def main(file: azf.InputStream) -> str:
+def main(file_snake: azf.InputStream) -> str:
     return json.dumps({
-        'name': file.name,
-        'length': file.length,
-        'content': file.read().decode('utf-8')
+        'name': file_snake.name,
+        'length': file_snake.length,
+        'content': file_snake.read().decode('utf-8')
     })

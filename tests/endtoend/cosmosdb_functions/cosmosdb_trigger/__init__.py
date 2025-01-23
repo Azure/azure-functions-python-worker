@@ -3,5 +3,5 @@
 import azure.functions as azf
 
 
-def main(docs: azf.DocumentList) -> str:
-    return docs[0].to_json()
+def main(docs_snake: azf.DocumentList) -> str:
+    return docs_snake[0].to_json()

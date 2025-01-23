@@ -5,7 +5,7 @@
     {
       "type": "serviceBusTrigger",
       "direction": "in",
-      "name": "msg",
+      "name": "msg_snake",
       "queueName": "testqueue",
       "connection": "AzureWebJobsServiceBusConnectionString",
     },

@@ -12,29 +12,29 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
 @app.function_name(name="blob_trigger")
-@app.blob_trigger(arg_name="file",
+@app.blob_trigger(arg_name="file_snake",
                   path="python-worker-tests/test-blob-trigger.txt",
                   connection="AzureWebJobsStorage")
 @app.blob_output(arg_name="$return",
                  path="python-worker-tests/test-blob-triggered.txt",
                  connection="AzureWebJobsStorage")
-def blob_trigger(file: func.InputStream) -> str:
+def blob_trigger(file_snake: func.InputStream) -> str:
     return json.dumps({
-        'name': file.name,
-        'length': file.length,
-        'content': file.read().decode('utf-8')
+        'name': file_snake.name,
+        'length': file_snake.length,
+        'content': file_snake.read().decode('utf-8')
     })
 
 
 @app.function_name(name="get_blob_as_bytes")
 @app.route(route="get_blob_as_bytes")
-@app.blob_input(arg_name="file",
+@app.blob_input(arg_name="file_snake",
                 path="python-worker-tests/test-bytes.txt",
                 data_type="BINARY",
                 connection="AzureWebJobsStorage")
-def get_blob_as_bytes(req: func.HttpRequest, file: bytes) -> str:
-    assert isinstance(file, bytes)
-    return file.decode('utf-8')
+def get_blob_as_bytes(req: func.HttpRequest, file_snake: bytes) -> str:
+    assert isinstance(file_snake, bytes)
+    return file_snake.decode('utf-8')
 
 
 @app.function_name(name="get_blob_as_bytes_return_http_response")
@@ -189,13 +189,13 @@ def get_blob_triggered(req: func.HttpRequest, file: func.InputStream) -> str:
 
 
 @app.function_name(name="put_blob_as_bytes_return_http_response")
-@app.blob_output(arg_name="file",
+@app.blob_output(arg_name="file_snake",
                  path="python-worker-tests/shmem-test-bytes-out.txt",
                  data_type="BINARY",
                  connection="AzureWebJobsStorage")
 @app.route(route="put_blob_as_bytes_return_http_response")
 def put_blob_as_bytes_return_http_response(req: func.HttpRequest,
-                                           file: func.Out[
+                                           file_snake: func.Out[
                                                bytes]) -> func.HttpResponse:
     """
     Write a blob (bytes) and respond back (in HTTP response) with the number of
@@ -214,7 +214,7 @@ def put_blob_as_bytes_return_http_response(req: func.HttpRequest,
         content = bytearray(random.getrandbits(8) for _ in range(content_size))
     content_sha256 = hashlib.sha256(content).hexdigest()
 
-    file.set(content)
+    file_snake.set(content)
 
     response_dict = {
         'content_size': content_size,

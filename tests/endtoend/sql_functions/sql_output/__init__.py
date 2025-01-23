@@ -6,10 +6,10 @@ import json
 import azure.functions as func
 
 
-def main(req: func.HttpRequest, r: func.Out[func.SqlRow]) -> func.HttpResponse:
+def main(req: func.HttpRequest, r_snake: func.Out[func.SqlRow]) -> func.HttpResponse:
     body = json.loads(req.get_body())
     row = func.SqlRow.from_dict(body)
-    r.set(row)
+    r_snake.set(row)
 
     return func.HttpResponse(
         body=req.get_body(),

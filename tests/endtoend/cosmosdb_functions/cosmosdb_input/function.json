@@ -11,7 +11,7 @@
     {
       "direction": "in",
       "type": "cosmosDB",
-      "name": "docs",
+      "name": "docs_snake",
       "databaseName": "test",
       "containerName": "items",
       "id": "cosmosdb-input-test",

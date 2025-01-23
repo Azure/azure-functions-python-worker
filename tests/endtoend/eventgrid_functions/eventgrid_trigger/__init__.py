@@ -5,11 +5,11 @@ import json
 import azure.functions as func
 
 
-def main(event: func.EventGridEvent) -> str:
+def main(event_snake: func.EventGridEvent) -> str:
     return json.dumps({
-        'id': event.id,
-        'data': event.get_json(),
-        'topic': event.topic,
-        'subject': event.subject,
-        'event_type': event.event_type,
+        'id': event_snake.id,
+        'data': event_snake.get_json(),
+        'topic': event_snake.topic,
+        'subject': event_snake.subject,
+        'event_type': event_snake.event_type,
     })

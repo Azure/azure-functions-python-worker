@@ -10,13 +10,13 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 @app.function_name(name="table_in_binding")
 @app.route(route="table_in_binding/{id}")
-@app.table_input(arg_name="testEntity",
+@app.table_input(arg_name="testEntity_snake",
                  connection="AzureWebJobsStorage",
                  table_name="BindingTestTable",
                  row_key='{id}',
                  partition_key="test")
-def table_in_binding(req: func.HttpRequest, testEntity):
-    return func.HttpResponse(status_code=200, body=testEntity)
+def table_in_binding(req: func.HttpRequest, testEntity_snake):
+    return func.HttpResponse(status_code=200, body=testEntity_snake)
 
 
 @app.function_name(name="table_out_binding")

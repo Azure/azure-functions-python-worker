@@ -5,7 +5,7 @@
     {
       "type": "eventGridTrigger",
       "direction": "in",
-      "name": "event"
+      "name": "event_snake"
     },
     {
       "type": "blob",

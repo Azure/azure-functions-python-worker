@@ -7,7 +7,7 @@ import azure.functions as func
 
 
 def main(req: func.HttpRequest,
-         outputEvent: func.Out[func.EventGridOutputEvent]) -> func.HttpResponse:
+         outputEvent_snake: func.Out[func.EventGridOutputEvent]) -> func.HttpResponse:
     test_uuid = req.params.get('test_uuid')
     data_to_event_grid = func.EventGridOutputEvent(id="test-id",
                                                    data={
@@ -18,7 +18,7 @@ def main(req: func.HttpRequest,
                                                    event_time=datetime.utcnow(),
                                                    data_version="1.0")
 
-    outputEvent.set(data_to_event_grid)
+    outputEvent_snake.set(data_to_event_grid)
     r_value = "Sent event with subject: {}, id: {}, data: {}, event_type: {} " \
               "to EventGrid!".format(data_to_event_grid.subject,
                                      data_to_event_grid.id,

@@ -5,7 +5,7 @@
     {
       "type": "queueTrigger",
       "direction": "in",
-      "name": "msg",
+      "name": "msg_snake",
       "queueName": "testqueue",
       "connection": "AzureWebJobsStorage",
     },

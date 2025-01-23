@@ -6,5 +6,5 @@ import logging
 import azure.functions as func
 
 
-def main(mytimer: func.TimerRequest) -> None:
+def main(mytimer_snake: func.TimerRequest) -> None:
     logging.info("This timer trigger function executed successfully")

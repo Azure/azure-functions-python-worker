@@ -3,5 +3,5 @@
 import azure.functions as func
 
 
-def main(req: func.HttpRequest, testEntity):
-    return func.HttpResponse(status_code=200, body=testEntity)
+def main(req: func.HttpRequest, testEntity_snake):
+    return func.HttpResponse(status_code=200, body=testEntity_snake)

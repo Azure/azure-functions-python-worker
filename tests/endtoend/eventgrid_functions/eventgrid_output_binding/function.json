@@ -10,7 +10,7 @@
     },
     {
       "type": "eventGrid",
-      "name": "outputEvent",
+      "name": "outputEvent_snake",
       "topicEndpointUri": "AzureWebJobsEventGridTopicUri",
       "topicKeySetting": "AzureWebJobsEventGridConnectionKey",
       "direction": "out"

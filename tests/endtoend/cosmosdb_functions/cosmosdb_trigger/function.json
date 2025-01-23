@@ -5,7 +5,7 @@
     {
       "direction": "in",
       "type": "cosmosDBTrigger",
-      "name": "docs",
+      "name": "docs_snake",
       "databaseName": "test",
       "containerName": "items",
       "id": "cosmosdb-trigger-test",

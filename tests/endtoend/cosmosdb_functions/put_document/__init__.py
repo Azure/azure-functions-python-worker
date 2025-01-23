@@ -3,7 +3,7 @@
 import azure.functions as func
 
 
-def main(req: func.HttpRequest, doc: func.Out[func.Document]):
-    doc.set(func.Document.from_json(req.get_body()))
+def main(req: func.HttpRequest, doc_snake: func.Out[func.Document]):
+    doc_snake.set(func.Document.from_json(req.get_body()))
 
     return 'OK'

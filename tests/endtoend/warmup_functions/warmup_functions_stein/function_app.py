@@ -8,6 +8,6 @@ import azure.functions as func
 app = func.FunctionApp()
 
 
-@app.warm_up_trigger('warmup')
-def warmup(warmup) -> None:
+@app.warm_up_trigger('warmup_snake')
+def warmup(warmup_snake) -> None:
     logging.info('Function App instance is warm')

@@ -3,7 +3,7 @@
 import typing
 from typing import Any, Optional
 
-from . import datumdef
+from .datumdef import Datum
 
 
 class GenericBinding:
@@ -22,29 +22,29 @@ class GenericBinding:
 
     @classmethod
     def encode(cls, obj: Any, *,
-               expected_type: Optional[type]) -> datumdef.Datum:
+               expected_type: Optional[type]) -> Datum:
         if isinstance(obj, str):
-            return datumdef.Datum(type='string', value=obj)
+            return Datum(type='string', value=obj)
 
         elif isinstance(obj, (bytes, bytearray)):
-            return datumdef.Datum(type='bytes', value=bytes(obj))
+            return Datum(type='bytes', value=bytes(obj))
         elif obj is None:
-            return datumdef.Datum(type=None, value=obj)
+            return Datum(type=None, value=obj)
         elif isinstance(obj, dict):
-            return datumdef.Datum(type='dict', value=obj)
+            return Datum(type='dict', value=obj)
         elif isinstance(obj, list):
-            return datumdef.Datum(type='list', value=obj)
+            return Datum(type='list', value=obj)
         elif isinstance(obj, int):
-            return datumdef.Datum(type='int', value=obj)
+            return Datum(type='int', value=obj)
         elif isinstance(obj, float):
-            return datumdef.Datum(type='double', value=obj)
+            return Datum(type='double', value=obj)
         elif isinstance(obj, bool):
-            return datumdef.Datum(type='bool', value=obj)
+            return Datum(type='bool', value=obj)
         else:
             raise NotImplementedError
 
     @classmethod
-    def decode(cls, data: datumdef.Datum, *, trigger_metadata) -> typing.Any:
+    def decode(cls, data: Datum, *, trigger_metadata) -> typing.Any:
         # Enabling support for Dapr bindings
         # https://github.com/Azure/azure-functions-python-worker/issues/1316
         if data is None:

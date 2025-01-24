@@ -1,0 +1,31 @@
+jobs:
+  - job: "Aggregate"
+    displayName: 'Aggregate Python Library Workers'
+
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-ubuntu-22.04
+      os: linux
+
+    steps:
+      - task: DownloadBuildArtifacts@0
+        inputs:
+          buildType: 'specific'
+          project: $(System.TeamProject)
+          pipeline: 652  # official build pipeline ID
+          buildVersionToDownload: 'specific'
+          specificBuildId: $(BuildId1)  # exact build ID
+          downloadPath: $(Build.ArtifactStagingDirectory)
+          displayName: 'Download Artifacts from Specific Build'
+
+      - script: |
+          # Assuming each branch build produced a wheel or tar.gz, merge them.
+          # This can depend on your packaging logic.
+          mkdir -p $(Build.ArtifactStagingDirectory)/final_package
+          cp $(Build.ArtifactStagingDirectory)/dev-*/dist/* $(Build.ArtifactStagingDirectory)/dist/
+        displayName: 'Merge and Compile Python Packages'
+
+      - publish: $(Build.ArtifactStagingDirectory)/dist
+        artifact: azure-functions-worker
+        displayName: 'Publish Final Python Package'
+

@@ -3,8 +3,8 @@
 
 from typing import Any, Callable
 
-from ..logging import error_logger, logger
-from .common import is_envvar_false, is_envvar_true
+from ..logging import logger
+from .env_state import is_envvar_false, is_envvar_true
 from .tracing import extend_exception_message
 
 
@@ -45,7 +45,6 @@ def attach_message_to_exception(expt_type: Exception, message: str,
             except expt_type as e:
                 if debug_logs is not None:
                     logger.error(debug_logs)
-                error_logger.exception("Error: %s, %s", e, message)
                 raise extend_exception_message(e, message)
         return call
     return decorate

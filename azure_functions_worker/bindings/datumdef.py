@@ -1,19 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+
 import json
 import logging
+
+from datetime import datetime
 from typing import Any, List, Optional
-
-from .. import protos
-from ..logging import logger
-
-try:
-    from http.cookies import SimpleCookie
-except ImportError:
-    from Cookie import SimpleCookie
-
-from dateutil import parser
-from dateutil.parser import ParserError
 
 from .nullable_converters import (
     to_nullable_bool,
@@ -21,6 +13,13 @@ from .nullable_converters import (
     to_nullable_string,
     to_nullable_timestamp,
 )
+
+from ..logging import logger
+
+try:
+    from http.cookies import SimpleCookie
+except ImportError:
+    from Cookie import SimpleCookie
 
 
 class Datum:
@@ -67,7 +66,12 @@ class Datum:
         return '<Datum {} {}>'.format(self.type, val_repr)
 
     @classmethod
-    def from_typed_data(cls, td: protos.TypedData):
+    def from_typed_data(cls, protos):
+        try:
+            td = protos.TypedData
+        except Exception as ex:
+            # Todo: better catch for Datum.from_typed_data(http.body) -- if the data being sent in is already protos.TypedData
+            td = protos
         tt = td.WhichOneof('data')
         if tt == 'http':
             http = td.http
@@ -111,84 +115,8 @@ class Datum:
 
         return cls(val, tt)
 
-    @classmethod
-    def from_rpc_shared_memory(
-            cls,
-            shmem: protos.RpcSharedMemory,
-            shmem_mgr) -> Optional['Datum']:
-        """
-        Reads the specified shared memory region and converts the read data
-        into a datum object of the corresponding type.
-        """
-        if shmem is None:
-            logger.warning('Cannot read from shared memory. '
-                           'RpcSharedMemory is None.')
-            return None
 
-        mem_map_name = shmem.name
-        offset = shmem.offset
-        count = shmem.count
-        data_type = shmem.type
-        ret_val = None
-
-        if data_type == protos.RpcDataType.bytes:
-            val = shmem_mgr.get_bytes(mem_map_name, offset, count)
-            if val is not None:
-                ret_val = cls(val, 'bytes')
-        elif data_type == protos.RpcDataType.string:
-            val = shmem_mgr.get_string(mem_map_name, offset, count)
-            if val is not None:
-                ret_val = cls(val, 'string')
-
-        if ret_val is not None:
-            logger.info(
-                'Read %s bytes from memory map %s for data type %s', count,
-                mem_map_name, data_type)
-            return ret_val
-        return None
-
-    @classmethod
-    def to_rpc_shared_memory(
-            cls,
-            datum: 'Datum',
-            shmem_mgr) -> Optional[protos.RpcSharedMemory]:
-        """
-        Writes the given value to shared memory and returns the corresponding
-        RpcSharedMemory object which can be sent back to the functions host over
-        RPC.
-        """
-        if datum.type == 'bytes':
-            value = datum.value
-            shared_mem_meta = shmem_mgr.put_bytes(value)
-            data_type = protos.RpcDataType.bytes
-        elif datum.type == 'string':
-            value = datum.value
-            shared_mem_meta = shmem_mgr.put_string(value)
-            data_type = protos.RpcDataType.string
-        else:
-            raise NotImplementedError(
-                f'Unsupported datum type ({datum.type}) for shared memory'
-            )
-
-        if shared_mem_meta is None:
-            logger.warning('Cannot write to shared memory for type: %s',
-                           datum.type)
-            return None
-
-        shmem = protos.RpcSharedMemory(
-            name=shared_mem_meta.mem_map_name,
-            offset=0,
-            count=shared_mem_meta.count_bytes,
-            type=data_type)
-
-        logger.info(
-            'Wrote %s bytes to memory map %s for data type %s',
-            shared_mem_meta.count_bytes, shared_mem_meta.mem_map_name,
-            data_type)
-        return shmem
-
-
-def datum_as_proto(datum: Datum) -> protos.TypedData:
+def datum_as_proto(datum: Datum,  protos):
     if datum.type == 'string':
         return protos.TypedData(string=datum.value)
     elif datum.type == 'bytes':
@@ -202,9 +130,9 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
                 k: v.value
                 for k, v in datum.value['headers'].items()
             },
-            cookies=parse_to_rpc_http_cookie_list(datum.value.get('cookies')),
+            cookies=parse_to_rpc_http_cookie_list(datum.value.get('cookies'), protos),
             enable_content_negotiation=False,
-            body=datum_as_proto(datum.value['body']),
+            body=datum_as_proto(datum.value['body'], protos),
         ))
     elif datum.type is None:
         return None
@@ -227,7 +155,7 @@ def datum_as_proto(datum: Datum) -> protos.TypedData:
         )
 
 
-def parse_to_rpc_http_cookie_list(cookies: Optional[List[SimpleCookie]]):
+def parse_to_rpc_http_cookie_list(cookies: Optional[List[SimpleCookie]], protos):
     if cookies is None:
         return cookies
 
@@ -240,23 +168,30 @@ def parse_to_rpc_http_cookie_list(cookies: Optional[List[SimpleCookie]]):
                                      value=cookie_entity.value,
                                      domain=to_nullable_string(
                                          cookie_entity['domain'],
-                                         'cookie.domain'),
+                                         'cookie.domain',
+                                         protos),
                                      path=to_nullable_string(
-                                         cookie_entity['path'], 'cookie.path'),
+                                         cookie_entity['path'],
+                                         'cookie.path',
+                                         protos),
                                      expires=to_nullable_timestamp(
                                          parse_cookie_attr_expires(
-                                             cookie_entity), 'cookie.expires'),
+                                             cookie_entity), 'cookie.expires',
+                                         protos),
                                      secure=to_nullable_bool(
                                          bool(cookie_entity['secure']),
-                                         'cookie.secure'),
+                                         'cookie.secure',
+                                         protos),
                                      http_only=to_nullable_bool(
                                          bool(cookie_entity['httponly']),
-                                         'cookie.httpOnly'),
+                                         'cookie.httpOnly',
+                                         protos),
                                      same_site=parse_cookie_attr_same_site(
-                                         cookie_entity),
+                                         cookie_entity, protos),
                                      max_age=to_nullable_double(
                                          cookie_entity['max-age'],
-                                         'cookie.maxAge')))
+                                         'cookie.maxAge',
+                                         protos)))
 
     return rpc_http_cookies
 
@@ -266,8 +201,8 @@ def parse_cookie_attr_expires(cookie_entity):
 
     if expires is not None and len(expires) != 0:
         try:
-            return parser.parse(expires)
-        except ParserError:
+            return datetime.strptime(expires, "%a, %d %b %Y %H:%M:%S GMT")
+        except ValueError:
             logging.error(
                 f"Can not parse value {expires} of expires in the cookie "
                 f"due to invalid format.")
@@ -282,7 +217,7 @@ def parse_cookie_attr_expires(cookie_entity):
     return None
 
 
-def parse_cookie_attr_same_site(cookie_entity):
+def parse_cookie_attr_same_site(cookie_entity, protos):
     same_site = getattr(protos.RpcHttpCookie.SameSite, "None")
     try:
         raw_same_site_str = cookie_entity['samesite'].lower()

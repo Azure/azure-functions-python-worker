@@ -1,2 +1,0 @@
-# Required dependencies listed in pyproject.toml
-.

@@ -1,6 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+
 import traceback
+
 from traceback import StackSummary, extract_tb
 from typing import List
 
@@ -37,3 +39,18 @@ def _remove_frame_from_stack(tbss: StackSummary,
                                           'filename') != framename, tbss))
     filtered_stack: StackSummary = StackSummary.from_list(filtered_stack_list)
     return filtered_stack
+
+
+def serialize_exception(exc: Exception, protos):
+    try:
+        message = f'{type(exc).__name__}: {exc}'
+    except Exception:
+        message = ('Unhandled exception in function. '
+                   'Could not serialize original exception message.')
+
+    try:
+        stack_trace = marshall_exception_trace(exc)
+    except Exception:
+        stack_trace = ''
+
+    return protos.RpcException(message=message, stack_trace=stack_trace)

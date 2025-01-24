@@ -8,13 +8,13 @@ import socket
 import sys
 from typing import Dict
 
-from azure_functions_worker.constants import (
+from .utils.constants import (
     BASE_EXT_SUPPORTED_PY_MINOR_VERSION,
     PYTHON_ENABLE_INIT_INDEXING,
     X_MS_INVOCATION_ID,
 )
 from azure_functions_worker.logging import logger
-from azure_functions_worker.utils.common import is_envvar_false
+from .utils.env_state import is_envvar_false
 
 
 # Http V2 Exceptions

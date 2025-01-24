@@ -2,19 +2,21 @@
 # Licensed under the MIT License.
 import os
 import sys
-import typing
 
-from .. import protos
-from ..constants import (
+from typing import Any, Dict, Optional
+
+from .datumdef import Datum, datum_as_proto
+from .generic import GenericBinding
+
+from ..http_v2 import HttpV2Registry
+from ..logging import logger
+from ..utils.constants import (
     BASE_EXT_SUPPORTED_PY_MINOR_VERSION,
     CUSTOMER_PACKAGES_PATH,
     HTTP,
     HTTP_TRIGGER,
 )
-from ..http_v2 import HttpV2Registry
-from ..logging import logger
-from . import datumdef, generic
-from .shared_memory_data_transfer import SharedMemoryManager
+
 
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
@@ -91,7 +93,7 @@ def load_binding_registry() -> None:
 
 
 def get_binding(bind_name: str,
-                is_deferred_binding: typing.Optional[bool] = False)\
+                is_deferred_binding: Optional[bool] = False)\
         -> object:
     """
     First checks if the binding is a non-deferred binding. This is
@@ -105,7 +107,7 @@ def get_binding(bind_name: str,
     if binding is None and is_deferred_binding:
         binding = DEFERRED_BINDING_REGISTRY.get(bind_name)
     if binding is None:
-        binding = generic.GenericBinding
+        binding = GenericBinding
     return binding
 
 
@@ -140,7 +142,7 @@ def has_implicit_output(bind_name: str) -> bool:
     binding = get_binding(bind_name)
 
     # Need to pass in bind_name to exempt Durable Functions
-    if binding is generic.GenericBinding:
+    if binding is GenericBinding:
         return (getattr(binding, 'has_implicit_output', lambda: False)
                 (bind_name))
 
@@ -152,16 +154,15 @@ def has_implicit_output(bind_name: str) -> bool:
 
 def from_incoming_proto(
         binding: str,
-        pb: protos.ParameterBinding, *,
-        pytype: typing.Optional[type],
-        trigger_metadata: typing.Optional[typing.Dict[str, protos.TypedData]],
-        shmem_mgr: SharedMemoryManager,
+        pb, *,
+        pytype: Optional[type],
+        trigger_metadata: Optional[Dict[str, Any]],
         function_name: str,
-        is_deferred_binding: typing.Optional[bool] = False) -> typing.Any:
+        is_deferred_binding: Optional[bool] = False) -> Any:
     binding = get_binding(binding, is_deferred_binding)
     if trigger_metadata:
         metadata = {
-            k: datumdef.Datum.from_typed_data(v)
+            k: Datum.from_typed_data(v)
             for k, v in trigger_metadata.items()
         }
     else:
@@ -170,11 +171,7 @@ def from_incoming_proto(
     pb_type = pb.WhichOneof(PB_TYPE)
     if pb_type == PB_TYPE_DATA:
         val = pb.data
-        datum = datumdef.Datum.from_typed_data(val)
-    elif pb_type == PB_TYPE_RPC_SHARED_MEMORY:
-        # Data was sent over shared memory, attempt to read
-        datum = datumdef.Datum.from_rpc_shared_memory(pb.rpc_shared_memory,
-                                                      shmem_mgr)
+        datum = Datum.from_typed_data(val)
     else:
         raise TypeError(f'Unknown ParameterBindingType: {pb_type}')
 
@@ -197,8 +194,8 @@ def from_incoming_proto(
             f'and expected binding type {binding}')
 
 
-def get_datum(binding: str, obj: typing.Any,
-              pytype: typing.Optional[type]) -> datumdef.Datum:
+def get_datum(binding: str, obj: Any,
+              pytype: Optional[type]) -> Datum:
     """
     Convert an object to a datum with the specified type.
     """
@@ -214,76 +211,36 @@ def get_datum(binding: str, obj: typing.Any,
     return datum
 
 
-def _does_datatype_support_caching(datum: datumdef.Datum):
+def _does_datatype_support_caching(datum: Datum):
     supported_datatypes = ('bytes', 'string')
     return datum.type in supported_datatypes
 
 
-def _can_transfer_over_shmem(shmem_mgr: SharedMemoryManager,
-                             is_function_data_cache_enabled: bool,
-                             datum: datumdef.Datum):
-    """
-    If shared memory is enabled and supported for the given datum, try to
-    transfer to host over shared memory as a default.
-    If caching is enabled, then also check if this type is supported - if so,
-    transfer over shared memory.
-    In case of caching, some conditions like object size may not be
-    applicable since even small objects are also allowed to be cached.
-    """
-    if not shmem_mgr.is_enabled():
-        # If shared memory usage is not enabled, no further checks required
-        return False
-    if shmem_mgr.is_supported(datum):
-        # If transferring this object over shared memory is supported, do so.
-        return True
-    if is_function_data_cache_enabled and _does_datatype_support_caching(datum):
-        # If caching is enabled and this object can be cached, transfer over
-        # shared memory (since the cache uses shared memory).
-        # In this case, some requirements (like object size) for using shared
-        # memory may be ignored since we want to support caching of small
-        # objects (those that have sizes smaller that the minimum we transfer
-        # over shared memory when the cache is not enabled) as well.
-        return True
-    return False
-
-
-def to_outgoing_proto(binding: str, obj: typing.Any, *,
-                      pytype: typing.Optional[type]) -> protos.TypedData:
+def to_outgoing_proto(binding: str, obj: Any, *,
+                      pytype: Optional[type],
+                      protos):
     datum = get_datum(binding, obj, pytype)
-    return datumdef.datum_as_proto(datum)
+    return datum_as_proto(datum, protos)
 
 
-def to_outgoing_param_binding(binding: str, obj: typing.Any, *,
-                              pytype: typing.Optional[type],
+def to_outgoing_param_binding(binding: str, obj: Any, *,
+                              pytype: Optional[type],
                               out_name: str,
-                              shmem_mgr: SharedMemoryManager,
-                              is_function_data_cache_enabled: bool) \
-        -> protos.ParameterBinding:
+                              protos):
     datum = get_datum(binding, obj, pytype)
-    shared_mem_value = None
-    if _can_transfer_over_shmem(shmem_mgr, is_function_data_cache_enabled,
-                                datum):
-        shared_mem_value = datumdef.Datum.to_rpc_shared_memory(datum, shmem_mgr)
-    # Check if data was written into shared memory
-    if shared_mem_value is not None:
-        # If it was, then use the rpc_shared_memory field in response message
-        return protos.ParameterBinding(
-            name=out_name,
-            rpc_shared_memory=shared_mem_value)
-    else:
-        # If not, send it as part of the response message over RPC
-        # rpc_val can be None here as we now support a None return type
-        rpc_val = datumdef.datum_as_proto(datum)
-        return protos.ParameterBinding(
-            name=out_name,
-            data=rpc_val)
+    # If not, send it as part of the response message over RPC
+    # rpc_val can be None here as we now support a None return type
+    rpc_val = datum_as_proto(datum, protos)
+    return protos.ParameterBinding(
+        name=out_name,
+        data=rpc_val)
 
 
-def deferred_bindings_decode(binding: typing.Any,
-                             pb: protos.ParameterBinding, *,
-                             pytype: typing.Optional[type],
-                             datum: typing.Any,
-                             metadata: typing.Any,
+def deferred_bindings_decode(binding: Any,
+                             pb: Any, *,
+                             pytype: Optional[type],
+                             datum: Any,
+                             metadata: Any,
                              function_name: str):
     """
     This cache holds deferred binding types (ie. BlobClient, ContainerClient)

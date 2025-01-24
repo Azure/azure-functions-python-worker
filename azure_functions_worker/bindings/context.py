@@ -1,13 +1,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+
 import threading
+
 from typing import Type
 
-from . import RetryContext, TraceContext
+from .retrycontext import RetryContext
+from .tracecontext import TraceContext
 
 
 class Context:
-
     def __init__(self,
                  func_name: str,
                  func_dir: str,
@@ -45,3 +47,23 @@ class Context:
     @property
     def retry_context(self) -> RetryContext:
         return self.__retry_context
+
+
+def get_context(invoc_request, name: str,
+                 directory: str) -> Context:
+    """ For more information refer:
+    https://aka.ms/azfunc-invocation-context
+    """
+    trace_context = TraceContext(
+        invoc_request.trace_context.trace_parent,
+        invoc_request.trace_context.trace_state,
+        invoc_request.trace_context.attributes)
+
+    retry_context = RetryContext(
+        invoc_request.retry_context.retry_count,
+        invoc_request.retry_context.max_retry_count,
+        invoc_request.retry_context.exception)
+
+    return Context(
+        name, directory, invoc_request.invocation_id,
+        threading.local(), trace_context, retry_context)

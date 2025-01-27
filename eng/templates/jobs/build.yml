@@ -39,5 +39,5 @@ jobs:
         displayName: 'Build python worker'
       - bash: |
           pip install pip-audit
-          pip-audit -r requirements.txt
+          pip-audit .
         displayName: 'Run vulnerability scan'

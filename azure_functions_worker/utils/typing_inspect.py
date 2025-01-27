@@ -12,8 +12,8 @@ Example usage::
 # NOTE: This module must support Python 2.7 in addition to Python 3.x
 
 import collections.abc
-import sys
-from typing import Callable, ClassVar, Generic, Tuple, TypeVar, Union, _GenericAlias, _SpecialGenericAlias
+from typing import (Callable, ClassVar, Generic, Tuple,
+                    TypeVar, Union, _GenericAlias, _SpecialGenericAlias)
 
 
 # from mypy_extensions import _TypedDictMeta

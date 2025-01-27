@@ -50,7 +50,7 @@ class Context:
 
 
 def get_context(invoc_request, name: str,
-                 directory: str) -> Context:
+                directory: str) -> Context:
     """ For more information refer:
     https://aka.ms/azfunc-invocation-context
     """

@@ -14,8 +14,6 @@ from .nullable_converters import (
     to_nullable_timestamp,
 )
 
-from ..logging import logger
-
 try:
     from http.cookies import SimpleCookie
 except ImportError:
@@ -69,8 +67,9 @@ class Datum:
     def from_typed_data(cls, protos):
         try:
             td = protos.TypedData
-        except Exception as ex:
-            # Todo: better catch for Datum.from_typed_data(http.body) -- if the data being sent in is already protos.TypedData
+        except Exception:
+            # Todo: better catch for Datum.from_typed_data(http.body)
+            # if the data being sent in is already protos.TypedData
             td = protos
         tt = td.WhichOneof('data')
         if tt == 'http':
@@ -116,7 +115,7 @@ class Datum:
         return cls(val, tt)
 
 
-def datum_as_proto(datum: Datum,  protos):
+def datum_as_proto(datum: Datum, protos):
     if datum.type == 'string':
         return protos.TypedData(string=datum.value)
     elif datum.type == 'bytes':

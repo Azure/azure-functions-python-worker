@@ -6,7 +6,6 @@ import logging
 import os
 import sys
 
-from datetime import datetime
 from typing import List, Optional
 
 from .functions import FunctionInfo, Registry
@@ -22,7 +21,9 @@ from .logging import logger
 from .otel import otel_manager, initialize_azure_monitor, configure_opentelemetry
 
 from .bindings.context import get_context
-from .bindings.meta import load_binding_registry, is_trigger_binding, from_incoming_proto, to_outgoing_param_binding, to_outgoing_proto
+from .bindings.meta import (load_binding_registry, is_trigger_binding,
+                            from_incoming_proto, to_outgoing_param_binding,
+                            to_outgoing_proto)
 from .bindings.out import Out
 from .utils.constants import (FUNCTION_DATA_CACHE,
                               RAW_HTTP_BODY_BYTES,
@@ -56,7 +57,6 @@ _host: str = None
 protos = None
 
 
-# Protos will be the retry / binding / metadata protos object that we populate and return
 async def worker_init_request(request):
     logger.info("Library Worker: received worker_init_request")
     global result, _host, protos, _function_data_cache_enabled
@@ -83,14 +83,14 @@ async def worker_init_request(request):
         if otel_manager.get_azure_monitor_available():
             capabilities[WORKER_OPEN_TELEMETRY_ENABLED] = TRUE
 
-
     # loading bindings registry and saving results to a static
     # dictionary which will be later used in the invocation request
     load_binding_registry()
 
     try:
-        result = asyncio.create_task(load_function_metadata(init_request.function_app_directory,
-                                                            caller_info="worker_init_request"))
+        result = asyncio.create_task(load_function_metadata(
+            init_request.function_app_directory,
+            caller_info="worker_init_request"))
         if get_app_setting(setting=PYTHON_ENABLE_INIT_INDEXING):
             capabilities[HTTP_URI] = \
                 initialize_http_server(_host)
@@ -130,11 +130,10 @@ async def functions_metadata_request(request):
 
     else:
         return protos.FunctionMetadataResponse(
-                    use_default_metadata_indexing=False,
-                    function_metadata_results=metadata_result,
-                    result=protos.StatusResult(
-                        status=protos.StatusResult.Success))
-
+            use_default_metadata_indexing=False,
+            function_metadata_results=metadata_result,
+            result=protos.StatusResult(
+                status=protos.StatusResult.Success))
 
 
 async def functions_load_request(request):
@@ -152,7 +151,6 @@ async def functions_load_request(request):
 async def invocation_request(request):
     logger.info("Library Worker: received worker_invocation_request")
     global protos
-    invocation_time = datetime.now()
     invoc_request = request.request.invocation_request
     invocation_id = invoc_request.invocation_id
     function_id = invoc_request.function_id
@@ -256,11 +254,11 @@ async def invocation_request(request):
         # Actively flush customer print() function to console
         sys.stdout.flush()
         return protos.InvocationResponse(
-                    invocation_id=invocation_id,
-                    return_value=return_value,
-                    result=protos.StatusResult(
-                        status=protos.StatusResult.Success),
-                    output_data=output_data)
+            invocation_id=invocation_id,
+            return_value=return_value,
+            result=protos.StatusResult(
+                status=protos.StatusResult.Success),
+            output_data=output_data)
 
     except Exception as ex:
         if http_v2_enabled:
@@ -268,10 +266,10 @@ async def invocation_request(request):
         global metadata_result
         metadata_result = ex
         return protos.InvocationResponse(
-                    invocation_id=invocation_id,
-                    result=protos.StatusResult(
-                        status=protos.StatusResult.Failure,
-                        exception=serialize_exception(ex)))
+            invocation_id=invocation_id,
+            result=protos.StatusResult(
+                status=protos.StatusResult.Failure,
+                exception=serialize_exception(ex)))
 
 
 async def function_environment_reload_request(request):
@@ -308,9 +306,10 @@ async def function_environment_reload_request(request):
             global _host, result, protos
             _host = request.properties.get("host")
             protos = request.properties.get("protos")
-            result = asyncio.create_task(load_function_metadata(directory,
-                                                                caller_info="environment_reload_request"))
-            if get_app_setting(setting=PYTHON_ENABLE_INIT_INDEXING):  # PYTHON_ENABLE_HTTP_STREAMING
+            result = asyncio.create_task(load_function_metadata(
+                directory,
+                caller_info="environment_reload_request"))
+            if get_app_setting(setting=PYTHON_ENABLE_INIT_INDEXING):
                 capabilities[HTTP_URI] = \
                     initialize_http_server(_host)
                 capabilities[REQUIRES_ROUTE_PARAMETERS] = TRUE
@@ -324,18 +323,18 @@ async def function_environment_reload_request(request):
                 func_env_reload_request.function_app_directory)
 
         return protos.FunctionEnvironmentReloadResponse(
-                capabilities=capabilities,
-                worker_metadata=get_worker_metadata(protos),
-                result=protos.StatusResult(
-                    status=protos.StatusResult.Success))
+            capabilities=capabilities,
+            worker_metadata=get_worker_metadata(protos),
+            result=protos.StatusResult(
+                status=protos.StatusResult.Success))
 
     except Exception as ex:
         global metadata_exception
         metadata_exception = ex
         return protos.FunctionEnvironmentReloadResponse(
-                result=protos.StatusResult(
-                    status=protos.StatusResult.Failure,
-                    exception=serialize_exception(ex)))
+            result=protos.StatusResult(
+                status=protos.StatusResult.Failure,
+                exception=serialize_exception(ex)))
 
 
 async def load_function_metadata(function_app_directory, caller_info):

@@ -28,4 +28,3 @@ def run_sync_func(invocation_id, context, func, params):
         return result(params)
     finally:
         context.thread_local_storage.invocation_id = None
-

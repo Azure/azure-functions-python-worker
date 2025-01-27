@@ -136,7 +136,8 @@ class Registry:
     def validate_function_params(params: dict, bound_params: dict,
                                  annotations: dict, func_name: str,
                                  protos):
-        logger.info("Params: %s, BoundParams: %s, Annotations: %s, FuncName: %s", params, bound_params, annotations, func_name)
+        logger.info("Params: %s, BoundParams: %s, Annotations: %s, FuncName: %s",
+                    params, bound_params, annotations, func_name)
         if set(params) - set(bound_params):
             raise FunctionLoadError(
                 func_name,

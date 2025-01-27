@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import asyncio
 import unittest
 
 from typing import Any
@@ -30,7 +29,7 @@ class InnerRequest:
 class InnerInnerRequest:
     def __init__(self, name: Any):
         self.capabilities = name
-        self.function_app_directory = "tests\\unit_tests"
+        self.function_app_directory = "tests\\unittests"
 
 
 class TestObjects(unittest.TestCase):
@@ -51,7 +50,12 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                        properties={'host': '123',
                                                    'protos': protos})
         result = await worker_init_request(worker_request)
-        self.assertEqual(result.capabilities, {'WorkerStatus': 'true', 'RpcHttpBodyOnly': 'true', 'SharedMemoryDataTransfer': 'true', 'RpcHttpTriggerMetadataRemoved': 'true', 'RawHttpBodyBytes': 'true', 'TypedDataCollection': 'true'})
+        self.assertEqual(result.capabilities, {'WorkerStatus': 'true',
+                                               'RpcHttpBodyOnly': 'true',
+                                               'SharedMemoryDataTransfer': 'true',
+                                               'RpcHttpTriggerMetadataRemoved': 'true',
+                                               'RawHttpBodyBytes': 'true',
+                                               'TypedDataCollection': 'true'})
         self.assertEqual(result.worker_metadata.runtime_name, "python")
         self.assertIsNotNone(result.worker_metadata.runtime_version)
         self.assertIsNotNone(result.worker_metadata.worker_version)

@@ -3,8 +3,6 @@
 
 import re
 
-from .constants import PYTHON_THREADPOOL_THREAD_COUNT, PYTHON_THREADPOOL_THREAD_COUNT_MIN
-
 
 class InvalidFileNameError(Exception):
 

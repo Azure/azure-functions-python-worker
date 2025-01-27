@@ -9,7 +9,7 @@ import sys
 import time
 
 from datetime import timedelta
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 
 from .functions import Registry

@@ -16,5 +16,9 @@ jobs:
         inputs:
           version: 8.0.x
       - bash: |
+          chmod +x eng/scripts/install-dependencies.sh          
+          eng/scripts/install-dependencies.sh
+        displayName: 'Install dependencies'
+      - bash: |
           python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
         displayName: "Running $(PYTHON_VERSION) Unit Tests"

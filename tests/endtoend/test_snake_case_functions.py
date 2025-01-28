@@ -66,6 +66,18 @@ class TestValidSnakeCaseFunctions(testutils.WebHostTestCase):
             b'Hello, query.'
         )
 
+    
+    @testutils.retryable_test(3, 5)
+    def test_ultimate_combo(self):
+        r = self.webhost.request('GET', 'ultimate_combo',
+                                 params={'name': 'query'},
+                                 timeout=REQUEST_TIMEOUT_SEC)
+        self.assertTrue(r.ok)
+        self.assertEqual(
+            r.content,
+            b'Hello, query.'
+        )
+
 
 class TestValidSnakeCaseFunctionsStein(TestValidSnakeCaseFunctions):
 

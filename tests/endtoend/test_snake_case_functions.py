@@ -77,6 +77,28 @@ class TestValidSnakeCaseFunctions(testutils.WebHostTestCase):
             r.content,
             b'Hello, query.'
         )
+    
+    @testutils.retryable_test(3, 5)
+    def test_underscore_prefix_snake(self):
+        r = self.webhost.request('GET', 'underscore_prefix_snake',
+                                 params={'name': 'query'},
+                                 timeout=REQUEST_TIMEOUT_SEC)
+        self.assertTrue(r.ok)
+        self.assertEqual(
+            r.content,
+            b'Hello, query.'
+        )
+    
+    @testutils.retryable_test(3, 5)
+    def test_underscore_suffix_snake(self):
+        r = self.webhost.request('GET', 'underscore_suffix_snake',
+                                 params={'name': 'query'},
+                                 timeout=REQUEST_TIMEOUT_SEC)
+        self.assertTrue(r.ok)
+        self.assertEqual(
+            r.content,
+            b'Hello, query.'
+        )
 
 
 class TestValidSnakeCaseFunctionsStein(TestValidSnakeCaseFunctions):

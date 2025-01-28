@@ -19,7 +19,7 @@ def durablefunctionsorchestrator(context):
 @app.durable_client_input(client_name="client")
 async def durable_client(req: func.HttpRequest, client) -> func.HttpResponse:
     instance_id = await client.start_new(req.route_params["functionName"], None,
-                                               None)
+                                         None)
     logging.info(f"Started orchestration with ID = '{instance_id}'.")
     return client.create_check_status_response(req, instance_id)
 

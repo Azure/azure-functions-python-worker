@@ -30,7 +30,7 @@ def underscore_suffix(req_: func.HttpRequest) -> func.HttpResponse:
     return func.HttpResponse(f"Hello, {name}.")
 
 @app.route(route="ultimate_combo", trigger_arg_name="_req_snake_snake_snake_snake_")
-def classic_snake_case(_req_snake_snake_snake_snake_: func.HttpRequest)\
+def ultimate_combo(_req_snake_snake_snake_snake_: func.HttpRequest)\
         -> func.HttpResponse:
     name = _req_snake_snake_snake_snake_.params.get('name')
     return func.HttpResponse(f"Hello, {name}.")

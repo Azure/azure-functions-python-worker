@@ -9,14 +9,14 @@ jobs:
 
     variables:
       # Extract the version number from the branch name
-      pythonVersion: $[substring(variables['Build.SourceBranchName'], 4, 2)]  # Extract last two digits from dev-xxx
+      pythonVersion: $[substring(variables['Build.SourceBranchName'], 4, 2)]
 
     templateContext:
-      outputParentDirectory: $(Build.c)
+      outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:
         - output: pipelineArtifact
           targetPath: $(Build.SourcesDirectory)/dist
-          artifactName: "azure-functions-worker"
+          artifactName: "azure-functions-worker-py3$(pythonVersion)"
 
     steps:
       - script: |
@@ -57,7 +57,7 @@ jobs:
           package_version=$(echo $branch_name | sed 's|^release/\([^/]*\)-.*|\1|')
 
           if [[ ! "$package_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([a-zA-Z]+[0-9]*)?$ ]]; then
-            echo "Invalid package version detected. Setting to default: 1.0.0a13"
+            echo "Invalid package version detected. Setting to default: 1.0.0"
             package_version="1.0.0"
           fi
           

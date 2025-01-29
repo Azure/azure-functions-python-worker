@@ -6,26 +6,32 @@ jobs:
       name: 1es-pool-azfunc
       image: 1es-ubuntu-22.04
       os: linux
+  
+    templateContext:
+      outputParentDirectory: $(Build.ArtifactStagingDirectory)
+      outputs:
+        - output: pipelineArtifact
+          targetPath: $(Build.SourcesDirectory)/final_package
+          artifactName: "azure-functions-worker"
 
     steps:
-      - task: DownloadBuildArtifacts@0
+      # Add download task for each artifact
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download Python Worker Artifact'
         inputs:
-          buildType: 'specific'
-          project: $(System.TeamProject)
-          pipeline: 652  # official build pipeline ID
-          buildVersionToDownload: 'specific'
-          specificBuildId: $(BuildId1)  # exact build ID
-          downloadPath: $(Build.ArtifactStagingDirectory)
-          displayName: 'Download Artifacts from Specific Build'
-
+          buildType: specific
+          project: 'internal'
+          definition: 652
+          buildVersionToDownload: specific
+          pipelineId: $(BuildId1)
+          artifactName: 'azure-functions-worker-py313'
+          targetPath: "azure-functions-worker-py313"
+      # Compiles the python packages
       - script: |
-          # Assuming each branch build produced a wheel or tar.gz, merge them.
-          # This can depend on your packaging logic.
-          mkdir -p $(Build.ArtifactStagingDirectory)/final_package
-          cp $(Build.ArtifactStagingDirectory)/dev-*/dist/* $(Build.ArtifactStagingDirectory)/dist/
+          mkdir -p $(Build.SourcesDirectory)/final_package
+          cp $(Build.SourcesDirectory)/azure-functions-worker-py3*/*.whl $(Build.SourcesDirectory)/final_package/
         displayName: 'Merge and Compile Python Packages'
-
-      - publish: $(Build.ArtifactStagingDirectory)/dist
-        artifact: azure-functions-worker
-        displayName: 'Publish Final Python Package'
-
+      - script: |
+          echo "Contents of final_package folder:"
+          ls -al $(Build.SourcesDirectory)/final_package
+        displayName: 'Verify folder contents post compilation'

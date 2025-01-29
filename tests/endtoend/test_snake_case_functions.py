@@ -66,7 +66,6 @@ class TestValidSnakeCaseFunctions(testutils.WebHostTestCase):
             b'Hello, query.'
         )
 
-    
     @testutils.retryable_test(3, 5)
     def test_ultimate_combo(self):
         r = self.webhost.request('GET', 'ultimate_combo',
@@ -77,7 +76,7 @@ class TestValidSnakeCaseFunctions(testutils.WebHostTestCase):
             r.content,
             b'Hello, query.'
         )
-    
+
     @testutils.retryable_test(3, 5)
     def test_underscore_prefix_snake(self):
         r = self.webhost.request('GET', 'underscore_prefix_snake',
@@ -88,7 +87,7 @@ class TestValidSnakeCaseFunctions(testutils.WebHostTestCase):
             r.content,
             b'Hello, query.'
         )
-    
+
     @testutils.retryable_test(3, 5)
     def test_underscore_suffix_snake(self):
         r = self.webhost.request('GET', 'underscore_suffix_snake',

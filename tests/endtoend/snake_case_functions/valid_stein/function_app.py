@@ -23,20 +23,24 @@ def underscore_prefix(_req: func.HttpRequest) -> func.HttpResponse:
     name = _req.params.get('name')
     return func.HttpResponse(f"Hello, {name}.")
 
+
 @app.route(route="underscore_prefix_snake", trigger_arg_name="_req_snake")
 def underscore_prefix_snake(_req_snake: func.HttpRequest) -> func.HttpResponse:
     name = _req_snake.params.get('name')
     return func.HttpResponse(f"Hello, {name}.")
+
 
 @app.route(route="underscore_suffix", trigger_arg_name="req_")
 def underscore_suffix(req_: func.HttpRequest) -> func.HttpResponse:
     name = req_.params.get('name')
     return func.HttpResponse(f"Hello, {name}.")
 
+
 @app.route(route="underscore_suffix_snake", trigger_arg_name="req_snake_")
-def underscore_suffix(req_snake_: func.HttpRequest) -> func.HttpResponse:
+def underscore_suffix_snake(req_snake_: func.HttpRequest) -> func.HttpResponse:
     name = req_snake_.params.get('name')
     return func.HttpResponse(f"Hello, {name}.")
+
 
 @app.route(route="ultimate_combo", trigger_arg_name="_req_snake_snake_snake_snake_")
 def ultimate_combo(_req_snake_snake_snake_snake_: func.HttpRequest)\

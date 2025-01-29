@@ -3,6 +3,7 @@
 import inspect
 import operator
 import pathlib
+import re
 import typing
 import uuid
 
@@ -11,6 +12,7 @@ from . import protos
 from ._thirdparty import typing_inspect
 from .constants import HTTP_TRIGGER
 from .protos import BindingInfo
+from .logging import logger
 
 
 class ParamTypeInfo(typing.NamedTuple):
@@ -129,6 +131,15 @@ class Registry:
                         'type azure.functions.Context, got '
                         f'{ctx_anno!r}')
         return requires_context
+
+    @staticmethod
+    def validate_arg_name(params: dict):
+        pattern = r'(^\d|\b\w*__\w*|\w{129,})'
+        for arg_name in params:
+            if re.search(pattern, arg_name):
+                logger.warning("Argument name %s is invalid. Please "
+                               "ensure it does not contain '__', start with a digit, "
+                               "or exceed 128 characters.", arg_name)
 
     @staticmethod
     def validate_function_params(params: dict, bound_params: dict,
@@ -388,6 +399,8 @@ class Registry:
         requires_context = self.is_context_required(params, bound_params,
                                                     annotations,
                                                     func_name)
+
+        self.validate_arg_name(params)
 
         input_types, output_types, _ = self.validate_function_params(
             params, bound_params, annotations, func_name)

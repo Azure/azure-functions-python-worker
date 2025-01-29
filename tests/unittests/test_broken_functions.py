@@ -297,3 +297,24 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertRegex(
                 r.response.result.exception.message,
                 r'.*ModuleNotFoundError')
+
+    async def test_double_underscore_arg_name(self):
+        async with testutils.start_mockhost(
+                script_root=self.broken_funcs_dir) as host:
+            await host.init_worker()
+            func_id, r = await host.load_function('double_underscore_arg_name')
+
+            self.assertEqual(r.response.function_id, func_id)
+            # Indexing does not fail here
+            self.assertEqual(r.response.result.status,
+                             protos.StatusResult.Success)
+
+            message_present = False
+            warning_log = ("Argument name __req is invalid. "
+                           "Please ensure it does not contain "
+                           "\'__\', start with a digit, or exceed 128 characters.")
+            for log in r.logs:
+                if warning_log in log.message:
+                    message_present = True
+                    break
+            self.assertTrue(message_present)

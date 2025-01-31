@@ -8,8 +8,8 @@ jobs:
       os: linux
 
     variables:
-      # Extract the version number from the branch name
-      pythonVersion: $[substring(variables['Build.SourceBranchName'], 4, 2)]  # Extract last two digits from dev-xxx
+      # Extract the last two digits from the branch name
+      pythonVersion: $[substring(variables['Build.SourceBranchName'], 4, 2)]
 
     steps:
       - script: |

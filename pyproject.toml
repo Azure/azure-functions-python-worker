@@ -27,7 +27,7 @@ dynamic = ["version"]
 #]
 dependencies = [
     "azurefunctions-extensions-base; python_version >= '3.8'",
-    "vtest-sdk"
+    "azure-functions"
 ]
 #
 #[project.urls]

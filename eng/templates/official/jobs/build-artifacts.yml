@@ -8,8 +8,8 @@ jobs:
       os: linux
 
     variables:
-      # Extract the version number from the branch name
-      pythonVersion: $[substring(variables['Build.SourceBranchName'], 4, 2)]
+      # Default version
+      pythonVersion: '3.13'
 
     templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)

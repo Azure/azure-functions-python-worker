@@ -12,7 +12,7 @@ from .bindings.meta import (has_implicit_output,
                             check_output_type_annotation,
                             check_input_type_annotation)
 from .utils.constants import HTTP_TRIGGER
-from .utils.typing_inspect import is_generic_type, get_origin, get_args
+from .utils.typing_inspect import is_generic_type, get_origin, get_args  # type: ignore
 
 
 class ParamTypeInfo(typing.NamedTuple):
@@ -35,7 +35,7 @@ class FunctionInfo(typing.NamedTuple):
 
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
-    return_type: typing.Optional[ParamTypeInfo]
+    return_type: typing.Optional[typing.Union[str, ParamTypeInfo]]
 
     trigger_metadata: typing.Optional[typing.Dict[str, typing.Any]]
 
@@ -54,7 +54,7 @@ class Registry:
     def __init__(self) -> None:
         self._functions = {}
 
-    def get_function(self, function_id: str) -> FunctionInfo:
+    def get_function(self, function_id: str) -> typing.Union[FunctionInfo, None]:
         if function_id in self._functions:
             return self._functions[function_id]
 

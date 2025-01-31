@@ -53,7 +53,7 @@ metadata_exception: Optional[Exception] = None
 result = None  # Todo: type is coroutine?
 _functions = Registry()
 _function_data_cache_enabled: bool = False
-_host: str = None
+_host: str = ""
 protos = None
 
 

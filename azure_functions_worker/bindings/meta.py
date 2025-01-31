@@ -1,9 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+# mypy: disable-error-code="attr-defined"
 import os
 import sys
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from .datumdef import Datum, datum_as_proto
 from .generic import GenericBinding
@@ -24,7 +25,7 @@ PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 
 BINDING_REGISTRY = None
 DEFERRED_BINDING_REGISTRY = None
-deferred_bindings_cache = {}
+deferred_bindings_cache: Dict[Any, Any] = {}
 
 
 def _check_http_input_type_annotation(bind_name: str, pytype: type,
@@ -69,7 +70,7 @@ def load_binding_registry() -> None:
         import azure.functions as func
 
     global BINDING_REGISTRY
-    BINDING_REGISTRY = func.get_binding_registry()
+    BINDING_REGISTRY = func.get_binding_registry()  # type: ignore
 
     if BINDING_REGISTRY is None:
         raise AttributeError('BINDING_REGISTRY is None. azure-functions '
@@ -103,9 +104,9 @@ def get_binding(bind_name: str,
     """
     binding = None
     if binding is None and not is_deferred_binding:
-        binding = BINDING_REGISTRY.get(bind_name)
+        binding = BINDING_REGISTRY.get(bind_name)  # type: ignore
     if binding is None and is_deferred_binding:
-        binding = DEFERRED_BINDING_REGISTRY.get(bind_name)
+        binding = DEFERRED_BINDING_REGISTRY.get(bind_name)  # type: ignore
     if binding is None:
         binding = GenericBinding
     return binding
@@ -144,7 +145,7 @@ def has_implicit_output(bind_name: str) -> bool:
     # Need to pass in bind_name to exempt Durable Functions
     if binding is GenericBinding:
         return (getattr(binding, 'has_implicit_output', lambda: False)
-                (bind_name))
+                (bind_name))  # type: ignore
 
     else:
         # If the binding does not have metaclass of meta.InConverter
@@ -159,7 +160,7 @@ def from_incoming_proto(
         trigger_metadata: Optional[Dict[str, Any]],
         function_name: str,
         is_deferred_binding: Optional[bool] = False) -> Any:
-    binding = get_binding(binding, is_deferred_binding)
+    binding_obj = get_binding(binding, is_deferred_binding)
     if trigger_metadata:
         metadata = {
             k: Datum.from_typed_data(v)
@@ -178,30 +179,30 @@ def from_incoming_proto(
     try:
         # if the binding is an sdk type binding
         if is_deferred_binding:
-            return deferred_bindings_decode(binding=binding,
+            return deferred_bindings_decode(binding=binding_obj,
                                             pb=pb,
                                             pytype=pytype,
                                             datum=datum,
                                             metadata=metadata,
                                             function_name=function_name)
-        return binding.decode(datum, trigger_metadata=metadata)
+        return binding_obj.decode(datum, trigger_metadata=metadata)
     except NotImplementedError:
         # Binding does not support the data.
         dt = val.WhichOneof('data')
         raise TypeError(
             f'unable to decode incoming TypedData: '
             f'unsupported combination of TypedData field {dt!r} '
-            f'and expected binding type {binding}')
+            f'and expected binding type {binding_obj}')
 
 
 def get_datum(binding: str, obj: Any,
-              pytype: Optional[type]) -> Datum:
+              pytype: Optional[type]) -> Union[Datum, None]:
     """
     Convert an object to a datum with the specified type.
     """
-    binding = get_binding(binding)
+    binding_obj = get_binding(binding)
     try:
-        datum = binding.encode(obj, expected_type=pytype)
+        datum = binding_obj.encode(obj, expected_type=pytype)
     except NotImplementedError:
         # Binding does not support the data.
         raise TypeError(
@@ -220,7 +221,7 @@ def to_outgoing_proto(binding: str, obj: Any, *,
                       pytype: Optional[type],
                       protos):
     datum = get_datum(binding, obj, pytype)
-    return datum_as_proto(datum, protos)
+    return datum_as_proto(datum, protos)  # type: ignore
 
 
 def to_outgoing_param_binding(binding: str, obj: Any, *,
@@ -230,7 +231,7 @@ def to_outgoing_param_binding(binding: str, obj: Any, *,
     datum = get_datum(binding, obj, pytype)
     # If not, send it as part of the response message over RPC
     # rpc_val can be None here as we now support a None return type
-    rpc_val = datum_as_proto(datum, protos)
+    rpc_val = datum_as_proto(datum, protos)  # type: ignore
     return protos.ParameterBinding(
         name=out_name,
         data=rpc_val)
@@ -277,9 +278,8 @@ def deferred_bindings_decode(binding: Any,
         return deferred_binding_type
 
 
-def check_deferred_bindings_enabled(param_anno: type,
-                                    deferred_bindings_enabled: bool) -> (bool,
-                                                                         bool):
+def check_deferred_bindings_enabled(param_anno: Union[type, None],
+                                    deferred_bindings_enabled: bool) -> Any:
     """
     Checks if deferred bindings is enabled at fx and single binding level
 

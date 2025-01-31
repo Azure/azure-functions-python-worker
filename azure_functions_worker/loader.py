@@ -9,7 +9,7 @@ import sys
 import time
 
 from datetime import timedelta
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 
 from .functions import Registry
@@ -32,7 +32,7 @@ from .utils.wrappers import attach_message_to_exception
 _AZURE_NAMESPACE = '__app__'
 _DEFAULT_SCRIPT_FILENAME = '__init__.py'
 _DEFAULT_ENTRY_POINT = 'main'
-_submodule_dirs = []
+_submodule_dirsL: list[Any] = []
 
 
 def convert_to_seconds(timestr: str):
@@ -52,7 +52,7 @@ def build_binding_protos(protos, indexed_function) -> Dict:
     return binding_protos
 
 
-def build_retry_protos(protos, indexed_function) -> Dict:
+def build_retry_protos(protos, indexed_function) -> Union[Dict, None]:
     retry = get_retry_settings(indexed_function)
 
     if not retry:

@@ -17,7 +17,7 @@ from .nullable_converters import (
 try:
     from http.cookies import SimpleCookie
 except ImportError:
-    from Cookie import SimpleCookie
+    from Cookie import SimpleCookie  # type: ignore
 
 
 class Datum:

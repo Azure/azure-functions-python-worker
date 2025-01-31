@@ -6,7 +6,7 @@ import asyncio
 import importlib
 import socket
 import sys
-from typing import Dict
+from typing import Any, Dict
 
 from .utils.constants import (
     BASE_EXT_SUPPORTED_PY_MINOR_VERSION,
@@ -119,7 +119,7 @@ class SingletonMeta(type):
     """
     Metaclass for implementing the singleton pattern.
     """
-    _instances = {}
+    _instances: Dict[Any, Any] = {}
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
@@ -214,7 +214,7 @@ def initialize_http_server(host_addr, **kwargs):
 
         @app.route
         async def catch_all(request: request_type):  # type: ignore
-            invoc_id = request.headers.get(X_MS_INVOCATION_ID)
+            invoc_id = request.headers.get(X_MS_INVOCATION_ID)  # type: ignore
             if invoc_id is None:
                 raise MissingHeaderError("Header %s not found" %
                                          X_MS_INVOCATION_ID)

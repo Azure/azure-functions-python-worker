@@ -36,7 +36,7 @@ def disable_feature_by(flag: str,
     return decorate
 
 
-def attach_message_to_exception(expt_type: Exception, message: str,
+def attach_message_to_exception(expt_type: type[Exception], message: str,
                                 debug_logs=None) -> Callable:
     def decorate(func):
         def call(*args, **kwargs):

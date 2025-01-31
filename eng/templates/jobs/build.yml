@@ -8,8 +8,8 @@ jobs:
       os: linux
 
     variables:
-      # Extract the last two digits from the branch name
-      pythonVersion: $[substring(variables['Build.SourceBranchName'], 4, 2)]
+      # Default Variable
+      pythonVersion: '3.13'
 
     steps:
       - script: |

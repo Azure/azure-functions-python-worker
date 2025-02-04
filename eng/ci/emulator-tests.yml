@@ -1,4 +1,9 @@
-trigger: none # ensure this is not ran as a CI build
+trigger: # run for sdk and extension release branches
+  batch: true
+  branches:
+    include:
+      - sdk/*
+      - extensions/*
 
 pr:
   branches:

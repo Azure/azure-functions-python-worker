@@ -111,7 +111,7 @@ jobs:
           chmod +x eng/scripts/test-setup.sh
           chmod +x eng/scripts/test-extensions.sh
 
-          eng/scripts/test-extensions.sh $(Pipeline.Workspace) $(PYTHON_VERSION)
+          eng/scripts/test-extensions.sh $(Pipeline.Workspace) $(PYTHON_VERSION) $(PYTHONEXTENSIONNAME)
           eng/scripts/test-setup.sh
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))

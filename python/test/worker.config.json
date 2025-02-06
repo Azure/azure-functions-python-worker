@@ -5,5 +5,9 @@
         "defaultExecutablePath":"python",
         "defaultWorkerPath":"worker.py",
         "workerIndexing": "true"
+    },
+     "processOptions": {
+        "initializationTimeout": "00:02:00",
+        "environmentReloadTimeout": "00:02:00"
     }
 }

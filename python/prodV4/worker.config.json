@@ -9,5 +9,9 @@
         "defaultExecutablePath":"python",
         "defaultWorkerPath":"%FUNCTIONS_WORKER_RUNTIME_VERSION%/{os}/{architecture}/worker.py",
         "workerIndexing": "true"
+    },
+     "processOptions": {
+        "initializationTimeout": "00:02:00",
+        "environmentReloadTimeout": "00:02:00"
     }
 }

@@ -169,7 +169,7 @@ class TestOpenTelemetry(unittest.TestCase):
         self.assertIn("WorkerOpenTelemetryEnabled", capabilities)
         self.assertEqual(capabilities["WorkerOpenTelemetryEnabled"], "true")
 
-    @patch.dict(os.environ, {})
+    @patch.dict(os.environ, {'PYTHON_ENABLE_OPENTELEMETRY': 'false'})
     def test_init_request_enable_opentelemetry_default_app_setting(
         self,
     ):

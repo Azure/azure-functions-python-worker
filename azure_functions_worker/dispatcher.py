@@ -31,9 +31,7 @@ from .constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,
     PYTHON_ENABLE_INIT_INDEXING,
     PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY,
-    PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY_DEFAULT,
     PYTHON_ENABLE_OPENTELEMETRY,
-    PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
     PYTHON_LANGUAGE_RUNTIME,
     PYTHON_ROLLBACK_CWD_PATH,
     PYTHON_SCRIPT_FILE_NAME,
@@ -386,20 +384,11 @@ class Dispatcher(metaclass=DispatcherMeta):
             constants.SHARED_MEMORY_DATA_TRANSFER: _TRUE,
         }
 
-        opentelemetry_app_setting = get_app_setting(
-            setting=PYTHON_ENABLE_OPENTELEMETRY,
-            default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
-        )
-
-        appinsights_app_setting = get_app_setting(
-            setting=PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY,
-            default_value=PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY_DEFAULT,
-        )
-        if appinsights_app_setting and appinsights_app_setting.lower() == "true":
+        if is_envvar_true(PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY):
             self.initialize_azure_monitor()
 
-        if opentelemetry_app_setting and opentelemetry_app_setting.lower() == "true":
-            self._otel_libs_available = True
+        if is_envvar_true(PYTHON_ENABLE_OPENTELEMETRY):
+            self.initialize_azure_monitor()
 
         if self._azure_monitor_available or self._otel_libs_available:
             capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE
@@ -795,13 +784,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             bindings.load_binding_registry()
 
             capabilities = {}
-            if get_app_setting(
-                    setting=PYTHON_ENABLE_OPENTELEMETRY,
-                    default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
+            if is_envvar_true(PYTHON_ENABLE_OPENTELEMETRY):
                 self._otel_libs_available = True
-            if get_app_setting(
-                    setting=PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY,
-                    default_value=PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY_DEFAULT):
+            if is_envvar_true(PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY):
                 self.initialize_azure_monitor()
 
             if self._azure_monitor_available or self._otel_libs_available:

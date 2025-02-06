@@ -82,15 +82,13 @@ HTTP = "http"
 BASE_EXT_SUPPORTED_PY_MINOR_VERSION = 8
 
 # Appsetting to turn on OpenTelemetry support/features
-# A value of "true" enables the setting, defaults to "false"
+# A value of "true" enables the setting
 PYTHON_ENABLE_OPENTELEMETRY = "PYTHON_ENABLE_OPENTELEMETRY"
-PYTHON_ENABLE_OPENTELEMETRY_DEFAULT = "false"
 
 # Appsetting to turn on ApplicationInsights support/features
-# A value of "true" enables the setting, defaults to "false"
+# A value of "true" enables the setting
 PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY = \
     "PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY"
-PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY_DEFAULT = "false"
 
 # Appsetting to specify root logger name of logger to collect telemetry for
 # Used by Azure monitor distro (Application Insights)

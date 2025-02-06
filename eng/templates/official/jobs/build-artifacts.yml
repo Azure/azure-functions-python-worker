@@ -16,7 +16,7 @@ jobs:
       outputs:
         - output: pipelineArtifact
           targetPath: $(Build.SourcesDirectory)/dist
-          artifactName: "azure-functions-worker-py3$(pythonVersion)"
+          artifactName: "azure-functions-runtime-py3$(pythonVersion)"
 
     steps:
       - script: |
@@ -69,7 +69,7 @@ jobs:
         displayName: 'Extract Package Version from Branch Name'
       - script: |
           wheel_file=$(ls $(Build.SourcesDirectory)/dist/*.whl)
-          new_wheel_name="azure-functions-worker-$(packageVersion)-py3$(pythonVersion)-none-any.whl"
+          new_wheel_name="azure-functions-runtime-$(packageVersion)-py3$(pythonVersion)-none-any.whl"
           mv "$wheel_file" "$(Build.SourcesDirectory)/dist/$new_wheel_name"
       - bash: |
           pip install pip-audit

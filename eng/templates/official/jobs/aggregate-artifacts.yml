@@ -12,7 +12,7 @@ jobs:
       outputs:
         - output: pipelineArtifact
           targetPath: $(Build.SourcesDirectory)/final_package
-          artifactName: "azure-functions-worker"
+          artifactName: "dist"
 
     steps:
       # Add download task for each artifact
@@ -24,12 +24,12 @@ jobs:
           definition: 652
           buildVersionToDownload: specific
           pipelineId: $(BuildId1)
-          artifactName: 'azure-functions-worker-py313'
-          targetPath: "azure-functions-worker-py313"
+          artifactName: 'azure-functions-runtime-py313'
+          targetPath: "azure-functions-runtime-py313"
       # Compiles the python packages
       - script: |
           mkdir -p $(Build.SourcesDirectory)/final_package
-          cp $(Build.SourcesDirectory)/azure-functions-worker-py3*/*.whl $(Build.SourcesDirectory)/final_package/
+          cp $(Build.SourcesDirectory)/azure-functions-runtime-py3*/*.whl $(Build.SourcesDirectory)/final_package/
         displayName: 'Merge and Compile Python Packages'
       - script: |
           echo "Contents of final_package folder:"

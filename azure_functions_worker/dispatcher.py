@@ -388,7 +388,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self.initialize_azure_monitor()
 
         if is_envvar_true(PYTHON_ENABLE_OPENTELEMETRY):
-            self.initialize_azure_monitor()
+            self._otel_libs_available = True
 
         if self._azure_monitor_available or self._otel_libs_available:
             capabilities[constants.WORKER_OPEN_TELEMETRY_ENABLED] = _TRUE

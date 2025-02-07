@@ -45,6 +45,7 @@ Repository = "https://github.com/Azure/azure-functions-python-worker"
 dev = [
     "azure-eventhub", # Used for EventHub E2E tests
     "azure-functions-durable", # Used for Durable E2E tests
+    "azure-monitor-opentelemetry", # Used for Azure Monitor unit tests
     "flask",
     "fastapi~=0.103.2",
     "pydantic",
@@ -55,6 +56,7 @@ dev = [
     "requests==2.*",
     "coverage",
     "pytest-sugar",
+    "opentelemetry-api", # Used for OpenTelemetry unit tests
     "pytest-cov",
     "pytest-xdist",
     "pytest-randomly",

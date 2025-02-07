@@ -57,7 +57,7 @@ if __name__ == '__main__':
         os.execve(sys.executable,
                   [sys.executable, '-m', 'proxy_worker']
                   + sys.argv[1:],
-                  os.environ)
+                  env)
     else:
         add_script_root_to_sys_path()
         from proxy_worker import start_worker

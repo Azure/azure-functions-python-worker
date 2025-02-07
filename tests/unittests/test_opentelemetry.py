@@ -1,6 +1,9 @@
 import asyncio
 import os
+import sys
 import unittest
+
+from unittest import skipIf
 from unittest.mock import MagicMock, patch
 
 from tests.unittests.test_dispatcher import FUNCTION_APP_DIRECTORY
@@ -9,6 +12,8 @@ from tests.utils import testutils
 from azure_functions_worker import protos
 
 
+@skipIf(sys.version_info.minor == 7,
+        "Packages are only supported for 3.8+")
 class TestOpenTelemetry(unittest.TestCase):
 
     def setUp(self):

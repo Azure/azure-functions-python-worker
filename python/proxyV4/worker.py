@@ -54,6 +54,10 @@ if __name__ == '__main__':
     joined_pkg_paths = os.pathsep.join(user_pkg_paths)
     env['PYTHONPATH'] = f'{joined_pkg_paths}:{func_worker_dir}'
 
+    project_root = os.path.abspath(os.path.dirname(__file__))
+    if project_root not in sys.path:
+        sys.path.append(project_root)
+
     if is_azure_environment():
         os.execve(sys.executable,
                   [sys.executable, '-m', 'proxy_worker']

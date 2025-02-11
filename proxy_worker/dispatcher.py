@@ -2,7 +2,6 @@ import asyncio
 import concurrent.futures
 import importlib.util
 import logging
-import os
 import queue
 import sys
 import threading
@@ -13,7 +12,6 @@ from dataclasses import dataclass
 from typing import Optional
 
 import grpc
-import azure_functions_worker
 
 from proxy_worker import protos
 from proxy_worker.logging import (
@@ -29,6 +27,9 @@ from proxy_worker.utils.common import is_envvar_true
 from proxy_worker.utils.constants import PYTHON_ENABLE_DEBUG_LOGGING, PYTHON_THREADPOOL_THREAD_COUNT
 from proxy_worker.version import VERSION
 from .utils.dependency import DependencyManager
+
+# Library worker import reloaded in init and reload request
+library_worker = None
 
 class ContextEnabledTask(asyncio.Task):
     AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
@@ -101,6 +102,7 @@ class DispatcherMeta(type):
         if disp is None:
             raise RuntimeError('no currently running Dispatcher is found')
         return disp
+
 
 
 class Dispatcher(metaclass=DispatcherMeta):
@@ -376,42 +378,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         # We can box the app setting as int for earlier python versions.
         return int(max_workers) if max_workers else None
 
-    @staticmethod
-    def reload_azure_functions_worker():
-        try:
-            DependencyManager.reload_azure_google_namespace_from_worker_deps()
-
-            customer_packages_path = sys.path[0]
-            potential_path = os.path.join(customer_packages_path, "azure_functions_worker", "__init__.py")
-
-            if not os.path.exists(potential_path):
-                raise FileNotFoundError(f"ERROR: Expected module file not found at {potential_path}")
-
-            if "azure_functions_worker" in sys.modules:
-                del sys.modules["azure_functions_worker"]
-
-            # Create module spec with forced reloading
-            spec = importlib.util.spec_from_file_location("azure_functions_worker", potential_path)
-
-            if spec is None:
-                raise ImportError(f"ERROR: Failed to create module spec for {potential_path}")
-
-            if spec.loader is None:
-                raise ImportError(f"ERROR: spec.loader is None for {potential_path}")
-
-            # Load module manually
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-
-            # Force all references to use the new module
-            sys.modules["azure_functions_worker"] = module
-            globals()["azure_functions_worker"] = module
-
-            logger.debug("V1 Programming model detected. Successfully loaded azure_functions_worker from:"
-                         f" {module.__file__}")
-        except FileNotFoundError:
-            logger.debug("V2 Programming model detected. Skipping azure_functions_worker reload.")
-
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '
                     'python version %s, '
@@ -432,9 +398,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
 
-        self.reload_azure_functions_worker()
+        import azure_functions_worker as worker
+        global library_worker
+        importlib.reload(worker)
+        library_worker = worker
 
-        init_response = await azure_functions_worker.worker_init_request(init_request)
+        init_response = await library_worker.worker_init_request(init_request)
         logger.info("Finished WorkerInitRequest, request ID %s, worker id %s, ",
                     self.request_id, self.worker_id)
 
@@ -456,12 +425,15 @@ class Dispatcher(metaclass=DispatcherMeta):
         directory = func_env_reload_request.function_app_directory
         DependencyManager.reload_customer_libraries(directory)
 
-        self.reload_azure_functions_worker()
+        import azure_functions_worker as worker
+        global library_worker
+        importlib.reload(worker)
+        library_worker = worker
 
         env_reload_request = WorkerRequest(name="FunctionEnvironmentReloadRequest", request=request,
                                            properties={"protos": protos,
                                                  "host": self._host})
-        env_reload_response = await azure_functions_worker.function_environment_reload_request(env_reload_request)
+        env_reload_response = await library_worker.function_environment_reload_request(env_reload_request)
         return protos.StreamingMessage(
             request_id=self.request_id,
             function_environment_reload_response=env_reload_response)
@@ -481,7 +453,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self.request_id, self.worker_id)
 
         metadata_request = WorkerRequest(name="WorkerMetadataRequest", request=request)
-        metadata_response = await azure_functions_worker.functions_metadata_request(metadata_request)
+        metadata_response = await library_worker.functions_metadata_request(metadata_request)
 
         return protos.StreamingMessage(
             request_id=request.request_id,
@@ -499,7 +471,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self.request_id, function_id, function_name, self.worker_id)
 
         load_request = WorkerRequest(name="FunctionsLoadRequest", request=request)
-        load_response = await azure_functions_worker.function_load_request(load_request)
+        load_response = await library_worker.function_load_request(load_request)
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -517,7 +489,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         invocation_request = WorkerRequest(name="WorkerInvRequest", request=request,
                                            properties={"threadpool": self._sync_call_tp})
-        invocation_response = await azure_functions_worker.invocation_request(invocation_request)
+        invocation_response = await library_worker.invocation_request(invocation_request)
         return protos.StreamingMessage(
             request_id=self.request_id,
             invocation_response=invocation_response)

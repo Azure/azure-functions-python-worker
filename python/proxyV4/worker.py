@@ -30,7 +30,6 @@ def determine_user_pkg_paths():
         User packages are defined in:
             /home/site/wwwroot/.python_packages/lib/site-packages
     """
-    validate_python_version()
     usr_packages_path = [os.path.join(PKGS_PATH, PKGS)]
     return usr_packages_path
 
@@ -44,6 +43,8 @@ def add_script_root_to_sys_path():
 
 if __name__ == '__main__':
     # worker.py lives in the same directory as proxy_worker
+    validate_python_version()
+
     func_worker_dir = str(pathlib.Path(__file__).absolute())
     env = os.environ
 

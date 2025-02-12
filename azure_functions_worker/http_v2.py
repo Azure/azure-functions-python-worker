@@ -285,8 +285,9 @@ class HttpV2Registry:
 
         import azurefunctions.extensions.base as ext_base
         cls._ext_base = ext_base
+        return True
 
-        return cls._ext_base.HttpV2FeatureChecker.http_v2_enabled()
+        # return cls._ext_base.HttpV2FeatureChecker.http_v2_enabled()
 
 
 http_coordinator = HttpCoordinator()

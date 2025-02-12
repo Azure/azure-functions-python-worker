@@ -19,6 +19,7 @@ from .http_v2 import (
 from .loader import index_function_app, process_indexed_function
 from .logging import logger
 from .otel import otel_manager, initialize_azure_monitor, configure_opentelemetry
+from .version import VERSION
 
 from .bindings.context import get_context
 from .bindings.meta import (load_binding_registry, is_trigger_binding,
@@ -58,7 +59,8 @@ protos = None
 
 
 async def worker_init_request(request):
-    logger.info("Library Worker: received worker_init_request")
+    logger.info("V2 Library Worker: received WorkerInitRequest,"
+                "Version %s", VERSION)
     global result, _host, protos, _function_data_cache_enabled
     init_request = request.request.worker_init_request
     host_capabilities = init_request.capabilities
@@ -91,10 +93,11 @@ async def worker_init_request(request):
         result = asyncio.create_task(load_function_metadata(
             init_request.function_app_directory,
             caller_info="worker_init_request"))
-        if get_app_setting(setting=PYTHON_ENABLE_INIT_INDEXING):
-            capabilities[HTTP_URI] = \
-                initialize_http_server(_host)
-            capabilities[REQUIRES_ROUTE_PARAMETERS] = TRUE
+        if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
+            if HttpV2Registry.http_v2_enabled():
+                capabilities[HTTP_URI] = \
+                    initialize_http_server(_host)
+                capabilities[REQUIRES_ROUTE_PARAMETERS] = TRUE
     except HttpServerInitError:
         raise
     except Exception as ex:
@@ -114,10 +117,8 @@ async def worker_init_request(request):
 # worker_status_request can be done in the proxy worker
 
 async def functions_metadata_request(request):
-    logger.info("Library Worker: received worker_metadata_request")
-    global protos
-    # Todo: should there be a check on if result is None?
-    global result, metadata_result, metadata_exception
+    logger.info("V2 Library Worker: received WorkerMetadataRequest")
+    global protos, result, metadata_result, metadata_exception
     if result:
         await result
 
@@ -136,8 +137,8 @@ async def functions_metadata_request(request):
                 status=protos.StatusResult.Success))
 
 
-async def functions_load_request(request):
-    logger.info("Library Worker: received worker_load_request")
+async def function_load_request(request):
+    logger.info("V2 Library Worker: received WorkerLoadRequest")
     global protos
     func_request = request.request.function_load_request
     function_id = func_request.function_id
@@ -149,7 +150,7 @@ async def functions_load_request(request):
 
 
 async def invocation_request(request):
-    logger.info("Library Worker: received worker_invocation_request")
+    logger.info("V2 Library Worker: received WorkerInvocationRequest")
     global protos
     invoc_request = request.request.invocation_request
     invocation_id = invoc_request.invocation_id
@@ -277,7 +278,8 @@ async def function_environment_reload_request(request):
     This is called only when placeholder mode is true. On worker restarts
     worker init request will be called directly.
     """
-    logger.info("Library Worker: received worker_env_reload_request")
+    logger.info("V2 Library Worker: received WorkerInitRequest,"
+                "Version %s", VERSION)
     try:
 
         func_env_reload_request = \
@@ -334,7 +336,7 @@ async def function_environment_reload_request(request):
         return protos.FunctionEnvironmentReloadResponse(
             result=protos.StatusResult(
                 status=protos.StatusResult.Failure,
-                exception=serialize_exception(ex)))
+                exception=serialize_exception(ex, protos)))
 
 
 async def load_function_metadata(function_app_directory, caller_info):

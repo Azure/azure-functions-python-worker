@@ -131,3 +131,6 @@ prof/
 tests/**/host.json
 tests/**/bin
 tests/**/extensions.csproj
+
+# Protos
+*pb2*

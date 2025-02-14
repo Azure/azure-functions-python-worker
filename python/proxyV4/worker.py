@@ -42,8 +42,6 @@ def add_script_root_to_sys_path():
 
 
 if __name__ == '__main__':
-    # worker.py lives in the same directory as azure_functions_worker
-
     validate_python_version()
     func_worker_dir = str(pathlib.Path(__file__).absolute().parent)
     env = os.environ

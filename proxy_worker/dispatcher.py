@@ -400,7 +400,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         import azure_functions_worker as worker
         global library_worker
-        importlib.reload(worker)
         library_worker = worker
 
         init_response = await library_worker.worker_init_request(init_request)

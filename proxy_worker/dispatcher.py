@@ -399,12 +399,21 @@ class Dispatcher(metaclass=DispatcherMeta):
             DependencyManager.prioritize_customer_dependencies()
 
         try:
+            logger.info("Trying to import v1 worker")
             import azure_functions_worker_v1 as worker
+            logger.info(f"V1 worker Import succeeded: {worker.__file__}")
         except ImportError:
+            logger.info("Trying to import v2 worker")
             import azure_functions_worker as worker
+            logger.info(f"V2 worker Import succeeded: {worker.__file__}")
+        except Exception as e:
+            logger.info(f"Some other ex: {e}")
 
+        logger.info("Updating globals")
         global library_worker
         library_worker = worker
+        logger.info(f"Done Updating globals: {worker.__file__}")
+
 
         init_response = await library_worker.worker_init_request(init_request)
         logger.info("Finished WorkerInitRequest, request ID %s, worker id %s, ",

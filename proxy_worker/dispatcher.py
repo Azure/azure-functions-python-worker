@@ -391,31 +391,34 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self.request_id,
                     python_appsetting_state())
 
+        
+        if DependencyManager.should_load_cx_dependencies():
+            DependencyManager.prioritize_customer_dependencies()
+
+        global library_worker
+        try:
+            logger.info("Trying to import v1 worker")
+            import azure_functions_worker_v1
+            library_worker = azure_functions_worker_v1
+            logger.info(f"V1 worker Import succeeded: {library_worker.__file__}")
+        except ImportError:
+            logger.info("Trying to import v2 worker")
+            import azure_functions_worker
+            library_worker = azure_functions_worker
+            logger.info(f"V2 worker Import succeeded: {library_worker.__file__}")
+        except Exception as e:
+            logger.info(f"Some other ex: {e}")
+
+        logger.info(f"Done Updating globals: {library_worker.__file__}")
+
         init_request = WorkerRequest(name="WorkerInitRequest",
                                      request=request,
                                      properties={"protos": protos,
                                                  "host": self._host})
-        if DependencyManager.should_load_cx_dependencies():
-            DependencyManager.prioritize_customer_dependencies()
-
         try:
-            logger.info("Trying to import v1 worker")
-            import azure_functions_worker_v1 as worker
-            logger.info(f"V1 worker Import succeeded: {worker.__file__}")
-        except ImportError:
-            logger.info("Trying to import v2 worker")
-            import azure_functions_worker as worker
-            logger.info(f"V2 worker Import succeeded: {worker.__file__}")
+            init_response = await library_worker.worker_init_request(init_request)
         except Exception as e:
-            logger.info(f"Some other ex: {e}")
-
-        logger.info("Updating globals")
-        global library_worker
-        library_worker = worker
-        logger.info(f"Done Updating globals: {worker.__file__}")
-
-
-        init_response = await library_worker.worker_init_request(init_request)
+            logger.info(f"Exception from init: {e}")
         logger.info("Finished WorkerInitRequest, request ID %s, worker id %s, ",
                     self.request_id, self.worker_id)
 

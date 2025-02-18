@@ -398,7 +398,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
 
-        import azure_functions_worker as worker
+        try:
+            import azure_functions_worker_v1 as worker
+        except ImportError:
+            import azure_functions_worker as worker
+
         global library_worker
         library_worker = worker
 
@@ -424,9 +428,12 @@ class Dispatcher(metaclass=DispatcherMeta):
         directory = func_env_reload_request.function_app_directory
         DependencyManager.reload_customer_libraries(directory)
 
-        import azure_functions_worker as worker
+        try:
+            import azure_functions_worker_v1  as worker
+        except ImportError:
+            import azure_functions_worker as worker
+
         global library_worker
-        importlib.reload(worker)
         library_worker = worker
 
         env_reload_request = WorkerRequest(name="FunctionEnvironmentReloadRequest", request=request,

@@ -172,9 +172,10 @@ class DependencyManager:
             is_envvar_true("WEBSITE_PLACEHOLDER_MODE"), sys.path)
 
         cls._remove_from_sys_path(cls.worker_deps_path)
+        cls._add_to_sys_path(cls.worker_deps_path, True)
         cls._add_to_sys_path(cls.cx_deps_path, True)
         cls._add_to_sys_path(working_directory, False)
-        cls._add_to_sys_path(cls.worker_deps_path, False)
+
 
         logger.info(f'Finished prioritize_customer_dependencies: {sys.path}')
 

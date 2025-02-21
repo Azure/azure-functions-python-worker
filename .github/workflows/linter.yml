@@ -52,7 +52,7 @@ jobs:
           # VALIDATE_PYTHON_PYLINT: false # disable pylint, as we have not configure it
           # VALIDATE_PYTHON_BLACK: false # same as above
           PYTHON_FLAKE8_CONFIG_FILE: tox.ini
-          FILTER_REGEX_INCLUDE: azure_functions_worker/.*
+          FILTER_REGEX_INCLUDE: azure_functions_worker_v2/.*
           FILTER_REGEX_EXCLUDE: tests/.*
           DEFAULT_BRANCH: dev
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

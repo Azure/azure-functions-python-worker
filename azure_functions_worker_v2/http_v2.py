@@ -13,7 +13,7 @@ from .utils.constants import (
     PYTHON_ENABLE_INIT_INDEXING,
     X_MS_INVOCATION_ID,
 )
-from azure_functions_worker.logging import logger
+from azure_functions_worker_v2.logging import logger
 from .utils.env_state import is_envvar_false
 
 

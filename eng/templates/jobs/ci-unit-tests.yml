@@ -20,5 +20,5 @@ jobs:
           eng/scripts/install-dependencies.sh
         displayName: 'Install dependencies'
       - bash: |
-          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker_v2 --cov-report xml --cov-branch tests/unittests
         displayName: "Running $(PYTHON_VERSION) Unit Tests"

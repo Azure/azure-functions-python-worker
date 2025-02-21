@@ -1,5 +1,5 @@
 [project]
-name = "azure-functions-runtime"
+name = "test-worker"
 dynamic = ["version"]
 description = "Python Language Worker for Azure Functions Runtime"
 authors = [
@@ -86,9 +86,9 @@ profile = "black"
 line_length = 88
 multi_line_output = 3
 include_trailing_comma = true
-known_first_party = ["azure_functions_worker"]
+known_first_party = ["azure_functions_worker_v2"]
 default_section = "THIRDPARTY"
-src_paths = ["azure_functions_worker"]
+src_paths = ["azure_functions_worker_v2"]
 skip_glob = [
     "build",
     "dist",
@@ -109,4 +109,4 @@ skip_glob = [
 ]
 
 [tool.setuptools.dynamic]
-version = {attr = "azure_functions_worker.version.VERSION"}
+version = {attr = "azure_functions_worker_v2.version.VERSION"}

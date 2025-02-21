@@ -4,8 +4,8 @@ import os
 from typing import Any
 from unittest.mock import patch
 
-from azure_functions_worker.utils.constants import PYTHON_ENABLE_INIT_INDEXING
-from azure_functions_worker.handle_event import (worker_init_request,
+from azure_functions_worker_v2.utils.constants import PYTHON_ENABLE_INIT_INDEXING
+from azure_functions_worker_v2.handle_event import (worker_init_request,
                                                  functions_metadata_request,
                                                  function_environment_reload_request)
 from tests.utils import testutils
@@ -111,7 +111,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
 
     async def run_init_then_meta(self):
         worker_request = WorkerRequest(name='worker_init_request',
-                                       request=Request(FunctionRequest('hello')),
+                                       request=Request(FunctionRequest('hello', BASIC_FUNCTION_DIRECTORY)),
                                        properties={'host': '123',
                                                    'protos': protos})
         _ = await worker_init_request(worker_request)

@@ -35,6 +35,7 @@ def _check_http_input_type_annotation(bind_name: str, pytype: type,
             .check_type(pytype)
 
     binding = get_binding(bind_name, is_deferred_binding)
+    logger.info("VICTORIA -- inside _check_http_input_type_annotation. Bind name: %s, binding: %s, pytype: %s, check: %s", bind_name, binding, pytype, binding.check_input_type_annotation(pytype))
     return binding.check_input_type_annotation(pytype)
 
 
@@ -43,6 +44,7 @@ def _check_http_output_type_annotation(bind_name: str, pytype: type) -> bool:
         return HttpV2Registry.ext_base().ResponseTrackerMeta.check_type(pytype)
 
     binding = get_binding(bind_name)
+    logger.info("VICTORIA -- inside _check_http_output_type_annotation. Bind name: %s, binding: %s, pytype: %s, check: %s", bind_name, binding, pytype, binding.check_output_type_annotation(pytype))
     return binding.check_output_type_annotation(pytype)
 
 
@@ -68,6 +70,7 @@ def load_binding_registry() -> None:
 
     if func is None:
         import azure.functions as func
+    logger.info(f"VICTORIA ---- azure-functions import succeeded: {func.__file__}")
 
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()  # type: ignore

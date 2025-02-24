@@ -168,6 +168,7 @@ def index_function_app(function_path: str):
     imported_module = importlib.import_module(module_name)
 
     from azure.functions import FunctionRegister
+    logger.info(f"VICTORIA ---- FunctionRegister import succeeded: {FunctionRegister}")
     app: Optional[FunctionRegister] = None
     for i in imported_module.__dir__():
         if isinstance(getattr(imported_module, i, None), FunctionRegister):

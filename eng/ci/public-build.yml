@@ -62,3 +62,5 @@ extends:
         - template: /eng/templates/jobs/ci-emulator-tests.yml@self
           parameters:
             PoolName: 1es-pool-azfunc-public
+      # Don't run emulator tests as part of public build for releases. Emulator tests run on internal pipeline to pick up artifacts
+      condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))

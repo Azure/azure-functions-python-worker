@@ -52,6 +52,8 @@ extends:
     - stage: Build
       jobs:
       - template: /eng/templates/jobs/build.yml@self
+      # Skip the build stage for SDK and Extensions release branches. This stage will fail because pyproject.toml contains the updated (and unreleased) library version
+      condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
     - stage: RunUnitTests
       dependsOn: Build
       jobs:

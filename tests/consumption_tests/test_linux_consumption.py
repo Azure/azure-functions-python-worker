@@ -6,6 +6,7 @@ from time import sleep
 from unittest import TestCase, skipIf
 
 from requests import Request
+from tests.utils.testutils_lc import LinuxConsumptionWebHostController
 
 from azure_functions_worker.constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,
@@ -13,7 +14,6 @@ from azure_functions_worker.constants import (
     PYTHON_ENABLE_WORKER_EXTENSIONS,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
 )
-from tests.utils.testutils_lc import LinuxConsumptionWebHostController
 
 _DEFAULT_HOST_VERSION = "4"
 
@@ -61,7 +61,6 @@ class TestLinuxConsumption(TestCase):
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_blob_url("HttpNoAuth")
             })
-
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
@@ -378,8 +377,7 @@ class TestLinuxConsumption(TestCase):
                 streamed_data, b'streamingtestingresponseisreturned')
 
     def _get_blob_url(self, scenario_name: str) -> str:
-        sas_token = os.getenv(f"SAS_TOKEN{self._py_shortform}")
         return (
             f'https://pythonworker{self._py_shortform}sa.blob.core.windows.net/'
-            f'python-worker-lc-apps/{scenario_name}{self._py_shortform}.zip?{sas_token}'
+            f'python-worker-lc-apps/{scenario_name}{self._py_shortform}.zip'
         )

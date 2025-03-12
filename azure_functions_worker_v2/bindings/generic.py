@@ -61,8 +61,7 @@ class GenericBinding:
             result = None
         else:
             raise ValueError(
-                f'unexpected type of data received for the "generic" binding '
-                f': {data_type!r}'
+                'unexpected type of data received for the "generic" binding ', repr(data_type)
             )
 
         return result

@@ -153,12 +153,12 @@ async def invocation_request(request):
     logger.info("V2 Library Worker: received WorkerInvocationRequest")
     global protos
     invoc_request = request.request.invocation_request
-    logger.info("GAVIN --- invocation request %s", invoc_request)
+    logger.info("VICTORIA --- invocation request %s", invoc_request)
     invocation_id = invoc_request.invocation_id
     function_id = invoc_request.function_id
     http_v2_enabled = False
     threadpool = request.properties.get("threadpool")
-    logger.info("GAVIN --- all variables obtained")
+    logger.info("VICTORIA --- all variables obtained")
 
     try:
         fi: FunctionInfo = _functions.get_function(
@@ -170,10 +170,10 @@ async def invocation_request(request):
         http_v2_enabled = _functions.get_function(
             function_id).is_http_func and \
             HttpV2Registry.http_v2_enabled()
-        logger.info("GAVIN --- http_v2_enabled %s", http_v2_enabled)
+        logger.info("VICTORIA --- http_v2_enabled %s", http_v2_enabled)
 
         for pb in invoc_request.input_data:
-            logger.info("GAVIN --- pb: %s", pb)
+            logger.info("VICTORIA --- pb: %s", pb)
             pb_type_info = fi.input_types[pb.name]
             if is_trigger_binding(pb_type_info.binding_name):
                 trigger_metadata = invoc_request.trigger_metadata
@@ -189,7 +189,7 @@ async def invocation_request(request):
                     function_id).name,
                 is_deferred_binding=pb_type_info.deferred_bindings_enabled)
 
-            logger.info("GAVIN --- args[pb.name]: %s", args[pb.name])
+            logger.info("VICTORIA --- args[pb.name]: %s", args[pb.name])
 
         if http_v2_enabled:
             http_request = await http_coordinator.get_http_request_async(
@@ -227,8 +227,8 @@ async def invocation_request(request):
 
         if call_result is not None and not fi.has_return:
             raise RuntimeError(
-                f'function {fi.name!r} without a $return binding'
-                'returned a non-None value')
+                'function %s without a $return binding'
+                'returned a non-None value', repr(fi.name))
 
         if http_v2_enabled:
             http_coordinator.set_http_response(invocation_id, call_result)
@@ -248,7 +248,7 @@ async def invocation_request(request):
                     out_name=out_name,
                     protos=protos)
                 output_data.append(param_binding)
-        logger.info("GAVIN --- output_data: %s", output_data)
+        logger.info("VICTORIA --- output_data: %s", output_data)
 
         return_value = None
         if fi.return_type is not None and not http_v2_enabled:
@@ -258,7 +258,7 @@ async def invocation_request(request):
                 pytype=fi.return_type.pytype,
                 protos=protos
             )
-        logger.info("GAVIN --- return_value: %s", return_value)
+        logger.info("VICTORIA --- return_value: %s", return_value)
 
         # Actively flush customer print() function to console
         sys.stdout.flush()
@@ -357,7 +357,7 @@ async def load_function_metadata(function_app_directory, caller_info):
     try:
         script_file_name = get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
-            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
+            default_value=PYTHON_SCRIPT_FILE_NAME_DEFAULT)
 
         logger.debug(
             'Received load metadata request from %s, '

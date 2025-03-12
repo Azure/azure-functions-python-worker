@@ -21,8 +21,8 @@ def to_nullable_string(nullable: Optional[str], property_name: str, protos):
 
     if nullable is not None:
         raise TypeError(
-            f"A 'str' type was expected instead of a '{type(nullable)}' "
-            f"type. Cannot parse value {nullable} of '{property_name}'.")
+            "A 'str' type was expected instead of a '%s' "
+            "type. Cannot parse value %s of '%s'.", type(nullable), nullable, property_name)
 
     return None
 
@@ -43,8 +43,8 @@ def to_nullable_bool(nullable: Optional[bool], property_name: str, protos):
 
     if nullable is not None:
         raise TypeError(
-            f"A 'bool' type was expected instead of a '{type(nullable)}' "
-            f"type. Cannot parse value {nullable} of '{property_name}'.")
+            "A 'bool' type was expected instead of a '%s' "
+            "type. Cannot parse value %s of '%s'.", type(nullable), nullable, property_name)
 
     return None
 
@@ -71,14 +71,14 @@ def to_nullable_double(nullable: Optional[Union[str, int, float]],
             return protos.NullableDouble(value=float(nullable))
         except Exception:
             raise TypeError(
-                f"Cannot parse value {nullable} of '{property_name}' to "
-                f"float.")
+                "Cannot parse value %s of '%s' to "
+                "float.", nullable, property_name)
 
     if nullable is not None:
         raise TypeError(
-            f"A 'int' or 'float'"
-            f" type was expected instead of a '{type(nullable)}' "
-            f"type. Cannot parse value {nullable} of '{property_name}'.")
+            "A 'int' or 'float'"
+            " type was expected instead of a '%s' "
+            "type. Cannot parse value %s of '%s'.", type(nullable), nullable, property_name)
 
     return None
 
@@ -105,7 +105,7 @@ def to_nullable_timestamp(date_time: Optional[Union[datetime, int]],
                 value=protos.Timestamp(seconds=int(time_in_seconds)))
         except Exception:
             raise TypeError(
-                f"A 'datetime' or 'int'"
-                f" type was expected instead of a '{type(date_time)}' "
-                f"type. Cannot parse value {date_time} of '{property_name}'.")
+                "A 'datetime' or 'int'"
+                " type was expected instead of a '%s' "
+                "type. Cannot parse value %s of '%s'.", type(date_time), date_time, property_name)
     return None

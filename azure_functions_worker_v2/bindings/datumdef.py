@@ -203,14 +203,14 @@ def parse_cookie_attr_expires(cookie_entity):
             return datetime.strptime(expires, "%a, %d %b %Y %H:%M:%S GMT")
         except ValueError:
             logging.error(
-                f"Can not parse value {expires} of expires in the cookie "
-                f"due to invalid format.")
+                "Can not parse value %s of expires in the cookie "
+                "due to invalid format.", expires)
             raise
         except OverflowError:
             logging.error(
-                f"Can not parse value {expires} of expires in the cookie "
-                f"because the parsed date exceeds the largest valid C "
-                f"integer on your system.")
+                "Can not parse value %s of expires in the cookie "
+                "because the parsed date exceeds the largest valid C "
+                "integer on your system.", expires)
             raise
 
     return None

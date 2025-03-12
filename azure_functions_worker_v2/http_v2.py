@@ -236,7 +236,7 @@ def initialize_http_server(host_addr, **kwargs):
         loop = asyncio.get_event_loop()
         loop.create_task(web_server_run_task)
 
-        web_server_address = f"http://{host_addr}:{unused_port}"
+        web_server_address = "http://{}:{}".format(host_addr, unused_port)
         logger.info('HTTP server starting on %s', web_server_address)
 
         return web_server_address

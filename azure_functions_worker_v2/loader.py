@@ -154,21 +154,19 @@ def process_indexed_function(protos,
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message='Cannot find module. Please check the requirements.txt '
+    message=('Cannot find module. Please check the requirements.txt '
             'file for the missing module. For more info, '
             'please refer the troubleshooting '
-            f'guide: {MODULE_NOT_FOUND_TS_URL}. '
-            f'Current sys.path: {sys.path}',
-    debug_logs='Error in index_function_app. '
-               f'Sys Path: {sys.path}, Sys Module: {sys.modules},'
-               'python-packages Path exists: '
-               f'{os.path.exists(CUSTOMER_PACKAGES_PATH)}')
+            'guide: %s. '
+            'Current sys.path: %s', MODULE_NOT_FOUND_TS_URL, sys.path),
+    debug_logs=('Error in index_function_app. '
+               'Sys Path: %s, Sys Module: %s,'
+               'python-packages Path exists: %s', sys.path, sys.modules, os.path.exists(CUSTOMER_PACKAGES_PATH)))
 def index_function_app(function_path: str):
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)
 
     from azure.functions import FunctionRegister
-    logger.info(f"GAVIN ---- FunctionRegister import succeeded: {FunctionRegister}")
     app: Optional[FunctionRegister] = None
     for i in imported_module.__dir__():
         if isinstance(getattr(imported_module, i, None), FunctionRegister):
@@ -176,15 +174,14 @@ def index_function_app(function_path: str):
                 app = getattr(imported_module, i, None)
             else:
                 raise ValueError(
-                    f"More than one {app.__class__.__name__} or other top "
-                    f"level function app instances are defined.")
+                    "More than one %s or other top "
+                    "level function app instances are defined.", app.__class__.__name__)
 
     if not app:
         script_file_name = get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
-            default_value=f'{PYTHON_SCRIPT_FILE_NAME_DEFAULT}')
-        raise ValueError("Could not find top level function app instances in "
-                         f"{script_file_name}.")
+            default_value=PYTHON_SCRIPT_FILE_NAME_DEFAULT)
+        raise ValueError("Could not find top level function app instances in %s.", script_file_name)
 
     return app.get_functions()
 

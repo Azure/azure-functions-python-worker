@@ -30,13 +30,13 @@ deferred_bindings_cache: Dict[Any, Any] = {}
 
 def _check_http_input_type_annotation(bind_name: str, pytype: type,
                                       is_deferred_binding: bool) -> bool:
-    logger.info("GAVIN --- http v2 enabled %s", (HttpV2Registry.http_v2_enabled()))
+    logger.info("VICTORIA --- http v2 enabled %s", (HttpV2Registry.http_v2_enabled()))
     if HttpV2Registry.http_v2_enabled():
         return HttpV2Registry.ext_base().RequestTrackerMeta \
             .check_type(pytype)
 
     binding = get_binding(bind_name, is_deferred_binding)
-    logger.info("GAVIN -- inside _check_http_input_type_annotation. Bind name: %s, binding: %s, pytype: %s, check: %s", bind_name, binding, pytype, binding.check_input_type_annotation(pytype))
+    logger.info("VICTORIA -- inside _check_http_input_type_annotation. Bind name: %s, binding: %s, pytype: %s, check: %s", bind_name, binding, pytype, binding.check_input_type_annotation(pytype))
     return binding.check_input_type_annotation(pytype)
 
 
@@ -45,7 +45,7 @@ def _check_http_output_type_annotation(bind_name: str, pytype: type) -> bool:
         return HttpV2Registry.ext_base().ResponseTrackerMeta.check_type(pytype)
 
     binding = get_binding(bind_name)
-    logger.info("GAVIN -- inside _check_http_output_type_annotation. Bind name: %s, binding: %s, pytype: %s, check: %s", bind_name, binding, pytype, binding.check_output_type_annotation(pytype))
+    logger.info("VICTORIA -- inside _check_http_output_type_annotation. Bind name: %s, binding: %s, pytype: %s, check: %s", bind_name, binding, pytype, binding.check_output_type_annotation(pytype))
     return binding.check_output_type_annotation(pytype)
 
 
@@ -71,7 +71,7 @@ def load_binding_registry() -> None:
 
     if func is None:
         import azure.functions as func
-    logger.info(f"GAVIN ---- azure-functions import succeeded: {func.__file__}")
+    logger.info("VICTORIA ---- azure-functions import succeeded: %s", func.__file__)
 
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()  # type: ignore
@@ -124,15 +124,15 @@ def is_trigger_binding(bind_name: str) -> bool:
 def check_input_type_annotation(bind_name: str,
                                 pytype: type,
                                 is_deferred_binding: bool) -> bool:
-    logger.info("GAVIN --- Inside check_input_type_annotation. bind_name: %s, pytype: %s", bind_name, pytype)
+    logger.info("VICTORIA --- Inside check_input_type_annotation. bind_name: %s, pytype: %s", bind_name, pytype)
     global INPUT_TYPE_CHECK_OVERRIDE_MAP
-    logger.info("GAVIN --- bind_name in input type check map: %s", (bind_name in INPUT_TYPE_CHECK_OVERRIDE_MAP))
+    logger.info("VICTORIA --- bind_name in input type check map: %s", (bind_name in INPUT_TYPE_CHECK_OVERRIDE_MAP))
     if bind_name in INPUT_TYPE_CHECK_OVERRIDE_MAP:
         return INPUT_TYPE_CHECK_OVERRIDE_MAP[bind_name](bind_name, pytype,
                                                         is_deferred_binding)
 
     binding = get_binding(bind_name, is_deferred_binding)
-    logger.info("GAVIN -- inside _check_http_input_type_annotation. Bind name: %s, binding: %s, pytype: %s, check: %s", bind_name, binding, pytype, binding.check_input_type_annotation(pytype))
+    logger.info("VICTORIA -- inside _check_http_input_type_annotation. Bind name: %s, binding: %s, pytype: %s, check: %s", bind_name, binding, pytype, binding.check_input_type_annotation(pytype))
 
     return binding.check_input_type_annotation(pytype)
 
@@ -181,7 +181,7 @@ def from_incoming_proto(
         val = pb.data
         datum = Datum.from_typed_data(val)
     else:
-        raise TypeError(f'Unknown ParameterBindingType: {pb_type}')
+        raise TypeError('Unknown ParameterBindingType: %s', pb_type)
 
     try:
         # if the binding is an sdk type binding
@@ -197,9 +197,9 @@ def from_incoming_proto(
         # Binding does not support the data.
         dt = val.WhichOneof('data')
         raise TypeError(
-            f'unable to decode incoming TypedData: '
-            f'unsupported combination of TypedData field {dt!r} '
-            f'and expected binding type {binding_obj}')
+            'unable to decode incoming TypedData: '
+            'unsupported combination of TypedData field %s '
+            'and expected binding type %s', repr(dt), binding_obj)
 
 
 def get_datum(binding: str, obj: Any,
@@ -213,9 +213,9 @@ def get_datum(binding: str, obj: Any,
     except NotImplementedError:
         # Binding does not support the data.
         raise TypeError(
-            f'unable to encode outgoing TypedData: '
-            f'unsupported type "{binding}" for '
-            f'Python type "{type(obj).__name__}"')
+            'unable to encode outgoing TypedData: '
+            'unsupported type "%s" for '
+            'Python type "%s"', binding, type(obj).__name__)
     return datum
 
 

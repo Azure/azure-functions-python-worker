@@ -43,7 +43,7 @@ def _remove_frame_from_stack(tbss: StackSummary,
 
 def serialize_exception(exc: Exception, protos):
     try:
-        message = f'{type(exc).__name__}: {exc}'
+        message = '{}: {}'.format(type(exc).__name__, exc)
     except Exception:
         message = ('Unhandled exception in function. '
                    'Could not serialize original exception message.')

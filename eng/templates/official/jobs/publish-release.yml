@@ -139,6 +139,7 @@ jobs:
         packagesToPush: '$(Pipeline.Workspace)/PythonWorkerArtifact/**/*.nupkg;!$(Pipeline.Workspace)/PythonWorkerArtifact/**/*.symbols.nupkg'
         publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/eb652719-f36a-4e78-8541-e13a3cd655f9'
         allowPackageConflicts: true
+        packageParentPath: '$(Pipeline.Workspace)'
   steps:
   - task: DownloadPipelineArtifact@2
     displayName: 'Download Python Worker release/4.x.y.z Artifact'

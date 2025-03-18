@@ -13,8 +13,8 @@ def get_current_loop():
     return asyncio.events.get_event_loop()
 
 
-def execute(function, args) -> Any:
-    return function(**args)
+async def execute(function, args) -> Any:
+    return await function(**args)
 
 
 def run_sync_func(invocation_id, context, func, params):

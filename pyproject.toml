@@ -1,5 +1,5 @@
 [project]
-name = "victorias-test-package"
+name = "test-worker"
 dynamic = ["version"]
 requires-python = ">=3.13"
 description = "Python Language Worker for Azure Functions Runtime"

@@ -217,7 +217,7 @@ async def invocation_request(request):
             if otel_manager.get_azure_monitor_available():
                 configure_opentelemetry(fi_context)
 
-            call_result = await execute(fi.func, **args)  # Not supporting Extensions
+            call_result = await execute(fi.func, args)  # Not supporting Extensions
         else:
             _loop = get_current_loop()
             call_result = await _loop.run_in_executor(

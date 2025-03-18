@@ -13,8 +13,11 @@ def get_current_loop():
     return asyncio.events.get_event_loop()
 
 
-async def execute(function, args) -> Any:
+async def execute_async(function, args) -> Any:
     return await function(**args)
+
+def execute_sync(function, args) -> Any:
+    return function(**args)
 
 
 def run_sync_func(invocation_id, context, func, params):
@@ -24,7 +27,7 @@ def run_sync_func(invocation_id, context, func, params):
     try:
         if otel_manager.get_azure_monitor_available():
             configure_opentelemetry(context)
-        result = functools.partial(execute, func)
+        result = functools.partial(execute_sync, func)
         return result(params)
     finally:
         context.thread_local_storage.invocation_id = None

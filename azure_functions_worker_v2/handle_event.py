@@ -43,7 +43,7 @@ from .utils.constants import (FUNCTION_DATA_CACHE,
                               PYTHON_SCRIPT_FILE_NAME,
                               PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                               PYTHON_ENABLE_DEBUG_LOGGING)
-from .utils.current import get_current_loop, execute, run_sync_func
+from .utils.current import get_current_loop, execute_async, run_sync_func
 from .utils.env_state import get_app_setting, is_envvar_true
 from .utils.helpers import change_cwd, get_worker_metadata
 from .utils.tracing import serialize_exception
@@ -217,7 +217,7 @@ async def invocation_request(request):
             if otel_manager.get_azure_monitor_available():
                 configure_opentelemetry(fi_context)
 
-            call_result = await execute(fi.func, args)  # Not supporting Extensions
+            call_result = await execute_async(fi.func, args)  # Not supporting Extensions
         else:
             _loop = get_current_loop()
             call_result = await _loop.run_in_executor(

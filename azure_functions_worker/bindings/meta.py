@@ -299,16 +299,31 @@ def deferred_bindings_decode(binding: typing.Any,
     If cache is empty or key doesn't exist, deferred_binding_type is None
     """
     global deferred_bindings_cache
-    
-    cache_key = (pb.name, pytype, datum.value if datum.type == "collection_model_binding_data" else datum.value.content)
-    if deferred_bindings_cache.get(cache_key, None) is not None:
-        return deferred_bindings_cache.get(cache_key)
+
+    if datum.type == "collection_model_binding_data":
+        # Accumulates each model_binding_data content in collection_model_binding_data
+        content = b"".join(mbd.content for mbd in datum.value.model_binding_data)
+    else:
+        content = datum.value.content
+
+    if deferred_bindings_cache.get((pb.name,
+                                    pytype,
+                                    content,
+                                    function_name), None) is not None:
+        return deferred_bindings_cache.get((pb.name,
+                                            pytype,
+                                            content,
+                                            function_name))
     else:
         deferred_binding_type = binding.decode(datum,
                                                trigger_metadata=metadata,
                                                pytype=pytype)
-        deferred_bindings_cache[cache_key] = deferred_binding_type
-    return deferred_binding_type
+
+        deferred_bindings_cache[(pb.name,
+                                 pytype,
+                                 content,
+                                 function_name)] = deferred_binding_type
+        return deferred_binding_type
 
 
 def check_deferred_bindings_enabled(param_anno: type,

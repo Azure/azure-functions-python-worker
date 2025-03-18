@@ -102,6 +102,8 @@ class Datum:
             val = td.collection_sint64
         elif tt == 'model_binding_data':
             val = td.model_binding_data
+        elif tt == 'collection_model_binding_data':
+            val = td.collection_model_binding_data
         elif tt is None:
             return None
         else:

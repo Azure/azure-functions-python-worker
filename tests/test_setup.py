@@ -110,8 +110,13 @@ def compile_webhost(webhost_dir):
     print(f"Compiling Functions Host from {webhost_dir}")
     try:
         subprocess.run(
-            ["dotnet", "build", "WebJobs.Script.sln", "-o", "bin",
-             "/p:TreatWarningsAsErrors=false"],
+            [
+                "dotnet", "build", "WebJobs.Script.sln",
+                "/m:1",                # Disable parallel MSBuild
+                "/nodeReuse:false",    # Prevent MSBuild node reuse
+                f"--property:OutputPath={webhost_dir}/bin",  # Set output folder
+                "/p:TreatWarningsAsErrors=false"
+            ],
             check=True,
             cwd=str(webhost_dir),
             stdout=sys.stdout,
@@ -120,7 +125,7 @@ def compile_webhost(webhost_dir):
     except subprocess.CalledProcessError:
         print(
             f"Failed to compile webhost in {webhost_dir}. "
-            ".NET Core SDK is required to build the solution. "
+            "A compatible .NET Core SDK is required to build the solution. "
             "Please visit https://aka.ms/dotnet-download",
             file=sys.stderr,
         )

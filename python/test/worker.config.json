@@ -4,7 +4,8 @@
         "extensions":[".py"],
         "defaultExecutablePath":"python",
         "defaultWorkerPath":"worker.py",
-        "workerIndexing": "true"
+        "workerIndexing": "true",
+        "arguments": ["-X no_debug_ranges"]
     },
      "processOptions": {
         "initializationTimeout": "00:02:00",

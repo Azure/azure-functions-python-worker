@@ -72,7 +72,8 @@ extends:
         dependsOn: Build
         jobs:
           - template: /eng/templates/official/jobs/ci-docker-dedicated-tests.yml@self
-      - stage: RunLinuxConsumptionTests
-        dependsOn: Build
-        jobs:
-          - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
+#       Skipping consumption tests till pipeline is fixed
+#      - stage: RunLinuxConsumptionTests
+#        dependsOn: Build
+#        jobs:
+#          - template: /eng/templates/official/jobs/ci-lc-tests.yml@self

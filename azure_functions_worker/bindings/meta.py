@@ -132,7 +132,6 @@ def check_output_type_annotation(bind_name: str, pytype: type) -> bool:
         return OUTPUT_TYPE_CHECK_OVERRIDE_MAP[bind_name](bind_name, pytype)
 
     binding = get_binding(bind_name)
-
     return binding.check_output_type_annotation(pytype)
 
 

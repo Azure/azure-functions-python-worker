@@ -28,7 +28,6 @@ import tempfile
 import urllib.request
 import zipfile
 from distutils import dir_util
-from xml.dom import WRONG_DOCUMENT_ERR
 
 from invoke import task
 
@@ -39,7 +38,6 @@ BUILD_DIR = ROOT_DIR / 'build'
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
 WEBHOST_GIT_REPO = "https://github.com/Azure/azure-functions-host/archive"
 WEBHOST_TAG_PREFIX = "v4."
-WORKER_DIR = "azure_functions_worker" if sys.version_info.minor < 13 else "proxy_worker"
 
 
 def get_webhost_version() -> str:
@@ -112,8 +110,13 @@ def compile_webhost(webhost_dir):
     print(f"Compiling Functions Host from {webhost_dir}")
     try:
         subprocess.run(
-            ["dotnet", "build", "WebJobs.Script.sln", "-o", "bin",
-             "/p:TreatWarningsAsErrors=false"],
+            [
+                "dotnet", "build", "WebJobs.Script.sln",
+                "/m:1",                # Disable parallel MSBuild
+                "/nodeReuse:false",    # Prevent MSBuild node reuse
+                f"--property:OutputPath={webhost_dir}/bin",  # Set output folder
+                "/p:TreatWarningsAsErrors=false"
+            ],
             check=True,
             cwd=str(webhost_dir),
             stdout=sys.stdout,
@@ -122,7 +125,7 @@ def compile_webhost(webhost_dir):
     except subprocess.CalledProcessError:
         print(
             f"Failed to compile webhost in {webhost_dir}. "
-            ".NET Core SDK is required to build the solution. "
+            "A compatible .NET Core SDK is required to build the solution. "
             "Please visit https://aka.ms/dotnet-download",
             file=sys.stderr,
         )
@@ -131,10 +134,10 @@ def compile_webhost(webhost_dir):
 
 
 def gen_grpc():
-    proto_root_dir = ROOT_DIR / WORKER_DIR / "protos"
+    proto_root_dir = ROOT_DIR / "azure_functions_worker" / "protos"
     proto_src_dir = proto_root_dir / "_src" / "src" / "proto"
     staging_root_dir = BUILD_DIR / "protos"
-    staging_dir = staging_root_dir / WORKER_DIR / "protos"
+    staging_dir = staging_root_dir / "azure_functions_worker" / "protos"
     built_protos_dir = BUILD_DIR / "built_protos"
 
     if os.path.exists(BUILD_DIR):
@@ -156,12 +159,12 @@ def gen_grpc():
                 "-m",
                 "grpc_tools.protoc",
                 "-I",
-                os.sep.join((WORKER_DIR, "protos")),
+                os.sep.join(("azure_functions_worker", "protos")),
                 "--python_out",
                 str(built_protos_dir),
                 "--grpc_python_out",
                 str(built_protos_dir),
-                os.sep.join((WORKER_DIR, "protos", proto)),
+                os.sep.join(("azure_functions_worker", "protos", proto)),
             ],
             check=True,
             stdout=sys.stdout,
@@ -194,7 +197,7 @@ def make_absolute_imports(compiled_files):
             # from azure_functions_worker.protos import xxx_pb2 as..
             p1 = re.sub(
                 r"\nimport (.*?_pb2)",
-                  fr"\nfrom {WORKER_DIR}.protos import \g<1>",
+                r"\nfrom azure_functions_worker.protos import \g<1>",
                 content,
             )
             # Convert lines of the form:
@@ -202,7 +205,7 @@ def make_absolute_imports(compiled_files):
             # from azure_functions_worker.protos.identity import xxx_pb2..
             p2 = re.sub(
                 r"from ([a-z]*) (import.*_pb2)",
-                fr"from {WORKER_DIR}.protos.\g<1> \g<2>",
+                r"from azure_functions_worker.protos.\g<1> \g<2>",
                 p1,
             )
             f.write(p2)

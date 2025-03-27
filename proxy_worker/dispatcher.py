@@ -1,6 +1,8 @@
 import asyncio
 import concurrent.futures
+import importlib.util
 import logging
+import os
 import queue
 import sys
 import threading
@@ -29,6 +31,7 @@ from .utils.dependency import DependencyManager
 
 # Library worker import reloaded in init and reload request
 library_worker = None
+
 
 class ContextEnabledTask(asyncio.Task):
     AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
@@ -101,7 +104,6 @@ class DispatcherMeta(type):
         if disp is None:
             raise RuntimeError('no currently running Dispatcher is found')
         return disp
-
 
 
 class Dispatcher(metaclass=DispatcherMeta):
@@ -390,30 +392,29 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self.request_id,
                     python_appsetting_state())
 
-        
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
 
         global library_worker
-        try:
-            logger.info("Trying to import v1 worker")
-            import azure_functions_worker_v1
-            library_worker = azure_functions_worker_v1
-            logger.info(f"V1 worker Import succeeded: {library_worker.__file__}")
-        except ImportError:
+        directory = request.worker_init_request.function_app_directory
+        v2_directory = os.path.join(directory, 'function_app.py')
+        logger.info(f"V2 Directory: {v2_directory}. Path exists: {os.path.exists(v2_directory)}")
+        if os.path.exists(v2_directory):
             try:
                 logger.info("Trying to import v2 worker")
-                import azure.functions as func
-                logger.info(f"Func Import succeeded: {func.__file__}")
                 import azure_functions_worker_v2
                 library_worker = azure_functions_worker_v2
                 logger.info(f"V2 worker Import succeeded: {library_worker.__file__}")
-            except ImportError as e:
-                logger.info(f"Import error: {traceback.format_exception(etype=type(e), tb=e.__traceback__, value=e)}")
             except Exception as e:
-                logger.info(f"Error importing V2: {traceback.format_exception(etype=type(e), tb=e.__traceback__, value=e)}")
-        except Exception as e:
-            logger.info(f"Some other ex: {traceback.format_exception(etype=type(e), tb=e.__traceback__, value=e)}")
+                logger.info(f"Error when importing V2 library: {traceback.format_exc()}")
+        else:
+            try:
+                logger.info("Trying to import v1 worker")
+                import azure_functions_worker_v1
+                library_worker = azure_functions_worker_v1
+                logger.info(f"V1 worker Import succeeded: {library_worker.__file__}")
+            except Exception as e:
+                logger.info(f"Error when importing V1 library: {e}")
 
         logger.info(f"Done Updating globals: {library_worker.__file__}")
 
@@ -441,35 +442,39 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self.request_id,
                     python_appsetting_state())
 
-        DependencyManager.prioritize_customer_dependencies()
+        func_env_reload_request = \
+            request.function_environment_reload_request
+        directory = func_env_reload_request.function_app_directory
+        DependencyManager.reload_customer_libraries(directory)
 
         global library_worker
-        try:
-            logger.info("Trying to import v1 worker")
-            import azure_functions_worker_v1
-            library_worker = azure_functions_worker_v1
-            logger.info(f"V1 worker Import succeeded: {library_worker.__file__}")
-        except ImportError:
+        directory = request.worker_init_request.function_app_directory
+        v2_directory = os.path.join(directory, 'function_app.py')
+        logger.info(f"V2 Directory: {v2_directory}. Path exists: {os.path.exists(v2_directory)}")
+        if os.path.exists(v2_directory):
             try:
                 logger.info("Trying to import v2 worker")
-                import azure.functions as func
-                logger.info(f"Func Import succeeded: {func.__file__}")
                 import azure_functions_worker_v2
                 library_worker = azure_functions_worker_v2
                 logger.info(f"V2 worker Import succeeded: {library_worker.__file__}")
-            except ImportError as e:
-                logger.info(f"Import error: {traceback.format_exception(etype=type(e), tb=e.__traceback__, value=e)}")
             except Exception as e:
                 logger.info(
-                    f"Error importing V2: {traceback.format_exception(etype=type(e), tb=e.__traceback__, value=e)}")
-        except Exception as e:
-            logger.info(f"Some other ex: {traceback.format_exception(etype=type(e), tb=e.__traceback__, value=e)}")
+                    f"Error when importing V2 library: {traceback.format_exception(etype=type(e), tb=e.__traceback__, value=e)}")
+        else:
+            try:
+                logger.info("Trying to import v1 worker")
+                import azure_functions_worker_v1
+                library_worker = azure_functions_worker_v1
+                logger.info(f"V1 worker Import succeeded: {library_worker.__file__}")
+            except Exception as e:
+                logger.info(
+                    f"Error when importing V1 library: {traceback.format_exception(etype=type(e), tb=e.__traceback__, value=e)}")
 
         logger.info(f"Done Updating globals: {library_worker.__file__}")
 
         env_reload_request = WorkerRequest(name="FunctionEnvironmentReloadRequest", request=request,
                                            properties={"protos": protos,
-                                                 "host": self._host})
+                                                       "host": self._host})
         env_reload_response = await library_worker.function_environment_reload_request(env_reload_request)
         return protos.StreamingMessage(
             request_id=self.request_id,

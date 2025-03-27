@@ -5,6 +5,7 @@ import unittest
 
 import azure.functions as func
 from tests.utils import testutils
+from typing import List
 
 from azure_functions_worker import protos
 from azure_functions_worker.bindings import datumdef, meta
@@ -41,16 +42,9 @@ class MockMBD:
 
 
 class MockCMBD:
-    def __init__(self, model_binding_data_list=None):
-        if model_binding_data_list is None:
-            model_binding_data_list = []
-        self.model_binding_data_list = model_binding_data_list
-
-    def add_model_binding_data(self, model_binding_data):
-        if isinstance(model_binding_data, MockMBD):
-            self.model_binding_data_list.append(model_binding_data)
-        else:
-            raise TypeError("Expected an instance of MockMBD")
+    # Follow same format from host with dot notation
+    def __init__(self, model_binding_data_list: List[MockMBD]):
+        self.model_binding_data = model_binding_data_list
 
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"

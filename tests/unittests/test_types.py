@@ -207,11 +207,13 @@ class TestTriggerMetadataDecoder(unittest.TestCase):
         datum: bind_meta.Datum = bind_meta.Datum(value=sample_cmbd,
                                                  type='collection_model_binding_data')
 
-        self.assertEqual(datum.value, sample_mbd)
+        self.assertEqual(datum.value, sample_cmbd)
         self.assertEqual(datum.type, "collection_model_binding_data")
 
     def test_collection_model_binding_data_td_ok(self):
-        mock_cmbd = protos.TypedData(collection_model_binding_data={'version': '1.0'})
+        mock_cmbd = protos.TypedData(
+            collection_model_binding_data={'model_binding_data': [{'version': '1.0'}]}
+        )
         cmbd_datum = datumdef.Datum.from_typed_data(mock_cmbd)
 
         self.assertEqual(cmbd_datum.type, 'collection_model_binding_data')

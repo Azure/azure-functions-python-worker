@@ -123,7 +123,6 @@ def check_input_type_annotation(bind_name: str,
                                                         is_deferred_binding)
 
     binding = get_binding(bind_name, is_deferred_binding)
-
     return binding.check_input_type_annotation(pytype)
 
 
@@ -133,6 +132,7 @@ def check_output_type_annotation(bind_name: str, pytype: type) -> bool:
         return OUTPUT_TYPE_CHECK_OVERRIDE_MAP[bind_name](bind_name, pytype)
 
     binding = get_binding(bind_name)
+
     return binding.check_output_type_annotation(pytype)
 
 
@@ -302,7 +302,7 @@ def deferred_bindings_decode(binding: typing.Any,
 
     if datum.type == "collection_model_binding_data":
         # Accumulates each model_binding_data content in collection_model_binding_data
-        content = b"".join(mbd.content for mbd in datum.value.model_binding_data)
+        content = "".join(str(mbd.content) for mbd in datum.value.model_binding_data)
     else:
         content = datum.value.content
 

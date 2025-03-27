@@ -40,6 +40,19 @@ class MockMBD:
         self.content = content
 
 
+class MockCMBD:
+    def __init__(self, model_binding_data_list=None):
+        if model_binding_data_list is None:
+            model_binding_data_list = []
+        self.model_binding_data_list = model_binding_data_list
+
+    def add_model_binding_data(self, model_binding_data):
+        if isinstance(model_binding_data, MockMBD):
+            self.model_binding_data_list.append(model_binding_data)
+        else:
+            raise TypeError("Expected an instance of MockMBD")
+
+
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
                                               "is only supported for 3.9+.")
 class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
@@ -137,7 +150,7 @@ class TestDeferredBindingsEnabledDual(testutils.AsyncTestCase):
                                               "is only supported for 3.9+.")
 class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
 
-    def test_deferred_bindings_enabled_decode(self):
+    def test_mbd_deferred_bindings_enabled_decode(self):
         binding = BlobClientConverter
         pb = protos.ParameterBinding(name='test',
                                      data=protos.TypedData(
@@ -151,6 +164,28 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
                                      "\"BlobName\":"
                                      "\"test-blobclient-trigger.txt\"}")
         datum = datumdef.Datum(value=sample_mbd, type='model_binding_data')
+
+        obj = meta.deferred_bindings_decode(binding=binding, pb=pb,
+                                            pytype=BlobClient, datum=datum, metadata={},
+                                            function_name="test_function")
+
+        self.assertIsNotNone(obj)
+
+    def test_cmbd_deferred_bindings_enabled_decode(self):
+        binding = BlobClientConverter
+        pb = protos.ParameterBinding(name='test',
+                                     data=protos.TypedData(
+                                         string='test'))
+        sample_mbd = MockMBD(version="1.0",
+                             source="AzureStorageBlobs",
+                             content_type="application/json",
+                             content="{\"Connection\":\"AzureWebJobsStorage\","
+                                     "\"ContainerName\":"
+                                     "\"python-worker-tests\","
+                                     "\"BlobName\":"
+                                     "\"test-blobclient-trigger.txt\"}")
+        sample_cmbd = MockCMBD([sample_mbd, sample_mbd])
+        datum = datumdef.Datum(value=sample_cmbd, type='collection_model_binding_data')
 
         obj = meta.deferred_bindings_decode(binding=binding, pb=pb,
                                             pytype=BlobClient, datum=datum, metadata={},

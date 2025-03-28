@@ -123,7 +123,7 @@ def check_input_type_annotation(bind_name: str,
                                                         is_deferred_binding)
 
     binding = get_binding(bind_name, is_deferred_binding)
-    
+
     return binding.check_input_type_annotation(pytype)
 
 

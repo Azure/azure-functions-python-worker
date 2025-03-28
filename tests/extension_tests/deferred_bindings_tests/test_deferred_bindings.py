@@ -5,7 +5,6 @@ import unittest
 
 import azure.functions as func
 from tests.utils import testutils
-from typing import List
 
 from azure_functions_worker import protos
 from azure_functions_worker.bindings import datumdef, meta

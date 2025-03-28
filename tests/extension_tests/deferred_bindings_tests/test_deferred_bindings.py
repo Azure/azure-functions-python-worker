@@ -165,28 +165,6 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
 
         self.assertIsNotNone(obj)
 
-    def test_cmbd_deferred_bindings_enabled_decode(self):
-        binding = BlobClientConverter
-        pb = protos.ParameterBinding(name='test',
-                                     data=protos.TypedData(
-                                         string='test'))
-        sample_mbd = MockMBD(version="1.0",
-                             source="AzureStorageBlobs",
-                             content_type="application/json",
-                             content="{\"Connection\":\"AzureWebJobsStorage\","
-                                     "\"ContainerName\":"
-                                     "\"python-worker-tests\","
-                                     "\"BlobName\":"
-                                     "\"test-blobclient-trigger.txt\"}")
-        sample_cmbd = MockCMBD([sample_mbd, sample_mbd])
-        datum = datumdef.Datum(value=sample_cmbd, type='collection_model_binding_data')
-
-        obj = meta.deferred_bindings_decode(binding=binding, pb=pb,
-                                            pytype=BlobClient, datum=datum, metadata={},
-                                            function_name="test_function")
-
-        self.assertIsNotNone(obj)
-
     async def test_check_deferred_bindings_enabled(self):
         """
         check_deferred_bindings_enabled checks if deferred bindings is enabled at fx

@@ -8,13 +8,11 @@ import socket
 import sys
 from typing import Any, Dict
 
-from .utils.constants import (
+from azure_functions_worker_v2.utils.constants import (
     BASE_EXT_SUPPORTED_PY_MINOR_VERSION,
-    PYTHON_ENABLE_INIT_INDEXING,
     X_MS_INVOCATION_ID,
 )
 from azure_functions_worker_v2.logging import logger
-from .utils.env_state import is_envvar_false
 
 
 # Http V2 Exceptions
@@ -236,7 +234,7 @@ def initialize_http_server(host_addr, **kwargs):
         loop = asyncio.get_event_loop()
         loop.create_task(web_server_run_task)
 
-        web_server_address = "http://{}:{}".format(host_addr, unused_port)
+        web_server_address = "http://" + str(host_addr) + ":" + str(unused_port)
         logger.info('HTTP server starting on %s', web_server_address)
 
         return web_server_address
@@ -279,15 +277,13 @@ class HttpV2Registry:
 
     @classmethod
     def _check_http_v2_enabled(cls):
-        if sys.version_info.minor < BASE_EXT_SUPPORTED_PY_MINOR_VERSION or \
-                is_envvar_false(PYTHON_ENABLE_INIT_INDEXING):
+        if sys.version_info.minor < BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
             return False
 
         import azurefunctions.extensions.base as ext_base
         cls._ext_base = ext_base
-        return False
 
-        # return cls._ext_base.HttpV2FeatureChecker.http_v2_enabled()
+        return cls._ext_base.HttpV2FeatureChecker.http_v2_enabled()
 
 
 http_coordinator = HttpCoordinator()

@@ -22,7 +22,7 @@ def change_cwd(new_cwd: str):
 def get_worker_metadata(protos):
     return protos.WorkerMetadata(
         runtime_name=PYTHON_LANGUAGE_RUNTIME,
-        runtime_version="{}.{}".format(sys.version_info.major, sys.version_info.minor),
+        runtime_version=str(sys.version_info.major) + "." + str(sys.version_info.minor),
         worker_version=VERSION,
         worker_bitness=platform.machine(),
         custom_properties={})

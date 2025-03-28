@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import asyncio
 import logging
 import os
 import sys
@@ -51,7 +50,6 @@ from .utils.validators import validate_script_file_name
 
 metadata_result: Optional[List] = None
 metadata_exception: Optional[Exception] = None
-result = None  # Todo: type is coroutine?
 _functions = Registry()
 _function_data_cache_enabled: bool = False
 _host: str = ""
@@ -61,7 +59,7 @@ protos = None
 async def worker_init_request(request):
     logger.info("V2 Library Worker: received WorkerInitRequest,"
                 "Version %s", VERSION)
-    global result, _host, protos, _function_data_cache_enabled
+    global _host, protos, _function_data_cache_enabled, metadata_exception
     init_request = request.request.worker_init_request
     host_capabilities = init_request.capabilities
     _host = request.properties.get("host")
@@ -89,24 +87,30 @@ async def worker_init_request(request):
     # dictionary which will be later used in the invocation request
     load_binding_registry()
 
+    # Index in init by default
     try:
-        result = asyncio.create_task(load_function_metadata(
+        load_function_metadata(
             init_request.function_app_directory,
-            caller_info="worker_init_request"))
-        if is_envvar_true(PYTHON_ENABLE_INIT_INDEXING):
-            if HttpV2Registry.http_v2_enabled():
-                capabilities[HTTP_URI] = \
-                    initialize_http_server(_host)
-                capabilities[REQUIRES_ROUTE_PARAMETERS] = TRUE
-    except HttpServerInitError:
-        raise
+            caller_info="worker_init_request")
+
+        if HttpV2Registry.http_v2_enabled():
+            logger.info("VICTORIA --- init req. Streaming app setting enabled. Setting streaming capabilities")
+            capabilities[HTTP_URI] = \
+                initialize_http_server(_host)
+            capabilities[REQUIRES_ROUTE_PARAMETERS] = TRUE
+            logger.info("VICTORIA --- completed streaming setup")
+
+    except HttpServerInitError as ex:
+        logger.info("VICTORIA --- HTTP server init error has occurred")
+        metadata_exception = ex
     except Exception as ex:
         # This is catching an exception that happens during indexing while the init
         # request is still in progress. The proxy worker will do nothing with this,
         # but metadata will fail
-        global metadata_exception
         metadata_exception = ex
+        logger.info("VICTORIA --- an init exception has occurred: %s", ex)
 
+    logger.info("VICTORIA --- successfully processed init req")
     return protos.WorkerInitResponse(
         capabilities=capabilities,
         worker_metadata=get_worker_metadata(protos),
@@ -118,11 +122,11 @@ async def worker_init_request(request):
 
 async def functions_metadata_request(request):
     logger.info("V2 Library Worker: received WorkerMetadataRequest")
-    global protos, result, metadata_result, metadata_exception
-    if result:
-        await result
+    global protos, metadata_result, metadata_exception
+    logger.info("VICTORIA --- Metadata Result: %s, Metadata Exception: %s", metadata_result, metadata_exception)
 
     if metadata_exception:
+        logger.info("VICTORIA --- a metadata exception has occurred: %s", metadata_exception)
         return protos.FunctionMetadataResponse(
             result=protos.StatusResult(
                 status=protos.StatusResult.Failure,
@@ -130,6 +134,7 @@ async def functions_metadata_request(request):
                     metadata_exception, protos)))
 
     else:
+        logger.info("VICTORIA --- no metadata exception has occurred")
         return protos.FunctionMetadataResponse(
             use_default_metadata_indexing=False,
             function_metadata_results=metadata_result,
@@ -272,13 +277,13 @@ async def invocation_request(request):
     except Exception as ex:
         if http_v2_enabled:
             http_coordinator.set_http_response(invocation_id, ex)
-        global metadata_result
-        metadata_result = ex
+        global metadata_exception
+        metadata_exception = ex
         return protos.InvocationResponse(
             invocation_id=invocation_id,
             result=protos.StatusResult(
                 status=protos.StatusResult.Failure,
-                exception=serialize_exception(ex)))
+                exception=serialize_exception(ex, protos)))
 
 
 async def function_environment_reload_request(request):
@@ -288,6 +293,7 @@ async def function_environment_reload_request(request):
     """
     logger.info("V2 Library Worker: received WorkerInitRequest,"
                 "Version %s", VERSION)
+    global _host, protos, metadata_exception
     try:
 
         func_env_reload_request = \
@@ -313,18 +319,17 @@ async def function_environment_reload_request(request):
                     TRUE)
 
         try:
-            global _host, result, protos
             _host = request.properties.get("host")
             protos = request.properties.get("protos")
-            result = asyncio.create_task(load_function_metadata(
+            load_function_metadata(
                 directory,
-                caller_info="environment_reload_request"))
-            if get_app_setting(setting=PYTHON_ENABLE_INIT_INDEXING):
+                caller_info="environment_reload_request")
+            if HttpV2Registry.http_v2_enabled():
                 capabilities[HTTP_URI] = \
                     initialize_http_server(_host)
                 capabilities[REQUIRES_ROUTE_PARAMETERS] = TRUE
-        except HttpServerInitError:
-            raise
+        except HttpServerInitError as ex:
+            metadata_exception = ex
 
         # Change function app directory
         if getattr(func_env_reload_request,
@@ -339,7 +344,6 @@ async def function_environment_reload_request(request):
                 status=protos.StatusResult.Success))
 
     except Exception as ex:
-        global metadata_exception
         metadata_exception = ex
         return protos.FunctionEnvironmentReloadResponse(
             result=protos.StatusResult(
@@ -347,8 +351,8 @@ async def function_environment_reload_request(request):
                 exception=serialize_exception(ex, protos)))
 
 
-async def load_function_metadata(function_app_directory, caller_info):
-    global protos
+def load_function_metadata(function_app_directory, caller_info):
+    global protos, metadata_result
     """
     This method is called to index the functions in the function app
     directory and save the results in function_metadata_result or
@@ -373,7 +377,9 @@ async def load_function_metadata(function_app_directory, caller_info):
         global metadata_result
         metadata_result = (index_functions(function_path, function_app_directory)) \
             if os.path.exists(function_path) else None
+        logger.info("VICTORIA --- metadata_result: %s", metadata_result)
     except Exception as ex:
+        logger.info("VICTORIA --- exception in load_function_metadata: %s", ex)
         global metadata_exception
         metadata_exception = ex
 
@@ -405,9 +411,7 @@ def index_functions(function_path: str, function_dir: str):
                 indexed_function_bindings_logs.append((
                     binding.type, binding.name, deferred_binding_info))
 
-            function_log = "Function Name: {}, Function Binding: {}" \
-                .format(func.get_function_name(),
-                        indexed_function_bindings_logs)
+            function_log = "Function Name: " + func.get_function_name() + ", Function Binding: " + str(indexed_function_bindings_logs)
             indexed_function_logs.append(function_log)
 
         logger.info(

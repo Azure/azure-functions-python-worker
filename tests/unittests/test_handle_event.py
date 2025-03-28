@@ -12,8 +12,8 @@ from tests.utils import testutils
 
 import tests.protos as protos
 
-BASIC_FUNCTION_DIRECTORY = "tests\\unittests\\basic_function"
-STREAMING_FUNCTION_DIRECTORY = "tests\\unittests\\streaming_function"
+BASIC_FUNCTION_DIRECTORY = "C:\\Users\\victoriahall\\Documents\\repos\\azure-functions-python-worker\\tests\\unittests\\basic_function"
+STREAMING_FUNCTION_DIRECTORY = "C:\\Users\\victoriahall\\Documents\\repos\\azure-functions-python-worker\\tests\\unittests\\streaming_function"
 INDEXING_EXCEPTION_FUNCTION_DIRECTORY = "tests\\unittests\\indexing_exception_function"
 
 

@@ -154,14 +154,10 @@ def process_indexed_function(protos,
 
 @attach_message_to_exception(
     expt_type=ImportError,
-    message=('Cannot find module. Please check the requirements.txt '
-            'file for the missing module. For more info, '
-            'please refer the troubleshooting '
-            'guide: %s. '
-            'Current sys.path: %s', MODULE_NOT_FOUND_TS_URL, sys.path),
-    debug_logs=('Error in index_function_app. '
-               'Sys Path: %s, Sys Module: %s,'
-               'python-packages Path exists: %s', sys.path, sys.modules, os.path.exists(CUSTOMER_PACKAGES_PATH)))
+    message="Cannot find module. Please check the requirements.txt file for the missing module. For more info, please refer the troubleshooting guide: " + MODULE_NOT_FOUND_TS_URL +
+            ". Current sys.path: " + " ".join(sys.path),
+    debug_logs="Error in index_function_app. Sys Path:" + " ".join(sys.path) +
+               ", python-packages Path exists: " + str(os.path.exists(CUSTOMER_PACKAGES_PATH)))
 def index_function_app(function_path: str):
     module_name = pathlib.Path(function_path).stem
     imported_module = importlib.import_module(module_name)

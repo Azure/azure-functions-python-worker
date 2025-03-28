@@ -61,7 +61,7 @@ class Datum:
         val_repr = repr(self.value)
         if len(val_repr) > 10:
             val_repr = val_repr[:10] + '...'
-        return '<Datum {} {}>'.format(self.type, val_repr)
+        return '<Datum ' + str(self.type) + val_repr + '>'
 
     @classmethod
     def from_typed_data(cls, protos):
@@ -109,7 +109,7 @@ class Datum:
             return None
         else:
             raise NotImplementedError(
-                'unsupported TypeData kind: {!r}'.format(tt)
+                'unsupported TypeData kind: %s' % tt
             )
 
         return cls(val, tt)
@@ -150,7 +150,7 @@ def datum_as_proto(datum: Datum, protos):
         return protos.TypedData(int=int(datum.value))
     else:
         raise NotImplementedError(
-            'unexpected Datum type: {!r}'.format(datum.type)
+            'unexpected Datum type: %s' % datum.type
         )
 
 

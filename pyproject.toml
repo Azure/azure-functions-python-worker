@@ -1,7 +1,7 @@
 [project]
 name = "test-worker"
 dynamic = ["version"]
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 description = "Python Language Worker for Azure Functions Runtime"
 authors = [
     { name = "Azure Functions team at Microsoft Corp.", email = "azurefunctions@microsoft.com" }

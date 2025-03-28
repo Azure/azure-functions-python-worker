@@ -44,7 +44,7 @@ class FunctionLoadError(RuntimeError):
 
     def __init__(self, function_name: str, msg: str) -> None:
         super().__init__(
-            'cannot load the {} function: {}'.format(function_name, msg))
+            "cannot load the " + function_name + " function: " + msg)
 
 
 class Registry:

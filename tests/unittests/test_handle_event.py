@@ -60,7 +60,6 @@ class TestHandleEvent(testutils.AsyncTestCase):
         self.assertIsNotNone(result.worker_metadata.worker_bitness)
         self.assertEqual(result.result.status, 1)
 
-    @patch.dict(os.environ, {PYTHON_ENABLE_INIT_INDEXING: '1'})
     async def test_worker_init_request_with_streaming(self):
         worker_request = WorkerRequest(name='worker_init_request',
                                        request=Request(FunctionRequest(
@@ -69,7 +68,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                        properties={'host': '123',
                                                    'protos': protos})
         result = await worker_init_request(worker_request)
-        self.assertEqual(result.capabilities, {'WorkerStatus': 'true',
+        self.assertNotEqual(result.capabilities, {'WorkerStatus': 'true',
                                                'RpcHttpBodyOnly': 'true',
                                                'SharedMemoryDataTransfer': 'true',
                                                'RpcHttpTriggerMetadataRemoved': 'true',

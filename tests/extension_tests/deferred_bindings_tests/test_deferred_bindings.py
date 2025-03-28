@@ -41,12 +41,6 @@ class MockMBD:
         self.content = content
 
 
-class MockCMBD:
-    # Follow same format from host with dot notation
-    def __init__(self, model_binding_data_list: List[MockMBD]):
-        self.model_binding_data = model_binding_data_list
-
-
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
                                               "is only supported for 3.9+.")
 class TestDeferredBindingsEnabled(testutils.AsyncTestCase):

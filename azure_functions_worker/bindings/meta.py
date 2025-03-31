@@ -300,19 +300,19 @@ def deferred_bindings_decode(binding: typing.Any,
     """
     global deferred_bindings_cache
 
+    # Only applies to Event Hub and Service Bus - cannot cache
     if datum.type == "collection_model_binding_data":
-        # Accumulates each model_binding_data content in collection_model_binding_data
-        content = "".join(str(mbd.content) for mbd in datum.value.model_binding_data)
-    else:
-        content = datum.value.content
+        return binding.decode(datum,
+                              trigger_metadata=metadata,
+                              pytype=pytype)
 
     if deferred_bindings_cache.get((pb.name,
                                     pytype,
-                                    content,
+                                    datum.value.content,
                                     function_name), None) is not None:
         return deferred_bindings_cache.get((pb.name,
                                             pytype,
-                                            content,
+                                            datum.value.content,
                                             function_name))
     else:
         deferred_binding_type = binding.decode(datum,
@@ -321,7 +321,7 @@ def deferred_bindings_decode(binding: typing.Any,
 
         deferred_bindings_cache[(pb.name,
                                  pytype,
-                                 content,
+                                 datum.value.content,
                                  function_name)] = deferred_binding_type
         return deferred_binding_type
 

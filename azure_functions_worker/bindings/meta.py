@@ -303,7 +303,7 @@ def deferred_bindings_decode(binding: typing.Any,
     # Only applies to Event Hub and Service Bus - cannot cache
     # These types will always produce different content and are not clients
     if (datum.type == "collection_model_binding_data"
-            or datum.value.source == "AzureEventHubsEventData" 
+            or datum.value.source == "AzureEventHubsEventData"
             or datum.value.source == "AzureServiceBusReceivedMessage"):
         return binding.decode(datum,
                               trigger_metadata=metadata,

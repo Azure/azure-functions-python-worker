@@ -301,7 +301,8 @@ def deferred_bindings_decode(binding: typing.Any,
     global deferred_bindings_cache
 
     # Only applies to Event Hub and Service Bus - cannot cache
-    if (datum.value.source == "AzureEventHubsEventData" 
+    if (datum.type == "collection_model_binding_data"
+            or datum.value.source == "AzureEventHubsEventData" 
             or datum.value.source == "AzureServiceBusReceivedMessage"):
         return binding.decode(datum,
                               trigger_metadata=metadata,

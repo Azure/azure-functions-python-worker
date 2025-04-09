@@ -8,9 +8,8 @@ import sys
 from types import ModuleType
 from typing import List, Optional
 
-from azure_functions_worker.utils.wrappers import enable_feature_by
 from .common import is_envvar_true, is_true_like
-from .constants import AZURE_WEBJOBS_SCRIPT_ROOT, CONTAINER_NAME, PYTHON_ISOLATE_WORKER_DEPENDENCIES
+from .constants import AZURE_WEBJOBS_SCRIPT_ROOT, CONTAINER_NAME
 from ..logging import logger
 
 
@@ -104,35 +103,6 @@ class DependencyManager:
         logger.info('Start using worker dependencies %s. Sys.path: %s', cls.worker_deps_path, sys.path)
 
     @classmethod
-    def reload_customer_libraries(cls, cx_working_dir: str = None):
-        """Reload azure and google namespace, this including any modules in
-        this namespace, such as azure-functions, grpcio, grpcio-tools etc.
-
-        Depends on the PYTHON_ISOLATE_WORKER_DEPENDENCIES, the actual behavior
-        differs.
-
-        This is called only when placeholder mode is true. In the case of a
-        worker restart, this will not be called.
-
-        Parameters
-        ----------
-        cx_working_dir: str
-            The path which contains customer's project file (e.g. wwwroot).
-        """
-        isolate_dependencies_setting = os.getenv(PYTHON_ISOLATE_WORKER_DEPENDENCIES)
-        if isolate_dependencies_setting is None:
-            isolate_dependencies = True
-        else:
-            isolate_dependencies = is_true_like(isolate_dependencies_setting)
-
-        if isolate_dependencies:
-            cls.prioritize_customer_dependencies(cx_working_dir)
-
-    @classmethod
-    @enable_feature_by(
-        flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
-        flag_default=True
-    )
     def prioritize_customer_dependencies(cls, cx_working_dir=None):
         """Switch the sys.path and ensure the customer's code import are loaded
         from CX's deppendencies.

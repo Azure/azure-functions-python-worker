@@ -30,13 +30,11 @@ deferred_bindings_cache: Dict[Any, Any] = {}
 
 def _check_http_input_type_annotation(bind_name: str, pytype: type,
                                       is_deferred_binding: bool) -> bool:
-    logger.info("VICTORIA --- http v2 enabled %s", (HttpV2Registry.http_v2_enabled()))
     if HttpV2Registry.http_v2_enabled():
         return HttpV2Registry.ext_base().RequestTrackerMeta \
             .check_type(pytype)
 
     binding = get_binding(bind_name, is_deferred_binding)
-    logger.info("VICTORIA -- inside _check_http_input_type_annotation. Bind name: %s, binding: %s, pytype: %s, check: %s", bind_name, binding, pytype, binding.check_input_type_annotation(pytype))
     return binding.check_input_type_annotation(pytype)
 
 
@@ -45,7 +43,6 @@ def _check_http_output_type_annotation(bind_name: str, pytype: type) -> bool:
         return HttpV2Registry.ext_base().ResponseTrackerMeta.check_type(pytype)
 
     binding = get_binding(bind_name)
-    logger.info("VICTORIA -- inside _check_http_output_type_annotation. Bind name: %s, binding: %s, pytype: %s, check: %s", bind_name, binding, pytype, binding.check_output_type_annotation(pytype))
     return binding.check_output_type_annotation(pytype)
 
 
@@ -71,7 +68,6 @@ def load_binding_registry() -> None:
 
     if func is None:
         import azure.functions as func
-    logger.info("VICTORIA ---- azure-functions import succeeded: %s", func.__file__)
 
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()  # type: ignore
@@ -124,15 +120,12 @@ def is_trigger_binding(bind_name: str) -> bool:
 def check_input_type_annotation(bind_name: str,
                                 pytype: type,
                                 is_deferred_binding: bool) -> bool:
-    logger.info("VICTORIA --- Inside check_input_type_annotation. bind_name: %s, pytype: %s", bind_name, pytype)
     global INPUT_TYPE_CHECK_OVERRIDE_MAP
-    logger.info("VICTORIA --- bind_name in input type check map: %s", (bind_name in INPUT_TYPE_CHECK_OVERRIDE_MAP))
     if bind_name in INPUT_TYPE_CHECK_OVERRIDE_MAP:
         return INPUT_TYPE_CHECK_OVERRIDE_MAP[bind_name](bind_name, pytype,
                                                         is_deferred_binding)
 
     binding = get_binding(bind_name, is_deferred_binding)
-    logger.info("VICTORIA -- inside _check_http_input_type_annotation. Bind name: %s, binding: %s, pytype: %s, check: %s", bind_name, binding, pytype, binding.check_input_type_annotation(pytype))
 
     return binding.check_input_type_annotation(pytype)
 

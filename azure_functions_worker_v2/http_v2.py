@@ -269,6 +269,7 @@ class HttpV2Registry:
             cls._http_v2_enabled = cls._check_http_v2_enabled()
 
         # Return the result of HTTP/2 enablement
+        logger.debug("Streaming enabled: %s", cls._http_v2_enabled_checked)
         return cls._http_v2_enabled
 
     @classmethod

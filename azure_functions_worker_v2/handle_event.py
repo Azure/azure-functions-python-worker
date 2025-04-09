@@ -57,7 +57,7 @@ protos = None
 
 
 async def worker_init_request(request):
-    logger.info("V2 Library Worker: received WorkerInitRequest,"
+    logger.debug("V2 Library Worker: received WorkerInitRequest,"
                 "Version %s", VERSION)
     global _host, protos, _function_data_cache_enabled, metadata_exception
     init_request = request.request.worker_init_request
@@ -94,23 +94,22 @@ async def worker_init_request(request):
             caller_info="worker_init_request")
 
         if HttpV2Registry.http_v2_enabled():
-            logger.info("VICTORIA --- init req. Streaming app setting enabled. Setting streaming capabilities")
+            logger.debug("Streaming enabled.")
             capabilities[HTTP_URI] = \
                 initialize_http_server(_host)
             capabilities[REQUIRES_ROUTE_PARAMETERS] = TRUE
-            logger.info("VICTORIA --- completed streaming setup")
 
     except HttpServerInitError as ex:
-        logger.info("VICTORIA --- HTTP server init error has occurred")
+        logger.error("HTTP server init error has occurred")
         metadata_exception = ex
     except Exception as ex:
         # This is catching an exception that happens during indexing while the init
         # request is still in progress. The proxy worker will do nothing with this,
         # but metadata will fail
         metadata_exception = ex
-        logger.info("VICTORIA --- an init exception has occurred: %s", ex)
+        logger.error("An exception in WorkerInitRequest has occurred: %s", ex)
 
-    logger.info("VICTORIA --- successfully processed init req")
+    logger.debug("Successfully completed WorkerInitRequest")
     return protos.WorkerInitResponse(
         capabilities=capabilities,
         worker_metadata=get_worker_metadata(protos),
@@ -121,12 +120,11 @@ async def worker_init_request(request):
 # worker_status_request can be done in the proxy worker
 
 async def functions_metadata_request(request):
-    logger.info("V2 Library Worker: received WorkerMetadataRequest")
     global protos, metadata_result, metadata_exception
-    logger.info("VICTORIA --- Metadata Result: %s, Metadata Exception: %s", metadata_result, metadata_exception)
+    logger.debug("V2 Library Worker: received WorkerMetadataRequest. Metadata Result: %s, Metadata Exception: %s", metadata_result, metadata_exception)
 
     if metadata_exception:
-        logger.info("VICTORIA --- a metadata exception has occurred: %s", metadata_exception)
+        logger.info("An exception in WorkerMetadataRequest has occurred: %s", metadata_exception)
         return protos.FunctionMetadataResponse(
             result=protos.StatusResult(
                 status=protos.StatusResult.Failure,
@@ -134,7 +132,7 @@ async def functions_metadata_request(request):
                     metadata_exception, protos)))
 
     else:
-        logger.info("VICTORIA --- no metadata exception has occurred")
+        logger.debug("Successfully completed WorkerMetadataRequest.")
         return protos.FunctionMetadataResponse(
             use_default_metadata_indexing=False,
             function_metadata_results=metadata_result,
@@ -143,11 +141,12 @@ async def functions_metadata_request(request):
 
 
 async def function_load_request(request):
-    logger.info("V2 Library Worker: received WorkerLoadRequest")
+    logger.debug("V2 Library Worker: received WorkerLoadRequest")
     global protos
     func_request = request.request.function_load_request
     function_id = func_request.function_id
 
+    logger.debug("Successfully completed WorkerLoadRequest.")
     return protos.FunctionLoadResponse(
         function_id=function_id,
         result=protos.StatusResult(
@@ -155,15 +154,14 @@ async def function_load_request(request):
 
 
 async def invocation_request(request):
-    logger.info("V2 Library Worker: received WorkerInvocationRequest")
+    logger.debug("V2 Library Worker: received WorkerInvocationRequest")
     global protos
     invoc_request = request.request.invocation_request
-    logger.info("VICTORIA --- invocation request %s", invoc_request)
     invocation_id = invoc_request.invocation_id
     function_id = invoc_request.function_id
     http_v2_enabled = False
     threadpool = request.properties.get("threadpool")
-    logger.info("VICTORIA --- all variables obtained")
+    logger.debug("All variables obtained from proxy worker. Invocation ID: %s, Function ID: %s,  Threadpool: %s", invocation_id, function_id, threadpool)
 
     try:
         fi: FunctionInfo = _functions.get_function(
@@ -175,10 +173,8 @@ async def invocation_request(request):
         http_v2_enabled = _functions.get_function(
             function_id).is_http_func and \
             HttpV2Registry.http_v2_enabled()
-        logger.info("VICTORIA --- http_v2_enabled %s", http_v2_enabled)
 
         for pb in invoc_request.input_data:
-            logger.info("VICTORIA --- pb: %s", pb)
             pb_type_info = fi.input_types[pb.name]
             if is_trigger_binding(pb_type_info.binding_name):
                 trigger_metadata = invoc_request.trigger_metadata
@@ -193,8 +189,6 @@ async def invocation_request(request):
                 function_name=_functions.get_function(
                     function_id).name,
                 is_deferred_binding=pb_type_info.deferred_bindings_enabled)
-
-            logger.info("VICTORIA --- args[pb.name]: %s", args[pb.name])
 
         if http_v2_enabled:
             http_request = await http_coordinator.get_http_request_async(
@@ -253,7 +247,6 @@ async def invocation_request(request):
                     out_name=out_name,
                     protos=protos)
                 output_data.append(param_binding)
-        logger.info("VICTORIA --- output_data: %s", output_data)
 
         return_value = None
         if fi.return_type is not None and not http_v2_enabled:
@@ -263,10 +256,10 @@ async def invocation_request(request):
                 pytype=fi.return_type.pytype,
                 protos=protos
             )
-        logger.info("VICTORIA --- return_value: %s", return_value)
 
         # Actively flush customer print() function to console
         sys.stdout.flush()
+        logger.debug("Successfully completed WorkerInvocationRequest.")
         return protos.InvocationResponse(
             invocation_id=invocation_id,
             return_value=return_value,
@@ -275,6 +268,7 @@ async def invocation_request(request):
             output_data=output_data)
 
     except Exception as ex:
+        logger.error("An exception in WorkerInvocationRequest has occurred: %s", ex)
         if http_v2_enabled:
             http_coordinator.set_http_response(invocation_id, ex)
         global metadata_exception
@@ -291,7 +285,7 @@ async def function_environment_reload_request(request):
     This is called only when placeholder mode is true. On worker restarts
     worker init request will be called directly.
     """
-    logger.info("V2 Library Worker: received WorkerInitRequest,"
+    logger.debug("V2 Library Worker: received WorkerEnvReloadRequest,"
                 "Version %s", VERSION)
     global _host, protos, metadata_exception
     try:
@@ -337,6 +331,7 @@ async def function_environment_reload_request(request):
             change_cwd(
                 func_env_reload_request.function_app_directory)
 
+        logger.debug("Successfully completed WorkerEnvReloadRequest.")
         return protos.FunctionEnvironmentReloadResponse(
             capabilities=capabilities,
             worker_metadata=get_worker_metadata(protos),
@@ -344,6 +339,7 @@ async def function_environment_reload_request(request):
                 status=protos.StatusResult.Success))
 
     except Exception as ex:
+        logger.error("An exception in WorkerEnvReloadRequest has occurred: %s", ex)
         metadata_exception = ex
         return protos.FunctionEnvironmentReloadResponse(
             result=protos.StatusResult(
@@ -377,9 +373,7 @@ def load_function_metadata(function_app_directory, caller_info):
         global metadata_result
         metadata_result = (index_functions(function_path, function_app_directory)) \
             if os.path.exists(function_path) else None
-        logger.info("VICTORIA --- metadata_result: %s", metadata_result)
     except Exception as ex:
-        logger.info("VICTORIA --- exception in load_function_metadata: %s", ex)
         global metadata_exception
         metadata_exception = ex
 
@@ -416,8 +410,8 @@ def index_functions(function_path: str, function_dir: str):
 
         logger.info(
             'Successfully processed FunctionMetadataRequest for '
-            'functions: %s. Deferred bindings enabled: %s.', " ".join(
+            'functions: %s. Deferred bindings enabled: %s. App Settings: %s', " ".join(
                 indexed_function_logs),
-            _functions.deferred_bindings_enabled())
-
+            _functions.deferred_bindings_enabled(), )
+################# VICTORIA
         return fx_metadata_results

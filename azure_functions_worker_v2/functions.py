@@ -135,7 +135,7 @@ class Registry:
     def validate_function_params(params: dict, bound_params: dict,
                                  annotations: dict, func_name: str,
                                  protos):
-        logger.info("VICTORIA --- Params: %s, BoundParams: %s, Annotations: %s, FuncName: %s",
+        logger.debug("Params: %s, BoundParams: %s, Annotations: %s, FuncName: %s",
                     params, bound_params, annotations, func_name)
         if set(params) - set(bound_params):
             raise FunctionLoadError(
@@ -155,11 +155,11 @@ class Registry:
 
         for param in params.values():
             binding = bound_params[param.name]
-            logger.info("VICTORIA --- Param %s, binding: %s", param, binding)
+            logger.debug("Param %s, binding: %s", param, binding)
 
             param_has_anno = param.name in annotations
             param_anno = annotations.get(param.name)
-            logger.info("VICTORIA --- Param_has_anno %s, param_anno: %s", param_has_anno, param_anno)
+            logger.debug("Param_has_anno %s, param_anno: %s", param_has_anno, param_anno)
 
             # Check if deferred bindings is enabled
             fx_deferred_bindings_enabled, is_deferred_binding = (
@@ -208,7 +208,7 @@ class Registry:
             else:
                 param_py_type = param_anno
 
-            logger.info("VICTORIA --- Param_py_type %s", param_py_type)
+            logger.debug("Param_py_type %s", param_py_type)
 
             if (param_has_anno and not isinstance(param_py_type, type)
                     and not is_generic_type(param_py_type)):
@@ -236,7 +236,7 @@ class Registry:
             else:
                 param_bind_type = binding.type
 
-            logger.info("VICTORIA --- param_bind_type %s", param_bind_type)
+            logger.debug("param_bind_type %s", param_bind_type)
 
             if param_has_anno:
                 if is_param_out:
@@ -246,7 +246,7 @@ class Registry:
                     checks_out = check_input_type_annotation(
                         param_bind_type, param_py_type, is_deferred_binding)
 
-                logger.info("VICTORIA --- checks_out: %s",
+                logger.debug("checks_out: %s",
                             checks_out)
 
                 if not checks_out:

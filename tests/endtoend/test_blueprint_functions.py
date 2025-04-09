@@ -2,10 +2,6 @@
 # Licensed under the MIT License.
 
 from tests.utils import testutils
-import os
-import logging
-
-from unittest.mock import patch
 
 
 class TestFunctionInBluePrintOnly(testutils.WebHostTestCase):
@@ -14,10 +10,8 @@ class TestFunctionInBluePrintOnly(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'blueprint_functions' / \
             'functions_in_blueprint_only'
 
-    @patch.dict(os.environ, {"PYAZURE_WEBHOST_DEBUG": '1'})
     def test_function_in_blueprint_only(self):
         r = self.webhost.request('GET', 'default_template')
-        logging.info(f"R: {r}")
         self.assertTrue(r.ok)
 
 

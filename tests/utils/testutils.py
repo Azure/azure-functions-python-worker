@@ -50,22 +50,23 @@ from tests.utils.testutils_docker import (
     WebHostDedicated,
 )
 
-if sys.version_info.minor < 11:
+if sys.version_info.minor < 13:
     from azure_functions_worker import dispatcher, protos
+    from azure_functions_worker.bindings.shared_memory_data_transfer import (
+        FileAccessorFactory,
+    )
+    from azure_functions_worker.bindings.shared_memory_data_transfer import (
+        SharedMemoryConstants as consts,
+    )
+    from azure_functions_worker.constants import (
+        FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
+        UNIX_SHARED_MEMORY_DIRECTORIES,
+    )
+    from azure_functions_worker.utils.common import get_app_setting, is_envvar_true
 else:
     from proxy_worker import dispatcher, protos
-
-# from azure_functions_worker.bindings.shared_memory_data_transfer import (
-#     FileAccessorFactory,
-# )
-# from azure_functions_worker.bindings.shared_memory_data_transfer import (
-#     SharedMemoryConstants as consts,
-# )
-# from azure_functions_worker.constants import (
-#     FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED,
-#     UNIX_SHARED_MEMORY_DIRECTORIES,
-# )
-# from azure_functions_worker.utils.common import get_app_setting, is_envvar_true
+    from proxy_worker.utils.common import is_envvar_true
+    from proxy_worker.utils.app_settings import get_app_setting
 
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')
@@ -119,19 +120,6 @@ SECRETS_TEMPLATE = """\
 }
 """
 
-def is_true_like(setting: str) -> bool:
-    if setting is None:
-        return False
-
-    return setting.lower().strip() in {'1', 'true', 't', 'yes', 'y'}
-
-
-def is_envvar_true(env_key: str) -> bool:
-    if os.getenv(env_key) is None:
-        return False
-
-    return is_true_like(os.environ[env_key])
-
 
 class AsyncTestCaseMeta(type(unittest.TestCase)):
 
@@ -174,7 +162,7 @@ class WebHostTestCaseMeta(type(unittest.TestCase)):
                             __check_log__=check_log_case, **kwargs):
                     if (__check_log__ is not None
                             and callable(__check_log__)
-                            and not True):
+                            and not is_envvar_true(PYAZURE_WEBHOST_DEBUG)):
 
                         # Check logging output for unit test scenarios
                         result = self._run_test(__meth__, *args, **kwargs)
@@ -248,7 +236,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         docker_tests_enabled, sku = cls.docker_tests_enabled()
 
-        cls.host_stdout = None if True \
+        cls.host_stdout = None if is_envvar_true(PYAZURE_WEBHOST_DEBUG) \
             else tempfile.NamedTemporaryFile('w+t')
 
         try:
@@ -264,17 +252,13 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     cls.webhost = \
                         WebHostDedicated(docker_configs).spawn_container()
             else:
-                cls.host_stdout_logger.info("Starting to setup function app")
                 _setup_func_app(TESTS_ROOT / script_dir, is_unit_test)
-                cls.host_stdout_logger.info("Finished setup function app")
                 try:
-                    cls.host_stdout_logger.info("Starting webhost")
                     cls.webhost = start_webhost(script_dir=script_dir,
                                                 stdout=cls.host_stdout)
                 except Exception:
                     raise
 
-            time.sleep(5)
             if not cls.webhost.is_healthy() and cls.host_stdout is not None:
                 cls.host_out = cls.host_stdout.read()
                 if cls.host_out is not None and len(cls.host_out) > 0:
@@ -315,7 +299,6 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         _teardown_func_app(TESTS_ROOT / script_dir)
 
     def _run_test(self, test, *args, **kwargs):
-        self.host_stdout_logger.info(f"Starting to run test. Test: {test}, Args: {args}, Kwargs: {kwargs}")
         if self.host_stdout is None:
             test(self, *args, **kwargs)
         else:
@@ -342,124 +325,126 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     if test_exception is not None:
                         raise test_exception
 
+# This is not supported in 3.13+
+if sys.version_info.minor < 13:
+    class SharedMemoryTestCase(unittest.TestCase):
+        """
+        For tests involving shared memory data transfer usage.
+        """
 
-# class SharedMemoryTestCase(unittest.TestCase):
-#     """
-#     For tests involving shared memory data transfer usage.
-#     """
+        def setUp(self):
+            self.was_shmem_env_true = is_envvar_true(
+                FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
+            os.environ.update(
+                {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '1'})
 
-#     def setUp(self):
-#         self.was_shmem_env_true = is_envvar_true(
-#             FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED)
-#         os.environ.update(
-#             {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '1'})
+            os_name = platform.system()
+            if os_name == 'Darwin':
+                # If an existing AppSetting is specified, save it so it can be
+                # restored later
+                self.was_shmem_dirs = get_app_setting(
+                    UNIX_SHARED_MEMORY_DIRECTORIES
+                )
+                self._setUpDarwin()
+            elif os_name == 'Linux':
+                self._setUpLinux()
+            self.file_accessor = FileAccessorFactory.create_file_accessor()
 
-#         os_name = platform.system()
-#         if os_name == 'Darwin':
-#             # If an existing AppSetting is specified, save it so it can be
-#             # restored later
-#             self.was_shmem_dirs = get_app_setting(
-#                 UNIX_SHARED_MEMORY_DIRECTORIES
-#             )
-#             self._setUpDarwin()
-#         elif os_name == 'Linux':
-#             self._setUpLinux()
+        def tearDown(self):
+            os_name = platform.system()
+            if os_name == 'Darwin':
+                self._tearDownDarwin()
+                if self.was_shmem_dirs is not None:
+                    # If an AppSetting was set before the tests ran, restore it back
+                    os.environ.update(
+                        {UNIX_SHARED_MEMORY_DIRECTORIES: self.was_shmem_dirs})
+            elif os_name == 'Linux':
+                self._tearDownLinux()
 
-#     def tearDown(self):
-#         os_name = platform.system()
-#         if os_name == 'Darwin':
-#             self._tearDownDarwin()
-#             if self.was_shmem_dirs is not None:
-#                 # If an AppSetting was set before the tests ran, restore it back
-#                 os.environ.update(
-#                     {UNIX_SHARED_MEMORY_DIRECTORIES: self.was_shmem_dirs})
-#         elif os_name == 'Linux':
-#             self._tearDownLinux()
+            if not self.was_shmem_env_true:
+                os.environ.update(
+                    {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '0'})
 
-#         if not self.was_shmem_env_true:
-#             os.environ.update(
-#                 {FUNCTIONS_WORKER_SHARED_MEMORY_DATA_TRANSFER_ENABLED: '0'})
+        def get_new_mem_map_name(self):
+            return str(uuid.uuid4())
 
-#     def get_new_mem_map_name(self):
-#         return str(uuid.uuid4())
+        def get_random_bytes(self, num_bytes):
+            return bytearray(random.getrandbits(8) for _ in range(num_bytes))
 
-#     def get_random_bytes(self, num_bytes):
-#         return bytearray(random.getrandbits(8) for _ in range(num_bytes))
+        def get_random_string(self, num_chars):
+            return ''.join(random.choices(string.ascii_uppercase + string.digits,
+                                        k=num_chars))
 
-#     def get_random_string(self, num_chars):
-#         return ''.join(random.choices(string.ascii_uppercase + string.digits,
-#                                       k=num_chars))
+        def is_valid_uuid(self, uuid_to_test: str, version: int = 4) -> bool:
+            """
+            Check if uuid_to_test is a valid UUID.
+            Reference: https://stackoverflow.com/a/33245493/3132415
+            """
+            try:
+                uuid_obj = uuid.UUID(uuid_to_test, version=version)
+            except ValueError:
+                return False
+            return str(uuid_obj) == uuid_to_test
 
-#     def is_valid_uuid(self, uuid_to_test: str, version: int = 4) -> bool:
-#         """
-#         Check if uuid_to_test is a valid UUID.
-#         Reference: https://stackoverflow.com/a/33245493/3132415
-#         """
-#         try:
-#             uuid_obj = uuid.UUID(uuid_to_test, version=version)
-#         except ValueError:
-#             return False
-#         return str(uuid_obj) == uuid_to_test
+        def _createSharedMemoryDirectories(self, directories):
+            for temp_dir in directories:
+                temp_dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
+                if not os.path.exists(temp_dir_path):
+                    os.makedirs(temp_dir_path)
 
-#     def _createSharedMemoryDirectories(self, directories):
-#         for temp_dir in directories:
-#             temp_dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
-#             if not os.path.exists(temp_dir_path):
-#                 os.makedirs(temp_dir_path)
+        def _deleteSharedMemoryDirectories(self, directories):
+            for temp_dir in directories:
+                temp_dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
+                shutil.rmtree(temp_dir_path)
 
-#     def _deleteSharedMemoryDirectories(self, directories):
-#         for temp_dir in directories:
-#             temp_dir_path = os.path.join(temp_dir, consts.UNIX_TEMP_DIR_SUFFIX)
-#             shutil.rmtree(temp_dir_path)
+        def _setUpLinux(self):
+            self._createSharedMemoryDirectories(consts.UNIX_TEMP_DIRS)
 
-#     def _setUpLinux(self):
-#         self._createSharedMemoryDirectories(consts.UNIX_TEMP_DIRS)
+        def _tearDownLinux(self):
+            self._deleteSharedMemoryDirectories(consts.UNIX_TEMP_DIRS)
 
-#     def _tearDownLinux(self):
-#         self._deleteSharedMemoryDirectories(consts.UNIX_TEMP_DIRS)
+        def _setUpDarwin(self):
+            """
+            Create a RAM disk on macOS.
+            Ref: https://stackoverflow.com/a/2033417/3132415
+            """
+            size_in_mb = consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER / (1024 * 1024)
+            size = 2048 * size_in_mb
+            # The following command returns the name of the created disk
+            cmd = ['hdiutil', 'attach', '-nomount', f'ram://{size}']
+            result = subprocess.run(cmd, stdout=subprocess.PIPE)
+            if result.returncode != 0:
+                raise IOError(f'Cannot create ram disk with command: {cmd} - '
+                            f'{result.stdout} - {result.stderr}')
+            disk_name = result.stdout.strip().decode()
+            # We create a volume on the disk created above and mount it
+            volume_name = 'shm'
+            cmd = ['diskutil', 'eraseVolume', 'HFS+', volume_name, disk_name]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE)
+            if result.returncode != 0:
+                raise IOError(f'Cannot create volume with command: {cmd} - '
+                            f'{result.stdout} - {result.stderr}')
+            directory = f'/Volumes/{volume_name}'
+            self.created_directories = [directory]
+            # Create directories in the volume for shared memory maps
+            self._createSharedMemoryDirectories(self.created_directories)
+            # Override the AppSetting for the duration of this test so the
+            # FileAccessorUnix can use these directories for creating memory maps
+            os.environ.update(
+                {UNIX_SHARED_MEMORY_DIRECTORIES: ','.join(self.created_directories)}
+            )
 
-#     def _setUpDarwin(self):
-#         """
-#         Create a RAM disk on macOS.
-#         Ref: https://stackoverflow.com/a/2033417/3132415
-#         """
-#         size_in_mb = consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER / (1024 * 1024)
-#         size = 2048 * size_in_mb
-#         # The following command returns the name of the created disk
-#         cmd = ['hdiutil', 'attach', '-nomount', f'ram://{size}']
-#         result = subprocess.run(cmd, stdout=subprocess.PIPE)
-#         if result.returncode != 0:
-#             raise IOError(f'Cannot create ram disk with command: {cmd} - '
-#                           f'{result.stdout} - {result.stderr}')
-#         disk_name = result.stdout.strip().decode()
-#         # We create a volume on the disk created above and mount it
-#         volume_name = 'shm'
-#         cmd = ['diskutil', 'eraseVolume', 'HFS+', volume_name, disk_name]
-#         result = subprocess.run(cmd, stdout=subprocess.PIPE)
-#         if result.returncode != 0:
-#             raise IOError(f'Cannot create volume with command: {cmd} - '
-#                           f'{result.stdout} - {result.stderr}')
-#         directory = f'/Volumes/{volume_name}'
-#         self.created_directories = [directory]
-#         # Create directories in the volume for shared memory maps
-#         self._createSharedMemoryDirectories(self.created_directories)
-#         # Override the AppSetting for the duration of this test so the
-#         # FileAccessorUnix can use these directories for creating memory maps
-#         os.environ.update(
-#             {UNIX_SHARED_MEMORY_DIRECTORIES: ','.join(self.created_directories)}
-#         )
-
-#     def _tearDownDarwin(self):
-#         # Delete the directories containing shared memory maps
-#         self._deleteSharedMemoryDirectories(self.created_directories)
-#         # Unmount the volume used for shared memory maps
-#         volume_name = 'shm'
-#         cmd = f"find /Volumes -type d -name '{volume_name}*' -print0 " \
-#               "| xargs -0 umount -f"
-#         result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
-#         if result.returncode != 0:
-#             raise IOError(f'Cannot delete volume with command: {cmd} - '
-#                           f'{result.stdout} - {result.stderr}')
+        def _tearDownDarwin(self):
+            # Delete the directories containing shared memory maps
+            self._deleteSharedMemoryDirectories(self.created_directories)
+            # Unmount the volume used for shared memory maps
+            volume_name = 'shm'
+            cmd = f"find /Volumes -type d -name '{volume_name}*' -print0 " \
+                "| xargs -0 umount -f"
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+            if result.returncode != 0:
+                raise IOError(f'Cannot delete volume with command: {cmd} - '
+                            f'{result.stdout} - {result.stderr}')
 
 
 class _MockWebHostServicer(protos.FunctionRpcServicer):
@@ -820,7 +805,6 @@ class _WebHostProxy:
         self._addr = addr
 
     def is_healthy(self):
-        time.sleep(3)
         r = self.request('GET', '', no_prefix=True)
         return 200 <= r.status_code < 300
 
@@ -989,7 +973,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
 def start_webhost(*, script_dir=None, stdout=None):
     script_root = TESTS_ROOT / script_dir if script_dir else FUNCS_PATH
     if stdout is None:
-        if True:
+        if is_envvar_true(PYAZURE_WEBHOST_DEBUG):
             stdout = sys.stdout
         else:
             stdout = subprocess.DEVNULL

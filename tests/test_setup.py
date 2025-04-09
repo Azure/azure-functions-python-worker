@@ -38,7 +38,7 @@ BUILD_DIR = ROOT_DIR / 'build'
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
 WEBHOST_GIT_REPO = "https://github.com/Azure/azure-functions-host/archive"
 WEBHOST_TAG_PREFIX = "v4."
-WORKER_DIR = "azure_functions_worker" if sys.version_info.minor < 11 else "proxy_worker"
+WORKER_DIR = "azure_functions_worker" if sys.version_info.minor < 13 else "proxy_worker"
 
 
 def get_webhost_version() -> str:

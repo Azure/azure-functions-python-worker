@@ -8,6 +8,7 @@ import sys
 from types import ModuleType
 from typing import List, Optional
 
+from azure_functions_worker.utils.wrappers import enable_feature_by
 from .common import is_envvar_true, is_true_like
 from .constants import AZURE_WEBJOBS_SCRIPT_ROOT, CONTAINER_NAME, PYTHON_ISOLATE_WORKER_DEPENDENCIES
 from ..logging import logger
@@ -24,7 +25,7 @@ class DependencyManager:
 
     Azure Functions has three different set of sys.path ordering,
 
-    Linux Consumption sys.path: [
+    Linux Consumption sys.path: [
         "/tmp/functions\\standby\\wwwroot", # Placeholder folder
         "/home/site/wwwroot/.python_packages/lib/site-packages", # CX's deps
         "/azure-functions-host/workers/python/3.13/LINUX/X64", # Worker's deps
@@ -128,6 +129,10 @@ class DependencyManager:
             cls.prioritize_customer_dependencies(cx_working_dir)
 
     @classmethod
+    @enable_feature_by(
+        flag=PYTHON_ISOLATE_WORKER_DEPENDENCIES,
+        flag_default=True
+    )
     def prioritize_customer_dependencies(cls, cx_working_dir=None):
         """Switch the sys.path and ensure the customer's code import are loaded
         from CX's deppendencies.

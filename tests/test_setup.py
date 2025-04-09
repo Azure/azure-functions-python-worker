@@ -126,7 +126,7 @@ def compile_webhost(webhost_dir):
     except subprocess.CalledProcessError:
         print(
             f"Failed to compile webhost in {webhost_dir}. "
-            ".NET Core SDK is required to build the solution. "
+            "A compatible .NET Core SDK is required to build the solution. "
             "Please visit https://aka.ms/dotnet-download",
             file=sys.stderr,
         )

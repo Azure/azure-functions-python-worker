@@ -47,8 +47,7 @@ extends:
       dependsOn: []
       jobs:
       - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self
-#       Skipping consumption tests till pipeline is fixed
-#    - stage: RunLCTests
-#      dependsOn: []
-#      jobs:
-#      - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
+    - stage: RunLCTests
+      dependsOn: []
+      jobs:
+      - template: /eng/templates/official/jobs/ci-lc-tests.yml@self

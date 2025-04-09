@@ -26,15 +26,20 @@ classifiers = [
     "Intended Audience :: Developers"
 ]
 dependencies = [
-     "azure-functions==1.23.0b3",
-     "python-dateutil ~=2.9.0",
+     "azure-functions==1.23.0b1",
+     "python-dateutil~=2.9.0",
      "protobuf~=3.19.3; python_version == '3.7'",
-     "protobuf~=4.25.3; python_version >= '3.8'",
+     "protobuf~=4.25.3; python_version >= '3.8' and python_version < '3.13'",
+     "protobuf~=5.29.0; python_version >= '3.13'",
      "grpcio-tools~=1.43.0; python_version == '3.7'",
-     "grpcio-tools~=1.59.0; python_version >= '3.8'",
+     "grpcio-tools~=1.59.0; python_version >= '3.8' and python_version < '3.13'",
+     "grpcio-tools~=1.70.0; python_version >= '3.13'",
      "grpcio~=1.43.0; python_version == '3.7'",
-     "grpcio~=1.59.0; python_version >= '3.8'",
-     "azurefunctions-extensions-base; python_version >= '3.8'"
+     "grpcio ~=1.59.0; python_version >= '3.8' and python_version < '3.13'",
+     "grpcio~=1.70.0; python_version >= '3.13'",
+     "azurefunctions-extensions-base; python_version >= '3.8'",
+     "test-worker==1.0.0a38; python_version >= '3.13'",
+     "test-worker-v1==1.0.0a11; python_version >= '3.13'"
 ]
 
 [project.urls]
@@ -45,7 +50,6 @@ Repository = "https://github.com/Azure/azure-functions-python-worker"
 dev = [
     "azure-eventhub", # Used for EventHub E2E tests
     "azure-functions-durable", # Used for Durable E2E tests
-    "azure-monitor-opentelemetry; python_version >= '3.8'", # Used for Azure Monitor unit tests
     "flask",
     "fastapi~=0.103.2",
     "pydantic",
@@ -56,7 +60,6 @@ dev = [
     "requests==2.*",
     "coverage",
     "pytest-sugar",
-    "opentelemetry-api; python_version >= '3.8'", # Used for OpenTelemetry unit tests
     "pytest-cov",
     "pytest-xdist",
     "pytest-randomly",
@@ -74,7 +77,7 @@ dev = [
     "cryptography"
 ]
 test-http-v2 = [
-    "azurefunctions-extensions-http-fastapi==1.0.0b2",
+    "azurefunctions-extensions-http-fastapi==1.0.0b1",
     "ujson",
     "orjson"
 ]
@@ -83,7 +86,7 @@ test-deferred-bindings = [
 ]
 
 [build-system]
-requires = ["setuptools>=62", "wheel"]
+requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 

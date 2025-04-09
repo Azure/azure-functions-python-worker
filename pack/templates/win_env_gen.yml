@@ -12,6 +12,7 @@ steps:
 - task: PowerShell@2
   inputs:
     filePath: 'pack\scripts\win_deps.ps1'
+    arguments: '${{ parameters.pythonVersion }}'
 - bash: |
     pip install pip-audit
     pip-audit -r requirements.txt
@@ -41,4 +42,29 @@ steps:
       !pkg_resources\**
       !*.dist-info\**
       !werkzeug\debug\shared\debugger.js
+      !proxy_worker\**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
+  condition: lt(variables['pythonVersion'], '3.13')
+  displayName: 'Copy azure_functions_worker files'
+- task: CopyFiles@2
+  inputs:
+    sourceFolder: '$(Build.SourcesDirectory)\deps'
+    contents: |
+      **
+      !grpc_tools\**\*
+      !grpcio_tools*\*
+      !build\**
+      !docs\**
+      !pack\**
+      !python\**
+      !tests\**
+      !setuptools*\**
+      !_distutils_hack\**
+      !distutils-precedence.pth
+      !pkg_resources\**
+      !*.dist-info\**
+      !werkzeug\debug\shared\debugger.js
+      !dateutil\**
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+  condition: ge(variables['pythonVersion'], '3.13')
+  displayName: 'Copy proxy_worker files'

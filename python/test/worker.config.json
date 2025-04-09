@@ -2,10 +2,9 @@
     "description":{
         "language":"python",
         "extensions":[".py"],
-        "defaultExecutablePath":"python",
+        "defaultExecutablePath":"C:\\Users\\victoriahall\\Documents\\repos\\azure.azure-functions-python-worker\\.venv\\Scripts\\python.exe",
         "defaultWorkerPath":"worker.py",
-        "workerIndexing": "true",
-        "arguments": ["-X no_debug_ranges"]
+        "workerIndexing": "true"
     },
      "processOptions": {
         "initializationTimeout": "00:02:00",

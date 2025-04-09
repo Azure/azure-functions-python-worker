@@ -128,7 +128,7 @@ class Registry:
                     raise FunctionLoadError(
                         func_name,
                         'the "context" parameter is expected to be of '
-                        'type azure.functions.Context, got "%s"', repr(ctx_anno))
+                        'type azure.functions.Context, got "' + repr(ctx_anno) + '"')
         return requires_context
 
     @staticmethod
@@ -136,18 +136,18 @@ class Registry:
                                  annotations: dict, func_name: str,
                                  protos):
         logger.debug("Params: %s, BoundParams: %s, Annotations: %s, FuncName: %s",
-                    params, bound_params, annotations, func_name)
+                     params, bound_params, annotations, func_name)
         if set(params) - set(bound_params):
             raise FunctionLoadError(
                 func_name,
                 'the following parameters are declared in Python but '
-                'not in function.json: %s', repr(set(params) - set(bound_params)))
+                'not in function.json: ' + repr(set(params) - set(bound_params)))
 
         if set(bound_params) - set(params):
             raise FunctionLoadError(
                 func_name,
                 'the following parameters are declared in function.json but '
-                'not in Python: %s', repr(set(params) - set(bound_params)))
+                'not in Python: ' + repr(set(params) - set(bound_params)))
 
         input_types: typing.Dict[str, ParamTypeInfo] = {}
         output_types: typing.Dict[str, ParamTypeInfo] = {}
@@ -159,7 +159,8 @@ class Registry:
 
             param_has_anno = param.name in annotations
             param_anno = annotations.get(param.name)
-            logger.debug("Param_has_anno %s, param_anno: %s", param_has_anno, param_anno)
+            logger.debug("Param_has_anno %s, param_anno: %s",
+                         param_has_anno, param_anno)
 
             # Check if deferred bindings is enabled
             fx_deferred_bindings_enabled, is_deferred_binding = (
@@ -195,7 +196,8 @@ class Registry:
                 if len(param_anno_args) != 1:
                     raise FunctionLoadError(
                         func_name,
-                        'binding %s has invalid Out annotation %s', param.name, repr(param_anno))
+                        'binding ' + param.name
+                        + ' has invalid Out annotation ' + repr(param_anno))
                 param_py_type = param_anno_args[0]
 
                 # typing_inspect.get_args() returns a flat list,
@@ -214,21 +216,22 @@ class Registry:
                     and not is_generic_type(param_py_type)):
                 raise FunctionLoadError(
                     func_name,
-                    'binding %s has invalid non-type annotation %s', param.name, repr(param_anno))
+                    'binding ' + param.name
+                    + ' has invalid non-type annotation ' + repr(param_anno))
 
             if is_binding_out and param_has_anno and not is_param_out:
                 raise FunctionLoadError(
                     func_name,
-                    'binding %s is declared to have the "out" '
+                    'binding ' + param.name + ' is declared to have the "out" '
                     'direction, but its annotation in Python is not '
-                    'a subclass of azure.functions.Out', param.name)
+                    'a subclass of azure.functions.Out')
 
             if not is_binding_out and is_param_out:
                 raise FunctionLoadError(
                     func_name,
-                    'binding %s is declared to have the "in" '
+                    'binding ' + param.name + ' is declared to have the "in" '
                     'direction in function.json, but its annotation '
-                    'is azure.functions.Out in Python', param.name)
+                    'is azure.functions.Out in Python')
 
             if param_has_anno and param_py_type in (str, bytes) and (
                     not has_implicit_output(binding.type)):
@@ -247,23 +250,23 @@ class Registry:
                         param_bind_type, param_py_type, is_deferred_binding)
 
                 logger.debug("checks_out: %s",
-                            checks_out)
+                             checks_out)
 
                 if not checks_out:
                     if binding.data_type is not protos.BindingInfo.undefined:
                         raise FunctionLoadError(
                             func_name,
-                            '%s binding type "%s" '
-                            'and dataType "%s" in '
+                            'binding type "' + repr(param.name)
+                            + '" and dataType "' + binding.type + '" in '
                             'function.json do not match the corresponding '
                             'function parameter\'s Python type '
-                            'annotation %s', repr(param.name), binding.type, binding.data_type, param_py_type.__name__)
+                            'annotation ' + param_py_type.__name__)
                     else:
                         raise FunctionLoadError(
                             func_name,
-                            'type of %s binding in function.json '
-                            '"%s" does not match its Python '
-                            'annotation "%s"', param.name, binding.type, param_py_type.__name__)
+                            'type of ' + param.name + ' binding in function.json "'
+                            + binding.type + '" does not match its Python '
+                            'annotation "' + param_py_type.__name__ + '"')
 
             param_type_info = ParamTypeInfo(param_bind_type,
                                             param_py_type,
@@ -293,7 +296,7 @@ class Registry:
                 raise FunctionLoadError(
                     func_name,
                     'has invalid non-type return '
-                    'annotation %s', repr(return_pytype))
+                    'annotation ' + repr(return_pytype))
 
             if return_pytype is (str, bytes):
                 binding_name = 'generic'
@@ -302,8 +305,8 @@ class Registry:
                     binding_name, return_pytype):
                 raise FunctionLoadError(
                     func_name,
-                    'Python return annotation "%s" '
-                    'does not match binding type "%s"', return_pytype.__name__, binding_name)
+                    'Python return annotation "' + return_pytype.__name__
+                    + '" does not match binding type "' + binding_name + '"')
 
         if has_implicit_return and 'return' in annotations:
             return_pytype = annotations.get('return')

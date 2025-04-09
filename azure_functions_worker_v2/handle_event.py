@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import json
 import logging
 import os
 import sys
@@ -25,6 +26,7 @@ from .bindings.meta import (load_binding_registry, is_trigger_binding,
                             from_incoming_proto, to_outgoing_param_binding,
                             to_outgoing_proto)
 from .bindings.out import Out
+from utils.app_setting_manager import get_python_appsetting_state
 from .utils.constants import (FUNCTION_DATA_CACHE,
                               RAW_HTTP_BODY_BYTES,
                               TYPED_DATA_COLLECTION,
@@ -36,7 +38,6 @@ from .utils.constants import (FUNCTION_DATA_CACHE,
                               PYTHON_ENABLE_OPENTELEMETRY,
                               PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
                               WORKER_OPEN_TELEMETRY_ENABLED,
-                              PYTHON_ENABLE_INIT_INDEXING,
                               HTTP_URI,
                               REQUIRES_ROUTE_PARAMETERS,
                               PYTHON_SCRIPT_FILE_NAME,
@@ -58,7 +59,7 @@ protos = None
 
 async def worker_init_request(request):
     logger.debug("V2 Library Worker: received WorkerInitRequest,"
-                "Version %s", VERSION)
+                 "Version %s", VERSION)
     global _host, protos, _function_data_cache_enabled, metadata_exception
     init_request = request.request.worker_init_request
     host_capabilities = init_request.capabilities
@@ -121,10 +122,13 @@ async def worker_init_request(request):
 
 async def functions_metadata_request(request):
     global protos, metadata_result, metadata_exception
-    logger.debug("V2 Library Worker: received WorkerMetadataRequest. Metadata Result: %s, Metadata Exception: %s", metadata_result, metadata_exception)
+    logger.debug("V2 Library Worker: received WorkerMetadataRequest."
+                 " Metadata Result: %s, Metadata Exception: %s",
+                 metadata_result, metadata_exception)
 
     if metadata_exception:
-        logger.info("An exception in WorkerMetadataRequest has occurred: %s", metadata_exception)
+        logger.info("An exception in WorkerMetadataRequest has occurred: %s",
+                    metadata_exception)
         return protos.FunctionMetadataResponse(
             result=protos.StatusResult(
                 status=protos.StatusResult.Failure,
@@ -161,7 +165,9 @@ async def invocation_request(request):
     function_id = invoc_request.function_id
     http_v2_enabled = False
     threadpool = request.properties.get("threadpool")
-    logger.debug("All variables obtained from proxy worker. Invocation ID: %s, Function ID: %s,  Threadpool: %s", invocation_id, function_id, threadpool)
+    logger.debug("All variables obtained from proxy worker."
+                 " Invocation ID: %s, Function ID: %s,  Threadpool: %s",
+                 invocation_id, function_id, threadpool)
 
     try:
         fi: FunctionInfo = _functions.get_function(
@@ -216,7 +222,8 @@ async def invocation_request(request):
             if otel_manager.get_azure_monitor_available():
                 configure_opentelemetry(fi_context)
 
-            call_result = await execute_async(fi.func, args)  # Not supporting Extensions
+            # Extensions are not supported
+            call_result = await execute_async(fi.func, args)
         else:
             _loop = get_current_loop()
             call_result = await _loop.run_in_executor(
@@ -286,7 +293,7 @@ async def function_environment_reload_request(request):
     worker init request will be called directly.
     """
     logger.debug("V2 Library Worker: received WorkerEnvReloadRequest,"
-                "Version %s", VERSION)
+                 "Version %s", VERSION)
     global _host, protos, metadata_exception
     try:
 
@@ -405,13 +412,17 @@ def index_functions(function_path: str, function_dir: str):
                 indexed_function_bindings_logs.append((
                     binding.type, binding.name, deferred_binding_info))
 
-            function_log = "Function Name: " + func.get_function_name() + ", Function Binding: " + str(indexed_function_bindings_logs)
+            function_log = ("Function Name: " + func.get_function_name()
+                            + ", Function Binding: "
+                            + str(indexed_function_bindings_logs))
             indexed_function_logs.append(function_log)
 
-        logger.info(
-            'Successfully processed FunctionMetadataRequest for '
-            'functions: %s. Deferred bindings enabled: %s. App Settings: %s', " ".join(
-                indexed_function_logs),
-            _functions.deferred_bindings_enabled(), )
-################# VICTORIA
+        log_data = {
+            "message": "Successfully processed FunctionMetadataRequest",
+            "functions": " ".join(indexed_function_logs),
+            "deferred_bindings_enabled": _functions.deferred_bindings_enabled(),
+            "app_settings": get_python_appsetting_state()
+        }
+        logger.info(json.dumps(log_data))
+
         return fx_metadata_results

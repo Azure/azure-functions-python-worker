@@ -1,13 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import os
 from typing import Any
 from unittest.mock import patch
 
-from azure_functions_worker_v2.utils.constants import PYTHON_ENABLE_INIT_INDEXING
 from azure_functions_worker_v2.handle_event import (worker_init_request,
-                                                 functions_metadata_request,
-                                                 function_environment_reload_request)
+                                                    functions_metadata_request,
+                                                    function_environment_reload_request)
 from tests.utils import testutils
 
 import tests.protos as protos
@@ -69,11 +67,11 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                                    'protos': protos})
         result = await worker_init_request(worker_request)
         self.assertNotEqual(result.capabilities, {'WorkerStatus': 'true',
-                                               'RpcHttpBodyOnly': 'true',
-                                               'SharedMemoryDataTransfer': 'true',
-                                               'RpcHttpTriggerMetadataRemoved': 'true',
-                                               'RawHttpBodyBytes': 'true',
-                                               'TypedDataCollection': 'true'})
+                                                  'RpcHttpBodyOnly': 'true',
+                                                  'SharedMemoryDataTransfer': 'true',
+                                                  'RpcHttpTriggerMetadataRemoved': 'true',
+                                                  'RawHttpBodyBytes': 'true',
+                                                  'TypedDataCollection': 'true'})
         self.assertEqual(result.worker_metadata.runtime_name, "python")
         self.assertIsNotNone(result.worker_metadata.runtime_version)
         self.assertIsNotNone(result.worker_metadata.worker_version)
@@ -110,7 +108,8 @@ class TestHandleEvent(testutils.AsyncTestCase):
 
     async def run_init_then_meta(self):
         worker_request = WorkerRequest(name='worker_init_request',
-                                       request=Request(FunctionRequest('hello', BASIC_FUNCTION_DIRECTORY)),
+                                       request=Request(
+                                           FunctionRequest('hello', BASIC_FUNCTION_DIRECTORY)),
                                        properties={'host': '123',
                                                    'protos': protos})
         _ = await worker_init_request(worker_request)

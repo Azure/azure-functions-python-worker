@@ -22,7 +22,8 @@ def to_nullable_string(nullable: Optional[str], property_name: str, protos):
     if nullable is not None:
         raise TypeError(
             "A 'str' type was expected instead of a '%s' "
-            "type. Cannot parse value %s of '%s'.", type(nullable), nullable, property_name)
+            "type. Cannot parse value %s of '%s'.",
+            type(nullable), nullable, property_name)
 
     return None
 
@@ -44,7 +45,8 @@ def to_nullable_bool(nullable: Optional[bool], property_name: str, protos):
     if nullable is not None:
         raise TypeError(
             "A 'bool' type was expected instead of a '%s' "
-            "type. Cannot parse value %s of '%s'.", type(nullable), nullable, property_name)
+            "type. Cannot parse value %s of '%s'.",
+            type(nullable), nullable, property_name)
 
     return None
 
@@ -78,7 +80,8 @@ def to_nullable_double(nullable: Optional[Union[str, int, float]],
         raise TypeError(
             "A 'int' or 'float'"
             " type was expected instead of a '%s' "
-            "type. Cannot parse value %s of '%s'.", type(nullable), nullable, property_name)
+            "type. Cannot parse value %s of '%s'.",
+            type(nullable), nullable, property_name)
 
     return None
 
@@ -107,5 +110,6 @@ def to_nullable_timestamp(date_time: Optional[Union[datetime, int]],
             raise TypeError(
                 "A 'datetime' or 'int'"
                 " type was expected instead of a '%s' "
-                "type. Cannot parse value %s of '%s'.", type(date_time), date_time, property_name)
+                "type. Cannot parse value %s of '%s'.",
+                type(date_time), date_time, property_name)
     return None

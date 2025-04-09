@@ -16,6 +16,7 @@ def get_current_loop():
 async def execute_async(function, args) -> Any:
     return await function(**args)
 
+
 def execute_sync(function, args) -> Any:
     return function(**args)
 

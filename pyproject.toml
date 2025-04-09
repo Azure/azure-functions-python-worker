@@ -65,6 +65,7 @@ dev = [
     "pytest-randomly",
     "pytest-instafail",
     "pytest-rerunfailures",
+    "pytest-asyncio",
     "ptvsd",
     "python-dotenv",
     "plotly",

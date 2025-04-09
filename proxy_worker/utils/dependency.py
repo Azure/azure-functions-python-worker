@@ -180,6 +180,7 @@ class DependencyManager:
 
         logger.info(f'Finished prioritize_customer_dependencies: {sys.path}')
 
+
     @classmethod
     def _add_to_sys_path(cls, path: str, add_to_first: bool):
         """This will ensure no duplicated path are added into sys.path and

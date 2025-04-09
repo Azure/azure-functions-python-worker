@@ -1,5 +1,7 @@
-import os
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 
+import os
 
 def is_true_like(setting: str) -> bool:
     if setting is None:

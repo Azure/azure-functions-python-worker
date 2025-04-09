@@ -27,7 +27,6 @@ import sys
 import tempfile
 import urllib.request
 import zipfile
-from distutils import dir_util
 
 from invoke import task
 
@@ -185,7 +184,7 @@ def gen_grpc():
     # https://github.com/protocolbuffers/protobuf/issues/1491
     make_absolute_imports(compiled_files)
 
-    dir_util.copy_tree(str(built_protos_dir), str(proto_root_dir))
+    shutil.copytree(str(built_protos_dir), str(proto_root_dir), dirs_exist_ok=True)
 
 
 def make_absolute_imports(compiled_files):

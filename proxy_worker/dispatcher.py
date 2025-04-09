@@ -417,7 +417,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         func_env_reload_request = \
             request.function_environment_reload_request
         directory = func_env_reload_request.function_app_directory
-        DependencyManager.reload_customer_libraries(directory)
+        DependencyManager.prioritize_customer_dependencies(directory)
 
         global _library_worker
         directory = func_env_reload_request.function_app_directory

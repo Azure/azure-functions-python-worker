@@ -1,7 +1,7 @@
 import sys
 import os
 from azure_functions_worker import main
-
+from proxy_worker import start_worker
 
 # Azure environment variables
 AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
@@ -16,4 +16,7 @@ def add_script_root_to_sys_path():
 
 if __name__ == '__main__':
     add_script_root_to_sys_path()
-    main.main()
+    if sys.version_info.minor >= 13:
+        start_worker.start()
+    else:
+        main.main()

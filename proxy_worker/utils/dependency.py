@@ -181,39 +181,6 @@ class DependencyManager:
 
         logger.info(f'Finished prioritize_customer_dependencies: {sys.path}')
 
-    @classmethod
-    def reload_azure_google_namespace_from_worker_deps(cls):
-        """This is the old implementation of reloading azure and google
-        namespace in Python worker directory. It is not actually re-importing
-        the module but only reloads the module scripts from the worker path.
-
-        It is not doing what it is intended, but due to it is already released
-        on Linux Consumption production, we don't want to introduce regression
-        on existing customers.
-
-        Only intended to be used in Linux Consumption scenario.
-        """
-        # Reload package namespaces for customer's libraries
-        packages_to_reload = [ 'azure', 'google']
-        packages_reloaded = []
-        for p in packages_to_reload:
-            try:
-                importlib.reload(sys.modules[p])
-                packages_reloaded.append(p)
-            except Exception as ex:
-                logger.warning('Unable to reload %s: \n%s', p, ex)
-
-        logger.info(f'Reloaded modules: {",".join(packages_reloaded)}')
-
-        # Reload azure.functions to give user package precedence
-        try:
-            importlib.reload(sys.modules['azure.functions'])
-            logger.info('Reloaded azure.functions module now at %s',
-                        inspect.getfile(sys.modules['azure.functions']))
-        except Exception as ex:
-            logger.warning(
-                'Unable to reload azure.functions. Using default. '
-                'Exception:\n%s', ex)
 
     @classmethod
     def _add_to_sys_path(cls, path: str, add_to_first: bool):

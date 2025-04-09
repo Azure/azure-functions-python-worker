@@ -1,6 +1,5 @@
 import asyncio
 import concurrent.futures
-import importlib.util
 import logging
 import os
 import queue
@@ -23,14 +22,14 @@ from proxy_worker.logging import (
     is_system_log_category,
     logger,
 )
-from proxy_worker.utils.app_settings import get_app_setting, python_appsetting_state
+from proxy_worker.utils.app_settings import get_app_setting
 from proxy_worker.utils.common import is_envvar_true
 from proxy_worker.utils.constants import PYTHON_ENABLE_DEBUG_LOGGING, PYTHON_THREADPOOL_THREAD_COUNT
 from proxy_worker.version import VERSION
 from .utils.dependency import DependencyManager
 
 # Library worker import reloaded in init and reload request
-library_worker = None
+_library_worker = None
 
 
 class ContextEnabledTask(asyncio.Task):
@@ -185,20 +184,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         await disp._grpc_connected_fut
         logger.info('Successfully opened gRPC channel to %s:%s ', host, port)
         return disp
-
-    async def _initialize_grpc(self):
-        # Initialize gRPC-related attributes
-        self._grpc_resp_queue = queue.Queue()
-        self._grpc_connected_fut = self._loop.create_future()
-        self._grpc_thread = threading.Thread(
-            name='grpc_local-thread', target=self.__poll_grpc)
-
-        # Start gRPC thread
-        self._grpc_thread.start()
-
-        # Wait for gRPC connection to complete
-        await self._grpc_connected_fut
-        logger.info('Successfully opened gRPC channel to %s:%s', self._host, self._port)
 
     def __poll_grpc(self):
         options = []
@@ -384,101 +369,83 @@ class Dispatcher(metaclass=DispatcherMeta):
                     'python version %s, '
                     'worker version %s, '
                     'request ID %s. '
-                    'App Settings state: %s. '
                     'To enable debug level logging, please refer to '
                     'https://aka.ms/python-enable-debug-logging',
                     sys.version,
                     VERSION,
-                    self.request_id,
-                    python_appsetting_state())
+                    self.request_id)
 
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
 
-        global library_worker
+        global _library_worker
         directory = request.worker_init_request.function_app_directory
         v2_directory = os.path.join(directory, 'function_app.py')
-        logger.info(f"V2 Directory: {v2_directory}. Path exists: {os.path.exists(v2_directory)}")
         if os.path.exists(v2_directory):
             try:
-                logger.info("Trying to import v2 worker")
-                import azure_functions_worker_v2
-                library_worker = azure_functions_worker_v2
-                logger.info(f"V2 worker Import succeeded: {library_worker.__file__}")
-            except Exception as e:
-                logger.info(f"Error when importing V2 library: {traceback.format_exc()}")
+                import azure_functions_worker_v2  # NoQA
+                _library_worker = azure_functions_worker_v2
+                logger.debug("V2 worker import succeeded: %s", _library_worker.__file__)
+            except ImportError:
+                logger.warning("Error importing V2 library: %s",traceback.format_exc())
         else:
             try:
-                logger.info("Trying to import v1 worker")
-                import azure_functions_worker_v1
-                library_worker = azure_functions_worker_v1
-                logger.info(f"V1 worker Import succeeded: {library_worker.__file__}")
-            except Exception as e:
-                logger.info(f"Error when importing V1 library: {e}")
-
-        logger.info(f"Done Updating globals: {library_worker.__file__}")
+                import azure_functions_worker_v1  # NoQA
+                _library_worker = azure_functions_worker_v1
+                logger.debug("V1 worker import succeeded: %s", _library_worker.__file__)
+            except ImportError:
+                logger.warning("Error importing V1 library: %s",traceback.format_exc())
 
         init_request = WorkerRequest(name="WorkerInitRequest",
                                      request=request,
                                      properties={"protos": protos,
                                                  "host": self._host})
-        try:
-            init_response = await library_worker.worker_init_request(init_request)
-        except Exception as e:
-            logger.info(f"Exception from init: {e}")
-        logger.info("Finished WorkerInitRequest, request ID %s, worker id %s, ",
-                    self.request_id, self.worker_id)
+        init_response = await _library_worker.worker_init_request(init_request)
 
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=init_response)
 
+
     async def _handle__function_environment_reload_request(self, request):
         logger.info('Received FunctionEnvironmentReloadRequest, '
                     'request ID: %s, '
-                    'App Settings state: %s. '
                     'To enable debug level logging, please refer to '
                     'https://aka.ms/python-enable-debug-logging',
-                    self.request_id,
-                    python_appsetting_state())
+                    self.request_id)
 
         func_env_reload_request = \
             request.function_environment_reload_request
         directory = func_env_reload_request.function_app_directory
         DependencyManager.reload_customer_libraries(directory)
 
-        global library_worker
-        directory = request.worker_init_request.function_app_directory
+        global _library_worker
+        directory = func_env_reload_request.function_app_directory
         v2_directory = os.path.join(directory, 'function_app.py')
-        logger.info(f"V2 Directory: {v2_directory}. Path exists: {os.path.exists(v2_directory)}")
         if os.path.exists(v2_directory):
             try:
-                logger.info("Trying to import v2 worker")
-                import azure_functions_worker_v2
-                library_worker = azure_functions_worker_v2
-                logger.info(f"V2 worker Import succeeded: {library_worker.__file__}")
-            except Exception as e:
-                logger.info(
-                    f"Error when importing V2 library: {traceback.format_exception(etype=type(e), tb=e.__traceback__, value=e)}")
+                import azure_functions_worker_v2  # NoQA
+                _library_worker = azure_functions_worker_v2
+                logger.debug("V2 worker import succeeded: %s",_library_worker.__file__)
+            except ImportError:
+                logger.warning("Error importing V2 library: %s",traceback.format_exc())
         else:
             try:
-                logger.info("Trying to import v1 worker")
-                import azure_functions_worker_v1
-                library_worker = azure_functions_worker_v1
-                logger.info(f"V1 worker Import succeeded: {library_worker.__file__}")
-            except Exception as e:
-                logger.info(
-                    f"Error when importing V1 library: {traceback.format_exception(etype=type(e), tb=e.__traceback__, value=e)}")
-
-        logger.info(f"Done Updating globals: {library_worker.__file__}")
+                import azure_functions_worker_v1  # NoQA
+                _library_worker = azure_functions_worker_v1
+                logger.debug("V1 worker import succeeded: %s",_library_worker.__file__)
+            except ImportError:
+                logger.warning("Error importing V1 library: %s",traceback.format_exc())
 
         env_reload_request = WorkerRequest(name="FunctionEnvironmentReloadRequest", request=request,
                                            properties={"protos": protos,
                                                        "host": self._host})
-        env_reload_response = await library_worker.function_environment_reload_request(env_reload_request)
+        env_reload_response = await _library_worker.function_environment_reload_request(env_reload_request)
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             function_environment_reload_response=env_reload_response)
+
 
     async def _handle__worker_status_request(self, request):
         # Logging is not necessary in this request since the response is used
@@ -488,6 +455,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             request_id=request.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
+
     async def _handle__functions_metadata_request(self, request):
         logger.info(
             'Received WorkerMetadataRequest, request ID %s, '
@@ -495,7 +463,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self.request_id, self.worker_id)
 
         metadata_request = WorkerRequest(name="WorkerMetadataRequest", request=request)
-        metadata_response = await library_worker.functions_metadata_request(metadata_request)
+        metadata_response = await _library_worker.functions_metadata_request(metadata_request)
 
         return protos.StreamingMessage(
             request_id=request.request_id,
@@ -513,7 +481,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             self.request_id, function_id, function_name, self.worker_id)
 
         load_request = WorkerRequest(name="FunctionsLoadRequest", request=request)
-        load_response = await library_worker.function_load_request(load_request)
+        load_response = await _library_worker.function_load_request(load_request)
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -531,7 +499,8 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         invocation_request = WorkerRequest(name="WorkerInvRequest", request=request,
                                            properties={"threadpool": self._sync_call_tp})
-        invocation_response = await library_worker.invocation_request(invocation_request)
+        invocation_response = await _library_worker.invocation_request(invocation_request)
+
         return protos.StreamingMessage(
             request_id=self.request_id,
             invocation_response=invocation_response)

@@ -9,7 +9,7 @@ from typing import Optional
 # Logging Prefixes
 SYSTEM_LOG_PREFIX = "proxy_worker"
 SDK_LOG_PREFIX = "azure.functions"
-SYSTEM_ERROR_LOG_PREFIX = "azure_functions_worker_errors"
+SYSTEM_ERROR_LOG_PREFIX = "proxy_worker_errors"
 CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
 
 

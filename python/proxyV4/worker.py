@@ -2,7 +2,6 @@ import os
 import pathlib
 import sys
 
-
 PKGS_PATH = "/home/site/wwwroot/.python_packages"
 PKGS = "lib/site-packages"
 

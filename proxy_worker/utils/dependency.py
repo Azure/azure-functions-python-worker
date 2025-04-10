@@ -69,7 +69,7 @@ class DependencyManager:
     @classmethod
     def should_load_cx_dependencies(cls):
         """
-        Customer dependencies should be loaded when
+        Customer dependencies should be loaded when 
          1) App is a dedicated app
          2) App is linux consumption but not in placeholder mode.
          This can happen when the worker restarts for any reason
@@ -131,14 +131,14 @@ class DependencyManager:
 
         # Try to get the latest customer's dependency path
         cx_deps_path: str = cls._get_cx_deps_path()
-
+        
         if not cx_deps_path:
-            cx_deps_path = cls.cx_deps_path
-
+            cx_deps_path = cls.cx_deps_path    
+      
         logger.info(
             'Applying prioritize_customer_dependencies: '
             'worker_dependencies_path: %s, customer_dependencies_path: %s, '
-            'working_directory: %s, Linux Consumption: %s, Placeholder: %s, sys.path: %s',
+            'working_directory: %s, Linux Consumption: %s, Placeholder: %s, sys.path: %s', 
             cls.worker_deps_path, cx_deps_path, working_directory,
             DependencyManager.is_in_linux_consumption(),
             is_envvar_true("WEBSITE_PLACEHOLDER_MODE"), sys.path)
@@ -147,6 +147,7 @@ class DependencyManager:
         cls._add_to_sys_path(cls.worker_deps_path, True)
         cls._add_to_sys_path(cls.cx_deps_path, True)
         cls._add_to_sys_path(working_directory, False)
+
 
         logger.info(f'Finished prioritize_customer_dependencies: {sys.path}')
 

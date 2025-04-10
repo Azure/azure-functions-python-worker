@@ -124,55 +124,107 @@ async def test_worker_init_fallback_to_v1(
     assert result == "mocked_streaming_response"
     mock_logger.debug.assert_any_call("V1 worker import succeeded: %s", ANY)
 
-@patch("proxy_worker.dispatcher.DependencyManager.reload_customer_libraries")
-@patch("proxy_worker.dispatcher.protos.StreamingMessage", return_value="mocked_streaming_message")
+@patch("proxy_worker.dispatcher.DependencyManager.prioritize_customer_dependencies")
+@patch("proxy_worker.dispatcher.logger")
 @patch("proxy_worker.dispatcher.os.path.exists", side_effect=lambda p: p.endswith("function_app.py"))
 @patch("builtins.__import__", side_effect=fake_import)
-@patch("proxy_worker.dispatcher.logger")
+@patch("proxy_worker.dispatcher.protos.StreamingMessage", return_value="mocked_reload_response")
 @pytest.mark.asyncio
-async def test_function_environment_reload_v2_success(
-    mock_logger, mock_import, mock_exists, mock_streaming, mock_reload_libs
+async def test_function_environment_reload_v2_import(
+    mock_streaming, mock_import, mock_exists, mock_logger, mock_prioritize
 ):
-    dispatcher = Dispatcher(
-        loop=MagicMock(),
-        host="localhost",
-        port=7071,
-        worker_id="worker-test",
-        request_id="req-abc",
-        grpc_connect_timeout=5.0,
-    )
-
+    dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071, "worker123",
+                            "req789", 5.0)
     request = MagicMock()
     request.function_environment_reload_request.function_app_directory = "/home/site/wwwroot"
 
     result = await dispatcher._handle__function_environment_reload_request(request)
 
-    assert result == "mocked_streaming_message"
+    assert result == "mocked_reload_response"
     mock_logger.debug.assert_any_call("V2 worker import succeeded: %s", ANY)
 
-@patch("proxy_worker.dispatcher.DependencyManager.reload_customer_libraries")
-@patch("proxy_worker.dispatcher.protos.StreamingMessage", return_value="mocked_streaming_message")
+@patch("proxy_worker.dispatcher.DependencyManager.prioritize_customer_dependencies")
+@patch("proxy_worker.dispatcher.logger")
 @patch("proxy_worker.dispatcher.os.path.exists", side_effect=lambda p: False)
 @patch("builtins.__import__", side_effect=fake_import)
-@patch("proxy_worker.dispatcher.logger")
+@patch("proxy_worker.dispatcher.protos.StreamingMessage", return_value="mocked_reload_response")
 @pytest.mark.asyncio
-async def test_function_environment_reload_v1_success(
-    mock_logger, mock_import, mock_exists, mock_streaming, mock_reload_libs
+async def test_function_environment_reload_fallback_to_v1(
+    mock_streaming, mock_import, mock_exists, mock_logger, mock_prioritize
 ):
-    dispatcher = Dispatcher(
-        loop=MagicMock(),
-        host="localhost",
-        port=7071,
-        worker_id="worker-test",
-        request_id="req-abc",
-        grpc_connect_timeout=5.0,
-    )
-
+    dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071, "worker123",
+                            "req789", 5.0)
     request = MagicMock()
-    request.function_environment_reload_request.function_app_directory = "/home/site/wwwroot"
+    request.function_environment_reload_request.function_app_directory = "/some/path"
 
     result = await dispatcher._handle__function_environment_reload_request(request)
 
-    assert result == "mocked_streaming_message"
-    mock_logger.debug.assert_any_call("V1 worker import succeeded: %s", ANY)
+    assert result == "mocked_reload_response"
+    mock_logger.debug.assert_any_call("V1 worker import succeeded: %s", "azure_functions_worker_v1.py")
 
+
+@patch("proxy_worker.dispatcher._library_worker",
+       new=MagicMock(functions_metadata_request=AsyncMock(return_value="mocked_meta_resp")))
+@patch("proxy_worker.dispatcher.protos.StreamingMessage", return_value="mocked_response")
+@patch("proxy_worker.dispatcher.logger")
+@pytest.mark.asyncio
+async def test_handle_functions_metadata_request(mock_logger, mock_streaming):
+    dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071, "worker123",
+                            "req789", 5.0)
+    request = MagicMock()
+    request.request_id = "req789"
+
+    result = await dispatcher._handle__functions_metadata_request(request)
+
+    assert result == "mocked_response"
+    mock_logger.info.assert_called_with(
+        'Received WorkerMetadataRequest, request ID %s, worker id: %s',
+        "req789", "worker123"
+    )
+
+
+
+@patch("proxy_worker.dispatcher._library_worker",
+       new=MagicMock(function_load_request=AsyncMock(return_value="mocked_load_response")))
+@patch("proxy_worker.dispatcher.protos.StreamingMessage", return_value="mocked_stream_response")
+@patch("proxy_worker.dispatcher.logger")
+@pytest.mark.asyncio
+async def test_handle_function_load_request(mock_logger, mock_streaming):
+    dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071, "worker123",
+                            "req789", 5.0)
+
+    request = MagicMock()
+    request.function_load_request.function_id = "func123"
+    request.function_load_request.metadata.name = "hello_function"
+    request.request_id = "req789"
+
+    result = await dispatcher._handle__function_load_request(request)
+
+    assert result == "mocked_stream_response"
+    mock_logger.info.assert_called_with(
+        'Received WorkerLoadRequest, request ID %s, function_id: %s,function_name: %s, worker_id: %s',
+        "req789", "func123", "hello_function", "worker123"
+    )
+
+
+@patch("proxy_worker.dispatcher._library_worker",
+       new=MagicMock(invocation_request=AsyncMock(return_value="mocked_invoc_response")))
+@patch("proxy_worker.dispatcher.protos.StreamingMessage", return_value="mocked_streaming_response")
+@patch("proxy_worker.dispatcher.logger")
+@pytest.mark.asyncio
+async def test_handle_invocation_request(mock_logger, mock_streaming):
+    dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071, "worker123",
+                            "req789", 5.0)
+
+    request = MagicMock()
+    request.invocation_request.invocation_id = "inv123"
+    request.invocation_request.function_id = "func123"
+    request.request_id = "req789"
+
+    result = await dispatcher._handle__invocation_request(request)
+
+    assert result == "mocked_streaming_response"
+    mock_logger.info.assert_called_with(
+        'Received FunctionInvocationRequest, request ID %s, function_id: %s,invocation_id: %s, worker_id: %s',
+        "req789", "func123", "inv123", "worker123"
+    )

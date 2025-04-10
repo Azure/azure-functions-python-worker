@@ -184,7 +184,9 @@ def gen_grpc():
     # https://github.com/protocolbuffers/protobuf/issues/1491
     make_absolute_imports(compiled_files)
 
-    shutil.copytree(str(built_protos_dir), str(proto_root_dir), dirs_exist_ok=True)
+    if os.path.exists(str(proto_root_dir)):
+        shutil.rmtree(str(proto_root_dir))
+    shutil.copytree(str(built_protos_dir), str(proto_root_dir))
 
 
 def make_absolute_imports(compiled_files):

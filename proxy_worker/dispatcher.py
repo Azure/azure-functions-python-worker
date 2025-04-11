@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 import asyncio
 import concurrent.futures
 import logging
@@ -22,8 +25,8 @@ from proxy_worker.logging import (
     is_system_log_category,
     logger,
 )
-from proxy_worker.utils.app_settings import get_app_setting
-from proxy_worker.utils.common import is_envvar_true
+from proxy_worker.utils.common import get_app_setting
+from proxy_worker.utils.common import is_envvar_true, get_script_file_name
 from proxy_worker.utils.constants import PYTHON_ENABLE_DEBUG_LOGGING, \
     PYTHON_THREADPOOL_THREAD_COUNT
 from proxy_worker.version import VERSION
@@ -127,8 +130,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_thread: threading.Thread = threading.Thread(
             name='grpc_local-thread', target=self.__poll_grpc)
 
-        # TODO: Need to find a better place for these
-        self._function_data_cache_enabled = False
         self._sync_call_tp: concurrent.futures.Executor = (
             self._create_sync_call_tp(self._get_sync_tp_max_workers()))
 
@@ -381,21 +382,25 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         global _library_worker
         directory = request.worker_init_request.function_app_directory
-        v2_directory = os.path.join(directory, 'function_app.py')
+        v2_directory = os.path.join(directory, get_script_file_name())
         if os.path.exists(v2_directory):
             try:
                 import azure_functions_worker_v2  # NoQA
                 _library_worker = azure_functions_worker_v2
-                logger.debug("V2 worker import succeeded: %s", _library_worker.__file__)
+                logger.debug("azure_functions_worker_v2 import succeeded: %s",
+                             _library_worker.__file__)
             except ImportError:
-                logger.warning("Error importing V2 library: %s", traceback.format_exc())
+                logger.debug("azure_functions_worker_v2 library not found: : %s",
+                             traceback.format_exc())
         else:
             try:
                 import azure_functions_worker_v1  # NoQA
                 _library_worker = azure_functions_worker_v1
-                logger.debug("V1 worker import succeeded: %s", _library_worker.__file__)
+                logger.debug("azure_functions_worker_v1 import succeeded: %s",
+                             _library_worker.__file__)
             except ImportError:
-                logger.warning("Error importing V1 library: %s", traceback.format_exc())
+                logger.debug("azure_functions_worker_v1 library not found: %s",
+                             traceback.format_exc())
 
         init_request = WorkerRequest(name="WorkerInitRequest",
                                      request=request,
@@ -420,22 +425,25 @@ class Dispatcher(metaclass=DispatcherMeta):
         DependencyManager.prioritize_customer_dependencies(directory)
 
         global _library_worker
-        directory = func_env_reload_request.function_app_directory
-        v2_directory = os.path.join(directory, 'function_app.py')
+        v2_directory = os.path.join(directory, get_script_file_name())
         if os.path.exists(v2_directory):
             try:
                 import azure_functions_worker_v2  # NoQA
                 _library_worker = azure_functions_worker_v2
-                logger.debug("V2 worker import succeeded: %s", _library_worker.__file__)
+                logger.debug("azure_functions_worker_v2 import succeeded: %s",
+                             _library_worker.__file__)
             except ImportError:
-                logger.warning("Error importing V2 library: %s", traceback.format_exc())
+                logger.warning("azure_functions_worker_v2 library not found: %s",
+                               traceback.format_exc())
         else:
             try:
                 import azure_functions_worker_v1  # NoQA
                 _library_worker = azure_functions_worker_v1
-                logger.debug("V1 worker import succeeded: %s", _library_worker.__file__)
+                logger.debug("azure_functions_worker_v1 import succeeded: %s",
+                             _library_worker.__file__)
             except ImportError:
-                logger.warning("Error importing V1 library: %s", traceback.format_exc())
+                logger.warning("azure_functions_worker_v1 library not found: %s",
+                               traceback.format_exc())
 
         env_reload_request = WorkerRequest(name="FunctionEnvironmentReloadRequest",
                                            request=request,
@@ -481,7 +489,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             'function_name: %s, worker_id: %s',
             self.request_id, function_id, function_name, self.worker_id)
 
-        load_request = WorkerRequest(name="FunctionsLoadRequest", request=request)
+        load_request = WorkerRequest(name="FunctionLoadRequest ", request=request)
         load_response = await _library_worker.function_load_request(load_request)
 
         return protos.StreamingMessage(
@@ -498,7 +506,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             'invocation_id: %s, worker_id: %s',
             self.request_id, function_id, invocation_id, self.worker_id)
 
-        invocation_request = WorkerRequest(name="WorkerInvRequest", request=request,
+        invocation_request = WorkerRequest(name="FunctionInvocationRequest",
+                                           request=request,
                                            properties={
                                                "threadpool": self._sync_call_tp})
         invocation_response = await _library_worker.invocation_request(

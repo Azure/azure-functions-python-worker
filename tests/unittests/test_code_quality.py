@@ -17,7 +17,7 @@ class TestCodeQuality(unittest.TestCase):
 
         try:
             subprocess.run(
-                [sys.executable, '-m', 'mypy', '-m', 'azure_functions_worker',
+                [sys.executable, '-m', 'mypy', 'azure_functions_worker',
                  'proxy_worker'],
                 check=True,
                 stdout=subprocess.PIPE,

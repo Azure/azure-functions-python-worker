@@ -55,7 +55,7 @@ def start():
     logging.setup(log_level=args.log_level, log_destination=args.log_to)
 
     logger.info("Args: %s", args)
-    logger.info('Starting Azure Functions Python Worker.')
+    logger.info('Starting proxy worker.')
     logger.info('Worker ID: %s, Request ID: %s, Host Address: %s:%s',
                 args.worker_id, args.request_id, args.host, args.port)
 
@@ -72,7 +72,6 @@ def start():
 async def start_async(host, port, worker_id, request_id):
     from . import dispatcher
 
-    # ToDo: Fix functions_grpc_max_msg_len. Needs to be parsed from args
     disp = await dispatcher.Dispatcher.connect(host=host, port=port,
                                                worker_id=worker_id,
                                                request_id=request_id,

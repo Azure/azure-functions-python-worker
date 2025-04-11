@@ -1,14 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import importlib.util
-import inspect
 import os
 import re
 import sys
 from types import ModuleType
 from typing import List, Optional
 
-from .common import is_envvar_true, is_true_like
+from .common import is_envvar_true
 from .constants import AZURE_WEBJOBS_SCRIPT_ROOT, CONTAINER_NAME
 from ..logging import logger
 

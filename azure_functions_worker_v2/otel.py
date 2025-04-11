@@ -7,14 +7,15 @@ from .logging import logger
 
 from .utils.env_state import get_app_setting
 from .utils.constants import (APPLICATIONINSIGHTS_CONNECTION_STRING,
-                              PYTHON_AZURE_MONITOR_LOGGER_NAME,
-                              PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT,
+                              PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME,
+                              PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME_DEFAULT,
                               TRACESTATE, TRACEPARENT)
 
 
 class OTelManager:
     def __init__(self):
         self._azure_monitor_available = False
+        self._otel_libs_available = False
         self._context_api = None
         self._trace_context_propagator = None
 
@@ -23,6 +24,12 @@ class OTelManager:
 
     def get_azure_monitor_available(self):
         return self._azure_monitor_available
+
+    def set_otel_libs_available(self, otel_libs_available):
+        self._aotel_libs_available = otel_libs_available
+
+    def get_otel_libs_available(self):
+        return self._otel_libs_available
 
     def set_context_api(self, context_api):
         self._context_api = context_api
@@ -77,8 +84,8 @@ def initialize_azure_monitor():
                 setting=APPLICATIONINSIGHTS_CONNECTION_STRING
             ),
             logger_name=get_app_setting(
-                setting=PYTHON_AZURE_MONITOR_LOGGER_NAME,
-                default_value=PYTHON_AZURE_MONITOR_LOGGER_NAME_DEFAULT
+                setting=PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME,
+                default_value=PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME_DEFAULT
             ),
         )
         OTelManager.set_azure_monitor_available(True)

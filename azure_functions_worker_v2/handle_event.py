@@ -36,7 +36,7 @@ from .utils.constants import (FUNCTION_DATA_CACHE,
                               SHARED_MEMORY_DATA_TRANSFER,
                               TRUE,
                               PYTHON_ENABLE_OPENTELEMETRY,
-                              PYTHON_ENABLE_OPENTELEMETRY_DEFAULT,
+                              PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY,
                               WORKER_OPEN_TELEMETRY_ENABLED,
                               HTTP_URI,
                               REQUIRES_ROUTE_PARAMETERS,
@@ -77,12 +77,14 @@ async def worker_init_request(request):
         RPC_HTTP_TRIGGER_METADATA_REMOVED: TRUE,
         SHARED_MEMORY_DATA_TRANSFER: TRUE,
     }
-    if get_app_setting(setting=PYTHON_ENABLE_OPENTELEMETRY,
-                       default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
+    if is_envvar_true(PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY):
         initialize_azure_monitor()
 
-        if otel_manager.get_azure_monitor_available():
-            capabilities[WORKER_OPEN_TELEMETRY_ENABLED] = TRUE
+    if is_envvar_true(PYTHON_ENABLE_OPENTELEMETRY):
+        otel_manager.set_otel_libs_available(True)
+
+    if otel_manager.get_azure_monitor_available() or otel_manager.set_otel_libs_available():
+        capabilities[WORKER_OPEN_TELEMETRY_ENABLED] = TRUE
 
     # loading bindings registry and saving results to a static
     # dictionary which will be later used in the invocation request
@@ -219,7 +221,7 @@ async def invocation_request(request):
                 args[name] = Out()
 
         if fi.is_async:
-            if otel_manager.get_azure_monitor_available():
+            if otel_manager.get_azure_monitor_available() or otel_manager.set_otel_libs_available():
                 configure_opentelemetry(fi_context)
 
             # Extensions are not supported
@@ -310,14 +312,15 @@ async def function_environment_reload_request(request):
         load_binding_registry()
 
         capabilities = {}
-        if get_app_setting(
-                setting=PYTHON_ENABLE_OPENTELEMETRY,
-                default_value=PYTHON_ENABLE_OPENTELEMETRY_DEFAULT):
+        if is_envvar_true(PYTHON_ENABLE_OPENTELEMETRY):
+            otel_manager.set_otel_libs_available(True)
+
+        if is_envvar_true(PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY):
             initialize_azure_monitor()
 
-            if otel_manager.get_azure_monitor_available():
-                capabilities[WORKER_OPEN_TELEMETRY_ENABLED] = (
-                    TRUE)
+        if otel_manager.get_azure_monitor_available() or otel_manager.get_otel_libs_available():
+            capabilities[WORKER_OPEN_TELEMETRY_ENABLED] = (
+                TRUE)
 
         try:
             _host = request.properties.get("host")

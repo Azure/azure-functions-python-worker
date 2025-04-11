@@ -26,7 +26,7 @@ from .bindings.meta import (load_binding_registry, is_trigger_binding,
                             from_incoming_proto, to_outgoing_param_binding,
                             to_outgoing_proto)
 from .bindings.out import Out
-from utils.app_setting_manager import get_python_appsetting_state
+from .utils.app_setting_manager import get_python_appsetting_state
 from .utils.constants import (FUNCTION_DATA_CACHE,
                               RAW_HTTP_BODY_BYTES,
                               TYPED_DATA_COLLECTION,
@@ -419,6 +419,7 @@ def index_functions(function_path: str, function_dir: str):
 
         log_data = {
             "message": "Successfully processed FunctionMetadataRequest",
+            "version": VERSION,
             "functions": " ".join(indexed_function_logs),
             "deferred_bindings_enabled": _functions.deferred_bindings_enabled(),
             "app_settings": get_python_appsetting_state()

@@ -25,7 +25,6 @@ PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 
 BINDING_REGISTRY = None
 DEFERRED_BINDING_REGISTRY = None
-deferred_bindings_cache: Dict[Any, Any] = {}
 
 
 def _check_http_input_type_annotation(bind_name: str, pytype: type,
@@ -244,7 +243,7 @@ def deferred_bindings_decode(binding: Any,
                              metadata: Any,
                              function_name: str):
     """
-    This cache holds deferred binding types (ie. BlobClient, ContainerClient)
+    The appropriate extension manages a cache for clients (ie. BlobClient, ContainerClient)
     That have already been created, so that the worker can reuse the
     Previously created type without creating a new one.
 
@@ -256,26 +255,12 @@ def deferred_bindings_decode(binding: Any,
 
     If cache is empty or key doesn't exist, deferred_binding_type is None
     """
-    global deferred_bindings_cache
 
-    if deferred_bindings_cache.get((pb.name,
-                                    pytype,
-                                    datum.value.content,
-                                    function_name), None) is not None:
-        return deferred_bindings_cache.get((pb.name,
-                                            pytype,
-                                            datum.value.content,
-                                            function_name))
-    else:
-        deferred_binding_type = binding.decode(datum,
-                                               trigger_metadata=metadata,
-                                               pytype=pytype)
+    deferred_binding_type = binding.decode(datum,
+                                           trigger_metadata=metadata,
+                                           pytype=pytype)
 
-        deferred_bindings_cache[(pb.name,
-                                 pytype,
-                                 datum.value.content,
-                                 function_name)] = deferred_binding_type
-        return deferred_binding_type
+    return deferred_binding_type
 
 
 def check_deferred_bindings_enabled(param_anno: Union[type, None],

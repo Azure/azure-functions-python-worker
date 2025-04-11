@@ -13,4 +13,10 @@ python -m invoke -c test_setup build-protos
 
 cd ..
 cp .artifactignore "$BUILD_SOURCESDIRECTORY/deps"
-cp -r azure_functions_worker/protos "$BUILD_SOURCESDIRECTORY/deps/azure_functions_worker"
+
+version_minor=$(echo $1 | cut -d '.' -f 2)
+if [[ $version_minor -lt 13 ]]; then
+    cp -r azure_functions_worker/protos "$BUILD_SOURCESDIRECTORY/deps/azure_functions_worker"
+else
+    cp -r proxy_worker/protos "$BUILD_SOURCESDIRECTORY/deps/proxy_worker"
+fi

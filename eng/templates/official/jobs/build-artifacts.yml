@@ -24,6 +24,9 @@ jobs:
       Python312V4:
         pythonVersion: '3.12'
         workerPath: 'python/prodV4/worker.py'
+      Python313V4:
+        pythonVersion: '3.13'
+        workerPath: 'python/proxyV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -62,6 +65,9 @@ jobs:
       Python312V4:
         pythonVersion: '3.12'
         workerPath: 'python/prodV4/worker.py'
+      Python313V4:
+        pythonVersion: '3.13'
+        workerPath: 'python/proxyV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -100,6 +106,9 @@ jobs:
       Python312V4:
         pythonVersion: '3.12'
         workerPath: 'python/prodV4/worker.py'
+      Python313V4:
+        pythonVersion: '3.13'
+        workerPath: 'python/proxyV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -137,6 +146,9 @@ jobs:
       Python312V4:
         pythonVersion: '3.12'
         workerPath: 'python/prodV4/worker.py'
+      Python313V4:
+        pythonVersion: '3.13'
+        workerPath: 'python/proxyV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -168,6 +180,9 @@ jobs:
       Python312V4:
         pythonVersion: '3.12'
         workerPath: 'python/prodV4/worker.py'
+      Python313V4:
+        pythonVersion: '3.13'
+        workerPath: 'python/proxyV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:

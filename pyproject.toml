@@ -26,15 +26,20 @@ classifiers = [
     "Intended Audience :: Developers"
 ]
 dependencies = [
-     "azure-functions==1.23.0b3",
-     "python-dateutil ~=2.9.0",
+     "azure-functions==1.23.0",
+     "python-dateutil~=2.9.0",
      "protobuf~=3.19.3; python_version == '3.7'",
-     "protobuf~=5.29.0; python_version >= '3.8'",
+     "protobuf~=4.25.3; python_version >= '3.8' and python_version < '3.13'",
+     "protobuf~=5.29.0; python_version >= '3.13'",
      "grpcio-tools~=1.43.0; python_version == '3.7'",
-     "grpcio-tools~=1.70.0; python_version >= '3.8'",
+     "grpcio-tools~=1.59.0; python_version >= '3.8' and python_version < '3.13'",
+     "grpcio-tools~=1.70.0; python_version >= '3.13'",
      "grpcio~=1.43.0; python_version == '3.7'",
-     "grpcio~=1.70.0; python_version >= '3.8'",
-     "azurefunctions-extensions-base; python_version >= '3.8'"
+     "grpcio ~=1.59.0; python_version >= '3.8' and python_version < '3.13'",
+     "grpcio~=1.70.0; python_version >= '3.13'",
+     "azurefunctions-extensions-base; python_version >= '3.8'",
+     "test-worker==1.0.0a38; python_version >= '3.13'",
+     "test-worker-v1==1.0.0a11; python_version >= '3.13'"
 ]
 
 [project.urls]

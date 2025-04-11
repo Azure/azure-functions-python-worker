@@ -8,10 +8,15 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from tests.utils import testutils
-from azure_functions_worker.utils.common import is_envvar_true
 from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
+# This app setting is only present for Python < 3.13
 from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
+
+if sys.version_info.minor < 13:
+    from azure_functions_worker.utils.common import is_envvar_true
+else:
+    from proxy_worker.utils.common import is_envvar_true
 
 REQUEST_TIMEOUT_SEC = 5
 

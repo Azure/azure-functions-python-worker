@@ -194,3 +194,26 @@ class TestTriggerMetadataDecoder(unittest.TestCase):
         mbd_datum = datumdef.Datum.from_typed_data(mock_mbd)
 
         self.assertEqual(mbd_datum.type, 'model_binding_data')
+
+    def test_collection_model_binding_data_datum_ok(self):
+        sample_mbd = MockMBD(version="1.0",
+                             source="AzureStorageBlobs",
+                             content_type="application/json",
+                             content="{\"Connection\":\"python-worker-tests\","
+                                     "\"ContainerName\":\"test-blob\","
+                                     "\"BlobName\":\"test.txt\"}")
+        sample_cmbd = [sample_mbd, sample_mbd]
+
+        datum: bind_meta.Datum = bind_meta.Datum(value=sample_cmbd,
+                                                 type='collection_model_binding_data')
+
+        self.assertEqual(datum.value, sample_cmbd)
+        self.assertEqual(datum.type, "collection_model_binding_data")
+
+    def test_collection_model_binding_data_td_ok(self):
+        mock_cmbd = protos.TypedData(
+            collection_model_binding_data={'model_binding_data': [{'version': '1.0'}]}
+        )
+        cmbd_datum = datumdef.Datum.from_typed_data(mock_cmbd)
+
+        self.assertEqual(cmbd_datum.type, 'collection_model_binding_data')

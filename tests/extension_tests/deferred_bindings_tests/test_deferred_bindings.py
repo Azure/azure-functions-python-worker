@@ -137,7 +137,7 @@ class TestDeferredBindingsEnabledDual(testutils.AsyncTestCase):
                                               "is only supported for 3.9+.")
 class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
 
-    def test_deferred_bindings_enabled_decode(self):
+    def test_mbd_deferred_bindings_enabled_decode(self):
         binding = BlobClientConverter
         pb = protos.ParameterBinding(name='test',
                                      data=protos.TypedData(

@@ -183,9 +183,25 @@ def gen_grpc():
     # Needed to support absolute imports in files. See
     # https://github.com/protocolbuffers/protobuf/issues/1491
     make_absolute_imports(compiled_files)
+    copy_tree_merge(str(built_protos_dir), str(proto_root_dir))
 
-    shutil.copytree(str(built_protos_dir), str(proto_root_dir), dirs_exist_ok=True)
+def copy_tree_merge(src, dst):
+    """
+    Recursively copy all files and subdirectories from src to dst,
+    overwriting files if they already exist. This emulates what
+    distutils.dir_util.copy_tree did without removing existing directories.
+    """
+    if not os.path.exists(dst):
+        os.makedirs(dst)
 
+    for item in os.listdir(src):
+        s = os.path.join(src, item)
+        d = os.path.join(dst, item)
+
+        if os.path.isdir(s):
+            copy_tree_merge(s, d)
+        else:
+            shutil.copy2(s, d)
 
 def make_absolute_imports(compiled_files):
     for compiled in compiled_files:

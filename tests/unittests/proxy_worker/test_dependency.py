@@ -5,9 +5,12 @@ from unittest.mock import patch
 from proxy_worker.utils.dependency import DependencyManager
 
 
-@patch("proxy_worker.utils.dependency.DependencyManager._get_cx_deps_path", return_value="/mock/cx/site-packages")
-@patch("proxy_worker.utils.dependency.DependencyManager._get_cx_working_dir", return_value="/mock/cx")
-@patch("proxy_worker.utils.dependency.DependencyManager._get_worker_deps_path", return_value="/mock/worker")
+@patch("proxy_worker.utils.dependency.DependencyManager._get_cx_deps_path",
+       return_value="/mock/cx/site-packages")
+@patch("proxy_worker.utils.dependency.DependencyManager._get_cx_working_dir",
+       return_value="/mock/cx")
+@patch("proxy_worker.utils.dependency.DependencyManager._get_worker_deps_path",
+       return_value="/mock/worker")
 @patch("proxy_worker.utils.dependency.logger")
 def test_use_worker_dependencies(mock_logger, mock_worker, mock_cx_dir, mock_cx_deps):
     sys.path = ["/mock/cx/site-packages", "/mock/cx", "/original"]
@@ -27,13 +30,19 @@ def test_use_worker_dependencies(mock_logger, mock_worker, mock_cx_dir, mock_cx_
         "/mock/worker", "/mock/cx/site-packages", "/mock/cx"
     )
 
-@patch("proxy_worker.utils.dependency.DependencyManager._get_cx_deps_path", return_value="/mock/cx/site-packages")
-@patch("proxy_worker.utils.dependency.DependencyManager._get_worker_deps_path", return_value="/mock/worker")
-@patch("proxy_worker.utils.dependency.DependencyManager._get_cx_working_dir", return_value="/mock/cx")
-@patch("proxy_worker.utils.dependency.DependencyManager.is_in_linux_consumption", return_value=False)
+
+@patch("proxy_worker.utils.dependency.DependencyManager._get_cx_deps_path",
+       return_value="/mock/cx/site-packages")
+@patch("proxy_worker.utils.dependency.DependencyManager._get_worker_deps_path",
+       return_value="/mock/worker")
+@patch("proxy_worker.utils.dependency.DependencyManager._get_cx_working_dir",
+       return_value="/mock/cx")
+@patch("proxy_worker.utils.dependency.DependencyManager.is_in_linux_consumption",
+       return_value=False)
 @patch("proxy_worker.utils.dependency.is_envvar_true", return_value=False)
 @patch("proxy_worker.utils.dependency.logger")
-def test_prioritize_customer_dependencies(mock_logger, mock_env, mock_linux, mock_cx_dir, mock_worker, mock_cx_deps):
+def test_prioritize_customer_dependencies(mock_logger, mock_env, mock_linux,
+                                          mock_cx_dir, mock_worker, mock_cx_deps):
     sys.path = ["/mock/worker", "/some/old/path"]
 
     DependencyManager.initialize()
@@ -54,4 +63,3 @@ def test_prioritize_customer_dependencies(mock_logger, mock_env, mock_linux, moc
         "Finished prioritize_customer_dependencies" in str(call[0][0])
         for call in mock_logger.info.call_args_list
     )
-

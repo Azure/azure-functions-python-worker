@@ -76,9 +76,7 @@ UNIT_TESTS_ROOT = TESTS_ROOT / UNIT_TESTS_FOLDER
 EMULATOR_TESTS_FOLDER = pathlib.Path('emulator_tests')
 EXTENSION_TESTS_FOLDER = pathlib.Path('extension_tests')
 WEBHOST_DLL = "Microsoft.Azure.WebJobs.Script.WebHost.dll"
-DEFAULT_WEBHOST_DLL_PATH = (
-    PROJECT_ROOT / 'build' / 'webhost' / 'bin' / WEBHOST_DLL
-)
+DEFAULT_WEBHOST_DLL_PATH = (PROJECT_ROOT / 'build' / 'webhost' / 'bin' / WEBHOST_DLL)
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
 WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
@@ -325,6 +323,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     if test_exception is not None:
                         raise test_exception
 
+
 # This is not supported in 3.13+
 if sys.version_info.minor < 13:
     class SharedMemoryTestCase(unittest.TestCase):
@@ -373,7 +372,7 @@ if sys.version_info.minor < 13:
 
         def get_random_string(self, num_chars):
             return ''.join(random.choices(string.ascii_uppercase + string.digits,
-                                        k=num_chars))
+                                          k=num_chars))
 
         def is_valid_uuid(self, uuid_to_test: str, version: int = 4) -> bool:
             """
@@ -415,7 +414,7 @@ if sys.version_info.minor < 13:
             result = subprocess.run(cmd, stdout=subprocess.PIPE)
             if result.returncode != 0:
                 raise IOError(f'Cannot create ram disk with command: {cmd} - '
-                            f'{result.stdout} - {result.stderr}')
+                              f'{result.stdout} - {result.stderr}')
             disk_name = result.stdout.strip().decode()
             # We create a volume on the disk created above and mount it
             volume_name = 'shm'
@@ -423,7 +422,7 @@ if sys.version_info.minor < 13:
             result = subprocess.run(cmd, stdout=subprocess.PIPE)
             if result.returncode != 0:
                 raise IOError(f'Cannot create volume with command: {cmd} - '
-                            f'{result.stdout} - {result.stderr}')
+                              f'{result.stdout} - {result.stderr}')
             directory = f'/Volumes/{volume_name}'
             self.created_directories = [directory]
             # Create directories in the volume for shared memory maps
@@ -440,11 +439,11 @@ if sys.version_info.minor < 13:
             # Unmount the volume used for shared memory maps
             volume_name = 'shm'
             cmd = f"find /Volumes -type d -name '{volume_name}*' -print0 " \
-                "| xargs -0 umount -f"
+                  "| xargs -0 umount -f"
             result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
             if result.returncode != 0:
                 raise IOError(f'Cannot delete volume with command: {cmd} - '
-                            f'{result.stdout} - {result.stderr}')
+                              f'{result.stdout} - {result.stderr}')
 
 
 class _MockWebHostServicer(protos.FunctionRpcServicer):

@@ -24,7 +24,8 @@ from proxy_worker.logging import (
 )
 from proxy_worker.utils.app_settings import get_app_setting
 from proxy_worker.utils.common import is_envvar_true
-from proxy_worker.utils.constants import PYTHON_ENABLE_DEBUG_LOGGING, PYTHON_THREADPOOL_THREAD_COUNT
+from proxy_worker.utils.constants import PYTHON_ENABLE_DEBUG_LOGGING, \
+    PYTHON_THREADPOOL_THREAD_COUNT
 from proxy_worker.version import VERSION
 from .utils.dependency import DependencyManager
 
@@ -387,14 +388,14 @@ class Dispatcher(metaclass=DispatcherMeta):
                 _library_worker = azure_functions_worker_v2
                 logger.debug("V2 worker import succeeded: %s", _library_worker.__file__)
             except ImportError:
-                logger.warning("Error importing V2 library: %s",traceback.format_exc())
+                logger.warning("Error importing V2 library: %s", traceback.format_exc())
         else:
             try:
                 import azure_functions_worker_v1  # NoQA
                 _library_worker = azure_functions_worker_v1
                 logger.debug("V1 worker import succeeded: %s", _library_worker.__file__)
             except ImportError:
-                logger.warning("Error importing V1 library: %s",traceback.format_exc())
+                logger.warning("Error importing V1 library: %s", traceback.format_exc())
 
         init_request = WorkerRequest(name="WorkerInitRequest",
                                      request=request,
@@ -405,7 +406,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=init_response)
-
 
     async def _handle__function_environment_reload_request(self, request):
         logger.info('Received FunctionEnvironmentReloadRequest, '
@@ -426,26 +426,27 @@ class Dispatcher(metaclass=DispatcherMeta):
             try:
                 import azure_functions_worker_v2  # NoQA
                 _library_worker = azure_functions_worker_v2
-                logger.debug("V2 worker import succeeded: %s",_library_worker.__file__)
+                logger.debug("V2 worker import succeeded: %s", _library_worker.__file__)
             except ImportError:
-                logger.warning("Error importing V2 library: %s",traceback.format_exc())
+                logger.warning("Error importing V2 library: %s", traceback.format_exc())
         else:
             try:
                 import azure_functions_worker_v1  # NoQA
                 _library_worker = azure_functions_worker_v1
-                logger.debug("V1 worker import succeeded: %s",_library_worker.__file__)
+                logger.debug("V1 worker import succeeded: %s", _library_worker.__file__)
             except ImportError:
-                logger.warning("Error importing V1 library: %s",traceback.format_exc())
+                logger.warning("Error importing V1 library: %s", traceback.format_exc())
 
-        env_reload_request = WorkerRequest(name="FunctionEnvironmentReloadRequest", request=request,
+        env_reload_request = WorkerRequest(name="FunctionEnvironmentReloadRequest",
+                                           request=request,
                                            properties={"protos": protos,
                                                        "host": self._host})
-        env_reload_response = await _library_worker.function_environment_reload_request(env_reload_request)
+        env_reload_response = await _library_worker.function_environment_reload_request(
+            env_reload_request)
 
         return protos.StreamingMessage(
             request_id=self.request_id,
             function_environment_reload_response=env_reload_response)
-
 
     async def _handle__worker_status_request(self, request):
         # Logging is not necessary in this request since the response is used
@@ -455,7 +456,6 @@ class Dispatcher(metaclass=DispatcherMeta):
             request_id=request.request_id,
             worker_status_response=protos.WorkerStatusResponse())
 
-
     async def _handle__functions_metadata_request(self, request):
         logger.info(
             'Received WorkerMetadataRequest, request ID %s, '
@@ -463,7 +463,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             self.request_id, self.worker_id)
 
         metadata_request = WorkerRequest(name="WorkerMetadataRequest", request=request)
-        metadata_response = await _library_worker.functions_metadata_request(metadata_request)
+        metadata_response = await _library_worker.functions_metadata_request(
+            metadata_request)
 
         return protos.StreamingMessage(
             request_id=request.request_id,
@@ -498,8 +499,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             self.request_id, function_id, invocation_id, self.worker_id)
 
         invocation_request = WorkerRequest(name="WorkerInvRequest", request=request,
-                                           properties={"threadpool": self._sync_call_tp})
-        invocation_response = await _library_worker.invocation_request(invocation_request)
+                                           properties={
+                                               "threadpool": self._sync_call_tp})
+        invocation_response = await _library_worker.invocation_request(
+            invocation_request)
 
         return protos.StreamingMessage(
             request_id=self.request_id,

@@ -3,6 +3,7 @@
 
 import os
 
+
 def is_true_like(setting: str) -> bool:
     if setting is None:
         return False

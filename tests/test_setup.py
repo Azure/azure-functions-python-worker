@@ -112,8 +112,8 @@ def compile_webhost(webhost_dir):
         subprocess.run(
             [
                 "dotnet", "build", "WebJobs.Script.sln",
-                "/m:1",                # Disable parallel MSBuild
-                "/nodeReuse:false",    # Prevent MSBuild node reuse
+                "/m:1",  # Disable parallel MSBuild
+                "/nodeReuse:false",  # Prevent MSBuild node reuse
                 f"--property:OutputPath={webhost_dir}/bin",  # Set output folder
                 "/p:TreatWarningsAsErrors=false"
             ],
@@ -185,6 +185,7 @@ def gen_grpc():
     make_absolute_imports(compiled_files)
     copy_tree_merge(str(built_protos_dir), str(proto_root_dir))
 
+
 def copy_tree_merge(src, dst):
     """
     Recursively copy all files and subdirectories from src to dst,
@@ -203,6 +204,7 @@ def copy_tree_merge(src, dst):
         else:
             shutil.copy2(s, d)
 
+
 def make_absolute_imports(compiled_files):
     for compiled in compiled_files:
         with open(compiled, "r+") as f:
@@ -213,7 +215,7 @@ def make_absolute_imports(compiled_files):
             # from azure_functions_worker.protos import xxx_pb2 as..
             p1 = re.sub(
                 r"\nimport (.*?_pb2)",
-                  fr"\nfrom {WORKER_DIR}.protos import \g<1>",
+                fr"\nfrom {WORKER_DIR}.protos import \g<1>",
                 content,
             )
             # Convert lines of the form:

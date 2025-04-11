@@ -4,6 +4,7 @@
 import os
 from typing import Callable, Optional
 
+
 def get_app_setting(
     setting: str,
     default_value: Optional[str] = None,

@@ -106,7 +106,8 @@ async def test_worker_init_v2_import(
     result = await dispatcher._handle__worker_init_request(request)
 
     assert result == "mocked_streaming_response"
-    mock_logger.debug.assert_any_call("V2 worker import succeeded: %s", ANY)
+    mock_logger.debug.assert_any_call("azure_functions_worker_v2 import succeeded: %s",
+                                      ANY)
 
 
 @patch("proxy_worker.dispatcher.DependencyManager.should_load_cx_dependencies",
@@ -130,7 +131,8 @@ async def test_worker_init_fallback_to_v1(
     result = await dispatcher._handle__worker_init_request(request)
 
     assert result == "mocked_streaming_response"
-    mock_logger.debug.assert_any_call("V1 worker import succeeded: %s", ANY)
+    mock_logger.debug.assert_any_call("azure_functions_worker_v1 import succeeded: %s",
+                                      ANY)
 
 
 @patch("proxy_worker.dispatcher.DependencyManager.prioritize_customer_dependencies")
@@ -153,7 +155,8 @@ async def test_function_environment_reload_v2_import(
     result = await dispatcher._handle__function_environment_reload_request(request)
 
     assert result == "mocked_reload_response"
-    mock_logger.debug.assert_any_call("V2 worker import succeeded: %s", ANY)
+    mock_logger.debug.assert_any_call("azure_functions_worker_v2 import succeeded: %s",
+                                      ANY)
 
 
 @patch("proxy_worker.dispatcher.DependencyManager.prioritize_customer_dependencies")
@@ -174,8 +177,8 @@ async def test_function_environment_reload_fallback_to_v1(
     result = await dispatcher._handle__function_environment_reload_request(request)
 
     assert result == "mocked_reload_response"
-    mock_logger.debug.assert_any_call("V1 worker import succeeded: %s",
-                                      "azure_functions_worker_v1.py")
+    mock_logger.debug.assert_any_call("azure_functions_worker_v1 import succeeded: %s",
+                                      ANY)
 
 
 @patch("proxy_worker.dispatcher._library_worker",

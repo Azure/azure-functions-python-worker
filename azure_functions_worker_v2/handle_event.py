@@ -58,8 +58,8 @@ protos = None
 
 
 async def worker_init_request(request):
-    logger.debug("V2 Library Worker: received WorkerInitRequest,"
-                 "Version %s", VERSION)
+    logger.info("V2 Library Worker: received WorkerInitRequest,"
+                "Version %s", VERSION)
     global _host, protos, _function_data_cache_enabled, metadata_exception
     init_request = request.request.worker_init_request
     host_capabilities = init_request.capabilities
@@ -175,6 +175,7 @@ async def invocation_request(request):
         fi: FunctionInfo = _functions.get_function(
             function_id)
         assert fi is not None
+        logger.info("Function name: %s, Function Type: %s", fi.name, ("async" if fi.is_async else "sync"))
 
         args = {}
 
@@ -294,7 +295,7 @@ async def function_environment_reload_request(request):
     This is called only when placeholder mode is true. On worker restarts
     worker init request will be called directly.
     """
-    logger.debug("V2 Library Worker: received WorkerEnvReloadRequest,"
+    logger.info("V2 Library Worker: received WorkerEnvReloadRequest,"
                  "Version %s", VERSION)
     global _host, protos, metadata_exception
     try:
@@ -422,7 +423,6 @@ def index_functions(function_path: str, function_dir: str):
 
         log_data = {
             "message": "Successfully processed FunctionMetadataRequest",
-            "version": VERSION,
             "functions": " ".join(indexed_function_logs),
             "deferred_bindings_enabled": _functions.deferred_bindings_enabled(),
             "app_settings": get_python_appsetting_state()

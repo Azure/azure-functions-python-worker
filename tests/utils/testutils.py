@@ -65,8 +65,7 @@ if sys.version_info.minor < 13:
     from azure_functions_worker.utils.common import get_app_setting, is_envvar_true
 else:
     from proxy_worker import dispatcher, protos
-    from proxy_worker.utils.common import is_envvar_true
-    from proxy_worker.utils.app_settings import get_app_setting
+    from proxy_worker.utils.common import get_app_setting, is_envvar_true
 
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')

@@ -83,7 +83,8 @@ async def worker_init_request(request):
     if is_envvar_true(PYTHON_ENABLE_OPENTELEMETRY):
         otel_manager.set_otel_libs_available(True)
 
-    if otel_manager.get_azure_monitor_available() or otel_manager.set_otel_libs_available():
+    if (otel_manager.get_azure_monitor_available()
+            or otel_manager.get_otel_libs_available()):
         capabilities[WORKER_OPEN_TELEMETRY_ENABLED] = TRUE
 
     # loading bindings registry and saving results to a static
@@ -175,7 +176,9 @@ async def invocation_request(request):
         fi: FunctionInfo = _functions.get_function(
             function_id)
         assert fi is not None
-        logger.info("Function name: %s, Function Type: %s", fi.name, ("async" if fi.is_async else "sync"))
+        logger.info("Function name: %s, Function Type: %s",
+                    fi.name,
+                    ("async" if fi.is_async else "sync"))
 
         args = {}
 
@@ -222,7 +225,8 @@ async def invocation_request(request):
                 args[name] = Out()
 
         if fi.is_async:
-            if otel_manager.get_azure_monitor_available() or otel_manager.set_otel_libs_available():
+            if (otel_manager.get_azure_monitor_available()
+                    or otel_manager.set_otel_libs_available()):
                 configure_opentelemetry(fi_context)
 
             # Extensions are not supported
@@ -296,7 +300,7 @@ async def function_environment_reload_request(request):
     worker init request will be called directly.
     """
     logger.info("V2 Library Worker: received WorkerEnvReloadRequest,"
-                 "Version %s", VERSION)
+                "Version %s", VERSION)
     global _host, protos, metadata_exception
     try:
 
@@ -319,7 +323,8 @@ async def function_environment_reload_request(request):
         if is_envvar_true(PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY):
             initialize_azure_monitor()
 
-        if otel_manager.get_azure_monitor_available() or otel_manager.get_otel_libs_available():
+        if (otel_manager.get_azure_monitor_available()
+                or otel_manager.get_otel_libs_available()):
             capabilities[WORKER_OPEN_TELEMETRY_ENABLED] = (
                 TRUE)
 

@@ -26,7 +26,8 @@ def run_sync_func(invocation_id, context, func, params):
     # invocation_id from ThreadPoolExecutor's threads.
     context.thread_local_storage.invocation_id = invocation_id
     try:
-        if otel_manager.get_azure_monitor_available() or otel_manager.get_otel_libs_available():
+        if (otel_manager.get_azure_monitor_available()
+                or otel_manager.get_otel_libs_available()):
             configure_opentelemetry(context)
         result = functools.partial(execute_sync, func)
         return result(params)

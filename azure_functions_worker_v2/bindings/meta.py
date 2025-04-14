@@ -243,7 +243,7 @@ def deferred_bindings_decode(binding: Any,
                              metadata: Any,
                              function_name: str):
     """
-    The appropriate extension manages a cache for clients (ie. BlobClient, ContainerClient)
+    The extension manages a cache for clients (ie. BlobClient, ContainerClient)
     That have already been created, so that the worker can reuse the
     Previously created type without creating a new one.
 

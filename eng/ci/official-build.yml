@@ -2,7 +2,7 @@ trigger:
   batch: true
   branches:
     include:
-      - dev-3*
+      - 1.x
       - library-release/*
 
 # CI only, does not trigger on PRs.
@@ -13,7 +13,7 @@ schedules:
     displayName: At 12:00 AM, only on Monday
     branches:
       include:
-        - dev-3*
+        - 1.x
     always: true
 
 resources:

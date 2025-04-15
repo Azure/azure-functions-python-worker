@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
 import threading
+from typing import Type
 
 from .retrycontext import RetryContext
 from .tracecontext import TraceContext
@@ -12,7 +12,7 @@ class Context:
                  func_name: str,
                  func_dir: str,
                  invocation_id: str,
-                 thread_local_storage: threading.local,
+                 thread_local_storage: Type[threading.local],
                  trace_context: TraceContext,
                  retry_context: RetryContext) -> None:
         self.__func_name = func_name
@@ -27,7 +27,7 @@ class Context:
         return self.__invocation_id
 
     @property
-    def thread_local_storage(self) -> threading.local:
+    def thread_local_storage(self) -> Type[threading.local]:
         return self.__thread_local_storage
 
     @property

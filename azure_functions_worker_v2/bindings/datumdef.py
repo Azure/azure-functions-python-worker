@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
 import json
 import logging
 
@@ -68,8 +67,6 @@ class Datum:
         try:
             td = protos.TypedData
         except Exception:
-            # Todo: better catch for Datum.from_typed_data(http.body)
-            # if the data being sent in is already protos.TypedData
             td = protos
         tt = td.WhichOneof('data')
         if tt == 'http':

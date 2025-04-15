@@ -35,6 +35,7 @@ Repository = "https://github.com/Azure/azure-functions-python-worker"
 dev = [
     "azure-eventhub", # Used for EventHub E2E tests
     "azure-functions-durable", # Used for Durable E2E tests
+    "azure-monitor-opentelemetry; python_version >= '3.8'", # Used for Azure Monitor unit tests
     "flask",
     "fastapi~=0.103.2",
     "pydantic",
@@ -48,6 +49,7 @@ dev = [
     "grpcio~=1.70.0",
     "grpcio-tools~=1.70.0",
     "pytest-sugar",
+    "opentelemetry-api; python_version >= '3.8'", # Used for OpenTelemetry unit tests
     "pytest-cov",
     "pytest-xdist",
     "pytest-randomly",
@@ -64,16 +66,16 @@ dev = [
     "invoke"
 ]
 test-http-v2 = [
-    "azurefunctions-extensions-http-fastapi",
+    "azurefunctions-extensions-http-fastapi==1.0.0b2",
     "ujson",
     "orjson"
 ]
 test-deferred-bindings = [
-    "azurefunctions-extensions-bindings-blob"
+    "azurefunctions-extensions-bindings-blob==1.0.0b3"
 ]
 
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=62", "wheel"]
 build-backend = "setuptools.build_meta"
 
 

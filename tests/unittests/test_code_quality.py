@@ -6,6 +6,8 @@ import sys
 import unittest
 
 ROOT_PATH = pathlib.Path(__file__).parent.parent.parent
+WORKER_DIRECTORY = "azure_functions_worker"\
+    if sys.version_info.minor < 13 else "proxy_worker"
 
 
 class TestCodeQuality(unittest.TestCase):
@@ -17,8 +19,7 @@ class TestCodeQuality(unittest.TestCase):
 
         try:
             subprocess.run(
-                [sys.executable, '-m', 'mypy', 'azure_functions_worker',
-                 'proxy_worker'],
+                [sys.executable, '-m', 'mypy', WORKER_DIRECTORY],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

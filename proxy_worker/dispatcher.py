@@ -12,7 +12,7 @@ import traceback
 import typing
 from asyncio import AbstractEventLoop
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 import grpc
 
@@ -56,7 +56,7 @@ class ContextEnabledTask(asyncio.Task):
 _invocation_id_local = threading.local()
 
 
-def get_current_invocation_id() -> Optional[str]:
+def get_current_invocation_id() -> Optional[Any]:
     loop = asyncio._get_running_loop()
     if loop is not None:
         current_task = asyncio.current_task(loop)
@@ -99,7 +99,7 @@ class WorkerRequest:
 
 
 class DispatcherMeta(type):
-    __current_dispatcher__ = None
+    __current_dispatcher__: Optional["Dispatcher"] = None
 
     @property
     def current(cls):
@@ -123,14 +123,14 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._worker_id = worker_id
         self._grpc_connect_timeout: float = grpc_connect_timeout
         self._grpc_max_msg_len: int = grpc_max_msg_len
-        self._old_task_factory = None
+        self._old_task_factory: Optional[Any] = None
 
         self._grpc_resp_queue: queue.Queue = queue.Queue()
         self._grpc_connected_fut = loop.create_future()
-        self._grpc_thread: threading.Thread = threading.Thread(
+        self._grpc_thread: Optional[threading.Thread] = threading.Thread(
             name='grpc_local-thread', target=self.__poll_grpc)
 
-        self._sync_call_tp: concurrent.futures.Executor = (
+        self._sync_call_tp: Optional[concurrent.futures.Executor] = (
             self._create_sync_call_tp(self._get_sync_tp_max_workers()))
 
     def on_logging(self, record: logging.LogRecord,
@@ -182,7 +182,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                       request_id: str, connect_timeout: float):
         loop = asyncio.events.get_event_loop()
         disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
-        disp._grpc_thread.start()
+        # Safety check for mypy
+        if disp._grpc_thread is not None:
+            disp._grpc_thread.start()
         await disp._grpc_connected_fut
         logger.info('Successfully opened gRPC channel to %s:%s ', host, port)
         return disp
@@ -327,6 +329,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         this will be a no op.
         """
         if getattr(self, '_sync_call_tp', None):
+            assert self._sync_call_tp is not None  # mypy fix
             self._sync_call_tp.shutdown()
             self._sync_call_tp = None
 
@@ -397,7 +400,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 import azure_functions_worker_v1  # NoQA
                 _library_worker = azure_functions_worker_v1
                 logger.debug("azure_functions_worker_v1 import succeeded: %s",
-                             _library_worker.__file__)
+                             _library_worker.__file__)  # type: ignore[union-attr]
             except ImportError:
                 logger.debug("azure_functions_worker_v1 library not found: %s",
                              traceback.format_exc())
@@ -406,7 +409,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                                      request=request,
                                      properties={"protos": protos,
                                                  "host": self._host})
-        init_response = await _library_worker.worker_init_request(init_request)
+        init_response = await (
+            _library_worker.worker_init_request(  # type: ignore[union-attr]
+                init_request))
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -440,7 +445,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 import azure_functions_worker_v1  # NoQA
                 _library_worker = azure_functions_worker_v1
                 logger.debug("azure_functions_worker_v1 import succeeded: %s",
-                             _library_worker.__file__)
+                             _library_worker.__file__)  # type: ignore[union-attr]
             except ImportError:
                 logger.warning("azure_functions_worker_v1 library not found: %s",
                                traceback.format_exc())
@@ -449,8 +454,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                                            request=request,
                                            properties={"protos": protos,
                                                        "host": self._host})
-        env_reload_response = await _library_worker.function_environment_reload_request(
-            env_reload_request)
+        env_reload_response = await (
+            _library_worker.function_environment_reload_request(  # type: ignore[union-attr]  # noqa
+                env_reload_request))
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -471,8 +477,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             self.request_id, self.worker_id)
 
         metadata_request = WorkerRequest(name="WorkerMetadataRequest", request=request)
-        metadata_response = await _library_worker.functions_metadata_request(
-            metadata_request)
+        metadata_response = await (
+            _library_worker.functions_metadata_request(  # type: ignore[union-attr]
+                metadata_request))
 
         return protos.StreamingMessage(
             request_id=request.request_id,
@@ -490,7 +497,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             self.request_id, function_id, function_name, self.worker_id)
 
         load_request = WorkerRequest(name="FunctionLoadRequest ", request=request)
-        load_response = await _library_worker.function_load_request(load_request)
+        load_response = await (
+            _library_worker.function_load_request(  # type: ignore[union-attr]
+                load_request))
 
         return protos.StreamingMessage(
             request_id=self.request_id,
@@ -510,8 +519,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                                            request=request,
                                            properties={
                                                "threadpool": self._sync_call_tp})
-        invocation_response = await _library_worker.invocation_request(
-            invocation_request)
+        invocation_response = await (
+            _library_worker.invocation_request(  # type: ignore[union-attr]
+                invocation_request))
 
         return protos.StreamingMessage(
             request_id=self.request_id,

@@ -122,7 +122,7 @@ class DependencyManager:
         # cx_working_dir => cls.cx_working_dir => AzureWebJobsScriptRoot
         working_directory: str = ''
         if cx_working_dir:
-            working_directory: str = os.path.abspath(cx_working_dir)
+            working_directory = os.path.abspath(cx_working_dir)
         if not working_directory:
             working_directory = cls.cx_working_dir
         if not working_directory:

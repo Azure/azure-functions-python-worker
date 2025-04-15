@@ -6,8 +6,9 @@ import unittest
 import azure.functions as func
 from tests.utils import testutils
 
-from azure_functions_worker import protos
-from azure_functions_worker.bindings import datumdef, meta
+if sys.version_info.minor < 13:
+    from azure_functions_worker import protos
+    from azure_functions_worker.bindings import datumdef, meta
 
 # Even if the tests are skipped for <=3.8, the library is still imported as
 # it is used for these tests.
@@ -42,6 +43,9 @@ class MockMBD:
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
                                               "is only supported for 3.9+.")
+@unittest.skipIf(sys.version_info.minor < 13, "For python 3.13+,"
+                                              "this logic is in the"
+                                              "library worker.")
 class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
 
     @testutils.retryable_test(3, 5)
@@ -73,6 +77,9 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
                                               "is only supported for 3.9+.")
+@unittest.skipIf(sys.version_info.minor < 13, "For python 3.13+,"
+                                              "this logic is in the"
+                                              "library worker.")
 class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
 
     @testutils.retryable_test(3, 5)
@@ -104,6 +111,9 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
                                               "is only supported for 3.9+.")
+@unittest.skipIf(sys.version_info.minor < 13, "For python 3.13+,"
+                                              "this logic is in the"
+                                              "library worker.")
 class TestDeferredBindingsEnabledDual(testutils.AsyncTestCase):
 
     @testutils.retryable_test(3, 5)
@@ -135,6 +145,9 @@ class TestDeferredBindingsEnabledDual(testutils.AsyncTestCase):
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
                                               "is only supported for 3.9+.")
+@unittest.skipIf(sys.version_info.minor < 13, "For python 3.13+,"
+                                              "this logic is in the"
+                                              "library worker.")
 class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
 
     def test_mbd_deferred_bindings_enabled_decode(self):

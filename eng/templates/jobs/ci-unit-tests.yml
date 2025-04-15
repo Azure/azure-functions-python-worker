@@ -35,11 +35,11 @@ jobs:
         displayName: 'Install dependencies'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - bash: |
-          PY_VER="$(PYTHON_VERSION)"
+          $PY_VER = "$(PYTHON_VERSION)"
           echo "Python version: $PY_VER"
       
           # Extract minor version as integers
-          PY_MINOR="${PY_VER#*.}"
+          $PY_MINOR = "${PY_VER#*.}"
       
           if [ "$PY_MINOR" -ge 13 ];  then
               echo "Running proxy_worker tests (Python >= 3.13)..."

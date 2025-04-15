@@ -130,10 +130,10 @@ jobs:
           $branch = "$(Build.SourceBranch)"
           Write-Host "Branch: $branch"
           
-          PY_VER="$(PYTHON_VERSION)"
+          $PY_VER = "$(PYTHON_VERSION)"
           Write-Host "Python version: $PY_VER"
           # Extract minor version as integers
-          PY_MINOR="${PY_VER#*.}"
+          $PY_MINO = "${PY_VER#*.}"
           Write-Host "Branch: PY_MINOR"
 
           if($branch.StartsWith("refs/heads/sdk/") -or $pipelineVarSet -eq "true" -or $PY_MINOR -ge 13 )

@@ -129,7 +129,14 @@ jobs:
           Write-Host "pipelineVarSet: $pipelineVarSet"
           $branch = "$(Build.SourceBranch)"
           Write-Host "Branch: $branch"
-          if($branch.StartsWith("refs/heads/sdk/") -or $pipelineVarSet -eq "true" -or $(echo "$PYTHON_VERSION >= 3.13" | bc -l) ))
+          
+          PY_VER="$(PYTHON_VERSION)"
+          Write-Host "Python version: $PY_VER"
+          # Extract minor version as integers
+          PY_MINOR="${PY_VER#*.}"
+          Write-Host "Branch: PY_MINOR"
+
+          if($branch.StartsWith("refs/heads/sdk/") -or $pipelineVarSet -eq "true" -or $PY_MINOR -ge 13 )
           {
             Write-Host "##vso[task.setvariable variable=skipTest;]true"
           }
@@ -139,8 +146,6 @@ jobs:
           }
         displayName: 'Set skipTest variable'
         condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
-        env:
-          PYTHON_VERSION: $(PYTHON_VERSION) # Add as part of env for easier parsing
       - powershell: |
           Write-Host "skipTest: $(skipTest)"
         displayName: 'Display skipTest variable'

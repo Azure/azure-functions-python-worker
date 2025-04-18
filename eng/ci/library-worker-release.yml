@@ -6,14 +6,6 @@ resources:
       type: git
       name: 1ESPipelineTemplates/1ESPipelineTemplates
       ref: refs/tags/release
-    - repository: eng
-      type: git
-      name: engineering
-      ref: refs/tags/release
-
-variables:
-  - name: codeql.excludePathPatterns
-    value: deps/,build/
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1es
@@ -22,10 +14,6 @@ extends:
       name: 1es-pool-azfunc
       image: 1es-windows-2022
       os: windows
-    sdl:
-      codeSignValidation:
-        enabled: true
-        break: true
 
     stages:
       - stage: Release

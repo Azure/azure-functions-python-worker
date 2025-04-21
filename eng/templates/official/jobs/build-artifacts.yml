@@ -1,6 +1,6 @@
 jobs:
   - job: "Build"
-    displayName: 'Build Python Runtime SDK'
+    displayName: 'Build V2 Python Runtime SDK'
 
     pool:
       name: 1es-pool-azfunc

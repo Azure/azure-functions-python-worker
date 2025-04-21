@@ -130,8 +130,8 @@ async def functions_metadata_request(request):
                  metadata_result, metadata_exception)
 
     if metadata_exception:
-        logger.info("An exception in WorkerMetadataRequest has occurred: %s",
-                    metadata_exception)
+        logger.error("An exception in WorkerMetadataRequest has occurred: %s",
+                     metadata_exception)
         return protos.FunctionMetadataResponse(
             result=protos.StatusResult(
                 status=protos.StatusResult.Failure,

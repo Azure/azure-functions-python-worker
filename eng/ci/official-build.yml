@@ -2,8 +2,8 @@ trigger:
   batch: true
   branches:
     include:
-      - dev
-      - release/*
+      - dev-*
+      - library-release/*
 
 # CI only, does not trigger on PRs.
 pr: none
@@ -49,31 +49,7 @@ extends:
       - stage: Build
         jobs:
           - template: /eng/templates/official/jobs/build-artifacts.yml@self
-
-      - stage: RunE2ETests
-        dependsOn: Build
-        jobs:
-          - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self
-      - stage: RunEmulatorTests
-        dependsOn: Build
-        jobs:
-          - template: /eng/templates/jobs/ci-emulator-tests.yml@self
-            parameters:
-              PoolName: 1es-pool-azfunc
       - stage: RunUnitTests
         dependsOn: Build
         jobs:
           - template: /eng/templates/jobs/ci-unit-tests.yml@self
-      - stage: RunDockerConsumptionTests
-        dependsOn: Build
-        jobs:
-          - template: /eng/templates/official/jobs/ci-docker-consumption-tests.yml@self
-      - stage: RunDockerDedicatedTests
-        dependsOn: Build
-        jobs:
-          - template: /eng/templates/official/jobs/ci-docker-dedicated-tests.yml@self
-#       Skipping consumption tests till pipeline is fixed
-#      - stage: RunLinuxConsumptionTests
-#        dependsOn: Build
-#        jobs:
-#          - template: /eng/templates/official/jobs/ci-lc-tests.yml@self

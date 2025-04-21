@@ -1,10 +1,8 @@
 trigger:
   branches:
     include:
-      - dev
-      - release/*
-      - sdk/* # run for sdk and extension release branches
-      - extensions/*
+      - dev-*
+      - library-release/*
 
 resources:
   repositories:

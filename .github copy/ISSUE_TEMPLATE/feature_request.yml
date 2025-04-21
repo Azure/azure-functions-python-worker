@@ -1,0 +1,36 @@
+name: Python Worker Feature Request
+description: File a feature report
+title: "Request a feature"
+labels: ["python", "feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form will help you to fill in a feature request for the Azure Functions Python Worker.
+
+  - type: textarea
+    id: binding-type
+    attributes:
+      label: Binding Type
+      description: Add information about the binding type.
+      placeholder: Is this on an existing binding or new binding?
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+      placeholder: What should have occurred?
+
+  - type: textarea
+    id: code-snippet
+    attributes:
+      label: Relevant sample code snipped
+      description: Please copy and paste any relevant code snippet of how you want the feature to be used. (This will be automatically formatted into code, so no need for backticks)
+      render: shell
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional Information
+      description: Add any other information about the problem here.

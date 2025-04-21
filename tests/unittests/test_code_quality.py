@@ -17,7 +17,7 @@ class TestCodeQuality(unittest.TestCase):
 
         try:
             subprocess.run(
-                [sys.executable, '-m', 'mypy', '-m', 'azure_functions_worker'],
+                [sys.executable, '-m', 'mypy', '-m', 'azure_functions_worker_v1'],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -29,7 +29,7 @@ class TestCodeQuality(unittest.TestCase):
                     from ex
             output = ex.output.decode()
             raise AssertionError(
-                f'mypy validation failed:\n{output}') from None
+                'mypy validation failed:\n%s', output) from None
 
     def test_flake8(self):
         try:
@@ -51,4 +51,4 @@ class TestCodeQuality(unittest.TestCase):
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode()
             raise AssertionError(
-                f'flake8 validation failed:\n{output}') from None
+                'flake8 validation failed:\n%s', output) from None

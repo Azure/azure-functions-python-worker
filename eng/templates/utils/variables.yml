@@ -1,5 +1,0 @@
-variables:
-  - name: isSdkRelease
-    value: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/sdk/')] 
-  - name: isExtensionsRelease
-    value: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/extensions/')] 

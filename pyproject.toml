@@ -1,54 +1,46 @@
 [project]
-name = "azure-functions-worker"
+name = "test-worker-v1"
 dynamic = ["version"]
-description = "Python Language Worker for Azure Functions Runtime"
-authors = [
-    { name = "Azure Functions team at Microsoft Corp.", email = "azurefunctions@microsoft.com" }
-]
-keywords = ["azure", "functions", "azurefunctions",
-            "python", "serverless"]
-license = { name = "MIT", file = "LICENSE" }
-readme = { file = "README.md", content-type = "text/markdown" }
-classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Operating System :: Microsoft :: Windows",
-    "Operating System :: POSIX",
-    "Operating System :: MacOS :: MacOS X",
-    "Environment :: Web Environment",
-    "License :: OSI Approved :: MIT License",
-    "Intended Audience :: Developers"
-]
+#description = "Python Language Worker for Azure Functions Runtime"
+#authors = [
+#    { name = "Azure Functions team at Microsoft Corp.", email = "azurefunctions@microsoft.com" }
+#]
+#keywords = ["azure", "functions", "azurefunctions",
+#            "python", "serverless"]
+#license = { name = "MIT", file = "LICENSE" }
+#readme = { file = "README.md", content-type = "text/markdown" }
+#classifiers = [
+#    "Development Status :: 5 - Production/Stable",
+#    "Programming Language :: Python",
+#    "Programming Language :: Python :: 3",
+#    "Programming Language :: Python :: 3.7",
+#    "Programming Language :: Python :: 3.8",
+#    "Programming Language :: Python :: 3.9",
+#    "Programming Language :: Python :: 3.10",
+#    "Programming Language :: Python :: 3.11",
+#    "Operating System :: Microsoft :: Windows",
+#    "Operating System :: POSIX",
+#    "Operating System :: MacOS :: MacOS X",
+#    "Environment :: Web Environment",
+#    "License :: OSI Approved :: MIT License",
+#    "Intended Audience :: Developers"
+#]
 dependencies = [
-     "azure-functions==1.23.0",
-     "python-dateutil ~=2.9.0",
-     "protobuf~=3.19.3; python_version == '3.7'",
-     "protobuf~=4.25.3; python_version >= '3.8'",
-     "grpcio-tools~=1.43.0; python_version == '3.7'",
-     "grpcio-tools~=1.59.0; python_version >= '3.8'",
-     "grpcio~=1.43.0; python_version == '3.7'",
-     "grpcio~=1.59.0; python_version >= '3.8'",
-     "azurefunctions-extensions-base; python_version >= '3.8'"
+     "azure-functions"
 ]
-
-[project.urls]
-Documentation = "https://github.com/Azure/azure-functions-python-worker?tab=readme-ov-file#-azure-functions-python-worker"
-Repository = "https://github.com/Azure/azure-functions-python-worker"
+#
+#[project.urls]
+#Documentation = "https://github.com/Azure/azure-functions-python-worker?tab=readme-ov-file#-azure-functions-python-worker"
+#Repository = "https://github.com/Azure/azure-functions-python-worker"
 
 [project.optional-dependencies]
 dev = [
     "azure-eventhub", # Used for EventHub E2E tests
     "azure-functions-durable", # Used for Durable E2E tests
-    "azure-monitor-opentelemetry; python_version >= '3.8'", # Used for Azure Monitor unit tests
     "flask",
     "fastapi~=0.103.2",
     "pydantic",
+    "pycryptodome==3.*",
     "flake8==5.*; python_version == '3.7'",
     "flake8==6.*; python_version >= '3.8'",
     "mypy",
@@ -56,7 +48,6 @@ dev = [
     "requests==2.*",
     "coverage",
     "pytest-sugar",
-    "opentelemetry-api; python_version >= '3.8'", # Used for OpenTelemetry unit tests
     "pytest-cov",
     "pytest-xdist",
     "pytest-randomly",
@@ -70,20 +61,11 @@ dev = [
     "pandas",
     "numpy",
     "pre-commit",
-    "invoke",
-    "cryptography"
-]
-test-http-v2 = [
-    "azurefunctions-extensions-http-fastapi==1.0.0b2",
-    "ujson",
-    "orjson"
-]
-test-deferred-bindings = [
-    "azurefunctions-extensions-bindings-blob==1.0.0b3"
+    "invoke"
 ]
 
 [build-system]
-requires = ["setuptools>=62", "wheel"]
+requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 
@@ -97,9 +79,9 @@ profile = "black"
 line_length = 88
 multi_line_output = 3
 include_trailing_comma = true
-known_first_party = ["azure_functions_worker"]
+known_first_party = ["azure_functions_worker_v1"]
 default_section = "THIRDPARTY"
-src_paths = ["azure_functions_worker"]
+src_paths = ["azure_functions_worker_v1"]
 skip_glob = [
     "build",
     "dist",
@@ -120,4 +102,4 @@ skip_glob = [
 ]
 
 [tool.setuptools.dynamic]
-version = {attr = "azure_functions_worker.version.VERSION"}
+version = {attr = "azure_functions_worker_v1.version.VERSION"}

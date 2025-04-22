@@ -160,4 +160,5 @@ jobs:
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
           skipTest: $(skipTest)
+          PYAZURE_WEBHOST_DEBUG: true
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"

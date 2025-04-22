@@ -1,8 +1,8 @@
 trigger:
   branches:
     include:
-      - dev-3*
-      - library-release/*
+      - 1.x
+      - runtime-release/*
 
 resources:
   repositories:

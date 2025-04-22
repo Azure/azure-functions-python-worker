@@ -3,8 +3,6 @@ trigger:
   branches:
     include:
     - 1.x
-    - sdk/*
-    - extensions/*
 
 pr:
   branches:

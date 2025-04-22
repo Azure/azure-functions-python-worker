@@ -3,7 +3,7 @@ trigger:
   branches:
     include:
       - 1.x
-      - library-release/*
+      - runtime-release/*
 
 # CI only, does not trigger on PRs.
 pr: none

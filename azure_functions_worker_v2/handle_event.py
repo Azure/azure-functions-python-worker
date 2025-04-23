@@ -176,9 +176,9 @@ async def invocation_request(request):
         fi: FunctionInfo = _functions.get_function(
             function_id)
         assert fi is not None
-        logger.info("Function name: %s, Function Type: %s",
-                    fi.name,
-                    ("async" if fi.is_async else "sync"))
+        logger.debug("Function name: %s, Function Type: %s",
+                     fi.name,
+                     ("async" if fi.is_async else "sync"))
 
         args = {}
 
@@ -226,7 +226,7 @@ async def invocation_request(request):
 
         if fi.is_async:
             if (otel_manager.get_azure_monitor_available()
-                    or otel_manager.set_otel_libs_available()):
+                    or otel_manager.get_otel_libs_available()):
                 configure_opentelemetry(fi_context)
 
             # Extensions are not supported

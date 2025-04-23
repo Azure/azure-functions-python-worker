@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/Azure/azure-functions-python-worker?tab=readme-ov-file#-azure-functions-python-worker"
+Documentation = "https://github.com/Azure/azure-functions-python-worker/blob/hallvictoria/v1-library-worker/README.md"
 Repository = "https://github.com/Azure/azure-functions-python-worker"
 
 [project.optional-dependencies]

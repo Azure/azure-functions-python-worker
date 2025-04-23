@@ -39,8 +39,8 @@ _library_worker = None
 class ContextEnabledTask(asyncio.Task):
     AZURE_INVOCATION_ID = '__azure_function_invocation_id__'
 
-    def __init__(self, coro, loop, context=None):
-        super().__init__(coro, loop=loop, context=context)
+    def __init__(self, coro, loop, context=None, **kwargs):
+        super().__init__(coro, loop=loop, context=context, **kwargs)
 
         current_task = asyncio.current_task(loop)
         if current_task is not None:
@@ -279,8 +279,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             # In Python 3.11+, constructing a task has an optional context
             # parameter. Allow for this param to be passed to ContextEnabledTask
             self._loop.set_task_factory(
-                lambda loop, coro, context=None: ContextEnabledTask(
-                    coro, loop=loop, context=context))
+                lambda loop, coro, context=None, **kwargs: ContextEnabledTask(
+                    coro, loop=loop, context=context, **kwargs))
 
             # Detach console logging before enabling GRPC channel logging
             logger.info('Detaching console logging.')
@@ -369,24 +369,11 @@ class Dispatcher(metaclass=DispatcherMeta):
         # We can box the app setting as int for earlier python versions.
         return int(max_workers) if max_workers else None
 
-    async def _handle__worker_init_request(self, request):
-        logger.info('Received WorkerInitRequest, '
-                    'python version %s, '
-                    'worker version %s, '
-                    'request ID %s. '
-                    'To enable debug level logging, please refer to '
-                    'https://aka.ms/python-enable-debug-logging',
-                    sys.version,
-                    VERSION,
-                    self.request_id)
-
-        if DependencyManager.should_load_cx_dependencies():
-            DependencyManager.prioritize_customer_dependencies()
-
+    @staticmethod
+    def reload_library_worker(directory: str):
         global _library_worker
-        directory = request.worker_init_request.function_app_directory
-        v2_directory = os.path.join(directory, get_script_file_name())
-        if os.path.exists(v2_directory):
+        v2_scriptfile = os.path.join(directory, get_script_file_name())
+        if os.path.exists(v2_scriptfile):
             try:
                 import azure_functions_worker_v2  # NoQA
                 _library_worker = azure_functions_worker_v2
@@ -404,6 +391,26 @@ class Dispatcher(metaclass=DispatcherMeta):
             except ImportError:
                 logger.debug("azure_functions_worker_v1 library not found: %s",
                              traceback.format_exc())
+
+    async def _handle__worker_init_request(self, request):
+        logger.info('Received WorkerInitRequest, '
+                    'python version %s, '
+                    'worker version %s, '
+                    'request ID %s. '
+                    'To enable debug level logging, please refer to '
+                    'https://aka.ms/python-enable-debug-logging',
+                    sys.version,
+                    VERSION,
+                    self.request_id)
+
+        if DependencyManager.is_in_linux_consumption():
+            import azure_functions_worker_v2
+
+        if DependencyManager.should_load_cx_dependencies():
+            DependencyManager.prioritize_customer_dependencies()
+
+        directory = request.worker_init_request.function_app_directory
+        self.reload_library_worker(directory)
 
         init_request = WorkerRequest(name="WorkerInitRequest",
                                      request=request,
@@ -427,28 +434,9 @@ class Dispatcher(metaclass=DispatcherMeta):
         func_env_reload_request = \
             request.function_environment_reload_request
         directory = func_env_reload_request.function_app_directory
-        DependencyManager.prioritize_customer_dependencies(directory)
 
-        global _library_worker
-        v2_directory = os.path.join(directory, get_script_file_name())
-        if os.path.exists(v2_directory):
-            try:
-                import azure_functions_worker_v2  # NoQA
-                _library_worker = azure_functions_worker_v2
-                logger.debug("azure_functions_worker_v2 import succeeded: %s",
-                             _library_worker.__file__)
-            except ImportError:
-                logger.warning("azure_functions_worker_v2 library not found: %s",
-                               traceback.format_exc())
-        else:
-            try:
-                import azure_functions_worker_v1  # NoQA
-                _library_worker = azure_functions_worker_v1
-                logger.debug("azure_functions_worker_v1 import succeeded: %s",
-                             _library_worker.__file__)  # type: ignore[union-attr]
-            except ImportError:
-                logger.warning("azure_functions_worker_v1 library not found: %s",
-                               traceback.format_exc())
+        DependencyManager.prioritize_customer_dependencies(directory)
+        self.reload_library_worker(directory)
 
         env_reload_request = WorkerRequest(name="FunctionEnvironmentReloadRequest",
                                            request=request,

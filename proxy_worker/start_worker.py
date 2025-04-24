@@ -5,6 +5,7 @@
 import argparse
 import traceback
 
+_GRPC_CONNECTION_TIMEOUT = 5.0
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -17,24 +18,17 @@ def parse_args():
                         help='id for the worker')
     parser.add_argument('--requestId', dest='request_id',
                         help='id of the request')
-    parser.add_argument('--log-level', type=str, default='INFO',
-                        choices=['TRACE', 'INFO', 'WARNING', 'ERROR'],
-                        help="log level: 'TRACE', 'INFO', 'WARNING', "
-                             "or 'ERROR'")
-    parser.add_argument('--log-to', type=str, default=None,
-                        help='log destination: stdout, stderr, '
-                             'syslog, or a file path')
     parser.add_argument('--grpcMaxMessageLength', type=int,
                         dest='grpc_max_msg_len')
     parser.add_argument('--functions-uri', dest='functions_uri', type=str,
                         help='URI with IP Address and Port used to'
                              ' connect to the Host via gRPC.')
-    parser.add_argument('--functions-request-id', dest='functions_request_id',
-                        type=str, help='Request ID used for gRPC communication '
-                                       'with the Host.')
     parser.add_argument('--functions-worker-id',
                         dest='functions_worker_id', type=str,
                         help='Worker ID assigned to this language worker.')
+    parser.add_argument('--functions-request-id', dest='functions_request_id',
+                        type=str, help='Request ID used for gRPC communication '
+                                       'with the Host.')
     parser.add_argument('--functions-grpc-max-message-length', type=int,
                         dest='functions_grpc_max_msg_len',
                         help='Max grpc_local message length for Functions')
@@ -52,12 +46,12 @@ def start():
     from .logging import error_logger, logger
 
     args = parse_args()
-    logging.setup(log_level=args.log_level, log_destination=args.log_to)
+    logging.setup(log_level="INFO", log_destination=None)
 
     logger.info("Args: %s", args)
-    logger.info('Starting proxy worker.')
-    logger.info('Worker ID: %s, Request ID: %s, Host Address: %s:%s',
-                args.worker_id, args.request_id, args.host, args.port)
+    logger.info(
+        'Starting proxy worker. Worker ID: %s, Request ID: %s, Host Address: %s:%s',
+        args.worker_id, args.request_id, args.host, args.port)
 
     try:
         return asyncio.run(start_async(
@@ -75,7 +69,7 @@ async def start_async(host, port, worker_id, request_id):
     disp = await dispatcher.Dispatcher.connect(host=host, port=port,
                                                worker_id=worker_id,
                                                request_id=request_id,
-                                               connect_timeout=5.0)
+                                               connect_timeout=_GRPC_CONNECTION_TIMEOUT)
     await disp.dispatch_forever()
 
 

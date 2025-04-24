@@ -6,9 +6,9 @@ import sys
 from types import ModuleType
 from typing import List, Optional
 
+from ..logging import logger
 from .common import is_envvar_true
 from .constants import AZURE_WEBJOBS_SCRIPT_ROOT, CONTAINER_NAME
-from ..logging import logger
 
 
 class DependencyManager:
@@ -295,7 +295,10 @@ class DependencyManager:
             # Both of these has the module path placed in __path__ property
             # The property .__path__ can be None or does not exist in module
             try:
-                module_paths = set(getattr(module, '__path__', None) or [])
+                # Safely check for __path__ and __file__ existence
+                module_paths = set()
+                if hasattr(module, '__path__') and module.__path__:
+                    module_paths.update(module.__path__)
                 if hasattr(module, '__file__') and module.__file__:
                     module_paths.add(module.__file__)
 

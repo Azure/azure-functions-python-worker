@@ -2,10 +2,12 @@
 # Licensed under the MIT License.
 
 import os
-from typing import Optional, Callable
+from typing import Callable, Optional
 
-from proxy_worker.utils.constants import PYTHON_SCRIPT_FILE_NAME_DEFAULT, \
-    PYTHON_SCRIPT_FILE_NAME
+from proxy_worker.utils.constants import (
+    PYTHON_SCRIPT_FILE_NAME,
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+)
 
 
 def get_app_setting(

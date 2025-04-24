@@ -15,7 +15,6 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import grpc
-
 from proxy_worker import protos
 from proxy_worker.logging import (
     CONSOLE_LOG_PREFIX,
@@ -25,11 +24,17 @@ from proxy_worker.logging import (
     is_system_log_category,
     logger,
 )
-from proxy_worker.utils.common import get_app_setting
-from proxy_worker.utils.common import is_envvar_true, get_script_file_name
-from proxy_worker.utils.constants import PYTHON_ENABLE_DEBUG_LOGGING, \
-    PYTHON_THREADPOOL_THREAD_COUNT
+from proxy_worker.utils.common import (
+    get_app_setting,
+    get_script_file_name,
+    is_envvar_true,
+)
+from proxy_worker.utils.constants import (
+    PYTHON_ENABLE_DEBUG_LOGGING,
+    PYTHON_THREADPOOL_THREAD_COUNT,
+)
 from proxy_worker.version import VERSION
+
 from .utils.dependency import DependencyManager
 
 # Library worker import reloaded in init and reload request

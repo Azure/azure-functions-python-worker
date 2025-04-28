@@ -24,7 +24,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
                       connection="AzureWebJobsEventHubConnectionString")
 @app.route(route="eventhub_output")
 def eventhub_output(req: func.HttpRequest, event: func.Out[str]) -> str:
-    # event.set(req.get_body().decode('utf-8'))
+    event.set('debug')
     return 'OK'
 
 # This is an actual EventHub trigger which will convert the event data

@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import os
 import sys
 import time
 import unittest
@@ -23,10 +24,10 @@ class TestDeferredBindingsEventHubFunctions(testutils.WebHostTestCase):
     def test_ed_eventhub_trigger(self):
         # data = "DummyData"
 
-        r = self.webhost.request('POST', 'put_bc_trigger',
+        r = self.webhost.request('POST', 'eventhub_output',
                                  data="test")
-        self.assertEqual(r.status_code, 200)
-        # self.assertEqual(r.text, 'OK')
+        # self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, f"AzureWebJobsEventHubConnectionString: {os.getenv('AzureWebJobsEventHubConnectionString')}, AzureWebJobsStorage: {os.getenv('AzureWebJobsStorage')}")
 
         # # Once the event get generated, allow function host to poll from
         # # EventHub and wait for eventhub_trigger to execute,

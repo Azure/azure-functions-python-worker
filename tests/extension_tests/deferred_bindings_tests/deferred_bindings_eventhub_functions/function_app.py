@@ -8,24 +8,24 @@ import azurefunctions.extensions.bindings.eventhub as eh
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
-@app.function_name(name="put_bc_trigger")
-@app.blob_output(arg_name="file",
-                 path="python-worker-tests/test-blobclient-trigger.txt",
-                 connection="AzureWebJobsStorage")
-@app.route(route="put_bc_trigger")
-def put_bc_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
-    file.set(req.get_body())
-    return 'OK'
+# @app.function_name(name="put_bc_trigger")
+# @app.blob_output(arg_name="file",
+#                  path="python-worker-tests/test-blobclient-trigger.txt",
+#                  connection="AzureWebJobsStorage")
+# @app.route(route="put_bc_trigger")
+# def put_bc_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
+#     file.set(req.get_body())
+#     return 'OK'
 
 # An HttpTrigger to generating EventHub event from EventHub Output Binding
-# @app.function_name(name="eventhub_output")
-# @app.route(route="eventhub_output")
-# @app.event_hub_output(arg_name="event",
-#                       event_hub_name="python-worker-ci-eventhub-one",
-#                       connection="AzureWebJobsEventHubConnectionString")
-# def eventhub_output(req: func.HttpRequest, event: func.Out[str]) -> str:
-#     event.set(req.get_body().decode('utf-8'))
-#     return 'OK'
+@app.function_name(name="eventhub_output")
+@app.event_hub_output(arg_name="event",
+                      event_hub_name="python-worker-ci-eventhub-one",
+                      connection="AzureWebJobsEventHubConnectionString")
+@app.route(route="eventhub_output")
+def eventhub_output(req: func.HttpRequest, event: func.Out[str]) -> str:
+    # event.set(req.get_body().decode('utf-8'))
+    return 'OK'
 
 # # This is an actual EventHub trigger which will convert the event data
 # # into a storage blob.

@@ -24,7 +24,7 @@ def put_eh_ed_trigger(req: func.HttpRequest, event: func.Out[str]) -> str:
     event_hub_name="python-worker-ci-eventhub-one",
     connection="AzureWebJobsEventHubConnectionString")
 @app.blob_output(arg_name="$return",
-                 path="python-worker-tests/test-metadata-triggered.txt",
+                 path="python-worker-tests/test-eventhub-triggered.txt",
                  connection="AzureWebJobsStorage")
 async def eh_ed_trigger(event: func.EventHubEvent) -> bytes:
     event_dict: typing.Mapping[str, typing.Any] = {
@@ -43,7 +43,7 @@ async def eh_ed_trigger(event: func.EventHubEvent) -> bytes:
 @app.function_name(name="get_eh_ed_triggered")
 @app.route(route="get_eh_ed_triggered")
 @app.blob_input(arg_name="file",
-                path="python-worker-tests/test-metadata-triggered.txt",
+                path="python-worker-tests/test-eventhub-triggered.txt",
                 connection="AzureWebJobsStorage")
 async def get_eh_ed_triggered(req: func.HttpRequest,
                                  file: func.InputStream) -> str:

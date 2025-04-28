@@ -29,7 +29,7 @@ class TestDeferredBindingsEventHubFunctions(testutils.WebHostTestCase):
             'body': random_number
         }
 
-        r = self.webhost.request('POST', 'put_eh_trigger',
+        r = self.webhost.request('POST', 'put_eh_ed_trigger',
                                  data=json.dumps(req_body))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')

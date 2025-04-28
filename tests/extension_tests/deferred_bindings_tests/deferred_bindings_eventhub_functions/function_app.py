@@ -9,19 +9,19 @@ import azure.functions as func
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
-@app.function_name(name="put_eh_trigger")
+@app.function_name(name="put_eh_ed_trigger")
 @app.event_hub_output(arg_name="event",
                       event_hub_name="python-worker-ci-eventhub-one",
                       connection="AzureWebJobsEventHubConnectionString")
-@app.route(route="put_eh_trigger")
-def put_eh_trigger(req: func.HttpRequest, event: func.Out[str]) -> str:
+@app.route(route="put_eh_ed_trigger")
+def put_eh_ed_trigger(req: func.HttpRequest, event: func.Out[str]) -> str:
     event.set(req.get_body())
     return 'OK'
 
 @app.function_name(name="eh_ed_trigger")
 @app.event_hub_message_trigger(
     arg_name="event",
-    event_hub_name="python-worker-ci-eventhub-one-metadata",
+    event_hub_name="python-worker-ci-eventhub-one",
     connection="AzureWebJobsEventHubConnectionString")
 @app.blob_output(arg_name="$return",
                  path="python-worker-tests/test-metadata-triggered.txt",

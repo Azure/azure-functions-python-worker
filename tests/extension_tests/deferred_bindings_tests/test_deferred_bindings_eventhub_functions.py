@@ -21,6 +21,7 @@ class TestDeferredBindingsEventHubFunctions(testutils.WebHostTestCase):
     def get_libraries_to_install(cls):
         return ['azurefunctions-extensions-bindings-eventhub']
     
+    @testutils.retryable_test(3, 5)
     def test_ed_eventhub_trigger(self):
         # data = "DummyData"
 

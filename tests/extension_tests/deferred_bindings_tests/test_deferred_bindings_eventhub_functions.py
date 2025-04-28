@@ -26,8 +26,8 @@ class TestDeferredBindingsEventHubFunctions(testutils.WebHostTestCase):
 
         r = self.webhost.request('POST', 'eventhub_output',
                                  data="test")
-        # self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, f"AzureWebJobsEventHubConnectionString: {os.getenv('AzureWebJobsEventHubConnectionString')}, AzureWebJobsStorage: {os.getenv('AzureWebJobsStorage')}")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK')
 
         # # Once the event get generated, allow function host to poll from
         # # EventHub and wait for eventhub_trigger to execute,

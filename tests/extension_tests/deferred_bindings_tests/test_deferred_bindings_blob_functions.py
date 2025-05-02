@@ -171,6 +171,8 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data')
 
+    @unittest.skipIf(sys.version_info.minor >= 13, "For python 3.13+,"
+                     "the cache is maintained in the ext and TBD.")
     def test_caching(self):
         '''
         The cache returns the same type based on resource and function name.
@@ -204,6 +206,8 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r2.text, client2)
         self.assertNotEqual(r.text, r2.text)
 
+    @unittest.skipIf(sys.version_info.minor >= 13, "For python 3.13+,"
+                    "the cache is maintained in the ext and TBD.")
     def test_caching_same_resource(self):
         '''
         The cache returns the same type based on param name.

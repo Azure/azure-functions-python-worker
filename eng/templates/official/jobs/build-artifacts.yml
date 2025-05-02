@@ -188,16 +188,52 @@ jobs:
     outputs:
       - output: pipelineArtifact
         targetPath: $(Build.ArtifactStagingDirectory)
-        artifactName: "$(pythonVersion)_OSX_ARM4"
+        artifactName: "$(pythonVersion)_OSX_ARM64"
   steps:
   - template: ../../../../pack/templates/macos_64_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_OSX_ARM64'
+- job: Build_LINUX_ARM64
+  pool:
+    name: Azure Pipelines
+    image: macOS-latest
+    os: macOS
+  strategy:
+    matrix:
+      Python39V4:
+        pythonVersion: '3.9'
+        workerPath: 'python/prodV4/worker.py'
+      Python310V4:
+        pythonVersion: '3.10'
+        workerPath: 'python/prodV4/worker.py'
+      Python311V4:
+        pythonVersion: '3.11'
+        workerPath: 'python/prodV4/worker.py'
+      Python312V4:
+        pythonVersion: '3.12'
+        workerPath: 'python/prodV4/worker.py'
+      Python313V4:
+        pythonVersion: '3.13'
+        workerPath: 'python/proxyV4/worker.py'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(pythonVersion)_LINUX_ARM64"
+  steps:
+  - template: ../../../../pack/templates/nix_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
+      artifactName: '$(pythonVersion)_LINUX_ARM64'
+
+
 
 - job: PackageWorkers
-  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64']
+  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
   templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:

@@ -43,6 +43,9 @@ class MockMBD:
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
                                               "is only supported for 3.9+.")
+@unittest.skipIf(sys.version_info.minor >= 13, "For python 3.13+,"
+                                               "this logic is in the"
+                                               "library worker.")
 class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
 
     @testutils.retryable_test(3, 5)
@@ -74,6 +77,9 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
                                               "is only supported for 3.9+.")
+@unittest.skipIf(sys.version_info.minor >= 13, "For python 3.13+,"
+                                               "this logic is in the"
+                                               "library worker.")
 class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
 
     @testutils.retryable_test(3, 5)
@@ -105,6 +111,9 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
                                               "is only supported for 3.9+.")
+@unittest.skipIf(sys.version_info.minor >= 13, "For python 3.13+,"
+                                               "this logic is in the"
+                                               "library worker.")
 class TestDeferredBindingsEnabledDual(testutils.AsyncTestCase):
 
     @testutils.retryable_test(3, 5)

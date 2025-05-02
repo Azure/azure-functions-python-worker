@@ -133,8 +133,8 @@ jobs:
           $PY_VER = "$(PYTHON_VERSION)"
           Write-Host "Python version: $PY_VER"
           # Extract minor version as integers
-          $PY_MINO = "${PY_VER#*.}"
-          Write-Host "Minor version: $PY_MINO"
+          $PY_MINOR = "${PY_VER#*.}"
+          Write-Host "Minor version: $PY_MINOR"
 
           if($branch.StartsWith("refs/heads/sdk/") -or $pipelineVarSet -eq "true" -or $PY_MINOR -ge 13 )
           {

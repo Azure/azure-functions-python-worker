@@ -73,7 +73,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         time.sleep(5)
 
         # Call get_eventhub_triggered to retrieve event metadata from blob.
-        r = self.webhost.request('GET', 'get2_eventhub_triggered')
+        r = self.webhost.request('GET', 'get_eventhub2_triggered')
 
         # Waiting for the blob get updated with the latest data from the
         # eventhub output binding

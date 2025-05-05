@@ -229,9 +229,40 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_LINUX_ARM64'
+- job: Build_WINDOWS_ARM64
+  pool:
+    name: 1es-pool-azfunc
+    image: 1es-windows-2022
+    os: windows
+  strategy:
+    matrix:
+      # ARM64 python is only supported for 3.11 and above
+      Python311V4:
+        pythonVersion: '3.11'
+        workerPath: 'python/prodV4/worker.py'
+      Python312V4:
+        pythonVersion: '3.12'
+        workerPath: 'python/prodV4/worker.py'
+      Python313V4:
+        pythonVersion: '3.13'
+        workerPath: 'python/proxyV4/worker.py'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(pythonVersion)_WINDOWS_ARM64"
+  steps:
+  - template: ../../../pack/templates/win_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      workerPath: '$(workerPath)'
+      architecture: 'x64'  # only x64 and x86 are supported for windows agents
+      downloadArm64: true
+      artifactName: '$(pythonVersion)_WINDOWS_ARM64'
 
 - job: PackageWorkers
-  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
+  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64', 'Build_WINDOWS_ARM64']
   templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:

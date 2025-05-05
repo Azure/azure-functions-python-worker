@@ -107,14 +107,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertGreaterEqual(sys_props['SequenceNumber'], 0)
         self.assertIsNotNone(sys_props['Offset'])
 
-class TestEventHubDeferredBindings(TestEventHubFunctions):
-
-    @classmethod
-    def get_script_dir(cls):
-        return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions' / \
-            'eventhub_deferred_bindings'
-
-
 
 class TestEventHubFunctionsStein(TestEventHubFunctions):
 

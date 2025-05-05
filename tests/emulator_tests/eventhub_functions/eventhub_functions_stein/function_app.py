@@ -19,6 +19,16 @@ def eventhub_output(req: func.HttpRequest, event: func.Out[str]):
     event.set(req.get_body().decode('utf-8'))
     return 'OK'
 
+# An HttpTrigger to generating EventHub event from EventHub Output Binding
+@app.function_name(name="eventhub2_output")
+@app.route(route="eventhub2_output")
+@app.event_hub_output(arg_name="event",
+                      event_hub_name="python-worker-ci-eventhub-one",
+                      connection="AzureWebJobsEventHubConnectionString")
+def eventhub2_output(req: func.HttpRequest, event: func.Out[str]):
+    event.set(req.get_body().decode('utf-8'))
+    return 'OK'
+
 
 # This is an actual EventHub trigger which will convert the event data
 # into a storage blob.

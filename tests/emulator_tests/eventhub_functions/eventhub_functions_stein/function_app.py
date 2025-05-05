@@ -23,7 +23,7 @@ def eventhub_output(req: func.HttpRequest, event: func.Out[str]):
 @app.function_name(name="eventhub2_output")
 @app.route(route="eventhub2_output")
 @app.event_hub_output(arg_name="event",
-                      event_hub_name="python-worker-ci-eventhub-one",
+                      event_hub_name="python-worker-ci-eventhub-two",
                       connection="AzureWebJobsEventHubConnectionString")
 def eventhub2_output(req: func.HttpRequest, event: func.Out[str]):
     event.set(req.get_body().decode('utf-8'))
@@ -43,6 +43,19 @@ def eventhub2_output(req: func.HttpRequest, event: func.Out[str]):
 def eventhub_trigger(event: func.EventHubEvent) -> bytes:
     return event.get_body()
 
+# This is an actual EventHub trigger which will convert the event data
+# into a storage blob.
+@app.function_name(name="eventhub2_trigger")
+@app.event_hub_message_trigger(arg_name="event",
+                               event_hub_name="python-worker-ci-eventhub-two",
+                               connection="AzureWebJobsEventHubConnectionString"
+                               )
+@app.blob_output(arg_name="$return",
+                 path="python-worker-tests/test-eventhub-triggered2.txt",
+                 connection="AzureWebJobsStorage")
+def eventhub2_trigger(event: func.EventHubEvent) -> bytes:
+    return event.get_body()
+
 
 # Retrieve the event data from storage blob and return it as Http response
 @app.function_name(name="get_eventhub_triggered")
@@ -51,6 +64,17 @@ def eventhub_trigger(event: func.EventHubEvent) -> bytes:
                 path="python-worker-tests/test-eventhub-triggered.txt",
                 connection="AzureWebJobsStorage")
 def get_eventhub_triggered(req: func.HttpRequest,
+                           file: func.InputStream) -> str:
+    return file.read().decode('utf-8')
+
+
+# Retrieve the event data from storage blob and return it as Http response
+@app.function_name(name="get_eventhub2_triggered")
+@app.route(route="get_eventhub2_triggered")
+@app.blob_input(arg_name="file",
+                path="python-worker-tests/test-eventhub-triggered2.txt",
+                connection="AzureWebJobsStorage")
+def get_eventhub2_triggered(req: func.HttpRequest,
                            file: func.InputStream) -> str:
     return file.read().decode('utf-8')
 

@@ -64,7 +64,7 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         # Invoke eventhub2_output HttpTrigger to generate an Eventhub Event.
         r = self.webhost.request('POST', 'eventhub2_output',
                                  data=json.dumps(doc))
-        self.assertEqual(r.status_code, 123)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
 
         # Once the event get generated, allow function host to poll from

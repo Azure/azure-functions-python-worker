@@ -7,6 +7,7 @@ steps:
 - task: UsePythonVersion@0
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
+    architecture: ${{ parameters.architecture }}
     addToPath: true
 - bash: |
     major=$(echo $(pythonVersion) | cut -d. -f1)
@@ -15,12 +16,10 @@ steps:
     echo "##vso[task.setvariable variable=pythonMinor]$minor"
     echo $pythonMinor
   displayName: 'Parse pythonVersion'
-- task: ShellScript@2
+- task: PowerShell@2
   inputs:
-    disableAutoCwd: true
-    scriptPath: 'pack/scripts/nix_deps.sh'
-    args: '${{ parameters.pythonVersion }}'
-  displayName: 'Install Dependencies'
+    filePath: 'eng\pack\scripts\win_deps.ps1'
+    arguments: '${{ parameters.pythonVersion }}'
 - bash: |
     pip install pip-audit
     pip-audit -r requirements.txt
@@ -34,46 +33,46 @@ steps:
     flattenFolders: true
 - task: CopyFiles@2
   inputs:
-    sourceFolder: '$(Build.SourcesDirectory)/deps'
+    sourceFolder: '$(Build.SourcesDirectory)\deps'
     contents: |
       **
-      !grpc_tools/**/*
-      !grpcio_tools*/*
-      !build/**
-      !docs/**
-      !pack/**
-      !python/**
-      !tests/**
-      !setuptools*/**
-      !_distutils_hack/**
+      !grpc_tools\**\*
+      !grpcio_tools*\*
+      !build\**
+      !docs\**
+      !eng\**
+      !python\**
+      !tests\**
+      !setuptools*\**
+      !_distutils_hack\**
       !distutils-precedence.pth
-      !pkg_resources/**
-      !*.dist-info/**
-      !werkzeug/debug/shared/debugger.js
-      !proxy_worker/**
+      !pkg_resources\**
+      !*.dist-info\**
+      !werkzeug\debug\shared\debugger.js
+      !proxy_worker\**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: in(variables['pythonMinor'], '7', '8', '9', '10', '11', '12')
   displayName: 'Copy azure_functions_worker files'
 - task: CopyFiles@2
   inputs:
-    sourceFolder: '$(Build.SourcesDirectory)/deps'
+    sourceFolder: '$(Build.SourcesDirectory)\deps'
     contents: |
       **
-      !grpc_tools/**/*
-      !grpcio_tools*/*
-      !build/**
-      !docs/**
-      !pack/**
-      !python/**
-      !tests/**
-      !setuptools*/**
-      !_distutils_hack/**
+      !grpc_tools\**\*
+      !grpcio_tools*\*
+      !build\**
+      !docs\**
+      !eng\**
+      !python\**
+      !tests\**
+      !setuptools*\**
+      !_distutils_hack\**
       !distutils-precedence.pth
-      !pkg_resources/**
-      !*.dist-info/**
-      !werkzeug/debug/shared/debugger.js
-      !dateutil/**
-      !azure_functions_worker/**
+      !pkg_resources\**
+      !*.dist-info\**
+      !werkzeug\debug\shared\debugger.js
+      !dateutil\**
+      !azure_functions_worker\**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: in(variables['pythonMinor'], '13')
   displayName: 'Copy proxy_worker files'

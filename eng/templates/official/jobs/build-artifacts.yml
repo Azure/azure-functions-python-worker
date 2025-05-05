@@ -34,7 +34,7 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_WINDOWS_X64"
   steps:
-  - template: ../../../../pack/templates/win_env_gen.yml
+  - template: ../../../pack/templates/win_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
@@ -75,7 +75,7 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_WINDOWS_X86"
   steps:
-  - template: ../../../../pack/templates/win_env_gen.yml
+  - template: ../../../pack/templates/win_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
@@ -116,7 +116,7 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_LINUX_X64"
   steps:
-  - template: ../../../../pack/templates/nix_env_gen.yml
+  - template: ../../../pack/templates/nix_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
@@ -156,7 +156,7 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_OSX_X64"
   steps:
-  - template: ../../../../pack/templates/nix_env_gen.yml
+  - template: ../../../pack/templates/nix_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
@@ -190,7 +190,7 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_OSX_ARM64"
   steps:
-  - template: ../../../../pack/templates/macos_64_env_gen.yml
+  - template: ../../../pack/templates/macos_64_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
@@ -224,13 +224,11 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_LINUX_ARM64"
   steps:
-  - template: ../../../../pack/templates/nix_env_gen.yml
+  - template: ../../../pack/templates/nix_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_LINUX_ARM64'
-
-
 
 - job: PackageWorkers
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
@@ -248,19 +246,19 @@ jobs:
       if [[ $BUILD_SOURCEBRANCHNAME = 4\.* ]]
       then
         echo "Generating V4 Release Package for $BUILD_SOURCEBRANCHNAME"
-        NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+        NUSPEC="eng\pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
         WKVERSION="$BUILD_SOURCEBRANCHNAME"
       elif [[ $BUILD_SOURCEBRANCHNAME = dev ]]
       then
         echo "Generating V4 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
         VERSION=$(cat azure_functions_worker/version.py | tail -1 | cut -d' ' -f3 | sed  "s/'//g")
-        NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+        NUSPEC="eng\pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
         WKVERSION="$VERSION-$(Build.BuildNumber)"
       else
         # this is only to test nuget related workflow because we are setting nuspec here
         echo "Generating Integration Test Package for $BUILD_SOURCEBRANCHNAME for testing purpose"
         LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
-        NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+        NUSPEC="eng\pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
         # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
         WKVERSION="3.$LATEST_TAG-$(BUILD_BUILDID)-TEST"
         echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"

@@ -1,7 +1,6 @@
 parameters:
   pythonVersion: ''
   artifactName: ''
-  workerPath: ''
 
 steps:
 - task: UsePythonVersion@0
@@ -28,10 +27,24 @@ steps:
     pip-audit -r requirements.txt
   displayName: 'Run vulnerability scan'
   condition: ne(variables['pythonVersion'], '3.7')
+- powershell: |
+    Write-Host "Minor version: $(pythonMinor)"
+
+    if( $(pythonMinor) -ge 13 )
+    {
+      Write-Host "##vso[task.setvariable variable=workerPath;]$(proxyV4Path)"
+    }
+    else
+    {
+      Write-Host "##vso[task.setvariable variable=workerPath;]$(prodV4Path)"
+    }
+  displayName: 'Set workerPath variable'
+- powershell: |
+    Write-Host "workerPath: $(workerPath)"
+  displayName: 'Display workerPath variable'
 - task: CopyFiles@2
   inputs:
-    contents: |
-      ${{ parameters.workerPath }}
+    contents: '$(workerPath)'
     targetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
 - task: CopyFiles@2

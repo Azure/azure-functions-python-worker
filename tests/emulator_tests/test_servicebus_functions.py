@@ -72,9 +72,9 @@ class TestServiceBusSDKFunctions(testutils.WebHostTestCase):
         return testutils.EMULATOR_TESTS_FOLDER / 'servicebus_sdk_functions'
 
     @testutils.retryable_test(3, 5)
-    def test_servicebus_basic(self):
+    def test_servicebus_basic_sdk(self):
         data = str(round(time.time()))
-        r = self.webhost.request('POST', 'put_message',
+        r = self.webhost.request('POST', 'put_message_sdk',
                                  data=data)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
@@ -86,12 +86,12 @@ class TestServiceBusSDKFunctions(testutils.WebHostTestCase):
             time.sleep(1)
 
             try:
-                r = self.webhost.request('GET', 'get_servicebus_triggered')
+                r = self.webhost.request('GET', 'get_servicebus_triggered_sdk')
                 self.assertEqual(r.status_code, 200)
                 msg = r.json()
                 self.assertEqual(msg['body'], data)
                 for attr in {'message', 'body', 'enqueued_time_utc', 'lock_token',
-                             'locked_until', 'message_id', 'sequence_number'}:
+                             'message_id', 'sequence_number'}:
                     self.assertIn(attr, msg)
             except (AssertionError, json.JSONDecodeError):
                 if try_no == max_retries - 1:

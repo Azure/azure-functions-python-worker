@@ -79,7 +79,8 @@ dev = [
     "numpy",
     "pre-commit",
     "invoke",
-    "cryptography"
+    "cryptography",
+    "jsonpickle"
 ]
 test-http-v2 = [
     "azurefunctions-extensions-http-fastapi==1.0.0b2",

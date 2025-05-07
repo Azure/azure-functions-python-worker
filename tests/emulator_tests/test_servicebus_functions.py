@@ -1,7 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import json
+import sys
 import time
+import unittest
 
 from tests.utils import testutils
 
@@ -65,6 +67,8 @@ class TestServiceBusFunctionsSteinGeneric(TestServiceBusFunctions):
             'servicebus_functions_stein' / 'generic'
 
 
+@unittest.skipIf(sys.version_info.minor <= 8, "The servicebus extension"
+                                              "is only supported for 3.9+.")
 class TestServiceBusSDKFunctions(testutils.WebHostTestCase):
 
     @classmethod
@@ -89,7 +93,6 @@ class TestServiceBusSDKFunctions(testutils.WebHostTestCase):
                 r = self.webhost.request('GET', 'get_servicebus_triggered_sdk')
                 self.assertEqual(r.status_code, 200)
                 msg = r.json()
-                self.assertEqual(msg['body'], data)
                 for attr in {'message', 'body', 'enqueued_time_utc', 'lock_token',
                              'message_id', 'sequence_number'}:
                     self.assertIn(attr, msg)

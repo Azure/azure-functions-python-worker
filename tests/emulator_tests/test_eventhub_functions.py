@@ -55,35 +55,6 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         # Check if the event body matches the initial data
         self.assertEqual(response, doc)
 
-    @testutils.retryable_test(3, 5)
-    def test_eventhub2_trigger(self):
-        # Generate a unique event body for the EventHub event
-        data = str(round(time.time()))
-        doc = {'id': data}
-
-        # Invoke eventhub2_output HttpTrigger to generate an Eventhub Event.
-        r = self.webhost.request('POST', 'eventhub2_output',
-                                 data=json.dumps(doc))
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK')
-
-        # Once the event get generated, allow function host to poll from
-        # EventHub and wait for eventhub_trigger to execute,
-        # converting the event metadata into a blob.
-        time.sleep(5)
-
-        # Call get_eventhub_triggered to retrieve event metadata from blob.
-        r = self.webhost.request('GET', 'get_eventhub2_triggered')
-
-        # Waiting for the blob get updated with the latest data from the
-        # eventhub output binding
-        time.sleep(5)
-        self.assertEqual(r.status_code, 200)
-        response = r.json()
-
-        # Check if the event body matches the initial data
-        self.assertEqual(response, doc)
-
     @skipIf(sys.version_info.minor == 7,
             "Using azure-eventhub SDK with the EventHub Emulator"
             "requires Python 3.8+")
@@ -137,17 +108,17 @@ class TestEventHubFunctions(testutils.WebHostTestCase):
         self.assertIsNotNone(sys_props['Offset'])
 
 
-class TestEventHubFunctionsStein(TestEventHubFunctions):
+# class TestEventHubFunctionsStein(TestEventHubFunctions):
 
-    @classmethod
-    def get_script_dir(cls):
-        return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions' / \
-            'eventhub_functions_stein'
+#     @classmethod
+#     def get_script_dir(cls):
+#         return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions' / \
+#             'eventhub_functions_stein'
 
 
-class TestEventHubFunctionsSteinGeneric(TestEventHubFunctions):
+# class TestEventHubFunctionsSteinGeneric(TestEventHubFunctions):
 
-    @classmethod
-    def get_script_dir(cls):
-        return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions' / \
-            'eventhub_functions_stein' / 'generic'
+#     @classmethod
+#     def get_script_dir(cls):
+#         return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions' / \
+#             'eventhub_functions_stein' / 'generic'

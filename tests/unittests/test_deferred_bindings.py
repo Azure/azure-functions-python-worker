@@ -19,15 +19,12 @@ if sys.version_info.minor >= 9:
                                                          StorageStreamDownloader)
 
 DEFERRED_BINDINGS_ENABLED_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'deferred_bindings_tests' / \
     'deferred_bindings_functions' / \
     'deferred_bindings_enabled'
 DEFERRED_BINDINGS_DISABLED_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'deferred_bindings_tests' / \
     'deferred_bindings_functions' / \
     'deferred_bindings_disabled'
 DEFERRED_BINDINGS_ENABLED_DUAL_DIR = testutils.UNIT_TESTS_FOLDER / \
-    'deferred_bindings_tests' / \
     'deferred_bindings_functions' / \
     'deferred_bindings_enabled_dual'
 

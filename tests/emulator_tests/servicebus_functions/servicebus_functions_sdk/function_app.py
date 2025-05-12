@@ -22,7 +22,7 @@ def put_message_sdk(req: func.HttpRequest, msg: func.Out[str]):
                 path="python-worker-tests/test-servicebus-sdk-triggered.txt",
                 connection="AzureWebJobsStorage")
 def get_servicebus_triggered_sdk(req: func.HttpRequest,
-                             file: func.InputStream) -> str:
+                                 file: func.InputStream) -> str:
     return func.HttpResponse(
         file.read().decode('utf-8'), mimetype='application/json')
 

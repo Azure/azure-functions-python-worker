@@ -73,7 +73,8 @@ class TestServiceBusSDKFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.EMULATOR_TESTS_FOLDER / 'servicebus_sdk_functions'
+        return testutils.EMULATOR_TESTS_FOLDER / 'servicebus_functions' / \
+            'servicebus_functions_sdk'
 
     @testutils.retryable_test(3, 5)
     def test_servicebus_basic_sdk(self):

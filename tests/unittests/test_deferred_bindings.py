@@ -155,7 +155,7 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
         sample_mbd = MockMBD(version="1.0",
                              source="AzureStorageBlobs",
                              content_type="application/json",
-                             content="{\"Connection\":\"AzureWebJobsStorage\","
+                             content="{\"Connection\":\"AZURE_STORAGE_CONNECTION_STRING\","
                                      "\"ContainerName\":"
                                      "\"python-worker-tests\","
                                      "\"BlobName\":"

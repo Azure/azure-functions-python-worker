@@ -49,3 +49,46 @@ def servicebus_trigger_sdk(msg: sb.ServiceBusReceivedMessage) -> str:
     })
 
     return result
+
+
+@app.route(route="put_message_sdk_topic")
+@app.service_bus_topic_output(arg_name="msg",
+                              connection="AzureWebJobsServiceBusSDKConnectionString",
+                              topic_name="testtopic")
+def put_message_sdk_topic(req: func.HttpRequest, msg: func.Out[str]):
+    msg.set(req.get_body().decode('utf-8'))
+    return 'OK'
+
+
+@app.route(route="get_servicebus_triggered_sdk_topic")
+@app.blob_input(arg_name="file",
+                path="python-worker-tests/test-servicebus-sdk-triggered-topic.txt",
+                connection="AzureWebJobsStorage")
+def get_servicebus_triggered_sdk_topic(req: func.HttpRequest,
+                                 file: func.InputStream) -> str:
+    return func.HttpResponse(
+        file.read().decode('utf-8'), mimetype='application/json')
+
+
+@app.service_bus_topic_trigger(arg_name="msg",
+                               topic_name="testtopic",
+                               connection="AzureWebJobsServiceBusSDKConnectionString",
+                               subscription_name="testsub")
+@app.blob_output(arg_name="$return",
+                 path="python-worker-tests/test-servicebus-sdk-triggered-topic.txt",
+                 connection="AzureWebJobsStorage")
+def servicebus_trigger_sdk_topic(msg: sb.ServiceBusReceivedMessage) -> str:
+    msg_json = jsonpickle.encode(msg)
+    body_json = jsonpickle.encode(msg.body)
+    enqueued_time_json = jsonpickle.encode(msg.enqueued_time_utc)
+    lock_token_json = jsonpickle.encode(msg.lock_token)
+    result = json.dumps({
+        'message': msg_json,
+        'body': body_json,
+        'enqueued_time_utc': enqueued_time_json,
+        'lock_token': lock_token_json,
+        'message_id': msg.message_id,
+        'sequence_number': msg.sequence_number
+    })
+
+    return result

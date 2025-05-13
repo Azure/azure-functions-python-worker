@@ -49,6 +49,42 @@ class TestServiceBusFunctions(testutils.WebHostTestCase):
                     raise
             else:
                 break
+    
+    @testutils.retryable_test(3, 5)
+    def test_servicebus_basic_topic(self):
+        data = str(round(time.time()))
+        r = self.webhost.request('POST', 'put_message_topic',
+                                 data=data)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK')
+
+        max_retries = 10
+
+        for try_no in range(max_retries):
+            # wait for trigger to process the queue item
+            time.sleep(1)
+
+            try:
+                r = self.webhost.request('GET', 'get_servicebus_triggered_topic')
+                self.assertEqual(r.status_code, 200)
+                msg = r.json()
+                self.assertEqual(msg['body'], data)
+                for attr in {'message_id', 'body', 'content_type', 'delivery_count',
+                             'expiration_time', 'label', 'partition_key', 'reply_to',
+                             'reply_to_session_id', 'scheduled_enqueue_time',
+                             'session_id', 'time_to_live', 'to', 'user_properties',
+                             'application_properties', 'correlation_id',
+                             'dead_letter_error_description', 'dead_letter_reason',
+                             'dead_letter_source', 'enqueued_sequence_number',
+                             'enqueued_time_utc', 'expires_at_utc', 'locked_until',
+                             'lock_token', 'sequence_number', 'state', 'subject',
+                             'transaction_partition_key'}:
+                    self.assertIn(attr, msg)
+            except (AssertionError, json.JSONDecodeError):
+                if try_no == max_retries - 1:
+                    raise
+            else:
+                break
 
 
 class TestServiceBusFunctionsStein(TestServiceBusFunctions):
@@ -92,6 +128,33 @@ class TestServiceBusSDKFunctions(testutils.WebHostTestCase):
 
             try:
                 r = self.webhost.request('GET', 'get_servicebus_triggered_sdk')
+                self.assertEqual(r.status_code, 200)
+                msg = r.json()
+                for attr in {'message', 'body', 'enqueued_time_utc', 'lock_token',
+                             'message_id', 'sequence_number'}:
+                    self.assertIn(attr, msg)
+            except (AssertionError, json.JSONDecodeError):
+                if try_no == max_retries - 1:
+                    raise
+            else:
+                break
+
+    @testutils.retryable_test(3, 5)
+    def test_servicebus_basic_sdk_topic(self):
+        data = str(round(time.time()))
+        r = self.webhost.request('POST', 'put_message_sdk_topic',
+                                 data=data)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK')
+
+        max_retries = 10
+
+        for try_no in range(max_retries):
+            # wait for trigger to process the queue item
+            time.sleep(1)
+
+            try:
+                r = self.webhost.request('GET', 'get_servicebus_triggered_sdk_topic')
                 self.assertEqual(r.status_code, 200)
                 msg = r.json()
                 for attr in {'message', 'body', 'enqueued_time_utc', 'lock_token',

@@ -1,4 +1,5 @@
 variables:
+  - group: python-emulator-resources
   - name: isSdkRelease
     value: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/sdk/')] 
   - name: isExtensionsRelease

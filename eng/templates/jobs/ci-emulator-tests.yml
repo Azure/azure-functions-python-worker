@@ -82,9 +82,9 @@ jobs:
       - bash: |
             python -m pytest -q -n auto --dist loadfile --reruns 4 --ignore=tests/emulator_tests/test_servicebus_functions.py tests/emulator_tests
         env:
-          AzureWebJobsStorage: "UseDevelopmentStorage=true"
-          AzureWebJobsEventHubConnectionString: "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
-          AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+          AzureWebJobsStorage: $(AzureWebJobsStorage)
+          AzureWebJobsEventHubConnectionString: $(AzureWebJobsEventHubConnectionString)
+          AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
         displayName: "Running $(PYTHON_VERSION) Python Linux Emulator Tests"
       - bash: |
           # Stop and remove EventHub Emulator container to free up the port
@@ -98,7 +98,7 @@ jobs:
       - bash: |
             python -m pytest -q -n auto --dist loadfile --reruns 4 tests/emulator_tests/test_servicebus_functions.py
         env:
-          AzureWebJobsStorage: "UseDevelopmentStorage=true"
-          AzureWebJobsServiceBusConnectionString: "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
-          AzureWebJobsServiceBusSDKConnectionString: "Endpoint=sb://127.0.0.1;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
+          AzureWebJobsStorage: $(AzureWebJobsStorage)
+          AzureWebJobsServiceBusConnectionString: $(AzureWebJobsServiceBusConnectionString)
+          AzureWebJobsServiceBusSDKConnectionString: $(AzureWebJobsServiceBusSDKConnectionString)
         displayName: "Running $(PYTHON_VERSION) Python ServiceBus Linux Emulator Tests"

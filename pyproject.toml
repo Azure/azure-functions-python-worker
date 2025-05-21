@@ -82,7 +82,7 @@ dev = [
     "cryptography"
 ]
 test-http-v2 = [
-    "azurefunctions-extensions-http-fastapi==1.0.0b2",
+    "azurefunctions-extensions-http-fastapi==1.0.0",
     "ujson",
     "orjson"
 ]

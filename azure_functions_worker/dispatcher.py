@@ -7,6 +7,7 @@ Implements loading and execution of Python workers.
 
 import asyncio
 import concurrent.futures
+import json
 import logging
 import os
 import platform
@@ -62,6 +63,7 @@ from .logging import (
 from .utils.app_setting_manager import get_python_appsetting_state
 from .utils.common import get_app_setting, is_envvar_true, validate_script_file_name
 from .utils.dependency import DependencyManager
+from .utils.kernel_manager import KernelHandler
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
 from .version import VERSION
@@ -601,9 +603,14 @@ class Dispatcher(metaclass=DispatcherMeta):
         current_task.set_azure_invocation_id(invocation_id)
 
         try:
+            # Execute things here
+
             fi: functions.FunctionInfo = self._functions.get_function(
                 function_id)
             assert fi is not None
+            logger.info("Starting kernel handler...")
+            kernel_handler = KernelHandler()
+            logger.info("Kernel handler successfully started!")
 
             function_invocation_logs: List[str] = [
                 'Received FunctionInvocationRequest',
@@ -655,36 +662,44 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             fi_context = self._get_context(invoc_request, fi.name,
                                            fi.directory)
+            
+            logger.info("Starting execution using kernel...")
+            code_json = invoc_request.trigger_metadata.get('mcptoolargs').json
+            logger.info("Full request: %s, Received code from request: %s, Type of object: %s", invoc_request, code_json, type(code_json))
+            code = json.dumps(code_json)
+            logger.info("Parsed code from request: %s", code)
+            call_result = kernel_handler.run_code(code)
+            logger.info("Execution completed successfully! Result: %s", call_result)
 
             # Use local thread storage to store the invocation ID
             # for a customer's threads
-            fi_context.thread_local_storage.invocation_id = invocation_id
-            if fi.requires_context:
-                args['context'] = fi_context
+            # fi_context.thread_local_storage.invocation_id = invocation_id
+            # if fi.requires_context:
+            #     args['context'] = fi_context
 
-            if fi.output_types:
-                for name in fi.output_types:
-                    args[name] = bindings.Out()
+            # if fi.output_types:
+            #     for name in fi.output_types:
+            #         args[name] = bindings.Out()
 
-            if fi.is_async:
-                if self._azure_monitor_available or self._otel_libs_available:
-                    self.configure_opentelemetry(fi_context)
+            # if fi.is_async:
+            #     if self._azure_monitor_available or self._otel_libs_available:
+            #         self.configure_opentelemetry(fi_context)
 
-                call_result = \
-                    await self._run_async_func(fi_context, fi.func, args)
-            else:
-                call_result = await self._loop.run_in_executor(
-                    self._sync_call_tp,
-                    self._run_sync_func,
-                    invocation_id, fi_context, fi.func, args)
+            #     call_result = \
+            #         await self._run_async_func(fi_context, fi.func, args)
+            # else:
+            #     call_result = await self._loop.run_in_executor(
+            #         self._sync_call_tp,
+            #         self._run_sync_func,
+            #         invocation_id, fi_context, fi.func, args)
 
-            if call_result is not None and not fi.has_return:
-                raise RuntimeError(
-                    f'function {fi.name!r} without a $return binding'
-                    'returned a non-None value')
+            # if call_result is not None and not fi.has_return:
+            #     raise RuntimeError(
+            #         f'function {fi.name!r} without a $return binding'
+            #         'returned a non-None value')
 
-            if http_v2_enabled:
-                http_coordinator.set_http_response(invocation_id, call_result)
+            # if http_v2_enabled:
+            #     http_coordinator.set_http_response(invocation_id, call_result)
 
             output_data = []
             cache_enabled = self._function_data_cache_enabled

@@ -2,3 +2,7 @@ variables:
   - template: /ci/variables/build.yml@eng
   - template: /ci/variables/cfs.yml@eng
   - group: python-integration-resources
+  - name: prodV4Path
+    value: 'python/prodV4/worker.py'
+  - name: proxyV4Path
+    value: 'python/proxyV4/worker.py'

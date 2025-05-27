@@ -133,8 +133,9 @@ jobs:
           $PY_VER = "$(PYTHON_VERSION)"
           Write-Host "Python version: $PY_VER"
           # Extract minor version as integers
-          $PY_MINO = "${PY_VER#*.}"
-          Write-Host "Branch: PY_MINOR"
+          $versionParts = $PY_VER.Split('.')
+          $PY_MINOR = [int]$versionParts[1]
+          Write-Host "Minor version: $PY_MINOR"
 
           if($branch.StartsWith("refs/heads/sdk/") -or $pipelineVarSet -eq "true" -or $PY_MINOR -ge 13 )
           {
@@ -148,7 +149,6 @@ jobs:
       - powershell: |
           Write-Host "skipTest: $(skipTest)"
         displayName: 'Display skipTest variable'
-        condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
       - bash: |
              python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
         env:

@@ -8,25 +8,18 @@ jobs:
     matrix:
       Python37V4:
         pythonVersion: '3.7'
-        workerPath: 'python/prodV4/worker.py'
       Python38V4:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV4/worker.py'
       Python39V4:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV4/worker.py'
       Python310V4:
         pythonVersion: '3.10'
-        workerPath: 'python/prodV4/worker.py'
       Python311V4:
         pythonVersion: '3.11'
-        workerPath: 'python/prodV4/worker.py'
       Python312V4:
         pythonVersion: '3.12'
-        workerPath: 'python/prodV4/worker.py'
       Python313V4:
         pythonVersion: '3.13'
-        workerPath: 'python/proxyV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -34,10 +27,9 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_WINDOWS_X64"
   steps:
-  - template: ../../../../pack/templates/win_env_gen.yml
+  - template: ../../../pack/templates/win_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
-      workerPath: '$(workerPath)'
       architecture: 'x64'
       artifactName: '$(pythonVersion)_WINDOWS_X64'
 - job: Build_WINDOWS_X86
@@ -49,25 +41,18 @@ jobs:
     matrix:
       Python37V4:
         pythonVersion: '3.7'
-        workerPath: 'python/prodV4/worker.py'
       Python38V4:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV4/worker.py'
       Python39V4:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV4/worker.py'
       Python310V4:
         pythonVersion: '3.10'
-        workerPath: 'python/prodV4/worker.py'
       Python311V4:
         pythonVersion: '3.11'
-        workerPath: 'python/prodV4/worker.py'
       Python312V4:
         pythonVersion: '3.12'
-        workerPath: 'python/prodV4/worker.py'
       Python313V4:
         pythonVersion: '3.13'
-        workerPath: 'python/proxyV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -75,10 +60,9 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_WINDOWS_X86"
   steps:
-  - template: ../../../../pack/templates/win_env_gen.yml
+  - template: ../../../pack/templates/win_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
-      workerPath: '$(workerPath)'
       architecture: 'x86'
       artifactName: '$(pythonVersion)_WINDOWS_x86'
 - job: Build_LINUX_X64
@@ -90,25 +74,18 @@ jobs:
     matrix:
       Python37V4:
         pythonVersion: '3.7'
-        workerPath: 'python/prodV4/worker.py'
       Python38V4:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV4/worker.py'
       Python39V4:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV4/worker.py'
       Python310V4:
         pythonVersion: '3.10'
-        workerPath: 'python/prodV4/worker.py'
       Python311V4:
         pythonVersion: '3.11'
-        workerPath: 'python/prodV4/worker.py'
       Python312V4:
         pythonVersion: '3.12'
-        workerPath: 'python/prodV4/worker.py'
       Python313V4:
         pythonVersion: '3.13'
-        workerPath: 'python/proxyV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -116,10 +93,9 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_LINUX_X64"
   steps:
-  - template: ../../../../pack/templates/nix_env_gen.yml
+  - template: ../../../pack/templates/nix_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
-      workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_LINUX_X64'
 - job: Build_OSX_X64
   pool:
@@ -130,25 +106,18 @@ jobs:
     matrix:
       Python37V4:
         pythonVersion: '3.7'
-        workerPath: 'python/prodV4/worker.py'
       Python38V4:
         pythonVersion: '3.8'
-        workerPath: 'python/prodV4/worker.py'
       Python39V4:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV4/worker.py'
       Python310V4:
         pythonVersion: '3.10'
-        workerPath: 'python/prodV4/worker.py'
       Python311V4:
         pythonVersion: '3.11'
-        workerPath: 'python/prodV4/worker.py'
       Python312V4:
         pythonVersion: '3.12'
-        workerPath: 'python/prodV4/worker.py'
       Python313V4:
         pythonVersion: '3.13'
-        workerPath: 'python/proxyV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -156,10 +125,9 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_OSX_X64"
   steps:
-  - template: ../../../../pack/templates/nix_env_gen.yml
+  - template: ../../../pack/templates/nix_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
-      workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_OSX_X64'
 - job: Build_OSX_ARM64
   pool:
@@ -170,34 +138,56 @@ jobs:
     matrix:
       Python39V4:
         pythonVersion: '3.9'
-        workerPath: 'python/prodV4/worker.py'
       Python310V4:
         pythonVersion: '3.10'
-        workerPath: 'python/prodV4/worker.py'
       Python311V4:
         pythonVersion: '3.11'
-        workerPath: 'python/prodV4/worker.py'
       Python312V4:
         pythonVersion: '3.12'
-        workerPath: 'python/prodV4/worker.py'
       Python313V4:
         pythonVersion: '3.13'
-        workerPath: 'python/proxyV4/worker.py'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
         targetPath: $(Build.ArtifactStagingDirectory)
-        artifactName: "$(pythonVersion)_OSX_ARM4"
+        artifactName: "$(pythonVersion)_OSX_ARM64"
   steps:
-  - template: ../../../../pack/templates/macos_64_env_gen.yml
+  - template: ../../../pack/templates/macos_64_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
-      workerPath: '$(workerPath)'
       artifactName: '$(pythonVersion)_OSX_ARM64'
+- job: Build_LINUX_ARM64
+  pool:
+    name: Azure Pipelines
+    image: macOS-latest
+    os: macOS
+  strategy:
+    matrix:
+      Python39V4:
+        pythonVersion: '3.9'
+      Python310V4:
+        pythonVersion: '3.10'
+      Python311V4:
+        pythonVersion: '3.11'
+      Python312V4:
+        pythonVersion: '3.12'
+      Python313V4:
+        pythonVersion: '3.13'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(pythonVersion)_LINUX_ARM64"
+  steps:
+  - template: ../../../pack/templates/nix_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(pythonVersion)_LINUX_ARM64'
 
 - job: PackageWorkers
-  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64']
+  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
   templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:
@@ -212,19 +202,19 @@ jobs:
       if [[ $BUILD_SOURCEBRANCHNAME = 4\.* ]]
       then
         echo "Generating V4 Release Package for $BUILD_SOURCEBRANCHNAME"
-        NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+        NUSPEC="eng\pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
         WKVERSION="$BUILD_SOURCEBRANCHNAME"
       elif [[ $BUILD_SOURCEBRANCHNAME = dev ]]
       then
         echo "Generating V4 Integration Test Package for $BUILD_SOURCEBRANCHNAME"
         VERSION=$(cat azure_functions_worker/version.py | tail -1 | cut -d' ' -f3 | sed  "s/'//g")
-        NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+        NUSPEC="eng\pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
         WKVERSION="$VERSION-$(Build.BuildNumber)"
       else
         # this is only to test nuget related workflow because we are setting nuspec here
         echo "Generating Integration Test Package for $BUILD_SOURCEBRANCHNAME for testing purpose"
         LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
-        NUSPEC="pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
+        NUSPEC="eng\pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
         # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
         WKVERSION="3.$LATEST_TAG-$(BUILD_BUILDID)-TEST"
         echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"

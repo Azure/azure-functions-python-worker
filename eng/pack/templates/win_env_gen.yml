@@ -1,7 +1,6 @@
 parameters:
   pythonVersion: ''
   artifactName: ''
-  workerPath: ''
 
 steps:
 - task: UsePythonVersion@0
@@ -9,16 +8,36 @@ steps:
     versionSpec: ${{ parameters.pythonVersion }}
     architecture: ${{ parameters.architecture }}
     addToPath: true
-- bash: |
-    major=$(echo $(pythonVersion) | cut -d. -f1)
-    minor=$(echo $(pythonVersion) | cut -d. -f2)
-    echo "##vso[task.setvariable variable=pythonMajor]$major"
-    echo "##vso[task.setvariable variable=pythonMinor]$minor"
-    echo $pythonMinor
-  displayName: 'Parse pythonVersion'
+- powershell: |
+    # Parse the Python minor version
+    $PY_VER = "$(pythonVersion)"
+    Write-Host "Python version: $PY_VER"
+    # Extract minor version as integers
+    $versionParts = $PY_VER.Split('.')
+    $PY_MINOR = [int]$versionParts[1]
+    Write-Host "Minor version: $PY_MINOR"
+
+    # Set build-related variables based on Python minor version
+    if( $PY_MINOR -ge 13 )
+    {
+      Write-Host "##vso[task.setvariable variable=workerPath;]$(proxyV4Path)"
+      Write-Host "##vso[task.setvariable variable=proxyWorker;]true"
+    }
+    else
+    {
+      Write-Host "##vso[task.setvariable variable=workerPath;]$(prodV4Path)"
+      Write-Host "##vso[task.setvariable variable=proxyWorker;]false"
+    }
+  displayName: 'Set necessary variables'
+  env:
+    pythonVersion: ${{ parameters.pythonVersion }}
+- powershell: |
+    Write-Host "workerPath: $(workerPath)"
+    Write-Host "proxyWorker: $(proxyWorker)"
+  displayName: 'Display variables'
 - task: PowerShell@2
   inputs:
-    filePath: 'pack\scripts\win_deps.ps1'
+    filePath: 'eng\pack\scripts\win_deps.ps1'
     arguments: '${{ parameters.pythonVersion }}'
 - bash: |
     pip install pip-audit
@@ -27,8 +46,7 @@ steps:
   condition: ne(variables['pythonVersion'], '3.7')
 - task: CopyFiles@2
   inputs:
-    contents: |
-      ${{ parameters.workerPath }}
+    contents: '$(workerPath)'
     targetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
 - task: CopyFiles@2
@@ -40,7 +58,7 @@ steps:
       !grpcio_tools*\*
       !build\**
       !docs\**
-      !pack\**
+      !eng\**
       !python\**
       !tests\**
       !setuptools*\**
@@ -51,7 +69,7 @@ steps:
       !werkzeug\debug\shared\debugger.js
       !proxy_worker\**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
-  condition: in(variables['pythonMinor'], '7', '8', '9', '10', '11', '12')
+  condition: eq(variables['proxyWorker'], false)
   displayName: 'Copy azure_functions_worker files'
 - task: CopyFiles@2
   inputs:
@@ -62,7 +80,7 @@ steps:
       !grpcio_tools*\*
       !build\**
       !docs\**
-      !pack\**
+      !eng\**
       !python\**
       !tests\**
       !setuptools*\**
@@ -74,5 +92,5 @@ steps:
       !dateutil\**
       !azure_functions_worker\**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
-  condition: in(variables['pythonMinor'], '13')
+  condition: eq(variables['proxyWorker'], true)
   displayName: 'Copy proxy_worker files'

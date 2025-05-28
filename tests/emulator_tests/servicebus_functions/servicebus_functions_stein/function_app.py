@@ -9,7 +9,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 @app.service_bus_queue_output(
     arg_name="msg",
     connection="AzureWebJobsServiceBusConnectionString",
-    queue_name="testqueue")
+    queue_name="queue.1")
 def put_message(req: func.HttpRequest, msg: func.Out[str]):
     msg.set(req.get_body().decode('utf-8'))
     return 'OK'
@@ -28,7 +28,7 @@ def get_servicebus_triggered(req: func.HttpRequest,
 @app.service_bus_queue_trigger(
     arg_name="msg",
     connection="AzureWebJobsServiceBusConnectionString",
-    queue_name="testqueue")
+    queue_name="queue.1")
 @app.blob_output(arg_name="$return",
                  path="python-worker-tests/test-servicebus-triggered.txt",
                  connection="AzureWebJobsStorage")
@@ -76,7 +76,7 @@ def servicebus_trigger(msg: func.ServiceBusMessage) -> str:
 @app.route(route="put_message_topic")
 @app.service_bus_topic_output(arg_name="msg",
                               connection="AzureWebJobsServiceBusConnectionString",
-                              topic_name="testtopic")
+                              topic_name="topic.1")
 def put_message_topic(req: func.HttpRequest, msg: func.Out[str]):
     msg.set(req.get_body().decode('utf-8'))
     return 'OK'
@@ -93,9 +93,9 @@ def get_servicebus_triggered_topic(req: func.HttpRequest,
 
 
 @app.service_bus_topic_trigger(arg_name="msg", 
-                               topic_name="testtopic", 
+                               topic_name="topic.1", 
                                connection="AzureWebJobsServiceBusConnectionString", 
-                               subscription_name="testsub")
+                               subscription_name="subscription.1")
 @app.blob_output(arg_name="$return",
                  path="python-worker-tests/test-servicebus-triggered-topic.txt",
                  connection="AzureWebJobsStorage")

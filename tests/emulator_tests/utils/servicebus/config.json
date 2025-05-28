@@ -1,27 +1,28 @@
 {
-    "UserConfig": {
-     "Namespaces": [
-       {
-         "Name": "sbemulatorns",
-         "Queues": [
-           {
-             "Name": "testqueue",
-             "Properties": {
-               "DeadLetteringOnMessageExpiration": false,
-               "DefaultMessageTimeToLive": "PT1H",
-               "DuplicateDetectionHistoryTimeWindow": "PT20S",
-               "ForwardDeadLetteredMessagesTo": "",
-               "ForwardTo": "",
-               "LockDuration": "PT1M",
-               "MaxDeliveryCount": 10,
-               "RequiresDuplicateDetection": false,
-               "RequiresSession": false
-             }
-           }
-         ],
-         "Topics": [
+  "UserConfig": {
+    "Namespaces": [
+      {
+        "Name": "sbemulatorns",
+        "Queues": [
           {
-            "Name": "testtopic",
+            "Name": "queue.1",
+            "Properties": {
+              "DeadLetteringOnMessageExpiration": false,
+              "DefaultMessageTimeToLive": "PT1H",
+              "DuplicateDetectionHistoryTimeWindow": "PT20S",
+              "ForwardDeadLetteredMessagesTo": "",
+              "ForwardTo": "",
+              "LockDuration": "PT1M",
+              "MaxDeliveryCount": 3,
+              "RequiresDuplicateDetection": false,
+              "RequiresSession": false
+            }
+          }
+        ],
+ 
+        "Topics": [
+          {
+            "Name": "topic.1",
             "Properties": {
               "DefaultMessageTimeToLive": "PT1H",
               "DuplicateDetectionHistoryTimeWindow": "PT20S",
@@ -29,7 +30,7 @@
             },
             "Subscriptions": [
               {
-                "Name": "testsub",
+                "Name": "subscription.1",
                 "Properties": {
                   "DeadLetteringOnMessageExpiration": false,
                   "DefaultMessageTimeToLive": "PT1H",
@@ -53,20 +54,81 @@
                      "ReplyToSessionId": "sessionId",
                      "SessionId": "session1",
                      "To": "xyz"
-                   }}}
+                   }
+                    }
+                  }
+                ]
+              },
+              {
+                "Name": "subscription.2",
+                "Properties": {
+                  "DeadLetteringOnMessageExpiration": false,
+                  "DefaultMessageTimeToLive": "PT1H",
+                  "LockDuration": "PT1M",
+                  "MaxDeliveryCount": 3,
+                  "ForwardDeadLetteredMessagesTo": "",
+                  "ForwardTo": "",
+                  "RequiresSession": false
+                },
+                "Rules": [
+                  {
+                    "Name": "user-prop-filter-1",
+                    "Properties": {
+                      "FilterType": "Correlation",
+                      "CorrelationFilter": {
+                        "Properties": {
+                          "prop1": "value1"
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "Name": "subscription.3",
+                "Properties": {
+                  "DeadLetteringOnMessageExpiration": false,
+                  "DefaultMessageTimeToLive": "PT1H",
+                  "LockDuration": "PT1M",
+                  "MaxDeliveryCount": 3,
+                  "ForwardDeadLetteredMessagesTo": "",
+                  "ForwardTo": "",
+                  "RequiresSession": false
+                }
+              },
+              {
+                "Name": "subscription.4",
+                "Properties": {
+                  "DeadLetteringOnMessageExpiration": false,
+                  "DefaultMessageTimeToLive": "PT1H",
+                  "LockDuration": "PT1M",
+                  "MaxDeliveryCount": 3,
+                  "ForwardDeadLetteredMessagesTo": "",
+                  "ForwardTo": "",
+                  "RequiresSession": false
+                },
+                "Rules": [
+                  {
+                    "Name": "sql-filter-1",
+                    "Properties": {
+                      "FilterType": "Sql",
+                      "SqlFilter": {
+                        "SqlExpression": "sys.MessageId = '123456' AND userProp1 = 'value1'"
+                      },
+                      "Action" : {
+                        "SqlExpression": "SET sys.To = 'Entity'"
+                      }
+                    }
+                  }
                 ]
               }
             ]
           }
-         ]
-
-
-
-         
-       }
-     ],
-     "Logging": {
-       "Type": "File"
-     }
+        ]
+      }
+    ],
+    "Logging": {
+      "Type": "File"
+    }
   }
-}
+ }

@@ -1,0 +1,103 @@
+parameters:
+  pythonVersion: ''
+  artifactName: ''
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: ${{ parameters.pythonVersion }}
+    addToPath: true
+- powershell: |
+    # Parse the Python minor version
+    $PY_VER = "$(pythonVersion)"
+    Write-Host "Python version: $PY_VER"
+    # Extract minor version as integers
+    $versionParts = $PY_VER.Split('.')
+    $PY_MINOR = [int]$versionParts[1]
+    Write-Host "Minor version: $PY_MINOR"
+
+    # Set build-related variables based on Python minor version
+    if( $PY_MINOR -ge 13 )
+    {
+      Write-Host "##vso[task.setvariable variable=workerPath;]$(proxyV4Path)"
+      Write-Host "##vso[task.setvariable variable=proxyWorker;]true"
+    }
+    else
+    {
+      Write-Host "##vso[task.setvariable variable=workerPath;]$(prodV4Path)"
+      Write-Host "##vso[task.setvariable variable=proxyWorker;]false"
+    }
+  displayName: 'Set necessary variables'
+  env:
+    pythonVersion: ${{ parameters.pythonVersion }}
+- powershell: |
+    Write-Host "workerPath: $(workerPath)"
+    Write-Host "proxyWorker: $(proxyWorker)"
+  displayName: 'Display variables'
+- script: |
+    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  displayName: 'Docker login to avoid rate limits'
+  env:
+    DOCKER_USERNAME: $(DOCKER_USERNAME)
+    DOCKER_PASSWORD: $(DOCKER_PASSWORD)
+- task: ShellScript@2
+  inputs:
+    disableAutoCwd: true
+    scriptPath: 'eng/pack/scripts/nix_arm64_deps.sh'
+    args: '${{ parameters.pythonVersion }}'
+  displayName: 'Install Dependencies'
+- bash: |
+    pip install pip-audit
+    pip-audit -r requirements.txt
+  displayName: 'Run vulnerability scan'
+  condition: ne(variables['pythonVersion'], '3.7')
+- task: CopyFiles@2
+  inputs:
+    contents: '$(workerPath)'
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+    flattenFolders: true
+- task: CopyFiles@2
+  inputs:
+    sourceFolder: '$(Build.SourcesDirectory)/deps'
+    contents: |
+      **
+      !grpc_tools/**/*
+      !grpcio_tools*/*
+      !build/**
+      !docs/**
+      !eng/**
+      !python/**
+      !tests/**
+      !setuptools*/**
+      !_distutils_hack/**
+      !distutils-precedence.pth
+      !pkg_resources/**
+      !*.dist-info/**
+      !werkzeug/debug/shared/debugger.js
+      !proxy_worker/**
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+  condition: eq(variables['proxyWorker'], false)
+  displayName: 'Copy azure_functions_worker files'
+- task: CopyFiles@2
+  inputs:
+    sourceFolder: '$(Build.SourcesDirectory)/deps'
+    contents: |
+      **
+      !grpc_tools/**/*
+      !grpcio_tools*/*
+      !build/**
+      !docs/**
+      !eng/**
+      !python/**
+      !tests/**
+      !setuptools*/**
+      !_distutils_hack/**
+      !distutils-precedence.pth
+      !pkg_resources/**
+      !*.dist-info/**
+      !werkzeug/debug/shared/debugger.js
+      !dateutil/**
+      !azure_functions_worker/**
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+  condition: eq(variables['proxyWorker'], true)
+  displayName: 'Copy proxy_worker files'

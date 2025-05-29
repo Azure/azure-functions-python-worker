@@ -22,7 +22,6 @@ PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 
 BINDING_REGISTRY = None
 DEFERRED_BINDING_REGISTRY = None
-deferred_bindings_cache = {}
 
 
 def _check_http_input_type_annotation(bind_name: str, pytype: type,
@@ -285,48 +284,8 @@ def deferred_bindings_decode(binding: typing.Any,
                              datum: typing.Any,
                              metadata: typing.Any,
                              function_name: str):
-    """
-    This cache holds deferred binding types (ie. BlobClient, ContainerClient)
-    That have already been created, so that the worker can reuse the
-    Previously created type without creating a new one.
 
-    For async types, the function_name is needed as a key to differentiate.
-    This prevents a known SDK issue where reusing a client across functions
-    can lose the session context and cause an error.
-
-    The cache key is based on: param name, type, resource, function_name
-
-    If cache is empty or key doesn't exist, deferred_binding_type is None
-    """
-    global deferred_bindings_cache
-
-    # Only applies to Event Hub and Service Bus - cannot cache
-    # These types will always produce different content and are not clients
-    if (datum.type == "collection_model_binding_data"
-            or datum.value.source == "AzureEventHubsEventData"
-            or datum.value.source == "AzureServiceBusReceivedMessage"):
-        return binding.decode(datum,
-                              trigger_metadata=metadata,
-                              pytype=pytype)
-
-    if deferred_bindings_cache.get((pb.name,
-                                    pytype,
-                                    datum.value.content,
-                                    function_name), None) is not None:
-        return deferred_bindings_cache.get((pb.name,
-                                            pytype,
-                                            datum.value.content,
-                                            function_name))
-    else:
-        deferred_binding_type = binding.decode(datum,
-                                               trigger_metadata=metadata,
-                                               pytype=pytype)
-
-        deferred_bindings_cache[(pb.name,
-                                 pytype,
-                                 datum.value.content,
-                                 function_name)] = deferred_binding_type
-        return deferred_binding_type
+    return binding.decode(datum, trigger_metadata=metadata, pytype=pytype)
 
 
 def check_deferred_bindings_enabled(param_anno: type,

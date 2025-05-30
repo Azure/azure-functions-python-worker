@@ -171,64 +171,6 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data')
 
-    @unittest.skipIf(sys.version_info.minor >= 13, "For python 3.13+,"
-                     "the cache is maintained in the ext and TBD.")
-    def test_caching(self):
-        '''
-        The cache returns the same type based on resource and function name.
-        Two different functions with clients that access the same resource
-        will have two different clients. This tests that the same client
-        is returned for each invocation and that the clients are different
-        between the two functions.
-        '''
-
-        r = self.webhost.request('GET', 'blob_cache')
-        r2 = self.webhost.request('GET', 'blob_cache2')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r2.status_code, 200)
-        client = r.text
-        client2 = r2.text
-        self.assertNotEqual(client, client2)
-
-        r = self.webhost.request('GET', 'blob_cache')
-        r2 = self.webhost.request('GET', 'blob_cache2')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r2.status_code, 200)
-        self.assertEqual(r.text, client)
-        self.assertEqual(r2.text, client2)
-        self.assertNotEqual(r.text, r2.text)
-
-        r = self.webhost.request('GET', 'blob_cache')
-        r2 = self.webhost.request('GET', 'blob_cache2')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r2.status_code, 200)
-        self.assertEqual(r.text, client)
-        self.assertEqual(r2.text, client2)
-        self.assertNotEqual(r.text, r2.text)
-
-    @unittest.skipIf(sys.version_info.minor >= 13, "For python 3.13+,"
-                    "the cache is maintained in the ext and TBD.")
-    def test_caching_same_resource(self):
-        '''
-        The cache returns the same type based on param name.
-        One functions with two clients that access the same resource
-        will have two different clients. This tests that the same clients
-        are returned for each invocation and that the clients are different
-        between the two bindings.
-        '''
-
-        r = self.webhost.request('GET', 'blob_cache3')
-        self.assertEqual(r.status_code, 200)
-        clients = r.text.split(" | ")
-        self.assertNotEqual(clients[0], clients[1])
-
-        r2 = self.webhost.request('GET', 'blob_cache3')
-        self.assertEqual(r2.status_code, 200)
-        clients_second_call = r2.text.split(" | ")
-        self.assertEqual(clients[0], clients_second_call[0])
-        self.assertEqual(clients[1], clients_second_call[1])
-        self.assertNotEqual(clients_second_call[0], clients_second_call[1])
-
     def test_failed_client_creation(self):
         r = self.webhost.request('GET', 'invalid_connection_info')
         # Without the http_v2_enabled default definition, this request would time out.

@@ -22,7 +22,10 @@ class JsonResponse(Generic[T], func.HttpResponse):
         status_code: int = 200,
         headers: Optional[Mapping[str, str]] = None,
     ):
-        super().__init__(json.dumps(body), status_code=status_code, headers=headers, charset="utf-8")
+        super().__init__(json.dumps(body),
+                         status_code=status_code,
+                         headers=headers,
+                         charset="utf-8")
 
 
 @app.function_name(name="default_template")

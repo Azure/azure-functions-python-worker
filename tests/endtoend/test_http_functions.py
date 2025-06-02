@@ -129,7 +129,7 @@ class TestHttpFunctionsStein(TestHttpFunctions):
             {'status': 'healthy'}
         )
         self.assertTrue(r.ok)
-    
+
     @testutils.retryable_test(3, 5)
     def test_return_custom_class_with_query_param(self):
         """Test if query is accepted

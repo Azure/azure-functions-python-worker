@@ -165,10 +165,11 @@ def get_origin(tp):
         return tp.__origin__ if tp.__origin__ is not ClassVar else None
     if tp is Generic:
         return Generic
-    if (isinstance(tp, type) and issubclass(tp, Generic)
-                or ((isinstance(tp, _GenericAlias) or isinstance(tp, _SpecialGenericAlias))  # NoQA E501
-                and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable))):  # NoQA E501
-        return Generic
+    if NEW_39_TYPING:
+        if (isinstance(tp, type) and issubclass(tp, Generic)
+                    or ((isinstance(tp, _GenericAlias) or isinstance(tp, _SpecialGenericAlias))  # NoQA E501
+                    and tp.__origin__ not in (Union, tuple, ClassVar, collections.abc.Callable))):  # NoQA E501
+            return Generic
     return None
 
 

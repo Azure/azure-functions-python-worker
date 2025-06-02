@@ -132,8 +132,7 @@ class TestHttpFunctionsStein(TestHttpFunctions):
     
     @testutils.retryable_test(3, 5)
     def test_return_custom_class_with_query_param(self):
-        """Test if the azure.functions SDK is able to deserialize query
-        parameter from the default template
+        """Test if query is accepted
         """
         r = self.webhost.request('GET', 'custom_response',
                                  params={'name': 'query'},

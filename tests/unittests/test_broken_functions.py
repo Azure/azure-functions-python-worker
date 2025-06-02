@@ -67,8 +67,7 @@ class TestMockHost(testutils.AsyncTestCase):
 
             self.assertRegex(
                 r.response.result.exception.message,
-                r'.*cannot load the bad_out_annotation function'
-                r'.*binding foo has invalid Out annotation.*')
+                'binding foo is declared to have the \"out\" direction, but its annotation in Python is not a subclass of azure.functions.Out')
 
     async def test_load_broken__wrong_binding_dir(self):
         async with testutils.start_mockhost(

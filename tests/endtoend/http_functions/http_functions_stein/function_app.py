@@ -23,7 +23,6 @@ class JsonResponse(Generic[T], func.HttpResponse):
         status_code: int = 200,
         headers: Optional[Mapping[str, str]] = None,
     ):
-        headers = (headers or {}) | {"Content-Type": "application/json"}
         super().__init__(json.dumps(body), status_code=status_code, headers=headers, charset="utf-8")
 
 @app.route(route="default_template")

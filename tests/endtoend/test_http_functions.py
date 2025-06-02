@@ -118,8 +118,34 @@ class TestHttpFunctionsStein(TestHttpFunctions):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'http_functions_stein'
 
+    @testutils.retryable_test(3, 5)
+    def test_return_custom_class(self):
+        """Test if returning a custom class returns OK
+        """
+        r = self.webhost.request('GET', 'custom_response',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+        self.assertEqual(
+            r.content,
+            {'status': 'healthy'}
+        )
+        self.assertTrue(r.ok)
+    
+    @testutils.retryable_test(3, 5)
+    def test_return_custom_class_with_query_param(self):
+        """Test if the azure.functions SDK is able to deserialize query
+        parameter from the default template
+        """
+        r = self.webhost.request('GET', 'custom_response',
+                                 params={'name': 'query'},
+                                 timeout=REQUEST_TIMEOUT_SEC)
+        self.assertTrue(r.ok)
+        self.assertEqual(
+            r.content,
+            {'name': 'query'}
+        )
 
-class TestHttpFunctionsSteinGeneric(TestHttpFunctions):
+
+class TestHttpFunctionsSteinGeneric(TestHttpFunctionsStein):
 
     @classmethod
     def get_script_dir(cls):

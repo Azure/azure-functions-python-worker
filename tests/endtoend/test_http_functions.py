@@ -126,7 +126,7 @@ class TestHttpFunctionsStein(TestHttpFunctions):
                                  timeout=REQUEST_TIMEOUT_SEC)
         self.assertEqual(
             r.content,
-            {'status': 'healthy'}
+            b'{"status": "healthy"}'
         )
         self.assertTrue(r.ok)
 
@@ -140,7 +140,7 @@ class TestHttpFunctionsStein(TestHttpFunctions):
         self.assertTrue(r.ok)
         self.assertEqual(
             r.content,
-            {'name': 'query'}
+            b'{"name": "query"}'
         )
 
 

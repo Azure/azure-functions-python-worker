@@ -79,12 +79,12 @@ dev = [
     "numpy",
     "pre-commit",
     "invoke",
-    "cryptography"
+    "cryptography",
+    "orjson"
 ]
 test-http-v2 = [
     "azurefunctions-extensions-http-fastapi==1.0.0",
-    "ujson",
-    "orjson"
+    "ujson"
 ]
 test-deferred-bindings = [
     "azurefunctions-extensions-bindings-blob==1.0.0",

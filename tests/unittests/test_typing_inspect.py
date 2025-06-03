@@ -3,7 +3,6 @@
 # Imported from https://github.com/ilevkivskyi/typing_inspect/blob/168fa6f7c5c55f720ce6282727211cf4cf6368f6/test_typing_inspect.py
 # Author: Ivan Levkivskyi
 # License: MIT
-import sys
 
 from typing import (
     Any,

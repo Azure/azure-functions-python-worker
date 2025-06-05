@@ -45,7 +45,7 @@ def main():
     from .utils.dependency import DependencyManager
     DependencyManager.initialize()
     DependencyManager.use_worker_dependencies()
-    
+
     import asyncio
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 

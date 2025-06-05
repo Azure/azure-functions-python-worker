@@ -3,6 +3,7 @@
 """Main entrypoint."""
 
 import argparse
+import uvloop
 
 
 def parse_args():
@@ -45,8 +46,6 @@ def main():
     DependencyManager.initialize()
     DependencyManager.use_worker_dependencies()
 
-    import asyncio
-
     from . import logging
     from .logging import error_logger, format_exception, logger
 
@@ -58,6 +57,9 @@ def main():
                 args.worker_id, args.request_id, args.host, args.port)
 
     try:
+        import asyncio
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+        logger.debug('Using event loop: %s', type(asyncio.get_event_loop()))
         return asyncio.run(start_async(
             args.host, args.port, args.worker_id, args.request_id))
     except Exception as ex:

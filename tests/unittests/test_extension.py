@@ -748,7 +748,7 @@ class TestExtension(unittest.TestCase):
         info_mock.assert_called_once_with(
             'Python Worker Extension Manager is loading %s, '
             'current registered extensions: %s', 'HttpTrigger',
-            '{"FuncExtension": {"HttpTrigger": ["NewFuncExtension"]}}'
+            '{"FuncExtension":{"HttpTrigger":["NewFuncExtension"]}}'
         )
 
     @patch('azure_functions_worker.extension.logger.info')
@@ -764,7 +764,7 @@ class TestExtension(unittest.TestCase):
         info_mock.assert_called_once_with(
             'Python Worker Extension Manager is loading %s, current '
             'registered extensions: %s',
-            'HttpTrigger', '{"AppExtension": ["NewAppExtension"]}'
+            'HttpTrigger', '{"AppExtension":["NewAppExtension"]}'
         )
 
     @patch('azure_functions_worker.extension.logger.warning')

@@ -80,8 +80,7 @@ dev = [
     "pre-commit",
     "invoke",
     "cryptography",
-    "orjson",
-    "uvloop"
+    "orjson"
 ]
 test-http-v2 = [
     "azurefunctions-extensions-http-fastapi==1.0.0",

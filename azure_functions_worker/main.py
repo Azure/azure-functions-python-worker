@@ -47,7 +47,7 @@ def main():
     DependencyManager.use_worker_dependencies()
 
     import asyncio
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    # asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
     from . import logging
     from .logging import error_logger, format_exception, logger

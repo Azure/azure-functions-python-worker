@@ -3,7 +3,6 @@
 """Main entrypoint."""
 
 import argparse
-import uvloop
 
 
 def parse_args():

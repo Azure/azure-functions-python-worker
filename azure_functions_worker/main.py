@@ -3,7 +3,6 @@
 """Main entrypoint."""
 
 import argparse
-import uvloop
 import sys
 
 
@@ -49,6 +48,7 @@ def main():
 
     import asyncio
     if sys.platform != 'win32':
+        import uvloop
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
     from . import logging

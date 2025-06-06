@@ -48,8 +48,11 @@ def main():
 
     import asyncio
     if sys.platform != 'win32':
-        import uvloop
-        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+        try:
+            import uvloop
+            asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+        except ImportError:
+            pass
 
     from . import logging
     from .logging import error_logger, format_exception, logger

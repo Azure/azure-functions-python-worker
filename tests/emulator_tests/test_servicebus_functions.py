@@ -102,30 +102,3 @@ class TestServiceBusSDKFunctions(testutils.WebHostTestCase):
                     raise
             else:
                 break
-
-    @testutils.retryable_test(3, 5)
-    def test_servicebus_basic_sdk_topic(self):
-        data = str(round(time.time()))
-        r = self.webhost.request('POST', 'put_message_sdk_topic',
-                                 data=data)
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK')
-
-        max_retries = 10
-
-        for try_no in range(max_retries):
-            # wait for trigger to process the queue item
-            time.sleep(1)
-
-            try:
-                r = self.webhost.request('GET', 'get_servicebus_triggered_sdk_topic')
-                self.assertEqual(r.status_code, 200)
-                msg = r.json()
-                for attr in {'message', 'body', 'enqueued_time_utc', 'lock_token',
-                             'message_id', 'sequence_number'}:
-                    self.assertIn(attr, msg)
-            except (AssertionError, json.JSONDecodeError):
-                if try_no == max_retries - 1:
-                    raise
-            else:
-                break

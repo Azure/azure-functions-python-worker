@@ -1,12 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import json
-import sys
 import time
-from datetime import datetime
-from unittest.case import skipIf
 
-from dateutil import parser
 from tests.utils import testutils
 
 class TestServiceBusBatchFunctionsStein(testutils.WebHostTestCase):

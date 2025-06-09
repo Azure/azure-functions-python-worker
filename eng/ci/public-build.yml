@@ -2,18 +2,17 @@ trigger:
   batch: true
   branches:
     include:
-    - 1.x
-
+    - dev
 pr:
   branches:
     include:
-    - 1.x
+    - dev
 schedules:
 - cron: '0 0 * * MON'
   displayName: At 12:00 AM, only on Monday
   branches:
     include:
-      - 1.x
+      - dev
   always: true
 
 resources:

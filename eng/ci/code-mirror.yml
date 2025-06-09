@@ -1,7 +1,7 @@
 trigger:
   branches:
     include:
-      - 1.x
+      - dev
       - runtime-release/*
 
 resources:

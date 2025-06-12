@@ -1,43 +1,22 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from typing import Any
 from unittest.mock import patch
 
 import azure_functions_worker_v2.handle_event as handle_event
+import tests.protos as test_protos
+
 from azure_functions_worker_v2.handle_event import (worker_init_request,
                                                     functions_metadata_request,
                                                     function_environment_reload_request)
 from tests.utils import testutils
 from tests.utils.constants import UNIT_TESTS_FOLDER
+from tests.utils.mock_classes import FunctionRequest, Request, WorkerRequest
 
-import tests.protos as test_protos
 
 BASIC_FUNCTION_DIRECTORY = UNIT_TESTS_FOLDER / "basic_function"
 STREAMING_FUNCTION_DIRECTORY = UNIT_TESTS_FOLDER / "streaming_function"
 INDEXING_EXCEPTION_FUNCTION_DIRECTORY = (UNIT_TESTS_FOLDER
                                          / "indexing_exception_function")
-
-
-# This represents the top level protos request sent from the host
-class WorkerRequest:
-    def __init__(self, name: str, request: Any, properties: dict):
-        self.name = name
-        self.request = request
-        self.properties = properties
-
-
-# This represents the inner request
-class Request:
-    def __init__(self, name: Any):
-        self.worker_init_request = name
-        self.function_environment_reload_request = name
-
-
-# This represents the Function Init/Metadata/Load/Invocation request
-class FunctionRequest:
-    def __init__(self, capabilities: Any, function_app_directory: Any):
-        self.capabilities = capabilities
-        self.function_app_directory = function_app_directory
 
 
 class TestHandleEvent(testutils.AsyncTestCase):
@@ -155,7 +134,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
 
     @patch("azure_functions_worker_v2.loader.index_function_app",
            return_value=True)
-    async def test_function_environment_reload_request(self):
+    async def test_function_environment_reload_request(self, mock_index_function_app):
         worker_request = WorkerRequest(name='function_environment_reload_request',
                                        request=Request(FunctionRequest(
                                            'hello',

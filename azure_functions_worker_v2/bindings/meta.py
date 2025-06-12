@@ -12,7 +12,6 @@ from .generic import GenericBinding
 from ..http_v2 import HttpV2Registry
 from ..logging import logger
 from ..utils.constants import (
-    BASE_EXT_SUPPORTED_PY_MINOR_VERSION,
     CUSTOMER_PACKAGES_PATH,
     HTTP,
     HTTP_TRIGGER,
@@ -79,17 +78,16 @@ def load_binding_registry() -> None:
                              sys.path, sys.modules,
                              os.path.exists(CUSTOMER_PACKAGES_PATH))
 
-    if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
-        try:
-            import azurefunctions.extensions.base as clients
-            global DEFERRED_BINDING_REGISTRY
-            DEFERRED_BINDING_REGISTRY = clients.get_binding_registry()
-        except ImportError:
-            logger.debug('Base extension not found. '
-                         'Python version: 3.%s, Sys path: %s, '
-                         'Sys Module: %s, python-packages Path exists: %s.',
-                         sys.version_info.minor, sys.path,
-                         sys.modules, os.path.exists(CUSTOMER_PACKAGES_PATH))
+    try:
+        import azurefunctions.extensions.base as clients
+        global DEFERRED_BINDING_REGISTRY
+        DEFERRED_BINDING_REGISTRY = clients.get_binding_registry()
+    except ImportError:
+        logger.debug('Base extension not found. '
+                     'Python version: 3.%s, Sys path: %s, '
+                     'Sys Module: %s, python-packages Path exists: %s.',
+                     sys.version_info.minor, sys.path,
+                     sys.modules, os.path.exists(CUSTOMER_PACKAGES_PATH))
 
 
 def get_binding(bind_name: str,
@@ -245,15 +243,12 @@ def deferred_bindings_decode(binding: Any,
     """
     The extension manages a cache for clients (ie. BlobClient, ContainerClient)
     That have already been created, so that the worker can reuse the
-    Previously created type without creating a new one.
+    previously created type without creating a new one.
 
     For async types, the function_name is needed as a key to differentiate.
     This prevents a known SDK issue where reusing a client across functions
     can lose the session context and cause an error.
 
-    The cache key is based on: param name, type, resource, function_name
-
-    If cache is empty or key doesn't exist, deferred_binding_type is None
     """
 
     deferred_binding_type = binding.decode(datum,

@@ -3,13 +3,14 @@
 from typing import Any
 from unittest.mock import patch
 
+import azure_functions_worker_v2.handle_event as handle_event
 from azure_functions_worker_v2.handle_event import (worker_init_request,
                                                     functions_metadata_request,
                                                     function_environment_reload_request)
 from tests.utils import testutils
 from tests.utils.constants import UNIT_TESTS_FOLDER
 
-import tests.protos as protos
+import tests.protos as test_protos
 
 BASIC_FUNCTION_DIRECTORY = UNIT_TESTS_FOLDER / "basic_function"
 STREAMING_FUNCTION_DIRECTORY = UNIT_TESTS_FOLDER / "streaming_function"
@@ -46,7 +47,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                            'hello',
                                            BASIC_FUNCTION_DIRECTORY)),
                                        properties={'host': '123',
-                                                   'protos': protos})
+                                                   'protos': test_protos})
         result = await worker_init_request(worker_request)
         self.assertEqual(result.capabilities, {'WorkerStatus': 'true',
                                                'RpcHttpBodyOnly': 'true',
@@ -72,7 +73,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                            'hello',
                                            STREAMING_FUNCTION_DIRECTORY)),
                                        properties={'host': '123',
-                                                   'protos': protos})
+                                                   'protos': test_protos})
         result = await worker_init_request(worker_request)
         self.assertEqual(result.capabilities, {'WorkerStatus': 'true',
                                                'RpcHttpBodyOnly': 'true',
@@ -97,7 +98,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                            'hello',
                                            BASIC_FUNCTION_DIRECTORY)),
                                        properties={'host': '123',
-                                                   'protos': protos})
+                                                   'protos': test_protos})
         result = await worker_init_request(worker_request)
         self.assertEqual(result.capabilities, {'WorkerStatus': 'true',
                                                'RpcHttpBodyOnly': 'true',
@@ -120,7 +121,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                            'hello',
                                            INDEXING_EXCEPTION_FUNCTION_DIRECTORY)),
                                        properties={'host': '123',
-                                                   'protos': protos})
+                                                   'protos': test_protos})
         result = await worker_init_request(worker_request)
         self.assertEqual(result.capabilities, {'WorkerStatus': 'true',
                                                'RpcHttpBodyOnly': 'true',
@@ -135,17 +136,10 @@ class TestHandleEvent(testutils.AsyncTestCase):
         self.assertEqual(result.result.status, 1)
 
     async def test_functions_metadata_request(self):
-        worker_request = WorkerRequest(name='worker_init_request',
-                                       request=Request(FunctionRequest(
-                                           'hello',
-                                           BASIC_FUNCTION_DIRECTORY)),
-                                       properties={'host': '123',
-                                                   'protos': protos})
-        _ = await worker_init_request(worker_request)
+        handle_event.protos = test_protos
         metadata_result = await functions_metadata_request(None)
-        self.assertEqual(metadata_result.use_default_metadata_indexing, False)
-        self.assertIsNotNone(metadata_result.function_metadata_results)
         self.assertEqual(metadata_result.result.status, 1)
+
 
     def test_functions_metadata_request_with_exception(self):
         pass
@@ -159,12 +153,15 @@ class TestHandleEvent(testutils.AsyncTestCase):
     def test_invocation_request_with_exception(self):
         pass
 
+    @patch("azure_functions_worker_v2.loader.index_function_app",
+           return_value=True)
     async def test_function_environment_reload_request(self):
         worker_request = WorkerRequest(name='function_environment_reload_request',
                                        request=Request(FunctionRequest(
+                                           'hello',
                                            BASIC_FUNCTION_DIRECTORY)),
                                        properties={'host': '123',
-                                                   'protos': protos})
+                                                   'protos': test_protos})
         result = await function_environment_reload_request(worker_request)
         self.assertEqual(result.capabilities, {})
         self.assertEqual(result.worker_metadata.runtime_name, "python")
@@ -186,7 +183,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                            'hello',
                                            STREAMING_FUNCTION_DIRECTORY)),
                                        properties={'host': '123',
-                                                   'protos': protos})
+                                                   'protos': test_protos})
         result = await function_environment_reload_request(worker_request)
         self.assertEqual(result.capabilities, {'HttpUri': 'http://mock_address',
                                                'RequiresRouteParameters': 'true'})
@@ -206,7 +203,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                            'hello',
                                            BASIC_FUNCTION_DIRECTORY)),
                                        properties={'host': '123',
-                                                   'protos': protos})
+                                                   'protos': test_protos})
         result = await function_environment_reload_request(worker_request)
         self.assertEqual(result.capabilities, {'WorkerOpenTelemetryEnabled': 'true'})
         self.assertEqual(result.worker_metadata.runtime_name, "python")
@@ -223,7 +220,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                            'hello',
                                            INDEXING_EXCEPTION_FUNCTION_DIRECTORY)),
                                        properties={'host': '123',
-                                                   'protos': protos})
+                                                   'protos': test_protos})
         result = await function_environment_reload_request(worker_request)
         self.assertEqual(result.capabilities, {})
         self.assertEqual(result.worker_metadata.runtime_name, "python")

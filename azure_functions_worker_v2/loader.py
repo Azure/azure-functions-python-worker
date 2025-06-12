@@ -9,7 +9,7 @@ import sys
 import time
 
 from datetime import timedelta
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional, Union
 
 
 from .functions import Registry
@@ -28,11 +28,6 @@ from .utils.constants import (
 )
 from .utils.env_state import get_app_setting
 from .utils.wrappers import attach_message_to_exception
-
-_AZURE_NAMESPACE = '__app__'
-_DEFAULT_SCRIPT_FILENAME = '__init__.py'
-_DEFAULT_ENTRY_POINT = 'main'
-_submodule_dirsL: list[Any] = []
 
 
 def convert_to_seconds(timestr: str):

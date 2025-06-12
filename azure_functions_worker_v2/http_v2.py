@@ -5,11 +5,9 @@ import abc
 import asyncio
 import importlib
 import socket
-import sys
 from typing import Any, Dict
 
 from azure_functions_worker_v2.utils.constants import (
-    BASE_EXT_SUPPORTED_PY_MINOR_VERSION,
     X_MS_INVOCATION_ID,
 )
 from azure_functions_worker_v2.logging import logger
@@ -278,9 +276,6 @@ class HttpV2Registry:
 
     @classmethod
     def _check_http_v2_enabled(cls):
-        if sys.version_info.minor < BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
-            return False
-
         import azurefunctions.extensions.base as ext_base
         cls._ext_base = ext_base
 

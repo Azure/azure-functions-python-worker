@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import threading
-from typing import Type
 
 from .retrycontext import RetryContext
 from .tracecontext import TraceContext

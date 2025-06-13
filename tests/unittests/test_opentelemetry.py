@@ -1,5 +1,4 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License.
 import os
 import unittest
 
@@ -18,13 +17,12 @@ FUNCTION_APP_DIRECTORY = UNIT_TESTS_FOLDER / 'basic_functions'
 
 class TestOpenTelemetry(unittest.TestCase):
 
-    def test_update_opentelemetry_status_import_error(self):
-        # Patch the built-in import mechanism
-        with patch('builtins.__import__', side_effect=ImportError):
-            update_opentelemetry_status()
-            # Verify that context variables are None due to ImportError
-            self.assertIsNone(otel_manager.get_context_api())
-            self.assertIsNone(otel_manager.get_trace_context_propagator())
+    @patch('builtins.__import__', side_effect=ImportError)
+    def test_update_opentelemetry_status_import_error(self, mock_import_error):
+        update_opentelemetry_status()
+        # Verify that context variables are None due to ImportError
+        self.assertIsNone(otel_manager.get_context_api())
+        self.assertIsNone(otel_manager.get_trace_context_propagator())
 
     @patch('builtins.__import__')
     def test_update_opentelemetry_status_success(

@@ -1,11 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
 from typing import Any, Callable
 
-from ..logging import logger
 from .env_state import is_envvar_false, is_envvar_true
 from .tracing import extend_exception_message
+
+from ..logging import logger
 
 
 def enable_feature_by(flag: str,

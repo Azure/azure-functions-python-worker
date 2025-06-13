@@ -23,7 +23,7 @@ classifiers = [
     "Intended Audience :: Developers"
 ]
 dependencies = [
-    "azurefunctions-extensions-base; python_version >= '3.8'",
+    "azurefunctions-extensions-base",
     "azure-functions"
 ]
 
@@ -35,13 +35,12 @@ Repository = "https://github.com/Azure/azure-functions-python-worker"
 dev = [
     "azure-eventhub", # Used for EventHub E2E tests
     "azure-functions-durable", # Used for Durable E2E tests
-    "azure-monitor-opentelemetry; python_version >= '3.8'", # Used for Azure Monitor unit tests
+    "azure-monitor-opentelemetry", # Used for Azure Monitor unit tests
     "flask",
     "fastapi~=0.103.2",
     "pydantic",
     "pycryptodome==3.*",
-    "flake8==5.*; python_version == '3.7'",
-    "flake8==6.*; python_version >= '3.8'",
+    "flake8==6.*",
     "mypy",
     "pytest",
     "requests==2.*",
@@ -49,7 +48,7 @@ dev = [
     "grpcio~=1.70.0",
     "grpcio-tools~=1.70.0",
     "pytest-sugar",
-    "opentelemetry-api; python_version >= '3.8'", # Used for OpenTelemetry unit tests
+    "opentelemetry-api", # Used for OpenTelemetry unit tests
     "pytest-cov",
     "pytest-xdist",
     "pytest-randomly",

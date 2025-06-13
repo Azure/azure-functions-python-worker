@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 
 import importlib
-import importlib.machinery
 import os.path
 import pathlib
 import sys

@@ -250,8 +250,6 @@ async def invocation_request(request):
             for out_name, out_type_info in fi.output_types.items():
                 val = args[out_name].get()
                 if val is None:
-                    # TODO: is the "Out" parameter optional?
-                    # Can "None" be marshaled into protos.TypedData?
                     continue
 
                 param_binding = to_outgoing_param_binding(
@@ -306,6 +304,20 @@ async def function_environment_reload_request(request):
         func_env_reload_request = \
             request.request.function_environment_reload_request
         directory = func_env_reload_request.function_app_directory
+
+        if func_env_reload_request.function_app_directory:
+            sys.path.append(func_env_reload_request.function_app_directory)
+
+        # Clear sys.path import cache, reload all module from new sys.path
+        sys.path_importer_cache.clear()
+
+        # Reload environment variables
+        os.environ.clear()
+        env_vars = func_env_reload_request.environment_variables
+        for var in env_vars:
+            os.environ[var] = env_vars[var]
+
+        # TODO: Apply PYTHON_THREADPOOL_THREAD_COUNT
 
         if is_envvar_true(PYTHON_ENABLE_DEBUG_LOGGING):
             root_logger = logging.getLogger("azure.functions")

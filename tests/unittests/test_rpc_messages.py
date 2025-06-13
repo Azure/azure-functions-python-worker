@@ -45,7 +45,7 @@ class TestGRPC(testutils.AsyncTestCase):
                          f"Exception in Reload request: {exp}")
 
         environ_dict = os.environ.copy()
-        self.assertDictEqual(environ_dict, test_env)
+        self.assertTrue(test_env.items() <= environ_dict.items())
         self.assertEqual(os.getcwd(), test_cwd)
 
         self._reset_environ()

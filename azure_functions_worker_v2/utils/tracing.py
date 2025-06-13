@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import traceback
+
 from traceback import StackSummary, extract_tb
 from typing import List
 

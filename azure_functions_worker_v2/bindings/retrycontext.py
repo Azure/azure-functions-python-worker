@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License.
-
+# Licensed under
 from dataclasses import dataclass
 from enum import Enum
 

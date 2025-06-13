@@ -21,7 +21,7 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertRegex(
                 r.response.result.exception.message,
                 r".*cannot load the missing_py_param function"
-                r".*parameters are declared in function.json"
+                r".*parameters are declared in trigger annotation"
                 r".*'req'.*")
 
     async def test_load_broken__missing_json_param(self):
@@ -37,7 +37,7 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertRegex(
                 r.response.result.exception.message,
                 r".*cannot load the missing_json_param function"
-                r".*parameters are declared in Python"
+                r".*parameters are declared in function parameter"
                 r".*'spam'.*")
 
     async def test_load_broken__wrong_param_dir(self):

@@ -136,14 +136,14 @@ class Registry:
         if set(params) - set(bound_params):
             raise FunctionLoadError(
                 func_name,
-                'the following parameters are declared in Python but '
-                f'not in function.json: {set(params) - set(bound_params)!r}')
+                'the following parameters are declared in function parameter but '
+                f'not in trigger annotation: {set(params) - set(bound_params)}')
 
         if set(bound_params) - set(params):
             raise FunctionLoadError(
                 func_name,
-                f'the following parameters are declared in function.json but '
-                f'not in Python: {set(bound_params) - set(params)!r}')
+                f'the following parameters are declared in trigger annotation but '
+                f'not in faction parameter: {set(bound_params) - set(params)}')
 
         input_types: typing.Dict[str, ParamTypeInfo] = {}
         output_types: typing.Dict[str, ParamTypeInfo] = {}

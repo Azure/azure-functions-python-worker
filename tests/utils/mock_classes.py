@@ -22,7 +22,7 @@ class Request:
 class FunctionRequest:
     def __init__(self, capabilities: Any,
                  function_app_directory: Any,
-                 environment_variables: Optional[Any] = None):
+                 environment_variables: Optional[Any] = {}):
         self.capabilities = capabilities
         self.function_app_directory = function_app_directory
         self.environment_variables = environment_variables

@@ -7,6 +7,7 @@ import tests.protos as protos
 from azure_functions_worker_v2.handle_event import otel_manager, worker_init_request
 from azure_functions_worker_v2.otel import (initialize_azure_monitor,
                                             update_opentelemetry_status)
+from azure_functions_worker_v2.logging import logger
 from tests.utils.constants import UNIT_TESTS_FOLDER
 from tests.utils.mock_classes import FunctionRequest, Request, WorkerRequest
 from unittest.mock import MagicMock, patch
@@ -17,12 +18,21 @@ FUNCTION_APP_DIRECTORY = UNIT_TESTS_FOLDER / 'basic_functions'
 
 class TestOpenTelemetry(unittest.TestCase):
 
-    @patch('builtins.__import__', side_effect=ImportError)
-    def test_update_opentelemetry_status_import_error(self, mock_import_error):
-        update_opentelemetry_status()
-        # Verify that context variables are None due to ImportError
-        self.assertIsNone(otel_manager.get_context_api())
-        self.assertIsNone(otel_manager.get_trace_context_propagator())
+    def test_update_opentelemetry_status_import_error(self):
+        with patch.dict('sys.modules', {
+            'opentelemetry': None,
+            'opentelemetry.context': None,
+            'opentelemetry.trace': None,
+            'opentelemetry.trace.propagation': None,
+            'opentelemetry.trace.propagation.tracecontext': None,
+        }):
+            # Verify that context variables are None due to ImportError
+            with self.assertLogs(logger.name, 'ERROR') as cm:
+                update_opentelemetry_status()
+                self.assertTrue(
+                    any("Cannot import OpenTelemetry libraries."
+                        in message for message in cm.output)
+                )
 
     @patch('builtins.__import__')
     def test_update_opentelemetry_status_success(

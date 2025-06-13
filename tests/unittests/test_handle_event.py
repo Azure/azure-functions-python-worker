@@ -136,6 +136,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                            BASIC_FUNCTION_DIRECTORY)),
                                        properties={'host': '123',
                                                    'protos': test_protos})
+        handle_event.protos = test_protos
         result = await function_environment_reload_request(worker_request)
         self.assertEqual(result.capabilities, {})
         self.assertEqual(result.worker_metadata.runtime_name, "python")
@@ -152,6 +153,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
             self,
             mock_http_v2_enabled,
             mock_initialize_http_server):
+        handle_event.protos = test_protos
         worker_request = WorkerRequest(name='function_environment_reload_request',
                                        request=Request(FunctionRequest(
                                            'hello',
@@ -172,6 +174,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
            return_value=True)
     async def test_function_environment_reload_request_with_otel(self,
                                                                  mock_otel_enabled):
+        handle_event.protos = test_protos
         worker_request = WorkerRequest(name='function_environment_reload_request',
                                        request=Request(FunctionRequest(
                                            'hello',
@@ -189,6 +192,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
     async def test_function_environment_reload_request_with_exception(self):
         # Even if an exception happens during indexing,
         # we still return success
+        handle_event.protos = test_protos
         worker_request = WorkerRequest(name='function_environment_reload_request',
                                        request=Request(FunctionRequest(
                                            'hello',

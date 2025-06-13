@@ -53,8 +53,8 @@ def update_opentelemetry_status():
             TraceContextTextMapPropagator,
         )
 
-        OTelManager.set_context_api(context_api)
-        OTelManager.set_trace_context_propagator(TraceContextTextMapPropagator())
+        otel_manager.set_context_api(context_api)
+        otel_manager.set_trace_context_propagator(TraceContextTextMapPropagator())
 
     except ImportError:
         logger.exception(
@@ -88,26 +88,26 @@ def initialize_azure_monitor():
                 default_value=PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME_DEFAULT
             ),
         )
-        OTelManager.set_azure_monitor_available(True)
+        otel_manager.set_azure_monitor_available(azure_monitor_available=True)
 
         logger.info("Successfully configured Azure monitor distro.")
     except ImportError:
         logger.exception(
             "Cannot import Azure Monitor distro."
         )
-        OTelManager.set_azure_monitor_available(False)
+        otel_manager.set_azure_monitor_available(False)
     except Exception:
         logger.exception(
             "Error initializing Azure monitor distro."
         )
-        OTelManager.set_azure_monitor_available(False)
+        otel_manager.set_azure_monitor_available(False)
 
 
 def configure_opentelemetry(invocation_context):
     carrier = {TRACEPARENT: invocation_context.trace_context.trace_parent,
                TRACESTATE: invocation_context.trace_context.trace_state}
-    ctx = OTelManager.get_trace_context_propagator().extract(carrier)
-    OTelManager.get_context_api().attach(ctx)
+    ctx = otel_manager.get_trace_context_propagator().extract(carrier)
+    otel_manager.get_context_api().attach(ctx)
 
 
 otel_manager = OTelManager()

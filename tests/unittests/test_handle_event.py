@@ -114,23 +114,19 @@ class TestHandleEvent(testutils.AsyncTestCase):
         self.assertIsNotNone(result.worker_metadata.worker_bitness)
         self.assertEqual(result.result.status, 1)
 
-    async def test_functions_metadata_request(self):
+    @patch("azure_functions_worker_v2.loader.index_function_app",
+           return_value=True)
+    async def test_functions_metadata_request(self, mock_index_function_app):
         handle_event.protos = test_protos
         metadata_result = await functions_metadata_request(None)
         self.assertEqual(metadata_result.result.status, 1)
 
-
-    def test_functions_metadata_request_with_exception(self):
-        pass
-
-    def test_invocation_request_sync(self):
-        pass
-
-    def test_invocation_request_async(self):
-        pass
-
-    def test_invocation_request_with_exception(self):
-        pass
+    @patch("azure_functions_worker_v2.metadata_exception",
+           return_value=Exception)
+    async def test_functions_metadata_request_with_exception(self):
+        handle_event.protos = test_protos
+        metadata_result = await functions_metadata_request(None)
+        self.assertEqual(metadata_result.result.status, 0)
 
     @patch("azure_functions_worker_v2.loader.index_function_app",
            return_value=True)

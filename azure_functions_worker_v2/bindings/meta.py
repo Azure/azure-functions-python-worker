@@ -171,7 +171,7 @@ def from_incoming_proto(
         val = pb.data
         datum = Datum.from_typed_data(val)
     else:
-        raise TypeError('Unknown ParameterBindingType: %s', pb_type)
+        raise TypeError('Unknown ParameterBindingType: %s' % pb_type)
 
     try:
         # if the binding is an sdk type binding
@@ -189,7 +189,7 @@ def from_incoming_proto(
         raise TypeError(
             'unable to decode incoming TypedData: '
             'unsupported combination of TypedData field %s '
-            'and expected binding type %s', repr(dt), binding_obj)
+            'and expected binding type %s' % (repr(dt), binding_obj))
 
 
 def get_datum(binding: str, obj: Any,
@@ -205,7 +205,7 @@ def get_datum(binding: str, obj: Any,
         raise TypeError(
             'unable to encode outgoing TypedData: '
             'unsupported type "%s" for '
-            'Python type "%s"', binding, type(obj).__name__)
+            'Python type "%s"' % (binding, type(obj).__name__))
     return datum
 
 

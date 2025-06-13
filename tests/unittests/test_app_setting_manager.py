@@ -2,7 +2,8 @@
 # Licensed under the MIT License.
 import os
 
-from azure_functions_worker_v2.utils.app_setting_manager import get_python_appsetting_state
+from azure_functions_worker_v2.utils.app_setting_manager import (
+    get_python_appsetting_state)
 from azure_functions_worker_v2.utils.constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,
     PYTHON_THREADPOOL_THREAD_COUNT,
@@ -17,7 +18,7 @@ class TestDefaultAppSettingsLogs(testutils.AsyncTestCase):
     def test_get_python_appsetting_state(self):
         app_setting_state = get_python_appsetting_state()
         expected_string = ""
-        self.assertEquals(expected_string, app_setting_state)
+        self.assertEqual(expected_string, app_setting_state)
 
 
 class TestNonDefaultAppSettingsLogs(testutils.AsyncTestCase):

@@ -11,7 +11,6 @@ import time
 from datetime import timedelta
 from typing import Dict, Optional, Union
 
-
 from .functions import Registry
 from .logging import logger
 
@@ -168,14 +167,15 @@ def index_function_app(function_path: str):
             else:
                 raise ValueError(
                     "More than one %s or other top "
-                    "level function app instances are defined.", app.__class__.__name__)
+                    "level function app instances are defined."
+                    % app.__class__.__name__)
 
     if not app:
         script_file_name = get_app_setting(
             setting=PYTHON_SCRIPT_FILE_NAME,
             default_value=PYTHON_SCRIPT_FILE_NAME_DEFAULT)
-        raise ValueError("Could not find top level function app instances in %s.",
-                         script_file_name)
+        raise ValueError("Could not find top level function app instances in %s."
+                         % script_file_name)
 
     return app.get_functions()
 

@@ -2,8 +2,6 @@
 # Licensed under the MIT License.
 
 import logging
-import time
-from datetime import datetime
 
 import azure.functions as func
 

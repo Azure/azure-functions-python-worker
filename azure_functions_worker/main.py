@@ -3,7 +3,6 @@
 """Main entrypoint."""
 
 import argparse
-import sys
 
 
 def parse_args():
@@ -47,12 +46,11 @@ def main():
     DependencyManager.use_worker_dependencies()
 
     import asyncio
-    if sys.platform != 'win32':
-        try:
-            import uvloop
-            asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-        except ImportError:
-            pass
+    try:
+        import uvloop
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    except Exception:
+        pass
 
     from . import logging
     from .logging import error_logger, format_exception, logger

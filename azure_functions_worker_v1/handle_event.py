@@ -18,6 +18,7 @@ from .bindings.meta import (load_binding_registry,
                             to_outgoing_param_binding,
                             to_outgoing_proto)
 from .bindings.out import Out
+from .utils.app_setting_manager import get_python_appsetting_state
 from .utils.constants import (FUNCTION_DATA_CACHE,
                               RAW_HTTP_BODY_BYTES,
                               TYPED_DATA_COLLECTION,
@@ -43,7 +44,8 @@ protos = None
 
 async def worker_init_request(request):
     logger.info("V1 Library Worker: received WorkerInitRequest,"
-                "Version %s", VERSION)
+                "Version %s. App Settings State: %s", VERSION,
+                get_python_appsetting_state())
     global _host, protos, _function_data_cache_enabled
     init_request = request.request.worker_init_request
     host_capabilities = init_request.capabilities
@@ -70,7 +72,7 @@ async def worker_init_request(request):
     if (otel_manager.get_azure_monitor_available()
             or otel_manager.get_otel_libs_available()):
         capabilities[WORKER_OPEN_TELEMETRY_ENABLED] = TRUE
-    
+
     # loading bindings registry and saving results to a static
     # dictionary which will be later used in the invocation request
     load_binding_registry()

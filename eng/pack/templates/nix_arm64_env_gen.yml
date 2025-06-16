@@ -97,7 +97,6 @@ steps:
       !*.dist-info/**
       !werkzeug/debug/shared/debugger.js
       !dateutil/**
-      !uvloop/**
       !azure_functions_worker/**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: eq(variables['proxyWorker'], true)

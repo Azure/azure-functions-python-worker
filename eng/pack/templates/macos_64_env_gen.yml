@@ -92,7 +92,6 @@ steps:
       !werkzeug/debug/shared/debugger.js
       !azure_functions_worker/**
       !dateutil/**
-      !uvloop/**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: eq(variables['proxyWorker'], true)
   displayName: 'Copy proxy_worker files'

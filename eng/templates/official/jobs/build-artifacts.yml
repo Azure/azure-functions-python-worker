@@ -11,22 +11,27 @@ jobs:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:
         - output: pipelineArtifact
-          targetPath: $(Build.SourcesDirectory)
-          artifactName: "azure-functions-runtime-v1"
-
-    steps:
-      - task: UsePythonVersion@0
-        inputs:
-          versionSpec: "3.13"
-      - bash: |
-          python --version
-        displayName: 'Check python version'
-      - bash: |
-          python -m pip install -U pip
-          python -m pip install build
-          python -m build
-        displayName: 'Build Python Runtime SDK'
-      - bash: |
-          pip install pip-audit
-          pip-audit .
-        displayName: 'Run vulnerability scan'
+          targetPath: $(Build.ArtifactStagingDirectory)
+          artifactName: "PythonWorker"
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      buildType: 'current'
+      targetPath: '$(Build.SourcesDirectory)'
+  - task: ManifestGeneratorTask@0
+    displayName: 'SBOM Generation Task'
+    inputs:
+      BuildDropPath: '$(Build.ArtifactStagingDirectory)'
+      BuildComponentPath: '$(Build.SourcesDirectory)'
+      Verbosity: 'Verbose'
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.ArtifactStagingDirectory)'
+      Contents: '**'
+      TargetFolder: '$(Build.SourcesDirectory)'
+  - task: NuGetCommand@2
+    inputs:
+      command: pack
+      packagesToPack: '$(nuspec_path)'
+      packDestination: $(Build.ArtifactStagingDirectory) 
+      versioningScheme: 'byEnvVar'
+      versionEnvVar: WORKER_VERSION

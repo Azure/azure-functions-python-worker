@@ -5,6 +5,7 @@ import os
 from unittest import skip
 from unittest.case import skipIf
 from unittest.mock import patch
+import logging
 
 from requests import Response
 from tests.utils import testutils
@@ -51,6 +52,8 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
 
         cls._patch_environ = patch.dict('os.environ', os_environ)
         cls._patch_environ.start()
+        logging.info("Customer dependencies path: %s",
+                      cls.customer_deps)
         super().setUpClass()
 
     @classmethod
@@ -111,6 +114,9 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         self.assertEqual(
             dm['cx_deps_path'].lower(), str(self.customer_deps).lower()
         )
+        logging.info("Worker dependencies path: %s, Customer working dir: %s," \
+        " Customer dependency path: %s", dm['worker_deps_path'],
+          dm['cx_working_dir'], dm['cx_deps_path'])
 
         # Should derive the package location from the built-in azure.functions
         azf_spec = importlib.util.find_spec('azure.functions')

@@ -152,6 +152,7 @@ jobs:
       - bash: |
              cd workers
              python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_dependency_isolation_functions.py
+        env:
           AzureWebJobsStorage: $(STORAGE_CONNECTION)
           AzureWebJobsCosmosDBConnectionString: $(COSMOSDB_CONNECTION)
           AzureWebJobsEventHubConnectionString: $(EVENTHUB_CONNECTION)

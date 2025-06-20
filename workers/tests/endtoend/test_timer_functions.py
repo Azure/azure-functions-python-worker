@@ -3,7 +3,7 @@
 import time
 import typing
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 REQUEST_TIMEOUT_SEC = 5
 

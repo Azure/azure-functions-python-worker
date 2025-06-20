@@ -3,7 +3,7 @@
 import os
 
 import requests
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 from azure_functions_worker.constants import PYTHON_SCRIPT_FILE_NAME
 

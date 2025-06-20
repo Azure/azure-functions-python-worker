@@ -9,8 +9,8 @@ import unittest
 from typing import Optional, Tuple
 from unittest.mock import patch
 
-from workers.tests.utils import testutils
-from workers.tests.utils.testutils import UNIT_TESTS_ROOT
+from tests.utils import testutils
+from tests.utils.testutils import UNIT_TESTS_ROOT
 
 from azure_functions_worker import protos
 from azure_functions_worker.constants import (

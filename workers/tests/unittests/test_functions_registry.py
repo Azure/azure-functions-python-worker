@@ -4,7 +4,7 @@
 from azure.functions import Function
 from azure.functions.decorators.blob import BlobInput
 from azure.functions.decorators.http import HttpTrigger
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 from azure_functions_worker import functions
 from azure_functions_worker.functions import FunctionLoadError

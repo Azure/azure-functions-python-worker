@@ -4,7 +4,7 @@ import json
 import pathlib
 import time
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 
 class TestTableFunctions(testutils.WebHostTestCase):

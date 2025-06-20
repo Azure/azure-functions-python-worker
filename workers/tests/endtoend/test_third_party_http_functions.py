@@ -3,8 +3,8 @@
 import os
 
 import requests
-from workers.tests.utils import testutils as utils
-from workers.tests.utils.testutils import E2E_TESTS_ROOT
+from tests.utils import testutils as utils
+from tests.utils.testutils import E2E_TESTS_ROOT
 
 HOST_JSON_TEMPLATE = """\
 {

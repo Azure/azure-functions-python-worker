@@ -21,7 +21,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import padding
 
-from workers.tests.utils.constants import PROJECT_ROOT
+from tests.utils.constants import PROJECT_ROOT
 
 # Linux Consumption Testing Constants
 _DOCKER_PATH = "DOCKER_PATH"

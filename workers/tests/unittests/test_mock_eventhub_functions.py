@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 import json
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 from azure_functions_worker import protos
 

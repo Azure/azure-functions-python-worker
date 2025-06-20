@@ -3,8 +3,8 @@
 import os
 import typing
 
-from workers.tests.utils import testutils
-from workers.tests.utils.testutils import TESTS_ROOT, remove_path
+from tests.utils import testutils
+from tests.utils.testutils import TESTS_ROOT, remove_path
 
 from azure_functions_worker.constants import PYTHON_ENABLE_DEBUG_LOGGING
 

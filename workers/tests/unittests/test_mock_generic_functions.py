@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 from azure_functions_worker import protos
 

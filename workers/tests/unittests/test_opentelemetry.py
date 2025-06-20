@@ -6,8 +6,8 @@ import unittest
 from unittest import skipIf
 from unittest.mock import MagicMock, patch
 
-from workers.tests.unittests.test_dispatcher import FUNCTION_APP_DIRECTORY
-from workers.tests.utils import testutils
+from tests.unittests.test_dispatcher import FUNCTION_APP_DIRECTORY
+from tests.utils import testutils
 
 from azure_functions_worker import protos
 

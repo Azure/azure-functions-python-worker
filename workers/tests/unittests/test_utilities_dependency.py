@@ -6,7 +6,7 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 from azure_functions_worker.utils.dependency import DependencyManager
 

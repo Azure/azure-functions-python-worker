@@ -10,7 +10,7 @@ from pathlib import Path
 from time import sleep
 
 import requests
-from workers.tests.utils.constants import PROJECT_ROOT, TESTS_ROOT
+from tests.utils.constants import PROJECT_ROOT, TESTS_ROOT
 
 _DOCKER_PATH = "DOCKER_PATH"
 _DOCKER_DEFAULT_PATH = "docker"

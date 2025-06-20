@@ -4,7 +4,7 @@ import collections as col
 import os
 from unittest.mock import patch
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 from azure_functions_worker.constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,

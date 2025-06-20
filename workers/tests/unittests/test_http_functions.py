@@ -8,7 +8,7 @@ import sys
 import typing
 from unittest import skipIf
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 
 class TestHttpFunctions(testutils.WebHostTestCase):

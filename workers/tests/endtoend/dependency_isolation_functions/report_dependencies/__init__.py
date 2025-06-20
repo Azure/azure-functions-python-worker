@@ -7,7 +7,7 @@ import google.protobuf as proto
 import grpc
 
 # Load dependency manager from customer' context
-from workers.azure_functions_worker.utils.dependency import DependencyManager as dm
+from azure_functions_worker.utils.dependency import DependencyManager as dm
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:

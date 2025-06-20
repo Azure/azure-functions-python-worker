@@ -7,7 +7,7 @@ import sys
 import time
 from unittest import skipIf
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 from azure_functions_worker import protos
 from azure_functions_worker.bindings.shared_memory_data_transfer import (

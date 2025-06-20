@@ -7,8 +7,8 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
-from workers.tests.utils import testutils
-from workers.tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
+from tests.utils import testutils
+from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
 # This app setting is only present for Python < 3.13
 from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING

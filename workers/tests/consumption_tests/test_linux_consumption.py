@@ -6,7 +6,7 @@ from time import sleep
 from unittest import TestCase, skipIf
 
 from requests import Request
-from workers.tests.utils.testutils_lc import LinuxConsumptionWebHostController
+from tests.utils.testutils_lc import LinuxConsumptionWebHostController
 
 from azure_functions_worker.constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,

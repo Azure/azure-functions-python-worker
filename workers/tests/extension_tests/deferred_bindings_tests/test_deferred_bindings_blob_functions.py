@@ -4,7 +4,7 @@ import sys
 import time
 import unittest
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"

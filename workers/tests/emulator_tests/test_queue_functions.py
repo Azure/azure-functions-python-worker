@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 import time
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 
 class TestQueueFunctions(testutils.WebHostTestCase):

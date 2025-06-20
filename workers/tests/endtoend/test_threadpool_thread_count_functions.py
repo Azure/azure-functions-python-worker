@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from threading import Thread
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 
 class TestPythonThreadpoolThreadCount(testutils.WebHostTestCase):

@@ -4,7 +4,7 @@ import sys
 import unittest
 
 import azure.functions as func
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 if sys.version_info.minor < 13:
     from azure_functions_worker import protos

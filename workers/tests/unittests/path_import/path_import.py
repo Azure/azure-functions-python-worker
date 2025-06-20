@@ -5,7 +5,7 @@ import os
 import shutil
 import sys
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 from azure_functions_worker import protos
 

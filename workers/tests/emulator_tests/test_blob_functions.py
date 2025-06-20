@@ -3,7 +3,7 @@
 import time
 
 from requests import JSONDecodeError
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 
 class TestBlobFunctions(testutils.WebHostTestCase):

@@ -5,7 +5,7 @@ import typing
 from unittest.mock import patch
 
 import requests
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 

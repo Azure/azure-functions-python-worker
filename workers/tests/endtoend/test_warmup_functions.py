@@ -4,8 +4,8 @@
 import typing
 from unittest import skipIf
 
-from workers.tests.utils import testutils
-from workers.tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
+from tests.utils import testutils
+from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
 from azure_functions_worker.utils.common import is_envvar_true
 

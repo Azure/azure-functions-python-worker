@@ -5,7 +5,7 @@ import unittest
 import uuid
 
 import requests
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 
 class TestEventGridFunctions(testutils.WebHostTestCase):

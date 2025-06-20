@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 from azure.functions import Function
 from azure.functions.decorators.retry_policy import RetryPolicy
 from azure.functions.decorators.timer import TimerTrigger
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 from azure_functions_worker import functions
 from azure_functions_worker.constants import (
@@ -223,7 +223,7 @@ class TestPluginLoader(testutils.AsyncTestCase):
         code = textwrap.dedent('''
 import asyncio
 from azure_functions_worker import protos
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 async def _runner():
     async with testutils.start_mockhost(

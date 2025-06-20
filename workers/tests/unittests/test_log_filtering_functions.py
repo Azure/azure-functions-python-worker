@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 import typing
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 HOST_JSON_TEMPLATE_WITH_LOGLEVEL_INFO = """\
 {

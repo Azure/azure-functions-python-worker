@@ -7,7 +7,7 @@ from datetime import datetime
 from unittest.case import skipIf
 
 from dateutil import parser
-from workers.tests.utils import testutils
+from tests.utils import testutils
 
 
 class TestEventHubFunctions(testutils.WebHostTestCase):

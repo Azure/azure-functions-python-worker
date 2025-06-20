@@ -11,8 +11,8 @@ import sys
 from unittest import skipIf
 from unittest.mock import patch
 
-from workers.tests.utils import testutils
-from workers.tests.utils.testutils import UNIT_TESTS_ROOT
+from tests.utils import testutils
+from tests.utils.testutils import UNIT_TESTS_ROOT
 
 HOST_JSON_TEMPLATE = """\
 {

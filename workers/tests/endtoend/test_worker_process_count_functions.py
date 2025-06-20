@@ -6,9 +6,9 @@ from datetime import datetime
 from threading import Thread
 from unittest import skipIf
 
-from workers.tests.utils import testutils
+from tests.utils import testutils
 from azure_functions_worker.utils.common import is_envvar_true
-from workers.tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
+from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)

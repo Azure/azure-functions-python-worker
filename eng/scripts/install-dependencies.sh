@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cd workers
 python -m pip install --upgrade pip
 python -m pip install -U azure-functions --pre
 python -m pip install -U -e .[dev]

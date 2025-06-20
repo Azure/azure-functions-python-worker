@@ -20,6 +20,7 @@ jobs:
           # Heading to Artifact Repository
           Write-Host "Operating based on $stagingDirectory/azure-functions-python-worker"
           git checkout -b "release/$newWorkerVersion"
+          cd workers
       
           # Change azure_functions_worker/version.py version
           Write-Host "Change version number in version.py to $newWorkerVersion"

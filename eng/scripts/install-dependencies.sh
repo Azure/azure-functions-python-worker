@@ -11,3 +11,6 @@ fi
 if [[ $1 != "3.7" && $1 != "3.8" ]]; then
     python -m pip install --pre -U -e .[test-deferred-bindings]
 fi
+
+cd tests/endtoend/dependency_isolation_functions
+pip install grpcio==1.35.0 protobuf==3.9.0 -t .python_packages_grpc_protobuf/lib/site-packages

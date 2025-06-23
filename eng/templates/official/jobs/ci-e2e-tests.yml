@@ -162,4 +162,5 @@ jobs:
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
           skipTest: $(skipTest)
           PYAZURE_WEBHOST_DEBUG: true
+          PYTHONPATH: "/mnt/vss/_work/1/s/workers/tests/endtoend/dependency_isolation_functions/.python_packages_grpc_protobuf/lib/site-packages"
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"

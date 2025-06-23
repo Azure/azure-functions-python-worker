@@ -5,7 +5,6 @@ import os
 from unittest import skip
 from unittest.case import skipIf
 from unittest.mock import patch
-import logging
 
 from requests import Response
 from tests.utils import testutils
@@ -52,8 +51,6 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
 
         cls._patch_environ = patch.dict('os.environ', os_environ)
         cls._patch_environ.start()
-        logging.info("Customer dependencies path: %s",
-                      cls.customer_deps)
         super().setUpClass()
 
     @classmethod

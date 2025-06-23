@@ -138,6 +138,8 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
             libraries['grpc.expected.version'], libraries['grpc.version']
         )
 
+        self.assertTrue(False)
+
 
 @skip("Skipping dependency isolation test for dedicated. Needs investigation")
 class TestOlderVersionOfAzFuncDependencyIsolationOnDedicated(

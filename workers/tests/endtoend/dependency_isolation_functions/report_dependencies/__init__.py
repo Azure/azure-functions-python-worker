@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import logging
 
 import azure.functions as func
 import google.protobuf as proto
@@ -47,4 +48,5 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             "HOST_VERSION": os.getenv('HOST_VERSION')
         }
     }
+    logging.info("Dependency report: %s", json.dumps(result))
     return func.HttpResponse(json.dumps(result))

@@ -114,9 +114,6 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         self.assertEqual(
             dm['cx_deps_path'].lower(), str(self.customer_deps).lower()
         )
-        logging.info("Worker dependencies path: %s, Customer working dir: %s," \
-        " Customer dependency path: %s", dm['worker_deps_path'],
-          dm['cx_working_dir'], dm['cx_deps_path'])
 
         # Should derive the package location from the built-in azure.functions
         azf_spec = importlib.util.find_spec('azure.functions')

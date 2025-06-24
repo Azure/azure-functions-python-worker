@@ -2,6 +2,8 @@
 # Licensed under the MIT License.
 import importlib.util
 import os
+import sys
+
 from unittest import skip
 from unittest.case import skipIf
 from unittest.mock import patch
@@ -128,6 +130,9 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         libraries version should match the ones in
         .python_packages_grpc_protobuf/ folder
         """
+        for mod in list(sys.modules):
+            if mod.startswith("google.protobuf") or mod.startswith("grpc"):
+                del sys.modules[mod]
         r: Response = self.webhost.request('GET', 'report_dependencies')
         libraries = r.json()['libraries']
         self.assertEqual(

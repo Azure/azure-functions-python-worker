@@ -1,9 +1,8 @@
 #!/bin/bash
 
-cd workers
 python -m pip install --upgrade pip
 python -m pip install -U azure-functions --pre
-python -m pip install -U -e .[dev]
+python -m pip install -U -e workers/[dev]
 
 if [[ $1 != "3.7" ]]; then
     python -m pip install --pre -U -e .[test-http-v2]

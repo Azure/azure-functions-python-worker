@@ -2,6 +2,9 @@ jobs:
   - job: "TestPython"
     displayName: "Run Python E2E Tests"
 
+    workspace:
+      clean: all
+
     pool:
       name: 1es-pool-azfunc
       image: 1es-ubuntu-22.04
@@ -73,6 +76,7 @@ jobs:
           EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
     steps:
+      - checkout: self
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
@@ -88,6 +92,7 @@ jobs:
           eng/scripts/test-setup.sh
         displayName: 'Install dependencies and the worker'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+        workingDirectory: $(Build.SourcesDirectory)/workers
       - task: DownloadPipelineArtifact@2
         displayName: 'Download Python SDK Artifact'
         inputs:
@@ -150,7 +155,6 @@ jobs:
           Write-Host "skipTest: $(skipTest)"
         displayName: 'Display skipTest variable'
       - bash: |
-             cd workers
              python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_dependency_isolation_functions.py
         env:
           AzureWebJobsStorage: $(STORAGE_CONNECTION)

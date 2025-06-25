@@ -5,8 +5,12 @@ python -m pip install -U azure-functions --pre
 python -m pip install -U -e workers/[dev]
 
 if [[ $1 != "3.7" ]]; then
-    python -m pip install --pre -U -e .[test-http-v2]
+    python -m pip install --pre -U -e workers/[test-http-v2]
 fi
 if [[ $1 != "3.7" && $1 != "3.8" ]]; then
-    python -m pip install --pre -U -e .[test-deferred-bindings]
+    python -m pip install --pre -U -e workers/[test-deferred-bindings]
 fi
+
+for mod in list(sys.modules):
+    if mod.startswith('google.protobuf') or mod.startswith('grpc'):
+        del sys.modules[mod]

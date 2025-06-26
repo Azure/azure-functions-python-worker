@@ -22,7 +22,7 @@ from azure_functions_worker.utils.common import is_envvar_true
 REQUEST_TIMEOUT_SEC = 5
 
 
-def clean_reimport_package(package_name: str, import_name: str = None):
+def clean_reimport_package(package_name: str, import_name: str = None, version: str = None, target_dir: str = None):
         """
         Uninstalls the given package, clears it from sys.modules,
         and re-imports it (assuming it's reinstalled on disk).
@@ -42,14 +42,8 @@ def clean_reimport_package(package_name: str, import_name: str = None):
             if mod == import_name or mod.startswith(f"{import_name}."):
                 del sys.modules[mod]
 
-        # Re-import it fresh (if still available on disk)
-        try:
-            fresh_module = importlib.import_module(import_name)
-            print(f"✅ Re-imported {import_name} from: {fresh_module.__file__}")
-            return fresh_module
-        except ImportError:
-            print(f"❌ {import_name} could not be re-imported (likely uninstalled).")
-            return None
+        """Install a specific version of a package."""
+        subprocess.run(["pip", "install", f"{package_name}=={version}", "--target", target_dir], check=True)
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
@@ -163,8 +157,8 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         libraries version should match the ones in
         .python_packages_grpc_protobuf/ folder
         """
-        clean_reimport_package("grpcio", "grpc")
-        clean_reimport_package('protobuf', "google.protobuf")
+        clean_reimport_package("grpcio", "grpc", '1.35.0', self.customer_deps)
+        clean_reimport_package('protobuf', "google.protobuf", '3.9.0', self.customer_deps)
         r: Response = self.webhost.request('GET', 'report_dependencies')
         libraries = r.json()['libraries']
         self.assertEqual(

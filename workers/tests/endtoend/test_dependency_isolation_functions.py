@@ -72,6 +72,8 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
 
     @classmethod
     def setUpClass(cls):
+        clean_reimport_package("grpcio", "grpc")
+        clean_reimport_package('protobuf', "google.protobuf")
         # Turn on feature flag
         cls.env_variables['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = '1'
 

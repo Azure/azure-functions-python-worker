@@ -77,6 +77,7 @@ jobs:
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
     steps:
       - checkout: self
+        workingDirectory: $(Build.SourcesDirectory)/workers
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
@@ -166,4 +167,3 @@ jobs:
           skipTest: $(skipTest)
           PYAZURE_WEBHOST_DEBUG: true
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"
-        workingDirectory: $(Build.SourcesDirectory)/workers

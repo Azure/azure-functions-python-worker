@@ -32,6 +32,7 @@ def clean_reimport_package(package_name: str, import_name: str = None, version: 
             import_name (str): The importable module name (e.g. 'grpc')
                             If None, defaults to package_name.
         """
+        print(f"Cleaning and reimporting package: {package_name}, version: {version}, target_dir: {target_dir}")
         import_name = import_name or package_name
 
         # Uninstall the package
@@ -66,8 +67,6 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
 
     @classmethod
     def setUpClass(cls):
-        clean_reimport_package("grpcio", "grpc")
-        clean_reimport_package('protobuf', "google.protobuf")
         # Turn on feature flag
         cls.env_variables['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = '1'
 

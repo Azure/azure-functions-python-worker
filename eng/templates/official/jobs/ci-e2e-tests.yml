@@ -77,7 +77,6 @@ jobs:
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
     steps:
       - checkout: self
-        workingDirectory: $(Build.SourcesDirectory)/workers
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
@@ -93,6 +92,7 @@ jobs:
           eng/scripts/test-setup.sh
         displayName: 'Install dependencies and the worker'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+        workingDirectory: $(Build.SourcesDirectory)/workers
       - task: DownloadPipelineArtifact@2
         displayName: 'Download Python SDK Artifact'
         inputs:
@@ -167,3 +167,4 @@ jobs:
           skipTest: $(skipTest)
           PYAZURE_WEBHOST_DEBUG: true
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"
+        workingDirectory: $(Build.SourcesDirectory)/workers

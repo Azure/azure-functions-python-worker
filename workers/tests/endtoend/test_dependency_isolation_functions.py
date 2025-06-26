@@ -2,8 +2,6 @@
 # Licensed under the MIT License.
 import importlib
 import os
-import sys
-import subprocess
 
 from unittest import skip
 from unittest.case import skipIf
@@ -20,31 +18,6 @@ from tests.utils.constants import (
 from azure_functions_worker.utils.common import is_envvar_true
 
 REQUEST_TIMEOUT_SEC = 5
-
-
-def clean_reimport_package(package_name: str, import_name: str = None, version: str = None, target_dir: str = None):
-        """
-        Uninstalls the given package, clears it from sys.modules,
-        and re-imports it (assuming it's reinstalled on disk).
-
-        Args:
-            package_name (str): The pip package name (e.g. 'grpcio')
-            import_name (str): The importable module name (e.g. 'grpc')
-                            If None, defaults to package_name.
-        """
-        print(f"Cleaning and reimporting package: {package_name}, version: {version}, target_dir: {target_dir}")
-        import_name = import_name or package_name
-
-        # Uninstall the package
-        subprocess.run(["pip", "uninstall", "-y", package_name], check=True)
-
-        # Remove all related modules from sys.modules
-        for mod in list(sys.modules):
-            if mod == import_name or mod.startswith(f"{import_name}."):
-                del sys.modules[mod]
-
-        """Install a specific version of a package."""
-        subprocess.run(["pip", "install", f"{package_name}=={version}", "--target", target_dir], check=True)
 
 
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
@@ -156,8 +129,6 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         libraries version should match the ones in
         .python_packages_grpc_protobuf/ folder
         """
-        clean_reimport_package("grpcio", "grpc", '1.35.0', self.customer_deps)
-        clean_reimport_package('protobuf', "google.protobuf", '3.9.0', self.customer_deps)
         r: Response = self.webhost.request('GET', 'report_dependencies')
         libraries = r.json()['libraries']
         self.assertEqual(

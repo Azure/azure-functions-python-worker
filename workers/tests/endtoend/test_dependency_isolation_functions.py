@@ -22,6 +22,36 @@ from azure_functions_worker.utils.common import is_envvar_true
 REQUEST_TIMEOUT_SEC = 5
 
 
+def clean_reimport_package(package_name: str, import_name: str = None):
+        """
+        Uninstalls the given package, clears it from sys.modules,
+        and re-imports it (assuming it's reinstalled on disk).
+
+        Args:
+            package_name (str): The pip package name (e.g. 'grpcio')
+            import_name (str): The importable module name (e.g. 'grpc')
+                            If None, defaults to package_name.
+        """
+        import_name = import_name or package_name
+
+        # Uninstall the package
+        subprocess.run(["pip", "uninstall", "-y", package_name], check=True)
+
+        # Remove all related modules from sys.modules
+        for mod in list(sys.modules):
+            if mod == import_name or mod.startswith(f"{import_name}."):
+                del sys.modules[mod]
+
+        # Re-import it fresh (if still available on disk)
+        try:
+            fresh_module = importlib.import_module(import_name)
+            print(f"✅ Re-imported {import_name} from: {fresh_module.__file__}")
+            return fresh_module
+        except ImportError:
+            print(f"❌ {import_name} could not be re-imported (likely uninstalled).")
+            return None
+
+
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
         or is_envvar_true(CONSUMPTION_DOCKER_TEST),
         'Docker tests do not work with dependency isolation ')
@@ -68,36 +98,6 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
     @classmethod
     def get_environment_variables(cls):
         return cls.env_variables
-
-    @classmethod
-    def clean_reimport_package(package_name: str, import_name: str = None):
-        """
-        Uninstalls the given package, clears it from sys.modules,
-        and re-imports it (assuming it's reinstalled on disk).
-
-        Args:
-            package_name (str): The pip package name (e.g. 'grpcio')
-            import_name (str): The importable module name (e.g. 'grpc')
-                            If None, defaults to package_name.
-        """
-        import_name = import_name or package_name
-
-        # Uninstall the package
-        subprocess.run(["pip", "uninstall", "-y", package_name], check=True)
-
-        # Remove all related modules from sys.modules
-        for mod in list(sys.modules):
-            if mod == import_name or mod.startswith(f"{import_name}."):
-                del sys.modules[mod]
-
-        # Re-import it fresh (if still available on disk)
-        try:
-            fresh_module = importlib.import_module(import_name)
-            print(f"✅ Re-imported {import_name} from: {fresh_module.__file__}")
-            return fresh_module
-        except ImportError:
-            print(f"❌ {import_name} could not be re-imported (likely uninstalled).")
-            return None
 
     def test_dependency_function_should_return_ok(self):
         """The common scenario of general import should return OK in any
@@ -161,8 +161,8 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         libraries version should match the ones in
         .python_packages_grpc_protobuf/ folder
         """
-        self.clean_reimport_package("grpcio", "grpc")
-        self.clean_reimport_package('protobuf', "google.protobuf")
+        clean_reimport_package("grpcio", "grpc")
+        clean_reimport_package('protobuf', "google.protobuf")
         r: Response = self.webhost.request('GET', 'report_dependencies')
         libraries = r.json()['libraries']
         self.assertEqual(

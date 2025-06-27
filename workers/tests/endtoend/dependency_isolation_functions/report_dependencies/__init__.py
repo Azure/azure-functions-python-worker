@@ -48,5 +48,4 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             "HOST_VERSION": os.getenv('HOST_VERSION')
         }
     }
-    logging.info("Dependency report: %s", json.dumps(result))
     return func.HttpResponse(json.dumps(result))

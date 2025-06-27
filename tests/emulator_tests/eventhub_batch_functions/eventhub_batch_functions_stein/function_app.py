@@ -40,7 +40,7 @@ def eventhub_multiple(events) -> str:
                       connection="AzureWebJobsEventHubConnectionString",
                       event_hub_name="python-worker-ci-eventhub-batch")
 @app.route(route="eventhub_output_batch", binding_arg_name="out")
-def c(req: func.HttpRequest, out: func.Out[str]) -> str:
+def eventhub_output_batch(req: func.HttpRequest, out: func.Out[str]) -> str:
     events = req.get_body().decode('utf-8')
     return events
 

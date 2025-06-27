@@ -95,7 +95,7 @@ class DependencyManager:
     )
     def use_worker_dependencies(cls):
         """Switch the sys.path and ensure the worker imports are loaded from
-        Worker's dependenciess.
+        Worker's dependencies.
 
         This will not affect already imported namespaces, but will clear out
         the module cache and ensure the upcoming modules are loaded from

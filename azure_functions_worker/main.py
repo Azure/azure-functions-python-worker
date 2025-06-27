@@ -3,6 +3,12 @@
 """Main entrypoint."""
 
 import argparse
+import asyncio
+try:
+    import uvloop
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+except Exception:
+    pass
 
 
 def parse_args():
@@ -44,13 +50,6 @@ def main():
     from .utils.dependency import DependencyManager
     DependencyManager.initialize()
     DependencyManager.use_worker_dependencies()
-
-    import asyncio
-    try:
-        import uvloop
-        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-    except Exception:
-        pass
 
     from . import logging
     from .logging import error_logger, format_exception, logger

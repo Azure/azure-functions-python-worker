@@ -58,7 +58,6 @@ jobs:
           python -m invoke -c test_setup build-protos
         displayName: 'Install dependencies'
       - bash: |
-             cd workers
              python -m pytest --reruns 4 -vv --instafail tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
         env:
           DEDICATED_DOCKER_TEST: "true"
@@ -69,4 +68,5 @@ jobs:
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
+        workingDirectory: $(Build.SourcesDirectory)/workers
         displayName: "Running $(PYTHON_VERSION) Docker Dedicated tests"

@@ -2,9 +2,6 @@ jobs:
   - job: "TestPython"
     displayName: "Run Python E2E Tests"
 
-    workspace:
-      clean: all
-
     pool:
       name: 1es-pool-azfunc
       image: 1es-ubuntu-22.04
@@ -76,7 +73,6 @@ jobs:
           EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
     steps:
-      - checkout: self
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
@@ -154,7 +150,7 @@ jobs:
           Write-Host "skipTest: $(skipTest)"
         displayName: 'Display skipTest variable'
       - bash: |
-             python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_dependency_isolation_functions.py
+             python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
         env:
           AzureWebJobsStorage: $(STORAGE_CONNECTION)
           AzureWebJobsCosmosDBConnectionString: $(COSMOSDB_CONNECTION)

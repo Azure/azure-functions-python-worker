@@ -1,8 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import importlib
+import importlib.util
 import os
-
 from unittest import skip
 from unittest.case import skipIf
 from unittest.mock import patch

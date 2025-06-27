@@ -41,7 +41,6 @@ jobs:
           # Extract minor version
           PY_MINOR="${PY_VER#*.}"
 
-          cd workers
           if [ "$PY_MINOR" -ge 13 ]; then
               echo "Running proxy_worker tests (Python >= 3.13)..."
               python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail \
@@ -56,4 +55,5 @@ jobs:
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
         env:
           PYTHON_VERSION: $(PYTHON_VERSION)
+        workingDirectory: $(Build.SourcesDirectory)/workers
   

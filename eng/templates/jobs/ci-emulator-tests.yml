@@ -80,11 +80,11 @@ jobs:
           docker compose -f workers/tests/emulator_tests/utils/eventhub/docker-compose.yml up -d
         displayName: 'Install Azurite and Start EventHub Emulator'
       - bash: |
-            cd workers
             python -m pytest -q -n auto --dist loadfile --reruns 4 --ignore=tests/emulator_tests/test_servicebus_functions.py tests/emulator_tests
         env:
           AzureWebJobsStorage: "UseDevelopmentStorage=true"
           AzureWebJobsEventHubConnectionString: "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
+        workingDirectory: $(Build.SourcesDirectory)/workers
         displayName: "Running $(PYTHON_VERSION) Python Linux Emulator Tests"
       - bash: |
           # Stop and remove EventHub Emulator container to free up the port
@@ -96,9 +96,9 @@ jobs:
           AzureWebJobsSQLPassword: $(AzureWebJobsSQLPassword)
         displayName: 'Install Azurite and Start ServiceBus Emulator'
       - bash: |
-            cd workers
             python -m pytest -q -n auto --dist loadfile --reruns 4 tests/emulator_tests/test_servicebus_functions.py
         env:
           AzureWebJobsStorage: "UseDevelopmentStorage=true"
           AzureWebJobsServiceBusConnectionString: "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
+        workingDirectory: $(Build.SourcesDirectory)/workers
         displayName: "Running $(PYTHON_VERSION) Python ServiceBus Linux Emulator Tests"

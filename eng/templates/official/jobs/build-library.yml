@@ -1,0 +1,30 @@
+parameters:
+  PYTHON_VERSION: ''
+  PROJECT_NAME: ''
+
+jobs:
+  - job: "Build"
+    displayName: 'Build Python V2 Library'
+
+    pool:
+      name: 1es-pool-azfunc-public
+      image: 1es-ubuntu-22.04
+      os: linux
+    
+    strategy:
+      matrix:
+        directory:
+          PROJECT_DIRECTORY: 'azure_functions_worker_v2'
+    
+    templateContext:
+      outputParentDirectory: $(Build.ArtifactStagingDirectory)
+      outputs:
+        - output: pipelineArtifact
+          targetPath: $(Build.SourcesDirectory)
+          artifactName: "$(EXTENSION_DIRECTORY)"
+
+    steps:
+      - template: /eng/templates/shared/build-steps.yml@self
+        parameters:
+          PYTHON_VERSION: '3.13'
+          PROJECT_DIRECTORY: $(PROJECT_DIRECTORY)

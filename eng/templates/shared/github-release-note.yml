@@ -1,0 +1,59 @@
+parameters:
+  GithubPat: ''
+  NewLibraryVersion: ''
+  BRANCH_NAME: ''
+
+steps:
+  - powershell: |
+      $githubToken = "$(GithubPat)"
+      $newWorkerVersion = "$(NewWorkerVersion)"
+      
+      if($newWorkerVersion -match '(\d)+.(\d)+.(\d)+') {
+          # Create GitHub credential
+          git config --global user.name "AzureFunctionsPython"
+          git config --global user.email "azfunc@microsoft.com"
+      
+          # Clone Repository
+          git clone https://$githubToken@github.com/Azure/azure-functions-python-worker
+          Write-Host "Cloned azure-functions-python-worker into local"
+          Set-Location "azure-functions-python-worker"
+          git checkout "origin/$BRANCH_NAME/$newWorkerVersion"
+      
+          # Create release tag X.Y.Z
+          Write-Host "Creating release tag $newWorkerVersion"
+          git tag -a "$newWorkerVersion" -m "$newWorkerVersion"
+      
+          # Push tag to remote
+          git push origin $newWorkerVersion
+      } else {
+          Write-Host "NewWorkerVersion $newWorkerVersion is malformed (example: 1.1.8)"
+          exit -1
+      }
+    displayName: 'Create and push release tag x.y.z'
+  - powershell: |
+      $githubUser = "$(GithubUser)"
+      $githubToken = "$(GithubPat)"
+      $newWorkerVersion = "$(NewWorkerVersion)"
+      
+      if($newWorkerVersion -match '(\d)+.(\d)+.(\d)+') {
+          # Create GitHub credential
+          $credential = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("${githubUser}:${githubToken}"))
+      
+          # Create Release Note
+          Write-Host "Creating release note in GitHub"
+          $body = (@{tag_name="$newWorkerVersion";name="Release $newWorkerVersion";body="- Fill in Release Note Here";draft=$true} | ConvertTo-Json -Compress)
+          $response = Invoke-WebRequest -Headers @{"Cache-Control"="no-cache";"Content-Type"="application/json";"Authorization"="Basic $credential"} -Method Post -Body "$body" -Uri "https://api.github.com/repos/Azure/azure-functions-python-worker/releases"
+      
+          # Return Value
+          if ($response.StatusCode -ne 201) {
+              Write-Host "Failed to create release note in GitHub"
+              exit -1
+          }
+      
+          $draftUrl = $response | ConvertFrom-Json | Select -expand url
+          Write-Host "Release draft created in $draftUrl"
+      } else {
+          Write-Host "NewWorkerVersion $newWorkerVersion is malformed (example: 1.1.8)"
+          exit -1
+      }
+    displayName: 'Create GitHub release draft'

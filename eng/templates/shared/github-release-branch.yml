@@ -51,12 +51,6 @@ steps:
 
           $response = Invoke-WebRequest -Headers $headers -Method Post -Body $body -Uri "https://api.github.com/repos/Azure/azure-functions-python-worker/pulls"
       
-          # Return Value
-          if ($response.StatusCode -ne 201) {
-              Write-Host "Failed to create PR in Azure Functions Python Worker"
-              exit -1
-          }
-      
           $draftUrl = $response | ConvertFrom-Json | Select -expand url
           Write-Host "PR draft created in $draftUrl"
       } else {

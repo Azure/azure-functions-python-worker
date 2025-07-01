@@ -5,6 +5,10 @@ parameters:
     displayName: 'Worker Release (Nuget)'
     type: boolean
     default: false
+  - name: LibraryRelease
+    displayName: 'Library Release (PyPI)'
+    type: boolean
+    default: false
 
 resources:
   repositories:

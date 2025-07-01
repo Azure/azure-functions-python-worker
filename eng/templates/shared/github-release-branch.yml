@@ -11,7 +11,7 @@ steps:
       $newWorkerVersion = "$(NewWorkerVersion)"
       $versionFile = "$PROJECT_NAME/version.py"
       
-      if($newWorkerVersion -match '(\d)+.(\d)+.(\d)+') {
+      if ($newWorkerVersion -match '^(\d+)\.(\d+)\.(\d+)([a-zA-Z0-9\-\.]*)?$') {
           # Create GitHub credential
           git config --global user.name "AzureFunctionsPython"
           git config --global user.email "azfunc@microsoft.com"

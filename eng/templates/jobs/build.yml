@@ -14,3 +14,7 @@ jobs:
 
     steps:
       - template: /eng/templates/shared/build-steps.yml@self
+        parameters:
+          PYTHON_VERSION: ${{ parameters.PYTHON_VERSION }}
+          PROJECT_NAME: ${{ parameters.PROJECT_NAME }}
+          PROJECT_DIRECTORY: ${{ parameters.PROJECT_DIRECTORY }}

@@ -38,9 +38,9 @@ extends:
         displayName: 'Release Python Worker (Nuget)'
         jobs:
           - template: /eng/templates/official/jobs/publish-release.yml@self
-        condition: eq(variables['WorkerRelease'], True)
+        condition: eq(${{ parameters.WorkerRelease }}, True)
       - stage: ReleasePythonV2Library
         displayName: 'Release V2 Library (PyPI)'
         jobs:
           - template: /eng/templates/official/jobs/publish-library-release.yml@self
-        condition: eq(variables['LibraryRelease'], True)
+        condition: eq(${{ parameters.LibraryRelease }}, True)

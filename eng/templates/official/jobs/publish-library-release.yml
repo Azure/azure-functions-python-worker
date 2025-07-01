@@ -52,7 +52,7 @@ jobs:
   - powershell: |
       $githubUser = "$(GithubUser)"
       $githubToken = "$(GithubPat)"
-      $newLibraryVersion = "$(NewLibraryVersion)"
+      $newLibraryVersion = "$(NewWorkerVersion)"
       $newBranch = "runtime-v2/$newLibraryVersion"
       
       if($newLibraryVersion -match '(\d)+.(\d)+.(\d)+') {
@@ -71,7 +71,7 @@ jobs:
       
           # Modify Runtime Version in pyproject.toml
           Write-Host "Replacing Runtime version in worker's pyproject.toml"
-          ((Get-Content workers/pyproject.toml) -replace '"azure-functions-runtime==(\d)+.(\d)+.*"','"azure-functions-runtime==$(NewLibraryVersion)"' -join "`n") + "`n" | Set-Content -NoNewline workers/pyproject.toml
+          ((Get-Content workers/pyproject.toml) -replace '"azure-functions-runtime==(\d)+.(\d)+.*"','"azure-functions-runtime==$(newLibraryVersion)"' -join "`n") + "`n" | Set-Content -NoNewline workers/pyproject.toml
       
           # Commit Python Version
           Write-Host "Pushing $newBranch to azure-functions-python-worker repo"

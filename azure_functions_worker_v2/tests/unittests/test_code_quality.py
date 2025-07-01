@@ -23,10 +23,6 @@ class TestCodeQuality(unittest.TestCase):
                 stderr=subprocess.PIPE,
                 cwd=str(ROOT_PATH))
         except subprocess.CalledProcessError as ex:
-            if (sys.version_info[1] == 7
-                    and sys.version_info[2] == 3):
-                raise unittest.SkipTest('Subprocess start failing for 3.7.3') \
-                    from ex
             output = ex.output.decode()
             raise AssertionError(
                 'mypy validation failed:\n%s', output) from None

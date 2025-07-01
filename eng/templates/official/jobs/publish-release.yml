@@ -177,7 +177,7 @@ jobs:
     displayName: 'Create Host PR for dev'
 
 - job: "CheckHostPRs"
-  dependsOn: ['HostRepoPRs']
+  dependsOn: ['HostRepoPR']
   displayName: '(Manual) Check Host PRs'
   pool: server
   steps:

@@ -74,6 +74,7 @@ extends:
     
     # Python V2 Library Build and Test Stages
     - stage: BuildV2Library
+      dependsOn: []
       jobs:
         - template: /eng/templates/jobs/build.yml@self
           parameters:

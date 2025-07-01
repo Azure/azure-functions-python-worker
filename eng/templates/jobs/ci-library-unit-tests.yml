@@ -4,7 +4,7 @@ parameters:
 
 jobs:
   - job: "TestPython"
-    displayName: "Run $(PROJECT_NAME) Unit Tests"
+    displayName: "Run ${{ parameters.PROJECT_NAME }} Unit Tests"
     
     strategy:
       matrix:
@@ -21,11 +21,11 @@ jobs:
           version: 8.0.x
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh          
-          eng/scripts/install-dependencies.sh $(PYTHON_VERSION) $(PROJECT_DIRECTORY)
+          eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
         displayName: 'Install dependencies'
       - bash: |
           python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker_v2 --cov-report xml --cov-branch tests/unittests
         displayName: "Running $(PYTHON_VERSION) Unit Tests"
         env:
           AzureWebJobsStorage: $(AzureWebJobsStorage)
-        workingDirectory: $(Build.SourcesDirectory)/$(PROJECT_DIRECTORY)
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}

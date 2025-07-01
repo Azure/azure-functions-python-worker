@@ -1,5 +1,5 @@
 parameters:
-  PROJECT_DIRECTORY: ''
+  PROJECT_DIRECTORY: 'workers'
 
 jobs:
   - job: "TestPython"
@@ -33,7 +33,7 @@ jobs:
           chmod +x eng/scripts/install-dependencies.sh
           chmod +x eng/scripts/test-setup.sh
           
-          eng/scripts/install-dependencies.sh $(PYTHON_VERSION) $(PROJECT_DIRECTORY)
+          eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
           eng/scripts/test-setup.sh
         displayName: 'Install dependencies'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
@@ -58,5 +58,5 @@ jobs:
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
         env:
           PYTHON_VERSION: $(PYTHON_VERSION)
-        workingDirectory: $(Build.SourcesDirectory)/$(PROJECT_DIRECTORY)
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
   

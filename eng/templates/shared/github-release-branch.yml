@@ -14,6 +14,7 @@ steps:
           # Create GitHub credential
           git config --global user.name "AzureFunctionsPython"
           git config --global user.email "azfunc@microsoft.com"
+          $credential = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("${githubUser}:${githubToken}"))
       
           # Heading to Artifact Repository
           Write-Host "Operating based on $stagingDirectory/azure-functions-python-worker"
@@ -32,8 +33,23 @@ steps:
 
           # Create PR
           Write-Host "Creating PR draft in GitHub"
-          $body = (@{head="$newBranch";base="dev";body="Version newWorkerVersion";draft=$true;maintainer_can_modify=$true;title="build: update ${{ parameters.PROJECT_NAME}} version to $newWorkerVersion"} | ConvertTo-Json -Compress)
-          $response = Invoke-WebRequest -Headers @{"Cache-Control"="no-cache";"Content-Type"="application/json";"Authorization"="Basic $credential";"Accept"="application/vnd.github.v3+json"} -Method Post -Body "$body" -Uri "https://api.github.com/repos/Azure/azure-functions-python-worker/pulls"
+          $body = @{
+              head = "$newBranch"
+              base = "dev"
+              title = "build: update $($parameters.PROJECT_NAME) version to $newWorkerVersion"
+              body = "Version $newWorkerVersion"
+              draft = $true
+              maintainer_can_modify = $true
+          } | ConvertTo-Json -Compress
+
+          $headers = @{
+              "Authorization" = "Basic $base64AuthInfo"
+              "Content-Type" = "application/json"
+              "Accept" = "application/vnd.github.v3+json"
+              "User-Agent" = "AzureDevOpsPipeline"
+          }
+
+          $response = Invoke-WebRequest -Headers $headers -Method Post -Body $body -Uri "https://api.github.com/repos/Azure/azure-functions-python-worker/pulls"
       
           # Return Value
           if ($response.StatusCode -ne 201) {

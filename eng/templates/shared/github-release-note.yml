@@ -1,6 +1,4 @@
 parameters:
-  GithubPat: ''
-  NewLibraryVersion: ''
   BRANCH_NAME: ''
 
 steps:
@@ -16,7 +14,7 @@ steps:
       git clone https://$githubToken@github.com/Azure/azure-functions-python-worker
       Write-Host "Cloned azure-functions-python-worker into local"
       Set-Location "azure-functions-python-worker"
-      git checkout "origin/$BRANCH_NAME/$newWorkerVersion"
+      git checkout "origin/${{ parameters.BRANCH_NAME}}/$newWorkerVersion"
   
       # Create release tag X.Y.Z
       Write-Host "Creating release tag $newWorkerVersion"

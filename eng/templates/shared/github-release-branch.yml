@@ -1,6 +1,4 @@
 parameters:
-  GithubPat: ''
-  NewLibraryVersion: ''
   PROJECT_DIRECTORY: ''
   PROJECT_NAME: ''
   BRANCH_NAME: ''
@@ -9,7 +7,7 @@ steps:
   - powershell: |
       $githubToken = "$(GithubPat)"
       $newWorkerVersion = "$(NewWorkerVersion)"
-      $versionFile = "$PROJECT_NAME/version.py"
+      $versionFile = "${{ parameters.PROJECT_NAME}}/version.py"
       
       if ($newWorkerVersion -match '^(\d+)\.(\d+)\.(\d+)([a-zA-Z0-9\-\.]*)?$') {
           # Create GitHub credential
@@ -18,20 +16,20 @@ steps:
       
           # Heading to Artifact Repository
           Write-Host "Operating based on $stagingDirectory/azure-functions-python-worker"
-          git checkout -b "$BRANCH_NAME/$newWorkerVersion"
-          cd $PROJECT_DIRECTORY
+          git checkout -b "${{ parameters.BRANCH_NAME}}/$newWorkerVersion"
+          cd ${{ parameters.PROJECT_DIRECTORY}}
       
-          # Change $PROJECT_NAME/version.py version
+          # Change ${{ parameters.PROJECT_NAME}}/version.py version
           Write-Host "Change version number in version.py to $newWorkerVersion"
           ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $versionFile
           git add $versionFile
-          git commit -m "build: update $PROJECT_NAME version to $newWorkerVersion"
+          git commit -m "build: update ${{ parameters.PROJECT_NAME}} version to $newWorkerVersion"
       
-          # Create release branch $BRANCH_NAME/X.Y.Z
-          Write-Host "Creating release branch $BRANCH_NAME/$newWorkerVersion"
+          # Create release branch ${{ parameters.BRANCH_NAME}}/X.Y.Z
+          Write-Host "Creating release branch ${{ parameters.BRANCH_NAME}}/$newWorkerVersion"
           git push --repo="https://$githubToken@github.com/Azure/azure-functions-python-worker.git"
       } else {
           Write-Host "NewWorkerVersion $newWorkerVersion is malformed (example: 1.1.8)"
           exit -1
       }
-    displayName: 'Push $BRANCH_NAME/x.y.z'
+    displayName: 'Push ${{ parameters.BRANCH_NAME}}/x.y.z'

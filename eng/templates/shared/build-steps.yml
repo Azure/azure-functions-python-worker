@@ -11,11 +11,10 @@ steps:
       python --version
     displayName: 'Check python version'
   - bash: |
-      python -m venv .env
-      .env\Scripts\Activate.ps1
       python -m pip install --upgrade pip
+      python -m pip install build
       cd ${{ parameters.PROJECT_DIRECTORY }}
-      python -m pip install .
+      python -m build
     displayName: 'Build Python ${{ parameters.PROJECT_NAME }}'
   - bash: |
       pip install pip-audit

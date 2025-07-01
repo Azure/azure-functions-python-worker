@@ -1,5 +1,4 @@
 parameters:
-  PYTHON_VERSION: ''
   PROJECT_NAME: ''
 
 jobs:
@@ -21,10 +20,24 @@ jobs:
       outputs:
         - output: pipelineArtifact
           targetPath: $(Build.SourcesDirectory)
-          artifactName: "$(EXTENSION_DIRECTORY)"
+          artifactName: "azure-functions-runtime"
 
     steps:
-      - template: /eng/templates/shared/build-steps.yml@self
-        parameters:
-          PYTHON_VERSION: '3.13'
-          PROJECT_DIRECTORY: $(PROJECT_DIRECTORY)
+      steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.13"
+      - bash: |
+          python --version
+        displayName: 'Check python version'
+      - bash: |
+          python -m pip install -U pip
+          python -m pip install build
+          cd $(PROJECT_DIRECTORY)
+          python -m build
+        displayName: 'Build ${{ parameters.PROJECT_NAME }}'
+      - bash: |
+          pip install pip-audit
+          cd $PROJECT_DIRECTORY)
+          pip-audit .
+        displayName: 'Run vulnerability scan'

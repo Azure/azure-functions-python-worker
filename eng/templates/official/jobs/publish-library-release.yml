@@ -33,6 +33,7 @@ jobs:
   - template: /eng/templates/shared/github-release-note.yml@self
     parameters:
       BRANCH_NAME: 'release-v2'
+      PROJECT_NAME: 'azure_functions_worker_v2'
 
 - job: "CheckGitHubRelease"
   dependsOn: ['CreateReleaseTag']
@@ -71,8 +72,8 @@ jobs:
       
           # Modify Runtime Version in pyproject.toml
           Write-Host "Replacing Runtime version in worker's pyproject.toml"
-          ((Get-Content workers/pyproject.toml) -replace '"azure-functions-runtime==(\d)+.(\d)+.*"','"azure-functions-runtime==$(newLibraryVersion)"' -join "`n") + "`n" | Set-Content -NoNewline workers/pyproject.toml
-      
+          ((Get-Content workers/pyproject.toml) -replace '"azure-functions-runtime==[^";]+', "`"azure-functions-runtime==$newLibraryVersion") -join "`n" | Set-Content -NoNewline workers/pyproject.toml
+
           # Commit Python Version
           Write-Host "Pushing $newBranch to azure-functions-python-worker repo"
           git add workers/pyproject.toml

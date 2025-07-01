@@ -1,5 +1,6 @@
 parameters:
   BRANCH_NAME: ''
+  PROJECT_NAME: ''
 
 steps:
   - powershell: |
@@ -17,8 +18,8 @@ steps:
       git checkout "origin/${{ parameters.BRANCH_NAME}}/$newWorkerVersion"
   
       # Create release tag X.Y.Z
-      Write-Host "Creating release tag $newWorkerVersion"
-      git tag -a "$newWorkerVersion" -m "$newWorkerVersion"
+      Write-Host "Creating release tag ${{ parameters.PROJECT_NAME}}-$newWorkerVersion"
+      git tag -a "${{ parameters.PROJECT_NAME}}-$newWorkerVersion" -m "$newWorkerVersion"
   
       # Push tag to remote
 

@@ -43,7 +43,7 @@ steps:
           } | ConvertTo-Json -Compress
 
           $headers = @{
-              "Authorization" = "Basic $base64AuthInfo"
+              "Authorization" = "Basic $credential"
               "Content-Type" = "application/json"
               "Accept" = "application/vnd.github.v3+json"
               "User-Agent" = "AzureDevOpsPipeline"

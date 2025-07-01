@@ -1,3 +1,6 @@
+parameters:
+  PROJECT_DIRECTORY: 'workers'
+
 jobs:
   - job: "TestPython"
     displayName: "Run Python Linux Consumption Tests"
@@ -26,9 +29,9 @@ jobs:
           versionSpec: $(PYTHON_VERSION)
       - bash: |
           python -m pip install --upgrade pip
-          python -m pip install -U -e .[dev]
+          python -m pip install -U -e ${{ parameters.PROJECT_DIRECTORY }}/[dev]
 
-          cd workers/tests
+          cd ${{ parameters.PROJECT_DIRECTORY }}/tests
           python -m invoke -c test_setup build-protos
         displayName: 'Install dependencies and the worker'
         # Skip the installation stage for SDK and Extensions release branches. This stage will fail because pyproject.toml contains the updated (and unreleased) library version
@@ -39,5 +42,5 @@ jobs:
           AzureWebJobsStorage: $(LinuxStorageConnectionString312)
           _DUMMY_CONT_KEY: $(_DUMMY_CONT_KEY)
         displayName: "Running $(PYTHON_VERSION) Linux Consumption tests"
-        workingDirectory: $(Build.SourcesDirectory)/workers
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))

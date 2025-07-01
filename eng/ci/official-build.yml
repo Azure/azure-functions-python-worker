@@ -87,7 +87,7 @@ extends:
       - stage: RunV2LibraryUnitTests
         dependsOn: BuildV2Library
         jobs:
-          - template: /eng/templates/jobs/ci-libray-unit-tests.yml@self
+          - template: /eng/templates/jobs/ci-library-unit-tests.yml@self
             parameters:
               PROJECT_NAME: 'Python V2 Library'
               PROJECT_DIRECTORY: 'azure_functions_worker_v2'

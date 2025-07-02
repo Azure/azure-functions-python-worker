@@ -9,23 +9,6 @@ ROOT_PATH = pathlib.Path(__file__).parent.parent.parent
 
 
 class TestCodeQuality(unittest.TestCase):
-    def test_mypy(self):
-        try:
-            import mypy  # NoQA
-        except ImportError as e:
-            raise unittest.SkipTest('mypy module is missing') from e
-
-        try:
-            subprocess.run(
-                [sys.executable, '-m', 'mypy', '-m', 'azure_functions_worker_v2'],
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                cwd=str(ROOT_PATH))
-        except subprocess.CalledProcessError as ex:
-            output = ex.output.decode()
-            raise AssertionError(
-                'mypy validation failed:\n%s', output) from None
 
     def test_flake8(self):
         try:

@@ -37,6 +37,6 @@ jobs:
         displayName: 'Build ${{ parameters.PROJECT_NAME }}'
       - bash: |
           pip install pip-audit
-          cd $PROJECT_DIRECTORY)
+          cd $(PROJECT_DIRECTORY)
           pip-audit .
         displayName: 'Run vulnerability scan'

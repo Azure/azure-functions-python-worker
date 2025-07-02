@@ -140,7 +140,7 @@ jobs:
       pip install twine
   
       # Publish artifacts to PyPi
-      twine upload --repository-url https://upload.pypi.org/legacy/ --username "__token__" --password "$pypiToken" PythonRuntimeArtifact/azure-functions-runtime/dist/*
+      twine upload --repository-url https://upload.pypi.org/legacy/ --username "__token__" --password "$pypiToken" PythonRuntimeArtifact/azure_functions_worker_v2/dist/*
       Start-Sleep -Seconds 3
   
       # Checking if the new version is uploaded

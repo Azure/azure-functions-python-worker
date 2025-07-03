@@ -9,7 +9,7 @@ from .utils.constants import (APPLICATIONINSIGHTS_CONNECTION_STRING,
                               PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME,
                               PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME_DEFAULT,
                               TRACESTATE, TRACEPARENT)
-from utils.tracing import serialize_exception_as_str
+from .utils.tracing import serialize_exception_as_str
 
 
 class OTelManager:

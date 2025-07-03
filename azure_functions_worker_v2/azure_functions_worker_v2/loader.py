@@ -24,7 +24,7 @@ from .utils.constants import (
     PYTHON_SCRIPT_FILE_NAME_DEFAULT,
     RETRY_POLICY,
 )
-from .utils.env_state import get_app_setting
+from .utils.app_setting_manager import get_app_setting
 from .utils.wrappers import attach_message_to_exception
 
 
@@ -146,7 +146,7 @@ def process_indexed_function(protos,
 
 
 @attach_message_to_exception(
-    expt_type=ImportError,
+    expt_type=(ImportError, ModuleNotFoundError),
     message="Cannot find module. Please check the requirements.txt file for the "
             "missing module. For more info, please refer the troubleshooting guide: "
             + MODULE_NOT_FOUND_TS_URL + ". Current sys.path: " + " ".join(sys.path),

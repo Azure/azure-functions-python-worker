@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 
-from typing import List, Optional
+from typing import List, MutableMapping, Optional
 
 from .functions import FunctionInfo, Registry
 from .http_v2 import (
@@ -17,40 +17,43 @@ from .http_v2 import (
 )
 from .loader import index_function_app, process_indexed_function
 from .logging import logger
-from .otel import otel_manager, initialize_azure_monitor, configure_opentelemetry
+from .otel import otel_manager, configure_opentelemetry, initialize_azure_monitor
 from .version import VERSION
 
 from .bindings.context import get_context
-from .bindings.meta import (load_binding_registry, is_trigger_binding,
-                            from_incoming_proto, to_outgoing_param_binding,
+from .bindings.meta import (from_incoming_proto,
+                            is_trigger_binding,
+                            load_binding_registry,
+                            to_outgoing_param_binding,
                             to_outgoing_proto)
 from .bindings.out import Out
-from .utils.app_setting_manager import get_python_appsetting_state
+from .utils.app_setting_manager import (get_app_setting,
+                                        get_python_appsetting_state,
+                                        is_envvar_true)
 from .utils.constants import (FUNCTION_DATA_CACHE,
+                              HTTP_URI,
+                              PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY,
+                              PYTHON_ENABLE_DEBUG_LOGGING,
+                              PYTHON_ENABLE_OPENTELEMETRY,
+                              PYTHON_SCRIPT_FILE_NAME,
+                              PYTHON_SCRIPT_FILE_NAME_DEFAULT,
                               RAW_HTTP_BODY_BYTES,
-                              TYPED_DATA_COLLECTION,
+                              REQUIRES_ROUTE_PARAMETERS,
                               RPC_HTTP_BODY_ONLY,
-                              WORKER_STATUS,
                               RPC_HTTP_TRIGGER_METADATA_REMOVED,
                               SHARED_MEMORY_DATA_TRANSFER,
                               TRUE,
-                              PYTHON_ENABLE_OPENTELEMETRY,
-                              PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY,
+                              TYPED_DATA_COLLECTION,
                               WORKER_OPEN_TELEMETRY_ENABLED,
-                              HTTP_URI,
-                              REQUIRES_ROUTE_PARAMETERS,
-                              PYTHON_SCRIPT_FILE_NAME,
-                              PYTHON_SCRIPT_FILE_NAME_DEFAULT,
-                              PYTHON_ENABLE_DEBUG_LOGGING)
-from .utils.current import get_current_loop, execute_async, run_sync_func
-from .utils.env_state import get_app_setting, is_envvar_true
+                              WORKER_STATUS)
+from .utils.executor import get_current_loop, execute_async, run_sync_func
 from .utils.helpers import change_cwd, get_worker_metadata
-from .utils.tracing import serialize_exception
+from .utils.tracing import serialize_exception, serialize_exception_as_str
 from .utils.validators import validate_script_file_name
 
-metadata_result: Optional[List] = None
-metadata_exception: Optional[Exception] = None
-_functions = Registry()
+_metadata_result: Optional[List] = None
+_metadata_exception: Optional[Exception] = None
+_functions: MutableMapping[str, FunctionInfo] = Registry()
 _function_data_cache_enabled: bool = False
 _host: str = ""
 protos = None
@@ -59,7 +62,7 @@ protos = None
 async def worker_init_request(request):
     logger.info("V2 Library Worker: received WorkerInitRequest,"
                 "Version %s", VERSION)
-    global _host, protos, _function_data_cache_enabled, metadata_exception
+    global _host, protos, _function_data_cache_enabled, _metadata_exception
     init_request = request.request.worker_init_request
     host_capabilities = init_request.capabilities
     _host = request.properties.get("host")
@@ -95,22 +98,22 @@ async def worker_init_request(request):
         load_function_metadata(
             init_request.function_app_directory,
             caller_info="worker_init_request")
-
-        if HttpV2Registry.http_v2_enabled():
-            logger.debug("Streaming enabled.")
-            capabilities[HTTP_URI] = \
-                initialize_http_server(_host)
-            capabilities[REQUIRES_ROUTE_PARAMETERS] = TRUE
-
-    except HttpServerInitError as ex:
-        logger.error("HTTP server init error has occurred")
-        metadata_exception = ex
+        try:
+            if HttpV2Registry.http_v2_enabled():
+                logger.debug("Streaming enabled.")
+                capabilities[HTTP_URI] = \
+                    initialize_http_server(_host)
+                capabilities[REQUIRES_ROUTE_PARAMETERS] = TRUE
+        except HttpServerInitError as ex:
+            logger.error("HTTP server init error has occurred")
+            _metadata_exception = ex
     except Exception as ex:
         # This is catching an exception that happens during indexing while the init
         # request is still in progress. The proxy worker will do nothing with this,
         # but metadata will fail
-        metadata_exception = ex
-        logger.error("An exception in WorkerInitRequest has occurred: %s", ex)
+        _metadata_exception = ex
+        logger.error("An exception in WorkerInitRequest has occurred: %s",
+                     serialize_exception_as_str(ex))
 
     logger.debug("Successfully completed WorkerInitRequest")
     return protos.WorkerInitResponse(
@@ -123,25 +126,23 @@ async def worker_init_request(request):
 # worker_status_request can be done in the proxy worker
 
 async def functions_metadata_request(request):
-    global protos, metadata_result, metadata_exception
+    global protos, _metadata_result, _metadata_exception
     logger.debug("V2 Library Worker: received WorkerMetadataRequest."
                  " Metadata Result: %s, Metadata Exception: %s",
-                 metadata_result, metadata_exception)
+                 _metadata_result, _metadata_exception)
 
-    if metadata_exception:
-        logger.error("An exception in WorkerMetadataRequest has occurred: %s",
-                     metadata_exception)
+    if _metadata_exception:
         return protos.FunctionMetadataResponse(
             result=protos.StatusResult(
                 status=protos.StatusResult.Failure,
                 exception=serialize_exception(
-                    metadata_exception, protos)))
+                    _metadata_exception, protos)))
 
     else:
         logger.debug("Successfully completed WorkerMetadataRequest.")
         return protos.FunctionMetadataResponse(
             use_default_metadata_indexing=False,
-            function_metadata_results=metadata_result,
+            function__metadata_results=_metadata_result,
             result=protos.StatusResult(
                 status=protos.StatusResult.Success))
 
@@ -279,11 +280,8 @@ async def invocation_request(request):
             output_data=output_data)
 
     except Exception as ex:
-        logger.error("An exception in WorkerInvocationRequest has occurred: %s", ex)
         if http_v2_enabled:
             http_coordinator.set_http_response(invocation_id, ex)
-        global metadata_exception
-        metadata_exception = ex
         return protos.InvocationResponse(
             invocation_id=invocation_id,
             result=protos.StatusResult(
@@ -298,7 +296,7 @@ async def function_environment_reload_request(request):
     """
     logger.info("V2 Library Worker: received WorkerEnvReloadRequest,"
                 "Version %s", VERSION)
-    global _host, protos, metadata_exception
+    global _host, protos, _metadata_exception
     try:
 
         func_env_reload_request = \
@@ -350,7 +348,7 @@ async def function_environment_reload_request(request):
                     initialize_http_server(_host)
                 capabilities[REQUIRES_ROUTE_PARAMETERS] = TRUE
         except HttpServerInitError as ex:
-            metadata_exception = ex
+            _metadata_exception = ex
 
         # Change function app directory
         if getattr(func_env_reload_request,
@@ -366,8 +364,7 @@ async def function_environment_reload_request(request):
                 status=protos.StatusResult.Success))
 
     except Exception as ex:
-        logger.error("An exception in WorkerEnvReloadRequest has occurred: %s", ex)
-        metadata_exception = ex
+        _metadata_exception = ex
         return protos.FunctionEnvironmentReloadResponse(
             result=protos.StatusResult(
                 status=protos.StatusResult.Failure,
@@ -375,7 +372,7 @@ async def function_environment_reload_request(request):
 
 
 def load_function_metadata(function_app_directory, caller_info):
-    global protos, metadata_result
+    global protos, _metadata_result
     """
     This method is called to index the functions in the function app
     directory and save the results in function_metadata_result or
@@ -397,12 +394,12 @@ def load_function_metadata(function_app_directory, caller_info):
 
         # For V1, the function path will not exist and
         # return None.
-        global metadata_result
-        metadata_result = (index_functions(function_path, function_app_directory)) \
+        global _metadata_result
+        _metadata_result = (index_functions(function_path, function_app_directory)) \
             if os.path.exists(function_path) else None
     except Exception as ex:
-        global metadata_exception
-        metadata_exception = ex
+        global _metadata_exception
+        _metadata_exception = ex
 
 
 def index_functions(function_path: str, function_dir: str):
@@ -414,7 +411,7 @@ def index_functions(function_path: str, function_dir: str):
     )
 
     if indexed_functions:
-        fx_metadata_results, fx_bindings_logs = (
+        fx__metadata_results, fx_bindings_logs = (
             process_indexed_function(
                 protos,
                 _functions,
@@ -445,4 +442,4 @@ def index_functions(function_path: str, function_dir: str):
         }
         logger.info(json.dumps(log_data))
 
-        return fx_metadata_results
+        return fx__metadata_results

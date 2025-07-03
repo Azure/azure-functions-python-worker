@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/Azure/azure-functions-python-worker/blob/hallvictoria/library-worker/README.md"
+Documentation = "https://github.com/Azure/azure-functions-python-worker/blob/dev/azure_functions_worker_v2/README.md"
 Repository = "https://github.com/Azure/azure-functions-python-worker"
 
 [project.optional-dependencies]
@@ -48,7 +48,6 @@ dev = [
     "grpcio~=1.70.0",
     "grpcio-tools~=1.70.0",
     "pytest-sugar",
-    "opentelemetry-api", # Used for OpenTelemetry unit tests
     "pytest-cov",
     "pytest-xdist",
     "pytest-randomly",

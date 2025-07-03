@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 from typing import Any, Callable
 
-from .env_state import is_envvar_false, is_envvar_true
+from .app_setting_manager import is_envvar_false, is_envvar_true
 from .tracing import extend_exception_message
 
 from ..logging import logger
@@ -36,8 +36,10 @@ def disable_feature_by(flag: str,
     return decorate
 
 
-def attach_message_to_exception(expt_type: type[Exception], message: str,
-                                debug_logs=None) -> Callable:
+def attach_message_to_exception(
+        expt_type: type[Exception] | tuple[type[Exception], ...],
+        message: str,
+        debug_logs=None) -> Callable:
     def decorate(func):
         def call(*args, **kwargs):
             try:

@@ -53,3 +53,18 @@ def serialize_exception(exc: Exception, protos):
         stack_trace = ''
 
     return protos.RpcException(message=message, stack_trace=stack_trace)
+
+
+def serialize_exception_as_str(exc: Exception):
+    try:
+        message = str(type(exc).__name__) + ": " + str(exc)
+    except Exception:
+        message = ('Unhandled exception in function. '
+                   'Could not serialize original exception message.')
+
+    try:
+        stack_trace = marshall_exception_trace(exc)
+    except Exception:
+        stack_trace = ''
+
+    return "Message: " + message + " | " + "Stack Trace: " + stack_trace

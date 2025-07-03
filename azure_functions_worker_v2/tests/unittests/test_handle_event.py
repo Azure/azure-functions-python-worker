@@ -116,16 +116,16 @@ class TestHandleEvent(testutils.AsyncTestCase):
 
     async def test_functions_metadata_request(self):
         handle_event.protos = test_protos
-        handle_event.metadata_exception = None
+        handle_event._metadata_exception = None
         metadata_result = await functions_metadata_request(None)
         self.assertEqual(metadata_result.result.status, 1)
 
     async def test_functions_metadata_request_with_exception(self):
         handle_event.protos = test_protos
-        handle_event.metadata_exception = Exception
+        handle_event._metadata_exception = Exception
         metadata_result = await functions_metadata_request(None)
         self.assertEqual(metadata_result.result.status, 0)
-        handle_event.metadata_exception = None
+        handle_event._metadata_exception = None
 
     @patch("azure_functions_worker_v2.loader.index_function_app",
            return_value=True)

@@ -142,7 +142,7 @@ async def functions_metadata_request(request):
         logger.debug("Successfully completed WorkerMetadataRequest.")
         return protos.FunctionMetadataResponse(
             use_default_metadata_indexing=False,
-            function__metadata_results=_metadata_result,
+            function_metadata_results=_metadata_result,
             result=protos.StatusResult(
                 status=protos.StatusResult.Success))
 

@@ -14,7 +14,7 @@ key = os.getenv("CosmosDBEmulatorKey")
 client = CosmosClient(url, key)
 
 
-# Create a database in the account using the CosmosClient,
+# Create a database in the account using the CosmosClient
 database_name = "test"
 try:
     database = client.create_database(id=database_name)
@@ -44,7 +44,7 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'cosmosdb_functions'
+        return testutils.EMULATOR_TESTS_FOLDER / 'cosmosdb_functions'
 
     def test_cosmosdb_trigger(self):
         data = str(round(time.time()))
@@ -98,7 +98,7 @@ class TestCosmosDBFunctionsStein(TestCosmosDBFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'cosmosdb_functions' / \
+        return testutils.EMULATOR_TESTS_FOLDER / 'cosmosdb_functions' / \
             'cosmosdb_functions_stein'
 
 
@@ -106,5 +106,5 @@ class TestCosmosDBFunctionsSteinGeneric(TestCosmosDBFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'cosmosdb_functions' / \
+        return testutils.EMULATOR_TESTS_FOLDER / 'cosmosdb_functions' / \
             'cosmosdb_functions_stein' / 'generic'

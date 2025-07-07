@@ -3,6 +3,7 @@
 import json
 import time
 from azure.cosmos import CosmosClient, PartitionKey
+from unittest import skip
 
 from tests.utils import testutils
 
@@ -64,6 +65,7 @@ class TestCosmosDBFunctions(testutils.WebHostTestCase):
         self.assertTrue('_rid' in response)
         self.assertTrue('_ts' in response)
 
+    @skip("Waiting for 'Read collection feed' support in CosmosDB Emulator")
     def test_cosmosdb_input(self):
         data = str(round(time.time()))
         doc = {'id': 'cosmosdb-input-test',

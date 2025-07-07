@@ -88,8 +88,8 @@ jobs:
             python -m pytest -q -n auto --dist loadfile --reruns 4 --ignore=tests/emulator_tests/test_servicebus_functions.py tests/emulator_tests
         env:
           AzureWebJobsStorage: "UseDevelopmentStorage=true"
-          AzureWebJobsEventHubConnectionString: "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
-          AzureWebJobsCosmosDBConnectionString: "AccountEndpoint=http://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;"
+          AzureWebJobsEventHubConnectionString: $(EmulatorEventHubConnectionString)
+          AzureWebJobsCosmosDBConnectionString: $(EmulatorCosmosDBConnectionString)
         workingDirectory: $(Build.SourcesDirectory)/workers
         displayName: "Running $(PYTHON_VERSION) Python Linux Emulator Tests"
       - bash: |
@@ -105,6 +105,6 @@ jobs:
             python -m pytest -q -n auto --dist loadfile --reruns 4 tests/emulator_tests/test_servicebus_functions.py
         env:
           AzureWebJobsStorage: "UseDevelopmentStorage=true"
-          AzureWebJobsServiceBusConnectionString: "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
+          AzureWebJobsServiceBusConnectionString: $(EmulatorServiceBusConnectionString)
         workingDirectory: $(Build.SourcesDirectory)/workers
         displayName: "Running $(PYTHON_VERSION) Python ServiceBus Linux Emulator Tests"

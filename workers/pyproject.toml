@@ -50,6 +50,7 @@ Repository = "https://github.com/Azure/azure-functions-python-worker"
 
 [project.optional-dependencies]
 dev = [
+    "azure-cosmos", # Used for CosmosDB Emulator tests
     "azure-eventhub", # Used for EventHub E2E tests
     "azure-functions-durable", # Used for Durable E2E tests
     "azure-monitor-opentelemetry; python_version >= '3.8'", # Used for Azure Monitor unit tests

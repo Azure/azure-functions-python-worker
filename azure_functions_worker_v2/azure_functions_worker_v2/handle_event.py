@@ -47,7 +47,7 @@ from .utils.constants import (FUNCTION_DATA_CACHE,
                               WORKER_OPEN_TELEMETRY_ENABLED,
                               WORKER_STATUS)
 from .utils.executor import get_current_loop, execute_async, run_sync_func
-from .utils.helpers import change_cwd, get_worker_metadata
+from .utils.helpers import change_cwd, get_sdk_version, get_worker_metadata
 from .utils.tracing import serialize_exception, serialize_exception_as_str
 from .utils.validators import validate_script_file_name
 
@@ -128,8 +128,9 @@ async def worker_init_request(request):
 async def functions_metadata_request(request):
     global protos, _metadata_result, _metadata_exception
     logger.debug("V2 Library Worker: received WorkerMetadataRequest."
-                 " Metadata Result: %s, Metadata Exception: %s",
-                 _metadata_result, _metadata_exception)
+                 " Metadata Result: %s, Metadata Exception: %s,"
+                 " azure-functions version: %s",
+                 _metadata_result, _metadata_exception, get_sdk_version())
 
     if _metadata_exception:
         return protos.FunctionMetadataResponse(

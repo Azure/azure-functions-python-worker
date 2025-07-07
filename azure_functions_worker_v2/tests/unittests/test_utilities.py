@@ -6,7 +6,10 @@ import typing
 import unittest
 from unittest.mock import patch
 
-from azure_functions_worker_v2.utils import app_setting_manager, validators, wrappers
+from azure_functions_worker_v2.utils import (app_setting_manager,
+                                             helpers,
+                                             validators,
+                                             wrappers)
 
 TEST_APP_SETTING_NAME = "TEST_APP_SETTING_NAME"
 TEST_FEATURE_FLAG = "APP_SETTING_FEATURE_FLAG"
@@ -319,6 +322,12 @@ class TestUtilities(unittest.TestCase):
         file_name = 'test'
         with self.assertRaises(validators.InvalidFileNameError):
             validators.validate_script_file_name(file_name)
+    
+    def test_set_get_sdk_version(self):
+        test_version = '1.2.3'
+        helpers.set_sdk_version(test_version)
+        self.assertEqual(helpers.get_sdk_version(), test_version)
+
 
     def _unset_feature_flag(self):
         try:

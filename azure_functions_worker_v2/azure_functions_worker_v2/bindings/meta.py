@@ -16,6 +16,7 @@ from ..utils.constants import (
     HTTP,
     HTTP_TRIGGER,
 )
+from ..utils.helpers import set_sdk_version
 
 
 PB_TYPE = 'rpc_data'
@@ -59,13 +60,15 @@ def load_binding_registry() -> None:
     not found, it loads the builtin. If the BINDING_REGISTRY is None,
     azure-functions hasn't been loaded in properly.
 
-    Tries to load the base extension only for python 3.8+.
+    Tries to load the base extension.
     """
 
     func = sys.modules.get('azure.functions')
 
     if func is None:
         import azure.functions as func
+    
+    set_sdk_version(func.__version__)  # type: ignore
 
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()  # type: ignore

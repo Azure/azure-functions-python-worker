@@ -90,6 +90,8 @@ jobs:
           AzureWebJobsStorage: "UseDevelopmentStorage=true"
           AzureWebJobsEventHubConnectionString: $(EmulatorEventHubConnectionString)
           AzureWebJobsCosmosDBConnectionString: $(EmulatorCosmosDBConnectionString)
+          CosmosDBEmulatorUrl: $(CosmosDBEmulatorUrl)
+          CosmosDBEmulatorKey: $(CosmosDBEmulatorKey)
         workingDirectory: $(Build.SourcesDirectory)/workers
         displayName: "Running $(PYTHON_VERSION) Python Linux Emulator Tests"
       - bash: |

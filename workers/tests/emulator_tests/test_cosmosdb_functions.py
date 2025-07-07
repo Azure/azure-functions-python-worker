@@ -1,14 +1,17 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import json
+import os
 import time
+
 from azure.cosmos import CosmosClient, PartitionKey
 from unittest import skip
 
 from tests.utils import testutils
 
-
-client = CosmosClient("http://localhost:8081", "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==")
+url = os.getenv("CosmosDBEmulatorUrl")
+key = os.getenv("CosmosDBEmulatorKey")
+client = CosmosClient(url, key)
 
 
 # Create a database in the account using the CosmosClient,

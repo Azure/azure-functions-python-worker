@@ -52,7 +52,6 @@ from .utils.tracing import serialize_exception
 from .utils.validators import validate_script_file_name
 
 _metadata_result: Optional[List] = None
-_metadata_exception: Optional[Exception] = None
 _functions: MutableMapping[str, FunctionInfo] = Registry()
 _function_data_cache_enabled: bool = False
 _host: str = ""
@@ -62,7 +61,7 @@ protos = None
 async def worker_init_request(request):
     logger.debug("V2 Library Worker: received WorkerInitRequest,"
                  "Version %s", VERSION)
-    global _host, protos, _function_data_cache_enabled, _metadata_exception
+    global _host, protos, _function_data_cache_enabled
     init_request = request.request.worker_init_request
     host_capabilities = init_request.capabilities
     _host = request.properties.get("host")
@@ -295,7 +294,7 @@ async def function_environment_reload_request(request):
     """
     logger.debug("V2 Library Worker: received WorkerEnvReloadRequest,"
                  "Version %s", VERSION)
-    global _host, protos, _metadata_exception
+    global _host, protos
     try:
 
         func_env_reload_request = \
@@ -376,31 +375,30 @@ def load_function_metadata(function_app_directory, caller_info):
     global protos, _metadata_result
     """
     This method is called to index the functions in the function app
-    directory and save the results in function_metadata_result or
-    function_metadata_exception in case of an exception.
+    directory and save the results in function_metadata_result.
+
+    If an exception occurs during the indexing, it will be caught
+    in the worker_init_request and returned as a failure
+    status result.
     """
-    try:
-        script_file_name = get_app_setting(
-            setting=PYTHON_SCRIPT_FILE_NAME,
-            default_value=PYTHON_SCRIPT_FILE_NAME_DEFAULT)
+    script_file_name = get_app_setting(
+        setting=PYTHON_SCRIPT_FILE_NAME,
+        default_value=PYTHON_SCRIPT_FILE_NAME_DEFAULT)
 
-        logger.debug(
-            'Received load_function_metadata request from %s, '
-            'script_file_name: %s',
-            caller_info, script_file_name)
+    logger.debug(
+        'Received load_function_metadata request from %s, '
+        'script_file_name: %s',
+        caller_info, script_file_name)
 
-        validate_script_file_name(script_file_name)
-        function_path = os.path.join(function_app_directory,
-                                     script_file_name)
+    validate_script_file_name(script_file_name)
+    function_path = os.path.join(function_app_directory,
+                                 script_file_name)
 
-        # For V1, the function path will not exist and
-        # return None.
-        global _metadata_result
-        _metadata_result = (index_functions(function_path, function_app_directory)) \
-            if os.path.exists(function_path) else None
-    except Exception as ex:
-        global _metadata_exception
-        _metadata_exception = ex
+    # For V1, the function path will not exist and
+    # return None.
+    global _metadata_result
+    _metadata_result = (index_functions(function_path, function_app_directory)) \
+        if os.path.exists(function_path) else None
 
 
 def index_functions(function_path: str, function_dir: str):

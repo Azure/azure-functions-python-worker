@@ -277,10 +277,15 @@ class HttpV2Registry:
 
     @classmethod
     def _check_http_v2_enabled(cls):
-        import azurefunctions.extensions.base as ext_base
-        cls._ext_base = ext_base
+        try:
+            # Attempt to import the base extension module
+            import azurefunctions.extensions.base as ext_base
+            cls._ext_base = ext_base
 
-        return cls._ext_base.HttpV2FeatureChecker.http_v2_enabled()
+            return cls._ext_base.HttpV2FeatureChecker.http_v2_enabled()
+        except ImportError:
+            logger.debug("ImportError when importing base extension.")
+            return False
 
 
 http_coordinator = HttpCoordinator()

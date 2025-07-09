@@ -67,7 +67,7 @@ def load_binding_registry() -> None:
 
     if func is None:
         import azure.functions as func
-    
+
     set_sdk_version(func.__version__)  # type: ignore
 
     global BINDING_REGISTRY

@@ -409,13 +409,17 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self.request_id)
 
         if DependencyManager.is_in_linux_consumption():
-            import azure_functions_worker_v2
+            import azure_functions_worker_v2  # NoQA
 
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
 
         directory = request.worker_init_request.function_app_directory
         self.reload_library_worker(directory)
+        logger.info('Using library: %s, '
+                    'library version: %s',
+                    _library_worker,
+                    _library_worker.version.VERSION)  # type: ignore[union-attr]
 
         init_request = WorkerRequest(name="WorkerInitRequest",
                                      request=request,
@@ -442,6 +446,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         DependencyManager.prioritize_customer_dependencies(directory)
         self.reload_library_worker(directory)
+        logger.info('Using library: %s, '
+                    'library version: %s',
+                    _library_worker,
+                    _library_worker.version.VERSION)  # type: ignore[union-attr]
 
         env_reload_request = WorkerRequest(name="FunctionEnvironmentReloadRequest",
                                            request=request,

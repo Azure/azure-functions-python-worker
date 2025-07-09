@@ -48,7 +48,7 @@ from .utils.constants import (FUNCTION_DATA_CACHE,
                               WORKER_STATUS)
 from .utils.executor import get_current_loop, execute_async, run_sync_func
 from .utils.helpers import change_cwd, get_sdk_version, get_worker_metadata
-from .utils.tracing import serialize_exception, serialize_exception_as_str
+from .utils.tracing import serialize_exception
 from .utils.validators import validate_script_file_name
 
 _metadata_result: Optional[List] = None
@@ -60,8 +60,8 @@ protos = None
 
 
 async def worker_init_request(request):
-    logger.info("V2 Library Worker: received WorkerInitRequest,"
-                "Version %s", VERSION)
+    logger.debug("V2 Library Worker: received WorkerInitRequest,"
+                 "Version %s", VERSION)
     global _host, protos, _function_data_cache_enabled, _metadata_exception
     init_request = request.request.worker_init_request
     host_capabilities = init_request.capabilities
@@ -93,7 +93,7 @@ async def worker_init_request(request):
     # dictionary which will be later used in the invocation request
     load_binding_registry()
 
-    # Index in init by default
+    # Index in init by default. Fail if an exception occurs.
     try:
         load_function_metadata(
             init_request.function_app_directory,
@@ -105,15 +105,23 @@ async def worker_init_request(request):
                     initialize_http_server(_host)
                 capabilities[REQUIRES_ROUTE_PARAMETERS] = TRUE
         except HttpServerInitError as ex:
-            logger.error("HTTP server init error has occurred")
-            _metadata_exception = ex
+            return protos.WorkerInitResponse(
+                capabilities=capabilities,
+                worker_metadata=get_worker_metadata(protos),
+                result=protos.StatusResult(
+                    status=protos.StatusResult.Failure,
+                    exception=serialize_exception(
+                        ex, protos))
+            )
     except Exception as ex:
-        # This is catching an exception that happens during indexing while the init
-        # request is still in progress. The proxy worker will do nothing with this,
-        # but metadata will fail
-        _metadata_exception = ex
-        logger.error("An exception in WorkerInitRequest has occurred: %s",
-                     serialize_exception_as_str(ex))
+        return protos.WorkerInitResponse(
+            capabilities=capabilities,
+            worker_metadata=get_worker_metadata(protos),
+            result=protos.StatusResult(
+                status=protos.StatusResult.Failure,
+                exception=serialize_exception(
+                    ex, protos))
+        )
 
     logger.debug("Successfully completed WorkerInitRequest")
     return protos.WorkerInitResponse(
@@ -126,26 +134,17 @@ async def worker_init_request(request):
 # worker_status_request can be done in the proxy worker
 
 async def functions_metadata_request(request):
-    global protos, _metadata_result, _metadata_exception
+    global protos, _metadata_result
     logger.debug("V2 Library Worker: received WorkerMetadataRequest."
-                 " Metadata Result: %s, Metadata Exception: %s,"
+                 " Metadata Result: %s,"
                  " azure-functions version: %s",
-                 _metadata_result, _metadata_exception, get_sdk_version())
+                 _metadata_result, get_sdk_version())
 
-    if _metadata_exception:
-        return protos.FunctionMetadataResponse(
-            result=protos.StatusResult(
-                status=protos.StatusResult.Failure,
-                exception=serialize_exception(
-                    _metadata_exception, protos)))
-
-    else:
-        logger.debug("Successfully completed WorkerMetadataRequest.")
-        return protos.FunctionMetadataResponse(
-            use_default_metadata_indexing=False,
-            function_metadata_results=_metadata_result,
-            result=protos.StatusResult(
-                status=protos.StatusResult.Success))
+    return protos.FunctionMetadataResponse(
+        use_default_metadata_indexing=False,
+        function_metadata_results=_metadata_result,
+        result=protos.StatusResult(
+            status=protos.StatusResult.Success))
 
 
 async def function_load_request(request):
@@ -154,7 +153,6 @@ async def function_load_request(request):
     func_request = request.request.function_load_request
     function_id = func_request.function_id
 
-    logger.debug("Successfully completed WorkerLoadRequest.")
     return protos.FunctionLoadResponse(
         function_id=function_id,
         result=protos.StatusResult(
@@ -177,9 +175,9 @@ async def invocation_request(request):
         fi: FunctionInfo = _functions.get_function(
             function_id)
         assert fi is not None
-        logger.debug("Function name: %s, Function Type: %s",
-                     fi.name,
-                     ("async" if fi.is_async else "sync"))
+        logger.info("Function name: %s, Function Type: %s",
+                    fi.name,
+                    ("async" if fi.is_async else "sync"))
 
         args = {}
 
@@ -295,8 +293,8 @@ async def function_environment_reload_request(request):
     This is called only when placeholder mode is true. On worker restarts
     worker init request will be called directly.
     """
-    logger.info("V2 Library Worker: received WorkerEnvReloadRequest,"
-                "Version %s", VERSION)
+    logger.debug("V2 Library Worker: received WorkerEnvReloadRequest,"
+                 "Version %s", VERSION)
     global _host, protos, _metadata_exception
     try:
 
@@ -349,7 +347,10 @@ async def function_environment_reload_request(request):
                     initialize_http_server(_host)
                 capabilities[REQUIRES_ROUTE_PARAMETERS] = TRUE
         except HttpServerInitError as ex:
-            _metadata_exception = ex
+            return protos.FunctionEnvironmentReloadResponse(
+                result=protos.StatusResult(
+                    status=protos.StatusResult.Failure,
+                    exception=serialize_exception(ex, protos)))
 
         # Change function app directory
         if getattr(func_env_reload_request,
@@ -365,7 +366,6 @@ async def function_environment_reload_request(request):
                 status=protos.StatusResult.Success))
 
     except Exception as ex:
-        _metadata_exception = ex
         return protos.FunctionEnvironmentReloadResponse(
             result=protos.StatusResult(
                 status=protos.StatusResult.Failure,
@@ -385,7 +385,7 @@ def load_function_metadata(function_app_directory, caller_info):
             default_value=PYTHON_SCRIPT_FILE_NAME_DEFAULT)
 
         logger.debug(
-            'Received load metadata request from %s, '
+            'Received load_function_metadata request from %s, '
             'script_file_name: %s',
             caller_info, script_file_name)
 
@@ -406,10 +406,6 @@ def load_function_metadata(function_app_directory, caller_info):
 def index_functions(function_path: str, function_dir: str):
     global protos
     indexed_functions = index_function_app(function_path)
-    logger.info(
-        "Indexed function app and found %s functions",
-        len(indexed_functions)
-    )
 
     if indexed_functions:
         fx__metadata_results, fx_bindings_logs = (
@@ -436,7 +432,8 @@ def index_functions(function_path: str, function_dir: str):
             indexed_function_logs.append(function_log)
 
         log_data = {
-            "message": "Successfully processed FunctionMetadataRequest",
+            "message": "Successfully indexed function app.",
+            "function_count": len(indexed_functions),
             "functions": " ".join(indexed_function_logs),
             "deferred_bindings_enabled": _functions.deferred_bindings_enabled(),
             "app_settings": get_python_appsetting_state()

@@ -257,7 +257,8 @@ class TestUtilities(unittest.TestCase):
         self.assertEqual(app_setting, '42')
 
     def test_app_settings_not_set_should_return_default_value(self):
-        app_setting = app_setting_manager.get_app_setting(TEST_APP_SETTING_NAME, 'default')
+        app_setting = app_setting_manager.get_app_setting(TEST_APP_SETTING_NAME,
+                                                          'default')
         self.assertEqual(app_setting, 'default')
 
     def test_app_settings_should_ignore_default_value(self):
@@ -265,14 +266,16 @@ class TestUtilities(unittest.TestCase):
         os.environ.update({TEST_APP_SETTING_NAME: '42'})
 
         # Try using utility to acquire application setting
-        app_setting = app_setting_manager.get_app_setting(TEST_APP_SETTING_NAME, 'default')
+        app_setting = app_setting_manager.get_app_setting(TEST_APP_SETTING_NAME,
+                                                          'default')
         self.assertEqual(app_setting, '42')
 
     def test_app_settings_should_not_trigger_validator_when_not_set(self):
         def raise_excpt(value: str):
             raise Exception('Should not raise on app setting not found')
 
-        app_setting_manager.get_app_setting(TEST_APP_SETTING_NAME, validator=raise_excpt)
+        app_setting_manager.get_app_setting(TEST_APP_SETTING_NAME,
+                                            validator=raise_excpt)
 
     def test_app_settings_return_default_value_when_validation_fail(self):
         def parse_int_no_raise(value: str):
@@ -322,12 +325,11 @@ class TestUtilities(unittest.TestCase):
         file_name = 'test'
         with self.assertRaises(validators.InvalidFileNameError):
             validators.validate_script_file_name(file_name)
-    
+
     def test_set_get_sdk_version(self):
         test_version = '1.2.3'
         helpers.set_sdk_version(test_version)
         self.assertEqual(helpers.get_sdk_version(), test_version)
-
 
     def _unset_feature_flag(self):
         try:

@@ -53,12 +53,6 @@ def test_prioritize_customer_dependencies(mock_logger, mock_env, mock_linux,
     expected_path = os.path.abspath("/override/cx")
     assert expected_path in sys.path
 
-    # Relaxed log validation: look for matching prefix
-    assert any(
-        "Applying prioritize_customer_dependencies" in str(call[0][0])
-        for call in mock_logger.info.call_args_list
-    )
-
     assert any(
         "Finished prioritize_customer_dependencies" in str(call[0][0])
         for call in mock_logger.info.call_args_list

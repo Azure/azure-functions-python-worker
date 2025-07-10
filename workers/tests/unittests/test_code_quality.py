@@ -44,7 +44,7 @@ class TestCodeQuality(unittest.TestCase):
         try:
             subprocess.run(
                 [sys.executable, '-m', 'flake8', '--config', str(config_path),
-                 'workers',],
+                 'workers'],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

@@ -79,6 +79,8 @@ def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
     mock_module.worker_init_request = AsyncMock(return_value="fake_response")
     mock_module.function_environment_reload_request = AsyncMock(
         return_value="mocked_env_reload_response")
+    mock_module.version = AsyncMock(return_value="fake_response")
+    mock_module.version.VERSION = AsyncMock(return_value="1.0.0")
     if name in ["azure_functions_worker_v2", "azure_functions_worker_v1"]:
         return mock_module
     return builtins.__import__(name, globals, locals, fromlist, level)

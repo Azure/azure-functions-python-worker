@@ -243,7 +243,7 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _dispatch_grpc_request(self, request):
         content_type = request.WhichOneof("content")
 
-        match content_type:
+        match content_type:  # noqa
             case "worker_init_request":
                 request_handler = self._handle__worker_init_request
             case "function_environment_reload_request":

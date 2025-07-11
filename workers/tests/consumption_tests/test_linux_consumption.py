@@ -4,6 +4,7 @@ import os
 import sys
 from time import sleep
 from unittest import TestCase, skipIf
+from unittest.mock import patch
 
 from requests import Request
 from tests.utils.testutils_lc import LinuxConsumptionWebHostController
@@ -16,7 +17,8 @@ from azure_functions_worker.constants import (
 )
 
 _DEFAULT_HOST_VERSION = "4"
-
+_SAS_TOKEN = os.getenv("SAS_TOKEN")
+_STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME", "pythonworker311sa")
 
 class TestLinuxConsumption(TestCase):
     """Test worker behaviors on specific scenarios.
@@ -378,6 +380,6 @@ class TestLinuxConsumption(TestCase):
 
     def _get_blob_url(self, scenario_name: str) -> str:
         return (
-            f'https://pythonworker{self._py_shortform}sa.blob.core.windows.net/'
-            f'python-worker-lc-apps/{scenario_name}{self._py_shortform}.zip'
+            f'https://{_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/'
+            f'python-worker-lc-apps/{scenario_name}{self._py_shortform}.zip?{_SAS_TOKEN}'
         )

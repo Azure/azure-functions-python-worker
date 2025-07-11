@@ -4,10 +4,6 @@ import os
 import sys
 from time import sleep
 from unittest import TestCase, skipIf
-from unittest.mock import patch
-
-from requests import Request
-from tests.utils.testutils_lc import LinuxConsumptionWebHostController
 
 from azure_functions_worker.constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,
@@ -15,6 +11,8 @@ from azure_functions_worker.constants import (
     PYTHON_ENABLE_WORKER_EXTENSIONS,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
 )
+from requests import Request
+from tests.utils.testutils_lc import LinuxConsumptionWebHostController
 
 _DEFAULT_HOST_VERSION = "4"
 _SAS_TOKEN = os.getenv("SAS_TOKEN")

@@ -20,8 +20,8 @@ INDEXING_EXCEPTION_FUNCTION_DIRECTORY = (UNIT_TESTS_FOLDER
 
 
 class TestHandleEvent(testutils.AsyncTestCase):
-    @patch("azure_functions_worker_v2.handle_event.index_function_app")
-    async def test_worker_init_request(self, mock_index_function_app):
+    @patch("azure_functions_worker_v2.handle_event.load_function_metadata")
+    async def test_worker_init_request(self, mock_load_function_metadata):
         worker_request = WorkerRequest(name='worker_init_request',
                                        request=Request(FunctionRequest(
                                            'hello',
@@ -29,7 +29,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                        properties={'host': '123',
                                                    'protos': test_protos})
         result = await worker_init_request(worker_request)
-        mock_index_function_app.assert_called_once()
+        mock_load_function_metadata.assert_called_once()
         self.assertEqual(result.capabilities, {'WorkerStatus': 'true',
                                                'RpcHttpBodyOnly': 'true',
                                                'SharedMemoryDataTransfer': 'true',
@@ -42,15 +42,15 @@ class TestHandleEvent(testutils.AsyncTestCase):
         self.assertIsNotNone(result.worker_metadata.worker_bitness)
         self.assertEqual(result.result.status, 1)
 
+    @patch("azure_functions_worker_v2.handle_event.load_function_metadata")
     @patch("azure_functions_worker_v2.handle_event.HttpV2Registry.http_v2_enabled",
            return_value=True)
     @patch("azure_functions_worker_v2.handle_event.initialize_http_server",
            return_value="http://mock_address")
-    @patch("azure_functions_worker_v2.handle_event.index_function_app")
     async def test_worker_init_request_with_streaming(self,
                                                       mock_http_v2_enabled,
                                                       mock_initialize_http_server,
-                                                      mock_index_function_app):
+                                                      mock_load_function_metadata):
         worker_request = WorkerRequest(name='worker_init_request',
                                        request=Request(FunctionRequest(
                                            'hello',
@@ -58,7 +58,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                        properties={'host': '123',
                                                    'protos': test_protos})
         result = await worker_init_request(worker_request)
-        mock_index_function_app.assert_called_once()
+        mock_load_function_metadata.assert_called_once()
         self.assertEqual(result.capabilities, {'WorkerStatus': 'true',
                                                'RpcHttpBodyOnly': 'true',
                                                'SharedMemoryDataTransfer': 'true',
@@ -73,13 +73,13 @@ class TestHandleEvent(testutils.AsyncTestCase):
         self.assertIsNotNone(result.worker_metadata.worker_bitness)
         self.assertEqual(result.result.status, 1)
 
+    @patch("azure_functions_worker_v2.handle_event.load_function_metadata")
     @patch("azure_functions_worker_v2.handle_event"
            ".otel_manager.get_azure_monitor_available",
            return_value=True)
-    @patch("azure_functions_worker_v2.handle_event.index_function_app")
     async def test_worker_init_request_with_otel(self,
                                                  mock_otel_enabled,
-                                                 mock_index_function_app):
+                                                 mock_load_function_metadata):
         worker_request = WorkerRequest(name='worker_init_request',
                                        request=Request(FunctionRequest(
                                            'hello',
@@ -87,7 +87,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                        properties={'host': '123',
                                                    'protos': test_protos})
         result = await worker_init_request(worker_request)
-        mock_index_function_app.assert_called_once()
+        mock_load_function_metadata.assert_called_once()
         self.assertEqual(result.capabilities, {'WorkerStatus': 'true',
                                                'RpcHttpBodyOnly': 'true',
                                                'SharedMemoryDataTransfer': 'true',
@@ -129,8 +129,8 @@ class TestHandleEvent(testutils.AsyncTestCase):
         metadata_result = await functions_metadata_request(None)
         self.assertEqual(metadata_result.result.status, 1)
 
-    @patch("azure_functions_worker_v2.handle_event.index_function_app")
-    async def test_function_environment_reload_request(self, mock_index_function_app):
+    @patch("azure_functions_worker_v2.handle_event.load_function_metadata")
+    async def test_function_environment_reload_request(self, mock_load_function_metadata):
         worker_request = WorkerRequest(name='function_environment_reload_request',
                                        request=Request(FunctionRequest(
                                            'hello',
@@ -139,7 +139,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                                    'protos': test_protos})
         handle_event.protos = test_protos
         result = await function_environment_reload_request(worker_request)
-        mock_index_function_app.assert_called_once()
+        mock_load_function_metadata.assert_called_once()
         self.assertEqual(result.capabilities, {})
         self.assertEqual(result.worker_metadata.runtime_name, "python")
         self.assertIsNotNone(result.worker_metadata.runtime_version)
@@ -147,16 +147,16 @@ class TestHandleEvent(testutils.AsyncTestCase):
         self.assertIsNotNone(result.worker_metadata.worker_bitness)
         self.assertEqual(result.result.status, 1)
 
+    @patch("azure_functions_worker_v2.handle_event.load_function_metadata")
     @patch("azure_functions_worker_v2.handle_event.HttpV2Registry.http_v2_enabled",
            return_value=True)
     @patch("azure_functions_worker_v2.handle_event.initialize_http_server",
            return_value="http://mock_address")
-    @patch("azure_functions_worker_v2.handle_event.index_function_app")
     async def test_function_environment_reload_request_with_streaming(
             self,
             mock_http_v2_enabled,
             mock_initialize_http_server,
-            mock_index_function_app):
+            mock_load_function_metadata):
         handle_event.protos = test_protos
         worker_request = WorkerRequest(name='function_environment_reload_request',
                                        request=Request(FunctionRequest(
@@ -165,7 +165,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                        properties={'host': '123',
                                                    'protos': test_protos})
         result = await function_environment_reload_request(worker_request)
-        mock_index_function_app.assert_called_once()
+        mock_load_function_metadata.assert_called_once()
         self.assertEqual(result.capabilities, {'HttpUri': 'http://mock_address',
                                                'RequiresRouteParameters': 'true'})
         self.assertEqual(result.worker_metadata.runtime_name, "python")
@@ -174,14 +174,14 @@ class TestHandleEvent(testutils.AsyncTestCase):
         self.assertIsNotNone(result.worker_metadata.worker_bitness)
         self.assertEqual(result.result.status, 1)
 
+    @patch("azure_functions_worker_v2.handle_event.load_function_metadata")
     @patch("azure_functions_worker_v2.handle_event"
            ".otel_manager.get_azure_monitor_available",
            return_value=True)
-    @patch("azure_functions_worker_v2.handle_event.index_function_app")
     async def test_function_environment_reload_request_with_otel(
             self,
             mock_otel_enabled,
-            mock_index_function_app):
+            mock_load_function_metadata):
         handle_event.protos = test_protos
         worker_request = WorkerRequest(name='function_environment_reload_request',
                                        request=Request(FunctionRequest(
@@ -190,7 +190,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
                                        properties={'host': '123',
                                                    'protos': test_protos})
         result = await function_environment_reload_request(worker_request)
-        mock_index_function_app.assert_called_once()
+        mock_load_function_metadata.assert_called_once()
         self.assertEqual(result.capabilities, {'WorkerOpenTelemetryEnabled': 'true'})
         self.assertEqual(result.worker_metadata.runtime_name, "python")
         self.assertIsNotNone(result.worker_metadata.runtime_version)

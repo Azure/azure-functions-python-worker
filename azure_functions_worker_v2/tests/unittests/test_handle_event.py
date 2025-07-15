@@ -130,7 +130,8 @@ class TestHandleEvent(testutils.AsyncTestCase):
         self.assertEqual(metadata_result.result.status, 1)
 
     @patch("azure_functions_worker_v2.handle_event.load_function_metadata")
-    async def test_function_environment_reload_request(self, mock_load_function_metadata):
+    async def test_function_environment_reload_request(self,
+                                                       mock_load_function_metadata):
         worker_request = WorkerRequest(name='function_environment_reload_request',
                                        request=Request(FunctionRequest(
                                            'hello',

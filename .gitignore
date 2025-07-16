@@ -105,6 +105,7 @@ py3env/
 *.nupkg
 
 .testconfig
+*/.testconfig
 .pytest_cache
 
 # vscode

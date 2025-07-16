@@ -56,4 +56,5 @@ jobs:
         env:
           PYTHON_VERSION: $(PYTHON_VERSION)
           AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
+        workingDirectory: $(Build.SourcesDirectory)/workers
   

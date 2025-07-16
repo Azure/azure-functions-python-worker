@@ -8,6 +8,7 @@ python -m venv .env
 .env\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 
+cd workers
 python -m pip install .
 
 $depsPath = Join-Path -Path $env:BUILD_SOURCESDIRECTORY -ChildPath "deps"

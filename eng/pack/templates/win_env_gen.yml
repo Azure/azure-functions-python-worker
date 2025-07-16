@@ -41,6 +41,7 @@ steps:
     arguments: '${{ parameters.pythonVersion }}'
 - bash: |
     pip install pip-audit
+    cd workers
     pip-audit -r requirements.txt
   displayName: 'Run vulnerability scan'
   condition: ne(variables['pythonVersion'], '3.7')

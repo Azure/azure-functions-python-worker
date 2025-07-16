@@ -225,8 +225,8 @@ async def test_handle_function_load_request(mock_logger, mock_streaming):
 
     assert result == "mocked_stream_response"
     mock_logger.info.assert_called_with(
-        'Received WorkerLoadRequest, request ID %s, function_id: %s,function_name: %s, '
-        'worker_id: %s', "req789", "func123", "hello_function", "worker123"
+        'Received WorkerLoadRequest, request ID %s, function_id: %s, function_name: %s,'
+        ' worker_id: %s', "req789", "func123", "hello_function", "worker123"
     )
 
 
@@ -250,7 +250,7 @@ async def test_handle_invocation_request(mock_logger, mock_streaming):
 
     assert result == "mocked_streaming_response"
     mock_logger.info.assert_called_with(
-        'Received FunctionInvocationRequest, request ID %s, function_id: %s,'
+        'Received FunctionInvocationRequest, request ID %s, function_id: %s, '
         'invocation_id: %s, worker_id: %s',
         "req789", "func123", "inv123", "worker123"
     )

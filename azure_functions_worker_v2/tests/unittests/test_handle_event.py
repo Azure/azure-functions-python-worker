@@ -93,7 +93,11 @@ class TestHandleEvent(testutils.AsyncTestCase):
         self.assertIsNotNone(result.worker_metadata.worker_bitness)
         self.assertEqual(result.result.status, 1)
 
-    async def test_worker_init_request_with_exception(self):
+    @patch("azure_functions_worker_v2.handle_event"
+           ".otel_manager.get_azure_monitor_available",
+           return_value=False)
+    async def test_worker_init_request_with_exception(self,
+                                                      mock_otel_enabled):
         # If an exception happens during indexing, we return failure
         worker_request = WorkerRequest(name='worker_init_request',
                                        request=Request(FunctionRequest(

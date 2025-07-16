@@ -493,7 +493,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_name = function_metadata.name
 
         logger.info(
-            'Received WorkerLoadRequest, request ID %s, function_id: %s,'
+            'Received WorkerLoadRequest, request ID %s, function_id: %s, '
             'function_name: %s, worker_id: %s',
             self.request_id, function_id, function_name, self.worker_id)
 
@@ -512,7 +512,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_id = invoc_request.function_id
 
         logger.info(
-            'Received FunctionInvocationRequest, request ID %s, function_id: %s,'
+            'Received FunctionInvocationRequest, request ID %s, function_id: %s, '
             'invocation_id: %s, worker_id: %s',
             self.request_id, function_id, invocation_id, self.worker_id)
 

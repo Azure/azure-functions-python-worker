@@ -292,7 +292,7 @@ async def function_environment_reload_request(request):
     This is called only when placeholder mode is true. On worker restarts
     worker init request will be called directly.
     """
-    logger.debug("V2 Library Worker: received WorkerEnvReloadRequest,"
+    logger.debug("V2 Library Worker: received FunctionEnvironmentReloadRequest, "
                  "Version %s", VERSION)
     global _host, protos
     try:
@@ -434,7 +434,8 @@ def index_functions(function_path: str, function_dir: str):
             "function_count": len(indexed_functions),
             "functions": " ".join(indexed_function_logs),
             "deferred_bindings_enabled": _functions.deferred_bindings_enabled(),
-            "app_settings": get_python_appsetting_state()
+            "app_settings": get_python_appsetting_state(),
+            "azure-functions version": get_sdk_version(),
         }
         logger.info(json.dumps(log_data))
 

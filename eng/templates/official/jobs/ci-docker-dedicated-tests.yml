@@ -54,7 +54,7 @@ jobs:
           chmod +x eng/scripts/install-dependencies.sh
 
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION)
-          cd tests
+          cd workers/tests
           python -m invoke -c test_setup build-protos
         displayName: 'Install dependencies'
       - bash: |
@@ -68,4 +68,5 @@ jobs:
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
+        workingDirectory: $(Build.SourcesDirectory)/workers
         displayName: "Running $(PYTHON_VERSION) Docker Dedicated tests"

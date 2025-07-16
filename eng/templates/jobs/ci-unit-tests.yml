@@ -55,4 +55,5 @@ jobs:
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
         env:
           PYTHON_VERSION: $(PYTHON_VERSION)
+        workingDirectory: $(Build.SourcesDirectory)/workers
   

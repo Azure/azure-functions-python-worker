@@ -162,3 +162,4 @@ jobs:
           skipTest: $(skipTest)
           PYAZURE_WEBHOST_DEBUG: true
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"
+        workingDirectory: $(Build.SourcesDirectory)/workers

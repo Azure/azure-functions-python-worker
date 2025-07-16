@@ -21,6 +21,7 @@ docker run --name my-arm64-container --platform linux/arm64 \
         ls -la /src  # debug: see what files exist
         apt-get update && apt-get install -y git curl && \
         pip install --upgrade pip && \
+        cd workers && \
         pip install . && \
         pip install . --target /src && \
         pip install invoke && \
@@ -28,6 +29,8 @@ docker run --name my-arm64-container --platform linux/arm64 \
         python -m invoke -c test_setup build-protos && \
         ls -la /src
       "
+
+cd workers
 
 # This copies over the build files from the docker container to the local pipeline
 docker cp my-arm64-container:/src/. $BUILD_SOURCESDIRECTORY/all/

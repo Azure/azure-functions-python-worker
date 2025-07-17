@@ -1,5 +1,7 @@
 parameters:
   PROJECT_NAME: ''
+  PROJECT_DIRECTORY: ''
+  ARTIFACT_NAME: ''
 
 jobs:
   - job: "Build"
@@ -10,19 +12,12 @@ jobs:
       image: 1es-ubuntu-22.04
       os: linux
     
-    strategy:
-      matrix:
-        V2Library:
-          PROJECT_DIRECTORY: 'azure_functions_worker_v2'
-        V1Library:
-          PROJECT_DIRECTORY: 'azure_functions_worker_v1'
-    
     templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:
         - output: pipelineArtifact
           targetPath: $(Build.SourcesDirectory)
-          artifactName: "azure-functions-runtime"
+          artifactName: "${{ parameters.ARTIFACT_NAME }}"
 
     steps:
       - task: UsePythonVersion@0
@@ -34,11 +29,11 @@ jobs:
       - bash: |
           python -m pip install -U pip
           python -m pip install build
-          cd $(PROJECT_DIRECTORY)
+          cd ${{ parameters.PROJECT_DIRECTORY }}
           python -m build
         displayName: 'Build ${{ parameters.PROJECT_NAME }}'
       - bash: |
           pip install pip-audit
-          cd $(PROJECT_DIRECTORY)
+          cd ${{ parameters.PROJECT_DIRECTORY }}
           pip-audit .
         displayName: 'Run vulnerability scan'

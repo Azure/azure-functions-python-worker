@@ -1,6 +1,11 @@
+parameters:
+  PYTHON_VERSION: ''
+  PROJECT_NAME: ''
+  PROJECT_DIRECTORY: ''
+
 jobs:
   - job: "Build"
-    displayName: 'Build python worker'
+    displayName: 'Build'
 
     pool:
       name: 1es-pool-azfunc-public
@@ -8,21 +13,8 @@ jobs:
       os: linux
 
     steps:
-      - task: UsePythonVersion@0
-        inputs:
-          versionSpec: "3.11"
-      - bash: |
-          python --version
-        displayName: 'Check python version'
-      - bash: |
-          python -m venv .env
-          .env\Scripts\Activate.ps1
-          python -m pip install --upgrade pip
-          cd workers
-          python -m pip install .
-        displayName: 'Build python worker'
-      - bash: |
-          pip install pip-audit
-          cd workers
-          pip-audit -r requirements.txt
-        displayName: 'Run vulnerability scan'
+      - template: /eng/templates/shared/build-steps.yml@self
+        parameters:
+          PYTHON_VERSION: ${{ parameters.PYTHON_VERSION }}
+          PROJECT_NAME: ${{ parameters.PROJECT_NAME }}
+          PROJECT_DIRECTORY: ${{ parameters.PROJECT_DIRECTORY }}

@@ -28,6 +28,7 @@ resources:
 
 variables:
   - template: /eng/templates/utils/variables.yml@self
+  - template: /eng/templates/utils/emulator-variables.yml@self
 
 extends:
   template: v1/1ES.Unofficial.PipelineTemplate.yml@1es

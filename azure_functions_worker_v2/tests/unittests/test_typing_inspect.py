@@ -92,7 +92,9 @@ class GetUtilityTestCase(unittest.TestCase):
 
     def test_origin(self):
         T = TypeVar('T')
-        class MyClass(Generic[T]): pass
+
+        class MyClass(Generic[T]):
+            pass
 
         self.assertEqual(get_origin(int), None)
         self.assertEqual(get_origin(ClassVar[int]), None)

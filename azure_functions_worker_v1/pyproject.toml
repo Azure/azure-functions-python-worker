@@ -32,18 +32,14 @@ Repository = "https://github.com/Azure/azure-functions-python-worker"
 
 [project.optional-dependencies]
 dev = [
-    "azure-eventhub", # Used for EventHub E2E tests
-    "azure-functions-durable", # Used for Durable E2E tests
-    "flask",
-    "fastapi~=0.103.2",
-    "pydantic",
-    "pycryptodome==3.*",
-    "flake8==5.*; python_version == '3.7'",
-    "flake8==6.*; python_version >= '3.8'",
+    "azure-monitor-opentelemetry", # Used for Azure Monitor unit tests
+    "flake8==6.*",
     "mypy",
-    "pytest~=7.4.4",
+    "pytest",
     "requests==2.*",
     "coverage",
+    "grpcio~=1.70.0",
+    "grpcio-tools~=1.70.0",
     "pytest-sugar",
     "pytest-cov",
     "pytest-xdist",
@@ -51,13 +47,6 @@ dev = [
     "pytest-instafail",
     "pytest-rerunfailures",
     "pytest-asyncio",
-    "ptvsd",
-    "python-dotenv",
-    "plotly",
-    "scikit-learn",
-    "opencv-python",
-    "pandas",
-    "numpy",
     "pre-commit",
     "invoke"
 ]

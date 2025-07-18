@@ -5,7 +5,7 @@ parameters:
 
 jobs:
   - job: "Build"
-    displayName: 'Build Python V2 Library'
+    displayName: 'Build ${{ parameters.PROJECT_NAME }}'
 
     pool:
       name: 1es-pool-azfunc-public

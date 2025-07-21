@@ -16,16 +16,19 @@ class Request:
     def __init__(self, name: Any):
         self.worker_init_request = name
         self.function_environment_reload_request = name
+        self.function_load_request = name
 
 
 # This represents the Function Init/Metadata/Load/Invocation request
 class FunctionRequest:
-    def __init__(self, capabilities: Any,
-                 function_app_directory: Any,
-                 environment_variables: Optional[Any] = {}):
+    def __init__(self, capabilities: Optional[Any] = None,
+                 function_app_directory: Optional[Any] = None,
+                 environment_variables: Optional[Any] = {},
+                 function_id: Optional[str] = "123"):
         self.capabilities = capabilities
         self.function_app_directory = function_app_directory
         self.environment_variables = environment_variables
+        self.function_id = function_id
 
 
 class MockMBD:

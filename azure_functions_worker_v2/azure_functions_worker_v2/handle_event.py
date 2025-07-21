@@ -406,7 +406,7 @@ def index_functions(function_path: str, function_dir: str):
     indexed_functions = index_function_app(function_path)
 
     if indexed_functions:
-        fx__metadata_results, fx_bindings_logs = (
+        fx_metadata_results, fx_bindings_logs = (
             process_indexed_function(
                 protos,
                 _functions,
@@ -439,4 +439,4 @@ def index_functions(function_path: str, function_dir: str):
         }
         logger.info(json.dumps(log_data))
 
-        return fx__metadata_results
+        return fx_metadata_results

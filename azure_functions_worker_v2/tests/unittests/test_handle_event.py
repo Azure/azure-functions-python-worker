@@ -7,6 +7,7 @@ import tests.protos as test_protos
 
 from azure_functions_worker_v2.handle_event import (worker_init_request,
                                                     functions_metadata_request,
+                                                    function_load_request,
                                                     function_environment_reload_request)
 from tests.utils import testutils
 from tests.utils.constants import UNIT_TESTS_FOLDER
@@ -124,6 +125,17 @@ class TestHandleEvent(testutils.AsyncTestCase):
         handle_event.protos = test_protos
         metadata_result = await functions_metadata_request(None)
         self.assertEqual(metadata_result.result.status, 1)
+
+    async def test_function_load_request(self):
+        handle_event.protos = test_protos
+        worker_request = WorkerRequest(name='function_load_request',
+                                       request=Request(FunctionRequest(
+                                           function_id="123")
+                                       ),
+                                       properties={'host': '123',
+                                                   'protos': test_protos})
+        result = await function_load_request(worker_request)
+        self.assertEqual(result.result.status, 1)
 
     @patch("azure_functions_worker_v2.handle_event"
            ".otel_manager.get_azure_monitor_available",

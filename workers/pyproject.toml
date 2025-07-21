@@ -84,7 +84,7 @@ dev = [
     "orjson"
 ]
 test-http-v2 = [
-    "azurefunctions-extensions-http-fastapi==1.0.0",
+    "azurefunctions-extensions-http-fastapi==1.0.1",
     "ujson"
 ]
 test-deferred-bindings = [

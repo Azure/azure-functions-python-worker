@@ -80,7 +80,7 @@ class TestHandleEvent(testutils.AsyncTestCase):
         handle_event.protos = test_protos
         worker_request = WorkerRequest(name='function_load_request',
                                        request=Request(FunctionRequest(
-                                           function_id=123,
+                                           function_id="123",
                                            metadata=Metadata(
                                                script_file=BASIC_FUNCTION_DIRECTORY,
                                                entry_point=BASIC_FUNCTION_DIRECTORY,

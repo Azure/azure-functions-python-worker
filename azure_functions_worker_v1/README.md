@@ -12,7 +12,6 @@ What are the supported Python versions?
 
 | Azure Functions Runtime          | Python 3.13 |
 |----------------------------------|-------------|
-| Azure Functions 3.0 (deprecated) | ✔           | 
 | Azure Functions 4.0              | ✔           |     
 
 For information about Azure Functions Runtime, please refer to [Azure Functions runtime versions overview](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) page.
@@ -45,11 +44,9 @@ Issues and feature requests are tracked in a variety of places. To report this f
 | Item          | Description                                  | Link                                                                           |
 |---------------|----------------------------------------------|--------------------------------------------------------------------------------|
 | Python Worker | Programming Model, Triggers & Bindings       | [File an Issue](https://github.com/Azure/azure-functions-python-worker/issues) |
-| Linux         | Base Docker Images                           | [File an Issue](https://github.com/Azure/azure-functions-docker/issues)        |
 | Runtime       | Script Host & Language Extensibility         | [File an Issue](https://github.com/Azure/azure-functions-host/issues)          |
 | VSCode        | VSCode Extension for Azure Functions         | [File an Issue](https://github.com/microsoft/vscode-azurefunctions/issues)     |
 | Core Tools    | Command Line Interface for Local Development | [File an Issue](https://github.com/Azure/azure-functions-core-tools/issues)    |
-| Portal        | User Interface or Experience Issue           | [File an Issue](https://github.com/azure/azure-functions-ux/issues)            |
 | Templates     | Code Issues with Creation Template           | [File an Issue](https://github.com/Azure/azure-functions-templates/issues)     |
 
 # Contribute

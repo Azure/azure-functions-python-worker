@@ -27,14 +27,13 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/Azure/azure-functions-python-worker/blob/hallvictoria/v1-library-worker/README.md"
+Documentation = "https://github.com/Azure/azure-functions-python-worker/blob/dev/azure_functions_worker_v2/README.md"
 Repository = "https://github.com/Azure/azure-functions-python-worker"
 
 [project.optional-dependencies]
 dev = [
     "azure-monitor-opentelemetry", # Used for Azure Monitor unit tests
     "flake8==6.*",
-    "mypy",
     "pytest",
     "requests==2.*",
     "coverage",

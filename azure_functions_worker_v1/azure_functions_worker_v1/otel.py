@@ -5,11 +5,12 @@ import os
 
 from .logging import logger
 
-from .utils.env_state import get_app_setting
+from .utils.app_setting_manager import get_app_setting
 from .utils.constants import (APPLICATIONINSIGHTS_CONNECTION_STRING,
                               PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME,
                               PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME_DEFAULT,
                               TRACESTATE, TRACEPARENT)
+from .utils.tracing import serialize_exception_as_str
 
 
 class OTelManager:
@@ -91,14 +92,16 @@ def initialize_azure_monitor():
         otel_manager.set_azure_monitor_available(True)
 
         logger.info("Successfully configured Azure monitor distro.")
-    except ImportError:
+    except ImportError as e:
         logger.exception(
-            "Cannot import Azure Monitor distro."
+            "Cannot import Azure Monitor distro. Exception: %s",
+            serialize_exception_as_str(e)
         )
         otel_manager.set_azure_monitor_available(False)
-    except Exception:
+    except Exception as e:
         logger.exception(
-            "Error initializing Azure monitor distro."
+            "Error initializing Azure monitor distro. Exception: %s",
+            serialize_exception_as_str(e)
         )
         otel_manager.set_azure_monitor_available(False)
 

@@ -1,9 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import json
 import logging
 import os
 import sys
+import typing
 
 from .functions import FunctionInfo, Registry
 from .loader import load_function, install
@@ -31,21 +33,20 @@ from .utils.constants import (FUNCTION_DATA_CACHE,
                               PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY,
                               WORKER_OPEN_TELEMETRY_ENABLED,
                               PYTHON_ENABLE_DEBUG_LOGGING)
-from .utils.current import get_current_loop, execute_async, run_sync_func
-from .utils.env_state import is_envvar_true
-from .utils.helpers import change_cwd, get_worker_metadata
+from .utils.executor import get_current_loop, execute_async, run_sync_func
+from .utils.app_setting_manager import is_envvar_true
+from .utils.helpers import change_cwd, get_sdk_version, get_worker_metadata
 from .utils.tracing import serialize_exception
 
-_functions = Registry()
+_functions: typing.MutableMapping[str, FunctionInfo] = Registry()
 _function_data_cache_enabled: bool = False
 _host: str = None
 protos = None
 
 
 async def worker_init_request(request):
-    logger.info("V1 Library Worker: received WorkerInitRequest,"
-                "Version %s. App Settings State: %s", VERSION,
-                get_python_appsetting_state())
+    logger.debug("V1 Library Worker: received WorkerInitRequest,"
+                 "Version %s", VERSION)
     global _host, protos, _function_data_cache_enabled
     init_request = request.request.worker_init_request
     host_capabilities = init_request.capabilities
@@ -117,15 +118,21 @@ async def function_load_request(request):
             _functions.add_function(
                 function_id, func, func_request.metadata, protos)
 
-        logger.debug("Successfully completed WorkerLoadRequest.")
+        log_data = {
+            "message": "Successfully indexed function app.",
+            "function_count": len(_functions._functions),
+            "functions": _functions._functions,
+            "deferred_bindings_enabled": "False",
+            "app_settings": get_python_appsetting_state(),
+            "azure-functions version": get_sdk_version(),
+        }
+        logger.info(json.dumps(log_data))
         return protos.FunctionLoadResponse(
             function_id=function_id,
             result=protos.StatusResult(
                 status=protos.StatusResult.Success))
 
     except Exception as ex:
-        logger.error("An exception in WorkerLoadRequest has occurred: %s",
-                     ex)
         return protos.FunctionLoadResponse(
             function_id=function_id,
             result=protos.StatusResult(
@@ -233,7 +240,6 @@ async def invocation_request(request):
             output_data=output_data)
 
     except Exception as ex:
-        logger.error("An exception in WorkerInvocationRequest has occurred: %s", ex)
         return protos.InvocationResponse(
             invocation_id=invocation_id,
             result=protos.StatusResult(
@@ -246,8 +252,8 @@ async def function_environment_reload_request(request):
     This is called only when placeholder mode is true. On worker restarts
     worker init request will be called directly.
     """
-    logger.info("V1 Library Worker: received WorkerEnvReloadRequest,"
-                "Version %s", VERSION)
+    logger.debug("V1 Library Worker: received FunctionEnvironmentReloadRequest, "
+                 "Version %s", VERSION)
     try:
         global protos
 
@@ -303,7 +309,6 @@ async def function_environment_reload_request(request):
                 status=protos.StatusResult.Success))
 
     except Exception as ex:
-        logger.error("An exception in WorkerEnvReloadRequest has occurred: %s", ex)
         return protos.FunctionEnvironmentReloadResponse(
             result=protos.StatusResult(
                 status=protos.StatusResult.Failure,

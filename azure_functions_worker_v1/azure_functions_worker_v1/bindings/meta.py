@@ -11,6 +11,7 @@ from .generic import GenericBinding
 from ..utils.constants import (
     CUSTOMER_PACKAGES_PATH,
 )
+from ..utils.helpers import set_sdk_version
 
 PB_TYPE = 'rpc_data'
 PB_TYPE_DATA = 'data'
@@ -38,6 +39,8 @@ def load_binding_registry() -> None:
     func = sys.modules.get('azure.functions')
     if func is None:
         import azure.functions as func
+
+    set_sdk_version(func.__version__)  # type: ignore
 
     global BINDING_REGISTRY
     BINDING_REGISTRY = func.get_binding_registry()

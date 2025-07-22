@@ -256,6 +256,7 @@ class Registry:
             return_anno = annotations.get('return')
             if is_generic_type(
                     return_anno) and get_origin(
+                    return_anno) is not None and get_origin(
                     return_anno).__name__ == 'Out':
                 raise FunctionLoadError(
                     func_name,

@@ -1,0 +1,23 @@
+parameters:
+  PYTHON_VERSION: ''
+  PROJECT_NAME: ''
+  PROJECT_DIRECTORY: ''
+
+steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: ${{ parameters.PYTHON_VERSION }}
+  - bash: |
+      python --version
+    displayName: 'Check python version'
+  - bash: |
+      python -m pip install --upgrade pip
+      python -m pip install build
+      cd ${{ parameters.PROJECT_DIRECTORY }}
+      python -m build
+    displayName: 'Build Python ${{ parameters.PROJECT_NAME }}'
+  - bash: |
+      pip install pip-audit
+      cd ${{ parameters.PROJECT_DIRECTORY }}
+      pip-audit -r requirements.txt
+    displayName: 'Run vulnerability scan'

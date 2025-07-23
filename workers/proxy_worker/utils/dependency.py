@@ -134,21 +134,18 @@ class DependencyManager:
         if not cx_deps_path:
             cx_deps_path = cls.cx_deps_path
 
-        logger.info(
-            'Applying prioritize_customer_dependencies: '
-            'worker_dependencies_path: %s, customer_dependencies_path: %s, '
-            'working_directory: %s, Linux Consumption: %s, Placeholder: %s, '
-            'sys.path: %s',
-            cls.worker_deps_path, cx_deps_path, working_directory,
-            DependencyManager.is_in_linux_consumption(),
-            is_envvar_true("WEBSITE_PLACEHOLDER_MODE"), sys.path)
-
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.worker_deps_path, True)
         cls._add_to_sys_path(cls.cx_deps_path, True)
         cls._add_to_sys_path(working_directory, False)
 
-        logger.info(f'Finished prioritize_customer_dependencies: {sys.path}')
+        logger.info(
+            'Finished prioritize_customer_dependencies: '
+            'worker_dependencies_path: %s, customer_dependencies_path: %s, '
+            'working_directory: %s, Placeholder: %s, '
+            'sys.path: %s',
+            cls.worker_deps_path, cx_deps_path, working_directory,
+            is_envvar_true("WEBSITE_PLACEHOLDER_MODE"), sys.path)
 
     @classmethod
     def _add_to_sys_path(cls, path: str, add_to_first: bool):

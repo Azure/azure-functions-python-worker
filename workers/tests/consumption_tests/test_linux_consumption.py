@@ -5,14 +5,14 @@ import sys
 from time import sleep
 from unittest import TestCase, skipIf
 
-from azure_functions_worker.constants import (
+from workers.azure_functions_worker.constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,
     PYTHON_ENABLE_INIT_INDEXING,
     PYTHON_ENABLE_WORKER_EXTENSIONS,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
 )
 from requests import Request
-from tests.utils.testutils_lc import LinuxConsumptionWebHostController
+from workers.tests.utils.testutils_lc import LinuxConsumptionWebHostController
 
 _DEFAULT_HOST_VERSION = "4"
 _SAS_TOKEN = os.getenv("SAS_TOKEN")
@@ -379,5 +379,5 @@ class TestLinuxConsumption(TestCase):
     def _get_blob_url(self, scenario_name: str) -> str:
         return (
             f'https://{_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/'
-            f'python-worker-lc-apps/{scenario_name}{self._py_shortform}.zip?{_SAS_TOKEN}'
+            f'python-worker-lc-apps/{scenario_name}.zip?{_SAS_TOKEN}'
         )

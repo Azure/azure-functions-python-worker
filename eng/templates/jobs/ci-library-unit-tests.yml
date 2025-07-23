@@ -1,0 +1,31 @@
+parameters:
+  PROJECT_NAME: ''
+  PROJECT_DIRECTORY: ''
+
+jobs:
+  - job: "TestPython"
+    displayName: "Run ${{ parameters.PROJECT_NAME }} Unit Tests"
+    
+    strategy:
+      matrix:
+        Python313:
+          PYTHON_VERSION: '3.13'
+    
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(PYTHON_VERSION)
+      - task: UseDotNet@2
+        displayName: 'Install .NET 8'
+        inputs:
+          version: 8.0.x
+      - bash: |
+          chmod +x eng/scripts/install-dependencies.sh          
+          eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
+        displayName: 'Install dependencies'
+      - bash: |
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail --cov=./azure_functions_worker_v2 --cov-report xml --cov-branch tests/unittests
+        displayName: "Running $(PYTHON_VERSION) Unit Tests"
+        env:
+          AzureWebJobsStorage: $(LinuxStorageConnectionString312)
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}

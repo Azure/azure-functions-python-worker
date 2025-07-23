@@ -7,6 +7,7 @@ import traceback
 
 _GRPC_CONNECTION_TIMEOUT = 5.0
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Python Azure Functions Worker')

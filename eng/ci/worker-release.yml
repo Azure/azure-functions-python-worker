@@ -1,5 +1,15 @@
 pr: none
 
+parameters:
+  - name: WorkerRelease
+    displayName: 'Worker Release (Nuget)'
+    type: boolean
+    default: false
+  - name: LibraryRelease
+    displayName: 'Library Release (PyPI)'
+    type: boolean
+    default: false
+
 resources:
   repositories:
     - repository: 1es
@@ -24,6 +34,14 @@ extends:
       os: windows
 
     stages:
-      - stage: Release
+      - stage: ReleasePythonWorker
+        displayName: 'Release Python Worker (Nuget)'
         jobs:
           - template: /eng/templates/official/jobs/publish-release.yml@self
+        condition: eq(${{ parameters.WorkerRelease }}, True)
+      - stage: ReleasePythonV2Library
+        dependsOn: []
+        displayName: 'Release V2 Library (PyPI)'
+        jobs:
+          - template: /eng/templates/official/jobs/publish-library-release.yml@self
+        condition: eq(${{ parameters.LibraryRelease }}, True)

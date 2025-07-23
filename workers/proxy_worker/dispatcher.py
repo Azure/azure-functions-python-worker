@@ -243,7 +243,7 @@ class Dispatcher(metaclass=DispatcherMeta):
     async def _dispatch_grpc_request(self, request):
         content_type = request.WhichOneof("content")
 
-        match content_type:
+        match content_type:  # noqa
             case "worker_init_request":
                 request_handler = self._handle__worker_init_request
             case "function_environment_reload_request":
@@ -409,13 +409,17 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self.request_id)
 
         if DependencyManager.is_in_linux_consumption():
-            import azure_functions_worker_v2
+            import azure_functions_worker_v2  # NoQA
 
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()
 
         directory = request.worker_init_request.function_app_directory
         self.reload_library_worker(directory)
+        logger.info('Using library: %s, '
+                    'library version: %s',
+                    _library_worker,
+                    _library_worker.version.VERSION)  # type: ignore[union-attr]
 
         init_request = WorkerRequest(name="WorkerInitRequest",
                                      request=request,
@@ -442,6 +446,10 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         DependencyManager.prioritize_customer_dependencies(directory)
         self.reload_library_worker(directory)
+        logger.info('Using library: %s, '
+                    'library version: %s',
+                    _library_worker,
+                    _library_worker.version.VERSION)  # type: ignore[union-attr]
 
         env_reload_request = WorkerRequest(name="FunctionEnvironmentReloadRequest",
                                            request=request,
@@ -485,7 +493,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_name = function_metadata.name
 
         logger.info(
-            'Received WorkerLoadRequest, request ID %s, function_id: %s,'
+            'Received WorkerLoadRequest, request ID %s, function_id: %s, '
             'function_name: %s, worker_id: %s',
             self.request_id, function_id, function_name, self.worker_id)
 
@@ -504,7 +512,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         function_id = invoc_request.function_id
 
         logger.info(
-            'Received FunctionInvocationRequest, request ID %s, function_id: %s,'
+            'Received FunctionInvocationRequest, request ID %s, function_id: %s, '
             'invocation_id: %s, worker_id: %s',
             self.request_id, function_id, invocation_id, self.worker_id)
 

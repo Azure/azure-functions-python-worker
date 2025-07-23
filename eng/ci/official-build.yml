@@ -46,34 +46,49 @@ extends:
         break: true
 
     stages:
-      - stage: Build
+       # Python Worker Build and Test Stages
+      - stage: BuildPythonWorker
         jobs:
           - template: /eng/templates/official/jobs/build-artifacts.yml@self
-
-      - stage: RunE2ETests
-        dependsOn: Build
+      - stage: RunWorkerE2ETests
+        dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self
-      - stage: RunEmulatorTests
-        dependsOn: Build
+      - stage: RunWorkerEmulatorTests
+        dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/jobs/ci-emulator-tests.yml@self
             parameters:
               PoolName: 1es-pool-azfunc
-      - stage: RunUnitTests
-        dependsOn: Build
+      - stage: RunWorkerUnitTests
+        dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/jobs/ci-unit-tests.yml@self
-      - stage: RunDockerConsumptionTests
-        dependsOn: Build
+      - stage: RunWorkerDockerConsumptionTests
+        dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/official/jobs/ci-docker-consumption-tests.yml@self
-      - stage: RunDockerDedicatedTests
-        dependsOn: Build
+      - stage: RunWorkerDockerDedicatedTests
+        dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/official/jobs/ci-docker-dedicated-tests.yml@self
 #       Skipping consumption tests till pipeline is fixed
-#      - stage: RunLinuxConsumptionTests
-#        dependsOn: Build
+#      - stage: RunWorkerLinuxConsumptionTests
+#        dependsOn: BuildPythonWorker
 #        jobs:
 #          - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
+
+      # Python V2 Library Build and Test Stages
+      - stage: BuildV2Library
+        dependsOn: []
+        jobs:
+          - template: /eng/templates/official/jobs/build-library.yml@self
+            parameters:
+              PROJECT_NAME: 'Python V2 Library'
+      - stage: RunV2LibraryUnitTests
+        dependsOn: BuildV2Library
+        jobs:
+          - template: /eng/templates/jobs/ci-library-unit-tests.yml@self
+            parameters:
+              PROJECT_NAME: 'Python V2 Library'
+              PROJECT_DIRECTORY: 'azure_functions_worker_v2'

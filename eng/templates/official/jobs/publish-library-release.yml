@@ -1,0 +1,155 @@
+jobs:
+
+- job: "CreateReleaseBranch"
+  displayName: 'Create Release Branch'
+  pool:
+    name: 1es-pool-azfunc
+    image: 1es-ubuntu-22.04
+    os: linux
+  steps:
+  - template: /eng/templates/shared/github-release-branch.yml@self
+    parameters:
+      PROJECT_DIRECTORY: 'azure_functions_worker_v2'
+      PROJECT_NAME: 'azure_functions_worker_v2'
+      BRANCH_NAME: 'release-v2'
+
+- job: "CheckReleaseBranch"
+  dependsOn: ['CreateReleaseBranch']
+  displayName: '(Manual) Check Release Branch'
+  pool: server
+  steps:
+  - task: ManualValidation@1
+    displayName: '(Optional) Modify release-v2/x.y.z branch'
+    inputs:
+      notifyUsers: ''  # No email notifications sent
+      instructions: |
+        1. Check if the https://github.com/Azure/azure-functions-python-worker/tree/release-v2/$(NewLibraryVersion) build succeeds and passes all unit tests.
+        2. If not, modify the release-v2/$(NewLibraryVersion) branch.
+        3. Ensure release-v2/$(NewLibraryVersion) branch contains all necessary changes.
+
+- job: "CreateReleaseTag"
+  dependsOn: ['CheckReleaseBranch']
+  steps:
+  - template: /eng/templates/shared/github-release-note.yml@self
+    parameters:
+      BRANCH_NAME: 'release-v2'
+      PROJECT_NAME: 'azure_functions_worker_v2'
+
+- job: "CheckGitHubRelease"
+  dependsOn: ['CreateReleaseTag']
+  displayName: '(Manual) Check GitHub release note'
+  pool: server
+  steps:
+  - task: ManualValidation@1
+    displayName: 'Write GitHub release note'
+    inputs:
+      notifyUsers: ''
+      instructions: 'Please head to https://github.com/Azure/azure-functions-python-worker/releases to finish the release note'
+
+- job: "TestWithWorker"
+  dependsOn: ['CheckGitHubRelease']
+  displayName: 'Test with Worker'
+  steps:
+  - powershell: |
+      $githubUser = "$(GithubUser)"
+      $githubToken = "$(GithubPat)"
+      $newLibraryVersion = "$(NewWorkerVersion)"
+      $newBranch = "runtime-v2/$newLibraryVersion"
+      
+      if($newLibraryVersion -match '(\d)+.(\d)+.(\d)+') {
+          # Create GitHub credential
+          git config --global user.name "AzureFunctionsPython"
+          git config --global user.email "azfunc@microsoft.com"
+      
+          # Create GitHub credential
+          $credential = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("${githubUser}:${githubToken}"))
+      
+          # Clone Repository
+          git clone https://$githubToken@github.com/Azure/azure-functions-python-worker
+          Write-Host "Cloned azure-functions-python-worker into local and checkout $newBranch branch"
+          Set-Location "azure-functions-python-worker"
+          git checkout -b $newBranch "origin/dev"
+      
+          # Modify Runtime Version in pyproject.toml
+          Write-Host "Replacing Runtime version in worker's pyproject.toml"
+          ((Get-Content workers/pyproject.toml) -replace '"azure-functions-runtime==[^";]+', "`"azure-functions-runtime==$newLibraryVersion") -join "`n" | Set-Content -NoNewline workers/pyproject.toml
+
+          # Commit Python Version
+          Write-Host "Pushing $newBranch to azure-functions-python-worker repo"
+          git add workers/pyproject.toml
+          git commit -m "Update Python Runtime Version to $newLibraryVersion"
+          git push origin $newBranch
+      
+          # Create PR
+          Write-Host "Creating PR draft in GitHub"
+          $body = (@{head="$newBranch";base="dev";body="Python Runtime Version [$newLibraryVersion](https://github.com/Azure/azure-functions-python-worker/releases/tag/$newLibraryVersion)";draft=$true;maintainer_can_modify=$true;title="build: update Python Runtime Version to $newLibraryVersion"} | ConvertTo-Json -Compress)
+          $response = Invoke-WebRequest -Headers @{"Cache-Control"="no-cache";"Content-Type"="application/json";"Authorization"="Basic $credential";"Accept"="application/vnd.github.v3+json"} -Method Post -Body "$body" -Uri "https://api.github.com/repos/Azure/azure-functions-python-worker/pulls"
+      
+          # Return Value
+          if ($response.StatusCode -ne 201) {
+              Write-Host "Failed to create PR in Azure Functions Python Worker"
+              exit -1
+          }
+      
+          $draftUrl = $response | ConvertFrom-Json | Select -expand url
+          Write-Host "PR draft created in $draftUrl"
+      } else {
+          Write-Host "NewLibraryVersion $newLibraryVersion is malformed (example: 1.1.8)"
+          exit -1
+      }
+    displayName: 'Create PR in Worker Repo'
+
+- job: "WaitForPythonWorkerPR"
+  dependsOn: ['TestWithWorker']
+  displayName: '(Manual) Check Python Worker PR'
+  pool: server
+  steps:
+  - task: ManualValidation@1
+    displayName: 'Check Python Worker PR'
+    inputs:
+      notifyUsers: ''
+      instructions: |
+        1. Please wait and check if all goes green in the https://github.com/Azure/azure-functions-python-worker/pulls
+        2. Merge the PR into worker dev branch
+
+- job: "PyPIPackage"
+  dependsOn: ['WaitForPythonWorkerPR']
+  displayName: 'PyPI Package'
+  steps:
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download Python V2 Library release-v2/x.y.z Artifact'
+    inputs:
+      buildType: specific
+      project: '3f99e810-c336-441f-8892-84983093ad7f'
+      definition: 652
+      specificBuildWithTriggering: true
+      buildVersionToDownload: latestFromBranch
+      branchName: refs/heads/release-v2
+      targetPath: PythonRuntimeArtifact
+  - task: UsePythonVersion@0
+    displayName: 'Use Python 3.13'
+    inputs:
+      versionSpec: 3.13
+  - powershell: |
+      $newLibraryVersion = "$(NewLibraryVersion)"
+      $pypiToken = "$(PypiToken)"
+      
+      # Setup local Python environment
+      Write-Host "Setup local Python environment"
+      python -m pip install -U pip
+      pip install twine
+  
+      # Publish artifacts to PyPi
+      twine upload --repository-url https://upload.pypi.org/legacy/ --username "__token__" --password "$pypiToken" PythonRuntimeArtifact/azure_functions_worker_v2/dist/*
+      Start-Sleep -Seconds 3
+  
+      # Checking if the new version is uploaded
+      Write-Host "Check if new version is uploaded"
+      $response = Invoke-WebRequest -Headers @{"Cache-Control"="no-cache"} -Method Get -Uri "https://pypi.org/project/azure-functions-runtime/$newLibraryVersion/"
+  
+      # Return Value
+      if ($response.StatusCode -ne 200) {
+          Write-Host "Failed to verify https://pypi.org/project/azure-functions-runtime/$newLibraryVersion/"
+          exit -1
+      }
+    displayName: 'Publish package to pypi.org'

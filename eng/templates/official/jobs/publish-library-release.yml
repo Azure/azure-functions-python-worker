@@ -83,7 +83,7 @@ jobs:
           # Commit Python Version
           Write-Host "Pushing $newBranch to azure-functions-python-worker repo"
           git add workers/pyproject.toml
-          git commit -m "Update Python Runtime Version to $newLibraryVersion"
+          git commit -m "Update ${{ parameters.PROJECT_NAME }} Version to $newLibraryVersion"
           git push origin $newBranch
       
           # Create PR

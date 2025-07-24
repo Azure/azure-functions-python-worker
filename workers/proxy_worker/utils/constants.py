@@ -12,4 +12,3 @@ AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
 # new programming model default script file name
 PYTHON_SCRIPT_FILE_NAME = "PYTHON_SCRIPT_FILE_NAME"
 PYTHON_SCRIPT_FILE_NAME_DEFAULT = "function_app.py"
-

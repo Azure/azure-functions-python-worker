@@ -6,7 +6,9 @@ import typing
 import unittest
 from unittest.mock import patch
 
-from azure_functions_worker_v1.utils import env_state, wrappers
+from azure_functions_worker_v1.utils import (app_setting_manager,
+                                             helpers,
+                                             wrappers)
 
 TEST_APP_SETTING_NAME = "TEST_APP_SETTING_NAME"
 TEST_FEATURE_FLAG = "APP_SETTING_FEATURE_FLAG"
@@ -87,44 +89,44 @@ class TestUtilities(unittest.TestCase):
         self.mock_environ.stop()
 
     def test_is_true_like_accepted(self):
-        self.assertTrue(env_state.is_true_like('1'))
-        self.assertTrue(env_state.is_true_like('true'))
-        self.assertTrue(env_state.is_true_like('T'))
-        self.assertTrue(env_state.is_true_like('YES'))
-        self.assertTrue(env_state.is_true_like('y'))
+        self.assertTrue(app_setting_manager.is_true_like('1'))
+        self.assertTrue(app_setting_manager.is_true_like('true'))
+        self.assertTrue(app_setting_manager.is_true_like('T'))
+        self.assertTrue(app_setting_manager.is_true_like('YES'))
+        self.assertTrue(app_setting_manager.is_true_like('y'))
 
     def test_is_true_like_rejected(self):
-        self.assertFalse(env_state.is_true_like(None))
-        self.assertFalse(env_state.is_true_like(''))
-        self.assertFalse(env_state.is_true_like('secret'))
+        self.assertFalse(app_setting_manager.is_true_like(None))
+        self.assertFalse(app_setting_manager.is_true_like(''))
+        self.assertFalse(app_setting_manager.is_true_like('secret'))
 
     def test_is_false_like_accepted(self):
-        self.assertTrue(env_state.is_false_like('0'))
-        self.assertTrue(env_state.is_false_like('false'))
-        self.assertTrue(env_state.is_false_like('F'))
-        self.assertTrue(env_state.is_false_like('NO'))
-        self.assertTrue(env_state.is_false_like('n'))
+        self.assertTrue(app_setting_manager.is_false_like('0'))
+        self.assertTrue(app_setting_manager.is_false_like('false'))
+        self.assertTrue(app_setting_manager.is_false_like('F'))
+        self.assertTrue(app_setting_manager.is_false_like('NO'))
+        self.assertTrue(app_setting_manager.is_false_like('n'))
 
     def test_is_false_like_rejected(self):
-        self.assertFalse(env_state.is_false_like(None))
-        self.assertFalse(env_state.is_false_like(''))
-        self.assertFalse(env_state.is_false_like('secret'))
+        self.assertFalse(app_setting_manager.is_false_like(None))
+        self.assertFalse(app_setting_manager.is_false_like(''))
+        self.assertFalse(app_setting_manager.is_false_like('secret'))
 
     def test_is_envvar_true(self):
         os.environ[TEST_FEATURE_FLAG] = 'true'
-        self.assertTrue(env_state.is_envvar_true(TEST_FEATURE_FLAG))
+        self.assertTrue(app_setting_manager.is_envvar_true(TEST_FEATURE_FLAG))
 
     def test_is_envvar_not_true_on_unset(self):
         self._unset_feature_flag()
-        self.assertFalse(env_state.is_envvar_true(TEST_FEATURE_FLAG))
+        self.assertFalse(app_setting_manager.is_envvar_true(TEST_FEATURE_FLAG))
 
     def test_is_envvar_false(self):
         os.environ[TEST_FEATURE_FLAG] = 'false'
-        self.assertTrue(env_state.is_envvar_false(TEST_FEATURE_FLAG))
+        self.assertTrue(app_setting_manager.is_envvar_false(TEST_FEATURE_FLAG))
 
     def test_is_envvar_not_false_on_unset(self):
         self._unset_feature_flag()
-        self.assertFalse(env_state.is_envvar_true(TEST_FEATURE_FLAG))
+        self.assertFalse(app_setting_manager.is_envvar_true(TEST_FEATURE_FLAG))
 
     def test_disable_feature_with_no_feature_flag(self):
         mock_feature = MockFeature()
@@ -242,7 +244,7 @@ class TestUtilities(unittest.TestCase):
             self.assertEqual(type(e), ValueError)
 
     def test_app_settings_not_set_should_return_none(self):
-        app_setting = env_state.get_app_setting(TEST_APP_SETTING_NAME)
+        app_setting = app_setting_manager.get_app_setting(TEST_APP_SETTING_NAME)
         self.assertIsNone(app_setting)
 
     def test_app_settings_should_return_value(self):
@@ -250,11 +252,12 @@ class TestUtilities(unittest.TestCase):
         os.environ.update({TEST_APP_SETTING_NAME: '42'})
 
         # Try using utility to acquire application setting
-        app_setting = env_state.get_app_setting(TEST_APP_SETTING_NAME)
+        app_setting = app_setting_manager.get_app_setting(TEST_APP_SETTING_NAME)
         self.assertEqual(app_setting, '42')
 
     def test_app_settings_not_set_should_return_default_value(self):
-        app_setting = env_state.get_app_setting(TEST_APP_SETTING_NAME, 'default')
+        app_setting = app_setting_manager.get_app_setting(TEST_APP_SETTING_NAME,
+                                                          'default')
         self.assertEqual(app_setting, 'default')
 
     def test_app_settings_should_ignore_default_value(self):
@@ -262,14 +265,16 @@ class TestUtilities(unittest.TestCase):
         os.environ.update({TEST_APP_SETTING_NAME: '42'})
 
         # Try using utility to acquire application setting
-        app_setting = env_state.get_app_setting(TEST_APP_SETTING_NAME, 'default')
+        app_setting = app_setting_manager.get_app_setting(TEST_APP_SETTING_NAME,
+                                                          'default')
         self.assertEqual(app_setting, '42')
 
     def test_app_settings_should_not_trigger_validator_when_not_set(self):
         def raise_excpt(value: str):
             raise Exception('Should not raise on app setting not found')
 
-        env_state.get_app_setting(TEST_APP_SETTING_NAME, validator=raise_excpt)
+        app_setting_manager.get_app_setting(TEST_APP_SETTING_NAME,
+                                            validator=raise_excpt)
 
     def test_app_settings_return_default_value_when_validation_fail(self):
         def parse_int_no_raise(value: str):
@@ -282,7 +287,7 @@ class TestUtilities(unittest.TestCase):
         # Set application setting to an invalid value
         os.environ.update({TEST_APP_SETTING_NAME: 'invalid'})
 
-        app_setting = env_state.get_app_setting(
+        app_setting = app_setting_manager.get_app_setting(
             TEST_APP_SETTING_NAME,
             default_value='1',
             validator=parse_int_no_raise
@@ -302,7 +307,7 @@ class TestUtilities(unittest.TestCase):
         # Set application setting to an invalid value
         os.environ.update({TEST_APP_SETTING_NAME: '42'})
 
-        app_setting = env_state.get_app_setting(
+        app_setting = app_setting_manager.get_app_setting(
             TEST_APP_SETTING_NAME,
             default_value='1',
             validator=parse_int_no_raise
@@ -310,6 +315,11 @@ class TestUtilities(unittest.TestCase):
 
         # Because 'invalid' is not an interger, falls back to default value
         self.assertEqual(app_setting, '42')
+
+    def test_set_get_sdk_version(self):
+        test_version = '1.2.3'
+        helpers.set_sdk_version(test_version)
+        self.assertEqual(helpers.get_sdk_version(), test_version)
 
     def _unset_feature_flag(self):
         try:

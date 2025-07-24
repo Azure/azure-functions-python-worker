@@ -40,7 +40,7 @@ def install() -> None:
 
 
 @attach_message_to_exception(
-    expt_type=ImportError,
+    expt_type=(ImportError, ModuleNotFoundError),
     message="Cannot find module. Please check the requirements.txt"
             " file for the missing module."
             " For more info, please refer the troubleshooting guide: "

@@ -24,7 +24,7 @@ class FunctionRequest:
     def __init__(self, capabilities: Optional[Any] = {},
                  function_app_directory: Optional[Any] = "",
                  environment_variables: Optional[Any] = {},
-                 function_id: Optional[Any] = 123,
+                 function_id: Optional[Any] = "123",
                  metadata: Optional[Any] = {}):
         self.capabilities = capabilities
         self.function_app_directory = function_app_directory

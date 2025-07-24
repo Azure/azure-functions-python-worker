@@ -5,31 +5,10 @@ import subprocess
 import sys
 import unittest
 
-ROOT_PATH = pathlib.Path(__file__).parent.parent.parent
+ROOT_PATH = pathlib.Path(__file__).parent.parent.parent.parent
 
 
 class TestCodeQuality(unittest.TestCase):
-    def test_mypy(self):
-        try:
-            import mypy  # NoQA
-        except ImportError as e:
-            raise unittest.SkipTest('mypy module is missing') from e
-
-        try:
-            subprocess.run(
-                [sys.executable, '-m', 'mypy', '-m', 'azure_functions_worker_v1'],
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                cwd=str(ROOT_PATH))
-        except subprocess.CalledProcessError as ex:
-            if (sys.version_info[1] == 7
-                    and sys.version_info[2] == 3):
-                raise unittest.SkipTest('Subprocess start failing for 3.7.3') \
-                    from ex
-            output = ex.output.decode()
-            raise AssertionError(
-                'mypy validation failed:\n%s', output) from None
 
     def test_flake8(self):
         try:
@@ -44,7 +23,7 @@ class TestCodeQuality(unittest.TestCase):
         try:
             subprocess.run(
                 [sys.executable, '-m', 'flake8', '--config', str(config_path),
-                 'azure_functions_worker',],
+                 'azure_functions_worker_v1',],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

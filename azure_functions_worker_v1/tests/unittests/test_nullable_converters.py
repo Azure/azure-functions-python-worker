@@ -91,13 +91,11 @@ class TestNullableConverters(unittest.TestCase):
             e.value.args[0])
         self.assertEqual(e.type, TypeError)
 
-    @unittest.skip("TODO: fix this test. Figure out what to do with Timestamp")
     def test_to_nullable_timestamp_int(self):
         self.assertEqual(to_nullable_timestamp(1000, "datetime", protos),
                          protos.NullableTimestamp(
                              value=Timestamp(seconds=int(1000))))
 
-    @unittest.skip("TODO: fix this test. Figure out what to do with Timestamp")
     def test_to_nullable_timestamp_datetime(self):
         now = datetime.datetime.now()
         self.assertEqual(to_nullable_timestamp(now, "datetime", protos),

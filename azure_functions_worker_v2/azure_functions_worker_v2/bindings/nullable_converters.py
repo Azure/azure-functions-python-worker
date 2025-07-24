@@ -1,5 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import sys
+
 from datetime import datetime
 from typing import Optional, Union
 
@@ -103,8 +105,18 @@ def to_nullable_timestamp(date_time: Optional[Union[datetime, int]],
                                                       int) else \
                 date_time.timestamp()
 
+            try:
+                from google.protobuf.timestamp_pb2 import Timestamp
+            except ImportError:
+                raise ImportError(
+                    "protobuf not found when trying to "
+                    "import Timestamp."
+                    "Sys Path: %s. "
+                    "Sys Modules: %s. ",
+                    sys.path, sys.modules)
+
             return protos.NullableTimestamp(
-                value=protos.Timestamp(seconds=int(time_in_seconds)))
+                value=Timestamp(seconds=int(time_in_seconds)))
         except Exception:
             raise TypeError(
                 "A 'datetime' or 'int'"

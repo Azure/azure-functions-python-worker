@@ -6,10 +6,12 @@
 ignore = W503,E402,E731
 
 exclude = .git, __pycache__, build, dist, .eggs, .github, .local, docs/,
-          Samples, azure_functions_worker/protos/, proxy_worker/protos/,
-          azure_functions_worker/_thirdparty/typing_inspect.py,
-          tests/unittests/test_typing_inspect.py,
-          tests/unittests/broken_functions/syntax_error/main.py,
-          .env*, .vscode, venv*, *.venv*
+          Samples, workers/azure_functions_worker/protos/, workers/proxy_worker/protos/,
+          workers/azure_functions_worker/_thirdparty/typing_inspect.py,
+          workers/tests/unittests/test_typing_inspect.py,
+          workers/tests/unittests/broken_functions/syntax_error/main.py,
+          .env*, .vscode, venv*, *.venv*,
+          azure_functions_worker_v2/tests/protos/*,
+          azure_functions_worker_v2/azure_functions_worker_v2/utils/typing_inspect.py
 
 max-line-length = 88

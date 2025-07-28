@@ -1,3 +1,6 @@
+parameters:
+  PROJECT_DIRECTORY: 'workers'
+
 jobs:
   - job: "TestPython"
     displayName: "Run Python Emulator Tests"
@@ -35,7 +38,7 @@ jobs:
           chmod +x eng/scripts/install-dependencies.sh
           chmod +x eng/scripts/test-setup.sh
 
-          eng/scripts/install-dependencies.sh $(PYTHON_VERSION)
+          eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
           eng/scripts/test-setup.sh
         displayName: 'Install dependencies and the worker'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
@@ -76,22 +79,30 @@ jobs:
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |
-          docker compose -f workers/tests/emulator_tests/utils/eventhub/docker-compose.yml pull
-          docker compose -f workers/tests/emulator_tests/utils/eventhub/docker-compose.yml up -d
+          docker pull mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+          docker run --detach --publish 8081:8081 --publish 1234:1234 mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+          docker ps
+        displayName: "Start CosmosDB Emulator"
+      - bash: |
+          docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/eventhub/docker-compose.yml pull
+          docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/eventhub/docker-compose.yml up -d
         displayName: 'Install Azurite and Start EventHub Emulator'
       - bash: |
             python -m pytest -q -n auto --dist loadfile --reruns 4 --ignore=tests/emulator_tests/test_servicebus_functions.py tests/emulator_tests
         env:
           AzureWebJobsStorage: "UseDevelopmentStorage=true"
-          AzureWebJobsEventHubConnectionString: "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
-        workingDirectory: $(Build.SourcesDirectory)/workers
+          AzureWebJobsEventHubConnectionString: $(EmulatorEventHubConnectionString)
+          AzureWebJobsCosmosDBConnectionString: $(EmulatorCosmosDBConnectionString)
+          CosmosDBEmulatorUrl: $(CosmosDBEmulatorUrl)
+          CosmosDBEmulatorKey: $(CosmosDBEmulatorKey)
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         displayName: "Running $(PYTHON_VERSION) Python Linux Emulator Tests"
       - bash: |
           # Stop and remove EventHub Emulator container to free up the port
           docker stop eventhubs-emulator
           docker container rm --force eventhubs-emulator
-          docker compose -f workers/tests/emulator_tests/utils/servicebus/docker-compose.yml pull
-          docker compose -f workers/tests/emulator_tests/utils/servicebus/docker-compose.yml up -d
+          docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/servicebus/docker-compose.yml pull
+          docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/servicebus/docker-compose.yml up -d
         env:
           AzureWebJobsSQLPassword: $(AzureWebJobsSQLPassword)
         displayName: 'Install Azurite and Start ServiceBus Emulator'
@@ -99,6 +110,6 @@ jobs:
             python -m pytest -q -n auto --dist loadfile --reruns 4 tests/emulator_tests/test_servicebus_functions.py
         env:
           AzureWebJobsStorage: "UseDevelopmentStorage=true"
-          AzureWebJobsServiceBusConnectionString: "Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
-        workingDirectory: $(Build.SourcesDirectory)/workers
+          AzureWebJobsServiceBusConnectionString: $(EmulatorServiceBusConnectionString)
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         displayName: "Running $(PYTHON_VERSION) Python ServiceBus Linux Emulator Tests"

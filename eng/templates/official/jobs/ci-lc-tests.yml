@@ -82,7 +82,7 @@ jobs:
             --connection-string "$(AZURE_STORAGE_CONNECTION_STRING)" \
             --output tsv)
           
-          Write-Host "##vso[task.setvariable variable=CONTAINER_SAS_TOKEN;]SAS_TOKEN"
+          echo "##vso[task.setvariable variable=CONTAINER_SAS_TOKEN]$SAS_TOKEN"
         env:
           AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)      
           

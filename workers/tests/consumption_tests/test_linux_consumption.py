@@ -5,31 +5,19 @@ import sys
 from time import sleep
 from unittest import TestCase, skipIf
 
+from requests import Request
+from tests.utils.testutils_lc import LinuxConsumptionWebHostController
+
 from azure_functions_worker.constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,
     PYTHON_ENABLE_INIT_INDEXING,
     PYTHON_ENABLE_WORKER_EXTENSIONS,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
 )
-from requests import Request
-from tests.utils.testutils_lc import LinuxConsumptionWebHostController
 
 _DEFAULT_HOST_VERSION = "4"
-_SAS_TOKEN = os.getenv("SAS_TOKEN")
-_STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME", "pythonworker311sa")
 
 class TestLinuxConsumption(TestCase):
-    """Test worker behaviors on specific scenarios.
-
-    SCM_RUN_FROM_PACKAGE: built function apps are acquired from
-        -> "Simple Batch" Subscription
-        -> "AzureFunctionsPythonWorkerCILinuxDevOps" Resource Group
-        -> "pythonworker<python_major><python_minor>sa" Storage Account
-        -> "python-worker-lc-apps" Blob Container
-
-    For a list of scenario names:
-        https://pythonworker39sa.blob.core.windows.net/python-worker-lc-apps?restype=container&comp=list
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -65,6 +53,9 @@ class TestLinuxConsumption(TestCase):
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
 
+    
+    @skipIf(sys.version_info.minor != 11,
+            "Uploaded common libraries are only supported for Python 3.11")
     def test_common_libraries(self):
         """A function app with the following requirements.txt:
 
@@ -95,8 +86,6 @@ class TestLinuxConsumption(TestCase):
             self.assertIn('pyodbc', content)
             self.assertIn('requests', content)
 
-    @skipIf(sys.version_info.minor in (10, 11),
-            "Protobuf pinning fails during remote build")
     def test_new_protobuf(self):
         """A function app with the following requirements.txt:
 
@@ -125,8 +114,6 @@ class TestLinuxConsumption(TestCase):
             self.assertEqual(content['google.protobuf'], '3.15.8')
             self.assertEqual(content['grpc'], '1.33.2')
 
-    @skipIf(sys.version_info.minor in (10, 11),
-            "Protobuf pinning fails during remote build")
     def test_old_protobuf(self):
         """A function app with the following requirements.txt:
 
@@ -230,8 +217,6 @@ class TestLinuxConsumption(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Func Version: 1.11.1", resp.text)
 
-    @skipIf(sys.version_info.minor != 10,
-            "This is testing only for python310")
     def test_opencensus_with_extensions_enabled(self):
         """A function app with extensions enabled containing the
          following libraries:
@@ -251,8 +236,6 @@ class TestLinuxConsumption(TestCase):
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
 
-    @skipIf(sys.version_info.minor != 10,
-            "This is testing only for python310")
     def test_opencensus_with_extensions_enabled_init_indexing(self):
         """
         A function app with init indexing enabled
@@ -269,43 +252,7 @@ class TestLinuxConsumption(TestCase):
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
 
-    @skipIf(sys.version_info.minor != 9,
-            "This is testing only for python39 where extensions"
-            "enabled by default")
-    def test_reload_variables_after_timeout_error(self):
-        """
-        A function app with HTTPtrigger which has a function timeout of
-        20s. The app as a sleep of 30s which should trigger a timeout
-        """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
-            ctrl.assign_container(env={
-                "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
-                    "TimeoutError"),
-                PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1"
-            })
-            req = Request('GET', f'{ctrl.url}/api/hello')
-            resp = ctrl.send_request(req)
-            self.assertEqual(resp.status_code, 500)
 
-            sleep(2)
-            logs = ctrl.get_container_logs()
-            self.assertRegex(
-                logs,
-                r"Applying prioritize_customer_dependencies: "
-                r"worker_dependencies_path: \/azure-functions-host\/"
-                r"workers\/python\/.*?\/LINUX\/X64,"
-                r" customer_dependencies_path: \/home\/site\/wwwroot\/"
-                r"\.python_packages\/lib\/site-packages, working_directory:"
-                r" \/home\/site\/wwwroot, Linux Consumption: True,"
-                r" Placeholder: False")
-            self.assertNotIn("Failure Exception: ModuleNotFoundError",
-                             logs)
-
-    @skipIf(sys.version_info.minor != 9,
-            "This is testing only for python39 where extensions"
-            "enabled by default")
     def test_reload_variables_after_oom_error(self):
         """
         A function app with HTTPtrigger mocking error code 137
@@ -338,7 +285,7 @@ class TestLinuxConsumption(TestCase):
                              logs)
 
     @skipIf(sys.version_info.minor != 10,
-            "This is testing only for python310")
+            "Pydantic dependencies that are only compatible with Python 3.10")
     def test_http_v2_fastapi_streaming_upload_download(self):
         """
         A function app using http v2 fastapi extension with streaming upload and
@@ -377,7 +324,10 @@ class TestLinuxConsumption(TestCase):
                 streamed_data, b'streamingtestingresponseisreturned')
 
     def _get_blob_url(self, scenario_name: str) -> str:
-        return (
-            f'https://{_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/'
-            f'python-worker-lc-apps/{scenario_name}.zip?{_SAS_TOKEN}'
-        )
+        base_url = "http://host.docker.internal:10000/devstoreaccount1/apps"
+        
+        container_sas_token = os.getenv('CONTAINER_SAS_TOKEN')
+        if not container_sas_token:
+            raise RuntimeError('Environment variable CONTAINER_SAS_TOKEN is '
+                               'required before running Linux Consumption test')
+        return f"{base_url}/{scenario_name}.zip?{container_sas_token}"

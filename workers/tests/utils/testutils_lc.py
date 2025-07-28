@@ -72,6 +72,10 @@ class LinuxConsumptionWebHostController:
         env["WEBSITE_SITE_NAME"] = self._uuid
         env["WEBSITE_HOSTNAME"] = f"{self._uuid}.azurewebsites.com"
 
+        # Debug: Print SCM_RUN_FROM_PACKAGE value
+        scm_package = env.get("SCM_RUN_FROM_PACKAGE", "NOT_SET")
+        print(f"🔍 DEBUG: SCM_RUN_FROM_PACKAGE in env: {scm_package}")
+
         # Wait for the container to be ready
         max_retries = 60
         for i in range(max_retries):
@@ -79,9 +83,12 @@ class LinuxConsumptionWebHostController:
                 ping_req = requests.Request(method="GET", url=f"{url}/admin/host/ping")
                 ping_response = self.send_request(ping_req)
                 if ping_response.ok:
+                    print(f"🔍 DEBUG: Container ready after {i+1} attempts")
                     break
-            except:
-                pass
+                else:
+                    print(f"🔍 DEBUG: Ping attempt {i+1}/60 failed with status {ping_response.status_code}")
+            except Exception as e:
+                print(f"🔍 DEBUG: Ping attempt {i+1}/60 failed with exception: {e}")
             time.sleep(1)
         else:
             raise RuntimeError(f'Container {self._uuid} did not become ready in time')
@@ -361,6 +368,10 @@ class LinuxConsumptionWebHostController:
         # Ensure WEBSITE_SITE_NAME is set to simulate production mode
         env["WEBSITE_SITE_NAME"] = site_name
         
+        # Debug: Check SCM_RUN_FROM_PACKAGE in environment
+        scm_package = env.get("SCM_RUN_FROM_PACKAGE", "NOT_SET")
+        print(f"🔍 DEBUG: SCM_RUN_FROM_PACKAGE before encryption: {scm_package}")
+        
         ctx = {
             "SiteId": 1,
             "SiteName": site_name,
@@ -368,6 +379,9 @@ class LinuxConsumptionWebHostController:
         }
 
         json_ctx = json.dumps(ctx)
+        print(f"🔍 DEBUG: Context JSON length: {len(json_ctx)} chars")
+        print(f"🔍 DEBUG: Context contains SCM_RUN_FROM_PACKAGE: {'SCM_RUN_FROM_PACKAGE' in json_ctx}")
+        
         encrypted = cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), json_ctx)
         return encrypted
 

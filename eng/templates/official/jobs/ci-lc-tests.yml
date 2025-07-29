@@ -61,30 +61,18 @@ jobs:
             --name apps \
             --connection-string  "$(AZURE_STORAGE_CONNECTION_STRING)"
           
-          # # Upload all function app packages to the container
-          # FUNCTION_APPS_DIR="$(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/tests/consumption_tests/function_apps"
-          # for zipfile in "$FUNCTION_APPS_DIR"/*.zip; do
-          #   filename=$(basename "$zipfile")
-          #   echo "Uploading $filename..."
-          #   az storage blob upload \
-          #     --container-name apps \
-          #     --name "$filename" \
-          #     --file "$zipfile" \
-          #     --connection-string "$(AZURE_STORAGE_CONNECTION_STRING)" \
-          #     --overwrite
-          # done
-          
-          # Upload one zip file for testing
-          ZIP_FILE="$(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/tests/consumption_tests/function_apps/HttpNoAuth.zip"
-          ZIP_NAME="HttpNoAuth.zip"
-
-          echo "Uploading $ZIP_NAME..."
-          az storage blob upload \
-            --container-name apps \
-            --name "$ZIP_NAME" \
-            --file "$ZIP_FILE" \
-            --connection-string "$(AZURE_STORAGE_CONNECTION_STRING)" \
-            --overwrite
+          # Upload all function app packages to the container
+          FUNCTION_APPS_DIR="$(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/tests/consumption_tests/function_apps"
+          for zipfile in "$FUNCTION_APPS_DIR"/*.zip; do
+            filename=$(basename "$zipfile")
+            echo "Uploading $filename..."
+            az storage blob upload \
+              --container-name apps \
+              --name "$filename" \
+              --file "$zipfile" \
+              --connection-string "$(AZURE_STORAGE_CONNECTION_STRING)" \
+              --overwrite
+          done
 
           # Generate a container-level SAS token valid for 1 day
           SAS_TOKEN=$(az storage container generate-sas \
@@ -114,8 +102,6 @@ jobs:
         displayName: 'Display CONTAINER_SAS_TOKEN variable'
 
       - bash: |
-             echo "AZURE_STORAGE_CONNECTION_STRING is: $AZURE_STORAGE_CONNECTION_STRING"
-             echo "AzureWebJobsStorage is: $AzureWebJobsStorage"
              python -m pytest -n auto --dist loadfile -vv --instafail tests/consumption_tests
         env:
           AzureWebJobsStorage: $(AZURE_STORAGE_CONNECTION_STRING)

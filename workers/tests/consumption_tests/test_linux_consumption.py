@@ -324,7 +324,7 @@ class TestLinuxConsumption(TestCase):
     #             streamed_data, b'streamingtestingresponseisreturned')
 
     def _get_blob_url(self, scenario_name: str) -> str:
-        base_url = "http://host.docker.internal:10000/devstoreaccount1/apps"
+        base_url = "http://172.17.0.1:10000/devstoreaccount1/apps"
         
         container_sas_token = os.getenv('CONTAINER_SAS_TOKEN')
         if not container_sas_token:

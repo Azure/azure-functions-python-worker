@@ -4,6 +4,12 @@
 
 import argparse
 import traceback
+import asyncio
+try:
+    import uvloop
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+except Exception:
+    pass
 
 _GRPC_CONNECTION_TIMEOUT = 5.0
 
@@ -40,8 +46,6 @@ def start():
     from .utils.dependency import DependencyManager
     DependencyManager.initialize()
     DependencyManager.use_worker_dependencies()
-
-    import asyncio
 
     from . import logging
     from .logging import error_logger, logger

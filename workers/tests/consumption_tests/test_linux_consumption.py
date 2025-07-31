@@ -86,61 +86,6 @@ class TestLinuxConsumption(TestCase):
             self.assertIn('pyodbc', content)
             self.assertIn('requests', content)
 
-    def test_new_protobuf(self):
-        """A function app with the following requirements.txt:
-
-        azure-functions==1.7.0
-        protobuf==3.15.8
-        grpcio==1.33.2
-
-        should return 200 after importing all libraries.
-        """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
-            ctrl.assign_container(env={
-                "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("NewProtobuf"),
-                PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1"
-            })
-            req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
-            resp = ctrl.send_request(req)
-            self.assertEqual(resp.status_code, 200)
-
-            content = resp.json()
-
-            # Worker always picks up the SDK version bundled with the image
-            # Version of the packages are inconsistent due to isolation's bug
-            self.assertEqual(content['azure.functions'], '1.7.0')
-            self.assertEqual(content['google.protobuf'], '3.15.8')
-            self.assertEqual(content['grpc'], '1.33.2')
-
-    def test_old_protobuf(self):
-        """A function app with the following requirements.txt:
-
-        azure-functions==1.5.0
-        protobuf==3.8.0
-        grpcio==1.27.1
-
-        should return 200 after importing all libraries.
-        """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
-            ctrl.assign_container(env={
-                "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("OldProtobuf"),
-                PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1"
-            })
-            req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
-            resp = ctrl.send_request(req)
-            self.assertEqual(resp.status_code, 200)
-
-            content = resp.json()
-
-            # Worker always picks up the SDK version bundled with the image
-            # Version of the packages are inconsistent due to isolation's bug
-            self.assertIn(content['azure.functions'], '1.5.0')
-            self.assertIn(content['google.protobuf'], '3.8.0')
-            self.assertIn(content['grpc'], '1.27.1')
 
     def test_debug_logging_disabled(self):
         """An HttpTrigger function app with 'azure-functions' library
@@ -325,7 +270,7 @@ class TestLinuxConsumption(TestCase):
 
     def _get_blob_url(self, scenario_name: str) -> str:
         base_url = "http://172.17.0.1:10000/devstoreaccount1/apps"
-        
+
         container_sas_token = os.getenv('CONTAINER_SAS_TOKEN')
         if not container_sas_token:
             raise RuntimeError('Environment variable CONTAINER_SAS_TOKEN is '

@@ -25,6 +25,11 @@ _submodule_dirs = []
 def register_function_dir(path: PathLike) -> None:
     try:
         _submodule_dirs.append(fspath(path))
+        # Update the namespace package's submodule search locations if it exists
+        if _AZURE_NAMESPACE in sys.modules:
+            sys.modules[_AZURE_NAMESPACE].__spec__.submodule_search_locations = _submodule_dirs
+            # Also update __path__ which is required for namespace packages to work
+            sys.modules[_AZURE_NAMESPACE].__path__ = _submodule_dirs
     except TypeError as e:
         raise RuntimeError('Path (%s) is incompatible with fspath. '
                            'It is of type %s.', path, type(path), e)
@@ -36,6 +41,8 @@ def install() -> None:
         ns_spec = importlib.machinery.ModuleSpec(_AZURE_NAMESPACE, None)
         ns_spec.submodule_search_locations = _submodule_dirs
         ns_pkg = importlib.util.module_from_spec(ns_spec)
+        # Set __path__ for namespace package
+        ns_pkg.__path__ = _submodule_dirs
         sys.modules[_AZURE_NAMESPACE] = ns_pkg
 
 

@@ -118,15 +118,16 @@ async def function_load_request(request):
             _functions.add_function(
                 function_id, func, func_request.metadata, protos)
 
-        log_data = {
-            "message": "Successfully indexed function app.",
-            "function_count": len(_functions._functions),
-            "functions": _functions._functions,
-            "deferred_bindings_enabled": "False",
-            "app_settings": get_python_appsetting_state(),
-            "azure-functions version": get_sdk_version(),
-        }
-        logger.info(json.dumps(log_data))
+        # TODO: Log function app indexing information
+        # log_data = {
+        #     "message": "Successfully indexed function app.",
+        #     "function_count": len(_functions._functions),
+        #     "functions": _functions._functions,
+        #     "deferred_bindings_enabled": "False",
+        #     "app_settings": get_python_appsetting_state(),
+        #     "azure-functions version": get_sdk_version(),
+        # }
+        # logger.info(json.dumps(log_data))
         return protos.FunctionLoadResponse(
             function_id=function_id,
             result=protos.StatusResult(

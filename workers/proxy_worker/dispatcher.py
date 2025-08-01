@@ -15,8 +15,6 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import grpc
-
-from . import loader
 from proxy_worker import protos
 from proxy_worker.logging import (
     CONSOLE_LOG_PREFIX,
@@ -272,7 +270,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                                'process')
 
         self._old_task_factory = self._loop.get_task_factory()
-        loader.install()
 
         DispatcherMeta.__current_dispatcher__ = self
         try:

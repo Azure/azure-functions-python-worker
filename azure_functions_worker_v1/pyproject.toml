@@ -1,0 +1,91 @@
+[project]
+name = "azure-functions-runtime-v1"
+dynamic = ["version"]
+requires-python = ">=3.13"
+description = "Python Language Worker for Azure Functions V1 Runtime"
+authors = [
+    { name = "Azure Functions team at Microsoft Corp.", email = "azurefunctions@microsoft.com" }
+]
+keywords = ["azure", "functions", "azurefunctions",
+            "python", "serverless"]
+license = { name = "MIT", file = "LICENSE" }
+readme = { file = "README.md", content-type = "text/markdown" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS :: MacOS X",
+    "Environment :: Web Environment",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers"
+]
+dependencies = [
+     "azure-functions"
+]
+
+[project.urls]
+Documentation = "https://github.com/Azure/azure-functions-python-worker/blob/dev/azure_functions_worker_v1/README.md"
+Repository = "https://github.com/Azure/azure-functions-python-worker"
+
+[project.optional-dependencies]
+dev = [
+    "azure-monitor-opentelemetry", # Used for Azure Monitor unit tests
+    "flake8==6.*",
+    "pytest",
+    "requests==2.*",
+    "coverage",
+    "grpcio~=1.70.0",
+    "grpcio-tools~=1.70.0",
+    "protobuf~=5.29.0",
+    "pytest-sugar",
+    "pytest-cov",
+    "pytest-xdist",
+    "pytest-randomly",
+    "pytest-instafail",
+    "pytest-rerunfailures",
+    "pytest-asyncio",
+    "pre-commit",
+    "invoke"
+]
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+exclude = [
+    'eng', 'tests', 'pack'
+    ]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+known_first_party = ["azure_functions_worker_v1"]
+default_section = "THIRDPARTY"
+src_paths = ["azure_functions_worker_v1"]
+skip_glob = [
+    "build",
+    "dist",
+    "env",
+    "venv",
+    "*venv*",
+    "*.egg-info",
+    ".tox",
+    ".nox",
+    ".git",
+    "__pycache__",
+    ".ci",
+    ".devcontainer",
+    ".github",
+    "eng",
+    "pack",
+    "*protos/*"
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "azure_functions_worker_v1.version.VERSION"}

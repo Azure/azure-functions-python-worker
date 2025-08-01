@@ -12,6 +12,8 @@ exclude = .git, __pycache__, build, dist, .eggs, .github, .local, docs/,
           workers/tests/unittests/broken_functions/syntax_error/main.py,
           .env*, .vscode, venv*, *.venv*,
           azure_functions_worker_v2/tests/protos/*,
-          azure_functions_worker_v2/azure_functions_worker_v2/utils/typing_inspect.py
+          azure_functions_worker_v2/azure_functions_worker_v2/utils/typing_inspect.py,
+          azure_functions_worker_v1/tests/protos/*,
+          azure_functions_worker_v1/azure_functions_worker_v1/utils/typing_inspect.py
 
 max-line-length = 88

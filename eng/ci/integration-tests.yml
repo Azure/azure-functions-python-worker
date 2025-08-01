@@ -9,7 +9,7 @@ pr:
   branches:
     include:
     - dev
-    - release/*
+    - release*
 
 schedules:
   - cron: "0 8 * * 1,2,3,4,5"

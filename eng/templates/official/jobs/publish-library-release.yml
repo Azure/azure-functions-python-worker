@@ -1,3 +1,10 @@
+parameters:
+  PROJECT_DIRECTORY: ''
+  PROJECT_NAME: ''
+  BRANCH_NAME: ''
+  TEST_BRANCH_NAME: ''
+
+
 jobs:
 
 - job: "CreateReleaseBranch"
@@ -9,9 +16,8 @@ jobs:
   steps:
   - template: /eng/templates/shared/github-release-branch.yml@self
     parameters:
-      PROJECT_DIRECTORY: 'azure_functions_worker_v2'
-      PROJECT_NAME: 'azure_functions_worker_v2'
-      BRANCH_NAME: 'release-v2'
+      PROJECT_DIRECTORY: ${{ parameters.PROJECT_DIRECTORY }}
+      BRANCH_NAME: ${{ parameters.BRANCH_NAME }}
 
 - job: "CheckReleaseBranch"
   dependsOn: ['CreateReleaseBranch']
@@ -19,21 +25,21 @@ jobs:
   pool: server
   steps:
   - task: ManualValidation@1
-    displayName: '(Optional) Modify release-v2/x.y.z branch'
+    displayName: '(Optional) Modify release branch'
     inputs:
       notifyUsers: ''  # No email notifications sent
       instructions: |
-        1. Check if the https://github.com/Azure/azure-functions-python-worker/tree/release-v2/$(NewLibraryVersion) build succeeds and passes all unit tests.
-        2. If not, modify the release-v2/$(NewLibraryVersion) branch.
-        3. Ensure release-v2/$(NewLibraryVersion) branch contains all necessary changes.
+        1. Check if the https://github.com/Azure/azure-functions-python-worker build succeeds and passes all unit tests.
+        2. If not, modify the release branch.
+        3. Ensure branch contains all necessary changes.
 
 - job: "CreateReleaseTag"
   dependsOn: ['CheckReleaseBranch']
   steps:
   - template: /eng/templates/shared/github-release-note.yml@self
     parameters:
-      BRANCH_NAME: 'release-v2'
-      PROJECT_NAME: 'azure_functions_worker_v2'
+      BRANCH_NAME: ${{ parameters.BRANCH_NAME }}
+      PROJECT_DIRECTORY: ${{ parameters.PROJECT_DIRECTORY }}
 
 - job: "CheckGitHubRelease"
   dependsOn: ['CreateReleaseTag']
@@ -54,7 +60,7 @@ jobs:
       $githubUser = "$(GithubUser)"
       $githubToken = "$(GithubPat)"
       $newLibraryVersion = "$(NewWorkerVersion)"
-      $newBranch = "runtime-v2/$newLibraryVersion"
+      $newBranch = "${{ parameters.TEST_BRANCH_NAME }}/$newLibraryVersion"
       
       if($newLibraryVersion -match '(\d)+.(\d)+.(\d)+') {
           # Create GitHub credential
@@ -72,12 +78,12 @@ jobs:
       
           # Modify Runtime Version in pyproject.toml
           Write-Host "Replacing Runtime version in worker's pyproject.toml"
-          ((Get-Content workers/pyproject.toml) -replace '"azure-functions-runtime==[^";]+', "`"azure-functions-runtime==$newLibraryVersion") -join "`n" | Set-Content -NoNewline workers/pyproject.toml
+          ((Get-Content workers/pyproject.toml) -replace '"${{ parameters.PROJECT_NAME }}==[^";]+', "`"${{ parameters.PROJECT_NAME }}==$newLibraryVersion") -join "`n" | Set-Content -NoNewline workers/pyproject.toml
 
           # Commit Python Version
           Write-Host "Pushing $newBranch to azure-functions-python-worker repo"
           git add workers/pyproject.toml
-          git commit -m "Update Python Runtime Version to $newLibraryVersion"
+          git commit -m "Update ${{ parameters.PROJECT_NAME }} Version to $newLibraryVersion"
           git push origin $newBranch
       
           # Create PR
@@ -117,14 +123,14 @@ jobs:
   displayName: 'PyPI Package'
   steps:
   - task: DownloadPipelineArtifact@2
-    displayName: 'Download Python V2 Library release-v2/x.y.z Artifact'
+    displayName: 'Download Python V2 Library release-*/x.y.z Artifact'
     inputs:
       buildType: specific
       project: '3f99e810-c336-441f-8892-84983093ad7f'
       definition: 652
       specificBuildWithTriggering: true
       buildVersionToDownload: latestFromBranch
-      branchName: refs/heads/release-v2
+      branchName: refs/heads/${{ parameters.BRANCH_NAME }}
       targetPath: PythonRuntimeArtifact
   - task: UsePythonVersion@0
     displayName: 'Use Python 3.13'
@@ -140,7 +146,7 @@ jobs:
       pip install twine
   
       # Publish artifacts to PyPi
-      twine upload --repository-url https://upload.pypi.org/legacy/ --username "__token__" --password "$pypiToken" PythonRuntimeArtifact/azure_functions_worker_v2/dist/*
+      twine upload --repository-url https://upload.pypi.org/legacy/ --username "__token__" --password "$pypiToken" PythonRuntimeArtifact/${{ parameters.PROJECT_DIRECTORY }}/dist/*
       Start-Sleep -Seconds 3
   
       # Checking if the new version is uploaded

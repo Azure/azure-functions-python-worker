@@ -41,7 +41,7 @@ dependencies = [
      "grpcio~=1.70.0; python_version >= '3.13'",
      "azurefunctions-extensions-base; python_version >= '3.8'",
      "azure-functions-runtime==1.0.0a3; python_version >= '3.13'",
-     "azure-functions-runtime-v1==1.0.0a2; python_version >= '3.13'"
+     "azure-functions-runtime-v1==1.0.0b1; python_version >= '3.13'"
 ]
 
 [project.urls]

@@ -27,7 +27,8 @@ def register_function_dir(path: PathLike) -> None:
         _submodule_dirs.append(fspath(path))
         # Update the namespace package's submodule search locations if it exists
         if _AZURE_NAMESPACE in sys.modules:
-            sys.modules[_AZURE_NAMESPACE].__spec__.submodule_search_locations = _submodule_dirs
+            sys.modules[
+                _AZURE_NAMESPACE].__spec__.submodule_search_locations = _submodule_dirs
             # Also update __path__ which is required for namespace packages to work
             sys.modules[_AZURE_NAMESPACE].__path__ = _submodule_dirs
     except TypeError as e:

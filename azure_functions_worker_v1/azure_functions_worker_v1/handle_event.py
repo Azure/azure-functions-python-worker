@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import json
 import logging
 import os
 import sys
@@ -20,7 +19,6 @@ from .bindings.meta import (load_binding_registry,
                             to_outgoing_param_binding,
                             to_outgoing_proto)
 from .bindings.out import Out
-from .utils.app_setting_manager import get_python_appsetting_state
 from .utils.constants import (FUNCTION_DATA_CACHE,
                               RAW_HTTP_BODY_BYTES,
                               TYPED_DATA_COLLECTION,
@@ -35,7 +33,7 @@ from .utils.constants import (FUNCTION_DATA_CACHE,
                               PYTHON_ENABLE_DEBUG_LOGGING)
 from .utils.executor import get_current_loop, execute_async, run_sync_func
 from .utils.app_setting_manager import is_envvar_true
-from .utils.helpers import change_cwd, get_sdk_version, get_worker_metadata
+from .utils.helpers import change_cwd, get_worker_metadata
 from .utils.tracing import serialize_exception
 
 _functions: typing.MutableMapping[str, FunctionInfo] = Registry()

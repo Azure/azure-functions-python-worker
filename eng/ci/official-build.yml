@@ -64,6 +64,8 @@ extends:
         dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/jobs/ci-unit-tests.yml@self
+            parameters:
+              PoolName: 1es-pool-azfunc
       - stage: RunWorkerDockerConsumptionTests
         dependsOn: BuildPythonWorker
         jobs:

@@ -16,6 +16,7 @@ from tests.utils.testutils_lc import LinuxConsumptionWebHostController
 
 _DEFAULT_HOST_VERSION = "4"
 
+
 class TestLinuxConsumption(TestCase):
 
     @classmethod
@@ -52,7 +53,6 @@ class TestLinuxConsumption(TestCase):
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
 
-    
     @skipIf(sys.version_info.minor != 11,
             "Uploaded common libraries are only supported for Python 3.11")
     def test_common_libraries(self):
@@ -84,7 +84,6 @@ class TestLinuxConsumption(TestCase):
             self.assertIn('cryptography', content)
             self.assertIn('pyodbc', content)
             self.assertIn('requests', content)
-
 
     def test_debug_logging_disabled(self):
         """An HttpTrigger function app with 'azure-functions' library
@@ -195,7 +194,6 @@ class TestLinuxConsumption(TestCase):
             req = Request('GET', f'{ctrl.url}/api/opencensus')
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
-
 
     def test_reload_variables_after_oom_error(self):
         """

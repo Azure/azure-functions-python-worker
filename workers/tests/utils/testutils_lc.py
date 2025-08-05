@@ -35,6 +35,7 @@ _CUSTOM_IMAGE = "CUSTOM_IMAGE"
 _EXTENSION_BASE_ZIP = 'https://github.com/Azure/azure-functions-python-' \
                       'extensions/archive/refs/heads/dev.zip'
 
+
 class LinuxConsumptionWebHostController:
     """A controller for spawning mesh Docker container and apply multiple
     test cases on it.
@@ -83,12 +84,13 @@ class LinuxConsumptionWebHostController:
                 ping_req = requests.Request(method="GET", url=f"{url}/admin/host/ping")
                 ping_response = self.send_request(ping_req)
                 if ping_response.ok:
-                    print(f"🔍 DEBUG: Container ready after {i+1} attempts")
+                    print(f"🔍 DEBUG: Container ready after {i + 1} attempts")
                     break
                 else:
-                    print(f"🔍 DEBUG: Ping attempt {i+1}/60 failed with status {ping_response.status_code}")
+                    print("🔍 DEBUG: Ping attempt {i+1}/60 failed with status "
+                          f"{ping_response.status_code}")
             except Exception as e:
-                print(f"🔍 DEBUG: Ping attempt {i+1}/60 failed with exception: {e}")
+                print(f"🔍 DEBUG: Ping attempt {i + 1}/60 failed with exception: {e}")
             time.sleep(1)
         else:
             raise RuntimeError(f'Container {self._uuid} did not become ready in time')
@@ -122,10 +124,9 @@ class LinuxConsumptionWebHostController:
 
         prepped = session.prepare_request(req)
         prepped.headers['Content-Type'] = 'application/json'
-        
+
         # Try to generate a proper JWT token first
         try:
-            import jwt
             jwt_token = self._generate_jwt_token()
             # Use JWT token for newer Azure Functions host versions
             prepped.headers['Authorization'] = f'Bearer {jwt_token}'
@@ -134,7 +135,7 @@ class LinuxConsumptionWebHostController:
             swt_token = self._get_site_restricted_token()
             prepped.headers['x-ms-site-restricted-token'] = swt_token
             prepped.headers['Authorization'] = f'Bearer {swt_token}'
-        
+
         # Add additional headers required by Azure Functions host
         prepped.headers['x-site-deployment-id'] = self._uuid
         prepped.headers['x-ms-client-request-id'] = str(uuid.uuid4())
@@ -318,7 +319,7 @@ class LinuxConsumptionWebHostController:
         """Get the header value which can be used by x-ms-site-restricted-token
         which expires in one day.
         """
-        # For compatibility with older Azure Functions host versions, 
+        # For compatibility with older Azure Functions host versions,
         # try the old SWT format first
         exp_ns = int((time.time() + 24 * 60 * 60) * 1000000000)
         token = cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), f'exp={exp_ns}')
@@ -331,18 +332,18 @@ class LinuxConsumptionWebHostController:
         except ImportError:
             # Fall back to SWT format if JWT library not available
             return self._get_site_restricted_token()
-        
+
         # JWT payload matching Azure Functions host expectations
         exp_time = int(time.time()) + (24 * 60 * 60)  # 24 hours from now
-        
+
         # Use the site name consistently for issuer and audience validation
         site_name = self._uuid
         container_name = self._uuid
-        
+
         # According to Azure Functions host analysis, use site-specific issuer format
         # This matches the ValidIssuers array in ScriptJwtBearerExtensions.cs
         issuer = f"https://{site_name}.azurewebsites.net"
-        
+
         payload = {
             'exp': exp_time,
             'iat': int(time.time()),
@@ -351,14 +352,13 @@ class LinuxConsumptionWebHostController:
             # For Linux Consumption in placeholder mode, audience is the container name
             'aud': container_name
         }
-        
+
         # Use the same encryption key for JWT signing
         key = base64.b64decode(os.getenv('_DUMMY_CONT_KEY').encode())
-        
+
         # Generate JWT token using HMAC SHA256 (matches Azure Functions host)
         jwt_token = jwt.encode(payload, key, algorithm='HS256')
         return jwt_token
-
 
     @classmethod
     def _get_site_encrypted_context(cls,
@@ -367,11 +367,11 @@ class LinuxConsumptionWebHostController:
         """Get the encrypted context for placeholder mode specialization"""
         # Ensure WEBSITE_SITE_NAME is set to simulate production mode
         env["WEBSITE_SITE_NAME"] = site_name
-        
+
         # Debug: Check SCM_RUN_FROM_PACKAGE in environment
         scm_package = env.get("SCM_RUN_FROM_PACKAGE", "NOT_SET")
         print(f"🔍 DEBUG: SCM_RUN_FROM_PACKAGE before encryption: {scm_package}")
-        
+
         ctx = {
             "SiteId": 1,
             "SiteName": site_name,
@@ -380,14 +380,14 @@ class LinuxConsumptionWebHostController:
 
         json_ctx = json.dumps(ctx)
         print(f"🔍 DEBUG: Context JSON length: {len(json_ctx)} chars")
-        print(f"🔍 DEBUG: Context contains SCM_RUN_FROM_PACKAGE: {'SCM_RUN_FROM_PACKAGE' in json_ctx}")
-        
+        print("🔍 DEBUG: Context contains SCM_RUN_FROM_PACKAGE: "
+              f"{'SCM_RUN_FROM_PACKAGE' in json_ctx}")
         encrypted = cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), json_ctx)
         return encrypted
 
     @classmethod
     def _encrypt_context(cls, encryption_key: str, plain_text: str) -> str:
-        """Encrypt plain text context into a encrypted message which can
+        """Encrypt plain text context into an encrypted message which can
         be accepted by the host
         """
         # Decode the encryption key

@@ -42,7 +42,7 @@ dependencies = [
      "uvloop~=0.21.0; python_version >= '3.13'",
      "azurefunctions-extensions-base; python_version >= '3.8'",
      "azure-functions-runtime==1.0.0a3; python_version >= '3.13'",
-     "azure-functions-runtime-v1==1.0.0a2; python_version >= '3.13'"
+     "azure-functions-runtime-v1==1.0.0b1; python_version >= '3.13'"
 ]
 
 [project.urls]
@@ -85,11 +85,11 @@ dev = [
     "orjson"
 ]
 test-http-v2 = [
-    "azurefunctions-extensions-http-fastapi==1.0.0",
+    "azurefunctions-extensions-http-fastapi==1.0.1",
     "ujson"
 ]
 test-deferred-bindings = [
-    "azurefunctions-extensions-bindings-blob==1.0.0",
+    "azurefunctions-extensions-bindings-blob==1.1.0",
     "azurefunctions-extensions-bindings-eventhub==1.0.0b1"
 ]
 

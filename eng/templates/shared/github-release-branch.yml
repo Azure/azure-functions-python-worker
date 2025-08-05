@@ -1,13 +1,12 @@
 parameters:
   PROJECT_DIRECTORY: ''
-  PROJECT_NAME: ''
   BRANCH_NAME: ''
 
 steps:
   - powershell: |
       $githubToken = "$(GithubPat)"
       $newWorkerVersion = "$(NewWorkerVersion)"
-      $versionFile = "${{ parameters.PROJECT_NAME}}/version.py"
+      $versionFile = "${{ parameters.PROJECT_DIRECTORY}}/version.py"
       $newBranch = "${{ parameters.BRANCH_NAME}}/$newWorkerVersion"
       
       if ($newWorkerVersion -match '^(\d+)\.(\d+)\.(\d+)([a-zA-Z0-9\-\.]*)?$') {
@@ -21,11 +20,11 @@ steps:
           git checkout -b "$newBranch"
           cd ${{ parameters.PROJECT_DIRECTORY}}
       
-          # Change ${{ parameters.PROJECT_NAME}}/version.py version
+          # Change ${{ parameters.PROJECT_DIRECTORY}}/version.py version
           Write-Host "Change version number in version.py to $newWorkerVersion"
           ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $versionFile
           git add $versionFile
-          git commit -m "build: update ${{ parameters.PROJECT_NAME}} version to $newWorkerVersion"
+          git commit -m "build: update ${{ parameters.PROJECT_DIRECTORY}} version to $newWorkerVersion"
       
           # Create release branch ${{ parameters.BRANCH_NAME}}/X.Y.Z
           Write-Host "Creating release branch $newBranch"
@@ -36,7 +35,7 @@ steps:
           $body = @{
               head = "$newBranch"
               base = "dev"
-              title = "build: update $($parameters.PROJECT_NAME) version to $newWorkerVersion"
+              title = "build: update $($parameters.PROJECT_DIRECTORY) version to $newWorkerVersion"
               body = "Version $newWorkerVersion"
               draft = $true
               maintainer_can_modify = $true

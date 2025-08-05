@@ -88,3 +88,22 @@ extends:
           parameters:
             PROJECT_NAME: 'V2 Library'
             PROJECT_DIRECTORY: 'azure_functions_worker_v2'
+
+
+
+    # Python V1 Library Build and Test Stages
+    - stage: BuildV1Library
+      dependsOn: []
+      jobs:
+        - template: /eng/templates/jobs/build.yml@self
+          parameters:
+            PYTHON_VERSION: '3.13'
+            PROJECT_NAME: 'V1 Library'
+            PROJECT_DIRECTORY: 'azure_functions_worker_v1'
+    - stage: RunV1LibraryUnitTests
+      dependsOn: BuildV1Library
+      jobs:
+        - template: /eng/templates/jobs/ci-library-unit-tests.yml@self
+          parameters:
+            PROJECT_NAME: 'V1 Library'
+            PROJECT_DIRECTORY: 'azure_functions_worker_v1'

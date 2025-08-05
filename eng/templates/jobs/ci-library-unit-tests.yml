@@ -1,6 +1,7 @@
 parameters:
   PROJECT_NAME: ''
   PROJECT_DIRECTORY: ''
+  PoolName: ''
 
 jobs:
   - job: "TestPython"

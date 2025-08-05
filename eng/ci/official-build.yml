@@ -99,6 +99,7 @@ extends:
             parameters:
               PROJECT_NAME: 'Python V2 Library'
               PROJECT_DIRECTORY: 'azure_functions_worker_v2'
+              PoolName: 1es-pool-azfunc
 
       # Python V1 Library Build and Test Stages
       - stage: BuildV1Library

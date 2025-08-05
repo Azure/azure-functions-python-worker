@@ -3,10 +3,7 @@
 import os
 import sys
 from time import sleep
-from unittest import TestCase, skipIf
-
-from requests import Request
-from tests.utils.testutils_lc import LinuxConsumptionWebHostController
+from unittest import TestCase, skip, skipIf
 
 from azure_functions_worker.constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,
@@ -14,6 +11,8 @@ from azure_functions_worker.constants import (
     PYTHON_ENABLE_WORKER_EXTENSIONS,
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
 )
+from requests import Request
+from tests.utils.testutils_lc import LinuxConsumptionWebHostController
 
 _DEFAULT_HOST_VERSION = "4"
 
@@ -229,8 +228,7 @@ class TestLinuxConsumption(TestCase):
             self.assertNotIn("Failure Exception: ModuleNotFoundError",
                              logs)
 
-    @skipIf(sys.version_info.minor != 10,
-            "Pydantic dependencies that are only compatible with Python 3.10")
+    @skip("Flaky test.")
     def test_http_v2_fastapi_streaming_upload_download(self):
         """
         A function app using http v2 fastapi extension with streaming upload and

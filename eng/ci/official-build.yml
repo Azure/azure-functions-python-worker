@@ -91,6 +91,7 @@ extends:
               PROJECT_NAME: 'Python V2 Library'
               PROJECT_DIRECTORY: 'azure_functions_worker_v2'
               ARTIFACT_NAME: 'azure-functions-runtime'
+              PoolName: 1es-pool-azfunc
       - stage: RunV2LibraryUnitTests
         dependsOn: BuildV2Library
         jobs:

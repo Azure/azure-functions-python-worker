@@ -368,10 +368,6 @@ class LinuxConsumptionWebHostController:
         # Ensure WEBSITE_SITE_NAME is set to simulate production mode
         env["WEBSITE_SITE_NAME"] = site_name
 
-        # Debug: Check SCM_RUN_FROM_PACKAGE in environment
-        scm_package = env.get("SCM_RUN_FROM_PACKAGE", "NOT_SET")
-        print(f"🔍 DEBUG: SCM_RUN_FROM_PACKAGE before encryption: {scm_package}")
-
         ctx = {
             "SiteId": 1,
             "SiteName": site_name,
@@ -379,9 +375,7 @@ class LinuxConsumptionWebHostController:
         }
 
         json_ctx = json.dumps(ctx)
-        print(f"🔍 DEBUG: Context JSON length: {len(json_ctx)} chars")
-        print("🔍 DEBUG: Context contains SCM_RUN_FROM_PACKAGE: "
-              f"{'SCM_RUN_FROM_PACKAGE' in json_ctx}")
+
         encrypted = cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), json_ctx)
         return encrypted
 

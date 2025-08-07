@@ -5,11 +5,11 @@
 import argparse
 import traceback
 import asyncio
-# try:
-#     import uvloop
-#     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-# except Exception:
-#     pass
+try:
+    import uvloop
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+except Exception:
+    pass
 
 _GRPC_CONNECTION_TIMEOUT = 5.0
 

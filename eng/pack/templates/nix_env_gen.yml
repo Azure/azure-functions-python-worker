@@ -86,6 +86,7 @@ steps:
       !python/**
       !tests/**
       !setuptools*/**
+      !uvloop/**
       !_distutils_hack/**
       !distutils-precedence.pth
       !pkg_resources/**

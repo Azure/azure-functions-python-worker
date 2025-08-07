@@ -12,21 +12,34 @@ jobs:
     
     strategy:
       matrix:
-        Python37:
-          PYTHON_VERSION: '3.7'
-        Python38:
-          PYTHON_VERSION: '3.8'
-        Python39:
-          PYTHON_VERSION: '3.9'
-        Python310:
-          PYTHON_VERSION: '3.10'
-        Python311:
-          PYTHON_VERSION: '3.11'
-
+         Python39:
+           PYTHON_VERSION: '3.9'
+         Python310:
+           PYTHON_VERSION: '3.10'
+         Python311:
+           PYTHON_VERSION: '3.11'
+         Python312:
+           PYTHON_VERSION: '3.12'
     steps:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
+      
+      - bash: |
+          # Start Azurite storage emulator in the background
+          docker run -d -p 10000:10000 -p 10001:10001 -p 10002:10002 \
+            --name azurite-storage \
+            mcr.microsoft.com/azure-storage/azurite:latest \
+            azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0
+          
+          # Wait for Azurite to be ready
+          sleep 5
+          
+          # Verify Azurite is running
+          docker ps | grep azurite-storage
+        displayName: 'Start Azurite Storage Emulator'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+
       - bash: |
           python -m pip install --upgrade pip
           python -m pip install -U -e ${{ parameters.PROJECT_DIRECTORY }}/[dev]
@@ -36,11 +49,69 @@ jobs:
         displayName: 'Install dependencies and the worker'
         # Skip the installation stage for SDK and Extensions release branches. This stage will fail because pyproject.toml contains the updated (and unreleased) library version
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+      
       - bash: |
-             python -m pytest -n auto --dist loadfile -vv  --reruns 4 --instafail tests/consumption_tests
+          # Install Azure CLI (if not already present)
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          
+          # Create the apps container in Azurite
+          az storage container create \
+            --name apps \
+            --connection-string  "$(AZURE_STORAGE_CONNECTION_STRING)"
+          
+          # Upload all function app packages to the container
+          FUNCTION_APPS_DIR="$(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/tests/consumption_tests/function_app_zips"
+          for zipfile in "$FUNCTION_APPS_DIR"/*.zip; do
+            filename=$(basename "$zipfile")
+            echo "Uploading $filename..."
+            az storage blob upload \
+              --container-name apps \
+              --name "$filename" \
+              --file "$zipfile" \
+              --connection-string "$(AZURE_STORAGE_CONNECTION_STRING)" \
+              --overwrite
+          done
+
+          # Generate a container-level SAS token valid for 1 day
+          SAS_TOKEN=$(az storage container generate-sas \
+            --name apps \
+            --permissions r \
+            --expiry $(date -u -d '+1 day' +%Y-%m-%dT%H:%M:%SZ) \
+            --connection-string "$(AZURE_STORAGE_CONNECTION_STRING)" \
+            --output tsv)
+          
+          echo "##vso[task.setvariable variable=CONTAINER_SAS_TOKEN]$SAS_TOKEN"
+
+          # List blobs in the container to verify uploads
+          echo "Verifying uploaded blobs in 'apps' container..."
+          az storage blob list \
+            --container-name apps \
+            --connection-string "$(AZURE_STORAGE_CONNECTION_STRING)" \
+            --output table
+
         env:
-          AzureWebJobsStorage: $(LinuxStorageConnectionString312)
+          AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)      
+          
+        displayName: 'Setup Function App Packages in Azurite'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+
+      - powershell: |
+          Write-Host "CONTAINER_SAS_TOKEN: $(CONTAINER_SAS_TOKEN)"
+        displayName: 'Display CONTAINER_SAS_TOKEN variable'
+
+      - bash: |
+             python -m pytest -n auto --dist loadfile -vv --instafail tests/consumption_tests
+        env:
+          AzureWebJobsStorage: $(AZURE_STORAGE_CONNECTION_STRING)
           _DUMMY_CONT_KEY: $(_DUMMY_CONT_KEY)
+          CONTAINER_SAS_TOKEN: $(CONTAINER_SAS_TOKEN)
         displayName: "Running $(PYTHON_VERSION) Linux Consumption tests"
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+  
+      - bash: |
+          # Cleanup: Stop and remove Azurite container
+          docker stop azurite-storage || true
+          docker rm azurite-storage || true
+        displayName: 'Cleanup Azurite Storage Emulator'
+        condition: always()

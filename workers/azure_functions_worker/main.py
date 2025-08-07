@@ -4,11 +4,11 @@
 
 import argparse
 import asyncio
-try:
-    import uvloop
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-except Exception:
-    pass
+# try:
+#     import uvloop
+#     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+# except Exception:
+#     pass
 
 
 def parse_args():

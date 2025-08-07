@@ -5,6 +5,11 @@ parameters:
 jobs:
   - job: "TestPython"
     displayName: "Run ${{ parameters.PROJECT_NAME }} Unit Tests"
+
+    pool:
+      name: ${{ parameters.PoolName }}
+      image: 1es-ubuntu-22.04
+      os: linux
     
     strategy:
       matrix:

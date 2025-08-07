@@ -89,6 +89,7 @@ extends:
           parameters:
             PROJECT_NAME: 'V2 Library'
             PROJECT_DIRECTORY: 'azure_functions_worker_v2'
+            PoolName: 1es-pool-azfunc-public
 
 
 
@@ -108,3 +109,4 @@ extends:
           parameters:
             PROJECT_NAME: 'V1 Library'
             PROJECT_DIRECTORY: 'azure_functions_worker_v1'
+            PoolName: 1es-pool-azfunc-public

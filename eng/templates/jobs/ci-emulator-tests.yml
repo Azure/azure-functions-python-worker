@@ -1,6 +1,5 @@
 parameters:
   PROJECT_DIRECTORY: 'workers'
-  PoolName: ''
 
 jobs:
   - job: "TestPython"

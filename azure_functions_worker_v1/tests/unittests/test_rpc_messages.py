@@ -1,0 +1,124 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+import os
+import subprocess
+import sys
+import tempfile
+import typing
+import unittest
+
+import tests.protos as protos
+
+from azure_functions_worker_v1.handle_event import function_environment_reload_request
+from tests.utils import testutils
+from tests.utils.constants import UNIT_TESTS_FOLDER
+from tests.utils.mock_classes import FunctionRequest, Request, WorkerRequest
+
+BASIC_FUNCTION_DIRECTORY = UNIT_TESTS_FOLDER / 'basic_function'
+
+
+class TestGRPC(testutils.AsyncTestCase):
+    pre_test_env = os.environ.copy()
+    pre_test_cwd = os.getcwd()
+
+    def _reset_environ(self):
+        for key, value in self.pre_test_env.items():
+            os.environ[key] = value
+        os.chdir(self.pre_test_cwd)
+
+    async def _verify_environment_reloaded(
+            self,
+            test_env: typing.Dict[str, str] = {},
+            test_cwd: str = os.getcwd()):
+        worker_request = WorkerRequest(name='function_environment_reload_request',
+                                       request=Request(FunctionRequest(
+                                           'hello',
+                                           test_cwd,
+                                           test_env)),
+                                       properties={'host': '123',
+                                                   'protos': protos})
+        result = await function_environment_reload_request(worker_request)
+
+        status = result.result.status
+        exp = result.result.exception
+        self.assertEqual(status, protos.StatusResult.Success,
+                         f"Exception in Reload request: {exp}")
+
+        environ_dict = os.environ.copy()
+        self.assertTrue(test_env.items() <= environ_dict.items())
+        self.assertEqual(os.getcwd(), test_cwd)
+
+        self._reset_environ()
+
+    async def test_multiple_env_vars_load(self):
+        test_env = {'TEST_KEY': 'foo', 'HELLO': 'world'}
+        await self._verify_environment_reloaded(test_env=test_env)
+
+    async def test_empty_env_vars_load(self):
+        test_env = {}
+        await self._verify_environment_reloaded(test_env=test_env)
+
+    @unittest.skipIf(sys.platform == 'darwin',
+                     'MacOS creates the processes specific var folder in '
+                     '/private filesystem and not in /var like in linux '
+                     'systems.')
+    async def test_changing_current_working_directory(self):
+        test_cwd = tempfile.gettempdir()
+        await self._verify_environment_reloaded(test_cwd=test_cwd)
+
+    @unittest.skipIf(sys.platform == 'darwin',
+                     'MacOS creates the processes specific var folder in '
+                     '/private filesystem and not in /var like in linux '
+                     'systems.')
+    async def test_reload_env_message(self):
+        test_env = {'TEST_KEY': 'foo', 'HELLO': 'world'}
+        test_cwd = tempfile.gettempdir()
+        await self._verify_environment_reloaded(test_env, test_cwd)
+
+    def _verify_sys_path_import(self, result, expected_output):
+        path_import_script = os.path.join(UNIT_TESTS_FOLDER,
+                                          'path_import', 'test_path_import.sh')
+        try:
+            subprocess.run(['chmod +x ' + path_import_script], shell=True)
+
+            exported_path = ":".join(sys.path)
+            output = subprocess.check_output(
+                [path_import_script, result, exported_path],
+                stderr=subprocess.STDOUT)
+            decoded_output = output.decode(sys.stdout.encoding).strip()
+            self.assertTrue(expected_output in decoded_output)
+        finally:
+            subprocess.run(['chmod -x ' + path_import_script], shell=True)
+            self._reset_environ()
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Linux .sh script only works on Linux')
+    def test_failed_sys_path_import(self):
+        self._verify_sys_path_import(
+            'fail',
+            "No module named 'test_module'")
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Linux .sh script only works on Linux')
+    def test_successful_sys_path_import(self):
+        self._verify_sys_path_import(
+            'success',
+            'This module was imported!')
+
+    def _verify_azure_namespace_import(self, result, expected_output):
+        print(os.getcwd())
+        path_import_script = os.path.join(UNIT_TESTS_FOLDER,
+                                          'azure_namespace_import',
+                                          'test_azure_namespace_import.sh')
+        try:
+            subprocess.run(['chmod +x ' + path_import_script], shell=True)
+
+            output = subprocess.check_output(
+                [path_import_script, result],
+                stderr=subprocess.STDOUT)
+            decoded_output = output.decode(sys.stdout.encoding).strip()
+            self.assertTrue(expected_output in decoded_output,
+                            f"Decoded Output: {decoded_output}")  # DNM
+        finally:
+            subprocess.run(['chmod -x ' + path_import_script], shell=True)
+            self._reset_environ()

@@ -380,21 +380,21 @@ class Dispatcher(metaclass=DispatcherMeta):
         v2_scriptfile = os.path.join(directory, get_script_file_name())
         if os.path.exists(v2_scriptfile):
             try:
-                import azure_functions_worker_v2  # NoQA
-                _library_worker = azure_functions_worker_v2
-                logger.debug("azure_functions_worker_v2 import succeeded: %s",
+                import azure_functions_runtime  # NoQA
+                _library_worker = azure_functions_runtime
+                logger.debug("azure_functions_runtime import succeeded: %s",
                              _library_worker.__file__)
             except ImportError:
-                logger.debug("azure_functions_worker_v2 library not found: : %s",
+                logger.debug("azure_functions_runtime library not found: : %s",
                              traceback.format_exc())
         else:
             try:
-                import azure_functions_worker_v1  # NoQA
-                _library_worker = azure_functions_worker_v1
-                logger.debug("azure_functions_worker_v1 import succeeded: %s",
+                import azure_functions_runtime_v1  # NoQA
+                _library_worker = azure_functions_runtime_v1
+                logger.debug("azure_functions_runtime_v1 import succeeded: %s",
                              _library_worker.__file__)  # type: ignore[union-attr]
             except ImportError:
-                logger.debug("azure_functions_worker_v1 library not found: %s",
+                logger.debug("azure_functions_runtime_v1 library not found: %s",
                              traceback.format_exc())
 
     async def _handle__worker_init_request(self, request):
@@ -409,7 +409,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self.request_id)
 
         if DependencyManager.is_in_linux_consumption():
-            import azure_functions_worker_v2  # NoQA
+            import azure_functions_runtime  # NoQA
 
         if DependencyManager.should_load_cx_dependencies():
             DependencyManager.prioritize_customer_dependencies()

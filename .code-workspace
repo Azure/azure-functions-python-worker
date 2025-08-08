@@ -1,0 +1,8 @@
+{
+    "folders": [
+        {"name": "Workers", "path": "./workers"},
+        {"name": "Azure Functions Runtime", "path": "./azure_functions_runtime"}, 
+        {"name": "Azure Functions Runtime V1", "path": "./azure_functions_runtime_v1"},
+        {"name": "Root", "path": "."}
+    ]
+}

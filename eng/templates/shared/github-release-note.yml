@@ -22,6 +22,7 @@ steps:
       git tag -a "${{ parameters.PROJECT_DIRECTORY}}-$newWorkerVersion" -m "$newWorkerVersion"
   
       # Push tag to remote
+      git push origin "${{ parameters.PROJECT_DIRECTORY}}-$newWorkerVersion"
 
     displayName: 'Create and push release tag x.y.z'
   - powershell: |

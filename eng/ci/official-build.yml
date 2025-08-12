@@ -74,11 +74,10 @@ extends:
         dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/official/jobs/ci-docker-dedicated-tests.yml@self
-#       Skipping consumption tests till pipeline is fixed
-#      - stage: RunWorkerLinuxConsumptionTests
-#        dependsOn: BuildPythonWorker
-#        jobs:
-#          - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
+      - stage: RunWorkerLinuxConsumptionTests
+        dependsOn: BuildPythonWorker
+        jobs:
+          - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
 
       # Python V2 Library Build and Test Stages
       - stage: BuildV2Library

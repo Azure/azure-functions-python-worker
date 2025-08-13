@@ -1,8 +1,8 @@
 #!/bin/bash
 
 python -m pip install --upgrade pip
-python -m pip install -e runtime/v2
-python -m pip install -e runtime/v1
+python -m pip install -e runtimes/v2
+python -m pip install -e runtimes/v1
 python -m pip install -U azure-functions --pre
 python -m pip install -U -e $2/[dev]
 

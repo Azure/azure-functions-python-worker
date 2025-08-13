@@ -46,6 +46,7 @@ class TestMultipleFunctionRegisters(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'return_http')
         self.assertEqual(r.status_code, 404)
 
+
 @skipIf(sys.version_info.minor >= 13,
         "TODO: fix test setup. 3.13 fails indexing in init.")
 class TestOnlyBlueprint(testutils.WebHostTestCase):

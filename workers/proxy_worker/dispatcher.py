@@ -377,25 +377,29 @@ class Dispatcher(metaclass=DispatcherMeta):
     @staticmethod
     def reload_library_worker(directory: str):
         global _library_worker
+        logger.info('Reloading library worker from directory: %s', directory)
         v2_scriptfile = os.path.join(directory, get_script_file_name())
+        logger.info('Library worker script file: %s', v2_scriptfile)
         if os.path.exists(v2_scriptfile):
+            logger.info('Found library worker script file: %s', v2_scriptfile)
             try:
                 import azure_functions_runtime  # NoQA
                 _library_worker = azure_functions_runtime
-                logger.debug("azure_functions_runtime import succeeded: %s",
+                logger.info("azure_functions_runtime import succeeded: %s",
                              _library_worker.__file__)
             except ImportError:
-                logger.debug("azure_functions_runtime library not found: : %s",
+                logger.info("azure_functions_runtime library not found: : %s",
                              traceback.format_exc())
         else:
+            logger.info('Library worker script file not found: %s', v2_scriptfile)
             try:
                 import azure_functions_runtime_v1  # NoQA
                 _library_worker = azure_functions_runtime_v1
-                logger.debug("azure_functions_runtime_v1 import succeeded: %s",
+                logger.info("azure_functions_runtime_v1 import succeeded: %s",
                              _library_worker.__file__)  # type: ignore[union-attr]
             except ImportError:
-                logger.debug("azure_functions_runtime_v1 library not found: %s",
-                             traceback.format_exc())
+                logger.info("azure_functions_runtime_v1 library not found: %s",
+                         traceback.format_exc())
 
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '

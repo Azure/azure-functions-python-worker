@@ -153,8 +153,8 @@ jobs:
           Write-Host "skipTest: $(skipTest)"
         displayName: 'Display skipTest variable'
       - bash: |
-             python -m pip install -e runtimes/v2
-             python -m pip install -e runtimes/v1
+             python -m pip install -e ../runtimes/v2
+             python -m pip install -e ../runtimes/v1
              python -m pytest -q -n auto --dist loadfile --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend/test_http_functions.py
         env:
           AzureWebJobsStorage: $(STORAGE_CONNECTION)

@@ -37,7 +37,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
     def get_script_dir(cls):
         return testutils.E2E_TESTS_FOLDER / 'http_functions'
 
-    @testutils.retryable_test(3, 5)
     def test_function_index_page_should_return_ok(self):
         """The index page of Azure Functions should return OK in any
         circumstances
@@ -46,7 +45,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
                                  timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
 
-    @testutils.retryable_test(3, 5)
     def test_default_http_template_should_return_ok(self):
         """Test if the default template of Http trigger in Python Function app
         will return OK
@@ -55,7 +53,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
                                  timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
 
-    @testutils.retryable_test(3, 5)
     def test_default_http_template_should_accept_query_param(self):
         """Test if the azure.functions SDK is able to deserialize query
         parameter from the default template
@@ -69,7 +66,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
             b'Hello, query. This HTTP triggered function executed successfully.'
         )
 
-    @testutils.retryable_test(3, 5)
     def test_default_http_template_should_accept_body(self):
         """Test if the azure.functions SDK is able to deserialize http body
         and pass it to default template
@@ -83,7 +79,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
             b'Hello, body. This HTTP triggered function executed successfully.'
         )
 
-    @testutils.retryable_test(3, 5)
     def test_worker_status_endpoint_should_return_ok(self):
         """Test if the worker status endpoint will trigger
         _handle__worker_status_request and sends a worker status response back
@@ -96,7 +91,6 @@ class TestHttpFunctions(testutils.WebHostTestCase):
                           timeout=REQUEST_TIMEOUT_SEC)
         self.assertTrue(r.ok)
 
-    @testutils.retryable_test(3, 5)
     def test_worker_status_endpoint_should_return_ok_when_disabled(self):
         """Test if the worker status endpoint will trigger
         _handle__worker_status_request and sends a worker status response back
@@ -146,7 +140,6 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
         return ['requests', 'python-dotenv', "plotly", "scikit-learn",
                 "opencv-python", "pandas", "numpy"]
 
-    @testutils.retryable_test(3, 5)
     def test_numpy(self):
         r = self.webhost.request('GET', 'numpy_func',
                                  timeout=REQUEST_TIMEOUT_SEC)
@@ -235,7 +228,6 @@ class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'user_thread_logging'
 
-    @testutils.retryable_test(3, 5)
     def test_http_thread(self):
         r = self.webhost.request('GET', 'thread',
                                  timeout=REQUEST_TIMEOUT_SEC)
@@ -249,7 +241,7 @@ class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(host_out.count('Thread3 used.'), 1)
         self.assertEqual(host_out.count('After threads.'), 1)
 
-    @testutils.retryable_test(3, 5)
+
     def test_http_async_thread(self):
         r = self.webhost.request('GET', 'async_thread',
                                  timeout=REQUEST_TIMEOUT_SEC)
@@ -263,7 +255,7 @@ class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(host_out.count('Thread3 used.'), 1)
         self.assertEqual(host_out.count('After threads.'), 1)
 
-    @testutils.retryable_test(3, 5)
+
     def test_http_thread_pool_executor(self):
         r = self.webhost.request('GET', 'thread_pool_executor',
                                  timeout=REQUEST_TIMEOUT_SEC)
@@ -275,7 +267,7 @@ class TestUserThreadLoggingHttpFunctions(testutils.WebHostTestCase):
         self.assertEqual(host_out.count('Using TPE.'), 1)
         self.assertEqual(host_out.count('After TPE.'), 1)
 
-    @testutils.retryable_test(3, 5)
+
     def test_http_async_thread_pool_executor(self):
         r = self.webhost.request('GET', 'async_thread_pool_executor',
                                  timeout=REQUEST_TIMEOUT_SEC)

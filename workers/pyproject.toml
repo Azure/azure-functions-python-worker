@@ -50,8 +50,8 @@ Repository = "https://github.com/Azure/azure-functions-python-worker"
 
 [project.optional-dependencies]
 dev = [
-    "azure-functions-runtime @ file://../runtimes/v2",
-    "azure-functions-runtime-v1 @ file://../runtimes/v1",
+    "azure-functions-runtime @ ../runtimes/v2",
+    "azure-functions-runtime-v1 @ ../runtimes/v1",
     "azure-cosmos", # Used for CosmosDB Emulator tests
     "azure-eventhub", # Used for EventHub E2E tests
     "azure-functions-durable", # Used for Durable E2E tests

@@ -1,6 +1,8 @@
 #!/bin/bash
 
 python -m pip install --upgrade pip
+python -m pip install -e azure_functions_worker_v2
+python -m pip install -e azure_functions_worker_v1
 python -m pip install -U azure-functions --pre
 python -m pip install -U -e $2/[dev]
 

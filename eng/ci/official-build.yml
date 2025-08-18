@@ -86,7 +86,7 @@ extends:
           - template: /eng/templates/official/jobs/build-library.yml@self
             parameters:
               PROJECT_NAME: 'Python V2 Library'
-              PROJECT_DIRECTORY: 'azure_functions_worker_v2'
+              PROJECT_DIRECTORY: 'runtimes/v2'
               ARTIFACT_NAME: 'azure-functions-runtime'
       - stage: RunV2LibraryUnitTests
         dependsOn: BuildV2Library
@@ -94,7 +94,7 @@ extends:
           - template: /eng/templates/jobs/ci-library-unit-tests.yml@self
             parameters:
               PROJECT_NAME: 'Python V2 Library'
-              PROJECT_DIRECTORY: 'azure_functions_worker_v2'
+              PROJECT_DIRECTORY: 'runtimes/v2'
 
       # Python V1 Library Build and Test Stages
       - stage: BuildV1Library
@@ -103,7 +103,7 @@ extends:
           - template: /eng/templates/official/jobs/build-library.yml@self
             parameters:
               PROJECT_NAME: 'Python V1 Library'
-              PROJECT_DIRECTORY: 'azure_functions_worker_v1'
+              PROJECT_DIRECTORY: 'runtimes/v1'
               ARTIFACT_NAME: 'azure-functions-runtime-v1'
       - stage: RunV1LibraryUnitTests
         dependsOn: BuildV1Library
@@ -111,4 +111,4 @@ extends:
           - template: /eng/templates/jobs/ci-library-unit-tests.yml@self
             parameters:
               PROJECT_NAME: 'Python V1 Library'
-              PROJECT_DIRECTORY: 'azure_functions_worker_v1'
+              PROJECT_DIRECTORY: 'runtimes/v1'

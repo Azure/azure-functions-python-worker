@@ -131,3 +131,7 @@ skip_glob = [
 
 [tool.setuptools.dynamic]
 version = {attr = "azure_functions_worker.version.VERSION"}
+
+[tool.pytest.ini_options]
+pythonpath = ["workers"]
+testpaths = ["workers/tests", "runtimes/v2/azure_functions_runtime/tests", "runtimes/v1/azure_functions_runtime_v1/tests"]

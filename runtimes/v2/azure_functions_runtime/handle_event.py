@@ -47,6 +47,7 @@ from .utils.constants import (FUNCTION_DATA_CACHE,
                               WORKER_OPEN_TELEMETRY_ENABLED,
                               WORKER_STATUS)
 from .utils.executor import get_current_loop, execute_async, run_sync_func
+from .utils.threadpool import get_threadpool_executor
 from .utils.helpers import change_cwd, get_sdk_version, get_worker_metadata
 from .utils.tracing import serialize_exception
 from .utils.validators import validate_script_file_name
@@ -165,10 +166,15 @@ async def invocation_request(request):
     invocation_id = invoc_request.invocation_id
     function_id = invoc_request.function_id
     http_v2_enabled = False
-    threadpool = request.properties.get("threadpool")
-    logger.debug("All variables obtained from proxy worker."
-                 " Invocation ID: %s, Function ID: %s,  Threadpool: %s",
-                 invocation_id, function_id, threadpool)
+
+    threadpool = get_threadpool_executor()
+    logger.debug(
+        "Invocation context prepared. Invocation ID: %s, Function ID: %s, "
+        "Threadpool id: %s",
+        invocation_id,
+        function_id,
+        id(threadpool) if threadpool else None,
+    )
 
     try:
         fi: FunctionInfo = _functions.get_function(

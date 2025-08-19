@@ -92,7 +92,7 @@ class TestGRPC(testutils.AsyncTestCase):
             self._reset_environ()
 
     @unittest.skipIf(sys.platform == 'win32',
-                    'Linux .sh script only works on Linux')
+                     'Linux .sh script only works on Linux')
     def test_failed_sys_path_import(self):
         self._verify_sys_path_import(
             'fail',

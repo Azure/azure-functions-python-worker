@@ -49,7 +49,7 @@ extends:
         jobs:
           - template: /eng/templates/official/jobs/publish-library-release.yml@self
             parameters:
-              PROJECT_DIRECTORY: 'azure_functions_worker_v2'
+              PROJECT_DIRECTORY: 'runtimes/v2'
               PROJECT_NAME: 'azure-functions-runtime'
               BRANCH_NAME: 'release-v2'
               TEST_BRANCH_NAME: 'test-release-v2'
@@ -60,7 +60,7 @@ extends:
         jobs:
           - template: /eng/templates/official/jobs/publish-library-release.yml@self
             parameters:
-              PROJECT_DIRECTORY: 'azure_functions_worker_v1'
+              PROJECT_DIRECTORY: 'runtimes/v1'
               PROJECT_NAME: 'azure-functions-runtime-v1'
               BRANCH_NAME: 'release-v1'
               TEST_BRANCH_NAME: 'test-release-v1'

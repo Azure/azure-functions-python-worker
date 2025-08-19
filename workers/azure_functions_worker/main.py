@@ -3,12 +3,6 @@
 """Main entrypoint."""
 
 import argparse
-import asyncio
-try:
-    import uvloop
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-except Exception:
-    pass
 
 
 def parse_args():
@@ -51,6 +45,8 @@ def main():
     DependencyManager.initialize()
     DependencyManager.use_worker_dependencies()
 
+    import asyncio
+
     from . import logging
     from .logging import error_logger, format_exception, logger
 
@@ -60,7 +56,6 @@ def main():
     logger.info('Starting Azure Functions Python Worker.')
     logger.info('Worker ID: %s, Request ID: %s, Host Address: %s:%s',
                 args.worker_id, args.request_id, args.host, args.port)
-    logger.debug('Using event loop: %s', type(asyncio.get_event_loop()))
 
     try:
         return asyncio.run(start_async(

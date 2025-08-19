@@ -91,6 +91,20 @@ class TestGRPC(testutils.AsyncTestCase):
             subprocess.run(['chmod -x ' + path_import_script], shell=True)
             self._reset_environ()
 
+    @unittest.skipIf(sys.platform == 'win32',
+                    'Linux .sh script only works on Linux')
+    def test_failed_sys_path_import(self):
+        self._verify_sys_path_import(
+            'fail',
+            "No module named 'test_module'")
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Linux .sh script only works on Linux')
+    def test_successful_sys_path_import(self):
+        self._verify_sys_path_import(
+            'success',
+            'This module was imported!')
+
     def _verify_azure_namespace_import(self, result, expected_output):
         print(os.getcwd())
         path_import_script = os.path.join(UNIT_TESTS_FOLDER,

@@ -76,7 +76,7 @@ class TestGRPC(testutils.AsyncTestCase):
         await self._verify_environment_reloaded(test_env, test_cwd)
 
     def _verify_sys_path_import(self, result, expected_output):
-        path_import_script = os.path.join(UNIT_TESTS_FOLDER,
+        path_import_script = os.path.join(testutils.UNIT_TESTS_ROOT,
                                           'path_import', 'test_path_import.sh')
         try:
             subprocess.run(['chmod +x ' + path_import_script], shell=True)

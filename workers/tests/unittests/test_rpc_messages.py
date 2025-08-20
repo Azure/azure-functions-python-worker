@@ -67,16 +67,16 @@ class TestGRPC(testutils.AsyncTestCase):
         test_cwd = tempfile.gettempdir()
         await self._verify_environment_reloaded(test_cwd=test_cwd)
 
-    # TODO: fix Linux-only tests
-    # @unittest.skipIf(sys.platform == 'darwin',
-    #                  'MacOS creates the processes specific var folder in '
-    #                  '/private filesystem and not in /var like in linux '
-    #                  'systems.')
-    # async def test_reload_env_message(self):
-    #     test_env = {'TEST_KEY': 'foo', 'HELLO': 'world'}
-    #     test_cwd = tempfile.gettempdir()
-    #     await self._verify_environment_reloaded(test_env, test_cwd)
+    @unittest.skipIf(sys.platform == 'darwin',
+                     'MacOS creates the processes specific var folder in '
+                     '/private filesystem and not in /var like in linux '
+                     'systems.')
+    async def test_reload_env_message(self):
+        test_env = {'TEST_KEY': 'foo', 'HELLO': 'world'}
+        test_cwd = tempfile.gettempdir()
+        await self._verify_environment_reloaded(test_env, test_cwd)
 
+    # TODO: fix Linux-only tests
     # def _verify_sys_path_import(self, result, expected_output):
     #     path_import_script = os.path.join(testutils.UNIT_TESTS_ROOT,
     #                                       'path_import', 'test_path_import.sh')

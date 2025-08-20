@@ -252,7 +252,7 @@ class TestMockHost(testutils.AsyncTestCase):
             self.assertEqual(
                 r.response.result.exception.message,
                 'FunctionLoadError: cannot load the invalid_in_anno function: '
-                r'type of ret binding in function definition '
+                r'type of req binding in function definition '
                 r'(function.json or function decorators) "httpTrigger" '
                 r'does not match its Python annotation "HttpResponse"')
 
@@ -270,8 +270,8 @@ class TestMockHost(testutils.AsyncTestCase):
                 r.response.result.exception.message,
                 r'.*cannot load the invalid_datatype function: '
                 r'.*binding type "httpTrigger" and dataType "1" in '
-                r'function definition (function.json or function decorators) '
-                r'do not match the corresponding function '
+                'function definition (function.json or function decorators) '
+                'do not match the corresponding function '
                 r'parameter.* Python type annotation "HttpResponse"')
 
     async def test_load_broken__invalid_in_anno_non_type(self):

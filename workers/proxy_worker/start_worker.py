@@ -10,7 +10,7 @@ from proxy_worker.utils.common import is_envvar_true
 from proxy_worker.utils.constants import PYTHON_ENABLE_UVLOOP
 
 if is_envvar_true(PYTHON_ENABLE_UVLOOP):
-    try:    
+    try:
         import uvloop
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     except Exception:
@@ -60,8 +60,11 @@ def start():
 
     logger.info("Args: %s", args)
     logger.info(
-        'Starting proxy worker. Worker ID: %s, Request ID: %s, Host Address: %s:%s, Event Loop: %s',
-        args.worker_id, args.request_id, args.host, args.port, type(asyncio.get_event_loop()))
+        'Starting proxy worker. Worker ID: %s, Request ID: %s, '
+        'Host Address: %s:%s, Event Loop: %s',
+        args.worker_id, args.request_id,
+        args.host, args.port, type(asyncio.get_event_loop())
+    )
 
     try:
         return asyncio.run(start_async(

@@ -268,11 +268,11 @@ class TestMockHost(testutils.AsyncTestCase):
 
             self.assertRegex(
                 r.response.result.exception.message,
-                r'.*cannot load the invalid_datatype function: '
-                r'.*binding type "httpTrigger" and dataType "1" in '
-                'function definition (function.json or function decorators) '
-                'do not match the corresponding function '
-                r'parameter.* Python type annotation "HttpResponse"')
+                r'.*FunctionLoadError: cannot load the invalid_datatype function: '
+                r'.*binding type "httpTrigger".*dataType "1".*do not match the '
+                r'corresponding function parameter\'s Python type '
+                r'annotation "HttpResponse"'
+            )
 
     async def test_load_broken__invalid_in_anno_non_type(self):
         async with testutils.start_mockhost(

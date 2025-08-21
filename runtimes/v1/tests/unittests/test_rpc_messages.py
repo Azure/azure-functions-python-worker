@@ -81,7 +81,7 @@ class TestGRPC(testutils.AsyncTestCase):
         try:
             subprocess.run(['chmod +x ' + path_import_script], shell=True)
 
-            exported_path = ":".join(map(str, sys.path))
+            exported_path = ":".join(sys.path)
             output = subprocess.check_output(
                 [path_import_script, result, exported_path],
                 stderr=subprocess.STDOUT)

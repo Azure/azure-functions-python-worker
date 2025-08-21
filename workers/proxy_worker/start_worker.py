@@ -6,15 +6,11 @@ import argparse
 import traceback
 import asyncio
 
-from proxy_worker.utils.common import is_envvar_true
-from proxy_worker.utils.constants import PYTHON_ENABLE_UVLOOP
-
-if is_envvar_true(PYTHON_ENABLE_UVLOOP):
-    try:
-        import uvloop
-        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-    except Exception:
-        pass
+try:
+    import uvloop
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+except Exception:
+    pass
 
 _GRPC_CONNECTION_TIMEOUT = 5.0
 

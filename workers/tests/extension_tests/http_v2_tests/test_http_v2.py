@@ -204,6 +204,8 @@ class TestHttpFunctionsWithInitIndexing(testutils.WebHostTestCase):
                  "Tests are flaky when running on Docker")
 @unittest.skipIf(sys.version_info.minor < 8, "HTTPv2"
                                              "is only supported for 3.8+.")
+@unittest.skipIf(sys.version_info.minor > 13,
+                 "App Setting is not needed for 3.13+")
 class TestHttpFunctionsWithInitIndexingDisabled(testutils.WebHostTestCase):
     @classmethod
     def setUpClass(cls):

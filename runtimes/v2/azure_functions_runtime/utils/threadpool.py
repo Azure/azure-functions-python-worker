@@ -37,15 +37,19 @@ def _validate_thread_count(value: str) -> bool:
 
 
 def _get_max_workers() -> Optional[int]:
-    raw = get_app_setting(
+    threadpool_count = get_app_setting(
         setting=PYTHON_THREADPOOL_THREAD_COUNT,
         validator=_validate_thread_count,
     )
-    if raw is None:
+    if threadpool_count is None:
         return None
     try:
-        return int(raw)
-    except Exception:
+        return int(threadpool_count)
+    except (TypeError, ValueError) as e:
+        logger.warning(
+            'Failed to convert %s value "%s" to integer: %s',
+            PYTHON_THREADPOOL_THREAD_COUNT, threadpool_count, e
+        )
         return None
 
 

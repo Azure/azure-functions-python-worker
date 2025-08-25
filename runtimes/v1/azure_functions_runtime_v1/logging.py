@@ -1,12 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-import logging.handlers
+import logging
 import sys
 import traceback
 
 # Logging Prefixes
-SDK_LOG_PREFIX = "azure.functions"
+SDK_LOG_PREFIX = "azure_functions_runtime"
 
 logger: logging.Logger = logging.getLogger(SDK_LOG_PREFIX)
 

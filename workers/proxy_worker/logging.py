@@ -8,6 +8,7 @@ from typing import Optional
 
 # Logging Prefixes
 SYSTEM_LOG_PREFIX = "proxy_worker"
+RUNTIME_LOG_PREFIX = "azure_functions_runtime"
 SDK_LOG_PREFIX = "azure.functions"
 SYSTEM_ERROR_LOG_PREFIX = "proxy_worker_errors"
 CONSOLE_LOG_PREFIX = "LanguageWorkerConsoleLog"
@@ -19,6 +20,17 @@ error_logger: logging.Logger = (
 
 handler: Optional[logging.Handler] = None
 error_handler: Optional[logging.Handler] = None
+
+
+class CustomerLogFilter(logging.Filter):
+    """Filter out system/worker logs so root only sees customer logs."""
+    def filter(self, record: logging.LogRecord) -> bool:
+        return not (
+            record.name.startswith(SYSTEM_LOG_PREFIX)
+            or record.name.startswith(RUNTIME_LOG_PREFIX)
+            or record.name.startswith(SDK_LOG_PREFIX)
+            or record.name.startswith(SYSTEM_ERROR_LOG_PREFIX)
+        )
 
 
 def setup(log_level, log_destination):
@@ -63,6 +75,17 @@ def setup(log_level, log_destination):
     error_logger.addHandler(error_handler)
     error_logger.setLevel(getattr(logging, log_level))
 
+    # --- Root logger ---
+    root_logger = logging.getLogger()
+    root_logger.setLevel(getattr(logging, log_level))
+
+    if not root_logger.handlers:
+        handler_with_filter = logging.StreamHandler(sys.stdout)
+        handler_with_filter.setFormatter(formatter)
+        handler_with_filter.setLevel(getattr(logging, log_level))
+        handler_with_filter.addFilter(CustomerLogFilter())
+        root_logger.addHandler(handler_with_filter)
+
 
 def disable_console_logging() -> None:
     # We should only remove the sys.stdout stream, as error_logger is used for
@@ -89,4 +112,6 @@ def is_system_log_category(ctg: str) -> bool:
     system_log    false          false                 true
     customer_log  true           true                  false
     """
-    return ctg.startswith(SYSTEM_LOG_PREFIX) or ctg.startswith(SDK_LOG_PREFIX)
+    return (ctg.startswith(SYSTEM_LOG_PREFIX)
+            or ctg.startswith(SDK_LOG_PREFIX)
+            or ctg.startswith(RUNTIME_LOG_PREFIX))

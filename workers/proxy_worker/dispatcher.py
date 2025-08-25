@@ -586,9 +586,9 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         try:
             invocation_request = WorkerRequest(name="FunctionInvocationRequest",
-                                           request=request,
-                                           properties={
-                                               "threadpool": self._sync_call_tp})
+                                               request=request,
+                                               properties={
+                                                   "threadpool": self._sync_call_tp})
             invocation_response = await (
                 _library_worker.invocation_request(  # type: ignore[union-attr]
                     invocation_request))

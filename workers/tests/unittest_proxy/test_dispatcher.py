@@ -624,7 +624,3 @@ class TestDispatcherInvocationHandling(unittest.TestCase):
 
         # Verify response
         self.assertEqual(result, "mocked_stream_response")
-
-
-if __name__ == '__main__':
-    unittest.main()

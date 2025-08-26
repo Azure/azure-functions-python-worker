@@ -380,7 +380,7 @@ async def test_worker_init_missing_threadpool_apis(mock_streaming, mock_import,
         "Threadpool executor APIs not present in runtime; skipping start.")
     assert not hasattr(dispatcher, "_sync_call_tp")
 
-    
+
 class TestInvocationTracking(unittest.TestCase):
     """Test suite for invocation ID tracking functionality"""
 

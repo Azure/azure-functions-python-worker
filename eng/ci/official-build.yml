@@ -66,6 +66,8 @@ extends:
         dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/jobs/ci-unit-tests.yml@self
+            parameters:
+              PoolName: 1es-pool-azfunc
       - stage: RunWorkerDockerConsumptionTests
         dependsOn: BuildPythonWorker
         jobs:
@@ -95,6 +97,7 @@ extends:
             parameters:
               PROJECT_NAME: 'Python V2 Library'
               PROJECT_DIRECTORY: 'runtimes/v2'
+              PoolName: 1es-pool-azfunc
 
       # Python V1 Library Build and Test Stages
       - stage: BuildV1Library
@@ -112,3 +115,4 @@ extends:
             parameters:
               PROJECT_NAME: 'Python V1 Library'
               PROJECT_DIRECTORY: 'runtimes/v1'
+              PoolName: 1es-pool-azfunc

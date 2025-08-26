@@ -4,6 +4,13 @@
 
 import argparse
 import traceback
+import asyncio
+
+try:
+    import uvloop
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+except Exception:
+    pass
 
 _GRPC_CONNECTION_TIMEOUT = 5.0
 
@@ -41,8 +48,6 @@ def start():
     DependencyManager.initialize()
     DependencyManager.use_worker_dependencies()
 
-    import asyncio
-
     from . import logging
     from .logging import error_logger, logger
 
@@ -51,8 +56,11 @@ def start():
 
     logger.info("Args: %s", args)
     logger.info(
-        'Starting proxy worker. Worker ID: %s, Request ID: %s, Host Address: %s:%s',
-        args.worker_id, args.request_id, args.host, args.port)
+        'Starting proxy worker. Worker ID: %s, Request ID: %s, '
+        'Host Address: %s:%s, Event Loop: %s',
+        args.worker_id, args.request_id,
+        args.host, args.port, type(asyncio.get_event_loop())
+    )
 
     try:
         return asyncio.run(start_async(

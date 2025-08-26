@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 
 import asyncio
-import concurrent.futures
 import logging
 import os
 import queue
@@ -25,13 +24,11 @@ from proxy_worker.logging import (
     logger,
 )
 from proxy_worker.utils.common import (
-    get_app_setting,
     get_script_file_name,
     is_envvar_true,
 )
 from proxy_worker.utils.constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,
-    PYTHON_THREADPOOL_THREAD_COUNT,
 )
 from proxy_worker.version import VERSION
 
@@ -39,6 +36,14 @@ from .utils.dependency import DependencyManager
 
 # Library worker import reloaded in init and reload request
 _library_worker = None
+
+# Thread-local invocation ID registry for efficient lookup
+_thread_invocation_registry: typing.Dict[int, str] = {}
+_registry_lock = threading.Lock()
+
+# Global current invocation tracker (as a fallback)
+_current_invocation_id: Optional[str] = None
+_current_invocation_lock = threading.Lock()
 
 
 class ContextEnabledTask(asyncio.Task):
@@ -61,16 +66,63 @@ class ContextEnabledTask(asyncio.Task):
 _invocation_id_local = threading.local()
 
 
+def set_thread_invocation_id(thread_id: int, invocation_id: str) -> None:
+    """Set the invocation ID for a specific thread"""
+    with _registry_lock:
+        _thread_invocation_registry[thread_id] = invocation_id
+
+
+def clear_thread_invocation_id(thread_id: int) -> None:
+    """Clear the invocation ID for a specific thread"""
+    with _registry_lock:
+        _thread_invocation_registry.pop(thread_id, None)
+
+
+def get_thread_invocation_id(thread_id: int) -> Optional[str]:
+    """Get the invocation ID for a specific thread"""
+    with _registry_lock:
+        return _thread_invocation_registry.get(thread_id)
+
+
+def set_current_invocation_id(invocation_id: str) -> None:
+    """Set the global current invocation ID"""
+    global _current_invocation_id
+    with _current_invocation_lock:
+        _current_invocation_id = invocation_id
+
+
+def get_global_current_invocation_id() -> Optional[str]:
+    """Get the global current invocation ID"""
+    with _current_invocation_lock:
+        return _current_invocation_id
+
+
 def get_current_invocation_id() -> Optional[Any]:
-    loop = asyncio._get_running_loop()
-    if loop is not None:
-        current_task = asyncio.current_task(loop)
-        if current_task is not None:
-            task_invocation_id = getattr(current_task,
-                                         ContextEnabledTask.AZURE_INVOCATION_ID,
-                                         None)
-            if task_invocation_id is not None:
-                return task_invocation_id
+    # Check global current invocation first (most up-to-date)
+    global_invocation_id = get_global_current_invocation_id()
+    if global_invocation_id is not None:
+        return global_invocation_id
+
+    # Check asyncio task context
+    try:
+        loop = asyncio._get_running_loop()
+        if loop is not None:
+            current_task = asyncio.current_task(loop)
+            if current_task is not None:
+                task_invocation_id = getattr(current_task,
+                                             ContextEnabledTask.AZURE_INVOCATION_ID,
+                                             None)
+                if task_invocation_id is not None:
+                    return task_invocation_id
+    except RuntimeError:
+        # No event loop running
+        pass
+
+    # Check the thread-local invocation ID registry
+    current_thread_id = threading.get_ident()
+    thread_invocation_id = get_thread_invocation_id(current_thread_id)
+    if thread_invocation_id is not None:
+        return thread_invocation_id
 
     return getattr(_invocation_id_local, 'invocation_id', None)
 
@@ -134,9 +186,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread: Optional[threading.Thread] = threading.Thread(
             name='grpc_local-thread', target=self.__poll_grpc)
-
-        self._sync_call_tp: Optional[concurrent.futures.Executor] = (
-            self._create_sync_call_tp(self._get_sync_tp_max_workers()))
 
     def on_logging(self, record: logging.LogRecord,
                    formatted_msg: str) -> None:
@@ -326,53 +375,18 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._grpc_thread.join()
             self._grpc_thread = None
 
-        self._stop_sync_call_tp()
+        # Ask the library runtime to stop its threadpool (if loaded)
+        global _library_worker
+        if _library_worker is not None:
+            stop_exec = getattr(_library_worker, 'stop_threadpool_executor', None)
+            if callable(stop_exec):
+                try:
+                    stop_exec()
+                except Exception:  # pragma: no cover - best effort
+                    logger.debug('Exception while stopping threadpool executor',
+                                 exc_info=True)
 
-    def _stop_sync_call_tp(self):
-        """Deallocate the current synchronous thread pool and assign
-        self._sync_call_tp to None. If the thread pool does not exist,
-        this will be a no op.
-        """
-        if getattr(self, '_sync_call_tp', None):
-            assert self._sync_call_tp is not None  # mypy fix
-            self._sync_call_tp.shutdown()
-            self._sync_call_tp = None
-
-    @staticmethod
-    def _create_sync_call_tp(max_worker: Optional[int]) -> concurrent.futures.Executor:
-        """Create a thread pool executor with max_worker. This is a wrapper
-        over ThreadPoolExecutor constructor. Consider calling this method after
-        _stop_sync_call_tp() to ensure only 1 synchronous thread pool is
-        running.
-        """
-        return concurrent.futures.ThreadPoolExecutor(
-            max_workers=max_worker
-        )
-
-    @staticmethod
-    def _get_sync_tp_max_workers() -> typing.Optional[int]:
-        def tp_max_workers_validator(value: str) -> bool:
-            try:
-                int_value = int(value)
-            except ValueError:
-                logger.warning('%s must be an integer',
-                               PYTHON_THREADPOOL_THREAD_COUNT)
-                return False
-
-            if int_value < 1:
-                logger.warning(
-                    '%s must be set to a value between 1 and sys.maxint. '
-                    'Reverting to default value for max_workers',
-                    PYTHON_THREADPOOL_THREAD_COUNT,
-                    1)
-                return False
-            return True
-
-        max_workers = get_app_setting(setting=PYTHON_THREADPOOL_THREAD_COUNT,
-                                      validator=tp_max_workers_validator)
-
-        # We can box the app setting as int for earlier python versions.
-        return int(max_workers) if max_workers else None
+    # Removed: threadpool lifecycle now handled in runtime libraries
 
     @staticmethod
     def reload_library_worker(directory: str):
@@ -419,14 +433,23 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Using library: %s, '
                     'library version: %s',
                     _library_worker,
-                    _library_worker.version.VERSION)  # type: ignore[union-attr]
+                    _library_worker.version.VERSION)
 
-        init_request = WorkerRequest(name="WorkerInitRequest",
-                                     request=request,
-                                     properties={"protos": protos,
-                                                 "host": self._host})
+        init_request = WorkerRequest(
+            name="WorkerInitRequest",
+            request=request,
+            properties={"protos": protos, "host": self._host},
+        )
+
+        try:
+            _library_worker.start_threadpool_executor()
+        except AttributeError:
+            logger.debug(
+                "Threadpool executor APIs not present in runtime; "
+                "skipping start."
+            )
         init_response = await (
-            _library_worker.worker_init_request(  # type: ignore[union-attr]
+            _library_worker.worker_init_request(
                 init_request))
 
         return protos.StreamingMessage(
@@ -449,14 +472,23 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Using library: %s, '
                     'library version: %s',
                     _library_worker,
-                    _library_worker.version.VERSION)  # type: ignore[union-attr]
+                    _library_worker.version.VERSION)
 
-        env_reload_request = WorkerRequest(name="FunctionEnvironmentReloadRequest",
-                                           request=request,
-                                           properties={"protos": protos,
-                                                       "host": self._host})
+        env_reload_request = WorkerRequest(
+            name="FunctionEnvironmentReloadRequest",
+            request=request,
+            properties={"protos": protos, "host": self._host},
+        )
+
+        try:
+            _library_worker.start_threadpool_executor()
+        except AttributeError:
+            logger.debug(
+                "Threadpool executor APIs not present in runtime during "
+                "env reload; skipping."
+            )
         env_reload_response = await (
-            _library_worker.function_environment_reload_request(  # type: ignore[union-attr]  # noqa
+            _library_worker.function_environment_reload_request(
                 env_reload_request))
 
         return protos.StreamingMessage(
@@ -516,14 +548,30 @@ class Dispatcher(metaclass=DispatcherMeta):
             'invocation_id: %s, worker_id: %s',
             self.request_id, function_id, invocation_id, self.worker_id)
 
-        invocation_request = WorkerRequest(name="FunctionInvocationRequest",
-                                           request=request,
-                                           properties={
-                                               "threadpool": self._sync_call_tp})
-        invocation_response = await (
-            _library_worker.invocation_request(  # type: ignore[union-attr]
-                invocation_request))
+        # Set the global current invocation ID first (for all threads to access)
+        set_current_invocation_id(invocation_id)
 
-        return protos.StreamingMessage(
-            request_id=self.request_id,
-            invocation_response=invocation_response)
+        # Set the current `invocation_id` to the current task so
+        # that our logging handler can find it.
+        current_task = asyncio.current_task()
+        if current_task is not None and isinstance(current_task, ContextEnabledTask):
+            current_task.set_azure_invocation_id(invocation_id)
+
+        # Register the invocation ID for the current thread
+        current_thread_id = threading.get_ident()
+        set_thread_invocation_id(current_thread_id, invocation_id)
+
+        try:
+            invocation_request = WorkerRequest(name="FunctionInvocationRequest",
+                                               request=request)
+            invocation_response = await (
+                _library_worker.invocation_request(  # type: ignore[union-attr]
+                    invocation_request))
+
+            return protos.StreamingMessage(
+                request_id=self.request_id,
+                invocation_response=invocation_response)
+        except Exception:
+            # Clear thread registry on exception to prevent stale IDs
+            clear_thread_invocation_id(current_thread_id)
+            raise

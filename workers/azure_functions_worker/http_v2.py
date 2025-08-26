@@ -291,15 +291,15 @@ class HttpV2Registry:
         import azurefunctions.extensions.base as ext_base
         cls._ext_base = ext_base
 
-        enabled = cls._ext_base.HttpV2FeatureChecker.http_v2_enabled()
-        if enabled and not init_indexing_enabled:
+        http_v2_enabled = cls._ext_base.HttpV2FeatureChecker.http_v2_enabled()
+        if http_v2_enabled and not init_indexing_enabled:
             raise AppSettingDisabledError("HTTP Streaming is enabled but "
                                           "PYTHON_ENABLE_INIT_INDEXING "
                                           "is not set or is set to false. "
                                           "See aka.ms/functions-python-streaming "
                                           "for more information")
 
-        return cls._ext_base.HttpV2FeatureChecker.http_v2_enabled()
+        return http_v2_enabled
 
 
 http_coordinator = HttpCoordinator()

@@ -4,11 +4,16 @@ import importlib
 import os
 import re
 import sys
+from datetime import datetime
 from types import ModuleType
 from typing import Callable, Optional
 
 from azure_functions_worker.constants import (
-    CUSTOMER_PACKAGES_PATH)
+    CUSTOMER_PACKAGES_PATH,
+    PYTHON_EOL_DATES,
+    PYTHON_EOL_WARNING_DATES)
+
+from ..logging import logger
 
 
 def is_true_like(setting: str) -> bool:
@@ -134,3 +139,30 @@ def validate_script_file_name(file_name: str):
     pattern = re.compile(r'^[a-zA-Z0-9_][a-zA-Z0-9_\-]*\.py$')
     if not pattern.match(file_name):
         raise InvalidFileNameError(file_name)
+
+
+def parse_date(date_str: str) -> datetime:
+    """Convert YYYY-MM string to datetime (first of month)."""
+    return datetime.strptime(date_str, "%Y-%m")
+
+
+def check_python_eol():
+    # Get running version (major.minor)
+    version = f"{sys.version_info.major}.{sys.version_info.minor}"
+
+    if version not in PYTHON_EOL_DATES:
+        logger.info(f"Python {version} not found in EOL tracking dictionary.")
+        return
+
+    # Current date as YYYY-MM
+    today = datetime.today().replace(day=1)
+
+    warning_date = parse_date(PYTHON_EOL_WARNING_DATES[version])
+    eol_date = parse_date(PYTHON_EOL_DATES[version])
+
+    if today >= eol_date:
+        logger.error(f"Python {version} reached EOL on "
+                     f"{eol_date.strftime('%Y-%m')}. Please upgrade.")
+    elif today >= warning_date:
+        logger.warning(f"Python {version} will reach EOL on "
+                       f"{eol_date.strftime('%Y-%m')}. Consider upgrading.")

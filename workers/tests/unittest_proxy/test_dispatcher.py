@@ -1,13 +1,23 @@
 import asyncio
 import builtins
 import logging
+import threading
 import types
 import unittest
 from unittest.mock import Mock, patch, MagicMock, AsyncMock, ANY
 
 import pytest
 
-from proxy_worker.dispatcher import Dispatcher
+from proxy_worker.dispatcher import (
+    Dispatcher,
+    ContextEnabledTask,
+    set_current_invocation_id,
+    get_global_current_invocation_id,
+    get_current_invocation_id,
+    set_thread_invocation_id,
+    get_thread_invocation_id,
+    clear_thread_invocation_id,
+)
 
 
 class TestDispatcher(unittest.TestCase):
@@ -254,3 +264,363 @@ async def test_handle_invocation_request(mock_logger, mock_streaming):
         'invocation_id: %s, worker_id: %s',
         "req789", "func123", "inv123", "worker123"
     )
+
+
+class TestInvocationTracking(unittest.TestCase):
+    """Test suite for invocation ID tracking functionality"""
+
+    def setUp(self):
+        """Clear any existing invocation state before each test"""
+        # Import the module-level variables properly
+        import proxy_worker.dispatcher as dispatcher_module
+
+        # Clear thread registry
+        with dispatcher_module._registry_lock:
+            dispatcher_module._thread_invocation_registry.clear()
+
+        # Clear global invocation ID
+        with dispatcher_module._current_invocation_lock:
+            dispatcher_module._current_invocation_id = None
+
+    def tearDown(self):
+        """Clean up after each test"""
+        # Import the module-level variables properly
+        import proxy_worker.dispatcher as dispatcher_module
+
+        # Clear thread registry
+        with dispatcher_module._registry_lock:
+            dispatcher_module._thread_invocation_registry.clear()
+
+        # Clear global invocation ID
+        with dispatcher_module._current_invocation_lock:
+            dispatcher_module._current_invocation_id = None
+
+    def test_global_invocation_id_set_and_get(self):
+        """Test setting and getting global current invocation ID"""
+        test_id = "test-invocation-123"
+
+        # Initially should be None
+        self.assertIsNone(get_global_current_invocation_id())
+
+        # Set and verify
+        set_current_invocation_id(test_id)
+        self.assertEqual(get_global_current_invocation_id(), test_id)
+
+        # Test overwrite
+        new_id = "new-invocation-456"
+        set_current_invocation_id(new_id)
+        self.assertEqual(get_global_current_invocation_id(), new_id)
+
+    def test_thread_invocation_registry(self):
+        """Test thread-specific invocation ID registry"""
+        thread_id = 12345
+        invocation_id = "thread-invocation-789"
+
+        # Initially should be None
+        self.assertIsNone(get_thread_invocation_id(thread_id))
+
+        # Set and verify
+        set_thread_invocation_id(thread_id, invocation_id)
+        self.assertEqual(get_thread_invocation_id(thread_id), invocation_id)
+
+        # Test clear
+        clear_thread_invocation_id(thread_id)
+        self.assertIsNone(get_thread_invocation_id(thread_id))
+
+        # Test clear non-existent (should not raise)
+        clear_thread_invocation_id(99999)
+
+    def test_get_current_invocation_id_priority_global(self):
+        """Test that global invocation ID has highest priority"""
+        global_id = "global-123"
+        thread_id = threading.get_ident()
+        thread_id_value = "thread-456"
+
+        # Set both global and thread-specific
+        set_current_invocation_id(global_id)
+        set_thread_invocation_id(thread_id, thread_id_value)
+
+        # Global should take priority
+        result = get_current_invocation_id()
+        self.assertEqual(result, global_id)
+
+    def test_get_current_invocation_id_fallback_to_thread(self):
+        """Test fallback to thread registry when global is None"""
+        thread_id = threading.get_ident()
+        thread_id_value = "thread-only-789"
+
+        # Set only thread-specific
+        set_thread_invocation_id(thread_id, thread_id_value)
+
+        # Should fallback to thread registry
+        result = get_current_invocation_id()
+        self.assertEqual(result, thread_id_value)
+
+    @patch('proxy_worker.dispatcher.asyncio._get_running_loop')
+    @patch('proxy_worker.dispatcher.asyncio.current_task')
+    def test_get_current_invocation_id_asyncio_task_context(
+            self, mock_current_task, mock_get_loop):
+        """Test getting invocation ID from asyncio task context"""
+        # Setup mocks
+        mock_loop = Mock()
+        mock_get_loop.return_value = mock_loop
+
+        mock_task = Mock(spec=ContextEnabledTask)
+        mock_task.__azure_function_invocation_id__ = "task-invocation-999"
+        mock_current_task.return_value = mock_task
+
+        # Should get from task context when no global/thread IDs
+        result = get_current_invocation_id()
+        self.assertEqual(result, "task-invocation-999")
+
+    @patch('proxy_worker.dispatcher.asyncio._get_running_loop')
+    def test_get_current_invocation_id_no_running_loop(self, mock_get_loop):
+        """Test behavior when no asyncio loop is running"""
+        mock_get_loop.side_effect = RuntimeError("No running event loop")
+
+        # Should handle RuntimeError gracefully and return None
+        result = get_current_invocation_id()
+        self.assertIsNone(result)
+
+    def test_context_enabled_task_invocation_id_inheritance(self):
+        """Test that ContextEnabledTask inherits invocation ID from parent task"""
+        # Create a mock parent task with invocation ID
+        parent_task = Mock(spec=ContextEnabledTask)
+        parent_task.__azure_function_invocation_id__ = "parent-invocation-123"
+
+        # Create real async coroutine
+        async def dummy_coro():
+            return "test"
+
+        # Create mock loop
+        mock_loop = Mock()
+
+        with patch('asyncio.current_task', return_value=parent_task):
+            # Create ContextEnabledTask
+            task = ContextEnabledTask(dummy_coro(), mock_loop)
+
+            # Should inherit parent's invocation ID
+            self.assertEqual(
+                getattr(task, ContextEnabledTask.AZURE_INVOCATION_ID),
+                "parent-invocation-123"
+            )
+
+    def test_context_enabled_task_set_invocation_id(self):
+        """Test setting invocation ID on ContextEnabledTask"""
+        # Create real async coroutine
+        async def dummy_coro():
+            return "test"
+
+        mock_loop = Mock()
+
+        with patch('asyncio.current_task', return_value=None):
+            task = ContextEnabledTask(dummy_coro(), mock_loop)
+
+            # Set invocation ID
+            test_id = "direct-set-456"
+            task.set_azure_invocation_id(test_id)
+
+            # Verify it was set
+            self.assertEqual(
+                getattr(task, ContextEnabledTask.AZURE_INVOCATION_ID),
+                test_id
+            )
+
+    def test_thread_safety_concurrent_access(self):
+        """Test thread safety of invocation ID operations"""
+        import concurrent.futures
+        import time
+
+        results = []
+        errors = []
+
+        def worker_thread(thread_num):
+            try:
+                thread_id = threading.get_ident()
+                invocation_id = f"concurrent-{thread_num}-{thread_id}"
+
+                # Set thread-specific invocation ID
+                set_thread_invocation_id(thread_id, invocation_id)
+
+                # Small delay to increase chance of race conditions
+                time.sleep(0.001)
+
+                # Get and verify
+                retrieved = get_thread_invocation_id(thread_id)
+                results.append((thread_num, invocation_id, retrieved))
+
+                # Clean up
+                clear_thread_invocation_id(thread_id)
+
+            except Exception as e:
+                errors.append((thread_num, str(e)))
+
+        # Run multiple threads concurrently
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(worker_thread, i) for i in range(20)]
+            concurrent.futures.wait(futures)
+
+        # Verify no errors
+        self.assertEqual(len(errors), 0, f"Errors occurred: {errors}")
+
+        # Verify all operations completed correctly
+        self.assertEqual(len(results), 20)
+        for thread_num, original, retrieved in results:
+            self.assertEqual(original, retrieved,
+                             f"Thread {thread_num}: {original} != {retrieved}")
+
+
+class TestDispatcherInvocationHandling(unittest.TestCase):
+    """Test dispatcher's handling of invocation requests with ID tracking"""
+
+    def setUp(self):
+        """Clear any existing invocation state before each test"""
+        # Import the module-level variables properly
+        import proxy_worker.dispatcher as dispatcher_module
+
+        # Clear thread registry
+        with dispatcher_module._registry_lock:
+            dispatcher_module._thread_invocation_registry.clear()
+
+        # Clear global invocation ID
+        with dispatcher_module._current_invocation_lock:
+            dispatcher_module._current_invocation_id = None
+
+    def tearDown(self):
+        """Clean up after each test"""
+        # Import the module-level variables properly
+        import proxy_worker.dispatcher as dispatcher_module
+
+        # Clear thread registry
+        with dispatcher_module._registry_lock:
+            dispatcher_module._thread_invocation_registry.clear()
+
+        # Clear global invocation ID
+        with dispatcher_module._current_invocation_lock:
+            dispatcher_module._current_invocation_id = None
+
+    @patch("proxy_worker.dispatcher._library_worker")
+    @patch("proxy_worker.dispatcher.protos.StreamingMessage")
+    @patch("proxy_worker.dispatcher.logger")
+    @patch("proxy_worker.dispatcher.asyncio.current_task")
+    @pytest.mark.asyncio
+    async def test_invocation_request_sets_all_contexts(
+            self, mock_current_task, mock_logger, mock_streaming,
+            mock_library_worker):
+        """Test that invocation request sets global, task, and thread contexts"""
+        # Setup mocks
+        mock_library_worker.invocation_request = AsyncMock(
+            return_value="mocked_response")
+        mock_streaming.return_value = "mocked_stream_response"
+
+        mock_task = Mock(spec=ContextEnabledTask)
+        mock_current_task.return_value = mock_task
+
+        # Create dispatcher
+        dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071,
+                                "worker123", "req789", 5.0)
+
+        # Create request
+        request = Mock()
+        request.invocation_request.invocation_id = "test-invocation-123"
+        request.invocation_request.function_id = "func123"
+
+        # Call the handler
+        result = await dispatcher._handle__invocation_request(request)
+
+        # Verify global invocation ID was set
+        self.assertEqual(get_global_current_invocation_id(),
+                         "test-invocation-123")
+
+        # Verify task invocation ID was set
+        mock_task.set_azure_invocation_id.assert_called_once_with(
+            "test-invocation-123")
+
+        # Verify thread registry was updated
+        current_thread_id = threading.get_ident()
+        self.assertEqual(get_thread_invocation_id(current_thread_id),
+                         "test-invocation-123")
+
+        # Verify library worker was called
+        mock_library_worker.invocation_request.assert_called_once()
+
+        # Verify response
+        self.assertEqual(result, "mocked_stream_response")
+
+    @patch("proxy_worker.dispatcher._library_worker")
+    @patch("proxy_worker.dispatcher.protos.StreamingMessage")
+    @patch("proxy_worker.dispatcher.logger")
+    @patch("proxy_worker.dispatcher.asyncio.current_task")
+    @pytest.mark.asyncio
+    async def test_invocation_request_cleans_up_on_exception(
+            self, mock_current_task, mock_logger, mock_streaming,
+            mock_library_worker):
+        """Test that thread registry is cleaned up when invocation fails"""
+        # Setup mocks to raise exception
+        mock_library_worker.invocation_request = AsyncMock(
+            side_effect=Exception("Test exception")
+        )
+
+        mock_task = Mock(spec=ContextEnabledTask)
+        mock_current_task.return_value = mock_task
+
+        # Create dispatcher
+        dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071,
+                                "worker123", "req789", 5.0)
+
+        # Create request
+        request = Mock()
+        request.invocation_request.invocation_id = "test-invocation-456"
+        request.invocation_request.function_id = "func123"
+
+        current_thread_id = threading.get_ident()
+
+        # Call should raise exception
+        with self.assertRaises(Exception) as cm:
+            await dispatcher._handle__invocation_request(request)
+
+        self.assertEqual(str(cm.exception), "Test exception")
+
+        # Verify thread registry was cleaned up
+        self.assertIsNone(get_thread_invocation_id(current_thread_id))
+
+        # Verify global invocation ID is still set (not cleared on exception)
+        self.assertEqual(get_global_current_invocation_id(),
+                         "test-invocation-456")
+
+    @patch("proxy_worker.dispatcher._library_worker")
+    @patch("proxy_worker.dispatcher.protos.StreamingMessage")
+    @patch("proxy_worker.dispatcher.logger")
+    @pytest.mark.asyncio
+    async def test_invocation_request_handles_no_current_task(
+            self, mock_logger, mock_streaming, mock_library_worker):
+        """Test invocation request when no current asyncio task exists"""
+        # Setup mocks
+        mock_library_worker.invocation_request = AsyncMock(
+            return_value="mocked_response")
+        mock_streaming.return_value = "mocked_stream_response"
+
+        # Create dispatcher
+        dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071,
+                                "worker123", "req789", 5.0)
+
+        # Create request
+        request = Mock()
+        request.invocation_request.invocation_id = "no-task-invocation-789"
+        request.invocation_request.function_id = "func123"
+
+        # Mock current_task to return None
+        with patch("proxy_worker.dispatcher.asyncio.current_task",
+                   return_value=None):
+            result = await dispatcher._handle__invocation_request(request)
+
+        # Should still set global and thread contexts
+        self.assertEqual(get_global_current_invocation_id(),
+                         "no-task-invocation-789")
+
+        current_thread_id = threading.get_ident()
+        self.assertEqual(get_thread_invocation_id(current_thread_id),
+                         "no-task-invocation-789")
+
+        # Verify response
+        self.assertEqual(result, "mocked_stream_response")

@@ -65,6 +65,7 @@ extends:
         - template: /eng/templates/jobs/ci-unit-tests.yml@self
           parameters:
             PROJECT_DIRECTORY: 'workers'
+            PoolName: 1es-pool-azfunc-public
     - stage: RunWorkerEmulatorTests
       dependsOn: BuildPythonWorker
       jobs:
@@ -88,6 +89,7 @@ extends:
           parameters:
             PROJECT_NAME: 'V2 Library'
             PROJECT_DIRECTORY: 'runtimes/v2'
+            PoolName: 1es-pool-azfunc-public
 
 
 
@@ -107,3 +109,4 @@ extends:
           parameters:
             PROJECT_NAME: 'V1 Library'
             PROJECT_DIRECTORY: 'runtimes/v1'
+            PoolName: 1es-pool-azfunc-public

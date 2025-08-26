@@ -29,4 +29,4 @@ class TestLogging(unittest.TestCase):
             self.assertIn("call2", processed_exception)
             self.assertIn("f", processed_exception)
             self.assertRegex(processed_exception,
-                             r".*tests\\unittests\\test_logging.py.*")
+                             r".*tests/unittests/test_logging.py.*")

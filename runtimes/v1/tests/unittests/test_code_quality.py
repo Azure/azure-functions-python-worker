@@ -5,7 +5,7 @@ import subprocess
 import sys
 import unittest
 
-ROOT_PATH = pathlib.Path(__file__).parent.parent.parent.parent
+ROOT_PATH = pathlib.Path(__file__).parent.parent.parent.parent.parent
 
 
 class TestCodeQuality(unittest.TestCase):
@@ -20,10 +20,12 @@ class TestCodeQuality(unittest.TestCase):
         if not config_path.exists():
             raise unittest.SkipTest('could not locate the .flake8 file')
 
+        project_path = pathlib.Path(ROOT_PATH,'runtimes','v1' ,'azure_functions_runtime_v1')
+
         try:
             subprocess.run(
                 [sys.executable, '-m', 'flake8', '--config', str(config_path),
-                 'azure_functions_runtime_v1',],
+                 project_path],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

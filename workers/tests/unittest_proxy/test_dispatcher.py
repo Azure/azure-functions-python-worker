@@ -266,6 +266,121 @@ async def test_handle_invocation_request(mock_logger, mock_streaming):
     )
 
 
+def _make_runtime_module(with_threadpool=True):
+    mod = types.SimpleNamespace(__file__="azure_functions_runtime.py")
+
+    async def _async_ok(*_a, **_k):
+        return "ok"
+
+    mod.worker_init_request = _async_ok
+    mod.function_environment_reload_request = _async_ok
+    mod.version = types.SimpleNamespace(VERSION="1.2.3")
+    if with_threadpool:
+        state = {"started": 0, "stopped": 0}
+
+        def start_threadpool_executor():
+            state["started"] += 1
+
+        def stop_threadpool_executor():
+            state["stopped"] += 1
+
+        def get_threadpool_executor():
+            return object()
+
+        mod.start_threadpool_executor = start_threadpool_executor
+        mod.stop_threadpool_executor = stop_threadpool_executor
+        mod.get_threadpool_executor = get_threadpool_executor
+        mod._state = state
+    return mod
+
+
+@patch("proxy_worker.dispatcher.DependencyManager.should_load_cx_dependencies",
+       return_value=False)
+@patch("proxy_worker.dispatcher.logger")
+@patch("proxy_worker.dispatcher.os.path.exists", side_effect=lambda p: True)
+@patch("builtins.__import__")
+@patch("proxy_worker.dispatcher.protos.StreamingMessage",
+       return_value="mocked_init_response")
+@pytest.mark.asyncio
+async def test_worker_init_starts_threadpool(mock_streaming, mock_import, *_mocks):
+    runtime_module = _make_runtime_module(with_threadpool=True)
+
+    def fake_import(name, *a, **k):
+        if name == "azure_functions_runtime":
+            return runtime_module
+        return builtins.__import__(name, *a, **k)
+
+    mock_import.side_effect = fake_import
+    dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071,
+                            "workerABC", "reqXYZ", 5.0)
+    req = MagicMock()
+    req.worker_init_request.function_app_directory = "/site/wwwroot"
+    await dispatcher._handle__worker_init_request(req)
+    assert runtime_module._state["started"] == 1
+    # _sync_call_tp should not exist after refactor
+    assert not hasattr(dispatcher, "_sync_call_tp")
+
+
+@patch("proxy_worker.dispatcher.DependencyManager.prioritize_customer_dependencies")
+@patch("proxy_worker.dispatcher.logger")
+@patch("proxy_worker.dispatcher.os.path.exists", side_effect=lambda p: True)
+@patch("builtins.__import__")
+@patch("proxy_worker.dispatcher.protos.StreamingMessage",
+       return_value="mocked_reload_response")
+@pytest.mark.asyncio
+async def test_env_reload_starts_threadpool(mock_streaming, mock_import, *_mocks):
+    runtime_module = _make_runtime_module(with_threadpool=True)
+
+    def fake_import(name, *a, **k):
+        if name == "azure_functions_runtime":
+            return runtime_module
+        return builtins.__import__(name, *a, **k)
+
+    mock_import.side_effect = fake_import
+    dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071,
+                            "workerABC", "reqXYZ", 5.0)
+    # simulate worker init first
+    init_req = MagicMock()
+    init_req.worker_init_request.function_app_directory = "/site/wwwroot"
+    await dispatcher._handle__worker_init_request(init_req)
+    reload_req = MagicMock()
+    reload_req.function_environment_reload_request.function_app_directory = (
+        "/site/wwwroot")
+    await dispatcher._handle__function_environment_reload_request(reload_req)
+    # start called twice: once on init, once on reload
+    assert runtime_module._state["started"] == 2
+    assert not hasattr(dispatcher, "_sync_call_tp")
+
+
+@patch("proxy_worker.dispatcher.DependencyManager.should_load_cx_dependencies",
+       return_value=False)
+@patch("proxy_worker.dispatcher.logger")
+@patch("proxy_worker.dispatcher.os.path.exists", side_effect=lambda p: True)
+@patch("builtins.__import__")
+@patch("proxy_worker.dispatcher.protos.StreamingMessage",
+       return_value="mocked_init_response")
+@pytest.mark.asyncio
+async def test_worker_init_missing_threadpool_apis(mock_streaming, mock_import,
+                                                   mock_exists, mock_logger, *_):
+    runtime_module = _make_runtime_module(with_threadpool=False)
+
+    def fake_import(name, *a, **k):
+        if name == "azure_functions_runtime":
+            return runtime_module
+        return builtins.__import__(name, *a, **k)
+
+    mock_import.side_effect = fake_import
+    dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071,
+                            "workerDEF", "req123", 5.0)
+    req = MagicMock()
+    req.worker_init_request.function_app_directory = "/site/wwwroot"
+    await dispatcher._handle__worker_init_request(req)
+    # Ensure we logged the debug message about missing APIs
+    mock_logger.debug.assert_any_call(
+        "Threadpool executor APIs not present in runtime; skipping start.")
+    assert not hasattr(dispatcher, "_sync_call_tp")
+
+
 class TestInvocationTracking(unittest.TestCase):
     """Test suite for invocation ID tracking functionality"""
 

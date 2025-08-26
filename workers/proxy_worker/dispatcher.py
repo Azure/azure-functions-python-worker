@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 
 import asyncio
-import concurrent.futures
 import logging
 import os
 import queue
@@ -25,13 +24,11 @@ from proxy_worker.logging import (
     logger,
 )
 from proxy_worker.utils.common import (
-    get_app_setting,
     get_script_file_name,
     is_envvar_true,
 )
 from proxy_worker.utils.constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,
-    PYTHON_THREADPOOL_THREAD_COUNT,
 )
 from proxy_worker.version import VERSION
 
@@ -189,9 +186,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         self._grpc_connected_fut = loop.create_future()
         self._grpc_thread: Optional[threading.Thread] = threading.Thread(
             name='grpc_local-thread', target=self.__poll_grpc)
-
-        self._sync_call_tp: Optional[concurrent.futures.Executor] = (
-            self._create_sync_call_tp(self._get_sync_tp_max_workers()))
 
     def on_logging(self, record: logging.LogRecord,
                    formatted_msg: str) -> None:
@@ -381,53 +375,18 @@ class Dispatcher(metaclass=DispatcherMeta):
             self._grpc_thread.join()
             self._grpc_thread = None
 
-        self._stop_sync_call_tp()
+        # Ask the library runtime to stop its threadpool (if loaded)
+        global _library_worker
+        if _library_worker is not None:
+            stop_exec = getattr(_library_worker, 'stop_threadpool_executor', None)
+            if callable(stop_exec):
+                try:
+                    stop_exec()
+                except Exception:  # pragma: no cover - best effort
+                    logger.debug('Exception while stopping threadpool executor',
+                                 exc_info=True)
 
-    def _stop_sync_call_tp(self):
-        """Deallocate the current synchronous thread pool and assign
-        self._sync_call_tp to None. If the thread pool does not exist,
-        this will be a no op.
-        """
-        if getattr(self, '_sync_call_tp', None):
-            assert self._sync_call_tp is not None  # mypy fix
-            self._sync_call_tp.shutdown()
-            self._sync_call_tp = None
-
-    @staticmethod
-    def _create_sync_call_tp(max_worker: Optional[int]) -> concurrent.futures.Executor:
-        """Create a thread pool executor with max_worker. This is a wrapper
-        over ThreadPoolExecutor constructor. Consider calling this method after
-        _stop_sync_call_tp() to ensure only 1 synchronous thread pool is
-        running.
-        """
-        return concurrent.futures.ThreadPoolExecutor(
-            max_workers=max_worker
-        )
-
-    @staticmethod
-    def _get_sync_tp_max_workers() -> typing.Optional[int]:
-        def tp_max_workers_validator(value: str) -> bool:
-            try:
-                int_value = int(value)
-            except ValueError:
-                logger.warning('%s must be an integer',
-                               PYTHON_THREADPOOL_THREAD_COUNT)
-                return False
-
-            if int_value < 1:
-                logger.warning(
-                    '%s must be set to a value between 1 and sys.maxint. '
-                    'Reverting to default value for max_workers',
-                    PYTHON_THREADPOOL_THREAD_COUNT,
-                    1)
-                return False
-            return True
-
-        max_workers = get_app_setting(setting=PYTHON_THREADPOOL_THREAD_COUNT,
-                                      validator=tp_max_workers_validator)
-
-        # We can box the app setting as int for earlier python versions.
-        return int(max_workers) if max_workers else None
+    # Removed: threadpool lifecycle now handled in runtime libraries
 
     @staticmethod
     def reload_library_worker(directory: str):
@@ -474,14 +433,23 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Using library: %s, '
                     'library version: %s',
                     _library_worker,
-                    _library_worker.version.VERSION)  # type: ignore[union-attr]
+                    _library_worker.version.VERSION)
 
-        init_request = WorkerRequest(name="WorkerInitRequest",
-                                     request=request,
-                                     properties={"protos": protos,
-                                                 "host": self._host})
+        init_request = WorkerRequest(
+            name="WorkerInitRequest",
+            request=request,
+            properties={"protos": protos, "host": self._host},
+        )
+
+        try:
+            _library_worker.start_threadpool_executor()
+        except AttributeError:
+            logger.debug(
+                "Threadpool executor APIs not present in runtime; "
+                "skipping start."
+            )
         init_response = await (
-            _library_worker.worker_init_request(  # type: ignore[union-attr]
+            _library_worker.worker_init_request(
                 init_request))
 
         return protos.StreamingMessage(
@@ -504,14 +472,23 @@ class Dispatcher(metaclass=DispatcherMeta):
         logger.info('Using library: %s, '
                     'library version: %s',
                     _library_worker,
-                    _library_worker.version.VERSION)  # type: ignore[union-attr]
+                    _library_worker.version.VERSION)
 
-        env_reload_request = WorkerRequest(name="FunctionEnvironmentReloadRequest",
-                                           request=request,
-                                           properties={"protos": protos,
-                                                       "host": self._host})
+        env_reload_request = WorkerRequest(
+            name="FunctionEnvironmentReloadRequest",
+            request=request,
+            properties={"protos": protos, "host": self._host},
+        )
+
+        try:
+            _library_worker.start_threadpool_executor()
+        except AttributeError:
+            logger.debug(
+                "Threadpool executor APIs not present in runtime during "
+                "env reload; skipping."
+            )
         env_reload_response = await (
-            _library_worker.function_environment_reload_request(  # type: ignore[union-attr]  # noqa
+            _library_worker.function_environment_reload_request(
                 env_reload_request))
 
         return protos.StreamingMessage(
@@ -586,9 +563,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         try:
             invocation_request = WorkerRequest(name="FunctionInvocationRequest",
-                                               request=request,
-                                               properties={
-                                                   "threadpool": self._sync_call_tp})
+                                               request=request)
             invocation_response = await (
                 _library_worker.invocation_request(  # type: ignore[union-attr]
                     invocation_request))

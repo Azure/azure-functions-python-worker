@@ -1,0 +1,39 @@
+parameters:
+  PROJECT_NAME: ''
+  PROJECT_DIRECTORY: ''
+  ARTIFACT_NAME: ''
+
+jobs:
+  - job: "Build"
+    displayName: 'Build ${{ parameters.PROJECT_NAME }}'
+
+    pool:
+      name: 1es-pool-azfunc-public
+      image: 1es-ubuntu-22.04
+      os: linux
+    
+    templateContext:
+      outputParentDirectory: $(Build.ArtifactStagingDirectory)
+      outputs:
+        - output: pipelineArtifact
+          targetPath: $(Build.SourcesDirectory)
+          artifactName: "${{ parameters.ARTIFACT_NAME }}"
+
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.13"
+      - bash: |
+          python --version
+        displayName: 'Check python version'
+      - bash: |
+          python -m pip install -U pip
+          python -m pip install build
+          cd ${{ parameters.PROJECT_DIRECTORY }}
+          python -m build
+        displayName: 'Build ${{ parameters.PROJECT_NAME }}'
+      - bash: |
+          pip install pip-audit
+          cd ${{ parameters.PROJECT_DIRECTORY }}
+          pip-audit .
+        displayName: 'Run vulnerability scan'

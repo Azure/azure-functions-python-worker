@@ -62,7 +62,7 @@ class LinuxConsumptionWebHostController:
 
     def assign_container(self, env: Dict[str, str] = {}):
         """Make a POST request to /admin/instance/assign to specialize the
-        container
+        container.
         """
         url = f'http://localhost:{self._ports[self._uuid]}'
 
@@ -72,6 +72,28 @@ class LinuxConsumptionWebHostController:
         env["FUNCTIONS_WORKER_RUNTIME_VERSION"] = self._py_version
         env["WEBSITE_SITE_NAME"] = self._uuid
         env["WEBSITE_HOSTNAME"] = f"{self._uuid}.azurewebsites.com"
+
+        # Debug: Print SCM_RUN_FROM_PACKAGE value
+        scm_package = env.get("SCM_RUN_FROM_PACKAGE", "NOT_SET")
+        print(f"🔍 DEBUG: SCM_RUN_FROM_PACKAGE in env: {scm_package}")
+
+        # Wait for the container to be ready
+        max_retries = 60
+        for i in range(max_retries):
+            try:
+                ping_req = requests.Request(method="GET", url=f"{url}/admin/host/ping")
+                ping_response = self.send_request(ping_req)
+                if ping_response.ok:
+                    print(f"🔍 DEBUG: Container ready after {i + 1} attempts")
+                    break
+                else:
+                    print("🔍 DEBUG: Ping attempt {i+1}/60 failed with status "
+                          f"{ping_response.status_code}")
+            except Exception as e:
+                print(f"🔍 DEBUG: Ping attempt {i + 1}/60 failed with exception: {e}")
+            time.sleep(1)
+        else:
+            raise RuntimeError(f'Container {self._uuid} did not become ready in time')
 
         # Send the specialization context via a POST request
         req = requests.Request(
@@ -102,48 +124,76 @@ class LinuxConsumptionWebHostController:
 
         prepped = session.prepare_request(req)
         prepped.headers['Content-Type'] = 'application/json'
-        prepped.headers['x-ms-site-restricted-token'] = (
-            self._get_site_restricted_token()
-        )
+
+        # Try to generate a proper JWT token first
+        try:
+            jwt_token = self._generate_jwt_token()
+            # Use JWT token for newer Azure Functions host versions
+            prepped.headers['Authorization'] = f'Bearer {jwt_token}'
+        except ImportError:
+            # Fall back to the old SWT token format if jwt library is not available
+            swt_token = self._get_site_restricted_token()
+            prepped.headers['x-ms-site-restricted-token'] = swt_token
+            prepped.headers['Authorization'] = f'Bearer {swt_token}'
+
+        # Add additional headers required by Azure Functions host
         prepped.headers['x-site-deployment-id'] = self._uuid
+        prepped.headers['x-ms-client-request-id'] = str(uuid.uuid4())
+        prepped.headers['x-ms-request-id'] = str(uuid.uuid4())
 
         resp = session.send(prepped)
         return resp
 
     @classmethod
-    def _find_latest_mesh_image(cls,
-                                host_major: str,
-                                python_version: str) -> str:
-        """Find the latest image in https://mcr.microsoft.com/v2/
-        azure-functions/mesh/tags/list. Match either (3.1.3, or 3.1.3-python3.x)
+    def _find_latest_mesh_image(
+            cls,
+            host_major: str,
+            python_version: str,
+    ) -> str:
+        """
+        Return the tag for the most recent mesh image that starts with
+        <host_major> and ends with “-python<python_version>”.
+
+        Example tag: 4.1040.100-0-python3.13
         """
         if host_major in cls._mesh_images:
             return cls._mesh_images[host_major]
 
-        # match 3.1.3
-        regex = re.compile(host_major + r'.\d+.\d+-python' + python_version)
+        # <host_major> might already contain dots, so escape it
+        tag_pattern = re.compile(
+            rf'{re.escape(host_major)}\.\d+\.\d+-\d+-python{python_version}$'
+        )
 
-        response = requests.get(_MESH_IMAGE_URL, allow_redirects=True)
+        response = requests.get(_MESH_IMAGE_URL, timeout=10)
         if not response.ok:
-            raise RuntimeError(f'Failed to query latest image for v{host_major}'
-                               f' Python {python_version}.'
-                               f' Status {response.status_code}')
+            raise RuntimeError(
+                f'Failed to query latest image for v{host_major} '
+                f'Python {python_version}. '
+                f'Status {response.status_code}'
+            )
 
-        tag_list = response.json().get('tags', [])
-        # Removing images with a -upgrade. Upgrade images were temporary
-        # images used to onboard customers from a previous version. These
-        # images are no longer used.
-        tag_list = [x.strip("-upgrade") for x in tag_list]
+        # Strip “-upgrade” from any temporary tags
+        tags = [t.removesuffix("-upgrade") for t in response.json().get("tags", [])]
 
-        # Listing all the versions from the tags with suffix -python<version>
-        python_versions = list(filter(regex.match, tag_list))
+        # Keep only tags that match host_major and python_version
+        candidates = [t for t in tags if tag_pattern.match(t)]
+        if not candidates:
+            raise RuntimeError(
+                f'No mesh image found for v{host_major} Python {python_version}.'
+            )
 
-        # sorting all the python versions based on the runtime version and
-        # getting the latest released runtime version for python.
-        latest_version = sorted(python_versions, key=lambda x: float(
-            x.split(host_major + '.')[-1].split("-python")[0]))[-1]
+        def _numeric_key(tag: str) -> tuple[int, ...]:
+            """
+            Convert the part before “-python” to a tuple of integers so that
+            numeric comparison works as expected.
 
-        image_tag = f'{_MESH_IMAGE_REPO}:{latest_version}'
+            For “4.1040.100-0” we get (4, 1040, 100, 0).
+            """
+            numeric_part = tag.split("-python")[0].replace("-", ".")
+            return tuple(int(piece) for piece in numeric_part.split("."))
+
+        latest_tag = max(candidates, key=_numeric_key)
+        image_tag = f"{_MESH_IMAGE_REPO}:{latest_tag}"
         cls._mesh_images[host_major] = image_tag
         return image_tag
 
@@ -201,6 +251,9 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["-e",
                         f"CONTAINER_ENCRYPTION_KEY={os.getenv('_DUMMY_CONT_KEY')}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
+        # Add required environment variables for JWT issuer validation
+        run_cmd.extend(["-e", f"WEBSITE_SITE_NAME={self._uuid}"])
+        run_cmd.extend(["-e", "WEBSITE_SKU=Dynamic"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
         run_cmd.extend(["-v",
                         f'{base_ext_local_path}:{base_ext_container_path}'])
@@ -266,27 +319,69 @@ class LinuxConsumptionWebHostController:
         """Get the header value which can be used by x-ms-site-restricted-token
         which expires in one day.
         """
-        exp_ns = int(time.time() + 24 * 60 * 60) * 1000000000
-        return cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), f'exp={exp_ns}')
+        # For compatibility with older Azure Functions host versions,
+        # try the old SWT format first
+        exp_ns = int((time.time() + 24 * 60 * 60) * 1000000000)
+        token = cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), f'exp={exp_ns}')
+        return token
+
+    def _generate_jwt_token(self) -> str:
+        """Generate a proper JWT token for newer Azure Functions host versions."""
+        try:
+            import jwt
+        except ImportError:
+            # Fall back to SWT format if JWT library not available
+            return self._get_site_restricted_token()
+
+        # JWT payload matching Azure Functions host expectations
+        exp_time = int(time.time()) + (24 * 60 * 60)  # 24 hours from now
+
+        # Use the site name consistently for issuer and audience validation
+        site_name = self._uuid
+        container_name = self._uuid
+
+        # According to Azure Functions host analysis, use site-specific issuer format
+        # This matches the ValidIssuers array in ScriptJwtBearerExtensions.cs
+        issuer = f"https://{site_name}.azurewebsites.net"
+
+        payload = {
+            'exp': exp_time,
+            'iat': int(time.time()),
+            # Use site-specific issuer format that matches ValidIssuers in the host
+            'iss': issuer,
+            # For Linux Consumption in placeholder mode, audience is the container name
+            'aud': container_name
+        }
+
+        # Use the same encryption key for JWT signing
+        key = base64.b64decode(os.getenv('_DUMMY_CONT_KEY').encode())
+
+        # Generate JWT token using HMAC SHA256 (matches Azure Functions host)
+        jwt_token = jwt.encode(payload, key, algorithm='HS256')
+        return jwt_token
 
     @classmethod
     def _get_site_encrypted_context(cls,
                                     site_name: str,
                                     env: Dict[str, str]) -> str:
         """Get the encrypted context for placeholder mode specialization"""
+        # Ensure WEBSITE_SITE_NAME is set to simulate production mode
+        env["WEBSITE_SITE_NAME"] = site_name
+
         ctx = {
             "SiteId": 1,
             "SiteName": site_name,
             "Environment": env
         }
 
-        # Ensure WEBSITE_SITE_NAME is set to simulate production mode
-        ctx["Environment"]["WEBSITE_SITE_NAME"] = site_name
-        return cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), json.dumps(ctx))
+        json_ctx = json.dumps(ctx)
+
+        encrypted = cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), json_ctx)
+        return encrypted
 
     @classmethod
     def _encrypt_context(cls, encryption_key: str, plain_text: str) -> str:
-        """Encrypt plain text context into a encrypted message which can
+        """Encrypt plain text context into an encrypted message which can
         be accepted by the host
         """
         # Decode the encryption key

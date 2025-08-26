@@ -32,13 +32,13 @@ If yes, please answer the following:
    - [ ] Does this change apply to both Python <=3.12 and 3.13+?
    - If yes, have the changes been made to:
       - [ ] azure_functions_worker (Python <= 3.12)
-      - [ ] azure_functions_worker_v1 / azure_functions_worker_v2 (Python >= 3.13)
+      - [ ] runtimes/v1 / runtimes/v2 (Python >= 3.13)
    - If no, please explain why:
 
 **Programming Model Compatibility (for Python 3.13+)**
 - Does this change apply to both:
-   - [ ] V1 programming model (azure_functions_worker_v1)?
-   - [ ] V2 programming model (azure_functions_worker_v2)?
+   - [ ] V1 programming model (runtimes/v1)?
+   - [ ] V2 programming model (runtimes/v2)?
 - Explanation (if limited to one model):
 
 <!-- Thanks for using the checklist -->

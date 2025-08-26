@@ -2,7 +2,7 @@ trigger:
   branches:
     include:
       - dev
-      - release/*
+      - release* # proxy & library worker releases
       - sdk/* # run for sdk and extension release branches
       - extensions/*
 

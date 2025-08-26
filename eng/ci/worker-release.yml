@@ -1,5 +1,19 @@
 pr: none
 
+parameters:
+  - name: WorkerRelease
+    displayName: 'Worker Release (Nuget)'
+    type: boolean
+    default: false
+  - name: V1LibraryRelease
+    displayName: 'V1 Library Release (PyPI)'
+    type: boolean
+    default: false
+  - name: V2LibraryRelease
+    displayName: 'V2 Library Release (PyPI)'
+    type: boolean
+    default: false
+
 resources:
   repositories:
     - repository: 1es
@@ -24,6 +38,30 @@ extends:
       os: windows
 
     stages:
-      - stage: Release
+      - stage: ReleasePythonWorker
+        displayName: 'Release Python Worker (Nuget)'
         jobs:
           - template: /eng/templates/official/jobs/publish-release.yml@self
+        condition: eq(${{ parameters.WorkerRelease }}, True)
+      - stage: ReleasePythonV2Library
+        dependsOn: []
+        displayName: 'Release V2 Library (PyPI)'
+        jobs:
+          - template: /eng/templates/official/jobs/publish-library-release.yml@self
+            parameters:
+              PROJECT_DIRECTORY: 'runtimes/v2'
+              PROJECT_NAME: 'azure-functions-runtime'
+              BRANCH_NAME: 'release-v2'
+              TEST_BRANCH_NAME: 'test-release-v2'
+        condition: eq(${{ parameters.V2LibraryRelease }}, True)
+      - stage: ReleasePythonV1Library
+        dependsOn: []
+        displayName: 'Release V1 Library (PyPI)'
+        jobs:
+          - template: /eng/templates/official/jobs/publish-library-release.yml@self
+            parameters:
+              PROJECT_DIRECTORY: 'runtimes/v1'
+              PROJECT_NAME: 'azure-functions-runtime-v1'
+              BRANCH_NAME: 'release-v1'
+              TEST_BRANCH_NAME: 'test-release-v1'
+        condition: eq(${{ parameters.V1LibraryRelease }}, True)

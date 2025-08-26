@@ -79,7 +79,9 @@ def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
     mock_module.worker_init_request = AsyncMock(return_value="fake_response")
     mock_module.function_environment_reload_request = AsyncMock(
         return_value="mocked_env_reload_response")
-    if name in ["azure_functions_worker_v2", "azure_functions_worker_v1"]:
+    mock_module.version = AsyncMock(return_value="fake_response")
+    mock_module.version.VERSION = AsyncMock(return_value="1.0.0")
+    if name in ["azure_functions_runtime", "azure_functions_runtime_v1"]:
         return mock_module
     return builtins.__import__(name, globals, locals, fromlist, level)
 
@@ -106,7 +108,7 @@ async def test_worker_init_v2_import(
     result = await dispatcher._handle__worker_init_request(request)
 
     assert result == "mocked_streaming_response"
-    mock_logger.debug.assert_any_call("azure_functions_worker_v2 import succeeded: %s",
+    mock_logger.debug.assert_any_call("azure_functions_runtime import succeeded: %s",
                                       ANY)
 
 
@@ -131,7 +133,7 @@ async def test_worker_init_fallback_to_v1(
     result = await dispatcher._handle__worker_init_request(request)
 
     assert result == "mocked_streaming_response"
-    mock_logger.debug.assert_any_call("azure_functions_worker_v1 import succeeded: %s",
+    mock_logger.debug.assert_any_call("azure_functions_runtime_v1 import succeeded: %s",
                                       ANY)
 
 
@@ -155,7 +157,7 @@ async def test_function_environment_reload_v2_import(
     result = await dispatcher._handle__function_environment_reload_request(request)
 
     assert result == "mocked_reload_response"
-    mock_logger.debug.assert_any_call("azure_functions_worker_v2 import succeeded: %s",
+    mock_logger.debug.assert_any_call("azure_functions_runtime import succeeded: %s",
                                       ANY)
 
 
@@ -177,7 +179,7 @@ async def test_function_environment_reload_fallback_to_v1(
     result = await dispatcher._handle__function_environment_reload_request(request)
 
     assert result == "mocked_reload_response"
-    mock_logger.debug.assert_any_call("azure_functions_worker_v1 import succeeded: %s",
+    mock_logger.debug.assert_any_call("azure_functions_runtime_v1 import succeeded: %s",
                                       ANY)
 
 
@@ -223,8 +225,8 @@ async def test_handle_function_load_request(mock_logger, mock_streaming):
 
     assert result == "mocked_stream_response"
     mock_logger.info.assert_called_with(
-        'Received WorkerLoadRequest, request ID %s, function_id: %s,function_name: %s, '
-        'worker_id: %s', "req789", "func123", "hello_function", "worker123"
+        'Received WorkerLoadRequest, request ID %s, function_id: %s, function_name: %s,'
+        ' worker_id: %s', "req789", "func123", "hello_function", "worker123"
     )
 
 
@@ -248,7 +250,7 @@ async def test_handle_invocation_request(mock_logger, mock_streaming):
 
     assert result == "mocked_streaming_response"
     mock_logger.info.assert_called_with(
-        'Received FunctionInvocationRequest, request ID %s, function_id: %s,'
+        'Received FunctionInvocationRequest, request ID %s, function_id: %s, '
         'invocation_id: %s, worker_id: %s',
         "req789", "func123", "inv123", "worker123"
     )

@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-import logging
 
 import azure.functions as func
 import google.protobuf as proto

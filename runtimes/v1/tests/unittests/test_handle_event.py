@@ -5,10 +5,11 @@ from unittest.mock import patch
 import azure_functions_runtime_v1.handle_event as handle_event
 import tests.protos as test_protos
 
-from azure_functions_runtime_v1.handle_event import (worker_init_request,
-                                                    functions_metadata_request,
-                                                    function_load_request,
-                                                    function_environment_reload_request)
+from azure_functions_runtime_v1.handle_event import (
+    worker_init_request,
+    functions_metadata_request,
+    function_load_request,
+    function_environment_reload_request)
 from tests.utils import testutils
 from tests.utils.constants import UNIT_TESTS_FOLDER
 from tests.utils.mock_classes import FunctionRequest, Metadata, Request, WorkerRequest

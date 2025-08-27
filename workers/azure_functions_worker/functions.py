@@ -136,13 +136,15 @@ class Registry:
         if set(params) - set(bound_params):
             raise FunctionLoadError(
                 func_name,
-                'the following parameters are declared in Python but '
-                f'not in function.json: {set(params) - set(bound_params)!r}')
+                'the following parameters are declared in Python '
+                'but not in the function definition (function.json or '
+                f'function decorators):  {set(params) - set(bound_params)!r}')
 
         if set(bound_params) - set(params):
             raise FunctionLoadError(
                 func_name,
-                f'the following parameters are declared in function.json but '
+                'the following parameters are declared in the function '
+                'definition (function.json or function decorators) but '
                 f'not in Python: {set(bound_params) - set(params)!r}')
 
         input_types: typing.Dict[str, ParamTypeInfo] = {}
@@ -221,7 +223,8 @@ class Registry:
                 raise FunctionLoadError(
                     func_name,
                     f'binding {param.name} is declared to have the "in" '
-                    'direction in function.json, but its annotation '
+                    'direction in the function definition (function.json '
+                    'or function decorators), but its annotation '
                     'is azure.functions.Out in Python')
 
             if param_has_anno and param_py_type in (str, bytes) and (
@@ -244,13 +247,16 @@ class Registry:
                             func_name,
                             f'{param.name!r} binding type "{binding.type}" '
                             f'and dataType "{binding.data_type}" in '
-                            f'function.json do not match the corresponding '
+                            'function definition (function.json or function '
+                            'decorators) do not match the corresponding '
                             f'function parameter\'s Python type '
                             f'annotation "{param_py_type.__name__}"')
                     else:
                         raise FunctionLoadError(
                             func_name,
-                            f'type of {param.name} binding in function.json '
+                            f'type of {param.name} binding in function '
+                            'definition (function.json or function '
+                            'decorators) '
                             f'"{binding.type}" does not match its Python '
                             f'annotation "{param_py_type.__name__}"')
 

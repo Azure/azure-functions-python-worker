@@ -197,3 +197,46 @@ class TestHttpFunctionsWithInitIndexing(testutils.WebHostTestCase):
             self.assertTrue(ok)
             complete_data = b"".join(data_chunks)
             self.assertEqual(content, complete_data)
+
+
+@unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+                 or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+                 "Tests are flaky when running on Docker")
+@unittest.skipIf(sys.version_info.minor < 8, "HTTPv2"
+                                             "is only supported for 3.8+.")
+@unittest.skipIf(sys.version_info.minor >= 13,
+                 "App Setting is not needed for 3.13+")
+class TestHttpFunctionsWithInitIndexingDisabled(testutils.WebHostTestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.env_variables[PYTHON_ENABLE_INIT_INDEXING] = '0'
+        os.environ[PYTHON_ENABLE_INIT_INDEXING] = "0"
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        os.environ.pop(PYTHON_ENABLE_INIT_INDEXING)
+        super().tearDownClass()
+
+    @classmethod
+    def get_environment_variables(cls):
+        return cls.env_variables
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.EXTENSION_TESTS_FOLDER / 'http_v2_tests' / \
+            'http_functions_v2' / \
+            'fastapi'
+
+    @classmethod
+    def get_libraries_to_install(cls):
+        return ['azurefunctions-extensions-http-fastapi', 'orjson', 'ujson']
+
+    @testutils.retryable_test(3, 5)
+    def test_return_streaming_disabled(self):
+        """Test if the return_streaming function returns an error"""
+        root_url = self.webhost._addr
+        streaming_url = f'{root_url}/api/return_streaming'
+        r = requests.get(
+            streaming_url, timeout=REQUEST_TIMEOUT_SEC, stream=True)
+        self.assertFalse(r.ok)

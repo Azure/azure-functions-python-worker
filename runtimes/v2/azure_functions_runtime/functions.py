@@ -142,15 +142,15 @@ class Registry:
             raise FunctionLoadError(
                 func_name,
                 'Function parameter mismatch — the following trigger/input bindings '
-                'are declared in the function decorators but missing from the '
-                'Python function signature: ' + repr(set(params) - set(bound_params)))
+                'are declared in Python but missing from the '
+                'function decorator: ' + repr(set(params) - set(bound_params)))
 
         if set(bound_params) - set(params):
             raise FunctionLoadError(
                 func_name,
-                'Extra parameters in function signature — the following parameters '
-                'are present in the Python function definition but are not declared '
-                'as bindings: ' + repr(set(params) - set(bound_params)))
+                'Extra parameters in binding definition — the following parameters '
+                'are declared as bindings but are not '
+                'present in Python: ' + repr(set(params) - set(bound_params)))
 
         input_types: typing.Dict[str, ParamTypeInfo] = {}
         output_types: typing.Dict[str, ParamTypeInfo] = {}

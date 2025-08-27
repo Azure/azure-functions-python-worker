@@ -7,9 +7,9 @@ import unittest
 from unittest.mock import patch
 
 from azure_functions_runtime.utils import (app_setting_manager,
-                                             helpers,
-                                             validators,
-                                             wrappers)
+                                           helpers,
+                                           validators,
+                                           wrappers)
 
 TEST_APP_SETTING_NAME = "TEST_APP_SETTING_NAME"
 TEST_FEATURE_FLAG = "APP_SETTING_FEATURE_FLAG"

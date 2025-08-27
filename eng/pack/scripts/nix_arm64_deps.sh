@@ -41,6 +41,8 @@ docker rm my-arm64-container
 copy_list=(
   "azure"
   "azure_functions_worker"
+  "azure_functions_runtime"
+  "azure_functions_runtime_v1"
   "azurefunctions"
   "dateutil"
   "google"

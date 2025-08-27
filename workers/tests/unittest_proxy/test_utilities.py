@@ -11,16 +11,14 @@ from proxy_worker.utils import common
 
 class TestCheckPythonEOL(unittest.TestCase):
     def setUp(self):
-        self.version = "3.9"
+        self.version = "3.13"
         self.eol_date = datetime.strptime(PYTHON_EOL_DATES[self.version], "%Y-%m")
-        self.warning_date = self.eol_date.replace(
-            day=1) - (self.eol_date
-                      - datetime.strptime("2025-04", "%Y-%m"))
+        self.warning_date = self.eol_date.replace(year=2029, month=4, day=1)
 
     @patch("proxy_worker.utils.common.sys.version_info")
     def test_between_warning_and_eol(self, mock_version):
-        mock_version.major, mock_version.minor = (3, 9)
-        test_date = datetime(2025, 5, 1)  # Between warning and EOL
+        mock_version.major, mock_version.minor = (3, 13)
+        test_date = datetime(2029, 6, 1)  # Between warning and EOL
         with patch("proxy_worker.utils.common.datetime") as mock_datetime:
             mock_datetime.utcnow.return_value = test_date
             mock_datetime.strptime = datetime.strptime
@@ -32,8 +30,8 @@ class TestCheckPythonEOL(unittest.TestCase):
 
     @patch("proxy_worker.utils.common.sys.version_info")
     def test_after_eol(self, mock_version):
-        mock_version.major, mock_version.minor = (3, 9)
-        test_date = datetime(2026, 1, 1)  # After EOL
+        mock_version.major, mock_version.minor = (3, 13)
+        test_date = datetime(2030, 1, 1)  # After EOL
         with patch("proxy_worker.utils.common.datetime") as mock_datetime:
             mock_datetime.utcnow.return_value = test_date
             mock_datetime.strptime = datetime.strptime

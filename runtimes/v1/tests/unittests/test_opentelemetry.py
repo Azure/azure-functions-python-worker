@@ -6,7 +6,7 @@ import tests.protos as protos
 
 from azure_functions_runtime_v1.handle_event import otel_manager, worker_init_request
 from azure_functions_runtime_v1.otel import (initialize_azure_monitor,
-                                            update_opentelemetry_status)
+                                             update_opentelemetry_status)
 from azure_functions_runtime_v1.logging import logger
 from tests.utils.constants import UNIT_TESTS_FOLDER
 from tests.utils.mock_classes import FunctionRequest, Request, WorkerRequest

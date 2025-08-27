@@ -14,7 +14,7 @@ from azure_functions_worker.constants import (
     X_MS_INVOCATION_ID,
 )
 from azure_functions_worker.logging import logger
-from azure_functions_worker.utils.common import is_envvar_false
+from azure_functions_worker.utils.common import is_envvar_true
 
 
 # Http V2 Exceptions
@@ -26,6 +26,11 @@ class HttpServerInitError(Exception):
 class MissingHeaderError(ValueError):
     """Exception raised when a required header is missing in the
     HTTP request."""
+
+
+class AppSettingDisabledError(Exception):
+    """Exception raised when the extension class is included
+    but PYTHON_ENABLE_INIT_INDEXING is not set or is set to false."""
 
 
 class BaseContextReference(abc.ABC):
@@ -279,14 +284,22 @@ class HttpV2Registry:
 
     @classmethod
     def _check_http_v2_enabled(cls):
-        if sys.version_info.minor < BASE_EXT_SUPPORTED_PY_MINOR_VERSION or \
-                is_envvar_false(PYTHON_ENABLE_INIT_INDEXING):
+        init_indexing_enabled = is_envvar_true(PYTHON_ENABLE_INIT_INDEXING)
+        if sys.version_info.minor < BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
             return False
 
         import azurefunctions.extensions.base as ext_base
         cls._ext_base = ext_base
 
-        return cls._ext_base.HttpV2FeatureChecker.http_v2_enabled()
+        http_v2_enabled = cls._ext_base.HttpV2FeatureChecker.http_v2_enabled()
+        if http_v2_enabled and not init_indexing_enabled:
+            raise AppSettingDisabledError("HTTP Streaming is enabled but "
+                                          "PYTHON_ENABLE_INIT_INDEXING "
+                                          "is not set or is set to false. "
+                                          "See aka.ms/functions-python-streaming "
+                                          "for more information")
+
+        return http_v2_enabled
 
 
 http_coordinator = HttpCoordinator()

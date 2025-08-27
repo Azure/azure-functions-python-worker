@@ -19,19 +19,35 @@ steps:
           Write-Host "Operating based on $stagingDirectory/azure-functions-python-worker"
           git checkout -b "$newBranch"
 
-          # Modify Runtime Version in pyproject.toml
-          Write-Host "Replacing Runtime version in worker's pyproject.toml"
-          ((Get-Content workers/pyproject.toml) -replace '"${{ parameters.PROJECT_NAME }}==[^";]+', "`"${{ parameters.PROJECT_NAME }}==$newLibraryVersion") -join "`n" | Set-Content -NoNewline workers/pyproject.toml
+          # Runtime Release Only
+          if (${{ parameters.PROJECT_DIRECTORY}} -ne "workers")
+          {
+              # Modify Runtime Version in workers/pyproject.toml
+              Write-Host "Replacing Runtime version in worker's pyproject.toml"
+              ((Get-Content workers/pyproject.toml) -replace '"${{ parameters.PROJECT_NAME }}==[^";]+', "`"${{ parameters.PROJECT_NAME }}==$newLibraryVersion") -join "`n" | Set-Content -NoNewline workers/pyproject.toml
+
+              # Change ${{ parameters.PROJECT_DIRECTORY}}/version.py version
+              Write-Host "Change version number in version.py to $newWorkerVersion"
+              ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $versionFile
+
+              git add workers/pyproject.toml
+              git add $versionFile
+          }
       
-          # Change ${{ parameters.PROJECT_DIRECTORY}}/version.py version
-          cd ${{ parameters.PROJECT_DIRECTORY}}
-          Write-Host "Change version number in version.py to $newWorkerVersion"
-          ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $versionFile
+          # Worker Release Only
+          if (${{ parameters.PROJECT_DIRECTORY}} -eq "workers")
+          {
+              # Change azure_functions_worker version
+              Write-Host "Change version number in version.py to $newWorkerVersion"
+              ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline ${{ parameters.PROJECT_DIRECTORY}}/azure_functions_worker/version.py
 
-          git add $versionFile
+              # Change proxy_worker version
+              Write-Host "Change version number in version.py to $newWorkerVersion"
+              ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline ${{ parameters.PROJECT_DIRECTORY}}/proxy_worker/version.py
 
-          cd ..
-          git add workers/pyproject.toml
+              git add ${{ parameters.PROJECT_DIRECTORY}}/azure_functions_worker/version.py
+              git add ${{ parameters.PROJECT_DIRECTORY}}/proxy_worker/version.py
+          }
 
           git commit -m "build: update ${{ parameters.PROJECT_DIRECTORY}} version to $newWorkerVersion"
       

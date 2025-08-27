@@ -105,10 +105,11 @@ def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
 @patch("builtins.__import__", side_effect=fake_import)
 @patch("proxy_worker.dispatcher.protos.StreamingMessage",
        return_value="mocked_streaming_response")
+@patch("proxy_worker.dispatcher.check_python_eol")
 @pytest.mark.asyncio
 async def test_worker_init_v2_import(
         mock_streaming, mock_import, mock_exists, mock_logger, mock_prioritize,
-        mock_should_load
+        mock_should_load, mock_eol_log
 ):
     dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071, "worker123",
                             "req789", 5.0)
@@ -130,10 +131,11 @@ async def test_worker_init_v2_import(
 @patch("builtins.__import__", side_effect=fake_import)
 @patch("proxy_worker.dispatcher.protos.StreamingMessage",
        return_value="mocked_streaming_response")
+@patch("proxy_worker.dispatcher.check_python_eol")
 @pytest.mark.asyncio
 async def test_worker_init_fallback_to_v1(
         mock_streaming, mock_import, mock_exists, mock_logger, mock_prioritize,
-        mock_should_load
+        mock_should_load, mock_eol_log
 ):
     dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071, "worker123",
                             "req789", 5.0)
@@ -154,9 +156,11 @@ async def test_worker_init_fallback_to_v1(
 @patch("builtins.__import__", side_effect=fake_import)
 @patch("proxy_worker.dispatcher.protos.StreamingMessage",
        return_value="mocked_reload_response")
+@patch("proxy_worker.dispatcher.check_python_eol")
 @pytest.mark.asyncio
 async def test_function_environment_reload_v2_import(
-        mock_streaming, mock_import, mock_exists, mock_logger, mock_prioritize
+        mock_streaming, mock_import, mock_exists, mock_logger, mock_prioritize,
+        mock_eol_log
 ):
     dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071,
                             "worker123", "req789", 5.0)
@@ -177,9 +181,11 @@ async def test_function_environment_reload_v2_import(
 @patch("builtins.__import__", side_effect=fake_import)
 @patch("proxy_worker.dispatcher.protos.StreamingMessage",
        return_value="mocked_reload_response")
+@patch("proxy_worker.dispatcher.check_python_eol")
 @pytest.mark.asyncio
 async def test_function_environment_reload_fallback_to_v1(
-        mock_streaming, mock_import, mock_exists, mock_logger, mock_prioritize
+        mock_streaming, mock_import, mock_exists, mock_logger, mock_prioritize,
+        mock_eol_log
 ):
     dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071, "worker123",
                             "req789", 5.0)
@@ -301,6 +307,7 @@ def _make_runtime_module(with_threadpool=True):
 @patch("builtins.__import__")
 @patch("proxy_worker.dispatcher.protos.StreamingMessage",
        return_value="mocked_init_response")
+@patch("proxy_worker.dispatcher.check_python_eol")
 @pytest.mark.asyncio
 async def test_worker_init_starts_threadpool(mock_streaming, mock_import, *_mocks):
     runtime_module = _make_runtime_module(with_threadpool=True)
@@ -327,6 +334,7 @@ async def test_worker_init_starts_threadpool(mock_streaming, mock_import, *_mock
 @patch("builtins.__import__")
 @patch("proxy_worker.dispatcher.protos.StreamingMessage",
        return_value="mocked_reload_response")
+@patch("proxy_worker.dispatcher.check_python_eol")
 @pytest.mark.asyncio
 async def test_env_reload_starts_threadpool(mock_streaming, mock_import, *_mocks):
     runtime_module = _make_runtime_module(with_threadpool=True)
@@ -359,6 +367,7 @@ async def test_env_reload_starts_threadpool(mock_streaming, mock_import, *_mocks
 @patch("builtins.__import__")
 @patch("proxy_worker.dispatcher.protos.StreamingMessage",
        return_value="mocked_init_response")
+@patch("proxy_worker.dispatcher.check_python_eol")
 @pytest.mark.asyncio
 async def test_worker_init_missing_threadpool_apis(mock_streaming, mock_import,
                                                    mock_exists, mock_logger, *_):

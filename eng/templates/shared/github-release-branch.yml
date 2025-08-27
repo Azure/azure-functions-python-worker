@@ -18,12 +18,21 @@ steps:
           # Heading to Artifact Repository
           Write-Host "Operating based on $stagingDirectory/azure-functions-python-worker"
           git checkout -b "$newBranch"
-          cd ${{ parameters.PROJECT_DIRECTORY}}
+
+          # Modify Runtime Version in pyproject.toml
+          Write-Host "Replacing Runtime version in worker's pyproject.toml"
+          ((Get-Content workers/pyproject.toml) -replace '"${{ parameters.PROJECT_NAME }}==[^";]+', "`"${{ parameters.PROJECT_NAME }}==$newLibraryVersion") -join "`n" | Set-Content -NoNewline workers/pyproject.toml
       
           # Change ${{ parameters.PROJECT_DIRECTORY}}/version.py version
+          cd ${{ parameters.PROJECT_DIRECTORY}}
           Write-Host "Change version number in version.py to $newWorkerVersion"
           ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $versionFile
+
           git add $versionFile
+
+          cd ..
+          git add workers/pyproject.toml
+
           git commit -m "build: update ${{ parameters.PROJECT_DIRECTORY}} version to $newWorkerVersion"
       
           # Create release branch ${{ parameters.BRANCH_NAME}}/X.Y.Z

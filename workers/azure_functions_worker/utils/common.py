@@ -150,19 +150,17 @@ def check_python_eol():
     # Get running version (major.minor)
     version = f"{sys.version_info.major}.{sys.version_info.minor}"
 
-    if version not in PYTHON_EOL_DATES:
-        logger.info(f"Python {version} not found in EOL tracking dictionary.")
-        return
-
-    # Current date as YYYY-MM
-    today = datetime.today().replace(day=1)
+    # Current date as YYYY-MM in UTC
+    today = datetime.utcnow().replace(day=1)
 
     warning_date = parse_date(PYTHON_EOL_WARNING_DATES[version])
     eol_date = parse_date(PYTHON_EOL_DATES[version])
 
     if today >= eol_date:
         logger.error(f"Python {version} reached EOL on "
-                     f"{eol_date.strftime('%Y-%m')}. Please upgrade.")
+                     f"{eol_date.strftime('%Y-%m')}. Please upgrade to a "
+                     f"supported version: aka.ms/supported-python-versions")
     elif today >= warning_date:
         logger.warning(f"Python {version} will reach EOL on "
-                       f"{eol_date.strftime('%Y-%m')}. Consider upgrading.")
+                       f"{eol_date.strftime('%Y-%m')}. Consider upgrading to "
+                       f"a supported version: aka.ms/supported-python-versions")

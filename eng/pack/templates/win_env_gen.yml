@@ -15,8 +15,13 @@ steps:
     Write-Host "Python version: $PY_VER"
     # Extract minor version as integers
     $versionParts = $PY_VER.Split('.')
+    $PY_MAJOR = [int]$versionParts[0]
+    Write-Host "Major version: $PY_MAJOR"
+    Write-Host "##vso[task.setvariable variable=majorVersion;]$PY_MAJOR"
+
     $PY_MINOR = [int]$versionParts[1]
     Write-Host "Minor version: $PY_MINOR"
+    Write-Host "##vso[task.setvariable variable=minorVersion;]$PY_MINOR"
 
     # Set build-related variables based on Python minor version
     if( $PY_MINOR -ge 13 )
@@ -94,7 +99,7 @@ steps:
         "dateutil",
         "google",
         "grpc",
-        "grpc/_cython/cygrpc.cp${{ parameters.pythonVersion }}-${{ parameters.grpcBuild }}",
+        "grpc/_cython/cygrpc.cp$(PY_MAJOR)$(PY_MINOR)-${{ parameters.grpcBuild }}",
         "markupsafe",
         "six.py",
         "werkzeug",
@@ -154,7 +159,7 @@ steps:
         "azurefunctions",
         "google",
         "grpc",
-        "grpc/_cython/cygrpc.cp${{ parameters.pythonVersion }}-${{ parameters.grpcBuild }}",
+        "grpc/_cython/cygrpc.cp$(PY_MAJOR)$(PY_MINOR)-${{ parameters.grpcBuild }}",
         "markupsafe",
         "proxy_worker",
         "proxy_worker/protos/FunctionRpc_pb2.py",

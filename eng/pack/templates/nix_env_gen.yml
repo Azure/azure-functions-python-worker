@@ -124,7 +124,7 @@ steps:
     $cythonDir = Join-Path $root "grpc/_cython"
 
     # Check 1: ABI version
-    $abiPattern = "cygrpc.cpython-$(majorVersion)$(minorVersion)-*"
+    $abiPattern = "cygrpc.*-$(majorVersion)$(minorVersion)-*"
     $abiMatch = Get-ChildItem -Path $cythonDir -Filter $abiPattern -ErrorAction SilentlyContinue
     if (-not $abiMatch) {
         $missing += "grpc/_cython/$abiPattern"
@@ -213,7 +213,7 @@ steps:
     $cythonDir = Join-Path $root "grpc/_cython"
 
     # Check 1: ABI version
-    $abiPattern = "cygrpc.cpython-$(majorVersion)$(minorVersion)-*"
+    $abiPattern = "cygrpc.*-$(majorVersion)$(minorVersion)-*"
     $abiMatch = Get-ChildItem -Path $cythonDir -Filter $abiPattern -ErrorAction SilentlyContinue
     if (-not $abiMatch) {
         $missing += "grpc/_cython/$abiPattern"

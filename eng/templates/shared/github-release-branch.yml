@@ -2,6 +2,7 @@ parameters:
   PROJECT_DIRECTORY: ''
   VERSION_FILE: ''
   BRANCH_NAME: ''
+  PROJECT_NAME: ''
 
 steps:
   - powershell: |
@@ -39,12 +40,12 @@ steps:
           if ("${{ parameters.PROJECT_DIRECTORY}}" -eq "workers")
           {
               # Change azure_functions_worker version
-              Write-Host "Change version number in version.py to $newWorkerVersion"
+              Write-Host "Change azure_functions_worker version to $newWorkerVersion"
               $afwVersionFile = "${{ parameters.PROJECT_DIRECTORY}}/azure_functions_worker/version.py"
               ((Get-Content $afwVersionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $afwVersionFile
 
               # Change proxy_worker version
-              Write-Host "Change version number in version.py to $newWorkerVersion"
+              Write-Host "Change proxy_worker version to $newWorkerVersion"
               $proxyVersionFile = "${{ parameters.PROJECT_DIRECTORY}}/proxy_worker/version.py"
               ((Get-Content $proxyVersionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $proxyVersionFile
 

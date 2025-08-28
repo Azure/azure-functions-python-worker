@@ -32,6 +32,7 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       architecture: 'x64'
       artifactName: '$(pythonVersion)_WINDOWS_X64'
+      grpcBuild: 'win_amd64.pyd'
 - job: Build_WINDOWS_X86
   pool:
     name: 1es-pool-azfunc
@@ -59,6 +60,7 @@ jobs:
       - output: pipelineArtifact
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_WINDOWS_X86"
+        grpcBuild: 'win32.pyd'
   steps:
   - template: ../../../pack/templates/win_env_gen.yml
     parameters:
@@ -92,6 +94,7 @@ jobs:
       - output: pipelineArtifact
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_LINUX_X64"
+        grpcBuild: 'x86_64-linux-gnu.so'
   steps:
   - template: ../../../pack/templates/nix_env_gen.yml
     parameters:
@@ -129,6 +132,7 @@ jobs:
     parameters:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(pythonVersion)_OSX_X64'
+      grpcBuild: 'darwin.so'
 - job: Build_OSX_ARM64
   pool:
     name: Azure Pipelines
@@ -152,6 +156,7 @@ jobs:
       - output: pipelineArtifact
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_OSX_ARM64"
+        grpcBuild: 'darwin.so'
   steps:
   - template: ../../../pack/templates/macos_64_env_gen.yml
     parameters:
@@ -180,6 +185,7 @@ jobs:
       - output: pipelineArtifact
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_LINUX_ARM64"
+        grpcBuild: 'aarch64-linux.gnu.so'
   steps:
   - template: ../../../pack/templates/nix_arm64_env_gen.yml
     parameters:

@@ -117,13 +117,25 @@ steps:
     } else {
         Write-Host "Skipping azurefunctions/ (minorVersion=7)"
     }
-    # Validate exact gRPC binary with python version + build
-    $expectedGrpcFile = "grpc/_cython/cygrpc.cpython-$(majorVersion)$(minorVersion)-$(grpcBuild)"
-    Write-Host "Expecting gRPC binary: $expectedGrpcFile"
+    # === gRPC checks ===
+    $cythonDir = Join-Path $root "grpc/_cython"
 
-    $grpcPath = Join-Path $root $expectedGrpcFile
-    if (-not (Test-Path $grpcPath)) {
-        $missing += $expectedGrpcFile
+    # Check 1: ABI version
+    $abiPattern = "cygrpc.cpython-$(majorVersion)$(minorVersion)-*"
+    $abiMatch = Get-ChildItem -Path $cythonDir -Filter $abiPattern -ErrorAction SilentlyContinue
+    if (-not $abiMatch) {
+        $missing += "grpc/_cython/$abiPattern"
+    } else {
+        Write-Host "✅ Found ABI gRPC binary: $($abiMatch.Name)"
+    }
+
+    # Check 2: Platform build
+    $buildPattern = "*-${{ parameters.grpcBuild}}"
+    $buildMatch = Get-ChildItem -Path $cythonDir -Filter $buildPattern -ErrorAction SilentlyContinue
+    if (-not $buildMatch) {
+        $missing += "grpc/_cython/$buildPattern"
+    } else {
+        Write-Host "✅ Found platform gRPC binary: $($buildMatch.Name)"
     }
 
     $missing = @()
@@ -216,7 +228,7 @@ steps:
     }
 
     # Check 2: Platform build
-    $buildPattern = "*-$(grpcBuild)"
+    $buildPattern = "*-${{ parameters.grpcBuild}}"
     $buildMatch = Get-ChildItem -Path $cythonDir -Filter $buildPattern -ErrorAction SilentlyContinue
     if (-not $buildMatch) {
         $missing += "grpc/_cython/$buildPattern"

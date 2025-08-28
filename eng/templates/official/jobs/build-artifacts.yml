@@ -160,7 +160,7 @@ jobs:
   - template: ../../../pack/templates/macos_64_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
-      artifactName: '$(pythonVersion)_OSX_ARM64
+      artifactName: '$(pythonVersion)_OSX_ARM64'
       grpcBuild: 'darwin.so'
 - job: Build_LINUX_ARM64
   pool:

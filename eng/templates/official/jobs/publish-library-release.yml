@@ -1,9 +1,8 @@
 parameters:
   PROJECT_DIRECTORY: ''
+  VERSION_FILE: ''
   PROJECT_NAME: ''
   BRANCH_NAME: ''
-  TEST_BRANCH_NAME: ''
-
 
 jobs:
 
@@ -17,6 +16,7 @@ jobs:
   - template: /eng/templates/shared/github-release-branch.yml@self
     parameters:
       PROJECT_DIRECTORY: ${{ parameters.PROJECT_DIRECTORY }}
+      VERSION_FILE: ${{ parameters.VERSION_FILE }}
       BRANCH_NAME: ${{ parameters.BRANCH_NAME }}
 
 - job: "CheckReleaseBranch"

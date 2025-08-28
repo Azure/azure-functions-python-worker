@@ -1,12 +1,13 @@
 parameters:
   PROJECT_DIRECTORY: ''
+  VERSION_FILE: ''
   BRANCH_NAME: ''
 
 steps:
   - powershell: |
       $githubToken = "$(GithubPat)"
       $newWorkerVersion = "$(NewWorkerVersion)"
-      $versionFile = "${{ parameters.PROJECT_DIRECTORY}}/version.py"
+      $versionFile = "${{ parameters.VERSION_FILE}}"
       $newBranch = "${{ parameters.BRANCH_NAME}}/$newWorkerVersion"
       
       if ($newWorkerVersion -match '^(\d+)\.(\d+)\.(\d+)([a-zA-Z0-9\-\.]*)?$') {
@@ -26,7 +27,7 @@ steps:
               Write-Host "Replacing Runtime version in worker's pyproject.toml"
               ((Get-Content workers/pyproject.toml) -replace '"${{ parameters.PROJECT_NAME }}==[^";]+', "`"${{ parameters.PROJECT_NAME }}==$newLibraryVersion") -join "`n" | Set-Content -NoNewline workers/pyproject.toml
 
-              # Change ${{ parameters.PROJECT_DIRECTORY}}/version.py version
+              # Change $versionFile version
               Write-Host "Change version number in version.py to $newWorkerVersion"
               ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $versionFile
 

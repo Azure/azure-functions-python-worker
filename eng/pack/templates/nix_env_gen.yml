@@ -81,6 +81,7 @@ steps:
   displayName: 'Copy azure_functions_worker files'
 - powershell: |
     $root = "$(Build.ArtifactStagingDirectory)"
+    $cythonDir = Join-Path $root "grpc/_cython"
 
     # Define expected files/folders relative to root
     $expected = @(
@@ -122,11 +123,13 @@ steps:
     }
     # === gRPC check ===
     $grpcPattern = "*$(majorVersion)$(minorVersion)*-${{ parameters.grpcBuild }}"
-    $grpcMatch = Get-ChildItem -Path $cythonDir -Filter $grpcPattern -ErrorAction SilentlyContinue
+    $grpcMatch = Get-ChildItem -Path $cythonDir -Name -ErrorAction SilentlyContinue |
+                Where-Object { $_ -like $grpcPattern }
+
     if (-not $grpcMatch) {
         $missing += "grpc/_cython/$grpcPattern"
     } else {
-        Write-Host "✅ Found gRPC binary: $($grpcMatch.Name)"
+        Write-Host "✅ Found gRPC binary: $grpcMatch"
     }
 
     if ($missing.Count -gt 0) {
@@ -163,6 +166,7 @@ steps:
   displayName: 'Copy proxy_worker files'
 - powershell: |
     $root = "$(Build.ArtifactStagingDirectory)"
+    $cythonDir = Join-Path $root "grpc/_cython"
 
     # Define expected files/folders relative to root
     $expected = @(
@@ -199,11 +203,13 @@ steps:
     }
     # === gRPC check ===
     $grpcPattern = "*$(majorVersion)$(minorVersion)*-${{ parameters.grpcBuild }}"
-    $grpcMatch = Get-ChildItem -Path $cythonDir -Filter $grpcPattern -ErrorAction SilentlyContinue
+    $grpcMatch = Get-ChildItem -Path $cythonDir -Name -ErrorAction SilentlyContinue |
+                Where-Object { $_ -like $grpcPattern }
+
     if (-not $grpcMatch) {
         $missing += "grpc/_cython/$grpcPattern"
     } else {
-        Write-Host "✅ Found gRPC binary: $($grpcMatch.Name)"
+        Write-Host "✅ Found gRPC binary: $grpcMatch"
     }
 
     if ($missing.Count -gt 0) {

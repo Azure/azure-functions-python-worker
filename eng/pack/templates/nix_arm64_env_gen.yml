@@ -130,7 +130,8 @@ steps:
     }
 
     # Check 2: Platform build
-    $buildPattern = "*-variables['grpcBuild ']"
+    $GRPC_BUILD = "$(grpcBuild)"
+    $buildPattern = "*-$GRPC_BUILD"
     $buildMatch = Get-ChildItem -Path $cythonDir -Filter $buildPattern -ErrorAction SilentlyContinue
     if (-not $buildMatch) {
         $missing += "grpc/_cython/$buildPattern"
@@ -228,7 +229,8 @@ steps:
     }
 
     # Check 2: Platform build
-    $buildPattern = "*-variables['grpcBuild ']"
+    $GRPC_BUILD = "$(grpcBuild)"
+    $buildPattern = "*-$GRPC_BUILD"
     $buildMatch = Get-ChildItem -Path $cythonDir -Filter $buildPattern -ErrorAction SilentlyContinue
     if (-not $buildMatch) {
         $missing += "grpc/_cython/$buildPattern"

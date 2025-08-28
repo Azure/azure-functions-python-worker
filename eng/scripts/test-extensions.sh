@@ -1,6 +1,5 @@
 #!/bin/bash
 
-cd workers
 python -m pip install --upgrade pip
 if [[ $2 != "3.7" ]]; then
     python -m pip install -e $1/PythonExtensionArtifact/$3

@@ -81,6 +81,7 @@ steps:
   displayName: 'Copy azure_functions_worker files'
 - powershell: |
     $root = "$(Build.ArtifactStagingDirectory)"
+    $cythonDir = Join-Path $root "grpc/_cython"
 
     # Define expected files/folders relative to root
     $expected = @(
@@ -120,25 +121,15 @@ steps:
             $missing += $item
         }
     }
-    # === gRPC checks ===
-    $cythonDir = Join-Path $root "grpc/_cython"
+    # === gRPC check ===
+    $grpcPattern = "*$(majorVersion)$(minorVersion)*-${{ parameters.grpcBuild }}"
+    $grpcMatch = Get-ChildItem -Path $cythonDir -Name -ErrorAction SilentlyContinue |
+                Where-Object { $_ -like $grpcPattern }
 
-    # Check 1: ABI version
-    $abiPattern = "*$(majorVersion)$(minorVersion)*"
-    $abiMatch = Get-ChildItem -Path $cythonDir -Filter $abiPattern -ErrorAction SilentlyContinue
-    if (-not $abiMatch) {
-        $missing += "grpc/_cython/$abiPattern"
+    if (-not $grpcMatch) {
+        $missing += "grpc/_cython/$grpcPattern"
     } else {
-        Write-Host "✅ Found ABI gRPC binary: $($abiMatch.Name)"
-    }
-
-    # Check 2: Platform build
-    $buildPattern = "*-variables['grpcBuild ']"
-    $buildMatch = Get-ChildItem -Path $cythonDir -Filter $buildPattern -ErrorAction SilentlyContinue
-    if (-not $buildMatch) {
-        $missing += "grpc/_cython/$buildPattern"
-    } else {
-        Write-Host "✅ Found platform gRPC binary: $($buildMatch.Name)"
+        Write-Host "✅ Found gRPC binary: $grpcMatch"
     }
 
     if ($missing.Count -gt 0) {
@@ -175,6 +166,7 @@ steps:
   displayName: 'Copy proxy_worker files'
 - powershell: |
     $root = "$(Build.ArtifactStagingDirectory)"
+    $cythonDir = Join-Path $root "grpc/_cython"
 
     # Define expected files/folders relative to root
     $expected = @(
@@ -210,25 +202,15 @@ steps:
         }
     }
 
-    # === gRPC checks ===
-    $cythonDir = Join-Path $root "grpc/_cython"
+    # === gRPC check ===
+    $grpcPattern = "*$(majorVersion)$(minorVersion)*-${{ parameters.grpcBuild }}"
+    $grpcMatch = Get-ChildItem -Path $cythonDir -Name -ErrorAction SilentlyContinue |
+                Where-Object { $_ -like $grpcPattern }
 
-    # Check 1: ABI version
-    $abiPattern = "*$(majorVersion)$(minorVersion)*"
-    $abiMatch = Get-ChildItem -Path $cythonDir -Filter $abiPattern -ErrorAction SilentlyContinue
-    if (-not $abiMatch) {
-        $missing += "grpc/_cython/$abiPattern"
+    if (-not $grpcMatch) {
+        $missing += "grpc/_cython/$grpcPattern"
     } else {
-        Write-Host "✅ Found ABI gRPC binary: $($abiMatch.Name)"
-    }
-
-    # Check 2: Platform build
-    $buildPattern = "*-variables['grpcBuild ']"
-    $buildMatch = Get-ChildItem -Path $cythonDir -Filter $buildPattern -ErrorAction SilentlyContinue
-    if (-not $buildMatch) {
-        $missing += "grpc/_cython/$buildPattern"
-    } else {
-        Write-Host "✅ Found platform gRPC binary: $($buildMatch.Name)"
+        Write-Host "✅ Found gRPC binary: $grpcMatch"
     }
 
     if ($missing.Count -gt 0) {

@@ -40,14 +40,16 @@ steps:
           {
               # Change azure_functions_worker version
               Write-Host "Change version number in version.py to $newWorkerVersion"
-              ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline ${{ parameters.PROJECT_DIRECTORY}}/azure_functions_worker/version.py
+              $afwVersionFile = ${{ parameters.PROJECT_DIRECTORY}}/azure_functions_worker/version.py
+              ((Get-Content $afwVersionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $afwVersionFile
 
               # Change proxy_worker version
               Write-Host "Change version number in version.py to $newWorkerVersion"
-              ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline ${{ parameters.PROJECT_DIRECTORY}}/proxy_worker/version.py
+              $proxyVersionFile = ${{ parameters.PROJECT_DIRECTORY}}/proxy_worker/version.py
+              ((Get-Content $proxyVersionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $proxyVersionFile
 
-              git add ${{ parameters.PROJECT_DIRECTORY}}/azure_functions_worker/version.py
-              git add ${{ parameters.PROJECT_DIRECTORY}}/proxy_worker/version.py
+              git add $afwVersionFile
+              git add $proxyVersionFile
           }
 
           git commit -m "build: update ${{ parameters.PROJECT_DIRECTORY}} version to $newWorkerVersion"

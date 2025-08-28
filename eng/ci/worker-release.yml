@@ -50,9 +50,9 @@ extends:
           - template: /eng/templates/official/jobs/publish-library-release.yml@self
             parameters:
               PROJECT_DIRECTORY: 'runtimes/v2'
+              VERSION_FILE: 'runtimes/v2/azure_functions_runtime/version.py'
               PROJECT_NAME: 'azure-functions-runtime'
               BRANCH_NAME: 'release-v2'
-              TEST_BRANCH_NAME: 'test-release-v2'
         condition: eq(${{ parameters.V2LibraryRelease }}, True)
       - stage: ReleasePythonV1Library
         dependsOn: []
@@ -61,7 +61,7 @@ extends:
           - template: /eng/templates/official/jobs/publish-library-release.yml@self
             parameters:
               PROJECT_DIRECTORY: 'runtimes/v1'
+              VERSION_FILE: 'runtimes/v1/azure_functions_runtime_v1/version.py'
               PROJECT_NAME: 'azure-functions-runtime-v1'
               BRANCH_NAME: 'release-v1'
-              TEST_BRANCH_NAME: 'test-release-v1'
         condition: eq(${{ parameters.V1LibraryRelease }}, True)

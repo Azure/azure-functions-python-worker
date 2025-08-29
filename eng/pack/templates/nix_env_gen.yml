@@ -189,6 +189,7 @@ steps:
         "proxy_worker/protos/shared/NullableTypes_pb2.py",
         "proxy_worker/protos/shared/NullableTypes_pb2_grpc.py",
         "six.py",
+        "uvloop",
         "werkzeug",
         "worker.py"
     )

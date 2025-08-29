@@ -118,16 +118,6 @@ steps:
     } else {
         Write-Host "Skipping azurefunctions/ (minorVersion=7)"
     }
-    # === gRPC check ===
-    $grpcPattern = "*$(majorVersion)$(minorVersion)*-${{ parameters.grpcBuild }}"
-    $grpcMatch = Get-ChildItem -Path $cythonDir -Name -ErrorAction SilentlyContinue |
-                Where-Object { $_ -like $grpcPattern }
-
-    if (-not $grpcMatch) {
-        $missing += "grpc/_cython/$grpcPattern"
-    } else {
-        Write-Host "✅ Found gRPC binary: $grpcMatch"
-    }
 
     $missing = @()
 
@@ -136,6 +126,16 @@ steps:
         if (-not (Test-Path $path)) {
             $missing += $item
         }
+    }
+    # === gRPC check ===
+    $grpcPattern = "*$(majorVersion)$(minorVersion)-${{ parameters.grpcBuild }}"
+    $grpcMatch = Get-ChildItem -Path $cythonDir -Name -ErrorAction SilentlyContinue |
+                Where-Object { $_ -like $grpcPattern }
+
+    if (-not $grpcMatch) {
+        $missing += "grpc/_cython/$grpcPattern"
+    } else {
+        Write-Host "✅ Found gRPC binary: $grpcMatch"
     }
 
     if ($missing.Count -gt 0) {
@@ -208,7 +208,7 @@ steps:
         }
     }
     # === gRPC check ===
-    $grpcPattern = "*$(majorVersion)$(minorVersion)*-${{ parameters.grpcBuild }}"
+    $grpcPattern = "*$(majorVersion)$(minorVersion)-${{ parameters.grpcBuild }}"
     $grpcMatch = Get-ChildItem -Path $cythonDir -Name -ErrorAction SilentlyContinue |
                 Where-Object { $_ -like $grpcPattern }
 

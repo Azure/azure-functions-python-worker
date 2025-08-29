@@ -100,7 +100,7 @@ jobs:
         displayName: 'Display CONTAINER_SAS_TOKEN variable'
 
       - bash: |
-             python -m pytest -n auto --dist loadfile -vv --instafail tests/consumption_tests
+             python -m pytest --dist loadfile -vv --instafail tests/consumption_tests
         env:
           AzureWebJobsStorage: $(AZURE_STORAGE_CONNECTION_STRING)
           _DUMMY_CONT_KEY: $(_DUMMY_CONT_KEY)

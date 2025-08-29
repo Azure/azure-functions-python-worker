@@ -52,67 +52,67 @@ extends:
       - stage: BuildPythonWorker
         jobs:
           - template: /eng/templates/official/jobs/build-artifacts.yml@self
-      # - stage: RunWorkerE2ETests
-      #   dependsOn: BuildPythonWorker
-      #   jobs:
-      #     - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self
-      # - stage: RunWorkerEmulatorTests
-      #   dependsOn: BuildPythonWorker
-      #   jobs:
-      #     - template: /eng/templates/jobs/ci-emulator-tests.yml@self
-      #       parameters:
-      #         PoolName: 1es-pool-azfunc
-      # - stage: RunWorkerUnitTests
-      #   dependsOn: BuildPythonWorker
-      #   jobs:
-      #     - template: /eng/templates/jobs/ci-unit-tests.yml@self
-      #       parameters:
-      #         PoolName: 1es-pool-azfunc
-      # - stage: RunWorkerDockerConsumptionTests
-      #   dependsOn: BuildPythonWorker
-      #   jobs:
-      #     - template: /eng/templates/official/jobs/ci-docker-consumption-tests.yml@self
-      # - stage: RunWorkerDockerDedicatedTests
-      #   dependsOn: BuildPythonWorker
-      #   jobs:
-      #     - template: /eng/templates/official/jobs/ci-docker-dedicated-tests.yml@self
-      # - stage: RunWorkerLinuxConsumptionTests
-      #   dependsOn: BuildPythonWorker
-      #   jobs:
-      #     - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
+      - stage: RunWorkerE2ETests
+        dependsOn: BuildPythonWorker
+        jobs:
+          - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self
+      - stage: RunWorkerEmulatorTests
+        dependsOn: BuildPythonWorker
+        jobs:
+          - template: /eng/templates/jobs/ci-emulator-tests.yml@self
+            parameters:
+              PoolName: 1es-pool-azfunc
+      - stage: RunWorkerUnitTests
+        dependsOn: BuildPythonWorker
+        jobs:
+          - template: /eng/templates/jobs/ci-unit-tests.yml@self
+            parameters:
+              PoolName: 1es-pool-azfunc
+      - stage: RunWorkerDockerConsumptionTests
+        dependsOn: BuildPythonWorker
+        jobs:
+          - template: /eng/templates/official/jobs/ci-docker-consumption-tests.yml@self
+      - stage: RunWorkerDockerDedicatedTests
+        dependsOn: BuildPythonWorker
+        jobs:
+          - template: /eng/templates/official/jobs/ci-docker-dedicated-tests.yml@self
+      - stage: RunWorkerLinuxConsumptionTests
+        dependsOn: BuildPythonWorker
+        jobs:
+          - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
 
-      # # Python V2 Library Build and Test Stages
-      # - stage: BuildV2Library
-      #   dependsOn: []
-      #   jobs:
-      #     - template: /eng/templates/official/jobs/build-library.yml@self
-      #       parameters:
-      #         PROJECT_NAME: 'Python V2 Library'
-      #         PROJECT_DIRECTORY: 'runtimes/v2'
-      #         ARTIFACT_NAME: 'azure-functions-runtime'
-      # - stage: RunV2LibraryUnitTests
-      #   dependsOn: BuildV2Library
-      #   jobs:
-      #     - template: /eng/templates/jobs/ci-library-unit-tests.yml@self
-      #       parameters:
-      #         PROJECT_NAME: 'Python V2 Library'
-      #         PROJECT_DIRECTORY: 'runtimes/v2'
-      #         PoolName: 1es-pool-azfunc
+      # Python V2 Library Build and Test Stages
+      - stage: BuildV2Library
+        dependsOn: []
+        jobs:
+          - template: /eng/templates/official/jobs/build-library.yml@self
+            parameters:
+              PROJECT_NAME: 'Python V2 Library'
+              PROJECT_DIRECTORY: 'runtimes/v2'
+              ARTIFACT_NAME: 'azure-functions-runtime'
+      - stage: RunV2LibraryUnitTests
+        dependsOn: BuildV2Library
+        jobs:
+          - template: /eng/templates/jobs/ci-library-unit-tests.yml@self
+            parameters:
+              PROJECT_NAME: 'Python V2 Library'
+              PROJECT_DIRECTORY: 'runtimes/v2'
+              PoolName: 1es-pool-azfunc
 
-      # # Python V1 Library Build and Test Stages
-      # - stage: BuildV1Library
-      #   dependsOn: []
-      #   jobs:
-      #     - template: /eng/templates/official/jobs/build-library.yml@self
-      #       parameters:
-      #         PROJECT_NAME: 'Python V1 Library'
-      #         PROJECT_DIRECTORY: 'runtimes/v1'
-      #         ARTIFACT_NAME: 'azure-functions-runtime-v1'
-      # - stage: RunV1LibraryUnitTests
-      #   dependsOn: BuildV1Library
-      #   jobs:
-      #     - template: /eng/templates/jobs/ci-library-unit-tests.yml@self
-      #       parameters:
-      #         PROJECT_NAME: 'Python V1 Library'
-      #         PROJECT_DIRECTORY: 'runtimes/v1'
-      #         PoolName: 1es-pool-azfunc
+      # Python V1 Library Build and Test Stages
+      - stage: BuildV1Library
+        dependsOn: []
+        jobs:
+          - template: /eng/templates/official/jobs/build-library.yml@self
+            parameters:
+              PROJECT_NAME: 'Python V1 Library'
+              PROJECT_DIRECTORY: 'runtimes/v1'
+              ARTIFACT_NAME: 'azure-functions-runtime-v1'
+      - stage: RunV1LibraryUnitTests
+        dependsOn: BuildV1Library
+        jobs:
+          - template: /eng/templates/jobs/ci-library-unit-tests.yml@self
+            parameters:
+              PROJECT_NAME: 'Python V1 Library'
+              PROJECT_DIRECTORY: 'runtimes/v1'
+              PoolName: 1es-pool-azfunc

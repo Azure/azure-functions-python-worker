@@ -1,5 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import unittest
+
 import azure.functions as func
 import azurefunctions.extensions.base as clients
 import tests.protos as protos
@@ -20,6 +22,7 @@ EVENTHUB_SAMPLE_CONTENT = b"\x00Sr\xc1\x8e\x08\xa3\x1bx-opt-sequence-number-epoc
 
 class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
 
+    @unittest.skip("TODO: Move to emulator.")
     def test_mbd_deferred_bindings_enabled_decode(self):
         binding = BlobClientConverter
         pb = protos.ParameterBinding(name='test',

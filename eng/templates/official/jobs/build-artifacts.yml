@@ -190,7 +190,7 @@ jobs:
     parameters:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(pythonVersion)_LINUX_ARM64'
-      grpcBuild: 'aarch64-linux.gnu.so'
+      grpcBuild: 'aarch64-linux-gnu.so'
 
 - job: PackageWorkers
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']

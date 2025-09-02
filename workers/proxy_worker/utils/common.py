@@ -2,12 +2,18 @@
 # Licensed under the MIT License.
 
 import os
+import sys
+from datetime import datetime
 from typing import Callable, Optional
 
 from proxy_worker.utils.constants import (
     PYTHON_SCRIPT_FILE_NAME,
     PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+    PYTHON_EOL_DATES,
+    PYTHON_EOL_WARNING_DATES
 )
+
+from ..logging import logger
 
 
 def get_app_setting(
@@ -84,3 +90,28 @@ def is_envvar_false(env_key: str) -> bool:
 def get_script_file_name():
     return get_app_setting(PYTHON_SCRIPT_FILE_NAME,
                            PYTHON_SCRIPT_FILE_NAME_DEFAULT)
+
+
+def parse_date(date_str: str) -> datetime:
+    """Convert YYYY-MM string to datetime (first of month)."""
+    return datetime.strptime(date_str, "%Y-%m")
+
+
+def check_python_eol():
+    # Get running version (major.minor)
+    version = f"{sys.version_info.major}.{sys.version_info.minor}"
+
+    # Current date as YYYY-MM in UTC
+    today = datetime.utcnow().replace(day=1)
+
+    warning_date = parse_date(PYTHON_EOL_WARNING_DATES[version])
+    eol_date = parse_date(PYTHON_EOL_DATES[version])
+
+    if today >= eol_date:
+        logger.error(f"Python {version} reached EOL on "
+                     f"{eol_date.strftime('%Y-%m')}. Please upgrade to a "
+                     f"supported version: aka.ms/supported-python-versions")
+    elif today >= warning_date:
+        logger.warning(f"Python {version} will reach EOL on "
+                       f"{eol_date.strftime('%Y-%m')}. Consider upgrading to "
+                       f"a supported version: aka.ms/supported-python-versions")

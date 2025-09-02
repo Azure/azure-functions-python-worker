@@ -26,6 +26,7 @@ from proxy_worker.logging import (
 from proxy_worker.utils.common import (
     get_script_file_name,
     is_envvar_true,
+    check_python_eol
 )
 from proxy_worker.utils.constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,
@@ -421,6 +422,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     sys.version,
                     VERSION,
                     self.request_id)
+        check_python_eol()
 
         if DependencyManager.is_in_linux_consumption():
             import azure_functions_runtime  # NoQA
@@ -462,6 +464,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     'To enable debug level logging, please refer to '
                     'https://aka.ms/python-enable-debug-logging',
                     self.request_id)
+        check_python_eol()
 
         func_env_reload_request = \
             request.function_environment_reload_request

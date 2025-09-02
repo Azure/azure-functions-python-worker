@@ -96,3 +96,22 @@ PYTHON_APPLICATIONINSIGHTS_LOGGER_NAME_DEFAULT = ""
 
 # Appsetting to specify AppInsights connection string
 APPLICATIONINSIGHTS_CONNECTION_STRING = "APPLICATIONINSIGHTS_CONNECTION_STRING"
+
+# EOL Dates
+PYTHON_EOL_DATES = {
+    '3.7': '2023-10',
+    '3.8': '2024-10',
+    '3.9': '2025-10',
+    '3.10': '2026-10',
+    '3.11': '2027-10',
+    '3.12': '2028-10'
+}
+
+PYTHON_EOL_WARNING_DATES = {
+    '3.7': '2023-04',
+    '3.8': '2024-04',
+    '3.9': '2025-04',
+    '3.10': '2026-04',
+    '3.11': '2027-04',
+    '3.12': '2028-04'
+}

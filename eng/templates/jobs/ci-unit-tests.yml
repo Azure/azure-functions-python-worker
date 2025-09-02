@@ -51,11 +51,11 @@ jobs:
 
           if [ "$PY_MINOR" -ge 13 ]; then
               echo "Running proxy_worker tests (Python >= 3.13)..."
-              python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail \
+              python -m pytest -q --dist loadfile --reruns 4 --instafail \
                     --cov=./proxy_worker --cov-report xml --cov-branch tests/unittest_proxy
           else
               echo "Running unittests (Python < 3.13)..."
-              python -m pytest -q -n auto --dist loadfile --reruns 4 --instafail \
+              python -m pytest -q --dist loadfile --reruns 4 --instafail \
                     --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
           fi
         displayName: "Running $(PYTHON_VERSION) Unit Tests"

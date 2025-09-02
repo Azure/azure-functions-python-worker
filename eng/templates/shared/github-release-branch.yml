@@ -1,12 +1,14 @@
 parameters:
   PROJECT_DIRECTORY: ''
+  VERSION_FILE: ''
   BRANCH_NAME: ''
+  PROJECT_NAME: ''
 
 steps:
   - powershell: |
       $githubToken = "$(GithubPat)"
       $newWorkerVersion = "$(NewWorkerVersion)"
-      $versionFile = "${{ parameters.PROJECT_DIRECTORY}}/version.py"
+      $versionFile = "${{ parameters.VERSION_FILE}}"
       $newBranch = "${{ parameters.BRANCH_NAME}}/$newWorkerVersion"
       
       if ($newWorkerVersion -match '^(\d+)\.(\d+)\.(\d+)([a-zA-Z0-9\-\.]*)?$') {
@@ -18,12 +20,39 @@ steps:
           # Heading to Artifact Repository
           Write-Host "Operating based on $stagingDirectory/azure-functions-python-worker"
           git checkout -b "$newBranch"
-          cd ${{ parameters.PROJECT_DIRECTORY}}
+
+          # Runtime Release Only
+          if ("${{ parameters.PROJECT_DIRECTORY}}" -ne "workers")
+          {
+              # Modify Runtime Version in workers/pyproject.toml
+              Write-Host "Replacing Runtime version in worker's pyproject.toml"
+              ((Get-Content workers/pyproject.toml) -replace '"${{ parameters.PROJECT_NAME }}==[^";]+', "`"${{ parameters.PROJECT_NAME }}==$newLibraryVersion") -join "`n" | Set-Content -NoNewline workers/pyproject.toml
+
+              # Change $versionFile version
+              Write-Host "Change version number in version.py to $newWorkerVersion"
+              ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $versionFile
+
+              git add workers/pyproject.toml
+              git add $versionFile
+          }
       
-          # Change ${{ parameters.PROJECT_DIRECTORY}}/version.py version
-          Write-Host "Change version number in version.py to $newWorkerVersion"
-          ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $versionFile
-          git add $versionFile
+          # Worker Release Only
+          if ("${{ parameters.PROJECT_DIRECTORY}}" -eq "workers")
+          {
+              # Change azure_functions_worker version
+              Write-Host "Change azure_functions_worker version to $newWorkerVersion"
+              $afwVersionFile = "${{ parameters.PROJECT_DIRECTORY}}/azure_functions_worker/version.py"
+              ((Get-Content $afwVersionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $afwVersionFile
+
+              # Change proxy_worker version
+              Write-Host "Change proxy_worker version to $newWorkerVersion"
+              $proxyVersionFile = "${{ parameters.PROJECT_DIRECTORY}}/proxy_worker/version.py"
+              ((Get-Content $proxyVersionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $proxyVersionFile
+
+              git add $afwVersionFile
+              git add $proxyVersionFile
+          }
+
           git commit -m "build: update ${{ parameters.PROJECT_DIRECTORY}} version to $newWorkerVersion"
       
           # Create release branch ${{ parameters.BRANCH_NAME}}/X.Y.Z

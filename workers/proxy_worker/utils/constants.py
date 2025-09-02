@@ -12,3 +12,12 @@ AZURE_WEBJOBS_SCRIPT_ROOT = "AzureWebJobsScriptRoot"
 # new programming model default script file name
 PYTHON_SCRIPT_FILE_NAME = "PYTHON_SCRIPT_FILE_NAME"
 PYTHON_SCRIPT_FILE_NAME_DEFAULT = "function_app.py"
+
+# EOL Dates
+PYTHON_EOL_DATES = {
+    '3.13': '2029-10'
+}
+
+PYTHON_EOL_WARNING_DATES = {
+    '3.13': '2029-04'
+}

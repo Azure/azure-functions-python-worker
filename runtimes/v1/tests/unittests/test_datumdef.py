@@ -67,7 +67,6 @@ class TestDatumDef(unittest.TestCase):
     def test_parse_to_rpc_http_cookie_list_none(self):
         self.assertEqual(parse_to_rpc_http_cookie_list(None, protos), None)
 
-    @unittest.skip("TODO: fix this test. Figure out what to do with Timestamp")
     def test_parse_to_rpc_http_cookie_list_valid(self):
         headers = [
             'foo=bar; Path=/some/path; Secure; HttpOnly; Domain=123; '

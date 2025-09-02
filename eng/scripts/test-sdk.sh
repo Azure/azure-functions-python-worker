@@ -1,8 +1,9 @@
 #!/bin/bash
 
 python -m pip install --upgrade pip
+python -m pip install uv
 python -m pip install -e $1/PythonSdkArtifact
-python -m pip install -e workers/[dev]
+python -m uv ip install -e workers/[dev]
 
 if [[ $2 != "3.7" ]]; then
     python -m pip install --pre -U -e workers/[test-http-v2]

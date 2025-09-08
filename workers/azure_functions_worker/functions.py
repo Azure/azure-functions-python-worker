@@ -30,6 +30,7 @@ class FunctionInfo(typing.NamedTuple):
     has_return: bool
     is_http_func: bool
     deferred_bindings_enabled: bool
+    settlement_client: typing.Tuple[bool, str]
 
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
@@ -133,12 +134,19 @@ class Registry:
     @staticmethod
     def validate_function_params(params: dict, bound_params: dict,
                                  annotations: dict, func_name: str):
+        settlement_client = (False, '')
         if set(params) - set(bound_params):
-            raise FunctionLoadError(
-                func_name,
-                'the following parameters are declared in Python '
-                'but not in the function definition (function.json or '
-                f'function decorators):  {set(params) - set(bound_params)!r}')
+            # Check for settlement client support for the missing parameters
+            settlement_client = bindings_utils.settlement_client_required(params, bound_params, annotations)
+            if settlement_client[0]:
+                params.pop(settlement_client[1])
+            else:
+                # Not supported by settlement client, raise error for missing parameters
+                raise FunctionLoadError(
+                    func_name,
+                    'the following parameters are declared in Python '
+                    'but not in the function definition (function.json or '
+                    f'function decorators):  {set(params) - set(bound_params)!r}')
 
         if set(bound_params) - set(params):
             raise FunctionLoadError(
@@ -267,7 +275,7 @@ class Registry:
                 output_types[param.name] = param_type_info
             else:
                 input_types[param.name] = param_type_info
-        return input_types, output_types, fx_deferred_bindings_enabled
+        return input_types, output_types, fx_deferred_bindings_enabled, settlement_client
 
     @staticmethod
     def get_function_return_type(annotations: dict, has_explicit_return: bool,
@@ -318,6 +326,7 @@ class Registry:
             has_explicit_return: bool,
             has_implicit_return: bool,
             deferred_bindings_enabled: bool,
+            settlement_client: typing.Tuple[bool, str],
             input_types: typing.Dict[str, ParamTypeInfo],
             output_types: typing.Dict[str, ParamTypeInfo],
             return_type: str):
@@ -343,6 +352,7 @@ class Registry:
             has_return=has_explicit_return or has_implicit_return,
             is_http_func=is_http_func,
             deferred_bindings_enabled=deferred_bindings_enabled,
+            settlement_client=settlement_client,
             input_types=input_types,
             output_types=output_types,
             return_type=return_type,
@@ -395,7 +405,7 @@ class Registry:
                                                     annotations,
                                                     func_name)
 
-        input_types, output_types, _ = self.validate_function_params(
+        input_types, output_types, _, _ = self.validate_function_params(
             params, bound_params, annotations, func_name)
 
         return_type = \
@@ -411,6 +421,7 @@ class Registry:
                                                       requires_context,
                                                       has_explicit_return,
                                                       has_implicit_return,
+                                                      _,
                                                       _,
                                                       input_types,
                                                       output_types,
@@ -453,7 +464,8 @@ class Registry:
                                                     func_name)
 
         (input_types, output_types,
-         deferred_bindings_enabled) = self.validate_function_params(
+         deferred_bindings_enabled,
+         settlement_client) = self.validate_function_params(
             params,
             bound_params,
             annotations,
@@ -471,5 +483,6 @@ class Registry:
                 func, func_name, function_id, func_dir,
                 requires_context, has_explicit_return,
                 has_implicit_return, deferred_bindings_enabled,
+                settlement_client,
                 input_types, output_types,
                 return_type)

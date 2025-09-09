@@ -17,6 +17,7 @@ if sys.version_info.minor >= 9:
                                                          BlobClientConverter,
                                                          ContainerClient,
                                                          StorageStreamDownloader)
+    from azurefunctions.extensions.bindings.servicebus import ServiceBusMessageActions
 
 DEFERRED_BINDINGS_ENABLED_DIR = testutils.EXTENSION_TESTS_FOLDER / \
     'deferred_bindings_tests' / \
@@ -209,3 +210,46 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
                 ContainerClient, True), (True, True))
             self.assertEqual(meta.check_deferred_bindings_enabled(
                 StorageStreamDownloader, True), (True, True))
+
+    async def test_valid_settlement_param():
+        params = {'param1', 'param2', 'param3'}
+        bound_params = {'param1', 'param2'}
+        annotations = {
+            'param1': func.InputStream,
+            'param2': func.Out[str],
+            'param3': ServiceBusMessageActions
+        }
+
+        settlement_client_arg = meta.validate_settlement_param(
+            params, bound_params, annotations)
+
+        assert settlement_client_arg == 'param3'
+
+    async def test_invalid_settlement_param():
+        params = {'param1', 'param2', 'param3'}
+        bound_params = {'param1', 'param2'}
+        annotations = {
+            'param1': func.InputStream,
+            'param2': func.Out[str],
+            'param3': str
+        }
+
+        settlement_client_arg = meta.validate_settlement_param(
+            params, bound_params, annotations)
+
+        assert settlement_client_arg == ''
+
+    async def test_invalid_settlement_param_multiple():
+        params = {'param1', 'param2', 'param3', 'param4'}
+        bound_params = {'param1', 'param2'}
+        annotations = {
+            'param1': func.InputStream,
+            'param2': func.Out[str],
+            'param3': ServiceBusMessageActions,
+            'param4': str
+        }
+
+        settlement_client_arg = meta.validate_settlement_param(
+            params, bound_params, annotations)
+
+        assert settlement_client_arg == ''

@@ -115,3 +115,6 @@ PYTHON_EOL_WARNING_DATES = {
     '3.11': '2027-04',
     '3.12': '2028-04'
 }
+
+# Service Bus Client Name
+SERVICE_BUS_CLIENT_NAME = "serviceBusClient"

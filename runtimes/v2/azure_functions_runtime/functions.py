@@ -11,7 +11,8 @@ from .logging import logger
 from .bindings.meta import (has_implicit_output,
                             check_deferred_bindings_enabled,
                             check_output_type_annotation,
-                            check_input_type_annotation)
+                            check_input_type_annotation,
+                            validate_settlement_param)
 from .utils.constants import HTTP_TRIGGER
 from .utils.typing_inspect import is_generic_type, get_origin, get_args  # type: ignore
 
@@ -33,6 +34,7 @@ class FunctionInfo(typing.NamedTuple):
     has_return: bool
     is_http_func: bool
     deferred_bindings_enabled: bool
+    settlement_client_arg: str
 
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
@@ -138,7 +140,13 @@ class Registry:
                                  protos):
         logger.debug("Params: %s, BoundParams: %s, Annotations: %s, FuncName: %s",
                      params, bound_params, annotations, func_name)
+        settlement_client_arg = ''
         if set(params) - set(bound_params):
+            # Check for settlement client support for the missing parameters
+            settlement_client_arg = validate_settlement_param(
+                params, bound_params, annotations)
+            if settlement_client_arg != '':
+                params.pop(settlement_client_arg)
             raise FunctionLoadError(
                 func_name,
                 'Function parameter mismatch — the following trigger/input bindings '
@@ -278,7 +286,8 @@ class Registry:
                 output_types[param.name] = param_type_info
             else:
                 input_types[param.name] = param_type_info
-        return input_types, output_types, fx_deferred_bindings_enabled
+        return (input_types, output_types, fx_deferred_bindings_enabled,
+                settlement_client_arg)
 
     @staticmethod
     def get_function_return_type(annotations: dict, has_explicit_return: bool,
@@ -330,6 +339,7 @@ class Registry:
             has_explicit_return: bool,
             has_implicit_return: bool,
             deferred_bindings_enabled: bool,
+            settlement_client_arg: str,
             input_types: typing.Dict[str, ParamTypeInfo],
             output_types: typing.Dict[str, ParamTypeInfo],
             return_type: str):
@@ -355,6 +365,7 @@ class Registry:
             has_return=has_explicit_return or has_implicit_return,
             is_http_func=is_http_func,
             deferred_bindings_enabled=deferred_bindings_enabled,
+            settlement_client_arg=settlement_client_arg,
             input_types=input_types,
             output_types=output_types,
             return_type=return_type,
@@ -412,7 +423,8 @@ class Registry:
                                                     func_name)
 
         (input_types, output_types,
-         deferred_bindings_enabled) = self.validate_function_params(
+         deferred_bindings_enabled,
+         settlement_client_arg) = self.validate_function_params(
             params,
             bound_params,
             annotations,
@@ -431,5 +443,6 @@ class Registry:
                 func, func_name, function_id, func_dir,
                 requires_context, has_explicit_return,
                 has_implicit_return, deferred_bindings_enabled,
+                settlement_client_arg,
                 input_types, output_types,
                 return_type)

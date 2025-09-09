@@ -10,6 +10,7 @@ from ..constants import (
     CUSTOMER_PACKAGES_PATH,
     HTTP,
     HTTP_TRIGGER,
+    SERVICE_BUS_CLIENT_NAME
 )
 from ..http_v2 import HttpV2Registry
 from ..logging import logger
@@ -317,7 +318,7 @@ def get_deferred_raw_bindings(indexed_function, input_types):
 
 
 def get_settlement_client():
-    return DEFERRED_BINDING_REGISTRY.get("serviceBusClient").get_client()
+    return DEFERRED_BINDING_REGISTRY.get(SERVICE_BUS_CLIENT_NAME).get_client()
 
 
 def validate_settlement_param(params: dict,

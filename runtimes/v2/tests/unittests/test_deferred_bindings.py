@@ -16,6 +16,7 @@ from azurefunctions.extensions.bindings.blob import (BlobClient,
                                                      ContainerClient,
                                                      StorageStreamDownloader)
 from azurefunctions.extensions.bindings.eventhub import EventData, EventDataConverter
+from azurefunctions.extensions.bindings.servicebus import ServiceBusMessageActions
 
 EVENTHUB_SAMPLE_CONTENT = b"\x00Sr\xc1\x8e\x08\xa3\x1bx-opt-sequence-number-epochT\xff\xa3\x15x-opt-sequence-numberU\x04\xa3\x0cx-opt-offset\x81\x00\x00\x00\x01\x00\x00\x010\xa3\x13x-opt-enqueued-time\x00\xa3\x1dcom.microsoft:datetime-offset\x81\x08\xddW\x05\xc3Q\xcf\x10\x00St\xc1I\x02\xa1\rDiagnostic-Id\xa1700-bdc3fde4889b4e907e0c9dcb46ff8d92-21f637af293ef13b-00\x00Su\xa0\x08message1"  # noqa: E501
 
@@ -98,3 +99,46 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
             ContainerClient, True), (True, True))
         self.assertEqual(meta.check_deferred_bindings_enabled(
             StorageStreamDownloader, True), (True, True))
+
+    async def test_valid_settlement_param():
+        params = {'param1', 'param2', 'param3'}
+        bound_params = {'param1', 'param2'}
+        annotations = {
+            'param1': func.InputStream,
+            'param2': func.Out[str],
+            'param3': ServiceBusMessageActions
+        }
+
+        settlement_client_arg = meta.validate_settlement_param(
+            params, bound_params, annotations)
+
+        assert settlement_client_arg == 'param3'
+
+    async def test_invalid_settlement_param():
+        params = {'param1', 'param2', 'param3'}
+        bound_params = {'param1', 'param2'}
+        annotations = {
+            'param1': func.InputStream,
+            'param2': func.Out[str],
+            'param3': str
+        }
+
+        settlement_client_arg = meta.validate_settlement_param(
+            params, bound_params, annotations)
+
+        assert settlement_client_arg == ''
+
+    async def test_invalid_settlement_param_multiple():
+        params = {'param1', 'param2', 'param3', 'param4'}
+        bound_params = {'param1', 'param2'}
+        annotations = {
+            'param1': func.InputStream,
+            'param2': func.Out[str],
+            'param3': ServiceBusMessageActions,
+            'param4': str
+        }
+
+        settlement_client_arg = meta.validate_settlement_param(
+            params, bound_params, annotations)
+
+        assert settlement_client_arg == ''

@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import unittest
+import _strptime  # noqa: F401
 
 from datetime import datetime
 from unittest.mock import patch

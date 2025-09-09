@@ -98,6 +98,8 @@ jobs:
       - powershell: |
           Write-Host "CONTAINER_SAS_TOKEN: $(CONTAINER_SAS_TOKEN)"
         displayName: 'Display CONTAINER_SAS_TOKEN variable'
+        # Skip as this variable is defined only for non-release branches
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
 
       - bash: |
              python -m pytest --dist loadfile -vv --instafail tests/consumption_tests

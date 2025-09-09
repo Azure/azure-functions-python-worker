@@ -667,8 +667,8 @@ class Dispatcher(metaclass=DispatcherMeta):
             if fi.requires_context:
                 args['context'] = fi_context
 
-            if fi.settlement_client[0]:
-                args[fi.settlement_client[1]] = get_settlement_client()
+            if fi.settlement_client_arg != '':
+                args[fi.settlement_client_arg] = get_settlement_client()
 
             if fi.output_types:
                 for name in fi.output_types:

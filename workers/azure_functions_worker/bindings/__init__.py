@@ -13,7 +13,7 @@ from .meta import (
     has_implicit_output,
     is_trigger_binding,
     load_binding_registry,
-    settlement_client_required,
+    validate_settlement_param,
     to_outgoing_param_binding,
     to_outgoing_proto,
 )
@@ -28,5 +28,5 @@ __all__ = (
     'has_implicit_output',
     'from_incoming_proto', 'to_outgoing_proto', 'TraceContext', 'RetryContext',
     'to_outgoing_param_binding', 'check_deferred_bindings_enabled',
-    'get_deferred_raw_bindings', 'settlement_client_required'
+    'get_deferred_raw_bindings', 'validate_settlement_param'
 )

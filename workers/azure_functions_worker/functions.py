@@ -30,7 +30,7 @@ class FunctionInfo(typing.NamedTuple):
     has_return: bool
     is_http_func: bool
     deferred_bindings_enabled: bool
-    settlement_client: typing.Tuple[bool, str]
+    settlement_client_arg: str
 
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
@@ -134,12 +134,13 @@ class Registry:
     @staticmethod
     def validate_function_params(params: dict, bound_params: dict,
                                  annotations: dict, func_name: str):
-        settlement_client = (False, '')
+        settlement_client_arg = ''
         if set(params) - set(bound_params):
             # Check for settlement client support for the missing parameters
-            settlement_client = bindings_utils.settlement_client_required(params, bound_params, annotations)
-            if settlement_client[0]:
-                params.pop(settlement_client[1])
+            settlement_client_arg = bindings_utils.validate_settlement_param(
+                params, bound_params, annotations)
+            if settlement_client_arg != '':
+                params.pop(settlement_client_arg)
             else:
                 # Not supported by settlement client, raise error for missing parameters
                 raise FunctionLoadError(
@@ -275,7 +276,8 @@ class Registry:
                 output_types[param.name] = param_type_info
             else:
                 input_types[param.name] = param_type_info
-        return input_types, output_types, fx_deferred_bindings_enabled, settlement_client
+        return (input_types, output_types, fx_deferred_bindings_enabled,
+                settlement_client_arg)
 
     @staticmethod
     def get_function_return_type(annotations: dict, has_explicit_return: bool,
@@ -326,7 +328,7 @@ class Registry:
             has_explicit_return: bool,
             has_implicit_return: bool,
             deferred_bindings_enabled: bool,
-            settlement_client: typing.Tuple[bool, str],
+            settlement_client_arg: str,
             input_types: typing.Dict[str, ParamTypeInfo],
             output_types: typing.Dict[str, ParamTypeInfo],
             return_type: str):
@@ -352,7 +354,7 @@ class Registry:
             has_return=has_explicit_return or has_implicit_return,
             is_http_func=is_http_func,
             deferred_bindings_enabled=deferred_bindings_enabled,
-            settlement_client=settlement_client,
+            settlement_client_arg=settlement_client_arg,
             input_types=input_types,
             output_types=output_types,
             return_type=return_type,
@@ -465,7 +467,7 @@ class Registry:
 
         (input_types, output_types,
          deferred_bindings_enabled,
-         settlement_client) = self.validate_function_params(
+         settlement_client_arg) = self.validate_function_params(
             params,
             bound_params,
             annotations,
@@ -483,6 +485,6 @@ class Registry:
                 func, func_name, function_id, func_dir,
                 requires_context, has_explicit_return,
                 has_implicit_return, deferred_bindings_enabled,
-                settlement_client,
+                settlement_client_arg,
                 input_types, output_types,
                 return_type)

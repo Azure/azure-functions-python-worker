@@ -288,8 +288,9 @@ def deferred_bindings_decode(binding: typing.Any,
     return binding.decode(datum, trigger_metadata=metadata, pytype=pytype)
 
 
-def check_deferred_bindings_enabled(param_anno: type,
-                                    deferred_bindings_enabled: bool) -> typing.Tuple[bool, bool]:
+def check_deferred_bindings_enabled(
+        param_anno: type,
+        deferred_bindings_enabled: bool) -> typing.Tuple[bool, bool]:
     """
     Checks if deferred bindings is enabled at fx and single binding level
 
@@ -319,27 +320,33 @@ def get_settlement_client():
     return DEFERRED_BINDING_REGISTRY.get("serviceBusClient").get_client()
 
 
-def settlement_client_required(params: dict,
-                               bound_params: dict,
-                               annotations: dict) -> typing.Tuple[bool, str]:
+def validate_settlement_param(params: dict,
+                              bound_params: dict,
+                              annotations: dict) -> str:
     """
     Checks if the settlement client is enabled for a given function.
 
-    Loop through all the params and check if any of the params are of a type that 
-    is supported by the settlement client. If so, return a tuple of (True, param_name) 
-    where param_name is the name of the param that is supported. If not, return a 
-    tuple of (False, '') indicating no settlement client support.
+    If there is more than one param that is not bound, return an empty string
+    indicating no settlement client support. This is a bad app.
 
-    Note: If a param does not have a type annotation, it will be skipped and not 
+    If there is only one unbound param, check if it's a type that is supported
+    by the settlement client. If so, return the param_name, where param_name
+    is the name of the param that is supported. If not, return an empty string
+    indicating no settlement client support.
+
+    Note: If a param does not have a type annotation, it will be skipped and not
     considered for settlement client support.
     """
-    for missing_param in set(params) - set(bound_params):
-        try:
-            param_type = annotations.get(missing_param)
-            settlement_client_enabled = DEFERRED_BINDING_REGISTRY.check_grpc_client_type(
-                param_type)
-            if settlement_client_enabled:
-                return (settlement_client_enabled, missing_param)
-        except Exception:
-            param_type = None
-    return (False, '')
+    if len(set(params) - set(bound_params)) > 1:
+        return ''
+
+    # There is only one unbound param, check the type
+    settlement_param = next(iter(set(params) - set(bound_params)))
+    try:
+        param_type = annotations.get(settlement_param)
+        # Check if the type is a supported type for the settlement client
+        if DEFERRED_BINDING_REGISTRY.check_supported_grpc_client_type(param_type):
+            return settlement_param
+    except Exception:
+        param_type = None
+    return ''

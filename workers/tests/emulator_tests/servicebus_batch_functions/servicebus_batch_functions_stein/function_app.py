@@ -9,7 +9,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 @app.service_bus_queue_output(
     arg_name="msg",
     connection="AzureWebJobsServiceBusConnectionString",
-    queue_name="testqueue")
+    queue_name="batchqueue")
 def servicebus_output_batch(req: func.HttpRequest, msg: func.Out[str]):
     msg.set(req.get_body().decode('utf-8'))
     return 'OK'
@@ -20,7 +20,7 @@ def servicebus_output_batch(req: func.HttpRequest, msg: func.Out[str]):
                 path="python-worker-tests/test-servicebus-batch-triggered.txt",
                 connection="AzureWebJobsStorage")
 def get_servicebus_batch_triggered(req: func.HttpRequest,
-                             file: func.InputStream) -> str:
+                                   file: func.InputStream) -> str:
     return func.HttpResponse(
         file.read().decode('utf-8'), mimetype='application/json')
 
@@ -28,7 +28,7 @@ def get_servicebus_batch_triggered(req: func.HttpRequest,
 @app.service_bus_queue_trigger(
     arg_name="events",
     connection="AzureWebJobsServiceBusConnectionString",
-    queue_name="testqueue",
+    queue_name="batchqueue",
     cardinality="many")
 @app.blob_output(arg_name="$return",
                  path="python-worker-tests/test-servicebus-batch-triggered.txt",

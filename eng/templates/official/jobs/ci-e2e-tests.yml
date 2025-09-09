@@ -153,7 +153,7 @@ jobs:
           Write-Host "skipTest: $(skipTest)"
         displayName: 'Display skipTest variable'
       - bash: |
-             python -m pytest -q -n auto --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
+             python -m pytest -q --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
         env:
           AzureWebJobsStorage: $(STORAGE_CONNECTION)
           AzureWebJobsCosmosDBConnectionString: $(COSMOSDB_CONNECTION)

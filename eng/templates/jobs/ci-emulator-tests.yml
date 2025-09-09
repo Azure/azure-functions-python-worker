@@ -113,5 +113,5 @@ jobs:
           AzureWebJobsStorage: $(AzureWebJobsStorage)
           AzureWebJobsServiceBusConnectionString: $(EmulatorServiceBusConnectionString)
           AzureWebJobsServiceBusSDKConnectionString: $(AzureWebJobsServiceBusSDKConnectionString)
-        workingDirectory: $(Build.SourcesDirectory)/workers
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         displayName: "Running $(PYTHON_VERSION) Python ServiceBus Linux Emulator Tests"

@@ -7,36 +7,12 @@ jobs:
     image: 1es-ubuntu-22.04
     os: linux
   steps:
-  - powershell: |
-      $githubToken = "$(GithubPat)"
-      $newWorkerVersion = "$(NewWorkerVersion)"
-      $versionFile = "azure_functions_worker/version.py"
-      
-      if($newWorkerVersion -match '(\d)+.(\d)+.(\d)+') {
-          # Create GitHub credential
-          git config --global user.name "AzureFunctionsPython"
-          git config --global user.email "azfunc@microsoft.com"
-      
-          # Heading to Artifact Repository
-          Write-Host "Operating based on $stagingDirectory/azure-functions-python-worker"
-          git checkout -b "release/$newWorkerVersion"
-          cd workers
-      
-          # Change azure_functions_worker/version.py version
-          Write-Host "Change version number in version.py to $newWorkerVersion"
-          ((Get-Content $versionFile) -replace "VERSION = '(\d+).(\d+).*'", "VERSION = '$newWorkerVersion'" -join "`n") + "`n" | Set-Content -NoNewline $versionFile
-          git add $versionFile
-          git commit -m "build: update Python Worker Version to $newWorkerVersion"
-      
-          # Create release branch release/X.Y.Z
-          Write-Host "Creating release branch release/$newWorkerVersion"
-          git push --repo="https://$githubToken@github.com/Azure/azure-functions-python-worker.git"
-      } else {
-          Write-Host "NewWorkerVersion $newWorkerVersion is malformed (example: 1.1.8)"
-          exit -1
-      }
-    displayName: 'Push release/x.y.z'
-  
+  - template: /eng/templates/shared/github-release-branch.yml@self
+    parameters:
+      PROJECT_DIRECTORY: 'workers'
+      PROJECT_NAME: 'azure_functions_worker'
+      BRANCH_NAME: 'release'
+
 - job: "CheckReleaseBranch"
   dependsOn: ['CreateReleaseBranch']
   displayName: '(Manual) Check Release Branch'
@@ -54,60 +30,11 @@ jobs:
 - job: "CreateReleaseTag"
   dependsOn: ['CheckReleaseBranch']
   steps:
-  - powershell: |
-      $githubToken = "$(GithubPat)"
-      $newWorkerVersion = "$(NewWorkerVersion)"
-      
-      if($newWorkerVersion -match '(\d)+.(\d)+.(\d)+') {
-          # Create GitHub credential
-          git config --global user.name "AzureFunctionsPython"
-          git config --global user.email "azfunc@microsoft.com"
-      
-          # Clone Repository
-          git clone https://$githubToken@github.com/Azure/azure-functions-python-worker
-          Write-Host "Cloned azure-functions-python-worker into local"
-          Set-Location "azure-functions-python-worker"
-          git checkout "origin/release/$newWorkerVersion"
-      
-          # Create release tag X.Y.Z
-          Write-Host "Creating release tag $newWorkerVersion"
-          git tag -a "$newWorkerVersion" -m "$newWorkerVersion"
-      
-          # Push tag to remote
-          git push origin $newWorkerVersion
-      } else {
-          Write-Host "NewWorkerVersion $newWorkerVersion is malformed (example: 1.1.8)"
-          exit -1
-      }
-    displayName: 'Create and push release tag x.y.z'
-  - powershell: |
-      $githubUser = "$(GithubUser)"
-      $githubToken = "$(GithubPat)"
-      $newWorkerVersion = "$(NewWorkerVersion)"
-      
-      if($newWorkerVersion -match '(\d)+.(\d)+.(\d)+') {
-          # Create GitHub credential
-          $credential = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("${githubUser}:${githubToken}"))
-      
-          # Create Release Note
-          Write-Host "Creating release note in GitHub"
-          $body = (@{tag_name="$newWorkerVersion";name="Release $newWorkerVersion";body="- Fill in Release Note Here";draft=$true} | ConvertTo-Json -Compress)
-          $response = Invoke-WebRequest -Headers @{"Cache-Control"="no-cache";"Content-Type"="application/json";"Authorization"="Basic $credential"} -Method Post -Body "$body" -Uri "https://api.github.com/repos/Azure/azure-functions-python-worker/releases"
-      
-          # Return Value
-          if ($response.StatusCode -ne 201) {
-              Write-Host "Failed to create release note in GitHub"
-              exit -1
-          }
-      
-          $draftUrl = $response | ConvertFrom-Json | Select -expand url
-          Write-Host "Release draft created in $draftUrl"
-      } else {
-          Write-Host "NewWorkerVersion $newWorkerVersion is malformed (example: 1.1.8)"
-          exit -1
-      }
-    displayName: 'Create GitHub release draft'
-  
+  - template: /eng/templates/shared/github-release-note.yml@self
+    parameters:
+      BRANCH_NAME: 'release'
+      PROJECT_NAME: 'azure_functions_worker'
+
 - job: "CheckGitHubRelease"
   dependsOn: ['CreateReleaseTag']
   displayName: '(Manual) Check GitHub release note'
@@ -129,7 +56,6 @@ jobs:
     inputs:
       notifyUsers: ''
       instructions: 'Ensure the build of release/4.x.y.z finishes in https://dev.azure.com/azfunc/internal/_build?definitionId=652 and verify if PackageWorkers task is completed.'
-
 
 - job: "PublishNuget" 
   dependsOn: ['WaitForPythonWorkerBuild']
@@ -252,7 +178,7 @@ jobs:
     displayName: 'Create Host PR for dev'
 
 - job: "CheckHostPRs"
-  dependsOn: ['HostRepoPRs']
+  dependsOn: ['HostRepoPR']
   displayName: '(Manual) Check Host PRs'
   pool: server
   steps:

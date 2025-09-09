@@ -60,7 +60,10 @@ from .logging import (
     logger,
 )
 from .utils.app_setting_manager import get_python_appsetting_state
-from .utils.common import get_app_setting, is_envvar_true, validate_script_file_name
+from .utils.common import (get_app_setting,
+                           is_envvar_true,
+                           validate_script_file_name,
+                           check_python_eol)
 from .utils.dependency import DependencyManager
 from .utils.tracing import marshall_exception_trace
 from .utils.wrappers import disable_feature_by
@@ -368,6 +371,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                     self.request_id,
                     get_python_appsetting_state()
                     )
+        check_python_eol()
 
         worker_init_request = request.worker_init_request
         host_capabilities = worker_init_request.capabilities
@@ -748,6 +752,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                         'https://aka.ms/python-enable-debug-logging',
                         self.request_id,
                         get_python_appsetting_state())
+            check_python_eol()
 
             func_env_reload_request = \
                 request.function_environment_reload_request

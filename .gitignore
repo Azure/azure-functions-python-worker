@@ -132,3 +132,8 @@ prof/
 tests/**/host.json
 tests/**/bin
 tests/**/extensions.csproj
+
+# Azurite related files
+__blobstorage__/*
+__queuestorage__/*
+__azurite*

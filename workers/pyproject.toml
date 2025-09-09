@@ -28,7 +28,7 @@ classifiers = [
     "Intended Audience :: Developers"
 ]
 dependencies = [
-     "azure-functions==1.24.0b3",
+     "azure-functions==1.24.0b4",
      "python-dateutil~=2.9.0",
      "protobuf~=3.19.3; python_version == '3.7'",
      "protobuf~=4.25.3; python_version >= '3.8' and python_version < '3.13'",
@@ -39,9 +39,10 @@ dependencies = [
      "grpcio~=1.43.0; python_version == '3.7'",
      "grpcio ~=1.59.0; python_version >= '3.8' and python_version < '3.13'",
      "grpcio~=1.70.0; python_version >= '3.13'",
+     "uvloop~=0.21.0; python_version >= '3.13' and sys_platform != 'win32'",
      "azurefunctions-extensions-base; python_version >= '3.8'",
-     "azure-functions-runtime==1.0.0a3; python_version >= '3.13'",
-     "azure-functions-runtime-v1==1.0.0a2; python_version >= '3.13'"
+     "azure-functions-runtime==1.0.0; python_version >= '3.13'",
+     "azure-functions-runtime-v1==1.0.0; python_version >= '3.13'"
 ]
 
 [project.urls]
@@ -85,11 +86,11 @@ dev = [
     "orjson"
 ]
 test-http-v2 = [
-    "azurefunctions-extensions-http-fastapi==1.0.0",
+    "azurefunctions-extensions-http-fastapi==1.0.1",
     "ujson"
 ]
 test-deferred-bindings = [
-    "azurefunctions-extensions-bindings-blob==1.0.0",
+    "azurefunctions-extensions-bindings-blob==1.1.1",
     "azurefunctions-extensions-bindings-eventhub==1.0.0b1",
     "azurefunctions-extensions-bindings-servicebus==1.0.0b1"
 ]
@@ -133,3 +134,7 @@ skip_glob = [
 
 [tool.setuptools.dynamic]
 version = {attr = "azure_functions_worker.version.VERSION"}
+
+[tool.pytest.ini_options]
+pythonpath = ["workers"]
+testpaths = ["workers/tests", "runtimes/v2/azure_functions_runtime/tests", "runtimes/v1/azure_functions_runtime_v1/tests"]

@@ -5,8 +5,11 @@ import pathlib
 import sys
 import typing
 import unittest
+
+from datetime import datetime
 from unittest.mock import patch
 
+from azure_functions_worker.constants import PYTHON_EOL_DATES
 from azure_functions_worker.utils import common, wrappers
 
 TEST_APP_SETTING_NAME = "TEST_APP_SETTING_NAME"
@@ -378,3 +381,38 @@ class TestUtilities(unittest.TestCase):
             os.environ.pop(TEST_FEATURE_FLAG)
         except KeyError:
             pass
+
+
+class TestCheckPythonEOL(unittest.TestCase):
+    def setUp(self):
+        self.version = "3.9"
+        self.eol_date = datetime.strptime(PYTHON_EOL_DATES[self.version], "%Y-%m")
+        self.warning_date = self.eol_date.replace(
+            day=1) - (self.eol_date
+                      - datetime.strptime("2025-04", "%Y-%m"))
+
+    @patch("azure_functions_worker.utils.common.sys.version_info")
+    def test_between_warning_and_eol(self, mock_version):
+        mock_version.major, mock_version.minor = (3, 9)
+        test_date = datetime(2025, 5, 1)  # Between warning and EOL
+        with patch("azure_functions_worker.utils.common.datetime") as mock_datetime:
+            mock_datetime.utcnow.return_value = test_date
+            mock_datetime.strptime = datetime.strptime
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
+                *args, **kwargs)
+            with self.assertLogs(level="WARNING") as cm:
+                common.check_python_eol()
+            self.assertTrue(any("will reach EOL" in msg for msg in cm.output))
+
+    @patch("azure_functions_worker.utils.common.sys.version_info")
+    def test_after_eol(self, mock_version):
+        mock_version.major, mock_version.minor = (3, 9)
+        test_date = datetime(2026, 1, 1)  # After EOL
+        with patch("azure_functions_worker.utils.common.datetime") as mock_datetime:
+            mock_datetime.utcnow.return_value = test_date
+            mock_datetime.strptime = datetime.strptime
+            mock_datetime.side_effect = lambda *args, **kwargs: datetime(
+                *args, **kwargs)
+            with self.assertLogs(level="ERROR") as cm:
+                common.check_python_eol()
+            self.assertTrue(any("reached EOL" in msg for msg in cm.output))

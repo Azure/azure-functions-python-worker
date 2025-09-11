@@ -157,6 +157,7 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
             source="AzureStorageBlobs",
             content_type="application/json",
             content="{\"Connection\":\"AZURE_STORAGE_CONNECTION_STRING\","
+                    "\"ContainerName\":"
                     "\"python-worker-tests\","
                     "\"BlobName\":"
                     "\"test-blobclient-trigger.txt\"}")

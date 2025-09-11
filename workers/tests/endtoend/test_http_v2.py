@@ -222,7 +222,7 @@ class TestHttpFunctionsWithInitIndexingDisabled(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'http_v2_tests' / \
+        return testutils.E2E_TESTS_FOLDER / \
             'http_functions_v2' / \
             'fastapi'
 

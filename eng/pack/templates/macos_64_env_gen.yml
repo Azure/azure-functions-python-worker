@@ -7,6 +7,7 @@ steps:
 - task: UsePythonVersion@0
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
+    allowUnstable: true
     addToPath: true
 - powershell: |
     # Parse the Python minor version
@@ -45,7 +46,14 @@ steps:
     disableAutoCwd: true
     scriptPath: 'eng/pack/scripts/mac_arm64_deps.sh'
     args: '${{ parameters.pythonVersion }}'
-  displayName: 'Install Dependencies'
+  displayName: 'Build and install dependencies'
+  condition: ne(variables['minorVersion'], '14')
+- task: PowerShell@2
+  inputs:
+    filePath: 'eng/pack/scripts/rc_mac_arm64_deps.sh'
+    arguments: '${{ parameters.pythonVersion }}'
+  displayName: 'Build and install dependencies from scratch'
+  condition: eq(variables['minorVersion'], '14')
 - bash: |
     pip install pip-audit
     cd workers

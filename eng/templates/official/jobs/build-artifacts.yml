@@ -20,6 +20,8 @@ jobs:
         pythonVersion: '3.12'
       Python313V4:
         pythonVersion: '3.13'
+      Python314V4:
+        pythonVersion: '3.14.0-rc.2'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -54,6 +56,8 @@ jobs:
         pythonVersion: '3.12'
       Python313V4:
         pythonVersion: '3.13'
+      Python314V4:
+        pythonVersion: '3.14.0-rc.2'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -88,6 +92,8 @@ jobs:
         pythonVersion: '3.12'
       Python313V4:
         pythonVersion: '3.13'
+      Python314V4:
+        pythonVersion: '3.14.0-rc.2'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -121,6 +127,8 @@ jobs:
         pythonVersion: '3.12'
       Python313V4:
         pythonVersion: '3.13'
+      Python314V4:
+        pythonVersion: '3.14.0-rc.2'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -150,6 +158,8 @@ jobs:
         pythonVersion: '3.12'
       Python313V4:
         pythonVersion: '3.13'
+      Python314V4:
+        pythonVersion: '3.14.0-rc.2'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:

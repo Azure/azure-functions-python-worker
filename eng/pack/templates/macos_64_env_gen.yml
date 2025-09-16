@@ -48,7 +48,7 @@ steps:
     args: '${{ parameters.pythonVersion }}'
   displayName: 'Build and install dependencies'
   condition: ne(variables['minorVersion'], '14')
-- task: PowerShell@2
+- task: ShellScript@2
   inputs:
     filePath: 'eng/pack/scripts/rc_mac_arm64_deps.sh'
     arguments: '${{ parameters.pythonVersion }}'

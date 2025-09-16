@@ -1,22 +1,49 @@
 param (
     [string]$pythonVersion
 )
-$versionParts = $pythonVersion -split '\.'  # Splitting by dot
-$versionMinor = [int]$versionParts[1]
 
+# Create venv
 python -m venv .env
-.env\Scripts\Activate.ps1
-python -m pip install --upgrade pip
+. .env\Scripts\Activate.ps1
+python -m pip install "setuptools<68" wheel
 
-cd workers
+# Install Bazel
+choco install bazel --version=6.5.0 -y
+refreshenv
+bazel --version
 
-# Build and install grpcio from source
-git clone --recursive https://github.com/grpc/grpc
+Write-Host "=== Checking Python version being used ==="
+.\.env\Scripts\python.exe --version
+.\.env\Scripts\pip.exe --version
+
+Write-Host "=== Cloning gRPC repo ==="
+if (-not (Test-Path "grpc")) {
+    git clone --recursive https://github.com/grpc/grpc
+} else {
+    cd grpc
+    Write-Host "Repo already exists. Updating submodules..."
+    git submodule update --init --recursive
+    cd ..
+}
+
 cd grpc
-python tools\distrib\python\make_grpcio_tools.py
-python tools\distrib\python\make_grpcio_wheel.py
-pip install artifacts/grpcio-*.whl
 
+Write-Host "=== Building grpcio wheel with setup.py ==="
+..\.\.env\Scripts\python.exe setup.py bdist_wheel -d dist
+
+Write-Host "=== Checking built wheels ==="
+Get-ChildItem dist
+
+Write-Host "=== Installing grpcio wheel into venv ==="
+Get-ChildItem -Path "dist" -Filter "grpcio-*.whl" | ForEach-Object {
+    Write-Host "Installing wheel: $($_.FullName)"
+    ..\.\.env\Scripts\pip.exe install $_.FullName
+}
+
+cd ..
+
+# Go back to your project root and install your workers package
+Set-Location workers
 python -m pip install .
 
 $depsPath = Join-Path -Path $env:BUILD_SOURCESDIRECTORY -ChildPath "deps"

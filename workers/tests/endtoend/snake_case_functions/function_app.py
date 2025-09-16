@@ -67,6 +67,7 @@ def classic_double_underscore(__req: func.HttpRequest) -> func.HttpResponse:
     name = __req.params.get('name')
     return func.HttpResponse(f"Hello, {name}.")
 
+
 @app.route(route="double_underscore_suffix", trigger_arg_name="req__")
 def double_underscore_suffix(req__: func.HttpRequest) -> func.HttpResponse:
     name = req__.params.get('name')

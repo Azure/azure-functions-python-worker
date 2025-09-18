@@ -22,7 +22,6 @@ from .version import VERSION
 
 from .bindings.context import get_context
 from .bindings.meta import (from_incoming_proto,
-                            get_settlement_client,
                             is_trigger_binding,
                             load_binding_registry,
                             to_outgoing_param_binding,
@@ -226,7 +225,7 @@ async def invocation_request(request):
             args['context'] = fi_context
 
         if fi.settlement_client_arg != '':
-            args[fi.settlement_client_arg] = get_settlement_client()
+            args[fi.settlement_client_arg] = fi.settlement_client
 
         if fi.output_types:
             for name in fi.output_types:

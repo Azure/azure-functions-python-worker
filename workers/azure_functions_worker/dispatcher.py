@@ -21,7 +21,6 @@ from typing import List, Optional
 import grpc
 
 from . import bindings, constants, functions, loader, protos
-from .bindings.meta import get_settlement_client
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (
     APPLICATIONINSIGHTS_CONNECTION_STRING,
@@ -668,7 +667,7 @@ class Dispatcher(metaclass=DispatcherMeta):
                 args['context'] = fi_context
 
             if fi.settlement_client_arg != '':
-                args[fi.settlement_client_arg] = get_settlement_client()
+                args[fi.settlement_client_arg] = fi.settlement_client
 
             if fi.output_types:
                 for name in fi.output_types:

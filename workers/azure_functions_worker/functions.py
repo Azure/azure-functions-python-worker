@@ -31,6 +31,7 @@ class FunctionInfo(typing.NamedTuple):
     is_http_func: bool
     deferred_bindings_enabled: bool
     settlement_client_arg: str
+    settlement_client: typing.Any
 
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
@@ -135,12 +136,14 @@ class Registry:
     def validate_function_params(params: dict, bound_params: dict,
                                  annotations: dict, func_name: str):
         settlement_client_arg = ''
+        settlement_client = None
         if set(params) - set(bound_params):
             # Check for settlement client support for the missing parameters
             settlement_client_arg = bindings_utils.validate_settlement_param(
                 params, bound_params, annotations)
             if settlement_client_arg != '':
                 params.pop(settlement_client_arg)
+                settlement_client = bindings_utils.get_settlement_client()
             else:
                 # Not supported by settlement client, raise error for missing parameters
                 raise FunctionLoadError(
@@ -277,7 +280,7 @@ class Registry:
             else:
                 input_types[param.name] = param_type_info
         return (input_types, output_types, fx_deferred_bindings_enabled,
-                settlement_client_arg)
+                settlement_client_arg, settlement_client)
 
     @staticmethod
     def get_function_return_type(annotations: dict, has_explicit_return: bool,
@@ -329,6 +332,7 @@ class Registry:
             has_implicit_return: bool,
             deferred_bindings_enabled: bool,
             settlement_client_arg: str,
+            settlement_client: typing.Any,
             input_types: typing.Dict[str, ParamTypeInfo],
             output_types: typing.Dict[str, ParamTypeInfo],
             return_type: str):
@@ -355,6 +359,7 @@ class Registry:
             is_http_func=is_http_func,
             deferred_bindings_enabled=deferred_bindings_enabled,
             settlement_client_arg=settlement_client_arg,
+            settlement_client=settlement_client,
             input_types=input_types,
             output_types=output_types,
             return_type=return_type,
@@ -407,7 +412,7 @@ class Registry:
                                                     annotations,
                                                     func_name)
 
-        input_types, output_types, _, _ = self.validate_function_params(
+        input_types, output_types, _, _, _ = self.validate_function_params(
             params, bound_params, annotations, func_name)
 
         return_type = \
@@ -423,6 +428,7 @@ class Registry:
                                                       requires_context,
                                                       has_explicit_return,
                                                       has_implicit_return,
+                                                      _,
                                                       _,
                                                       _,
                                                       input_types,
@@ -467,7 +473,7 @@ class Registry:
 
         (input_types, output_types,
          deferred_bindings_enabled,
-         settlement_client_arg) = self.validate_function_params(
+         settlement_client_arg, settlement_client) = self.validate_function_params(
             params,
             bound_params,
             annotations,
@@ -486,5 +492,6 @@ class Registry:
                 requires_context, has_explicit_return,
                 has_implicit_return, deferred_bindings_enabled,
                 settlement_client_arg,
+                settlement_client,
                 input_types, output_types,
                 return_type)

@@ -17,7 +17,7 @@ if sys.version_info.minor >= 9:
                                                          BlobClientConverter,
                                                          ContainerClient,
                                                          StorageStreamDownloader)
-    from azurefunctions.extensions.bindings.servicebus import ServiceBusMessageActions
+    from azurefunctions.extensions.base import GrpcClientType
 
 DEFERRED_BINDINGS_ENABLED_DIR = testutils.UNIT_TESTS_FOLDER / \
     'deferred_bindings_functions' / \
@@ -215,7 +215,7 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
         annotations = {
             'param1': func.InputStream,
             'param2': func.Out[str],
-            'param3': ServiceBusMessageActions
+            'param3': GrpcClientType
         }
 
         settlement_client_arg = meta.validate_settlement_param(
@@ -243,7 +243,7 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
         annotations = {
             'param1': func.InputStream,
             'param2': func.Out[str],
-            'param3': ServiceBusMessageActions,
+            'param3': GrpcClientType,
             'param4': str
         }
 

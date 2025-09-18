@@ -3,6 +3,7 @@ import jsonpickle
 
 import azure.functions as func
 import azurefunctions.extensions.bindings.servicebus as sb
+import azurefunctions.extensions.base as base
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -80,7 +81,7 @@ def get_servicebus_triggered_sdk_deadletter(req: func.HttpRequest,
     path="python-worker-tests/test-servicebus-sdk-triggered-deadletter.txt",
     connection="AzureWebJobsStorage")
 def servicebus_trigger_sdk_deadletter(msg: sb.ServiceBusReceivedMessage,
-                                      actions: sb.ServiceBusMessageActions) -> str:
+                                      actions: base.GrpcClientType) -> str:
     msg_json = jsonpickle.encode(msg)
     body_json = jsonpickle.encode(msg.body)
     enqueued_time_json = jsonpickle.encode(msg.enqueued_time_utc)
@@ -93,6 +94,5 @@ def servicebus_trigger_sdk_deadletter(msg: sb.ServiceBusReceivedMessage,
         'message_id': msg.message_id,
         'sequence_number': msg.sequence_number
     })
-    actions.deadletter(msg)
 
     return result

@@ -32,6 +32,7 @@ resources:
 variables:
   - template: /eng/templates/utils/variables.yml@self
   - template: /eng/templates/utils/official-variables.yml@self
+  - template: /eng/templates/utils/emulator-variables.yml@self
   - name: codeql.excludePathPatterns
     value: deps/,build/
 

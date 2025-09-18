@@ -33,7 +33,7 @@ jobs:
   - template: /eng/templates/shared/github-release-note.yml@self
     parameters:
       BRANCH_NAME: 'release'
-      PROJECT_NAME: 'azure_functions_worker'
+      PROJECT_DIRECTORY: 'azure_functions_worker'
 
 - job: "CheckGitHubRelease"
   dependsOn: ['CreateReleaseTag']

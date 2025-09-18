@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import json
 import logging
 import os
 import sys
@@ -33,8 +34,8 @@ from .utils.constants import (FUNCTION_DATA_CACHE,
                               PYTHON_ENABLE_DEBUG_LOGGING)
 from .utils.executor import get_current_loop, execute_async, run_sync_func
 from .utils.threadpool import get_threadpool_executor
-from .utils.app_setting_manager import is_envvar_true
-from .utils.helpers import change_cwd, get_worker_metadata
+from .utils.app_setting_manager import get_python_appsetting_state, is_envvar_true
+from .utils.helpers import change_cwd, get_sdk_version, get_worker_metadata
 from .utils.tracing import serialize_exception
 
 _functions: typing.MutableMapping[str, FunctionInfo] = Registry()
@@ -90,6 +91,12 @@ async def worker_init_request(request):
 
 async def functions_metadata_request(request):
     logger.debug("V1 Library Worker: received WorkerMetadataRequest")
+    log_data = {
+        "message": "Successfully indexed function app.",
+        "app_settings": get_python_appsetting_state(),
+        "azure-functions version": get_sdk_version(),
+    }
+    logger.info(json.dumps(log_data))
     # Setting result as None here.
     return protos.FunctionMetadataResponse(
         use_default_metadata_indexing=True,
@@ -117,16 +124,6 @@ async def function_load_request(request):
             _functions.add_function(
                 function_id, func, func_request.metadata, protos)
 
-        # TODO: Log function app indexing information
-        # log_data = {
-        #     "message": "Successfully indexed function app.",
-        #     "function_count": len(_functions._functions),
-        #     "functions": _functions._functions,
-        #     "deferred_bindings_enabled": "False",
-        #     "app_settings": get_python_appsetting_state(),
-        #     "azure-functions version": get_sdk_version(),
-        # }
-        # logger.info(json.dumps(log_data))
         return protos.FunctionLoadResponse(
             function_id=function_id,
             result=protos.StatusResult(

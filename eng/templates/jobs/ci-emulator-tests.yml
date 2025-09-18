@@ -90,7 +90,8 @@ jobs:
       - bash: |
             python -m pytest -q --dist loadfile --reruns 4 --ignore=tests/emulator_tests/test_servicebus_functions.py tests/emulator_tests
         env:
-          AzureWebJobsStorage: "UseDevelopmentStorage=true"
+          AzureWebJobsStorage: $(AzureWebJobsStorage)
+          AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
           AzureWebJobsEventHubConnectionString: $(EmulatorEventHubConnectionString)
           AzureWebJobsCosmosDBConnectionString: $(EmulatorCosmosDBConnectionString)
           CosmosDBEmulatorUrl: $(CosmosDBEmulatorUrl)
@@ -109,7 +110,8 @@ jobs:
       - bash: |
             python -m pytest -q --dist loadfile --reruns 4 tests/emulator_tests/test_servicebus_functions.py
         env:
-          AzureWebJobsStorage: "UseDevelopmentStorage=true"
+          AzureWebJobsStorage: $(AzureWebJobsStorage)
           AzureWebJobsServiceBusConnectionString: $(EmulatorServiceBusConnectionString)
+          AzureWebJobsServiceBusSDKConnectionString: $(AzureWebJobsServiceBusSDKConnectionString)
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         displayName: "Running $(PYTHON_VERSION) Python ServiceBus Linux Emulator Tests"

@@ -1,6 +1,7 @@
 parameters:
   pythonVersion: ''
   artifactName: ''
+  grpcBuild: ''
 
 steps:
 - task: UsePythonVersion@0
@@ -13,8 +14,13 @@ steps:
     Write-Host "Python version: $PY_VER"
     # Extract minor version as integers
     $versionParts = $PY_VER.Split('.')
+    $PY_MAJOR = [int]$versionParts[0]
+    Write-Host "Major version: $PY_MAJOR"
+    Write-Host "##vso[task.setvariable variable=majorVersion;]$PY_MAJOR"
+
     $PY_MINOR = [int]$versionParts[1]
     Write-Host "Minor version: $PY_MINOR"
+    Write-Host "##vso[task.setvariable variable=minorVersion;]$PY_MINOR"
 
     # Set build-related variables based on Python minor version
     if( $PY_MINOR -ge 13 )
@@ -73,6 +79,68 @@ steps:
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: eq(variables['proxyWorker'], false)
   displayName: 'Copy azure_functions_worker files'
+- powershell: |
+    $root = "$(Build.ArtifactStagingDirectory)"
+    $cythonDir = Join-Path $root "grpc/_cython"
+
+    # Define expected files/folders relative to root
+    $expected = @(
+        ".artifactignore",
+        "azure",
+        "azure_functions_worker",
+        "azure_functions_worker/protos/FunctionRpc_pb2.py",
+        "azure_functions_worker/protos/FunctionRpc_pb2_grpc.py",
+        "azure_functions_worker/protos/_src",
+        "azure_functions_worker/protos/identity",
+        "azure_functions_worker/protos/identity/ClaimsIdentityRpc_pb2.py",
+        "azure_functions_worker/protos/identity/ClaimsIdentityRpc_pb2_grpc.py",
+        "azure_functions_worker/protos/shared",
+        "azure_functions_worker/protos/shared/NullableTypes_pb2.py",
+        "azure_functions_worker/protos/shared/NullableTypes_pb2_grpc.py",
+        "dateutil",
+        "google",
+        "grpc",
+        "markupsafe",
+        "six.py",
+        "werkzeug",
+        "worker.py"
+    )
+    # Add azurefunctions/ conditionally
+    if ("$(minorVersion)" -ne "7") {
+        Write-Host "Including azurefunctions/ in expected list (minorVersion=$(minorVersion))"
+        $expected += "azurefunctions"
+    } else {
+        Write-Host "Skipping azurefunctions/ (minorVersion=7)"
+    }
+
+    $missing = @()
+
+    foreach ($item in $expected) {
+        $path = Join-Path $root $item
+        if (-not (Test-Path $path)) {
+            $missing += $item
+        }
+    }
+    # === gRPC check ===
+    $grpcPattern = "*$(majorVersion)$(minorVersion)*-${{ parameters.grpcBuild }}"
+    $grpcMatch = Get-ChildItem -Path $cythonDir -Name -ErrorAction SilentlyContinue |
+                Where-Object { $_ -like $grpcPattern }
+
+    if (-not $grpcMatch) {
+        $missing += "grpc/_cython/$grpcPattern"
+    } else {
+        Write-Host "✅ Found gRPC binary: $grpcMatch"
+    }
+
+    if ($missing.Count -gt 0) {
+        Write-Error "Validation failed. Missing expected files/folders:`n$($missing -join "`n")"
+        exit 1
+    }
+    else {
+        Write-Host "✅ Validation passed. All expected files/folders are present."
+    }
+  displayName: "Validate azure_functions_worker artifact contents"
+  condition: eq(variables['proxyWorker'], false)
 - task: CopyFiles@2
   inputs:
     sourceFolder: '$(Build.SourcesDirectory)/deps'
@@ -96,3 +164,62 @@ steps:
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: eq(variables['proxyWorker'], true)
   displayName: 'Copy proxy_worker files'
+- powershell: |
+    $root = "$(Build.ArtifactStagingDirectory)"
+    $cythonDir = Join-Path $root "grpc/_cython"
+
+    # Define expected files/folders relative to root
+    $expected = @(
+        ".artifactignore",
+        "azure",
+        "azure_functions_runtime",
+        "azure_functions_runtime_v1",
+        "azurefunctions",
+        "google",
+        "grpc",
+        "markupsafe",
+        "proxy_worker",
+        "proxy_worker/protos/FunctionRpc_pb2.py",
+        "proxy_worker/protos/FunctionRpc_pb2_grpc.py",
+        "proxy_worker/protos/_src",
+        "proxy_worker/protos/identity",
+        "proxy_worker/protos/identity/ClaimsIdentityRpc_pb2.py",
+        "proxy_worker/protos/identity/ClaimsIdentityRpc_pb2_grpc.py",
+        "proxy_worker/protos/shared",
+        "proxy_worker/protos/shared/NullableTypes_pb2.py",
+        "proxy_worker/protos/shared/NullableTypes_pb2_grpc.py",
+        "six.py",
+        "uvloop",
+        "werkzeug",
+        "worker.py"
+    )
+
+    $missing = @()
+
+    foreach ($item in $expected) {
+        $path = Join-Path $root $item
+        if (-not (Test-Path $path)) {
+            $missing += $item
+        }
+    }
+
+    # === gRPC check ===
+    $grpcPattern = "*$(majorVersion)$(minorVersion)*-${{ parameters.grpcBuild }}"
+    $grpcMatch = Get-ChildItem -Path $cythonDir -Name -ErrorAction SilentlyContinue |
+                Where-Object { $_ -like $grpcPattern }
+
+    if (-not $grpcMatch) {
+        $missing += "grpc/_cython/$grpcPattern"
+    } else {
+        Write-Host "✅ Found gRPC binary: $grpcMatch"
+    }
+
+    if ($missing.Count -gt 0) {
+        Write-Error "Validation failed. Missing expected files/folders:`n$($missing -join "`n")"
+        exit 1
+    }
+    else {
+        Write-Host "✅ Validation passed. All expected files/folders are present."
+    }
+  displayName: "Validate proxy_worker artifact contents"
+  condition: eq(variables['proxyWorker'], true)

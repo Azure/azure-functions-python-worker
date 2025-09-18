@@ -32,6 +32,7 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       architecture: 'x64'
       artifactName: '$(pythonVersion)_WINDOWS_X64'
+      grpcBuild: 'win_amd64.pyd'
 - job: Build_WINDOWS_X86
   pool:
     name: 1es-pool-azfunc
@@ -65,6 +66,7 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       architecture: 'x86'
       artifactName: '$(pythonVersion)_WINDOWS_x86'
+      grpcBuild: 'win32.pyd'
 - job: Build_LINUX_X64
   pool:
     name: 1es-pool-azfunc
@@ -97,6 +99,7 @@ jobs:
     parameters:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(pythonVersion)_LINUX_X64'
+      grpcBuild: 'x86_64-linux-gnu.so'
 - job: Build_OSX_X64
   pool:
     name: Azure Pipelines
@@ -129,6 +132,7 @@ jobs:
     parameters:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(pythonVersion)_OSX_X64'
+      grpcBuild: 'darwin.so'
 - job: Build_OSX_ARM64
   pool:
     name: Azure Pipelines
@@ -157,6 +161,7 @@ jobs:
     parameters:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(pythonVersion)_OSX_ARM64'
+      grpcBuild: 'darwin.so'
 - job: Build_LINUX_ARM64
   pool:
     name: 1es-pool-azfunc
@@ -185,6 +190,7 @@ jobs:
     parameters:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(pythonVersion)_LINUX_ARM64'
+      grpcBuild: 'aarch64-linux-gnu.so'
 
 - job: PackageWorkers
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']

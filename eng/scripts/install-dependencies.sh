@@ -10,5 +10,7 @@ if [[ $1 != "3.7" ]]; then
     python -m pip install --pre -U -e $2/[test-http-v2]
 fi
 if [[ $1 != "3.7" && $1 != "3.8" ]]; then
-    python -m pip install --pre -U -e $2/[test-deferred-bindings]
+    INSTALL_DIR="./extensions_dir"
+    python -m pip install --pre -U --target "$INSTALL_DIR" "$2/[test-deferred-bindings]"
+    python -c "import sys; sys.path.insert(0, '$INSTALL_DIR'); import azurefunctions.extensions.bindings.blob as blob; print(blob.__version__)"
 fi

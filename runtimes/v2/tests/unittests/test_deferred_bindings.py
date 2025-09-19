@@ -100,7 +100,7 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
         self.assertEqual(meta.check_deferred_bindings_enabled(
             StorageStreamDownloader, True), (True, True))
 
-    async def test_valid_settlement_param():
+    async def test_valid_settlement_param(self):
         params = {'param1', 'param2', 'param3'}
         bound_params = {'param1', 'param2'}
         annotations = {
@@ -112,9 +112,9 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
         settlement_client_arg = meta.validate_settlement_param(
             params, bound_params, annotations)
 
-        assert settlement_client_arg == 'param3'
+        self.assertEqual(settlement_client_arg, 'param3')
 
-    async def test_invalid_settlement_param():
+    async def test_invalid_settlement_param(self):
         params = {'param1', 'param2', 'param3'}
         bound_params = {'param1', 'param2'}
         annotations = {
@@ -126,9 +126,9 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
         settlement_client_arg = meta.validate_settlement_param(
             params, bound_params, annotations)
 
-        assert settlement_client_arg == ''
+        self.assertEqual(settlement_client_arg, '')
 
-    async def test_invalid_settlement_param_multiple():
+    async def test_invalid_settlement_param_multiple(self):
         params = {'param1', 'param2', 'param3', 'param4'}
         bound_params = {'param1', 'param2'}
         annotations = {
@@ -141,4 +141,4 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
         settlement_client_arg = meta.validate_settlement_param(
             params, bound_params, annotations)
 
-        assert settlement_client_arg == ''
+        self.assertEqual(settlement_client_arg, '')

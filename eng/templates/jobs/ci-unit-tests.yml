@@ -43,7 +43,6 @@ jobs:
         displayName: 'Install dependencies'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - bash: |
-          export PYTHONPATH="$(Build.SourcesDirectory)/servicebus_dir:$PYTHONPATH"
           PY_VER="$(PYTHON_VERSION)"
           echo "Python version: $PY_VER"
 

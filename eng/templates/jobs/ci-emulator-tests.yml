@@ -108,6 +108,7 @@ jobs:
           AzureWebJobsSQLPassword: $(AzureWebJobsSQLPassword)
         displayName: 'Install Azurite and Start ServiceBus Emulator'
       - bash: |
+            export PYTHONPATH="$(Build.SourcesDirectory)/servicebus_dir:$PYTHONPATH"
             python -m pytest -q --dist loadfile --reruns 4 tests/emulator_tests/test_servicebus_functions.py
         env:
           AzureWebJobsStorage: $(AzureWebJobsStorage)

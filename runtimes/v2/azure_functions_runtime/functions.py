@@ -147,11 +147,13 @@ class Registry:
                 params, bound_params, annotations)
             if settlement_client_arg != '':
                 params.pop(settlement_client_arg)
-            raise FunctionLoadError(
-                func_name,
-                'Function parameter mismatch — the following trigger/input bindings '
-                'are declared in Python but missing from the '
-                'function decorator: ' + repr(set(params) - set(bound_params)))
+            else:
+                # Not supported by settlement client, raise error for missing parameters
+                raise FunctionLoadError(
+                    func_name,
+                    'the following parameters are declared in Python '
+                    'but not in the function definition (function.json or '
+                    f'function decorators):  {set(params) - set(bound_params)!r}')
 
         if set(bound_params) - set(params):
             raise FunctionLoadError(

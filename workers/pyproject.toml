@@ -53,7 +53,6 @@ Repository = "https://github.com/Azure/azure-functions-python-worker"
 dev = [
     "azure-cosmos", # Used for CosmosDB Emulator tests
     "azure-eventhub", # Used for EventHub E2E tests
-    "azure-servicebus",
     "azure-functions-durable", # Used for Durable E2E tests
     "azure-monitor-opentelemetry; python_version >= '3.8'", # Used for Azure Monitor unit tests
     "flask",
@@ -92,8 +91,7 @@ test-http-v2 = [
 ]
 test-deferred-bindings = [
     "azurefunctions-extensions-bindings-blob==1.1.1",
-    "azurefunctions-extensions-bindings-eventhub==1.0.0b1",
-    "azurefunctions-extensions-bindings-servicebus==1.0.0b2"
+    "azurefunctions-extensions-bindings-eventhub==1.0.0b1"
 ]
 
 [build-system]

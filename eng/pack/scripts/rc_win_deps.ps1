@@ -1,62 +1,71 @@
 param (
     [string]$pythonVersion
 )
+$versionParts = $pythonVersion -split '\.'  # Splitting by dot
+$versionMinor = [int]$versionParts[1]
 
-# Create venv
-python -m venv .env
-. .env\Scripts\Activate.ps1
-python -m pip install "setuptools<68" wheel
-
-# Install Bazel
-choco install bazel --version=6.5.0 -y
-refreshenv
-bazel --version
-
-Write-Host "=== Checking Python version being used ==="
-.\.env\Scripts\python.exe --version
-.\.env\Scripts\pip.exe --version
+Write-Host "=== Upgrading pip and installing build dependencies ==="
+python -m pip install --upgrade pip setuptools wheel cython
 
 Write-Host "=== Cloning gRPC repo ==="
-if (-not (Test-Path "grpc")) {
-    git clone --recursive https://github.com/grpc/grpc
+if (Test-Path grpc) {
+    Remove-Item -Recurse -Force grpc
+}
+git clone --recursive https://github.com/grpc/grpc
+
+Write-Host "=== Building grpcio from source ==="
+Set-Location grpc
+$env:GRPC_PYTHON_BUILD_WITH_CYTHON = "1"
+
+# Build the wheel into dist/
+python -m pip wheel . -w dist
+
+# Log contents of dist
+Write-Host "=== Checking dist directory ==="
+if (Test-Path dist) {
+    Get-ChildItem dist
 } else {
-    cd grpc
-    Write-Host "Repo already exists. Updating submodules..."
-    git submodule update --init --recursive
-    cd ..
+    Write-Host "dist/ directory not found!"
 }
 
-cd grpc
+# Log and install grpc
+$grpcWheel = Get-ChildItem dist\grpcio-*.whl | Select-Object -First 1
+Write-Host "Built grpcio wheel: $($grpcWheel.Name)"
+Write-Host "=== Install grpcio wheel $($grpcWheel.Name) into root ==="
+$grpcWheel = Get-ChildItem dist\grpcio-*.whl | Select-Object -First 1
+python -m pip install $grpcWheel.FullName
 
-Write-Host "=== Building grpcio wheel with setup.py ==="
-..\.\.env\Scripts\python.exe setup.py bdist_wheel -d dist
-
-Write-Host "=== Checking built wheels ==="
-Get-ChildItem dist
-
-Write-Host "=== Installing grpcio wheel into venv ==="
-Get-ChildItem -Path "dist" -Filter "grpcio-*.whl" | ForEach-Object {
-    Write-Host "Installing wheel: $($_.FullName)"
-    ..\.\.env\Scripts\pip.exe install $_.FullName
-}
 
 cd ..
 
 # Go back to your project root and install your workers package
 Set-Location workers
+
+Write-Host "=== Install other deps into root ==="
 python -m pip install .
+python -m pip install grpcio-tools==1.70.0
 
 $depsPath = Join-Path -Path $env:BUILD_SOURCESDIRECTORY -ChildPath "deps"
 
-python -m pip install . azure-functions --no-compile --target $depsPath.ToString()
+# Install both grpc wheels into deps
+Write-Host "=== Installing grpcio into deps/ ==="
+python -m pip install $grpcWheel.FullName --target $depsPath
 
+Write-Host "=== Installing other deps into deps/ ==="
+python -m pip install --upgrade pip setuptools wheel cython --target $depsPath 
+python -m pip install . azure-functions --no-compile --target $depsPath --find-links ..\grpc\dist
+python -m pip install grpcio-tools==1.70.0 --no-compile --target $depsPath --find-links ..\grpc\dist
+
+Write-Host "=== Install invoke and build protos ==="
 python -m pip install invoke
 cd tests
 python -m invoke -c test_setup build-protos
 
+Write-Host "=== Copying .artifactignore ==="
 cd ..
 Copy-Item -Path ".artifactignore" -Destination $depsPath.ToString()
 
+Write-Host "=== Copying protos ==="
 if ($versionMinor -lt 13) {
     $protosPath = Join-Path -Path $depsPath -ChildPath "azure_functions_worker/protos"
     Copy-Item -Path "azure_functions_worker/protos/*" -Destination $protosPath.ToString() -Recurse -Force

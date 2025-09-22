@@ -1,5 +1,6 @@
 jobs:
 - job: Build_WINDOWS_X64
+  timeoutInMinutes: 180
   pool:
     name: 1es-pool-azfunc
     image: 1es-windows-2022
@@ -36,6 +37,7 @@ jobs:
       artifactName: '$(pythonVersion)_WINDOWS_X64'
       grpcBuild: 'win_amd64.pyd'
 - job: Build_WINDOWS_X86
+  timeoutInMinutes: 180
   pool:
     name: 1es-pool-azfunc
     image: 1es-windows-2022
@@ -72,6 +74,7 @@ jobs:
       artifactName: '$(pythonVersion)_WINDOWS_x86'
       grpcBuild: 'win32.pyd'
 - job: Build_LINUX_X64
+  timeoutInMinutes: 180
   pool:
     name: 1es-pool-azfunc
     image: 1es-ubuntu-22.04
@@ -107,6 +110,7 @@ jobs:
       artifactName: '$(pythonVersion)_LINUX_X64'
       grpcBuild: 'x86_64-linux-gnu.so'
 - job: Build_OSX_X64
+  timeoutInMinutes: 180
   pool:
     name: Azure Pipelines
     image: macOS-latest
@@ -136,12 +140,13 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(pythonVersion)_OSX_X64"
   steps:
-  - template: ../../../pack/templates/nix_env_gen.yml
+  - template: ../../../pack/templates/macos_64_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(pythonVersion)_OSX_X64'
       grpcBuild: 'darwin.so'
 - job: Build_OSX_ARM64
+  timeoutInMinutes: 180
   pool:
     name: Azure Pipelines
     image: macOS-latest
@@ -173,6 +178,7 @@ jobs:
       artifactName: '$(pythonVersion)_OSX_ARM64'
       grpcBuild: 'darwin.so'
 - job: Build_LINUX_ARM64
+  timeoutInMinutes: 240
   pool:
     name: 1es-pool-azfunc
     image: 1es-ubuntu-22.04

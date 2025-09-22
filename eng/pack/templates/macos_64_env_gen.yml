@@ -46,13 +46,14 @@ steps:
     disableAutoCwd: true
     scriptPath: 'eng/pack/scripts/mac_arm64_deps.sh'
     args: '${{ parameters.pythonVersion }}'
-  displayName: 'Build and install dependencies'
+  displayName: 'Install dependencies'
   condition: ne(variables['minorVersion'], '14')
 - task: ShellScript@2
   inputs:
-    filePath: 'eng/pack/scripts/rc_mac_arm64_deps.sh'
-    arguments: '${{ parameters.pythonVersion }}'
-  displayName: 'Build and install dependencies from scratch'
+    disableAutoCwd: true
+    scriptPath: 'eng/pack/scripts/rc_mac_arm64_deps.sh'
+    args: '${{ parameters.pythonVersion }}'
+  displayName: 'Build dependencies from scratch'
   condition: eq(variables['minorVersion'], '14')
 - bash: |
     pip install pip-audit
@@ -169,6 +170,14 @@ steps:
       !werkzeug/debug/shared/debugger.js
       !azure_functions_worker/**
       !dateutil/**
+      !Cython/**
+      !__pycache__/**
+      !bin/**
+      !cython.py
+      !pip/**
+      !pyximport/**
+      !typing_extensions.py
+      !wheel/**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: eq(variables['proxyWorker'], true)
   displayName: 'Copy proxy_worker files'

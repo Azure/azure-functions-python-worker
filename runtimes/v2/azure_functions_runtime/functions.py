@@ -34,7 +34,7 @@ class FunctionInfo(typing.NamedTuple):
     has_return: bool
     is_http_func: bool
     deferred_bindings_enabled: bool
-    settlement_client_arg: str
+    settlement_client_arg: typing.Optional[str]
 
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
@@ -140,12 +140,12 @@ class Registry:
                                  protos):
         logger.debug("Params: %s, BoundParams: %s, Annotations: %s, FuncName: %s",
                      params, bound_params, annotations, func_name)
-        settlement_client_arg = ''
+        settlement_client_arg = None
         if set(params) - set(bound_params):
             # Check for settlement client support for the missing parameters
             settlement_client_arg = validate_settlement_param(
                 params, bound_params, annotations)
-            if settlement_client_arg != '':
+            if settlement_client_arg is not None:
                 params.pop(settlement_client_arg)
             else:
                 # Not supported by settlement client, raise error for missing parameters

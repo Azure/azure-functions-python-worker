@@ -30,7 +30,7 @@ class FunctionInfo(typing.NamedTuple):
     has_return: bool
     is_http_func: bool
     deferred_bindings_enabled: bool
-    settlement_client_arg: str
+    settlement_client_arg: typing.Optional[str]
 
     input_types: typing.Mapping[str, ParamTypeInfo]
     output_types: typing.Mapping[str, ParamTypeInfo]
@@ -134,12 +134,12 @@ class Registry:
     @staticmethod
     def validate_function_params(params: dict, bound_params: dict,
                                  annotations: dict, func_name: str):
-        settlement_client_arg = ''
+        settlement_client_arg = None
         if set(params) - set(bound_params):
             # Check for settlement client support for the missing parameters
             settlement_client_arg = bindings_utils.validate_settlement_param(
                 params, bound_params, annotations)
-            if settlement_client_arg != '':
+            if settlement_client_arg is not None:
                 params.pop(settlement_client_arg)
             else:
                 # Not supported by settlement client, raise error for missing parameters

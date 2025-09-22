@@ -339,7 +339,7 @@ def validate_settlement_param(params: dict,
     considered for settlement client support.
     """
     if len(set(params) - set(bound_params)) > 1:
-        return ''
+        return None
 
     # There is only one unbound param, check the type
     settlement_param = next(iter(set(params) - set(bound_params)))
@@ -350,4 +350,4 @@ def validate_settlement_param(params: dict,
             return settlement_param
     except Exception:
         param_type = None
-    return ''
+    return None

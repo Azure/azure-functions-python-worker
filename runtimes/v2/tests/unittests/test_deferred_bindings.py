@@ -126,7 +126,7 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
         settlement_client_arg = meta.validate_settlement_param(
             params, bound_params, annotations)
 
-        self.assertEqual(settlement_client_arg, '')
+        self.assertEqual(settlement_client_arg, None)
 
     async def test_invalid_settlement_param_multiple(self):
         params = {'param1', 'param2', 'param3', 'param4'}
@@ -141,4 +141,4 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
         settlement_client_arg = meta.validate_settlement_param(
             params, bound_params, annotations)
 
-        self.assertEqual(settlement_client_arg, '')
+        self.assertEqual(settlement_client_arg, None)

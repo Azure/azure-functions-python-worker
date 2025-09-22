@@ -82,6 +82,7 @@ dev = [
     "pre-commit",
     "invoke",
     "cryptography",
+    "jsonpickle",
     "orjson"
 ]
 test-http-v2 = [

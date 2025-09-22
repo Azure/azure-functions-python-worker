@@ -341,7 +341,7 @@ class Registry:
             has_explicit_return: bool,
             has_implicit_return: bool,
             deferred_bindings_enabled: bool,
-            settlement_client_arg: str,
+            settlement_client_arg: typing.Optional[str],
             input_types: typing.Dict[str, ParamTypeInfo],
             output_types: typing.Dict[str, ParamTypeInfo],
             return_type: str):

@@ -18,16 +18,13 @@ if sys.version_info.minor >= 9:
                                                          ContainerClient,
                                                          StorageStreamDownloader)
 
-DEFERRED_BINDINGS_ENABLED_DIR = testutils.EXTENSION_TESTS_FOLDER / \
-    'deferred_bindings_tests' / \
+DEFERRED_BINDINGS_ENABLED_DIR = testutils.UNIT_TESTS_FOLDER / \
     'deferred_bindings_functions' / \
     'deferred_bindings_enabled'
-DEFERRED_BINDINGS_DISABLED_DIR = testutils.EXTENSION_TESTS_FOLDER / \
-    'deferred_bindings_tests' / \
+DEFERRED_BINDINGS_DISABLED_DIR = testutils.UNIT_TESTS_FOLDER / \
     'deferred_bindings_functions' / \
     'deferred_bindings_disabled'
-DEFERRED_BINDINGS_ENABLED_DUAL_DIR = testutils.EXTENSION_TESTS_FOLDER / \
-    'deferred_bindings_tests' / \
+DEFERRED_BINDINGS_ENABLED_DUAL_DIR = testutils.UNIT_TESTS_FOLDER / \
     'deferred_bindings_functions' / \
     'deferred_bindings_enabled_dual'
 
@@ -155,14 +152,15 @@ class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
         pb = protos.ParameterBinding(name='test',
                                      data=protos.TypedData(
                                          string='test'))
-        sample_mbd = MockMBD(version="1.0",
-                             source="AzureStorageBlobs",
-                             content_type="application/json",
-                             content="{\"Connection\":\"AzureWebJobsStorage\","
-                                     "\"ContainerName\":"
-                                     "\"python-worker-tests\","
-                                     "\"BlobName\":"
-                                     "\"test-blobclient-trigger.txt\"}")
+        sample_mbd = MockMBD(
+            version="1.0",
+            source="AzureStorageBlobs",
+            content_type="application/json",
+            content="{\"Connection\":\"AZURE_STORAGE_CONNECTION_STRING\","
+                    "\"ContainerName\":"
+                    "\"python-worker-tests\","
+                    "\"BlobName\":"
+                    "\"test-blobclient-trigger.txt\"}")
         datum = datumdef.Datum(value=sample_mbd, type='model_binding_data')
 
         obj = meta.deferred_bindings_decode(binding=binding, pb=pb,

@@ -1,7 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import json
+import sys
 import time
+import unittest
 
 from tests.utils import testutils
 
@@ -63,3 +65,40 @@ class TestServiceBusFunctionsSteinGeneric(TestServiceBusFunctions):
     def get_script_dir(cls):
         return testutils.EMULATOR_TESTS_FOLDER / 'servicebus_functions' / \
             'servicebus_functions_stein' / 'generic'
+
+
+@unittest.skipIf(sys.version_info.minor <= 8, "The servicebus extension"
+                                              "is only supported for 3.9+.")
+class TestServiceBusSDKFunctions(testutils.WebHostTestCase):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.EMULATOR_TESTS_FOLDER / 'servicebus_functions' / \
+            'servicebus_functions_sdk'
+
+    @testutils.retryable_test(3, 5)
+    def test_servicebus_basic_sdk(self):
+        data = str(round(time.time()))
+        r = self.webhost.request('POST', 'put_message_sdk',
+                                 data=data)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK')
+
+        max_retries = 10
+
+        for try_no in range(max_retries):
+            # wait for trigger to process the queue item
+            time.sleep(1)
+
+            try:
+                r = self.webhost.request('GET', 'get_servicebus_triggered_sdk')
+                self.assertEqual(r.status_code, 200)
+                msg = r.json()
+                for attr in {'message', 'body', 'enqueued_time_utc', 'lock_token',
+                             'message_id', 'sequence_number'}:
+                    self.assertIn(attr, msg)
+            except (AssertionError, json.JSONDecodeError):
+                if try_no == max_retries - 1:
+                    raise
+            else:
+                break

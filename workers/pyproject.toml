@@ -82,6 +82,7 @@ dev = [
     "pre-commit",
     "invoke",
     "cryptography",
+    "jsonpickle",
     "orjson"
 ]
 test-http-v2 = [
@@ -90,7 +91,8 @@ test-http-v2 = [
 ]
 test-deferred-bindings = [
     "azurefunctions-extensions-bindings-blob==1.1.1",
-    "azurefunctions-extensions-bindings-eventhub==1.0.0b1"
+    "azurefunctions-extensions-bindings-eventhub==1.0.0b1",
+    "azurefunctions-extensions-bindings-servicebus==1.0.0b2"
 ]
 
 [build-system]

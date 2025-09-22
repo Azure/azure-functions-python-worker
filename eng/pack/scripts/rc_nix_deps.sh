@@ -6,8 +6,11 @@ python -m pip install --upgrade pip
 
 cd workers
 python -m pip install .
+python -m pip install grpcio~=1.70.0
 python -m pip install grpcio-tools~=1.70.0
+
 python -m pip install . --no-compile --target "$BUILD_SOURCESDIRECTORY/deps"
+python -m pip install grpcio~=1.70.0 --no-compile --target "$BUILD_SOURCESDIRECTORY/deps"
 python -m pip install grpcio-tools~=1.70.0 --no-compile --target "$BUILD_SOURCESDIRECTORY/deps"
 
 python -m pip install invoke

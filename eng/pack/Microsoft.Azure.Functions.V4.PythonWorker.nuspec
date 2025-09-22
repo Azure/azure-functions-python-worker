@@ -48,6 +48,11 @@
     <file src="..\..\3.13_OSX_X64\**" target="tools\3.13\OSX\X64" />
     <file src="..\..\3.13_OSX_ARM64\**" target="tools\3.13\OSX\Arm64" />
     <file src="..\..\3.13_LINUX_ARM64\**" target="tools\3.13\LINUX\Arm64" />
+    <file src="..\..\3.14_WINDOWS_X64\**" target="tools\3.14\WINDOWS\X64" />
+    <file src="..\..\3.14_WINDOWS_X86\**" target="tools\3.14\WINDOWS\X86" />
+    <file src="..\..\3.14_LINUX_X64\**" target="tools\3.14\LINUX\X64" />
+    <file src="..\..\3.14_OSX_X64\**" target="tools\3.14\OSX\X64" />
+    <file src="..\..\3.14_OSX_ARM64\**" target="tools\3.14\OSX\Arm64" />
     <file src="..\..\workers\python\prodV4\worker.config.json" target="tools" />
     <file src="Microsoft.Azure.Functions.PythonWorker.targets" target="build" />
     <file src="..\..\_manifest\spdx_2.2\manifest.spdx.json" target="SBOM\manifest.spdx.json" />

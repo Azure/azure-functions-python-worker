@@ -7,6 +7,7 @@ steps:
 - task: UsePythonVersion@0
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
+    allowUnstable: true
     architecture: ${{ parameters.architecture }}
     addToPath: true
 - powershell: |
@@ -22,6 +23,16 @@ steps:
     $PY_MINOR = [int]$versionParts[1]
     Write-Host "Minor version: $PY_MINOR"
     Write-Host "##vso[task.setvariable variable=minorVersion;]$PY_MINOR"
+
+    # Detect if this is an RC build
+    if ($PY_VER -match "rc") {
+      Write-Host "RC version detected"
+      Write-Host "##vso[task.setvariable variable=isRC;]true"
+    }
+    else {
+      Write-Host "Stable version detected"
+      Write-Host "##vso[task.setvariable variable=isRC;]false"
+    }
 
     # Set build-related variables based on Python minor version
     if( $PY_MINOR -ge 13 )
@@ -45,6 +56,14 @@ steps:
   inputs:
     filePath: 'eng\pack\scripts\win_deps.ps1'
     arguments: '${{ parameters.pythonVersion }}'
+  displayName: 'Install dependencies'
+  condition: eq(variables['isRC'], 'false')
+- task: PowerShell@2
+  inputs:
+    filePath: 'eng\pack\scripts\rc_win_deps.ps1'
+    arguments: '${{ parameters.pythonVersion }}'
+  displayName: 'Build dependencies from source'
+  condition: eq(variables['isRC'], 'true')
 - bash: |
     pip install pip-audit
     cd workers
@@ -160,6 +179,14 @@ steps:
       !werkzeug\debug\shared\debugger.js
       !dateutil\**
       !azure_functions_worker\**
+      !Cython\**
+      !__pycache__\**
+      !bin\**
+      !cython.py
+      !pip\**
+      !pyximport\**
+      !typing_extensions.py
+      !wheel\**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: eq(variables['proxyWorker'], true)
   displayName: 'Copy proxy_worker files'

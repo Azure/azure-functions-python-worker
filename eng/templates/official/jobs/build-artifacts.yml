@@ -1,5 +1,6 @@
 jobs:
 - job: Build_WINDOWS_X64
+  timeoutInMinutes: 180
   pool:
     name: 1es-pool-azfunc
     image: 1es-windows-2022
@@ -8,32 +9,43 @@ jobs:
     matrix:
       Python37V4:
         pythonVersion: '3.7'
+        normalizedPythonVersion: '3.7'
       Python38V4:
         pythonVersion: '3.8'
+        normalizedPythonVersion: '3.8'
       Python39V4:
         pythonVersion: '3.9'
+        normalizedPythonVersion: '3.9'
       Python310V4:
         pythonVersion: '3.10'
+        normalizedPythonVersion: '3.10'
       Python311V4:
         pythonVersion: '3.11'
+        normalizedPythonVersion: '3.11'
       Python312V4:
         pythonVersion: '3.12'
+        normalizedPythonVersion: '3.12'
       Python313V4:
         pythonVersion: '3.13'
+        normalizedPythonVersion: '3.13'
+      Python314V4:
+        pythonVersion: '3.14.0-rc.2'
+        normalizedPythonVersion: '3.14'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
         targetPath: $(Build.ArtifactStagingDirectory)
-        artifactName: "$(pythonVersion)_WINDOWS_X64"
+        artifactName: "$(normalizedPythonVersion)_WINDOWS_X64"
   steps:
   - template: ../../../pack/templates/win_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       architecture: 'x64'
-      artifactName: '$(pythonVersion)_WINDOWS_X64'
+      artifactName: '$(normalizedPythonVersion)_WINDOWS_X64'
       grpcBuild: 'win_amd64.pyd'
 - job: Build_WINDOWS_X86
+  timeoutInMinutes: 180
   pool:
     name: 1es-pool-azfunc
     image: 1es-windows-2022
@@ -42,32 +54,43 @@ jobs:
     matrix:
       Python37V4:
         pythonVersion: '3.7'
+        normalizedPythonVersion: '3.7'
       Python38V4:
         pythonVersion: '3.8'
+        normalizedPythonVersion: '3.8'
       Python39V4:
         pythonVersion: '3.9'
+        normalizedPythonVersion: '3.9'
       Python310V4:
         pythonVersion: '3.10'
+        normalizedPythonVersion: '3.10'
       Python311V4:
         pythonVersion: '3.11'
+        normalizedPythonVersion: '3.11'
       Python312V4:
         pythonVersion: '3.12'
+        normalizedPythonVersion: '3.12'
       Python313V4:
         pythonVersion: '3.13'
+        normalizedPythonVersion: '3.13'
+      Python314V4:
+        pythonVersion: '3.14.0-rc.2'
+        normalizedPythonVersion: '3.14'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
         targetPath: $(Build.ArtifactStagingDirectory)
-        artifactName: "$(pythonVersion)_WINDOWS_X86"
+        artifactName: "$(normalizedPythonVersion)_WINDOWS_X86"
   steps:
   - template: ../../../pack/templates/win_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       architecture: 'x86'
-      artifactName: '$(pythonVersion)_WINDOWS_x86'
+      artifactName: '$(normalizedPythonVersion)_WINDOWS_x86'
       grpcBuild: 'win32.pyd'
 - job: Build_LINUX_X64
+  timeoutInMinutes: 180
   pool:
     name: 1es-pool-azfunc
     image: 1es-ubuntu-22.04
@@ -76,31 +99,42 @@ jobs:
     matrix:
       Python37V4:
         pythonVersion: '3.7'
+        normalizedPythonVersion: '3.7'
       Python38V4:
         pythonVersion: '3.8'
+        normalizedPythonVersion: '3.8'
       Python39V4:
         pythonVersion: '3.9'
+        normalizedPythonVersion: '3.9'
       Python310V4:
         pythonVersion: '3.10'
+        normalizedPythonVersion: '3.10'
       Python311V4:
         pythonVersion: '3.11'
+        normalizedPythonVersion: '3.11'
       Python312V4:
         pythonVersion: '3.12'
+        normalizedPythonVersion: '3.12'
       Python313V4:
         pythonVersion: '3.13'
+        normalizedPythonVersion: '3.13'
+      Python314V4:
+        pythonVersion: '3.14.0-rc.2'
+        normalizedPythonVersion: '3.14'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
         targetPath: $(Build.ArtifactStagingDirectory)
-        artifactName: "$(pythonVersion)_LINUX_X64"
+        artifactName: "$(normalizedPythonVersion)_LINUX_X64"
   steps:
   - template: ../../../pack/templates/nix_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
-      artifactName: '$(pythonVersion)_LINUX_X64'
+      artifactName: '$(normalizedPythonVersion)_LINUX_X64'
       grpcBuild: 'x86_64-linux-gnu.so'
 - job: Build_OSX_X64
+  timeoutInMinutes: 180
   pool:
     name: Azure Pipelines
     image: macOS-latest
@@ -109,60 +143,80 @@ jobs:
     matrix:
       Python37V4:
         pythonVersion: '3.7'
+        normalizedPythonVersion: '3.7'
       Python38V4:
         pythonVersion: '3.8'
+        normalizedPythonVersion: '3.8'
       Python39V4:
         pythonVersion: '3.9'
+        normalizedPythonVersion: '3.9'
       Python310V4:
         pythonVersion: '3.10'
+        normalizedPythonVersion: '3.10'
       Python311V4:
         pythonVersion: '3.11'
+        normalizedPythonVersion: '3.11'
       Python312V4:
         pythonVersion: '3.12'
+        normalizedPythonVersion: '3.12'
       Python313V4:
         pythonVersion: '3.13'
+        normalizedPythonVersion: '3.13'
+      Python314V4:
+        pythonVersion: '3.14.0-rc.2'
+        normalizedPythonVersion: '3.14'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
         targetPath: $(Build.ArtifactStagingDirectory)
-        artifactName: "$(pythonVersion)_OSX_X64"
-  steps:
-  - template: ../../../pack/templates/nix_env_gen.yml
-    parameters:
-      pythonVersion: '$(pythonVersion)'
-      artifactName: '$(pythonVersion)_OSX_X64'
-      grpcBuild: 'darwin.so'
-- job: Build_OSX_ARM64
-  pool:
-    name: Azure Pipelines
-    image: macOS-latest
-    os: macOS
-  strategy:
-    matrix:
-      Python39V4:
-        pythonVersion: '3.9'
-      Python310V4:
-        pythonVersion: '3.10'
-      Python311V4:
-        pythonVersion: '3.11'
-      Python312V4:
-        pythonVersion: '3.12'
-      Python313V4:
-        pythonVersion: '3.13'
-  templateContext:
-    outputParentDirectory: $(Build.ArtifactStagingDirectory)
-    outputs:
-      - output: pipelineArtifact
-        targetPath: $(Build.ArtifactStagingDirectory)
-        artifactName: "$(pythonVersion)_OSX_ARM64"
+        artifactName: "$(normalizedPythonVersion)_OSX_X64"
   steps:
   - template: ../../../pack/templates/macos_64_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
-      artifactName: '$(pythonVersion)_OSX_ARM64'
+      artifactName: '$(normalizedPythonVersion)_OSX_X64'
+      grpcBuild: 'darwin.so'
+- job: Build_OSX_ARM64
+  timeoutInMinutes: 180
+  pool:
+    name: Azure Pipelines
+    image: macOS-latest
+    os: macOS
+  strategy:
+    matrix:
+      Python39V4:
+        pythonVersion: '3.9'
+        normalizedPythonVersion: '3.9'
+      Python310V4:
+        pythonVersion: '3.10'
+        normalizedPythonVersion: '3.10'
+      Python311V4:
+        pythonVersion: '3.11'
+        normalizedPythonVersion: '3.11'
+      Python312V4:
+        pythonVersion: '3.12'
+        normalizedPythonVersion: '3.12'
+      Python313V4:
+        pythonVersion: '3.13'
+        normalizedPythonVersion: '3.13'
+      Python314V4:
+        pythonVersion: '3.14.0-rc.2'
+        normalizedPythonVersion: '3.14'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_OSX_ARM64"
+  steps:
+  - template: ../../../pack/templates/macos_64_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_OSX_ARM64'
       grpcBuild: 'darwin.so'
 - job: Build_LINUX_ARM64
+  timeoutInMinutes: 240
   pool:
     name: 1es-pool-azfunc
     image: 1es-ubuntu-22.04
@@ -171,25 +225,30 @@ jobs:
     matrix:
       Python39V4:
         pythonVersion: '3.9'
+        normalizedPythonVersion: '3.9'
       Python310V4:
         pythonVersion: '3.10'
+        normalizedPythonVersion: '3.10'
       Python311V4:
         pythonVersion: '3.11'
+        normalizedPythonVersion: '3.11'
       Python312V4:
         pythonVersion: '3.12'
+        normalizedPythonVersion: '3.12'
       Python313V4:
         pythonVersion: '3.13'
+        normalizedPythonVersion: '3.13'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
       - output: pipelineArtifact
         targetPath: $(Build.ArtifactStagingDirectory)
-        artifactName: "$(pythonVersion)_LINUX_ARM64"
+        artifactName: "$(normalizedPythonVersion)_LINUX_ARM64"
   steps:
   - template: ../../../pack/templates/nix_arm64_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
-      artifactName: '$(pythonVersion)_LINUX_ARM64'
+      artifactName: '$(normalizedPythonVersion)_LINUX_ARM64'
       grpcBuild: 'aarch64-linux-gnu.so'
 
 - job: PackageWorkers

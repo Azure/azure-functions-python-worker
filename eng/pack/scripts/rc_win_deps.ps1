@@ -35,7 +35,6 @@ Write-Host "=== Install grpcio wheel $($grpcWheel.Name) into root ==="
 $grpcWheel = Get-ChildItem dist\grpcio-*.whl | Select-Object -First 1
 python -m pip install $grpcWheel.FullName
 
-
 cd ..
 
 # Change back to project root

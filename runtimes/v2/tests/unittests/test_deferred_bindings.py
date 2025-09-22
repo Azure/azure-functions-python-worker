@@ -22,6 +22,9 @@ EVENTHUB_SAMPLE_CONTENT = b"\x00Sr\xc1\x8e\x08\xa3\x1bx-opt-sequence-number-epoc
 
 
 class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
+    def setUp(self):
+        # Initialize DEFERRED_BINDING_REGISTRY
+        meta.load_binding_registry()
 
     @unittest.skip("TODO: Move to emulator.")
     def test_mbd_deferred_bindings_enabled_decode(self):

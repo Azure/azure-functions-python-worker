@@ -39,7 +39,6 @@ dependencies = [
      "grpcio~=1.43.0; python_version == '3.7'",
      "grpcio ~=1.59.0; python_version >= '3.8' and python_version < '3.13'",
      "grpcio~=1.70.0; python_version == '3.13'",
-     "grpcio~=1.70.0; python_version == '3.14' and sys_platform == 'linux'",
      "uvloop~=0.21.0; python_version >= '3.13' and sys_platform != 'win32'",
      "azurefunctions-extensions-base==1.1.0; python_version >= '3.8'",
      "azure-functions-runtime==1.0.0; python_version >= '3.13'",
@@ -91,7 +90,8 @@ test-http-v2 = [
 ]
 test-deferred-bindings = [
     "azurefunctions-extensions-bindings-blob==1.1.1",
-    "azurefunctions-extensions-bindings-eventhub==1.0.0b1"
+    "azurefunctions-extensions-bindings-eventhub==1.0.0b1",
+    "azurefunctions-extensions-bindings-servicebus==1.0.0b2"
 ]
 
 [build-system]

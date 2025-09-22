@@ -178,7 +178,6 @@ jobs:
       artifactName: '$(pythonVersion)_OSX_ARM64'
       grpcBuild: 'darwin.so'
 - job: Build_LINUX_ARM64
-  timeoutInMinutes: 240
   pool:
     name: 1es-pool-azfunc
     image: 1es-ubuntu-22.04

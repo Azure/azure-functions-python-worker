@@ -53,7 +53,7 @@ steps:
     disableAutoCwd: true
     scriptPath: 'eng/pack/scripts/rc_nix_deps.sh'
     args: '${{ parameters.pythonVersion }}'
-  displayName: 'Build dependencies from scratch'
+  displayName: 'Build dependencies from source'
   condition: eq(variables['minorVersion'], '14')
 - bash: |
     pip install pip-audit

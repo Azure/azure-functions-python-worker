@@ -38,7 +38,7 @@ python -m pip install $grpcWheel.FullName
 
 cd ..
 
-# Go back to your project root and install your workers package
+# Change back to project root
 Set-Location workers
 
 Write-Host "=== Install other deps into root ==="

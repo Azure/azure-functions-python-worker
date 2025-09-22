@@ -31,7 +31,7 @@ python -m pip install "$GRPC_WHEEL"
 
 cd ..
 
-# Go back to your project root and install your workers package
+# Change back to project root
 cd workers
 
 echo "=== Install other deps into root ==="

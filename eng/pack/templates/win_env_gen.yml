@@ -52,7 +52,7 @@ steps:
   inputs:
     filePath: 'eng\pack\scripts\rc_win_deps.ps1'
     arguments: '${{ parameters.pythonVersion }}'
-  displayName: 'Build dependencies from scratch'
+  displayName: 'Build dependencies from source'
   condition: eq(variables['minorVersion'], '14')
 - bash: |
     pip install pip-audit

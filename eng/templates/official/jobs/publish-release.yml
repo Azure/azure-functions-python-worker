@@ -151,8 +151,8 @@ jobs:
 
       **IMPORTANT**: Currently, changes must be backported to the `in-proc` branch to be included in Core Tools and non-Flex deployments.
 
-      * [ ] Backporting to the `in-proc` branch is not required
-          * [x]Otherwise: Link to backporting PR
+      * [x] Backporting to the `in-proc` branch is not required
+          * [ ]Otherwise: Link to backporting PR
       * [x] My changes **do not** require documentation changes
           * [ ] Otherwise: Documentation issue linked to PR
       * [ ] My changes **should not** be added to the release notes for the next release
@@ -164,17 +164,30 @@ jobs:
       * [x] I have added all required tests (Unit tests, E2E tests)
 
       "@
+  
+      # Create PR
+          Write-Host "Creating PR draft in GitHub"
+          $body = @{
+              head = "$newBranch"
+              base = "dev"
+              title = "Update Python Worker Version to $newWorkerVersion"
+              body = $prTemplateContent
+              draft = $true
+              maintainer_can_modify = $true
+          } | ConvertTo-Json -Compress
 
-      $body = (@{head="$newBranch";base="dev";body=$prTemplateContent;draft=$true;maintainer_can_modify=$true;title="Update Python Worker Version to $newWorkerVersion"} | ConvertTo-Json -Compress)$response = Invoke-WebRequest -Headers @{"Cache-Control"="no-cache";"Content-Type"="application/json";"Authorization"="Basic $credential";"Accept"="application/vnd.github.v3+json"} -Method Post -Body "$body" -Uri "https://api.github.com/repos/Azure/azure-functions-host/pulls"
-  
-      # Return Value
-      if ($response.StatusCode -ne 201) {
-          Write-Host "Failed to create a PR in Azure Functions Host"
-          exit -1
-      }
-  
-      $draftUrl = $response | ConvertFrom-Json | Select -expand url
-      Write-Host "PR draft created in $draftUrl"
+          $headers = @{
+              "Authorization" = "Basic $credential"
+              "Content-Type" = "application/json"
+              "Accept" = "application/vnd.github.v3+json"
+              "User-Agent" = "AzureDevOpsPipeline"
+              "Cache-Control" = "no-cache"
+          }
+
+          $response = Invoke-WebRequest -Headers $headers -Method Post -Body $body -Uri "https://api.github.com/repos/Azure/azure-functions-host/pulls"
+      
+          $draftUrl = $response | ConvertFrom-Json | Select -expand url
+          Write-Host "PR draft created in $draftUrl"
     displayName: 'Create Host PR for dev'
 
 - job: "CheckHostPRs"

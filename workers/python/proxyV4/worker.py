@@ -22,7 +22,7 @@ def is_azure_environment():
 
 def validate_python_version():
     minor_version = sys.version_info[1]
-    if not (13 <= minor_version < 14):
+    if not (13 <= minor_version < 15):
         raise RuntimeError(f'Unsupported Python version: 3.{minor_version}')
 
 

@@ -16,6 +16,7 @@ jobs:
   - template: /eng/templates/shared/github-release-branch.yml@self
     parameters:
       PROJECT_DIRECTORY: ${{ parameters.PROJECT_DIRECTORY }}
+      PROJECT_NAME: ${{ parameters.PROJECT_NAME }}
       VERSION_FILE: ${{ parameters.VERSION_FILE }}
       BRANCH_NAME: ${{ parameters.BRANCH_NAME }}
 

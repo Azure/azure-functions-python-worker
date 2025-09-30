@@ -14,29 +14,16 @@ mkdir -p $BUILD_SOURCESDIRECTORY/deps
 # However, since we're running them on the linux/arm64 platform, we ensure
 # that we pull in the correct grpc, etc. builds
 docker run --privileged --rm tonistiigi/binfmt --install all
-docker run --name my-arm64-container --rm -i --platform linux/arm64 \
+docker run --name my-arm64-container --platform linux/arm64 \
       -v ./:/src \
       -w /src \
       python:3.14.0rc3-alpine3.22 sh -c "
         ls -la /src  # debug: see what files exist
-        apk update && apk add --no-cache git curl build-base && \
-        pip install --upgrade pip setuptools wheel cython&& \
-        git clone --recursive https://github.com/grpc/grpc && \
-        cd grpc && \
-        git submodule update --init --recursive && \
-        export GRPC_PYTHON_BUILD_WITH_CYTHON=1 && \
-        pip wheel . -w dist && \
-        ls -la dist && \
-        GRPC_WHEEL=\$(ls dist/grpcio-*.whl | head -n 1) && \
-        pip install \"\$GRPC_WHEEL\" && \ \
-        cd .. && \
+        apt-get update && apt-get install -y git curl && \
+        pip install --upgrade pip && \
         cd workers && \
         pip install . && \
-        pip install grpcio-tools==1.70.0 && \
-        pip install \"\$GRPC_WHEEL\" --target /src && \
-        pip install --upgrade pip setuptools wheel cython --target /src && \
         pip install . --target /src && \
-        pip install grpcio-tools==1.70.0 --target /src && \
         pip install invoke && \
         cd tests && \
         python -m invoke -c test_setup build-protos && \

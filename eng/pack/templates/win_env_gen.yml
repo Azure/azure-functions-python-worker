@@ -57,13 +57,13 @@ steps:
     filePath: 'eng\pack\scripts\win_deps.ps1'
     arguments: '${{ parameters.pythonVersion }}'
   displayName: 'Install dependencies'
-  condition: eq(variables['isRC'], 'false')
-- task: PowerShell@2
-  inputs:
-    filePath: 'eng\pack\scripts\rc_win_deps.ps1'
-    arguments: '${{ parameters.pythonVersion }}'
-  displayName: 'Build dependencies from source'
-  condition: eq(variables['isRC'], 'true')
+#   condition: eq(variables['isRC'], 'false')
+# - task: PowerShell@2
+#   inputs:
+#     filePath: 'eng\pack\scripts\rc_win_deps.ps1'
+#     arguments: '${{ parameters.pythonVersion }}'
+#   displayName: 'Build dependencies from source'
+#   condition: eq(variables['isRC'], 'true')
 - bash: |
     pip install pip-audit
     cd workers

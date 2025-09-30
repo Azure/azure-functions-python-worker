@@ -57,14 +57,14 @@ steps:
     scriptPath: 'eng/pack/scripts/nix_deps.sh'
     args: '${{ parameters.pythonVersion }}'
   displayName: 'Install Dependencies'
-  condition: eq(variables['isRC'], 'false')
-- task: ShellScript@2
-  inputs:
-    disableAutoCwd: true
-    scriptPath: 'eng/pack/scripts/rc_nix_deps.sh'
-    args: '${{ parameters.pythonVersion }}'
-  displayName: 'Build dependencies from source'
-  condition: eq(variables['isRC'], 'true')
+#   condition: eq(variables['isRC'], 'false')
+# - task: ShellScript@2
+#   inputs:
+#     disableAutoCwd: true
+#     scriptPath: 'eng/pack/scripts/rc_nix_deps.sh'
+#     args: '${{ parameters.pythonVersion }}'
+#   displayName: 'Build dependencies from source'
+#   condition: eq(variables['isRC'], 'true')
 - bash: |
     pip install pip-audit
     cd workers

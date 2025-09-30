@@ -17,7 +17,7 @@ docker run --privileged --rm tonistiigi/binfmt --install all
 docker run --name my-arm64-container --platform linux/arm64 \
       -v ./:/src \
       -w /src \
-      python:3.14.0rc3-alpine3.22 sh -c "
+      python:3.14.0rc3-alpine3.22 bash -c "
         ls -la /src  # debug: see what files exist
         apt-get update && apt-get install -y git curl && \
         pip install --upgrade pip && \

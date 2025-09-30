@@ -15,20 +15,20 @@ mkdir -p $BUILD_SOURCESDIRECTORY/deps
 # that we pull in the correct grpc, etc. builds
 docker run --privileged --rm tonistiigi/binfmt --install all
 docker run --name my-arm64-container --platform linux/arm64 \
-      -v ./:/src \
-      -w /src \
-      python:3.14.0rc3-alpine3.22 bash -c "
-        ls -la /src  # debug: see what files exist
-        apt-get update && apt-get install -y git curl && \
-        pip install --upgrade pip && \
-        cd workers && \
-        pip install . && \
-        pip install . --target /src && \
-        pip install invoke && \
-        cd tests && \
-        python -m invoke -c test_setup build-protos && \
-        ls -la /src
-      "
+  -v ./:/src \
+  -w /src \
+  python:3.14.0rc3-alpine3.22 sh -c "
+    ls -la /src  # debug: see what files exist
+    apk update && apk add --no-cache git curl build-base && \
+    pip install --upgrade pip && \
+    cd workers && \
+    pip install . && \
+    pip install . --target /src && \
+    pip install invoke && \
+    cd tests && \
+    python -m invoke -c test_setup build-protos && \
+    ls -la /src
+  "
 
 cd workers
 

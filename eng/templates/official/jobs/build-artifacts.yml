@@ -255,7 +255,7 @@ jobs:
       grpcBuild: 'aarch64-linux-gnu.so'
 
 - job: PackageWorkers
-  dependsOn: ['Build_LINUX_ARM64']
+  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
   templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:

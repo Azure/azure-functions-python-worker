@@ -6,7 +6,7 @@ import traceback
 def extend_exception_message(exc: Exception, msg: str) -> Exception:
     # Reconstruct exception message
     # From: ImportModule: no module name
-    #   To: ImportModule: no module name. msg
+    # To: ImportModule: no module name. msg
     old_tb = exc.__traceback__
     old_msg = getattr(exc, 'msg', None) or str(exc) or ''
     new_msg = (old_msg.rstrip('.') + '. ' + msg).rstrip()

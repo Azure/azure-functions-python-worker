@@ -3,9 +3,10 @@
 
 import unittest
 import traceback
-from azure_functions_worker.utils.tracing import (extend_exception_message,
-                                                  marshall_exception_trace)
-from azure_functions_worker.dispatcher import Dispatcher
+from azure_functions_runtime_v1.utils.tracing import (extend_exception_message,
+                                                      marshall_exception_trace,
+                                                      serialize_exception,
+                                                      serialize_exception_as_str)
 
 
 class MockProtos:
@@ -66,11 +67,20 @@ class TestExceptionUtils(unittest.TestCase):
         try:
             raise ValueError("Error for proto")
         except ValueError as exc:
-            result = Dispatcher._serialize_exception(exc)
+            result = serialize_exception(exc, MockProtos)
             self.assertIsInstance(result, MockProtos.RpcException)
             self.assertIn("ValueError", result.message)
             self.assertIn("Error for proto", result.message)
             self.assertIn("raise ValueError", result.stack_trace)
+
+    def test_serialize_exception_as_str_basic(self):
+        try:
+            raise RuntimeError("Runtime issue")
+        except RuntimeError as exc:
+            result = serialize_exception_as_str(exc)
+            self.assertIn("RuntimeError: Runtime issue", result)
+            self.assertIn("Stack Trace:", result)
+            self.assertIn("raise RuntimeError", result)
 
     def test_serialize_exception_with_unserializable_exception(self):
         class BadExc(Exception):
@@ -78,7 +88,10 @@ class TestExceptionUtils(unittest.TestCase):
                 raise ValueError("Cannot stringify")
 
         exc = BadExc()
-        result_proto = Dispatcher._serialize_exception(exc)
+        result_str = serialize_exception_as_str(exc)
+        self.assertIn("Could not serialize original exception message", result_str)
+
+        result_proto = serialize_exception(exc, MockProtos)
         self.assertIn("Could not serialize original exception message",
                       result_proto.message)
 

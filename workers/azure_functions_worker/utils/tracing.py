@@ -6,7 +6,7 @@ import traceback
 def extend_exception_message(exc: Exception, msg: str) -> Exception:
     # Reconstruct exception message
     # From: ImportModule: no module name
-    #   To: ImportModule: no module name. msg
+    # To: ImportModule: no module name. msg
     old_tb = exc.__traceback__
     old_msg = getattr(exc, 'msg', None) or str(exc) or ''
     new_msg = (old_msg.rstrip('.') + '. ' + msg).rstrip()
@@ -36,4 +36,3 @@ def marshall_exception_trace(exc: Exception) -> str:
     except Exception as sub_exc:
         return (f'Could not extract traceback. '
                 f'Sub-exception: {type(sub_exc).__name__}: {str(sub_exc)}')
-

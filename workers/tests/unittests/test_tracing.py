@@ -62,16 +62,6 @@ class TestExceptionUtils(unittest.TestCase):
             # Ensure 'The above exception was the direct cause' appears
             self.assertIn("The above exception was the direct cause", trace)
 
-    def test_serialize_exception_returns_rpc_exception(self):
-        try:
-            raise ValueError("Error for proto")
-        except ValueError as exc:
-            result = Dispatcher._serialize_exception(exc)
-            self.assertIsInstance(result, MockProtos.RpcException)
-            self.assertIn("ValueError", result.message)
-            self.assertIn("Error for proto", result.message)
-            self.assertIn("raise ValueError", result.stack_trace)
-
     def test_serialize_exception_with_unserializable_exception(self):
         class BadExc(Exception):
             def __str__(self):

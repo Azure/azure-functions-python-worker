@@ -1,5 +1,5 @@
-import importlib
-import types
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 
 from azure_functions_runtime.utils import threadpool as tp
 

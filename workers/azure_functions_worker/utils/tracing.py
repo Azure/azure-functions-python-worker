@@ -29,8 +29,8 @@ def marshall_exception_trace(exc: Exception) -> str:
                 if '<frozen importlib._bootstrap>' not in line and \
                    '<frozen importlib._bootstrap_external>' not in line:
                     filtered_lines.append(line)
-            return ''.join(filtered_lines) if filtered_lines else ''.join(
-                full_traceback)
+            if filtered_lines:
+                return ''.join(filtered_lines)
 
         return ''.join(full_traceback)
     except Exception as sub_exc:

@@ -57,6 +57,9 @@ jobs:
   dependsOn: ['CheckGitHubRelease']
   displayName: 'PyPI Package'
   steps:
+  - script: |
+      echo "##vso[task.setvariable variable=BranchName]refs/heads/${{ parameters.BRANCH_NAME }}/$(NewLibraryVersion)"
+    displayName: 'Set branch variable'
   - task: DownloadPipelineArtifact@2
     displayName: 'Download Python V2 Library release-*/x.y.z Artifact'
     inputs:
@@ -65,7 +68,7 @@ jobs:
       definition: 652
       specificBuildWithTriggering: true
       buildVersionToDownload: latestFromBranch
-      branchName: 'refs/heads/${{ parameters.BRANCH_NAME }}/$(NewLibraryVersion)'
+      branchName: '$(BranchName)'
       targetPath: PythonRuntimeArtifact
   - task: UsePythonVersion@0
     displayName: 'Use Python 3.13'

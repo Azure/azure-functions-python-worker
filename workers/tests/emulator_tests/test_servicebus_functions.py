@@ -69,6 +69,7 @@ class TestServiceBusFunctionsSteinGeneric(TestServiceBusFunctions):
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The servicebus extension"
                                               "is only supported for 3.9+.")
+@unittest.skipIf(sys.version_info.minor >= 14, "Skip to figure out uamqp.")
 class TestServiceBusSDKFunctions(testutils.WebHostTestCase):
 
     @classmethod

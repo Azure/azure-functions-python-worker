@@ -219,18 +219,19 @@ class LinuxConsumptionWebHostController:
         container according to the image name. Return the port of container.
         """
         # Construct environment variables and start the docker container
-        worker_path = os.path.join(PROJECT_ROOT, 'azure_functions_worker')
+        worker_name = 'azure_functions_worker' \
+            if sys.version_info.minor < 13 else 'proxy_worker'
+
+        worker_path = os.path.join(PROJECT_ROOT, worker_name)
+        container_worker_path = (
+            f"/azure-functions-host/workers/python/{self._py_version}/LINUX/X64/{worker_name}"
+        )
 
         # TODO: Mount library in docker container
         # self._download_azure_functions()
 
         # Download python extension base package
         ext_folder = self._download_extensions()
-
-        container_worker_path = (
-            f"/azure-functions-host/workers/python/{self._py_version}/"
-            "LINUX/X64/azure_functions_worker"
-        )
 
         base_ext_container_path = (
             f"/azure-functions-host/workers/python/{self._py_version}/"

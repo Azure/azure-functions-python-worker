@@ -12,14 +12,14 @@ jobs:
     
     strategy:
       matrix:
-         Python39:
-           PYTHON_VERSION: '3.9'
          Python310:
            PYTHON_VERSION: '3.10'
          Python311:
            PYTHON_VERSION: '3.11'
          Python312:
            PYTHON_VERSION: '3.12'
+         Python313:
+           PYTHON_VERSION: '3.13'
     steps:
       - task: UsePythonVersion@0
         inputs:

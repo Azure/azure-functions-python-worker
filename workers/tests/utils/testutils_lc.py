@@ -26,7 +26,10 @@ from tests.utils.constants import PROJECT_ROOT
 # Linux Consumption Testing Constants
 _DOCKER_PATH = "DOCKER_PATH"
 _DOCKER_DEFAULT_PATH = "docker"
-_MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/bookworm/flexconsumption/tags/list"
+_MESH_IMAGE_URL = (
+    "https://mcr.microsoft.com/v2/azure-functions/bookworm/"
+    "flexconsumption/tags/list"
+)
 _MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
 _FUNC_GITHUB_ZIP = "https://github.com/Azure/azure-functions-python-library" \
                    "/archive/refs/heads/dev.zip"
@@ -224,8 +227,32 @@ class LinuxConsumptionWebHostController:
 
         worker_path = os.path.join(PROJECT_ROOT, worker_name)
         container_worker_path = (
-            f"/azure-functions-host/workers/python/{self._py_version}/LINUX/X64/{worker_name}"
+            f"/azure-functions-host/workers/python/{self._py_version}/"
+            f"LINUX/X64/{worker_name}"
         )
+
+        # For Python 3.13+, also mount the runtime libraries
+        runtime_v2_path = None
+        runtime_v1_path = None
+        container_runtime_v2_path = None
+        container_runtime_v1_path = None
+
+        if sys.version_info.minor >= 13:
+            repo_root = os.path.dirname(PROJECT_ROOT)
+            runtime_v2_path = os.path.join(
+                repo_root, 'runtimes', 'v2', 'azure_functions_runtime'
+            )
+            runtime_v1_path = os.path.join(
+                repo_root, 'runtimes', 'v1', 'azure_functions_runtime_v1'
+            )
+            container_runtime_v2_path = (
+                f"/azure-functions-host/workers/python/{self._py_version}/"
+                "LINUX/X64/azure_functions_runtime"
+            )
+            container_runtime_v1_path = (
+                f"/azure-functions-host/workers/python/{self._py_version}/"
+                "LINUX/X64/azure_functions_runtime_v1"
+            )
 
         # TODO: Mount library in docker container
         # self._download_azure_functions()
@@ -256,6 +283,16 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["-e", f"WEBSITE_SITE_NAME={self._uuid}"])
         run_cmd.extend(["-e", "WEBSITE_SKU=Dynamic"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
+
+        # Mount runtime libraries for Python 3.13+
+        if runtime_v2_path and runtime_v1_path:
+            run_cmd.extend([
+                "-v", f'{runtime_v2_path}:{container_runtime_v2_path}'
+            ])
+            run_cmd.extend([
+                "-v", f'{runtime_v1_path}:{container_runtime_v1_path}'
+            ])
+
         run_cmd.extend(["-v",
                         f'{base_ext_local_path}:{base_ext_container_path}'])
 

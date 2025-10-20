@@ -26,7 +26,7 @@ from tests.utils.constants import PROJECT_ROOT
 # Linux Consumption Testing Constants
 _DOCKER_PATH = "DOCKER_PATH"
 _DOCKER_DEFAULT_PATH = "docker"
-_MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/mesh/tags/list"
+_MESH_IMAGE_URL = "https://mcr.microsoft.com/v2/azure-functions/bookworm/flexconsumption/tags/list"
 _MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
 _FUNC_GITHUB_ZIP = "https://github.com/Azure/azure-functions-python-library" \
                    "/archive/refs/heads/dev.zip"

@@ -26,8 +26,9 @@ from tests.utils.constants import PROJECT_ROOT
 # Linux Consumption Testing Constants
 _DOCKER_PATH = "DOCKER_PATH"
 _DOCKER_DEFAULT_PATH = "docker"
+_OS_TYPE = "bookworm" if sys.version_info.minor < 14 else "noble"
 _MESH_IMAGE_URL = (
-    "https://mcr.microsoft.com/v2/azure-functions/bookworm/"
+    f"https://mcr.microsoft.com/v2/azure-functions/{_OS_TYPE}/"
     "flexconsumption/tags/list"
 )
 _MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"

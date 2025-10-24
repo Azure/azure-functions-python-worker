@@ -1,7 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import unittest
-
 import azure.functions as func
 import azurefunctions.extensions.base as clients
 import tests.protos as protos

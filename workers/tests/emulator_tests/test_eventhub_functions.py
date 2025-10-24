@@ -122,3 +122,11 @@ class TestEventHubFunctionsSteinGeneric(TestEventHubFunctions):
     def get_script_dir(cls):
         return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions' / \
             'eventhub_functions_stein' / 'generic'
+
+
+class TestEventHubFunctionsSDK(TestEventHubFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions' / \
+            'eventhub_functions_sdk'

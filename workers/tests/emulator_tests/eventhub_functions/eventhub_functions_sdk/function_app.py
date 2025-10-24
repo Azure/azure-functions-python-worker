@@ -110,7 +110,7 @@ async def metadata_trigger(event: eh.EventData) -> bytes:
         # 'enqueued_time': event.enqueued_time.isoformat(),
         'partition_key': event.partition_key,
         'sequence_number': event.sequence_number,
-        'offset': event.offset,
+        'offset': event.system_properties[b'x-opt-offset'],
         'metadata': event_metadata
     }
 

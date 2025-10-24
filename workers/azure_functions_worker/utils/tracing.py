@@ -1,14 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import traceback
-from traceback import StackSummary, extract_tb
-from typing import List
 
 
 def extend_exception_message(exc: Exception, msg: str) -> Exception:
     # Reconstruct exception message
     # From: ImportModule: no module name
-    #   To: ImportModule: no module name. msg
+    # To: ImportModule: no module name. msg
     old_tb = exc.__traceback__
     old_msg = getattr(exc, 'msg', None) or str(exc) or ''
     new_msg = (old_msg.rstrip('.') + '. ' + msg).rstrip()
@@ -17,23 +15,24 @@ def extend_exception_message(exc: Exception, msg: str) -> Exception:
 
 
 def marshall_exception_trace(exc: Exception) -> str:
-    stack_summary: StackSummary = extract_tb(exc.__traceback__)
-    if isinstance(exc, ModuleNotFoundError):
-        stack_summary = _marshall_module_not_found_error(stack_summary)
-    return ''.join(stack_summary.format())
+    try:
+        # Use traceback.format_exception to capture the full exception chain
+        # This includes __cause__ and __context__ chained exceptions
+        full_traceback = traceback.format_exception(type(exc), exc, exc.__traceback__)
 
+        # If it's a ModuleNotFoundError, we might want to clean up the traceback
+        if isinstance(exc, ModuleNotFoundError):
+            # For consistency with the original logic, we'll still filter
+            # but we need to work with the formatted strings
+            filtered_lines = []
+            for line in full_traceback:
+                if '<frozen importlib._bootstrap>' not in line and \
+                   '<frozen importlib._bootstrap_external>' not in line:
+                    filtered_lines.append(line)
+            if filtered_lines:
+                return ''.join(filtered_lines)
 
-def _marshall_module_not_found_error(tbss: StackSummary) -> StackSummary:
-    tbss = _remove_frame_from_stack(tbss, '<frozen importlib._bootstrap>')
-    tbss = _remove_frame_from_stack(
-        tbss, '<frozen importlib._bootstrap_external>')
-    return tbss
-
-
-def _remove_frame_from_stack(tbss: StackSummary,
-                             framename: str) -> StackSummary:
-    filtered_stack_list: List[traceback.FrameSummary] = \
-        list(filter(lambda frame: getattr(frame,
-                                          'filename') != framename, tbss))
-    filtered_stack: StackSummary = StackSummary.from_list(filtered_stack_list)
-    return filtered_stack
+        return ''.join(full_traceback)
+    except Exception as sub_exc:
+        return (f'Could not extract traceback. '
+                f'Sub-exception: {type(sub_exc).__name__}: {str(sub_exc)}')

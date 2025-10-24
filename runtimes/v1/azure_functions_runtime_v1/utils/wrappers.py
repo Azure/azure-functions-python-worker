@@ -47,6 +47,7 @@ def attach_message_to_exception(
             except expt_type as e:
                 if debug_logs is not None:
                     logger.error(debug_logs)
+                logger.exception("Error: %s, %s", e, message)
                 raise extend_exception_message(e, message)
         return call
     return decorate

@@ -98,6 +98,12 @@ async def metadata_output(req: func.HttpRequest):
                  path="python-worker-tests/test-metadata-triggered-sdk.txt",
                  connection="AzureWebJobsStorage")
 async def metadata_trigger(event: eh.EventData) -> bytes:
+    # Formatting metadata dict basaed on EventData object
+    event_metadata = {"SystemProperties": {
+        "PartitionKey": event.partition_key,
+        "SequenceNumber": event.system_properties[b'x-opt-sequence-number'],
+        "Offset": event.system_properties[b'x-opt-offset'],
+    }}
     event_dict: typing.Mapping[str, typing.Any] = {
         'body': event.body_as_str(),
         # Uncomment this when the EnqueuedTimeUtc is fixed in azure-functions
@@ -105,7 +111,7 @@ async def metadata_trigger(event: eh.EventData) -> bytes:
         'partition_key': event.partition_key,
         'sequence_number': event.sequence_number,
         'offset': event.offset,
-        'metadata': event.metadata
+        'metadata': event_metadata
     }
 
     return json.dumps(event_dict)

@@ -11,7 +11,7 @@
       "type": "blob",
       "direction": "out",
       "name": "$return",
-      "connection": "AzureWebJobsStorage",
+      "connection": "STORAGE_CONNECTION",
       "path": "python-worker-tests/test-eventgrid-triggered.txt"
     }
   ]

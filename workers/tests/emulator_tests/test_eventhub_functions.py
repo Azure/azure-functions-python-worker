@@ -124,6 +124,7 @@ class TestEventHubFunctionsSteinGeneric(TestEventHubFunctions):
             'eventhub_functions_stein' / 'generic'
 
 
+@skipIf(sys.version_info.minor <= 8, "SDK Bindings supported for 3.9+.")
 @skipIf(sys.version_info.minor >= 14, "Skip to figure out uamqp.")
 class TestEventHubFunctionsSDK(TestEventHubFunctions):
 

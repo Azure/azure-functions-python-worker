@@ -6,13 +6,13 @@
       "type": "queueTrigger",
       "direction": "in",
       "queueName": "test-event-grid-storage-queue",
-      "connection": "AzureWebJobsStorage"
+      "connection": "STORAGE_CONNECTION"
     },
     {
       "type": "blob",
       "direction": "out",
       "name": "$return",
-      "connection": "AzureWebJobsStorage",
+      "connection": "STORAGE_CONNECTION",
       "path": "python-worker-tests/test-eventgrid-output-binding.txt"
     }
   ]

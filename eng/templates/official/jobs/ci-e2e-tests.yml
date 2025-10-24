@@ -14,41 +14,49 @@ jobs:
       matrix:
         Python37:
           PYTHON_VERSION: '3.7'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString37)
           SQL_CONNECTION: $(LinuxSqlConnectionString37)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString37)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString37)
         Python38:
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
           PYTHON_VERSION: '3.8'
           SQL_CONNECTION: $(LinuxSqlConnectionString38)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)
         Python39:
           PYTHON_VERSION: '3.9'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
           SQL_CONNECTION: $(LinuxSqlConnectionString39)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString39)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString39)
         Python310:
           PYTHON_VERSION: '3.10'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString310)
           SQL_CONNECTION: $(LinuxSqlConnectionString310)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString310)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString310)
         Python311:
           PYTHON_VERSION: '3.11'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString311)
           SQL_CONNECTION: $(LinuxSqlConnectionString311)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString311)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString311)
         Python312:
           PYTHON_VERSION: '3.12'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
           SQL_CONNECTION: $(LinuxSqlConnectionString312)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
         Python313:
           PYTHON_VERSION: '3.13'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
           SQL_CONNECTION: $(LinuxSqlConnectionString312)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
         Python314:
           PYTHON_VERSION: '3.14'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
           SQL_CONNECTION: $(LinuxSqlConnectionString312)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
@@ -130,13 +138,9 @@ jobs:
           Write-Host "skipTest: $(skipTest)"
         displayName: 'Display skipTest variable'
       - bash: |
-          docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/eventhub/docker-compose.yml pull
-          docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/eventhub/docker-compose.yml up -d
-        displayName: 'Install Azurite'
-      - bash: |
              python -m pytest -q --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
         env:
-          AzureWebJobsStorage: $(AzureWebJobsStorage)
+          STORAGE_CONNECTION: $(STORAGE_CONNECTION)
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)

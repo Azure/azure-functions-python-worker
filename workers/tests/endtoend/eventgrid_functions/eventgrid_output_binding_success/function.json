@@ -11,7 +11,7 @@
       "type": "blob",
       "direction": "in",
       "name": "file",
-      "connection": "AzureWebJobsStorage",
+      "connection": "STORAGE_CONNECTION",
       "path": "python-worker-tests/test-eventgrid-output-binding.txt"
     },
     {

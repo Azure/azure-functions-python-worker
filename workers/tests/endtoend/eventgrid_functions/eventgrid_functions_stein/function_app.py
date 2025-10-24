@@ -30,9 +30,13 @@ def event_grid_trigger(event: func.EventGridEvent) -> str:
     arg_name="outputEvent",
     topic_endpoint_uri="AzureWebJobsEventGridTopicUri",
     topic_key_setting="AzureWebJobsEventGridConnectionKey")
+@app.queue_output(arg_name="msg",
+                  connection="AzureWebJobsStorage",
+                  queue_name="test-event-grid-storage-queue")
 def eventgrid_output_binding(
         req: func.HttpRequest,
-        outputEvent: func.Out[func.EventGridOutputEvent]) -> func.HttpResponse:
+        outputEvent: func.Out[func.EventGridOutputEvent],
+        msg: func.Out[str]) -> func.HttpResponse:
     test_uuid = req.params.get('test_uuid')
     data_to_event_grid = func.EventGridOutputEvent(id="test-id",
                                                    data={
@@ -44,6 +48,7 @@ def eventgrid_output_binding(
                                                    data_version="1.0")
 
     outputEvent.set(data_to_event_grid)
+    msg.set(data_to_event_grid)
     r_value = "Sent event with subject: {}, id: {}, data: {}, event_type: {} " \
               "to EventGrid!".format(data_to_event_grid.subject,
                                      data_to_event_grid.id,

@@ -26,7 +26,6 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
         # Initialize DEFERRED_BINDING_REGISTRY
         meta.load_binding_registry()
 
-    @unittest.skip("TODO: Move to emulator.")
     def test_mbd_deferred_bindings_enabled_decode(self):
         binding = BlobClientConverter
         pb = protos.ParameterBinding(name='test',

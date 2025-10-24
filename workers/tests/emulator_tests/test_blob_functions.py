@@ -8,8 +8,6 @@ from tests.utils import testutils
 from unittest.case import skipIf
 
 
-@skipIf(sys.version_info.minor >= 13,
-        'Temporary skip for Python 3.13+')
 class TestBlobFunctions(testutils.WebHostTestCase):
 
     @classmethod

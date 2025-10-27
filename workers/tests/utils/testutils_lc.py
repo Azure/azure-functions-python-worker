@@ -31,7 +31,7 @@ _MESH_IMAGE_URL = (
     f"https://mcr.microsoft.com/v2/azure-functions/{_OS_TYPE}/"
     "flexconsumption/tags/list"
 )
-_MESH_IMAGE_REPO = "mcr.microsoft.com/azure-functions/mesh"
+_MESH_IMAGE_REPO = f"mcr.microsoft.com/azure-functions/{_OS_TYPE}/flexconsumption"
 _FUNC_GITHUB_ZIP = "https://github.com/Azure/azure-functions-python-library" \
                    "/archive/refs/heads/dev.zip"
 _FUNC_FILE_NAME = "azure-functions-python-library-dev"

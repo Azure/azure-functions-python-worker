@@ -140,6 +140,7 @@ jobs:
       - bash: |
              python -m pytest -q --dist loadfile --reruns 4 --cov=./azure_functions_worker --cov-report xml --cov-branch --cov-append tests/endtoend
         env:
+          AzureWebJobsStorage: $(STORAGE_CONNECTION)
           STORAGE_CONNECTION: $(STORAGE_CONNECTION)
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)

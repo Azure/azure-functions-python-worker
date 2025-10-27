@@ -32,8 +32,7 @@ def event_grid_trigger(event: func.EventGridEvent) -> str:
     topic_key_setting="AzureWebJobsEventGridConnectionKey")
 def eventgrid_output_binding(
         req: func.HttpRequest,
-        outputEvent: func.Out[func.EventGridOutputEvent],
-        msg: func.Out[str]) -> func.HttpResponse:
+        outputEvent: func.Out[func.EventGridOutputEvent]) -> func.HttpResponse:
     test_uuid = req.params.get('test_uuid')
     data_to_event_grid = func.EventGridOutputEvent(id="test-id",
                                                    data={

@@ -151,8 +151,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                     raise
 
 
-@skipIf(sys.version_info.minor >= 13,
-        'Temporary skip for Python 3.13+')
 class TestBlobFunctionsStein(TestBlobFunctions):
 
     @classmethod

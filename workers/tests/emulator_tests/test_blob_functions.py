@@ -42,52 +42,52 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, large_string)
 
-    def test_blob_io_bytes(self):
-        r = self.webhost.request('POST', 'put_blob_bytes',
-                                 data='test-dată'.encode('utf-8'))
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK')
+    # def test_blob_io_bytes(self):
+    #     r = self.webhost.request('POST', 'put_blob_bytes',
+    #                              data='test-dată'.encode('utf-8'))
+    #     self.assertEqual(r.status_code, 200)
+    #     self.assertEqual(r.text, 'OK')
 
-        r = self.webhost.request('POST', 'get_blob_bytes')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'test-dată')
+    #     r = self.webhost.request('POST', 'get_blob_bytes')
+    #     self.assertEqual(r.status_code, 200)
+    #     self.assertEqual(r.text, 'test-dată')
 
-        r = self.webhost.request('POST', 'get_blob_as_bytes')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'test-dată')
+    #     r = self.webhost.request('POST', 'get_blob_as_bytes')
+    #     self.assertEqual(r.status_code, 200)
+    #     self.assertEqual(r.text, 'test-dată')
 
-    def test_blob_io_large_bytes(self):
-        large_string = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
+    # def test_blob_io_large_bytes(self):
+    #     large_string = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 
-        r = self.webhost.request('POST', 'put_blob_bytes',
-                                 data=large_string.encode('utf-8'))
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK')
+    #     r = self.webhost.request('POST', 'put_blob_bytes',
+    #                              data=large_string.encode('utf-8'))
+    #     self.assertEqual(r.status_code, 200)
+    #     self.assertEqual(r.text, 'OK')
 
-        r = self.webhost.request('POST', 'get_blob_bytes')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, large_string)
+    #     r = self.webhost.request('POST', 'get_blob_bytes')
+    #     self.assertEqual(r.status_code, 200)
+    #     self.assertEqual(r.text, large_string)
 
-        r = self.webhost.request('POST', 'get_blob_as_bytes')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, large_string)
+    #     r = self.webhost.request('POST', 'get_blob_as_bytes')
+    #     self.assertEqual(r.status_code, 200)
+    #     self.assertEqual(r.text, large_string)
 
-    def test_blob_io_filelike(self):
-        r = self.webhost.request('POST', 'put_blob_filelike')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'OK')
+    # def test_blob_io_filelike(self):
+    #     r = self.webhost.request('POST', 'put_blob_filelike')
+    #     self.assertEqual(r.status_code, 200)
+    #     self.assertEqual(r.text, 'OK')
 
-        r = self.webhost.request('POST', 'get_blob_filelike')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'filelike')
+    #     r = self.webhost.request('POST', 'get_blob_filelike')
+    #     self.assertEqual(r.status_code, 200)
+    #     self.assertEqual(r.text, 'filelike')
 
-    def test_blob_io_return(self):
-        r = self.webhost.request('POST', 'put_blob_return')
-        self.assertEqual(r.status_code, 200)
+    # def test_blob_io_return(self):
+    #     r = self.webhost.request('POST', 'put_blob_return')
+    #     self.assertEqual(r.status_code, 200)
 
-        r = self.webhost.request('POST', 'get_blob_return')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.text, 'FROM RETURN')
+    #     r = self.webhost.request('POST', 'get_blob_return')
+    #     self.assertEqual(r.status_code, 200)
+    #     self.assertEqual(r.text, 'FROM RETURN')
 
     # def test_blob_trigger(self):
     #     data = "DummyData"

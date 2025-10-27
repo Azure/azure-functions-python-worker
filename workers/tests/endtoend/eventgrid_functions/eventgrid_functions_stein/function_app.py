@@ -44,7 +44,6 @@ def eventgrid_output_binding(
                                                    data_version="1.0")
 
     outputEvent.set(data_to_event_grid)
-    msg.set(data_to_event_grid)
     r_value = "Sent event with subject: {}, id: {}, data: {}, event_type: {} " \
               "to EventGrid!".format(data_to_event_grid.subject,
                                      data_to_event_grid.id,

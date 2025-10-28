@@ -6,7 +6,8 @@ import tests.protos as protos
 
 from azure_functions_runtime.handle_event import otel_manager, worker_init_request
 from azure_functions_runtime.otel import (initialize_azure_monitor,
-                                          update_opentelemetry_status)
+                                          update_opentelemetry_status,
+                                          OTelManager)
 from azure_functions_runtime.logging import logger
 from tests.utils.constants import UNIT_TESTS_FOLDER
 from tests.utils.mock_classes import FunctionRequest, Request, WorkerRequest
@@ -207,3 +208,37 @@ class TestOpenTelemetry(unittest.TestCase):
         # Verify that WorkerOpenTelemetryEnabled capability is not set
         capabilities = init_response.capabilities
         self.assertNotIn("WorkerOpenTelemetryEnabled", capabilities)
+
+
+class TestOTelManager(unittest.TestCase):
+
+    def setUp(self):
+        self.manager = OTelManager()
+
+    def test_default_values(self):
+        self.assertFalse(self.manager.get_azure_monitor_available())
+        self.assertFalse(self.manager.get_otel_libs_available())
+        self.assertIsNone(self.manager.get_context_api())
+        self.assertIsNone(self.manager.get_trace_context_propagator())
+
+    def test_set_and_get_azure_monitor_available(self):
+        self.manager.set_azure_monitor_available(True)
+        self.assertTrue(self.manager.get_azure_monitor_available())
+        self.manager.set_azure_monitor_available(False)
+        self.assertFalse(self.manager.get_azure_monitor_available())
+
+    def test_set_and_get_otel_libs_available(self):
+        self.manager.set_otel_libs_available(True)
+        self.assertTrue(self.manager.get_otel_libs_available())
+        self.manager.set_otel_libs_available(False)
+        self.assertFalse(self.manager.get_otel_libs_available())
+
+    def test_set_and_get_context_api(self):
+        dummy_api = object()
+        self.manager.set_context_api(dummy_api)
+        self.assertIs(self.manager.get_context_api(), dummy_api)
+
+    def test_set_and_get_trace_context_propagator(self):
+        dummy_propagator = object()
+        self.manager.set_trace_context_propagator(dummy_propagator)
+        self.assertIs(self.manager.get_trace_context_propagator(), dummy_propagator)

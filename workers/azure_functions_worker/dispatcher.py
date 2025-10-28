@@ -21,6 +21,7 @@ from typing import List, Optional
 import grpc
 
 from . import bindings, constants, functions, loader, protos
+from .bindings.meta import get_settlement_client
 from .bindings.shared_memory_data_transfer import SharedMemoryManager
 from .constants import (
     APPLICATIONINSIGHTS_CONNECTION_STRING,
@@ -665,6 +666,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             fi_context.thread_local_storage.invocation_id = invocation_id
             if fi.requires_context:
                 args['context'] = fi_context
+
+            if fi.settlement_client_arg is not None:
+                args[fi.settlement_client_arg] = get_settlement_client()
 
             if fi.output_types:
                 for name in fi.output_types:

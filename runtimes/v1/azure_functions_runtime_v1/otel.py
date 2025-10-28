@@ -27,7 +27,7 @@ class OTelManager:
         return self._azure_monitor_available
 
     def set_otel_libs_available(self, otel_libs_available):
-        self._aotel_libs_available = otel_libs_available
+        self._otel_libs_available = otel_libs_available
 
     def get_otel_libs_available(self):
         return self._otel_libs_available

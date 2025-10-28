@@ -16,6 +16,7 @@ jobs:
   - template: /eng/templates/shared/github-release-branch.yml@self
     parameters:
       PROJECT_DIRECTORY: ${{ parameters.PROJECT_DIRECTORY }}
+      PROJECT_NAME: ${{ parameters.PROJECT_NAME }}
       VERSION_FILE: ${{ parameters.VERSION_FILE }}
       BRANCH_NAME: ${{ parameters.BRANCH_NAME }}
 
@@ -64,7 +65,7 @@ jobs:
       definition: 652
       specificBuildWithTriggering: true
       buildVersionToDownload: latestFromBranch
-      branchName: refs/heads/${{ parameters.BRANCH_NAME }}/$(NewLibraryVersion)
+      branchName: 'refs/heads/${{ parameters.BRANCH_NAME }}/$(NewLibraryVersion)'
       targetPath: PythonRuntimeArtifact
   - task: UsePythonVersion@0
     displayName: 'Use Python 3.13'

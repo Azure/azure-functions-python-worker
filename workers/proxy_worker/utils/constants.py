@@ -15,9 +15,11 @@ PYTHON_SCRIPT_FILE_NAME_DEFAULT = "function_app.py"
 
 # EOL Dates
 PYTHON_EOL_DATES = {
-    '3.13': '2029-10'
+    '3.13': '2029-10',
+    '3.14': '2030-10'
 }
 
 PYTHON_EOL_WARNING_DATES = {
-    '3.13': '2029-04'
+    '3.13': '2029-04',
+    '3.14': '2030-04'
 }

@@ -57,10 +57,9 @@ def start():
     logger.info("Args: %s", args)
     logger.info(
         'Starting proxy worker. Worker ID: %s, Request ID: %s, '
-        'Host Address: %s:%s, Event Loop: %s',
+        'Host Address: %s:%s',
         args.worker_id, args.request_id,
-        args.host, args.port, type(asyncio.get_event_loop())
-    )
+        args.host, args.port)
 
     try:
         return asyncio.run(start_async(

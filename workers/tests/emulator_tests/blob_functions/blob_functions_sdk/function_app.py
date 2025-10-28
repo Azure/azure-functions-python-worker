@@ -11,7 +11,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 @app.function_name(name="put_bc_trigger")
 @app.blob_output(arg_name="file",
                  path="python-worker-tests/test-blobclient-trigger.txt",
-                 connection="AzureWebJobsStorage")
+                 connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.route(route="put_bc_trigger")
 def put_bc_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
     file.set(req.get_body())
@@ -21,10 +21,10 @@ def put_bc_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
 @app.function_name(name="bc_blob_trigger")
 @app.blob_trigger(arg_name="client",
                   path="python-worker-tests/test-blobclient-trigger.txt",
-                  connection="AzureWebJobsStorage")
+                  connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.blob_output(arg_name="$return",
                  path="python-worker-tests/test-blobclient-triggered.txt",
-                 connection="AzureWebJobsStorage")
+                 connection="AZURE_STORAGE_CONNECTION_STRING")
 def bc_blob_trigger(client: blob.BlobClient) -> str:
     blob_properties = client.get_blob_properties()
     file = client.download_blob(encoding='utf-8').readall()
@@ -38,7 +38,7 @@ def bc_blob_trigger(client: blob.BlobClient) -> str:
 @app.function_name(name="get_bc_blob_triggered")
 @app.blob_input(arg_name="client",
                 path="python-worker-tests/test-blobclient-triggered.txt",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.route(route="get_bc_blob_triggered")
 def get_bc_blob_triggered(req: func.HttpRequest,
                           client: blob.BlobClient) -> str:
@@ -48,7 +48,7 @@ def get_bc_blob_triggered(req: func.HttpRequest,
 @app.function_name(name="put_cc_trigger")
 @app.blob_output(arg_name="file",
                  path="python-worker-tests/test-containerclient-trigger.txt",
-                 connection="AzureWebJobsStorage")
+                 connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.route(route="put_cc_trigger")
 def put_cc_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
     file.set(req.get_body())
@@ -58,10 +58,10 @@ def put_cc_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
 @app.function_name(name="cc_blob_trigger")
 @app.blob_trigger(arg_name="client",
                   path="python-worker-tests/test-containerclient-trigger.txt",
-                  connection="AzureWebJobsStorage")
+                  connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.blob_output(arg_name="$return",
                  path="python-worker-tests/test-containerclient-triggered.txt",
-                 connection="AzureWebJobsStorage")
+                 connection="AZURE_STORAGE_CONNECTION_STRING")
 def cc_blob_trigger(client: blob.ContainerClient) -> str:
     container_properties = client.get_container_properties()
     file = client.download_blob("test-containerclient-trigger.txt",
@@ -75,7 +75,7 @@ def cc_blob_trigger(client: blob.ContainerClient) -> str:
 @app.function_name(name="get_cc_blob_triggered")
 @app.blob_input(arg_name="client",
                 path="python-worker-tests/test-containerclient-triggered.txt",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.route(route="get_cc_blob_triggered")
 def get_cc_blob_triggered(req: func.HttpRequest,
                           client: blob.ContainerClient) -> str:
@@ -86,7 +86,7 @@ def get_cc_blob_triggered(req: func.HttpRequest,
 @app.function_name(name="put_ssd_trigger")
 @app.blob_output(arg_name="file",
                  path="python-worker-tests/test-ssd-trigger.txt",
-                 connection="AzureWebJobsStorage")
+                 connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.route(route="put_ssd_trigger")
 def put_ssd_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
     file.set(req.get_body())
@@ -96,10 +96,10 @@ def put_ssd_trigger(req: func.HttpRequest, file: func.Out[str]) -> str:
 @app.function_name(name="ssd_blob_trigger")
 @app.blob_trigger(arg_name="stream",
                   path="python-worker-tests/test-ssd-trigger.txt",
-                  connection="AzureWebJobsStorage")
+                  connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.blob_output(arg_name="$return",
                  path="python-worker-tests/test-ssd-triggered.txt",
-                 connection="AzureWebJobsStorage")
+                 connection="AZURE_STORAGE_CONNECTION_STRING")
 def ssd_blob_trigger(stream: blob.StorageStreamDownloader) -> str:
     # testing chunking
     file = ""
@@ -113,7 +113,7 @@ def ssd_blob_trigger(stream: blob.StorageStreamDownloader) -> str:
 @app.function_name(name="get_ssd_blob_triggered")
 @app.blob_input(arg_name="stream",
                 path="python-worker-tests/test-ssd-triggered.txt",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.route(route="get_ssd_blob_triggered")
 def get_ssd_blob_triggered(req: func.HttpRequest,
                            stream: blob.StorageStreamDownloader) -> str:
@@ -124,7 +124,7 @@ def get_ssd_blob_triggered(req: func.HttpRequest,
 @app.route(route="get_bc_bytes")
 @app.blob_input(arg_name="client",
                 path="python-worker-tests/test-blob-extension-bytes.txt",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 def get_bc_bytes(req: func.HttpRequest, client: blob.BlobClient) -> str:
     return client.download_blob(encoding='utf-8').readall()
 
@@ -133,7 +133,7 @@ def get_bc_bytes(req: func.HttpRequest, client: blob.BlobClient) -> str:
 @app.route(route="get_cc_bytes")
 @app.blob_input(arg_name="client",
                 path="python-worker-tests/test-blob-extension-bytes.txt",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 def get_cc_bytes(req: func.HttpRequest,
                  client: blob.ContainerClient) -> str:
     return client.download_blob("test-blob-extension-bytes.txt",
@@ -144,7 +144,7 @@ def get_cc_bytes(req: func.HttpRequest,
 @app.route(route="get_ssd_bytes")
 @app.blob_input(arg_name="stream",
                 path="python-worker-tests/test-blob-extension-bytes.txt",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 def get_ssd_bytes(req: func.HttpRequest,
                   stream: blob.StorageStreamDownloader) -> str:
     return stream.readall().decode('utf-8')
@@ -154,7 +154,7 @@ def get_ssd_bytes(req: func.HttpRequest,
 @app.route(route="get_bc_str")
 @app.blob_input(arg_name="client",
                 path="python-worker-tests/test-blob-extension-str.txt",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 def get_bc_str(req: func.HttpRequest, client: blob.BlobClient) -> str:
     return client.download_blob(encoding='utf-8').readall()
 
@@ -163,7 +163,7 @@ def get_bc_str(req: func.HttpRequest, client: blob.BlobClient) -> str:
 @app.route(route="get_cc_str")
 @app.blob_input(arg_name="client",
                 path="python-worker-tests",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 def get_cc_str(req: func.HttpRequest, client: blob.ContainerClient) -> str:
     return client.download_blob("test-blob-extension-str.txt",
                                 encoding='utf-8').readall()
@@ -173,7 +173,7 @@ def get_cc_str(req: func.HttpRequest, client: blob.ContainerClient) -> str:
 @app.route(route="get_ssd_str")
 @app.blob_input(arg_name="stream",
                 path="python-worker-tests/test-blob-extension-str.txt",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 def get_ssd_str(req: func.HttpRequest, stream: blob.StorageStreamDownloader) -> str:
     return stream.readall().decode('utf-8')
 
@@ -183,11 +183,11 @@ def get_ssd_str(req: func.HttpRequest, stream: blob.StorageStreamDownloader) -> 
 @app.blob_input(arg_name="client",
                 path="python-worker-tests/test-blob-extension-str.txt",
                 data_type="STRING",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.blob_input(arg_name="blob",
                 path="python-worker-tests/test-blob-extension-str.txt",
                 data_type="STRING",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 def bc_and_inputstream_input(req: func.HttpRequest, client: blob.BlobClient,
                              blob: func.InputStream) -> str:
     output_msg = ""
@@ -202,11 +202,11 @@ def bc_and_inputstream_input(req: func.HttpRequest, client: blob.BlobClient,
 @app.blob_input(arg_name="blob",
                 path="python-worker-tests/test-blob-extension-str.txt",
                 data_type="STRING",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.blob_input(arg_name="client",
                 path="python-worker-tests/test-blob-extension-str.txt",
                 data_type="STRING",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 def inputstream_and_bc_input(req: func.HttpRequest, blob: func.InputStream,
                              client: blob.BlobClient) -> str:
     output_msg = ""
@@ -221,7 +221,7 @@ def inputstream_and_bc_input(req: func.HttpRequest, blob: func.InputStream,
 @app.blob_input(arg_name="file",
                 path="python-worker-tests/test-blob-extension-str.txt",
                 data_type="STRING",
-                connection="AzureWebJobsStorage")
+                connection="AZURE_STORAGE_CONNECTION_STRING")
 def type_undefined(req: func.HttpRequest, file) -> str:
     assert not isinstance(file, blob.BlobClient)
     assert not isinstance(file, blob.ContainerClient)
@@ -232,7 +232,7 @@ def type_undefined(req: func.HttpRequest, file) -> str:
 @app.function_name(name="put_blob_str")
 @app.blob_output(arg_name="file",
                  path="python-worker-tests/test-blob-extension-str.txt",
-                 connection="AzureWebJobsStorage")
+                 connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.route(route="put_blob_str")
 def put_blob_str(req: func.HttpRequest, file: func.Out[str]) -> str:
     file.set(req.get_body())
@@ -242,7 +242,7 @@ def put_blob_str(req: func.HttpRequest, file: func.Out[str]) -> str:
 @app.function_name(name="put_blob_bytes")
 @app.blob_output(arg_name="file",
                  path="python-worker-tests/test-blob-extension-bytes.txt",
-                 connection="AzureWebJobsStorage")
+                 connection="AZURE_STORAGE_CONNECTION_STRING")
 @app.route(route="put_blob_bytes")
 def put_blob_bytes(req: func.HttpRequest, file: func.Out[bytes]) -> str:
     file.set(req.get_body())

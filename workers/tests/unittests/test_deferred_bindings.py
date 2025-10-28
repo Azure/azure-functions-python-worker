@@ -8,26 +8,20 @@ from tests.utils import testutils
 
 if sys.version_info.minor < 13:
     from azure_functions_worker import protos
-    from azure_functions_worker.bindings import datumdef, meta
+    from azure_functions_worker.bindings import meta
 
 # Even if the tests are skipped for <=3.8, the library is still imported as
 # it is used for these tests.
 if sys.version_info.minor >= 9:
-    from azurefunctions.extensions.bindings.blob import (BlobClient,
-                                                         BlobClientConverter,
-                                                         ContainerClient,
-                                                         StorageStreamDownloader)
+    from azurefunctions.extensions.base import GrpcClientType
 
-DEFERRED_BINDINGS_ENABLED_DIR = testutils.EXTENSION_TESTS_FOLDER / \
-    'deferred_bindings_tests' / \
+DEFERRED_BINDINGS_ENABLED_DIR = testutils.UNIT_TESTS_FOLDER / \
     'deferred_bindings_functions' / \
     'deferred_bindings_enabled'
-DEFERRED_BINDINGS_DISABLED_DIR = testutils.EXTENSION_TESTS_FOLDER / \
-    'deferred_bindings_tests' / \
+DEFERRED_BINDINGS_DISABLED_DIR = testutils.UNIT_TESTS_FOLDER / \
     'deferred_bindings_functions' / \
     'deferred_bindings_disabled'
-DEFERRED_BINDINGS_ENABLED_DUAL_DIR = testutils.EXTENSION_TESTS_FOLDER / \
-    'deferred_bindings_tests' / \
+DEFERRED_BINDINGS_ENABLED_DUAL_DIR = testutils.UNIT_TESTS_FOLDER / \
     'deferred_bindings_functions' / \
     'deferred_bindings_enabled_dual'
 
@@ -145,67 +139,50 @@ class TestDeferredBindingsEnabledDual(testutils.AsyncTestCase):
 
 @unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
                                               "is only supported for 3.9+.")
-@unittest.skipIf(sys.version_info.minor >= 13, "For python 3.13+,"
-                                               "this logic is in the"
-                                               "library worker.")
 class TestDeferredBindingsHelpers(testutils.AsyncTestCase):
+    def setUp(self):
+        # Initialize DEFERRED_BINDING_REGISTRY
+        meta.load_binding_registry()
 
-    def test_mbd_deferred_bindings_enabled_decode(self):
-        binding = BlobClientConverter
-        pb = protos.ParameterBinding(name='test',
-                                     data=protos.TypedData(
-                                         string='test'))
-        sample_mbd = MockMBD(version="1.0",
-                             source="AzureStorageBlobs",
-                             content_type="application/json",
-                             content="{\"Connection\":\"AzureWebJobsStorage\","
-                                     "\"ContainerName\":"
-                                     "\"python-worker-tests\","
-                                     "\"BlobName\":"
-                                     "\"test-blobclient-trigger.txt\"}")
-        datum = datumdef.Datum(value=sample_mbd, type='model_binding_data')
+    async def test_valid_settlement_param(self):
+        params = {'param1', 'param2', 'param3'}
+        bound_params = {'param1', 'param2'}
+        annotations = {
+            'param1': func.InputStream,
+            'param2': func.Out[str],
+            'param3': GrpcClientType
+        }
 
-        obj = meta.deferred_bindings_decode(binding=binding, pb=pb,
-                                            pytype=BlobClient, datum=datum, metadata={},
-                                            function_name="test_function")
+        settlement_client_arg = meta.validate_settlement_param(
+            params, bound_params, annotations)
 
-        self.assertIsNotNone(obj)
+        self.assertEqual(settlement_client_arg, 'param3')
 
-    async def test_check_deferred_bindings_enabled(self):
-        """
-        check_deferred_bindings_enabled checks if deferred bindings is enabled at fx
-        and single binding level.
+    async def test_invalid_settlement_param(self):
+        params = {'param1', 'param2', 'param3'}
+        bound_params = {'param1', 'param2'}
+        annotations = {
+            'param1': func.InputStream,
+            'param2': func.Out[str],
+            'param3': str
+        }
 
-        The first bool represents if deferred bindings is enabled at a fx level. This
-        means that at least one binding in the function is a deferred binding type.
+        settlement_client_arg = meta.validate_settlement_param(
+            params, bound_params, annotations)
 
-        The second represents if the current binding is deferred binding. If this is
-        True, then deferred bindings must also be enabled at the function level.
-        """
-        async with testutils.start_mockhost(
-                script_root=DEFERRED_BINDINGS_ENABLED_DIR) as host:
-            await host.init_worker()
+        self.assertEqual(settlement_client_arg, None)
 
-            # Type is not supported, deferred_bindings_enabled is not yet set
-            self.assertEqual(meta.check_deferred_bindings_enabled(
-                func.InputStream, False), (False, False))
+    async def test_invalid_settlement_param_multiple(self):
+        params = {'param1', 'param2', 'param3', 'param4'}
+        bound_params = {'param1', 'param2'}
+        annotations = {
+            'param1': func.InputStream,
+            'param2': func.Out[str],
+            'param3': GrpcClientType,
+            'param4': str
+        }
 
-            # Type is not supported, deferred_bindings_enabled already set
-            self.assertEqual(meta.check_deferred_bindings_enabled(
-                func.InputStream, True), (True, False))
+        settlement_client_arg = meta.validate_settlement_param(
+            params, bound_params, annotations)
 
-            # Type is supported, deferred_bindings_enabled is not yet set
-            self.assertEqual(meta.check_deferred_bindings_enabled(
-                BlobClient, False), (True, True))
-            self.assertEqual(meta.check_deferred_bindings_enabled(
-                ContainerClient, False), (True, True))
-            self.assertEqual(meta.check_deferred_bindings_enabled(
-                StorageStreamDownloader, False), (True, True))
-
-            # Type is supported, deferred_bindings_enabled is already set
-            self.assertEqual(meta.check_deferred_bindings_enabled(
-                BlobClient, True), (True, True))
-            self.assertEqual(meta.check_deferred_bindings_enabled(
-                ContainerClient, True), (True, True))
-            self.assertEqual(meta.check_deferred_bindings_enabled(
-                StorageStreamDownloader, True), (True, True))
+        self.assertEqual(settlement_client_arg, None)

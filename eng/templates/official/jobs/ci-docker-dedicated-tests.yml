@@ -61,7 +61,7 @@ jobs:
           python -m invoke -c test_setup build-protos
         displayName: 'Install dependencies'
       - bash: |
-             python -m pytest --reruns 4 -vv --instafail tests/endtoend tests/extension_tests/deferred_bindings_tests tests/extension_tests/http_v2_tests
+             python -m pytest --reruns 4 -vv --instafail tests/endtoend
         env:
           DEDICATED_DOCKER_TEST: "true"
           AzureWebJobsStorage: $(STORAGE_CONNECTION)

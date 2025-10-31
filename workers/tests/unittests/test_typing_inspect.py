@@ -98,11 +98,14 @@ class GetUtilityTestCase(TestCase):
 
     def test_origin(self):
         T = TypeVar('T')
+        class MyClass(Generic[T]): pass
+
         self.assertEqual(get_origin(int), None)
         self.assertEqual(get_origin(ClassVar[int]), None)
         self.assertEqual(get_origin(Generic), Generic)
         self.assertEqual(get_origin(Generic[T]), Generic)
         self.assertEqual(get_origin(List[Tuple[T, T]][int]), list)
+        self.assertEqual(get_origin(MyClass), None)
 
     def test_parameters(self):
         T = TypeVar('T')

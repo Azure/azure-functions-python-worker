@@ -19,8 +19,8 @@ jobs:
           EVENTGRID_URI: $(LinuxEventGridTopicUriString37)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString37)
         Python38:
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
           PYTHON_VERSION: '3.8'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
           SQL_CONNECTION: $(LinuxSqlConnectionString38)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)

@@ -90,7 +90,7 @@ jobs:
           docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/eventhub/docker-compose.yml up -d
         displayName: 'Install Azurite and Start EventHub Emulator'
       - bash: |
-            python -m pytest -q --dist loadfile --ignore=tests/emulator_tests/test_servicebus_functions.py tests/emulator_tests/test_blob_functions.py
+            python -m pytest -q --dist loadfile --ignore=tests/emulator_tests/test_servicebus_functions.py tests/emulator_tests
         env:
           AzureWebJobsStorage: $(AzureWebJobsStorage)
           AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)

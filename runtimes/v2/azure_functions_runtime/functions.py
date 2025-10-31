@@ -160,7 +160,7 @@ class Registry:
                 func_name,
                 'Extra parameters in binding definition — the following parameters '
                 'are declared as bindings but are not '
-                'present in Python: ' + repr(set(params) - set(bound_params)))
+                'present in Python: ' + repr(set(bound_params) - set(params)))
 
         input_types: typing.Dict[str, ParamTypeInfo] = {}
         output_types: typing.Dict[str, ParamTypeInfo] = {}

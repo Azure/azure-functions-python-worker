@@ -326,7 +326,7 @@ async def function_environment_reload_request(request):
         # TODO: Apply PYTHON_THREADPOOL_THREAD_COUNT
 
         if is_envvar_true(PYTHON_ENABLE_DEBUG_LOGGING):
-            root_logger = logging.getLogger("azure.functions")
+            root_logger = logging.getLogger()
             root_logger.setLevel(logging.DEBUG)
 
         # calling load_binding_registry again since the

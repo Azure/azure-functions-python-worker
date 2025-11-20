@@ -46,7 +46,7 @@ dependencies = [
      "uvloop~=0.21.0; python_version >= '3.13' and sys_platform != 'win32'",
      "azurefunctions-extensions-base==1.1.0; python_version >= '3.8'",
      "azure-functions-runtime==1.1.0b3; python_version >= '3.13'",
-     "azure-functions-runtime-v1==1.1.0b1; python_version >= '3.13'"
+     "azure-functions-runtime-v1==1.1.0b2; python_version >= '3.13'"
 ]
 
 [project.urls]

@@ -7,7 +7,6 @@ import pathlib
 import sys
 import typing
 import unittest
-from unittest import skipIf
 from unittest.mock import patch
 
 from tests.utils import testutils
@@ -15,7 +14,6 @@ from tests.utils import testutils
 from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
 
 
-@unittest.skipIf(sys.version_info.minor <= 7, "Skipping tests <= Python 3.7")
 class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
     @classmethod
     def setUpClass(cls):
@@ -356,8 +354,6 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, '"OK-print-logging"')
 
-    @skipIf(sys.version_info < (3, 8, 0),
-            "Skip the tests for Python 3.7 and below")
     def test_multiple_cookie_header_in_response(self):
         r = self.webhost.request('GET', 'multiple_set_cookie_resp_headers')
         self.assertEqual(r.status_code, 200)
@@ -368,8 +364,6 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
             " foo3=43; Domain=example.com; expires=Fri, 12 Jan 2018 13:55:08"
             " GMT; HttpOnly; Max-Age=10000000; Path=/; SameSite=Lax; Secure")
 
-    @skipIf(sys.version_info < (3, 8, 0),
-            "Skip the tests for Python 3.7 and below")
     def test_set_cookie_header_in_response_default_value(self):
         r = self.webhost.request('GET',
                                  'set_cookie_resp_header_default_values')
@@ -377,16 +371,12 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
         self.assertEqual(r.headers.get('Set-Cookie'),
                          'foo3=42; Path=/; SameSite=lax')
 
-    @skipIf(sys.version_info < (3, 8, 0),
-            "Skip the tests for Python 3.7 and below")
     def test_response_cookie_header_nullable_timestamp_err(self):
         r = self.webhost.request(
             'GET',
             'response_cookie_header_nullable_timestamp_err')
         self.assertEqual(r.status_code, 200)
 
-    @skipIf(sys.version_info < (3, 8, 0),
-            "Skip the tests for Python 3.7 and below")
     def test_response_cookie_header_nullable_bool_err(self):
         r = self.webhost.request(
             'GET',
@@ -394,8 +384,6 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Set-Cookie" in r.headers)
 
-    @skipIf(sys.version_info < (3, 9, 0),
-            "Skip the tests for Python 3.8 and below")
     def test_print_to_console_stderr(self):
         r = self.webhost.request('GET', 'print_logging?console=true'
                                         '&message=Secret42&is_stderr=true')

@@ -515,38 +515,6 @@ class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):
         return func_id, invoke_id, function_name
 
 
-@unittest.skipIf(sys.version_info.minor != 8,
-                 "Run the tests only for Python 3.8. In other platforms, "
-                 "as the default passed is None, the cpu_count determines the "
-                 "number of max_workers and we cannot mock the os.cpu_count() "
-                 "in the concurrent.futures.ThreadPoolExecutor")
-class TestThreadPoolSettingsPython38(TestThreadPoolSettingsPython37):
-    def setUp(self, version=SysVersionInfo(3, 8, 0, 'final', 0)):
-        super(TestThreadPoolSettingsPython38, self).setUp(version)
-        self._allowed_max_workers: int = self._over_max_workers
-
-    def tearDown(self):
-        super(TestThreadPoolSettingsPython38, self).tearDown()
-
-    async def test_dispatcher_sync_threadpool_in_placeholder_above_max(self):
-        """Test if the sync threadpool will use any value and there isn't any
-        artificial max value set.
-        """
-        with patch('azure_functions_worker.dispatcher.logger'):
-            async with self._ctrl as host:
-                await self._check_if_function_is_ok(host)
-
-                # Reload environment variable on specialization
-                await host.reload_environment(environment={
-                    PYTHON_THREADPOOL_THREAD_COUNT: f'{self._over_max_workers}'
-                })
-                await self._assert_workers_threadpool(self._ctrl, host,
-                                                      self._allowed_max_workers)
-                self.assertNotEqual(
-                    self._ctrl._worker.get_sync_tp_workers_set(),
-                    self._default_workers)
-
-
 @unittest.skipIf(sys.version_info.minor != 9,
                  "Run the tests only for Python 3.9. In other platforms, "
                  "as the default passed is None, the cpu_count determines the "

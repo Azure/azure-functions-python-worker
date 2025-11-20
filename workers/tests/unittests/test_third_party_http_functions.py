@@ -6,9 +6,7 @@ import pathlib
 import re
 import typing
 import base64
-import sys
 
-from unittest import skipIf
 from unittest.mock import patch
 
 from tests.utils import testutils
@@ -118,8 +116,6 @@ class ThirdPartyHttpFunctionsTestBase:
             # System logs stdout now exist in host_out
             self.assertIn('Secret42', host_out)
 
-        @skipIf(sys.version_info < (3, 9, 0),
-                "Skip the tests for Python 3.8 and below")
         def test_print_to_console_stderr(self):
             r = self.webhost.request('GET', 'print_logging?console=true'
                                             '&message=Secret42&is_stderr=true',

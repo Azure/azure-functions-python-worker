@@ -307,6 +307,7 @@ def _make_runtime_module(with_threadpool=True):
        return_value=False)
 @patch("proxy_worker.dispatcher.logger")
 @patch("proxy_worker.dispatcher.os.path.exists", side_effect=lambda p: True)
+@patch("builtins.__import__")
 @patch("proxy_worker.dispatcher.protos.StreamingMessage",
        return_value="mocked_init_response")
 @patch("proxy_worker.dispatcher.check_python_eol")
@@ -334,6 +335,7 @@ async def test_worker_init_starts_threadpool(mock_eol, mock_streaming,
 @patch("proxy_worker.dispatcher.DependencyManager.prioritize_customer_dependencies")
 @patch("proxy_worker.dispatcher.logger")
 @patch("proxy_worker.dispatcher.os.path.exists", side_effect=lambda p: True)
+@patch("builtins.__import__")
 @patch("proxy_worker.dispatcher.protos.StreamingMessage",
        return_value="mocked_reload_response")
 @patch("proxy_worker.dispatcher.check_python_eol")
@@ -367,6 +369,7 @@ async def test_env_reload_starts_threadpool(mock_eol, mock_streaming,
        return_value=False)
 @patch("proxy_worker.dispatcher.logger")
 @patch("proxy_worker.dispatcher.os.path.exists", side_effect=lambda p: True)
+@patch("builtins.__import__")
 @patch("proxy_worker.dispatcher.protos.StreamingMessage",
        return_value="mocked_init_response")
 @patch("proxy_worker.dispatcher.check_python_eol")

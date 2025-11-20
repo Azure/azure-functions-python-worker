@@ -1,15 +1,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import sys
 import time
 
 from requests import JSONDecodeError
 from tests.utils import testutils
-from unittest.case import skipIf
 
 
-@skipIf(sys.version_info.minor >= 13,
-        'Temporary skip for Python 3.13+')
 class TestBlobFunctions(testutils.WebHostTestCase):
 
     @classmethod
@@ -154,8 +150,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                     raise
 
 
-@skipIf(sys.version_info.minor >= 13,
-        'Temporary skip for Python 3.13+')
 class TestBlobFunctionsStein(TestBlobFunctions):
 
     @classmethod
@@ -164,8 +158,6 @@ class TestBlobFunctionsStein(TestBlobFunctions):
             'blob_functions_stein'
 
 
-@skipIf(sys.version_info.minor >= 13,
-        'Temporary skip for Python 3.13+')
 class TestBlobFunctionsSteinGeneric(TestBlobFunctions):
 
     @classmethod

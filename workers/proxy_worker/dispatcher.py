@@ -247,9 +247,9 @@ class Dispatcher(metaclass=DispatcherMeta):
     def __poll_grpc(self):
         options = []
         if self._grpc_max_msg_len:
-            options.append(('grpc_local.max_receive_message_length',
+            options.append(('grpc.max_receive_message_length',
                             self._grpc_max_msg_len))
-            options.append(('grpc_local.max_send_message_length',
+            options.append(('grpc.max_send_message_length',
                             self._grpc_max_msg_len))
 
         channel = grpc.insecure_channel(

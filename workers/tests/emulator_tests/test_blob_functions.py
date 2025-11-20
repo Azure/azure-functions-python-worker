@@ -1,11 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import sys
 import time
 
 from requests import JSONDecodeError
 from tests.utils import testutils
-from unittest.case import skipIf
 
 
 class TestBlobFunctions(testutils.WebHostTestCase):
@@ -27,8 +25,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-data')
 
-    @skipIf(sys.version_info.minor >= 13,
-            'Investigating large blob test failures on Python 3.13')
     def test_blob_io_large_str(self):
         large_string = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 
@@ -58,8 +54,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'test-dată')
 
-    @skipIf(sys.version_info.minor >= 13,
-            'Investigating large blob test failures on Python 3.13')
     def test_blob_io_large_bytes(self):
         large_string = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 
@@ -123,8 +117,6 @@ class TestBlobFunctions(testutils.WebHostTestCase):
                 if try_no == max_retries - 1:
                     raise
 
-    @skipIf(sys.version_info.minor >= 13,
-            'Investigating large blob test failures on Python 3.13')
     def test_blob_trigger_with_large_content(self):
         data = 'DummyDataDummyDataDummyData' * 1024 * 1024  # 27 MB
 

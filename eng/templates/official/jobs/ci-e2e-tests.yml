@@ -12,24 +12,6 @@ jobs:
 
     strategy:
       matrix:
-        Python37:
-          PYTHON_VERSION: '3.7'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString37)
-          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString37)
-          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString37)
-          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString37)
-          SQL_CONNECTION: $(LinuxSqlConnectionString37)
-          EVENTGRID_URI: $(LinuxEventGridTopicUriString37)
-          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString37)
-        Python38:
-          PYTHON_VERSION: '3.8'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
-          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString38)
-          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString38)
-          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString38)
-          SQL_CONNECTION: $(LinuxSqlConnectionString38)
-          EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
-          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)
         Python39:
           PYTHON_VERSION: '3.9'
           STORAGE_CONNECTION: $(LinuxStorageConnectionString39)

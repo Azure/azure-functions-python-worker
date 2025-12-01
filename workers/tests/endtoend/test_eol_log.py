@@ -11,8 +11,8 @@ from unittest.case import skipIf
 REQUEST_TIMEOUT_SEC = 5
 
 
-@skipIf(sys.version_info.minor >= 9,
-        '3.9+ is supported.')
+@skipIf(sys.version_info.minor >= 10,
+        '3.10+ is supported.')
 class TestEOLFunctions(testutils.WebHostTestCase):
 
     @classmethod

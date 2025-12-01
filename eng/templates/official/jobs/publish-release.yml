@@ -127,8 +127,8 @@ jobs:
       ((Get-Content test\WebJobs.Script.Tests\WebJobs.Script.Tests.csproj) -replace "PythonWorker`" Version=`"(\d)+.(\d)+.(\d)+.?(\d)*`"","PythonWorker`" Version=`"$newWorkerVersion`"" -join "`n") + "`n" | Set-Content -NoNewline test\WebJobs.Script.Tests\WebJobs.Script.Tests.csproj
   
       # Modify release_notes.md
-      Write-Host "Adding a new entry in release_note.md"
-      ((Get-Content release_notes.md) -replace "-->","$&`n- Update Python Worker Version to [$newWorkerVersion](https://github.com/Azure/azure-functions-python-worker/releases/tag/$newWorkerVersion)" -join "`n") + "`n" | Set-Content -NoNewline release_notes.md
+      Write-Host "Adding a new entry in release_notes.md"
+      Add-Content -Path release_notes.md -Value "`n- Update Python Worker Version to [$newWorkerVersion](https://github.com/Azure/azure-functions-python-worker/releases/tag/$newWorkerVersion)"
   
       # Commit Python Version
       Write-Host "Pushing $newBranch to host repo"

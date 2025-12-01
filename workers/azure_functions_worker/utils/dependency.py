@@ -405,7 +405,7 @@ class DependencyManager:
                 if any([p for p in module_paths if p.startswith(path)]):
                     sys.modules.pop(module_name)
             except Exception as e:
-                logger.warning(
+                logger.debug(
                     'Attempt to remove module cache for %s but failed with '
                     '%s. Using the original module cache.',
                     module_name, e)

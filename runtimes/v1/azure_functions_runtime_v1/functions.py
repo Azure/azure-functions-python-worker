@@ -135,7 +135,7 @@ class Registry:
             raise FunctionLoadError(
                 func_name,
                 'the following parameters are declared in function.json but '
-                'not in Python: ' + repr(set(params) - set(bound_params)))
+                'not in Python: ' + repr(set(bound_params) - set(params)))
 
         input_types: typing.Dict[str, ParamTypeInfo] = {}
         output_types: typing.Dict[str, ParamTypeInfo] = {}

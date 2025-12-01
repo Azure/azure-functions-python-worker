@@ -288,6 +288,7 @@ class Registry:
             return_anno = annotations.get('return')
             if typing_inspect.is_generic_type(
                     return_anno) and typing_inspect.get_origin(
+                    return_anno) is not None and typing_inspect.get_origin(
                     return_anno).__name__ == 'Out':
                 raise FunctionLoadError(
                     func_name,

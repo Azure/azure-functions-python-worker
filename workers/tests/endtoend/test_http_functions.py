@@ -118,8 +118,33 @@ class TestHttpFunctionsStein(TestHttpFunctions):
         return testutils.E2E_TESTS_FOLDER / 'http_functions' / \
                                             'http_functions_stein'
 
+    @testutils.retryable_test(3, 5)
+    def test_return_custom_class(self):
+        """Test if returning a custom class returns OK
+        """
+        r = self.webhost.request('GET', 'custom_response',
+                                 timeout=REQUEST_TIMEOUT_SEC)
+        self.assertEqual(
+            r.content,
+            b'{"status": "healthy"}'
+        )
+        self.assertTrue(r.ok)
 
-class TestHttpFunctionsSteinGeneric(TestHttpFunctions):
+    @testutils.retryable_test(3, 5)
+    def test_return_custom_class_with_query_param(self):
+        """Test if query is accepted
+        """
+        r = self.webhost.request('GET', 'custom_response',
+                                 params={'name': 'query'},
+                                 timeout=REQUEST_TIMEOUT_SEC)
+        self.assertTrue(r.ok)
+        self.assertEqual(
+            r.content,
+            b'{"name": "query"}'
+        )
+
+
+class TestHttpFunctionsSteinGeneric(TestHttpFunctionsStein):
 
     @classmethod
     def get_script_dir(cls):

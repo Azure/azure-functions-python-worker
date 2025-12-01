@@ -200,8 +200,6 @@ class TestHttpFunctionsWithInitIndexing(testutils.WebHostTestCase):
 @unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
                  or is_envvar_true(CONSUMPTION_DOCKER_TEST),
                  "Tests are flaky when running on Docker")
-@unittest.skipIf(sys.version_info.minor < 8, "HTTPv2"
-                                             "is only supported for 3.8+.")
 @unittest.skipIf(sys.version_info.minor >= 13,
                  "App Setting is not needed for 3.13+")
 class TestHttpFunctionsWithInitIndexingDisabled(testutils.WebHostTestCase):

@@ -12,7 +12,8 @@ from proxy_worker.utils.dependency import DependencyManager
 @patch("proxy_worker.utils.dependency.DependencyManager._get_worker_deps_path",
        return_value="/mock/worker")
 @patch("proxy_worker.utils.dependency.logger")
-def test_use_worker_dependencies(mock_logger, mock_worker, mock_cx_dir, mock_cx_deps):
+def test_use_worker_dependencies(mock_logger, mock_worker, mock_cx_dir,
+                                 mock_cx_deps):
     sys.path = ["/mock/cx/site-packages", "/mock/cx", "/original"]
 
     DependencyManager.initialize()

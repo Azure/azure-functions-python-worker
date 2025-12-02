@@ -10,10 +10,7 @@ if sys.version_info.minor < 13:
     from azure_functions_worker import protos
     from azure_functions_worker.bindings import meta
 
-# Even if the tests are skipped for <=3.8, the library is still imported as
-# it is used for these tests.
-if sys.version_info.minor >= 9:
-    from azurefunctions.extensions.base import GrpcClientType
+from azurefunctions.extensions.base import GrpcClientType
 
 DEFERRED_BINDINGS_ENABLED_DIR = testutils.UNIT_TESTS_FOLDER / \
     'deferred_bindings_functions' / \
@@ -35,8 +32,6 @@ class MockMBD:
         self.content = content
 
 
-@unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
-                                              "is only supported for 3.9+.")
 @unittest.skipIf(sys.version_info.minor >= 13, "For python 3.13+,"
                                                "this logic is in the"
                                                "library worker.")
@@ -69,8 +64,6 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
         del sys.modules['function_app']
 
 
-@unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
-                                              "is only supported for 3.9+.")
 @unittest.skipIf(sys.version_info.minor >= 13, "For python 3.13+,"
                                                "this logic is in the"
                                                "library worker.")
@@ -103,8 +96,6 @@ class TestDeferredBindingsDisabled(testutils.AsyncTestCase):
         del sys.modules['function_app']
 
 
-@unittest.skipIf(sys.version_info.minor <= 8, "The base extension"
-                                              "is only supported for 3.9+.")
 @unittest.skipIf(sys.version_info.minor >= 13, "For python 3.13+,"
                                                "this logic is in the"
                                                "library worker.")

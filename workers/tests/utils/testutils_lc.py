@@ -77,24 +77,16 @@ class LinuxConsumptionWebHostController:
         env["WEBSITE_SITE_NAME"] = self._uuid
         env["WEBSITE_HOSTNAME"] = f"{self._uuid}.azurewebsites.com"
 
-        # Debug: Print SCM_RUN_FROM_PACKAGE value
-        scm_package = env.get("SCM_RUN_FROM_PACKAGE", "NOT_SET")
-        print(f"🔍 DEBUG: SCM_RUN_FROM_PACKAGE in env: {scm_package}")
-
         # Wait for the container to be ready
-        max_retries = 60
+        max_retries = 10
         for i in range(max_retries):
             try:
                 ping_req = requests.Request(method="GET", url=f"{url}/admin/host/ping")
                 ping_response = self.send_request(ping_req)
                 if ping_response.ok:
-                    print(f"🔍 DEBUG: Container ready after {i + 1} attempts")
                     break
-                else:
-                    print("🔍 DEBUG: Ping attempt {i+1}/60 failed with status "
-                          f"{ping_response.status_code}")
             except Exception as e:
-                print(f"🔍 DEBUG: Ping attempt {i + 1}/60 failed with exception: {e}")
+                pass
             time.sleep(1)
         else:
             raise RuntimeError(f'Container {self._uuid} did not become ready in time')
@@ -129,16 +121,9 @@ class LinuxConsumptionWebHostController:
         prepped = session.prepare_request(req)
         prepped.headers['Content-Type'] = 'application/json'
 
-        # Try to generate a proper JWT token first
-        try:
-            jwt_token = self._generate_jwt_token()
-            # Use JWT token for newer Azure Functions host versions
-            prepped.headers['Authorization'] = f'Bearer {jwt_token}'
-        except ImportError:
-            # Fall back to the old SWT token format if jwt library is not available
-            swt_token = self._get_site_restricted_token()
-            prepped.headers['x-ms-site-restricted-token'] = swt_token
-            prepped.headers['Authorization'] = f'Bearer {swt_token}'
+        # For flex consumption, use JWT Bearer token
+        jwt_token = self._generate_jwt_token()
+        prepped.headers['Authorization'] = f'Bearer {jwt_token}'
 
         # Add additional headers required by Azure Functions host
         prepped.headers['x-site-deployment-id'] = self._uuid
@@ -219,10 +204,9 @@ class LinuxConsumptionWebHostController:
     def spawn_container(self,
                         image: str,
                         env: Dict[str, str] = {}) -> int:
-        """Create a docker container and record its port. Create a docker
-        container according to the image name. Return the port of container.
-        """
-        # Construct environment variables and start the docker container
+        """Create a docker container and record its port."""
+        if not os.getenv('_DUMMY_CONT_KEY'):
+            os.environ['_DUMMY_CONT_KEY'] = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
         worker_name = 'azure_functions_worker' \
             if sys.version_info.minor < 13 else 'proxy_worker'
 
@@ -255,10 +239,6 @@ class LinuxConsumptionWebHostController:
                 "LINUX/X64/azure_functions_runtime_v1"
             )
 
-        # TODO: Mount library in docker container
-        # self._download_azure_functions()
-
-        # Download python extension base package
         ext_folder = self._download_extensions()
 
         base_ext_container_path = (
@@ -277,10 +257,12 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["--cap-add", "SYS_ADMIN"])
         run_cmd.extend(["--device", "/dev/fuse"])
         run_cmd.extend(["-e", f"CONTAINER_NAME={self._uuid}"])
-        run_cmd.extend(["-e",
-                        f"CONTAINER_ENCRYPTION_KEY={os.getenv('_DUMMY_CONT_KEY')}"])
+        encryption_key = os.getenv('_DUMMY_CONT_KEY')
+        full_key_bytes = base64.b64decode(encryption_key.encode())
+        aes_key_bytes = full_key_bytes[:32]
+        aes_key_base64 = base64.b64encode(aes_key_bytes).decode()
+        run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={aes_key_base64}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
-        # Add required environment variables for JWT issuer validation
         run_cmd.extend(["-e", f"WEBSITE_SITE_NAME={self._uuid}"])
         run_cmd.extend(["-e", "WEBSITE_SKU=Dynamic"])
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
@@ -355,103 +337,72 @@ class LinuxConsumptionWebHostController:
 
     @classmethod
     def _get_site_restricted_token(cls) -> str:
-        """Get the header value which can be used by x-ms-site-restricted-token
-        which expires in one day.
-        """
-        # For compatibility with older Azure Functions host versions,
-        # try the old SWT format first
+        """Get SWT token for site-restricted authentication."""
         exp_ns = int((time.time() + 24 * 60 * 60) * 1000000000)
         token = cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), f'exp={exp_ns}')
         return token
 
     def _generate_jwt_token(self) -> str:
-        """Generate a proper JWT token for newer Azure Functions host versions."""
+        """Generate JWT token for Flex consumption authentication."""
         try:
             import jwt
-        except ImportError:
-            # Fall back to SWT format if JWT library not available
-            return self._get_site_restricted_token()
+        except ImportError as e:
+            raise RuntimeError("PyJWT library required. Install with: pip install pyjwt") from e
 
-        # JWT payload matching Azure Functions host expectations
-        exp_time = int(time.time()) + (24 * 60 * 60)  # 24 hours from now
-
-        # Use the site name consistently for issuer and audience validation
+        exp_time = int(time.time()) + (24 * 60 * 60)
+        iat_time = int(time.time())
         site_name = self._uuid
-        container_name = self._uuid
-
-        # According to Azure Functions host analysis, use site-specific issuer format
-        # This matches the ValidIssuers array in ScriptJwtBearerExtensions.cs
         issuer = f"https://{site_name}.azurewebsites.net"
 
         payload = {
             'exp': exp_time,
-            'iat': int(time.time()),
-            # Use site-specific issuer format that matches ValidIssuers in the host
+            'iat': iat_time,
+            'nbf': iat_time,
             'iss': issuer,
-            # For Linux Consumption in placeholder mode, audience is the container name
-            'aud': container_name
+            'aud': site_name,
+            'sub': site_name,
         }
 
-        # Use the same encryption key for JWT signing
-        key = base64.b64decode(os.getenv('_DUMMY_CONT_KEY').encode())
+        encryption_key_str = os.getenv('_DUMMY_CONT_KEY')
+        if not encryption_key_str:
+            raise RuntimeError("_DUMMY_CONT_KEY environment variable not set")
 
-        # Generate JWT token using HMAC SHA256 (matches Azure Functions host)
+        key_bytes = base64.b64decode(encryption_key_str.encode())
+        key = key_bytes[:32]
         jwt_token = jwt.encode(payload, key, algorithm='HS256')
         return jwt_token
 
     @classmethod
-    def _get_site_encrypted_context(cls,
-                                    site_name: str,
-                                    env: Dict[str, str]) -> str:
-        """Get the encrypted context for placeholder mode specialization"""
-        # Ensure WEBSITE_SITE_NAME is set to simulate production mode
+    def _get_site_encrypted_context(cls, site_name: str, env: Dict[str, str]) -> str:
+        """Get encrypted specialization context."""
         env["WEBSITE_SITE_NAME"] = site_name
-
-        ctx = {
-            "SiteId": 1,
-            "SiteName": site_name,
-            "Environment": env
-        }
-
+        ctx = {"SiteId": 1, "SiteName": site_name, "Environment": env}
         json_ctx = json.dumps(ctx)
-
         encrypted = cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), json_ctx)
         return encrypted
 
     @classmethod
     def _encrypt_context(cls, encryption_key: str, plain_text: str) -> str:
-        """Encrypt plain text context into an encrypted message which can
-        be accepted by the host
-        """
-        # Decode the encryption key
+        """Encrypt context for specialization."""
         encryption_key_bytes = base64.b64decode(encryption_key.encode())
+        aes_key = encryption_key_bytes[:32]
 
-        # Pad the plaintext to be a multiple of the AES block size
         padder = padding.PKCS7(algorithms.AES.block_size).padder()
         plain_text_bytes = padder.update(plain_text.encode()) + padder.finalize()
 
-        # Initialization vector (IV) (fixed value for simplicity)
         iv_bytes = '0123456789abcedf'.encode()
-
-        # Create AES cipher with CBC mode
-        cipher = Cipher(algorithms.AES(encryption_key_bytes),
-                        modes.CBC(iv_bytes), backend=default_backend())
-
-        # Perform encryption
+        cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv_bytes), backend=default_backend())
         encryptor = cipher.encryptor()
         encrypted_bytes = encryptor.update(plain_text_bytes) + encryptor.finalize()
 
-        # Compute SHA256 hash of the encryption key
-        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-        digest.update(encryption_key_bytes)
-        key_sha256 = digest.finalize()
-
-        # Encode IV, encrypted message, and SHA256 hash in base64
         iv_base64 = base64.b64encode(iv_bytes).decode()
         encrypted_base64 = base64.b64encode(encrypted_bytes).decode()
+
+        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+        digest.update(aes_key)
+        key_sha256 = digest.finalize()
         key_sha256_base64 = base64.b64encode(key_sha256).decode()
 
-        # Return the final result
         return f'{iv_base64}.{encrypted_base64}.{key_sha256_base64}'
 
     def __enter__(self):

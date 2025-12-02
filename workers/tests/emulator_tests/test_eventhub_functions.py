@@ -4,6 +4,8 @@ import json
 import time
 
 from tests.utils import testutils
+from unittest import skipIf
+import sys
 
 
 class TestEventHubFunctions(testutils.WebHostTestCase):
@@ -118,7 +120,6 @@ class TestEventHubFunctionsSteinGeneric(TestEventHubFunctions):
             'eventhub_functions_stein' / 'generic'
 
 
-@skipIf(sys.version_info.minor <= 8, "SDK Bindings supported for 3.9+.")
 @skipIf(sys.version_info.minor >= 14, "Skip to figure out uamqp.")
 class TestEventHubFunctionsSDK(TestEventHubFunctions):
 

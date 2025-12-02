@@ -120,11 +120,7 @@ jobs:
   
       # Modify Python Worker Version in eng\build\python.props
       Write-Host "Replacing eng\build\python.props"
-      ((Get-Content eng\build\Workers.Python.props) -replace "PythonWorker`" Version=`"(\d)+.(\d)+.(\d)+.?(\d)*`"","PythonWorker`" Version=`"$newWorkerVersion`"" -join "`n") +"`n" | Set-Content -NoNewline eng\build\Workers.Python.props
-  
-      # Modify Python Worker Version in test\WebJobs.Script.Tests\WebJobs.Script.Tests.csproj
-      Write-Host "Replacing test\WebJobs.Script.Tests\WebJobs.Script.Tests.csproj"
-      ((Get-Content test\WebJobs.Script.Tests\WebJobs.Script.Tests.csproj) -replace "PythonWorker`" Version=`"(\d)+.(\d)+.(\d)+.?(\d)*`"","PythonWorker`" Version=`"$newWorkerVersion`"" -join "`n") + "`n" | Set-Content -NoNewline test\WebJobs.Script.Tests\WebJobs.Script.Tests.csproj
+      ((Get-Content eng\build\Workers.Python.props) -replace "PythonWorker`" VersionOverride=`"(\d)+.(\d)+.(\d)+.?(\d)*`"","PythonWorker`" VersionOverride=`"$newWorkerVersion`"" -join "`n") +"`n" | Set-Content -NoNewline eng\build\Workers.Python.props
   
       # Modify release_notes.md
       Write-Host "Adding a new entry in release_notes.md"
@@ -133,7 +129,6 @@ jobs:
       # Commit Python Version
       Write-Host "Pushing $newBranch to host repo"
       git add eng\build\Workers.Python.props
-      git add test\WebJobs.Script.Tests\WebJobs.Script.Tests.csproj
       git add release_notes.md
       git commit -m "Update Python Worker Version to $newWorkerVersion"
       git push origin $newBranch

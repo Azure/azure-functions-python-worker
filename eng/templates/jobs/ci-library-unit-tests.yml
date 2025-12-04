@@ -32,5 +32,5 @@ jobs:
           python -m pytest -q --dist loadfile --reruns 4 --instafail --cov=./${{ parameters.PROJECT_DIRECTORY }} --cov-report xml --cov-branch tests/unittests
         displayName: "Running $(PYTHON_VERSION) Unit Tests"
         env:
-          AzureWebJobsStorage: $(LinuxStorageConnectionString312)
+          AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}

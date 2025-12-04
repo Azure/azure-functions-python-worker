@@ -67,6 +67,7 @@ class TestServiceBusFunctionsSteinGeneric(TestServiceBusFunctions):
             'servicebus_functions_stein' / 'generic'
 
 
+@unittest.skipIf(sys.version_info.minor >= 14, "Skip to figure out uamqp.")
 class TestServiceBusSDKFunctions(testutils.WebHostTestCase):
 
     @classmethod

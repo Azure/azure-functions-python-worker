@@ -12,7 +12,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 @app.event_grid_trigger(arg_name="event")
 @app.blob_output(arg_name="$return",
                  path="python-worker-tests/test-eventgrid-triggered.txt",
-                 connection="AzureWebJobsStorage")
+                 connection="STORAGE_CONNECTION")
 def event_grid_trigger(event: func.EventGridEvent) -> str:
     logging.info("Event grid function is triggered!")
     return json.dumps({
@@ -54,10 +54,10 @@ def eventgrid_output_binding(
 
 @app.function_name(name="eventgrid_output_binding_message_to_blobstore")
 @app.queue_trigger(arg_name="msg", queue_name="test-event-grid-storage-queue",
-                   connection="AzureWebJobsStorage")
+                   connection="STORAGE_CONNECTION")
 @app.blob_output(arg_name="$return",
                  path="python-worker-tests/test-eventgrid-output-binding.txt",
-                 connection="AzureWebJobsStorage")
+                 connection="STORAGE_CONNECTION")
 def eventgrid_output_binding_message_to_blobstore(
         msg: func.QueueMessage) -> bytes:
     return msg.get_body()
@@ -67,7 +67,7 @@ def eventgrid_output_binding_message_to_blobstore(
 @app.route(route="eventgrid_output_binding_success")
 @app.blob_input(arg_name="file",
                 path="python-worker-tests/test-eventgrid-output-binding.txt",
-                connection="AzureWebJobsStorage")
+                connection="STORAGE_CONNECTION")
 def eventgrid_output_binding_success(
         req: func.HttpRequest, file: func.InputStream) -> str:
     return file.read().decode('utf-8')
@@ -77,7 +77,7 @@ def eventgrid_output_binding_success(
 @app.route(route="get_eventgrid_triggered")
 @app.blob_input(arg_name="file",
                 path="python-worker-tests/test-eventgrid-triggered.txt",
-                connection="AzureWebJobsStorage")
+                connection="STORAGE_CONNECTION")
 def get_eventgrid_triggered(
         req: func.HttpRequest, file: func.InputStream) -> str:
     return file.read().decode('utf-8')

@@ -20,6 +20,9 @@ from proxy_worker.dispatcher import (
 )
 
 
+_real_import = builtins.__import__
+
+
 class TestDispatcher(unittest.TestCase):
 
     @patch("proxy_worker.dispatcher.queue.Queue")
@@ -316,7 +319,7 @@ async def test_worker_init_starts_threadpool(mock_eol, mock_streaming,
     def fake_import(name, *a, **k):
         if name == "azure_functions_runtime":
             return runtime_module
-        return builtins.__import__(name, *a, **k)
+        return _real_import(name, *a, **k)
 
     mock_import.side_effect = fake_import
     dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071,
@@ -344,7 +347,7 @@ async def test_env_reload_starts_threadpool(mock_eol, mock_streaming,
     def fake_import(name, *a, **k):
         if name == "azure_functions_runtime":
             return runtime_module
-        return builtins.__import__(name, *a, **k)
+        return _real_import(name, *a, **k)
 
     mock_import.side_effect = fake_import
     dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071,
@@ -379,7 +382,7 @@ async def test_worker_init_missing_threadpool_apis(mock_eol,
     def fake_import(name, *a, **k):
         if name == "azure_functions_runtime":
             return runtime_module
-        return builtins.__import__(name, *a, **k)
+        return _real_import(name, *a, **k)
 
     mock_import.side_effect = fake_import
     dispatcher = Dispatcher(asyncio.get_event_loop(), "localhost", 7071,

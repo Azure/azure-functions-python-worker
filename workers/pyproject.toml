@@ -95,7 +95,7 @@ test-http-v2 = [
 ]
 test-deferred-bindings = [
     "azurefunctions-extensions-bindings-blob==1.1.1",
-    "azurefunctions-extensions-bindings-eventhub==1.0.0b1"
+    "azurefunctions-extensions-bindings-eventhub==1.0.0b1; python_version < '3.14'"
 ]
 
 [build-system]

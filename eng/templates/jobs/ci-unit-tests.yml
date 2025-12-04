@@ -22,6 +22,8 @@ jobs:
           PYTHON_VERSION: '3.12'
         Python313:
           PYTHON_VERSION: '3.13'
+        Python314:
+          PYTHON_VERSION: '3.14'
     steps:
       - task: UsePythonVersion@0
         inputs:

@@ -4,6 +4,8 @@ import json
 import time
 
 from tests.utils import testutils
+from unittest import skipIf
+import sys
 
 
 class TestEventHubFunctions(testutils.WebHostTestCase):
@@ -116,3 +118,12 @@ class TestEventHubFunctionsSteinGeneric(TestEventHubFunctions):
     def get_script_dir(cls):
         return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions' / \
             'eventhub_functions_stein' / 'generic'
+
+
+@skipIf(sys.version_info.minor >= 14, "Skip to figure out uamqp.")
+class TestEventHubFunctionsSDK(TestEventHubFunctions):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions' / \
+            'eventhub_functions_sdk'

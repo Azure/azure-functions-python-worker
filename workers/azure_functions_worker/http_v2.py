@@ -5,7 +5,6 @@ import abc
 import asyncio
 import importlib
 import socket
-import sys
 from typing import Dict
 
 from azure_functions_worker.constants import (

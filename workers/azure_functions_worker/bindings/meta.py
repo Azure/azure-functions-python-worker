@@ -82,10 +82,10 @@ def load_binding_registry() -> None:
         DEFERRED_BINDING_REGISTRY = clients.get_binding_registry()
     except ImportError:
         logger.debug('Base extension not found. '
-                        'Python version: 3.%s, Sys path: %s, '
-                        'Sys Module: %s, python-packages Path exists: %s.',
-                        sys.version_info.minor, sys.path,
-                        sys.modules, os.path.exists(CUSTOMER_PACKAGES_PATH))
+                     'Python version: 3.%s, Sys path: %s, '
+                     'Sys Module: %s, python-packages Path exists: %s.',
+                     sys.version_info.minor, sys.path,
+                     sys.modules, os.path.exists(CUSTOMER_PACKAGES_PATH))
 
 
 def get_binding(bind_name: str,

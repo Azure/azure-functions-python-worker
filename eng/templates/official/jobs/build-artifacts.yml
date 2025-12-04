@@ -7,12 +7,6 @@ jobs:
     os: windows
   strategy:
     matrix:
-      Python37V4:
-        pythonVersion: '3.7'
-        normalizedPythonVersion: '3.7'
-      Python38V4:
-        pythonVersion: '3.8'
-        normalizedPythonVersion: '3.8'
       Python39V4:
         pythonVersion: '3.9'
         normalizedPythonVersion: '3.9'
@@ -52,12 +46,6 @@ jobs:
     os: windows
   strategy:
     matrix:
-      Python37V4:
-        pythonVersion: '3.7'
-        normalizedPythonVersion: '3.7'
-      Python38V4:
-        pythonVersion: '3.8'
-        normalizedPythonVersion: '3.8'
       Python39V4:
         pythonVersion: '3.9'
         normalizedPythonVersion: '3.9'
@@ -97,12 +85,6 @@ jobs:
     os: linux
   strategy:
     matrix:
-      Python37V4:
-        pythonVersion: '3.7'
-        normalizedPythonVersion: '3.7'
-      Python38V4:
-        pythonVersion: '3.8'
-        normalizedPythonVersion: '3.8'
       Python39V4:
         pythonVersion: '3.9'
         normalizedPythonVersion: '3.9'
@@ -141,12 +123,6 @@ jobs:
     os: macOS
   strategy:
     matrix:
-      Python37V4:
-        pythonVersion: '3.7'
-        normalizedPythonVersion: '3.7'
-      Python38V4:
-        pythonVersion: '3.8'
-        normalizedPythonVersion: '3.8'
       Python39V4:
         pythonVersion: '3.9'
         normalizedPythonVersion: '3.9'

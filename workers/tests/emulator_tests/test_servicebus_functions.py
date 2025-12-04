@@ -67,8 +67,6 @@ class TestServiceBusFunctionsSteinGeneric(TestServiceBusFunctions):
             'servicebus_functions_stein' / 'generic'
 
 
-@unittest.skipIf(sys.version_info.minor <= 8, "The servicebus extension"
-                                              "is only supported for 3.9+.")
 class TestServiceBusSDKFunctions(testutils.WebHostTestCase):
 
     @classmethod

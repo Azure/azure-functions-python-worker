@@ -76,7 +76,6 @@ steps:
     cd workers
     pip-audit -r requirements.txt
   displayName: 'Run vulnerability scan'
-  condition: ne(variables['pythonVersion'], '3.7')
 - task: CopyFiles@2
   inputs:
     contents: '$(workerPath)'
@@ -112,6 +111,7 @@ steps:
     $expected = @(
         ".artifactignore",
         "azure",
+        "azurefunctions",
         "azure_functions_worker",
         "azure_functions_worker/protos/FunctionRpc_pb2.py",
         "azure_functions_worker/protos/FunctionRpc_pb2_grpc.py",
@@ -130,13 +130,6 @@ steps:
         "werkzeug",
         "worker.py"
     )
-    # Add azurefunctions/ conditionally
-    if ("$(minorVersion)" -ne "7") {
-        Write-Host "Including azurefunctions/ in expected list (minorVersion=$(minorVersion))"
-        $expected += "azurefunctions"
-    } else {
-        Write-Host "Skipping azurefunctions/ (minorVersion=7)"
-    }
 
     $missing = @()
 

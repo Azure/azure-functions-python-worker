@@ -81,7 +81,6 @@ jobs:
       allowFailedBuilds: true
       targetPath: '$(Pipeline.Workspace)/PythonWorkerArtifact'
 
-
 - job: "CheckNugetPackageContent"
   dependsOn: ['PublishNuget']
   displayName: '(Manual) Check Nuget Package Content'

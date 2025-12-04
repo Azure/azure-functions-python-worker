@@ -13,9 +13,6 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -31,20 +28,17 @@ dependencies = [
      "azure-functions==1.24.0; python_version < '3.10'",
      "azure-functions==1.25.0b2; python_version >= '3.10'",
      "python-dateutil~=2.9.0",
-     "protobuf~=3.19.3; python_version == '3.7'",
-     "protobuf~=4.25.3; python_version >= '3.8' and python_version < '3.13'",
+     "protobuf~=4.25.3; python_version < '3.13'",
      "protobuf~=5.29.0; python_version == '3.13'",
      "protobuf~=6.32.1; python_version == '3.14'",
-     "grpcio-tools~=1.43.0; python_version == '3.7'",
-     "grpcio-tools~=1.59.0; python_version >= '3.8' and python_version < '3.13'",
+     "grpcio-tools~=1.59.0;python_version < '3.13'",
      "grpcio-tools~=1.70.0; python_version == '3.13'",
      "grpcio-tools~=1.75.1; python_version == '3.14'",
-     "grpcio~=1.43.0; python_version == '3.7'",
-     "grpcio ~=1.59.0; python_version >= '3.8' and python_version < '3.13'",
+     "grpcio ~=1.59.0; python_version < '3.13'",
      "grpcio~=1.70.0; python_version == '3.13'",
      "grpcio~=1.75.1; python_version == '3.14'",
      "uvloop~=0.21.0; python_version >= '3.13' and sys_platform != 'win32'",
-     "azurefunctions-extensions-base==1.1.0; python_version >= '3.8'",
+     "azurefunctions-extensions-base==1.1.0",
      "azure-functions-runtime==1.1.0b3; python_version >= '3.13'",
      "azure-functions-runtime-v1==1.1.0b2; python_version >= '3.13'"
 ]
@@ -58,18 +52,17 @@ dev = [
     "azure-cosmos", # Used for CosmosDB Emulator tests
     "azure-eventhub", # Used for EventHub E2E tests
     "azure-functions-durable", # Used for Durable E2E tests
-    "azure-monitor-opentelemetry; python_version >= '3.8'", # Used for Azure Monitor unit tests
+    "azure-monitor-opentelemetry", # Used for Azure Monitor unit tests
     "flask",
     "fastapi~=0.103.2",
     "pydantic",
-    "flake8==5.*; python_version == '3.7'",
-    "flake8==6.*; python_version >= '3.8'",
+    "flake8==6.*",
     "mypy",
     "pytest~=7.4.4",
     "requests==2.*",
     "coverage",
     "pytest-sugar",
-    "opentelemetry-api; python_version >= '3.8'", # Used for OpenTelemetry unit tests
+    "opentelemetry-api", # Used for OpenTelemetry unit tests
     "pytest-cov",
     "pytest-xdist",
     "pytest-randomly",

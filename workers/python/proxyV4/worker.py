@@ -20,12 +20,6 @@ def is_azure_environment():
             or AZURE_WEBSITE_INSTANCE_ID in os.environ)
 
 
-def validate_python_version():
-    minor_version = sys.version_info[1]
-    if not (13 <= minor_version < 15):
-        raise RuntimeError(f'Unsupported Python version: 3.{minor_version}')
-
-
 def determine_user_pkg_paths():
     """This finds the user packages when function apps are running on the cloud
         User packages are defined in:
@@ -43,7 +37,6 @@ def add_script_root_to_sys_path():
 
 
 if __name__ == '__main__':
-    validate_python_version()
     func_worker_dir = str(pathlib.Path(__file__).absolute().parent)
     env = os.environ
 

@@ -89,7 +89,7 @@ jobs:
       pip install twine
   
       # Publish artifacts to PyPi
-      twine upload --repository-url https://upload.pypi.org/legacy/ --username "__token__" --password "$pypiToken" PythonRuntimeArtifact/${{ parameters.PROJECT_DIRECTORY }}/dist/*
+      twine upload --repository-url https://upload.pypi.org/legacy/ --username "__token__" --password "$pypiToken" PythonRuntimeArtifact/${{ parameters.PROJECT_NAME }}/${{ parameters.PROJECT_DIRECTORY }}/dist/*
       Start-Sleep -Seconds 3
   
       # Checking if the new version is uploaded

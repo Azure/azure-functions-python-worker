@@ -9,6 +9,9 @@ from .retrycontext import RetryContext
 from .tracecontext import TraceContext
 
 
+_invocation_id_local = threading.local()
+
+
 class Context:
     def __init__(self,
                  func_name: str,
@@ -66,4 +69,4 @@ def get_context(invoc_request, name: str,
 
     return Context(
         name, directory, invoc_request.invocation_id,
-        threading.local(), trace_context, retry_context)
+        _invocation_id_local, trace_context, retry_context)

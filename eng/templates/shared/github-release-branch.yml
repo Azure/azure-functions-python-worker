@@ -26,7 +26,7 @@ steps:
           {
               # Modify Runtime Version in workers/pyproject.toml
               Write-Host "Replacing Runtime version in worker's pyproject.toml"
-              ((Get-Content workers/pyproject.toml) -replace '"${{ parameters.PROJECT_NAME }}==[^";]+', "`"${{ parameters.PROJECT_NAME }}==$newLibraryVersion") -join "`n" | Set-Content -NoNewline workers/pyproject.toml
+              ((Get-Content workers/pyproject.toml) -replace '"${{ parameters.PROJECT_NAME }}==[^";]+', "`"${{ parameters.PROJECT_NAME }}==$newWorkerVersion") -join "`n" | Set-Content -NoNewline workers/pyproject.toml
 
               # Change $versionFile version
               Write-Host "Change version number in version.py to $newWorkerVersion"

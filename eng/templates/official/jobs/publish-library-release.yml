@@ -58,7 +58,7 @@ jobs:
   displayName: 'PyPI Package'
   steps:
   - powershell: |
-      Write-Host "##vso[task.setvariable variable=BranchName]refs/heads/${{ parameters.BRANCH_NAME }}/$(NewLibraryVersion)"
+      Write-Host "##vso[task.setvariable variable=BranchName]refs/heads/${{ parameters.BRANCH_NAME }}/$(NewWorkerVersion)"
     displayName: "Set branch variable"
   - powershell: |
         Write-Host "BranchName: $(BranchName)"
@@ -80,7 +80,7 @@ jobs:
     inputs:
       versionSpec: 3.13
   - powershell: |
-      $newLibraryVersion = "$(NewLibraryVersion)"
+      $newLibraryVersion = "$(NewWorkerVersion)"
       $pypiToken = "$(PypiToken)"
       
       # Setup local Python environment

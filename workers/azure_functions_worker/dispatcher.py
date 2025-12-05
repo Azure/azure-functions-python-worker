@@ -990,6 +990,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         if sys.version_info.minor <= 7:
             max_workers = min(int(max_workers),
                               PYTHON_THREADPOOL_THREAD_COUNT_MAX_37)
+
         # We can box the app setting as int for earlier python versions.
         return int(max_workers) if max_workers else None
 

@@ -38,6 +38,8 @@ from .constants import (
     PYTHON_SCRIPT_FILE_NAME,
     PYTHON_SCRIPT_FILE_NAME_DEFAULT,
     PYTHON_THREADPOOL_THREAD_COUNT,
+    PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT,
+    PYTHON_THREADPOOL_THREAD_COUNT_MAX_37,
     PYTHON_THREADPOOL_THREAD_COUNT_MIN,
     REQUIRES_ROUTE_PARAMETERS
 )
@@ -114,6 +116,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         # We allow the customer to change synchronous thread pool max worker
         # count by setting the PYTHON_THREADPOOL_THREAD_COUNT app setting.
+        #   For 3.[6|7|8] The default value is 1.
         #   For 3.9, we don't set this value by default but we honor incoming
         #     the app setting.
         self._sync_call_tp: concurrent.futures.Executor = (
@@ -977,12 +980,16 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         # Starting Python 3.9, worker won't be putting a limit on the
         # max_workers count in the created threadpool.
-        default_value = None
+        default_value = None if sys.version_info.minor >= 9 \
+            else f'{PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT}'
 
         max_workers = get_app_setting(setting=PYTHON_THREADPOOL_THREAD_COUNT,
                                       default_value=default_value,
                                       validator=tp_max_workers_validator)
 
+        if sys.version_info.minor <= 7:
+            max_workers = min(int(max_workers),
+                              PYTHON_THREADPOOL_THREAD_COUNT_MAX_37)
         # We can box the app setting as int for earlier python versions.
         return int(max_workers) if max_workers else None
 

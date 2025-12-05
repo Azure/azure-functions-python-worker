@@ -6,6 +6,7 @@ import typing
 
 from .. import protos
 from ..constants import (
+    BASE_EXT_SUPPORTED_PY_MINOR_VERSION,
     CUSTOMER_PACKAGES_PATH,
     HTTP,
     HTTP_TRIGGER,
@@ -57,7 +58,7 @@ def load_binding_registry() -> None:
     not found, it loads the builtin. If the BINDING_REGISTRY is None,
     azure-functions hasn't been loaded in properly.
 
-    Tries to load the base extension.
+    Tries to load the base extension only for python 3.8+.
     """
 
     func = sys.modules.get('azure.functions')
@@ -76,16 +77,17 @@ def load_binding_registry() -> None:
                              sys.path, sys.modules,
                              os.path.exists(CUSTOMER_PACKAGES_PATH))
 
-    try:
-        import azurefunctions.extensions.base as clients
-        global DEFERRED_BINDING_REGISTRY
-        DEFERRED_BINDING_REGISTRY = clients.get_binding_registry()
-    except ImportError:
-        logger.debug('Base extension not found. '
-                     'Python version: 3.%s, Sys path: %s, '
-                     'Sys Module: %s, python-packages Path exists: %s.',
-                     sys.version_info.minor, sys.path,
-                     sys.modules, os.path.exists(CUSTOMER_PACKAGES_PATH))
+    if sys.version_info.minor >= BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
+        try:
+            import azurefunctions.extensions.base as clients
+            global DEFERRED_BINDING_REGISTRY
+            DEFERRED_BINDING_REGISTRY = clients.get_binding_registry()
+        except ImportError:
+            logger.debug('Base extension not found. '
+                         'Python version: 3.%s, Sys path: %s, '
+                         'Sys Module: %s, python-packages Path exists: %s.',
+                         sys.version_info.minor, sys.path,
+                         sys.modules, os.path.exists(CUSTOMER_PACKAGES_PATH))
 
 
 def get_binding(bind_name: str,

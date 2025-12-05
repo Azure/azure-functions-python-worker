@@ -5,9 +5,11 @@ import abc
 import asyncio
 import importlib
 import socket
+import sys
 from typing import Dict
 
 from azure_functions_worker.constants import (
+    BASE_EXT_SUPPORTED_PY_MINOR_VERSION,
     PYTHON_ENABLE_INIT_INDEXING,
     X_MS_INVOCATION_ID,
 )
@@ -283,6 +285,8 @@ class HttpV2Registry:
     @classmethod
     def _check_http_v2_enabled(cls):
         init_indexing_enabled = is_envvar_true(PYTHON_ENABLE_INIT_INDEXING)
+        if sys.version_info.minor < BASE_EXT_SUPPORTED_PY_MINOR_VERSION:
+            return False
 
         import azurefunctions.extensions.base as ext_base
         cls._ext_base = ext_base

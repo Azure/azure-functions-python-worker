@@ -74,7 +74,7 @@ jobs:
       branchName: '$(BranchName)'
       allowPartiallySucceededBuilds: true
       allowFailedBuilds: true
-      targetPath: 'PythonWorkerArtifact'
+      targetPath: 'PythonRuntimeArtifact'
   - task: UsePythonVersion@0
     displayName: 'Use Python 3.13'
     inputs:

@@ -22,7 +22,6 @@ services:
   azurite:
     container_name: "azurite"
     image: "mcr.microsoft.com/azure-storage/azurite:latest"
-    command: "azurite --skipApiVersionCheck"
     ports:
       - "10000:10000"
       - "10001:10001"

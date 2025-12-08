@@ -54,6 +54,7 @@ dev = [
     "azure-eventhub", # Used for EventHub E2E tests
     "azure-functions-durable", # Used for Durable E2E tests
     "azure-monitor-opentelemetry", # Used for Azure Monitor unit tests
+    "azure-storage-blob~=1.27.1"
     "flask",
     "fastapi~=0.103.2",
     "pydantic",

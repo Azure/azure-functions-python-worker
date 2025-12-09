@@ -11,6 +11,7 @@ from .utils.threadpool import (
     stop_threadpool_executor,
     get_threadpool_executor,
 )
+from .utils.executor import invocation_id_cv
 
 __all__ = ('worker_init_request',
            'functions_metadata_request',
@@ -19,4 +20,5 @@ __all__ = ('worker_init_request',
            'function_load_request',
            'start_threadpool_executor',
            'stop_threadpool_executor',
-           'get_threadpool_executor')
+           'get_threadpool_executor',
+           'invocation_id_cv')

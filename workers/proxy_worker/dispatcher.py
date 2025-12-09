@@ -99,11 +99,6 @@ def get_global_current_invocation_id() -> Optional[str]:
 
 
 def get_current_invocation_id() -> Optional[Any]:
-    # Check global current invocation first (most up-to-date)
-    global_invocation_id = get_global_current_invocation_id()
-    if global_invocation_id is not None:
-        return global_invocation_id
-
     # Check asyncio task context
     try:
         loop = asyncio._get_running_loop()
@@ -124,6 +119,18 @@ def get_current_invocation_id() -> Optional[Any]:
     thread_invocation_id = get_thread_invocation_id(current_thread_id)
     if thread_invocation_id is not None:
         return thread_invocation_id
+
+    # Check contextvar from library worker
+    global _library_worker
+    if _library_worker:
+        try:
+            cv = getattr(_library_worker, 'invocation_id_cv', None)
+            if cv:
+                val = cv.get()
+                if val is not None:
+                    return val
+        except (AttributeError, LookupError):
+            pass
 
     return getattr(_invocation_id_local, 'invocation_id', None)
 

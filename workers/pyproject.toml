@@ -40,7 +40,7 @@ dependencies = [
      "uvloop~=0.21.0; python_version == '3.13' and sys_platform != 'win32'",
      "uvloop~=0.22.0; python_version == '3.14' and sys_platform != 'win32'",
      "azurefunctions-extensions-base==1.1.0",
-     "azure-functions-runtime==1.1.0b3; python_version >= '3.13'",
+     "azure-functions-runtime==1.1.0b4; python_version >= '3.13'",
      "azure-functions-runtime-v1==1.1.0b2; python_version >= '3.13'"
 ]
 

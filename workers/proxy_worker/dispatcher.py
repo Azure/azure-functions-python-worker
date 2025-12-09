@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import grpc
+from packaging.version import Version
+
 from proxy_worker import protos
 from proxy_worker.logging import (
     CONSOLE_LOG_PREFIX,
@@ -32,7 +34,6 @@ from proxy_worker.utils.constants import (
     PYTHON_ENABLE_DEBUG_LOGGING,
 )
 from proxy_worker.version import VERSION
-
 from .utils.dependency import DependencyManager
 
 # Library worker import reloaded in init and reload request
@@ -99,6 +100,13 @@ def get_global_current_invocation_id() -> Optional[str]:
 
 
 def get_current_invocation_id() -> Optional[Any]:
+    global _library_worker
+    # Check global current invocation first (most up-to-date)
+    if _library_worker and Version(_library_worker.version.VERSION) < Version("1.1.0b4"):
+        global_invocation_id = get_global_current_invocation_id()
+        if global_invocation_id is not None:
+            return global_invocation_id
+
     # Check asyncio task context
     try:
         loop = asyncio._get_running_loop()
@@ -121,7 +129,6 @@ def get_current_invocation_id() -> Optional[Any]:
         return thread_invocation_id
 
     # Check contextvar from library worker
-    global _library_worker
     if _library_worker:
         try:
             cv = getattr(_library_worker, 'invocation_id_cv', None)

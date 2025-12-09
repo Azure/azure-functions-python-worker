@@ -460,8 +460,8 @@ class TestInvocationTracking(unittest.TestCase):
         # Test clear non-existent (should not raise)
         clear_thread_invocation_id(99999)
 
-    def test_get_current_invocation_id_priority_global(self):
-        """Test that global invocation ID has highest priority"""
+    def test_get_current_invocation_id_ignores_global_by_default(self):
+        """Test that global invocation ID is ignored by default"""
         global_id = "global-123"
         thread_id = threading.get_ident()
         thread_id_value = "thread-456"
@@ -470,9 +470,9 @@ class TestInvocationTracking(unittest.TestCase):
         set_current_invocation_id(global_id)
         set_thread_invocation_id(thread_id, thread_id_value)
 
-        # Global should take priority
+        # Thread should take priority (global is ignored)
         result = get_current_invocation_id()
-        self.assertEqual(result, global_id)
+        self.assertEqual(result, thread_id_value)
 
     def test_get_current_invocation_id_fallback_to_thread(self):
         """Test fallback to thread registry when global is None"""

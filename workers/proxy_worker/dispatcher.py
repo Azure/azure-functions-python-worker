@@ -102,7 +102,8 @@ def get_global_current_invocation_id() -> Optional[str]:
 def get_current_invocation_id() -> Optional[Any]:
     global _library_worker
     # Check global current invocation first (most up-to-date)
-    if _library_worker and Version(_library_worker.version.VERSION) < Version("1.1.0b4"):
+    if (_library_worker
+            and Version(_library_worker.version.VERSION) < Version("1.1.0b4")):
         global_invocation_id = get_global_current_invocation_id()
         if global_invocation_id is not None:
             return global_invocation_id

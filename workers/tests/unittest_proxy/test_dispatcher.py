@@ -412,6 +412,9 @@ class TestInvocationTracking(unittest.TestCase):
         with dispatcher_module._current_invocation_lock:
             dispatcher_module._current_invocation_id = None
 
+        # Clear library worker to ensure tests run with expected state
+        dispatcher_module._library_worker = None
+
     def tearDown(self):
         """Clean up after each test"""
         # Import the module-level variables properly
@@ -424,6 +427,9 @@ class TestInvocationTracking(unittest.TestCase):
         # Clear global invocation ID
         with dispatcher_module._current_invocation_lock:
             dispatcher_module._current_invocation_id = None
+
+        # Clear library worker
+        dispatcher_module._library_worker = None
 
     def test_global_invocation_id_set_and_get(self):
         """Test setting and getting global current invocation ID"""

@@ -1,0 +1,42 @@
+parameters:
+  PROJECT_DIRECTORY: 'workers'
+
+jobs:
+  - job: "TestPython"
+    displayName: "Run HTTP Trigger Integration Test"
+
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-ubuntu-22.04
+      os: linux
+
+    strategy:
+      matrix:
+        Python39:
+          PYTHON_VERSION: '3.9'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
+        Python313:
+          PYTHON_VERSION: '3.13'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(PYTHON_VERSION)
+      - task: UseDotNet@2
+        displayName: 'Install .NET 8'
+        inputs:
+          version: 8.0.x
+      - bash: |
+          python -m pip install --upgrade pip
+          python -m pip install . pytest~=7.4.4
+
+          chmod +x eng/scripts/test-setup.sh
+          eng/scripts/test-setup.sh
+        displayName: 'Install only worker dependencies and build the host'
+      - bash: |
+             python -m pytest tests/endtoend/test_basic_http_functions.py
+        env:
+          AzureWebJobsStorage: $(STORAGE_CONNECTION)
+          PYAZURE_WEBHOST_DEBUG: true
+        displayName: "Running $(PYTHON_VERSION) Python Simple E2E Tests"
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}

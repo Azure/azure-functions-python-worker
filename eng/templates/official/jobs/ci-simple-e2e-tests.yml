@@ -27,11 +27,12 @@ jobs:
         inputs:
           version: 8.0.x
       - bash: |
-          python -m pip install --upgrade pip
-          python -m pip install . pytest~=7.4.4
-
           chmod +x eng/scripts/test-setup.sh
           eng/scripts/test-setup.sh
+
+          cd ${{ parameters.PROJECT_DIRECTORY }}
+          python -m pip install --upgrade pip
+          python -m pip install . pytest~=7.4.4
         displayName: 'Install only worker dependencies and build the host'
       - bash: |
              python -m pytest tests/endtoend/test_basic_http_functions.py

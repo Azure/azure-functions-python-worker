@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import grpc
-from packaging.version import Version
 
 from proxy_worker import protos
 from proxy_worker.logging import (
@@ -102,8 +101,7 @@ def get_global_current_invocation_id() -> Optional[str]:
 def get_current_invocation_id() -> Optional[Any]:
     global _library_worker
     # Check global current invocation first (most up-to-date)
-    if (_library_worker
-            and Version(_library_worker.version.VERSION) < Version("1.1.0b4")):
+    if _library_worker and not hasattr(_library_worker, 'invocation_id_cv'):
         global_invocation_id = get_global_current_invocation_id()
         if global_invocation_id is not None:
             return global_invocation_id

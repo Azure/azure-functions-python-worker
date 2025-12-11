@@ -14,10 +14,16 @@ jobs:
       matrix:
         Python39:
           PYTHON_VERSION: '3.9'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
+        Python310:
+          PYTHON_VERSION: '3.10'
+        Python311:
+          PYTHON_VERSION: '3.11'
+        Python312:
+          PYTHON_VERSION: '3.12'
         Python313:
           PYTHON_VERSION: '3.13'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
+        Python314:
+          PYTHON_VERSION: '3.14'
     steps:
       - task: UsePythonVersion@0
         inputs:
@@ -27,17 +33,19 @@ jobs:
         inputs:
           version: 8.0.x
       - bash: |
+          cd workers
+          python -m pip install --upgrade pip
+          python -m pip install . pytest~=7.4.4 invoke
+
+          cd ..
           chmod +x eng/scripts/test-setup.sh
           eng/scripts/test-setup.sh
 
-          cd ${{ parameters.PROJECT_DIRECTORY }}
-          python -m pip install --upgrade pip
-          python -m pip install . pytest~=7.4.4
         displayName: 'Install only worker dependencies and build the host'
       - bash: |
              python -m pytest tests/endtoend/test_basic_http_functions.py
         env:
-          AzureWebJobsStorage: $(STORAGE_CONNECTION)
+          AzureWebJobsStorage: $(LinuxStorageConnectionString312)
           PYAZURE_WEBHOST_DEBUG: true
         displayName: "Running $(PYTHON_VERSION) Python Simple E2E Tests"
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}

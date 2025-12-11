@@ -37,10 +37,13 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install . pytest~=7.4.4 invoke requests
 
+          # Remove from virtual environment
+          pip uninstall -y azure-functions-worker
+          pip uninstall -y proxy-worker
+
           cd ..
           chmod +x eng/scripts/test-setup.sh
           eng/scripts/test-setup.sh
-
         displayName: 'Install only worker dependencies and build the host'
       - bash: |
              python -m pytest tests/endtoend/test_basic_http_functions.py

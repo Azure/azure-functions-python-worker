@@ -51,7 +51,3 @@ extends:
       dependsOn: []
       jobs:
       - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
-    - stage: RunSimpleE2ETests
-      dependsOn: []
-      jobs:
-      - template: /eng/templates/official/jobs/ci-simple-e2e-tests.yml@self

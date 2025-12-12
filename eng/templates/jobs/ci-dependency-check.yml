@@ -1,0 +1,83 @@
+parameters:
+  PROJECT_DIRECTORY: 'workers'
+
+jobs:
+  - job: "TestPython"
+    displayName: "Run HTTP Trigger Integration Test"
+
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-ubuntu-22.04
+      os: linux
+
+    strategy:
+      matrix:
+        Python39:
+          PYTHON_VERSION: '3.9'
+        Python310:
+          PYTHON_VERSION: '3.10'
+        Python311:
+          PYTHON_VERSION: '3.11'
+        Python312:
+          PYTHON_VERSION: '3.12'
+        Python313:
+          PYTHON_VERSION: '3.13'
+        Python314:
+          PYTHON_VERSION: '3.14'
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(PYTHON_VERSION)
+      - bash: |
+          cd workers
+          pip install --no-deps .
+
+          PY_VER="$(PYTHON_VERSION)"
+          echo "Python version: $PY_VER"
+
+          # Extract minor version
+          PY_MINOR="${PY_VER#*.}"
+
+          python -c "import pkgutil, sys; 
+
+          if [ "$PY_MINOR" -ge 13 ]; then
+              import proxy_worker;
+          else
+              import azure_functions_worker;
+          fi
+          print('OK: imports resolved')"
+        displayName: 'Python Worker: check for missing dependencies'
+      - bash: |
+          cd runtimes/v1
+          pip install --no-deps .
+
+          PY_VER="$(PYTHON_VERSION)"
+          echo "Python version: $PY_VER"
+
+          # Extract minor version
+          PY_MINOR="${PY_VER#*.}"
+
+          python -c "import pkgutil, sys; 
+
+          if [ "$PY_MINOR" -ge 13 ]; then
+              import azure_functions_runtime_v1;
+          fi
+          print('OK: imports resolved')"
+        displayName: 'Python Library V1: check for missing dependencies'
+      - bash: |
+          cd runtimes/v2
+          pip install --no-deps .
+
+          PY_VER="$(PYTHON_VERSION)"
+          echo "Python version: $PY_VER"
+
+          # Extract minor version
+          PY_MINOR="${PY_VER#*.}"
+
+          python -c "import pkgutil, sys; 
+
+          if [ "$PY_MINOR" -ge 13 ]; then
+              import azure_functions_runtime;
+          fi
+          print('OK: imports resolved')"
+        displayName: 'Python Library V2: check for missing dependencies'

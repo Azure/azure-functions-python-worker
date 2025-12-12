@@ -3,10 +3,10 @@ parameters:
 
 jobs:
   - job: "TestPython"
-    displayName: "Run HTTP Trigger Integration Test"
+    displayName: "Run Dependency Checks"
 
     pool:
-      name: 1es-pool-azfunc
+      name: ${{ parameters.PoolName }}
       image: 1es-ubuntu-22.04
       os: linux
 

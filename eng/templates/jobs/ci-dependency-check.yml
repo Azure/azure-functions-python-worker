@@ -36,16 +36,17 @@ jobs:
           echo "Python version: $PY_VER"
 
           # Extract minor version
-          PY_MINOR="${PY_VER#*.}"
-
-          python -c "import pkgutil, sys; 
+          PY_MINOR="${PY_VER#*.}" 
 
           if [ "$PY_MINOR" -ge 13 ]; then
+              python -c "import pkgutil, sys;
               import proxy_worker;
+              print('OK: imports resolved')"
           else
+              python -c "import pkgutil, sys;
               import azure_functions_worker;
+              print('OK: imports resolved')"
           fi
-          print('OK: imports resolved')"
         displayName: 'Python Worker: check for missing dependencies'
       - bash: |
           cd runtimes/v1
@@ -57,12 +58,11 @@ jobs:
           # Extract minor version
           PY_MINOR="${PY_VER#*.}"
 
-          python -c "import pkgutil, sys; 
-
           if [ "$PY_MINOR" -ge 13 ]; then
+              python -c "import pkgutil, sys;
               import azure_functions_runtime_v1;
+              print('OK: imports resolved')"
           fi
-          print('OK: imports resolved')"
         displayName: 'Python Library V1: check for missing dependencies'
       - bash: |
           cd runtimes/v2
@@ -72,12 +72,11 @@ jobs:
           echo "Python version: $PY_VER"
 
           # Extract minor version
-          PY_MINOR="${PY_VER#*.}"
-
-          python -c "import pkgutil, sys; 
+          PY_MINOR="${PY_VER#*.}" 
 
           if [ "$PY_MINOR" -ge 13 ]; then
+              python -c "import pkgutil, sys;
               import azure_functions_runtime;
+              print('OK: imports resolved')"
           fi
-          print('OK: imports resolved')"
         displayName: 'Python Library V2: check for missing dependencies'

@@ -39,13 +39,9 @@ jobs:
           PY_MINOR="${PY_VER#*.}" 
 
           if [ "$PY_MINOR" -ge 13 ]; then
-              python -c "import pkgutil, sys;
-              import proxy_worker;
-              print('OK: imports resolved')"
+              python -c "import proxy_worker; print('OK: imports resolved')"
           else
-              python -c "import pkgutil, sys;
-              import azure_functions_worker;
-              print('OK: imports resolved')"
+              python -c "import azure_functions_worker; print('OK: imports resolved')"
           fi
         displayName: 'Python Worker: check for missing dependencies'
       - bash: |
@@ -59,9 +55,7 @@ jobs:
           PY_MINOR="${PY_VER#*.}"
 
           if [ "$PY_MINOR" -ge 13 ]; then
-              python -c "import pkgutil, sys;
-              import azure_functions_runtime_v1;
-              print('OK: imports resolved')"
+              python -c "import azure_functions_runtime_v1; print('OK: imports resolved')"
           fi
         displayName: 'Python Library V1: check for missing dependencies'
       - bash: |
@@ -75,8 +69,6 @@ jobs:
           PY_MINOR="${PY_VER#*.}" 
 
           if [ "$PY_MINOR" -ge 13 ]; then
-              python -c "import pkgutil, sys;
-              import azure_functions_runtime;
-              print('OK: imports resolved')"
+              python -c "import azure_functions_runtime; print('OK: imports resolved')"
           fi
         displayName: 'Python Library V2: check for missing dependencies'

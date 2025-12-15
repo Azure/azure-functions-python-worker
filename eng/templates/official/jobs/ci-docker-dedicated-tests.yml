@@ -56,6 +56,7 @@ jobs:
         env:
           DEDICATED_DOCKER_TEST: "true"
           AzureWebJobsStorage: $(STORAGE_CONNECTION)
+          STORAGE_CONNECTION: $(STORAGE_CONNECTION)
           AzureWebJobsCosmosDBConnectionString: $(COSMOSDB_CONNECTION)
           AzureWebJobsEventHubConnectionString: $(EVENTHUB_CONNECTION)
           AzureWebJobsServiceBusConnectionString: $(SERVICEBUS_CONNECTION)

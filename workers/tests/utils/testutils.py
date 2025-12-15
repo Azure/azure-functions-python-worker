@@ -144,7 +144,7 @@ class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
 class WebHostTestCaseMeta(type(unittest.TestCase)):
 
     def __new__(mcls, name, bases, dct):
-        if True \
+        if is_envvar_true(DEDICATED_DOCKER_TEST) \
                 or is_envvar_true(CONSUMPTION_DOCKER_TEST):
             return super().__new__(mcls, name, bases, dct)
 
@@ -221,7 +221,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         """
         if is_envvar_true(CONSUMPTION_DOCKER_TEST):
             return True, CONSUMPTION_DOCKER_TEST
-        elif True:
+        elif is_envvar_true(DEDICATED_DOCKER_TEST):
             return True, DEDICATED_DOCKER_TEST
         else:
             return False, None

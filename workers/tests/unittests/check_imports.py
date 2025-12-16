@@ -56,25 +56,25 @@ def find_imports(src_dir):
                         imports.add("azurefunctions.extensions.base")
                     # Special cases to ignore
                     elif str(src_dir).startswith("workers") and (
-                        node.module == "azure.monitor.opentelemetry"
-                        or node.module == "opentelemetry"
-                        or node.module == "opentelemetry.trace.propagation.tracecontext"
-                        or node.module == "Cookie"):
+                            node.module == "azure.monitor.opentelemetry"
+                            or node.module == "opentelemetry"
+                            or node.module == "opentelemetry.trace.propagation.tracecontext" # noqa
+                            or node.module == "Cookie"):
                         pass
-                    elif str(src_dir).startswith("runtimes\\v1\\azure_functions_runtime_v1") and (
-                        node.module == "google.protobuf.timestamp_pb2"
-                        or node.module == "azure.monitor.opentelemetry"
-                        or node.module == "opentelemetry"
-                        or node.module == "opentelemetry.trace.propagation.tracecontext"
-                        or node.module == "Cookie"):
+                    elif str(src_dir).startswith("runtimes\\v1\\azure_functions_runtime_v1") and ( # noqa
+                            node.module == "google.protobuf.timestamp_pb2"
+                            or node.module == "azure.monitor.opentelemetry"
+                            or node.module == "opentelemetry"
+                            or node.module == "opentelemetry.trace.propagation.tracecontext" # noqa
+                            or node.module == "Cookie"):
                         pass
-                    elif str(src_dir).startswith("runtimes\\v2\\azure_functions_runtime") and (
-                        node.module == "google.protobuf.duration_pb2"
-                        or node.module == "google.protobuf.timestamp_pb2"
-                        or node.module == "azure.monitor.opentelemetry"
-                        or node.module == "opentelemetry"
-                        or node.module == "opentelemetry.trace.propagation.tracecontext"
-                        or node.module == "Cookie"):
+                    elif str(src_dir).startswith("runtimes\\v2\\azure_functions_runtime")and ( # noqa
+                            node.module == "google.protobuf.duration_pb2"
+                            or node.module == "google.protobuf.timestamp_pb2"
+                            or node.module == "azure.monitor.opentelemetry"
+                            or node.module == "opentelemetry"
+                            or node.module == "opentelemetry.trace.propagation.tracecontext" # noqa
+                            or node.module == "Cookie"):
                         pass
                     else:
                         imports.add(node.module.split(".")[0])
@@ -118,8 +118,6 @@ def check_package(pkg_root, package_name):
             and imp != package_name
         ):
             missing.append(imp)
-
-
 
     if missing:
         print("Missing required dependencies:")

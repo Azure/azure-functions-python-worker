@@ -12,7 +12,6 @@ import typing
 from asyncio import AbstractEventLoop
 from dataclasses import dataclass
 from typing import Any, Optional
-import packaging
 
 import grpc
 

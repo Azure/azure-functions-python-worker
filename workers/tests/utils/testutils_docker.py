@@ -69,7 +69,9 @@ class WebHostDockerContainerBase(unittest.TestCase):
                           image_url: str) -> str:
 
         # New regex to match version format: 4.1042.100-4-python3.11
-        regex = re.compile(_HOST_VERSION + r'\.10\d+\.\d+(-\d+)?-python' + _python_version + r'(-appservice)?$')
+        regex = re.compile(_HOST_VERSION
+                           + r'\.10\d+\.\d+(-\d+)?-python'
+                           + _python_version + r'(-appservice)?$')
 
         response = requests.get(image_url, allow_redirects=True)
         if not response.ok:
@@ -91,10 +93,13 @@ class WebHostDockerContainerBase(unittest.TestCase):
         # getting the latest released runtime version for python.
         # Parse version format: 4.1042.100-4-python3.11
         def parse_version(tag):
-            version_part = tag.split('-python')[0]  # "4.1042.100-4"
-            parts = version_part.replace('-', '.').split('.')  # ["4", "1042", "100", "4"]
-            return tuple(int(p) for p in parts)  # (4, 1042, 100, 4)
-        
+            # "4.1042.100-4"
+            version_part = tag.split('-python')[0]
+            # ["4", "1042", "100", "4"]
+            parts = version_part.replace('-', '.').split('.')
+            # (4, 1042, 100, 4)
+            return tuple(int(p) for p in parts)
+
         latest_version = sorted(python_versions, key=parse_version)[-1]
 
         image_tag = f'{image_repo}:{latest_version}'

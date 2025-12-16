@@ -29,25 +29,6 @@ jobs:
         inputs:
           versionSpec: $(PYTHON_VERSION)
       - bash: |
-          cd workers
-          pip install --no-deps .
-
-          PY_VER="$(PYTHON_VERSION)"
-          echo "Python version: $PY_VER"
-
-          # Extract minor version
-          PY_MINOR="${PY_VER#*.}" 
-
-          if [ "$PY_MINOR" -ge 13 ]; then
-              python -c "import proxy_worker; print('OK: imports resolved')"
-          else
-              python -c "import azure_functions_worker; print('OK: imports resolved')"
-          fi
-        displayName: 'Python Worker: check for missing dependencies'
-      - bash: |
-          cd runtimes/v1
-          pip install --no-deps .
-
           PY_VER="$(PYTHON_VERSION)"
           echo "Python version: $PY_VER"
 
@@ -55,13 +36,25 @@ jobs:
           PY_MINOR="${PY_VER#*.}"
 
           if [ "$PY_MINOR" -ge 13 ]; then
-              python -c "import azure_functions_runtime_v1; print('OK: imports resolved')"
+              echo "Checking proxy_worker (Python >= 3.13)..."
+              python workers/tests/unittests/check_imports.py workers proxy_worker
+          else
+              echo "Checking azure_functions_worker (Python < 3.13)..."
+              python workers/tests/unittests/check_imports.py workers azure_functions_worker
+          fi
+        displayName: 'Python Worker: check for missing dependencies'
+      - bash: |
+          PY_VER="$(PYTHON_VERSION)"
+          echo "Python version: $PY_VER"
+
+          # Extract minor version
+          PY_MINOR="${PY_VER#*.}"
+
+          if [ "$PY_MINOR" -ge 13 ]; then
+              python workers/tests/unittests/check_imports.py runtimes/v1 azure-functions-runtime-v1
           fi
         displayName: 'Python Library V1: check for missing dependencies'
       - bash: |
-          cd runtimes/v2
-          pip install --no-deps .
-
           PY_VER="$(PYTHON_VERSION)"
           echo "Python version: $PY_VER"
 
@@ -69,6 +62,6 @@ jobs:
           PY_MINOR="${PY_VER#*.}" 
 
           if [ "$PY_MINOR" -ge 13 ]; then
-              python -c "import azure_functions_runtime; print('OK: imports resolved')"
+              python workers/tests/unittests/check_imports.py runtimes/v2 azure-functions-runtime
           fi
         displayName: 'Python Library V2: check for missing dependencies'

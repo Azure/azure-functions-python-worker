@@ -69,7 +69,7 @@ class WebHostDockerContainerBase(unittest.TestCase):
                           image_url: str) -> str:
 
         # New regex to match version format: 4.1042.100-4-python3.11
-        regex = re.compile(_HOST_VERSION + r'\.10\d+\.\d+(-\d+)?-python' + '3.11' + r'(-appservice)?$')
+        regex = re.compile(_HOST_VERSION + r'\.10\d+\.\d+(-\d+)?-python' + _python_version + r'(-appservice)?$')
 
         response = requests.get(image_url, allow_redirects=True)
         if not response.ok:

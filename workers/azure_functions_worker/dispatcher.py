@@ -13,6 +13,7 @@ import platform
 import queue
 import sys
 import threading
+import time
 from asyncio import BaseEventLoop
 from datetime import datetime
 from logging import LogRecord
@@ -774,6 +775,9 @@ class Dispatcher(metaclass=DispatcherMeta):
             env_vars = func_env_reload_request.environment_variables
             for var in env_vars:
                 os.environ[var] = env_vars[var]
+
+            # Refresh timezone information after environment reload
+            time.tzset()
 
             # Apply PYTHON_THREADPOOL_THREAD_COUNT
             self._stop_sync_call_tp()

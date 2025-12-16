@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import sys
+import time
 
 from typing import List, MutableMapping, Optional
 
@@ -306,7 +307,6 @@ async def function_environment_reload_request(request):
                  "Version %s", VERSION)
     global _host, protos
     try:
-
         func_env_reload_request = \
             request.request.function_environment_reload_request
         directory = func_env_reload_request.function_app_directory
@@ -323,7 +323,8 @@ async def function_environment_reload_request(request):
         for var in env_vars:
             os.environ[var] = env_vars[var]
 
-        # TODO: Apply PYTHON_THREADPOOL_THREAD_COUNT
+        # Refresh timezone information after environment reload
+        time.tzset()
 
         if is_envvar_true(PYTHON_ENABLE_DEBUG_LOGGING):
             root_logger = logging.getLogger()

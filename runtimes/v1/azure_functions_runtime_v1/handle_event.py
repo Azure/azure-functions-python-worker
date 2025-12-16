@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import sys
+import time
 import typing
 
 from .functions import FunctionInfo, Registry
@@ -274,6 +275,9 @@ async def function_environment_reload_request(request):
         env_vars = func_env_reload_request.environment_variables
         for var in env_vars:
             os.environ[var] = env_vars[var]
+
+        # Refresh timezone information after environment reload
+        time.tzset()
 
         if is_envvar_true(PYTHON_ENABLE_DEBUG_LOGGING):
             root_logger = logging.getLogger()

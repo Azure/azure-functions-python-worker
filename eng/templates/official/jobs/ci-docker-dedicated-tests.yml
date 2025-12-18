@@ -15,30 +15,27 @@ jobs:
         Python39:
           PYTHON_VERSION: '3.9'
           STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
-          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString39)
-          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString39)
-          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString39)
           SQL_CONNECTION: $(LinuxSqlConnectionString39)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString39)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString39)
         Python310:
           PYTHON_VERSION: '3.10'
           STORAGE_CONNECTION: $(LinuxStorageConnectionString310)
-          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString310)
-          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString310)
-          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString310)
           SQL_CONNECTION: $(LinuxSqlConnectionString310)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString310)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString310)
         Python311:
           PYTHON_VERSION: '3.11'
           STORAGE_CONNECTION: $(LinuxStorageConnectionString311)
-          COSMOSDB_CONNECTION: $(LinuxCosmosDBConnectionString311)
-          EVENTHUB_CONNECTION: $(LinuxEventHubConnectionString311)
-          SERVICEBUS_CONNECTION: $(LinuxServiceBusConnectionString311)
           SQL_CONNECTION: $(LinuxSqlConnectionString311)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString311)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString311)
+        Python312:
+          PYTHON_VERSION: '3.12'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
+          SQL_CONNECTION: $(LinuxSqlConnectionString312)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
 
     steps:
       - task: UsePythonVersion@0
@@ -56,9 +53,7 @@ jobs:
         env:
           DEDICATED_DOCKER_TEST: "true"
           AzureWebJobsStorage: $(STORAGE_CONNECTION)
-          AzureWebJobsCosmosDBConnectionString: $(COSMOSDB_CONNECTION)
-          AzureWebJobsEventHubConnectionString: $(EVENTHUB_CONNECTION)
-          AzureWebJobsServiceBusConnectionString: $(SERVICEBUS_CONNECTION)
+          STORAGE_CONNECTION: $(STORAGE_CONNECTION)
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)

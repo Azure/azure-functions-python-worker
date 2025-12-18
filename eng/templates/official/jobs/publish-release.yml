@@ -123,7 +123,7 @@ jobs:
   
       # Modify release_notes.md
       Write-Host "Adding a new entry in release_notes.md"
-      Add-Content -Path release_notes.md -Value "`n- Update Python Worker Version to [$newWorkerVersion](https://github.com/Azure/azure-functions-python-worker/releases/tag/$newWorkerVersion)"
+      Add-Content -Path release_notes.md -Value "- Update Python Worker Version to [$newWorkerVersion](https://github.com/Azure/azure-functions-python-worker/releases/tag/$newWorkerVersion)"
 
   
       # Commit Python Version

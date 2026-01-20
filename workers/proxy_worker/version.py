@@ -1,4 +1,4 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-VERSION = '4.41.2'
+VERSION = '4.42.0'

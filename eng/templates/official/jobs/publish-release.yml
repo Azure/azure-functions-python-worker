@@ -98,7 +98,7 @@ jobs:
   dependsOn: ['CheckNugetPackageContent']
   displayName: 'Create Host PRs'
   steps:
-  - powershell: |
+  - pwsh: |
       $githubUser = "$(GithubUser)"
       $githubToken = "$(GithubPat)"
       $newWorkerVersion = "$(NewWorkerVersion)"

@@ -53,6 +53,8 @@ jobs:
       - bash: |
           # Install Azure CLI (if not already present)
           curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+          export AZURE_STORAGE_API_VERSION=2023-11-03
           
           # Create the apps container in Azurite
           az storage container create \

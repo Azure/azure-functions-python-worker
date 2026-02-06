@@ -6,6 +6,8 @@ import uuid
 
 import requests
 from tests.utils import testutils
+from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
+from azure_functions_worker.utils.common import is_envvar_true
 
 
 class TestEventGridFunctions(testutils.WebHostTestCase):
@@ -90,6 +92,9 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
             else:
                 break
 
+    @unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
+                     or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+                     'EventGrid connection string not available in docker tests')
     def test_eventgrid_output_binding(self):
         """test event_grid output binding
 
@@ -131,28 +136,38 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
 
         self.assertEqual(expected_response, response)
 
-        max_retries = 10
-        for try_no in range(max_retries):
-            # Allow trigger to fire.
-            time.sleep(2)
+        r = self.webhost.request('GET',
+                                 'eventgrid_output_binding_success')
+        self.assertEqual(r.status_code, 200)
+        response = r.json()
 
-            try:
-                # Check that the trigger has fired.
-                r = self.webhost.request('GET',
-                                         'eventgrid_output_binding_success')
-                self.assertEqual(r.status_code, 200)
-                response = r.json()
+        # list of fields to check are limited as other fields contain
+        # datetime or other uncertain values
+        for f in ['data', 'id', 'eventType', 'subject', 'dataVersion']:
+            self.assertEqual(response[f], expected_final_data[f])
 
-                # list of fields to check are limited as other fields contain
-                # datetime or other uncertain values
-                for f in ['data', 'id', 'eventType', 'subject', 'dataVersion']:
-                    self.assertEqual(response[f], expected_final_data[f])
-
-            except AssertionError:
-                if try_no == max_retries - 1:
-                    raise
-            else:
-                break
+        # max_retries = 10
+        # for try_no in range(max_retries):
+        #     # Allow trigger to fire.
+        #     time.sleep(2)
+        #
+        #     try:
+        #         # Check that the trigger has fired.
+        #         r = self.webhost.request('GET',
+        #                                  'eventgrid_output_binding_success')
+        #         self.assertEqual(r.status_code, 200)
+        #         response = r.json()
+        #
+        #         # list of fields to check are limited as other fields contain
+        #         # datetime or other uncertain values
+        #         for f in ['data', 'id', 'eventType', 'subject', 'dataVersion']:
+        #             self.assertEqual(response[f], expected_final_data[f])
+        #
+        #     except AssertionError:
+        #         if try_no == max_retries - 1:
+        #             raise
+        #     else:
+        #         break
 
 
 class TestEventGridFunctionsStein(TestEventGridFunctions):

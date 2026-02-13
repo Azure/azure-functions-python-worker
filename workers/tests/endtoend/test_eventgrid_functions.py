@@ -136,16 +136,6 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
 
         self.assertEqual(expected_response, response)
 
-        r = self.webhost.request('GET',
-                                 'eventgrid_output_binding_success')
-        self.assertEqual(r.status_code, 200)
-        response = r.json()
-
-        # list of fields to check are limited as other fields contain
-        # datetime or other uncertain values
-        for f in ['data', 'id', 'eventType', 'subject', 'dataVersion']:
-            self.assertEqual(response[f], expected_final_data[f])
-
         max_retries = 10
         for try_no in range(max_retries):
             # Allow trigger to fire.

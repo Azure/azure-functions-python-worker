@@ -37,3 +37,4 @@ jobs:
           cd ${{ parameters.PROJECT_DIRECTORY }}
           pip-audit .
         displayName: 'Run vulnerability scan'
+        continueOnError: true

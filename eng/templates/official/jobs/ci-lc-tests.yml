@@ -42,7 +42,7 @@ jobs:
 
       - bash: |
           python -m pip install --upgrade pip
-          pip install setuptools<82.0
+          pip install "setuptools<82.0"
           python -m pip install -U -e ${{ parameters.PROJECT_DIRECTORY }}/[dev]
 
           cd ${{ parameters.PROJECT_DIRECTORY }}/tests

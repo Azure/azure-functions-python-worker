@@ -1,6 +1,7 @@
 #!/bin/bash
 
 python -m pip install --upgrade pip
+python -m pip install "setuptools>=62,<82.0"
 python -m pip install -e runtimes/v2
 python -m pip install -e runtimes/v1
 python -m pip install -U azure-functions --pre

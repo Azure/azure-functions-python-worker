@@ -15,7 +15,7 @@ python -c "import sys; sys.path.insert(0, '$SERVICEBUS_DIR'); import azurefuncti
 
 # Install grpcio and grpcio-tools for Python versions under 3.12
 PYTHON_VERSION=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-if [ "$(python -c "import sys; print(int(sys.version_info.major == 3 and sys.version_info.minor < 12))")" -eq 1 ]; then
+if [ "$(python -c "import sys; print(int(sys.version_info.major == 3 and sys.version_info.minor <= 12))")" -eq 1 ]; then
     echo "Python version $PYTHON_VERSION detected. Force installing grpcio and grpcio-tools ~=1.59.0"
     python -m pip install "grpcio~=1.59.0" "grpcio-tools~=1.59.0"
 else

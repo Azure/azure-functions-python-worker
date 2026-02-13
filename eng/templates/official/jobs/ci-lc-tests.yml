@@ -30,7 +30,7 @@ jobs:
           docker run -d -p 10000:10000 -p 10001:10001 -p 10002:10002 \
             --name azurite-storage \
             mcr.microsoft.com/azure-storage/azurite:latest \
-            azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0
+            azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --skipApiVersionCheck
           
           # Wait for Azurite to be ready
           sleep 5

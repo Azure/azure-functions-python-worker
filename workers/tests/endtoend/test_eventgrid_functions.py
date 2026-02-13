@@ -146,28 +146,28 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
         for f in ['data', 'id', 'eventType', 'subject', 'dataVersion']:
             self.assertEqual(response[f], expected_final_data[f])
 
-        # max_retries = 10
-        # for try_no in range(max_retries):
-        #     # Allow trigger to fire.
-        #     time.sleep(2)
-        #
-        #     try:
-        #         # Check that the trigger has fired.
-        #         r = self.webhost.request('GET',
-        #                                  'eventgrid_output_binding_success')
-        #         self.assertEqual(r.status_code, 200)
-        #         response = r.json()
-        #
-        #         # list of fields to check are limited as other fields contain
-        #         # datetime or other uncertain values
-        #         for f in ['data', 'id', 'eventType', 'subject', 'dataVersion']:
-        #             self.assertEqual(response[f], expected_final_data[f])
-        #
-        #     except AssertionError:
-        #         if try_no == max_retries - 1:
-        #             raise
-        #     else:
-        #         break
+        max_retries = 10
+        for try_no in range(max_retries):
+            # Allow trigger to fire.
+            time.sleep(2)
+        
+            try:
+                # Check that the trigger has fired.
+                r = self.webhost.request('GET',
+                                         'eventgrid_output_binding_success')
+                self.assertEqual(r.status_code, 200)
+                response = r.json()
+        
+                # list of fields to check are limited as other fields contain
+                # datetime or other uncertain values
+                for f in ['data', 'id', 'eventType', 'subject', 'dataVersion']:
+                    self.assertEqual(response[f], expected_final_data[f])
+        
+            except AssertionError:
+                if try_no == max_retries - 1:
+                    raise
+            else:
+                break
 
 
 class TestEventGridFunctionsStein(TestEventGridFunctions):

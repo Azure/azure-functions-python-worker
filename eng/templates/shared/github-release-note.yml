@@ -25,7 +25,7 @@ steps:
       git push origin "${{ parameters.PROJECT_DIRECTORY}}-$newWorkerVersion"
 
     displayName: 'Create and push release tag x.y.z'
-  - powershell: |
+  - pwsh: |
       $githubUser = "$(GithubUser)"
       $githubToken = "$(GithubPat)"
       $newWorkerVersion = "$(NewWorkerVersion)"

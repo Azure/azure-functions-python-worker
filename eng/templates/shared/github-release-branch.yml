@@ -5,7 +5,7 @@ parameters:
   PROJECT_NAME: ''
 
 steps:
-  - powershell: |
+  - pwsh: |
       $githubToken = "$(GithubPat)"
       $newWorkerVersion = "$(NewWorkerVersion)"
       $versionFile = "${{ parameters.VERSION_FILE}}"

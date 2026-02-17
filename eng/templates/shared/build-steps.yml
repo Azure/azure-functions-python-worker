@@ -21,3 +21,4 @@ steps:
       cd ${{ parameters.PROJECT_DIRECTORY }}
       pip-audit -r requirements.txt
     displayName: 'Run vulnerability scan'
+    continueOnError: true

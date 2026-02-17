@@ -79,7 +79,7 @@ jobs:
     displayName: 'Use Python 3.13'
     inputs:
       versionSpec: 3.13
-  - powershell: |
+  - pwsh: |
       $newLibraryVersion = "$(NewWorkerVersion)"
       $pypiToken = "$(PypiToken)"
       

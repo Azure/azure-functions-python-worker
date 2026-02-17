@@ -34,7 +34,7 @@ dependencies = [
      "grpcio-tools~=1.59.0;python_version < '3.13'",
      "grpcio-tools~=1.70.0; python_version == '3.13'",
      "grpcio-tools~=1.75.1; python_version == '3.14'",
-     "grpcio ~=1.59.0; python_version < '3.13'",
+     "grpcio~=1.59.0; python_version < '3.13'",
      "grpcio~=1.70.0; python_version == '3.13'",
      "grpcio~=1.75.1; python_version == '3.14'",
      "uvloop~=0.21.0; python_version == '3.13' and sys_platform != 'win32'",
@@ -94,7 +94,7 @@ test-deferred-bindings = [
 ]
 
 [build-system]
-requires = ["setuptools>=62", "wheel"]
+requires = ["setuptools>=62,<82.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 

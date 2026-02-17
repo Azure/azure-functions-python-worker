@@ -1,6 +1,7 @@
 #!/bin/bash
 
 python -m pip install --upgrade pip
+python -m pip install "setuptools>=62,<82.0"
 python -m pip install -e $1/PythonSdkArtifact
 python -m pip install -e workers/[dev]
 

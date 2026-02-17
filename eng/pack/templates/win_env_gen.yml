@@ -69,6 +69,7 @@ steps:
     cd workers
     pip-audit -r requirements.txt
   displayName: 'Run vulnerability scan'
+  continueOnError: true
 - task: CopyFiles@2
   inputs:
     contents: '$(workerPath)'

@@ -48,6 +48,7 @@ jobs:
       - bash: |
             echo "Checking azure_functions_worker (Python < 3.13)..."
             cd workers
+            pip install "setuptools<82.0"
             pip install . invoke
             cd tests
             python -m invoke -c test_setup build-protos

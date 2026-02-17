@@ -77,6 +77,10 @@ jobs:
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |
+          # Clean up Docker resources to free disk space
+          docker system prune -af --volumes
+          df -h
+          
           docker pull mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
           docker run --detach --publish 8081:8081 --publish 1234:1234 mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
           docker ps

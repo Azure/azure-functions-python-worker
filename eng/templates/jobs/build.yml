@@ -4,8 +4,8 @@ parameters:
   PROJECT_DIRECTORY: ''
 
 jobs:
-  - job: "Build"
-    displayName: 'Build'
+  - job: "Build ${{ parameters.PROJECT_NAME }}"
+    displayName: 'Build ${{ parameters.PROJECT_NAME }}'
 
     pool:
       name: 1es-pool-azfunc-public

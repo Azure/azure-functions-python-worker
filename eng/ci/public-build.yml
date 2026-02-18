@@ -56,16 +56,19 @@ extends:
       - template: /eng/templates/jobs/build.yml@self
         parameters:
           PYTHON_VERSION: '3.11'
+          SIMPLE_VERSION: '311'
           PROJECT_NAME: 'Azure Functions Python Worker <= 3.12'
           PROJECT_DIRECTORY: 'workers'
       - template: /eng/templates/jobs/build.yml@self
         parameters:
           PYTHON_VERSION: '3.13'
+          SIMPLE_VERSION: '313'
           PROJECT_NAME: 'Azure Functions Python Worker == 3.13'
           PROJECT_DIRECTORY: 'workers'
       - template: /eng/templates/jobs/build.yml@self
         parameters:
           PYTHON_VERSION: '3.14'
+          SIMPLE_VERSION: '314'
           PROJECT_NAME: 'Azure Functions Python Worker == 3.14'
           PROJECT_DIRECTORY: 'workers'
       # Skip the build stage for SDK and Extensions release branches. This stage will fail because pyproject.toml contains the updated (and unreleased) library version

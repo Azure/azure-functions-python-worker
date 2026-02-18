@@ -4,7 +4,7 @@ parameters:
   PROJECT_DIRECTORY: ''
 
 jobs:
-  - job: "Build ${{ parameters.PYTHON_VERSION }}"
+  - job: "Build${{ parameters.PYTHON_VERSION }}"
     displayName: 'Build ${{ parameters.PROJECT_NAME }}'
 
     pool:

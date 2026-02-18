@@ -3,6 +3,7 @@
 python -m venv .env
 source .env/bin/activate
 python -m pip install --upgrade pip
+python -m pip install "setuptools>=62,<82.0"
 
 cd workers
 python -m pip install .

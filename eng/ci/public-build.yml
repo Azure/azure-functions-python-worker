@@ -111,8 +111,6 @@ extends:
             PROJECT_DIRECTORY: 'runtimes/v2'
             PoolName: 1es-pool-azfunc-public
 
-
-
     # Python V1 Library Build and Test Stages
     - stage: BuildV1Library
       dependsOn: []

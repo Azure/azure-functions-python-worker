@@ -49,6 +49,24 @@ jobs:
           EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
     steps:
+      - bash: |
+          echo "Disk space before cleanup:"
+          df -h
+          
+          # Clean up Docker resources
+          docker system prune -af --volumes || true
+          
+          # Clean pip cache
+          pip cache purge || true
+          
+          # Clean apt cache
+          sudo apt-get clean || true
+          sudo rm -rf /var/lib/apt/lists/* || true
+          
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Free disk space'
+        
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
@@ -137,3 +155,22 @@ jobs:
           PYAZURE_WEBHOST_DEBUG: true
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+      
+      - bash: |
+          echo "Cleaning up after tests..."
+          # Remove build artifacts and caches
+          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/build || true
+          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.pytest_cache || true
+          rm -rf $(Pipeline.Workspace)/PythonSdkArtifact || true
+          rm -rf $(Pipeline.Workspace)/PythonExtensionArtifact || true
+          
+          # Clean Docker
+          docker system prune -f || true
+          
+          # Clean pip cache
+          pip cache purge || true
+          
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Cleanup after tests'
+        condition: always()

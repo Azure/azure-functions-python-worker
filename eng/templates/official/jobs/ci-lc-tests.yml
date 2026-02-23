@@ -21,6 +21,24 @@ jobs:
          Python312:
            PYTHON_VERSION: '3.12'
     steps:
+      - bash: |
+          echo "Disk space before cleanup:"
+          df -h
+          
+          # Clean up Docker resources
+          docker system prune -af --volumes || true
+          
+          # Clean pip cache
+          pip cache purge || true
+          
+          # Clean apt cache
+          sudo apt-get clean || true
+          sudo rm -rf /var/lib/apt/lists/* || true
+          
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Free disk space'
+        
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
@@ -113,8 +131,22 @@ jobs:
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
   
       - bash: |
+          echo "Cleaning up after tests..."
           # Cleanup: Stop and remove Azurite container
           docker stop azurite-storage || true
           docker rm azurite-storage || true
-        displayName: 'Cleanup Azurite Storage Emulator'
+          
+          # Remove build artifacts and caches
+          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/build || true
+          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.pytest_cache || true
+          
+          # Clean Docker resources
+          docker system prune -f || true
+          
+          # Clean pip cache
+          pip cache purge || true
+          
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Cleanup after tests'
         condition: always()

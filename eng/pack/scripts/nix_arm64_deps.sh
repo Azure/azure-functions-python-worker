@@ -3,7 +3,7 @@
 python -m venv .env
 source .env/bin/activate
 python -m pip install --upgrade pip
-python -m pip install "setuptools>=62,<82.0"
+python -m pip install setuptools==81.0
 
 version_minor=$(echo $1 | cut -d '.' -f 2)
 mkdir -p $BUILD_SOURCESDIRECTORY/deps
@@ -22,7 +22,7 @@ docker run --name my-arm64-container --platform linux/arm64 \
         ls -la /src  # debug: see what files exist
         apt-get update && apt-get install -y git curl && \
         pip install --upgrade pip && \
-        pip install "setuptools>=62,<82.0" && \
+        pip install setuptools==81.0 && \
         cd workers && \
         pip install . && \
         pip install . --target /src && \

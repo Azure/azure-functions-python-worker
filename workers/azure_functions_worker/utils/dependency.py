@@ -152,6 +152,18 @@ class DependencyManager:
         if not cx_deps_path:
             cx_deps_path = cls.cx_deps_path
 
+        # Fallback: if cx_deps_path is still empty and we have a working
+        # directory, try the well-known .python_packages path.  This
+        # handles Flex Consumption where the app content is mounted after
+        # the worker process starts (so the path was never in sys.path).
+        if not cx_deps_path and working_directory:
+            candidate = os.path.join(
+                working_directory, '.python_packages', 'lib',
+                'site-packages'
+            )
+            if os.path.isdir(candidate):
+                cx_deps_path = candidate
+
         logger.info(
             'Applying prioritize_customer_dependencies: '
             'worker_dependencies_path: %s, customer_dependencies_path: %s, '
@@ -161,7 +173,7 @@ class DependencyManager:
             is_envvar_true("WEBSITE_PLACEHOLDER_MODE"))
 
         cls._remove_from_sys_path(cls.worker_deps_path)
-        cls._add_to_sys_path(cls.cx_deps_path, True)
+        cls._add_to_sys_path(cx_deps_path, True)
 
         # Deprioritize worker dependencies but don't completely remove it
         # Otherwise, it will break some really old function apps, those

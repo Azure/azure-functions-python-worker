@@ -12,12 +12,12 @@ from azure_functions_worker.constants import (
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
 )
 from requests import Request
-from tests.utils.testutils_lc import LinuxConsumptionWebHostController
+from tests.utils.testutils_lc import FlexConsumptionWebHostController
 
 _DEFAULT_HOST_VERSION = "4"
 
 
-class TestLinuxConsumption(TestCase):
+class TestFlexConsumption(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -27,13 +27,13 @@ class TestLinuxConsumption(TestCase):
         cls._storage = os.getenv('AzureWebJobsStorage')
         if cls._storage is None:
             raise RuntimeError('Environment variable AzureWebJobsStorage is '
-                               'required before running Linux Consumption test')
+                               'required before running Flex Consumption test')
 
     def test_placeholder_mode_root_returns_ok(self):
         """In any circumstances, a placeholder container should returns 200
         even when it is not specialized.
         """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+        with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
                                                self._py_version) as ctrl:
             req = Request('GET', ctrl.url)
             resp = ctrl.send_request(req)
@@ -43,11 +43,11 @@ class TestLinuxConsumption(TestCase):
         """An HttpTrigger function app with 'azure-functions' library
         should return 200.
         """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+        with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("HttpNoAuth")
+                "SCM_RUN_FROM_PACKAGE": self._get_function_app("HttpNoAuth")
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
@@ -68,11 +68,11 @@ class TestLinuxConsumption(TestCase):
 
         should return 200 after importing all libraries.
         """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+        with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("CommonLibraries")
+                "SCM_RUN_FROM_PACKAGE": self._get_function_app("CommonLibraries")
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
@@ -90,11 +90,11 @@ class TestLinuxConsumption(TestCase):
         should return 200 and by default customer debug logging should be
         disabled.
         """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+        with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("EnableDebugLogging")
+                "SCM_RUN_FROM_PACKAGE": self._get_function_app("EnableDebugLogging")
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
             resp = ctrl.send_request(req)
@@ -117,11 +117,11 @@ class TestLinuxConsumption(TestCase):
         should return 200 and with customer debug logging enabled, debug logs
         should be written to container logs.
         """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+        with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
+                "SCM_RUN_FROM_PACKAGE": self._get_function_app(
                     "EnableDebugLogging"),
                 PYTHON_ENABLE_DEBUG_LOGGING: "1"
             })
@@ -145,12 +145,12 @@ class TestLinuxConsumption(TestCase):
         should return 200 with the azure functions version set to 1.11.1
         since dependency isolation is enabled by default for all py versions
         """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+        with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
                                                self._py_version) as ctrl:
 
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
+                "SCM_RUN_FROM_PACKAGE": self._get_function_app(
                     "PinningFunctions"),
                 PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1",
             })
@@ -168,11 +168,11 @@ class TestLinuxConsumption(TestCase):
 
         should return 200 after importing all libraries.
         """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+        with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("Opencensus"),
+                "SCM_RUN_FROM_PACKAGE": self._get_function_app("Opencensus"),
                 PYTHON_ENABLE_WORKER_EXTENSIONS: "1"
             })
             req = Request('GET', f'{ctrl.url}/api/opencensus')
@@ -183,11 +183,11 @@ class TestLinuxConsumption(TestCase):
         """
         A function app with init indexing enabled
         """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+        with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("Opencensus"),
+                "SCM_RUN_FROM_PACKAGE": self._get_function_app("Opencensus"),
                 PYTHON_ENABLE_WORKER_EXTENSIONS: "1",
                 PYTHON_ENABLE_INIT_INDEXING: "true"
             })
@@ -199,11 +199,11 @@ class TestLinuxConsumption(TestCase):
         """
         A function app with HTTPtrigger mocking error code 137
         """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+        with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url(
+                "SCM_RUN_FROM_PACKAGE": self._get_function_app(
                     "OOMError"),
                 PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1"
             })
@@ -223,12 +223,12 @@ class TestLinuxConsumption(TestCase):
         A function app using http v2 fastapi extension with streaming upload and
          download
         """
-        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+        with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE":
-                self._get_blob_url("HttpV2FastApiStreaming"),
+                self._get_function_app("HttpV2FastApiStreaming"),
                 PYTHON_ENABLE_INIT_INDEXING: "true",
                 PYTHON_ISOLATE_WORKER_DEPENDENCIES: "1"
             })
@@ -255,11 +255,7 @@ class TestLinuxConsumption(TestCase):
             self.assertEqual(
                 streamed_data, b'streamingtestingresponseisreturned')
 
-    def _get_blob_url(self, scenario_name: str) -> str:
-        base_url = "http://172.17.0.1:10000/devstoreaccount1/apps"
-
-        container_sas_token = os.getenv('CONTAINER_SAS_TOKEN')
-        if not container_sas_token:
-            raise RuntimeError('Environment variable CONTAINER_SAS_TOKEN is '
-                               'required before running Linux Consumption test')
-        return f"{base_url}/{scenario_name}.zip?{container_sas_token}"
+    @staticmethod
+    def _get_function_app(scenario_name: str) -> str:
+        """Return the zip filename for the given test scenario."""
+        return f"{scenario_name}.zip"

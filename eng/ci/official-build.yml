@@ -77,7 +77,7 @@ extends:
         dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/official/jobs/ci-docker-dedicated-tests.yml@self
-      - stage: RunWorkerLinuxConsumptionTests
+      - stage: RunWorkerFlexConsumptionTests
         dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/official/jobs/ci-lc-tests.yml@self

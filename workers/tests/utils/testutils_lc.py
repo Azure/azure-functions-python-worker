@@ -21,9 +21,11 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import padding
 
-from tests.utils.constants import PROJECT_ROOT
+from tests.utils.constants import PROJECT_ROOT, TESTS_ROOT
 
-# Linux Consumption Testing Constants
+_FUNCTION_APP_ZIPS_DIR = TESTS_ROOT / 'consumption_tests' / 'function_app_zips'
+
+# Flex Consumption Testing Constants
 _DOCKER_PATH = "DOCKER_PATH"
 _DOCKER_DEFAULT_PATH = "docker"
 _OS_TYPE = "bookworm" if sys.version_info.minor < 14 else "noble"
@@ -40,7 +42,7 @@ _EXTENSION_BASE_ZIP = 'https://github.com/Azure/azure-functions-python-' \
                       'extensions/archive/refs/heads/dev.zip'
 
 
-class LinuxConsumptionWebHostController:
+class FlexConsumptionWebHostController:
     """A controller for spawning mesh Docker container and apply multiple
     test cases on it.
     """
@@ -75,9 +77,8 @@ class LinuxConsumptionWebHostController:
         env["FUNCTIONS_WORKER_RUNTIME"] = "python"
         env["FUNCTIONS_WORKER_RUNTIME_VERSION"] = self._py_version
         env["WEBSITE_SITE_NAME"] = self._uuid
-        env["WEBSITE_HOSTNAME"] = f"{self._uuid}.azurewebsites.com"
+        env["WEBSITE_POD_NAME"] = self._uuid
 
-        # Wait for the container to be ready
         max_retries = 10
         for i in range(max_retries):
             try:
@@ -90,6 +91,21 @@ class LinuxConsumptionWebHostController:
             time.sleep(1)
         else:
             raise RuntimeError(f'Container {self._uuid} did not become ready in time')
+
+        # Flex/Legion host does not download app content during assign (it's a
+        # no-op).  In local Docker tests there is no Legion infrastructure, so
+        # we must manually mount the content BEFORE the assign call so the
+        # host can discover functions when it specializes.
+        pkg_name = env.get("SCM_RUN_FROM_PACKAGE") or env.get(
+            "WEBSITE_RUN_FROM_PACKAGE"
+        )
+        if pkg_name:
+            local_zip = _FUNCTION_APP_ZIPS_DIR / pkg_name
+            if not local_zip.exists():
+                raise RuntimeError(
+                    f"Local function app zip not found: {local_zip}"
+                )
+            self._mount_package_in_container(str(local_zip))
 
         # Send the specialization context via a POST request
         req = requests.Request(
@@ -107,6 +123,57 @@ class LinuxConsumptionWebHostController:
             raise RuntimeError(f'Failed to specialize container {self._uuid}'
                                f' at {url} (status {response.status_code}).'
                                f' stdout: {stdout}')
+
+    def _mount_package_in_container(self, local_path: str):
+        """Copy a local function app package into the container and
+        mount/extract it at /home/site/wwwroot.
+
+        Supports both regular zip files (PK magic) and SquashFS images
+        (hsqs magic) which Azure Functions uses for Flex Consumption.
+        """
+        with open(local_path, "rb") as f:
+            magic = f.read(4)
+
+        is_squashfs = (magic == b'hsqs')
+        is_zip = (magic[:2] == b'PK')
+
+        if not is_squashfs and not is_zip:
+            raise RuntimeError(
+                f"{local_path} is neither a zip nor a squashfs image. "
+                f"First 4 bytes: {magic}"
+            )
+
+        container_pkg = "/tmp/app.sqsh" if is_squashfs else "/tmp/app.zip"
+
+        # Copy the package into the container
+        subprocess.run(
+            [self._docker_cmd, "cp", local_path,
+             f"{self._uuid}:{container_pkg}"],
+            check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+
+        if is_squashfs:
+            # Mount squashfs image at /home/site/wwwroot
+            subprocess.run(
+                [self._docker_cmd, "exec", self._uuid,
+                 "bash", "-c",
+                 "mkdir -p /home/site/wwwroot "
+                 f"&& mount -t squashfs -o loop {container_pkg} "
+                 "/home/site/wwwroot"],
+                check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            )
+        else:
+            # Extract zip using Python's zipfile
+            subprocess.run(
+                [self._docker_cmd, "exec", self._uuid,
+                 "python", "-c",
+                 "import zipfile, os; "
+                 "os.makedirs('/home/site/wwwroot', exist_ok=True); "
+                 f"zipfile.ZipFile('{container_pkg}').extractall("
+                 "'/home/site/wwwroot'); "
+                 f"os.remove('{container_pkg}')"],
+                check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            )
 
     def send_request(
             self,
@@ -205,8 +272,6 @@ class LinuxConsumptionWebHostController:
                         image: str,
                         env: Dict[str, str] = {}) -> int:
         """Create a docker container and record its port."""
-        if not os.getenv('_DUMMY_CONT_KEY'):
-            os.environ['_DUMMY_CONT_KEY'] = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
         worker_name = 'azure_functions_worker' \
             if sys.version_info.minor < 13 else 'proxy_worker'
 
@@ -256,15 +321,13 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["--name", self._uuid, "--privileged"])
         run_cmd.extend(["--cap-add", "SYS_ADMIN"])
         run_cmd.extend(["--device", "/dev/fuse"])
-        run_cmd.extend(["-e", f"CONTAINER_NAME={self._uuid}"])
-        encryption_key = os.getenv('_DUMMY_CONT_KEY')
-        full_key_bytes = base64.b64decode(encryption_key.encode())
-        aes_key_bytes = full_key_bytes[:32]
-        aes_key_base64 = base64.b64encode(aes_key_bytes).decode()
-        run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={aes_key_base64}"])
+        run_cmd.extend(["-e",
+                        f"CONTAINER_ENCRYPTION_KEY={os.getenv('_DUMMY_CONT_KEY')}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
         run_cmd.extend(["-e", f"WEBSITE_SITE_NAME={self._uuid}"])
-        run_cmd.extend(["-e", "WEBSITE_SKU=Dynamic"])
+        run_cmd.extend(["-e", f"WEBSITE_POD_NAME={self._uuid}"])
+        run_cmd.extend(["-e", "WEBSITE_SKU=FlexConsumption"])
+        # Mount Worker Code
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
 
         # Mount runtime libraries for Python 3.13+
@@ -353,13 +416,26 @@ class LinuxConsumptionWebHostController:
         iat_time = int(time.time())
         site_name = self._uuid
         issuer = f"https://{site_name}.azurewebsites.net"
+        
+        # Flex Consumption Host validation can be tricky with exact audience matching.
+        # Provide a comprehensive list of potential expected audiences.
+        audience = [
+            issuer,
+            f"{issuer}/",
+            site_name,
+            f"{site_name}.azurewebsites.net",
+            f"https://{site_name}.azurewebsites.net",
+            f"https://{site_name}.azurewebsites.net/",
+            "https://azure-functions-host", 
+            "https://localhost",
+        ]
 
         payload = {
             'exp': exp_time,
             'iat': iat_time,
             'nbf': iat_time,
             'iss': issuer,
-            'aud': site_name,
+            'aud': self._uuid,
             'sub': site_name,
         }
 
@@ -376,7 +452,7 @@ class LinuxConsumptionWebHostController:
     def _get_site_encrypted_context(cls, site_name: str, env: Dict[str, str]) -> str:
         """Get encrypted specialization context."""
         env["WEBSITE_SITE_NAME"] = site_name
-        ctx = {"SiteId": 1, "SiteName": site_name, "Environment": env}
+        ctx = {"siteId": 1, "siteName": site_name, "environment": env}
         json_ctx = json.dumps(ctx)
         encrypted = cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), json_ctx)
         return encrypted

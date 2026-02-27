@@ -226,7 +226,7 @@ class DependencyManager:
         ]
         # Return first or default to first site-packages path in sys.path
         default_path = next((p for p in sys.path if 'site-packages' in p), '')
-        logger.info("Customer dependencies path candidates: %s. Default: %s", cx_paths, default_path)
+        logger.debug("Customer dependencies path candidates: %s. Default: %s", cx_paths, default_path)
         if cx_paths:
             return cx_paths[0]
         else:

@@ -79,6 +79,7 @@ class FlexConsumptionWebHostController:
         env["WEBSITE_SITE_NAME"] = self._uuid
         env["WEBSITE_POD_NAME"] = self._uuid
 
+        # Wait for the container to be ready
         max_retries = 10
         for i in range(max_retries):
             try:
@@ -272,6 +273,7 @@ class FlexConsumptionWebHostController:
                         image: str,
                         env: Dict[str, str] = {}) -> int:
         """Create a docker container and record its port."""
+        os.environ['_DUMMY_CONT_KEY'] = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
         worker_name = 'azure_functions_worker' \
             if sys.version_info.minor < 13 else 'proxy_worker'
 
@@ -321,8 +323,12 @@ class FlexConsumptionWebHostController:
         run_cmd.extend(["--name", self._uuid, "--privileged"])
         run_cmd.extend(["--cap-add", "SYS_ADMIN"])
         run_cmd.extend(["--device", "/dev/fuse"])
-        run_cmd.extend(["-e",
-                        f"CONTAINER_ENCRYPTION_KEY={os.getenv('_DUMMY_CONT_KEY')}"])
+        run_cmd.extend(["-e", f"CONTAINER_NAME={self._uuid}"])
+        encryption_key = os.getenv('_DUMMY_CONT_KEY')
+        full_key_bytes = base64.b64decode(encryption_key.encode())
+        aes_key_bytes = full_key_bytes[:32]
+        aes_key_base64 = base64.b64encode(aes_key_bytes).decode()
+        run_cmd.extend(["-e", f"CONTAINER_ENCRYPTION_KEY={aes_key_base64}"])
         run_cmd.extend(["-e", "WEBSITE_PLACEHOLDER_MODE=1"])
         run_cmd.extend(["-e", f"WEBSITE_SITE_NAME={self._uuid}"])
         run_cmd.extend(["-e", f"WEBSITE_POD_NAME={self._uuid}"])
@@ -435,7 +441,7 @@ class FlexConsumptionWebHostController:
             'iat': iat_time,
             'nbf': iat_time,
             'iss': issuer,
-            'aud': self._uuid,
+            'aud': site_name,
             'sub': site_name,
         }
 
@@ -452,7 +458,7 @@ class FlexConsumptionWebHostController:
     def _get_site_encrypted_context(cls, site_name: str, env: Dict[str, str]) -> str:
         """Get encrypted specialization context."""
         env["WEBSITE_SITE_NAME"] = site_name
-        ctx = {"siteId": 1, "siteName": site_name, "environment": env}
+        ctx = {"SiteId": 1, "SiteName": site_name, "Environment": env}
         json_ctx = json.dumps(ctx)
         encrypted = cls._encrypt_context(os.getenv('_DUMMY_CONT_KEY'), json_ctx)
         return encrypted

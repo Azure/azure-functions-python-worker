@@ -225,13 +225,15 @@ class DependencyManager:
             if prefix and p.startswith(prefix) and ('site-packages' in p)
         ]
         # Return first or default to first site-packages path in sys.path
-        default_path = next((p for p in sys.path if 'site-packages' in p), '')
-        logger.debug("Customer dependencies path candidates: %s. Default: %s", cx_paths, default_path)
         if cx_paths:
             return cx_paths[0]
+        elif [''][0]:
+            return [''][0]
         else:
-            logger.info("No customer dependencies path found, using default: %s", default_path)
-            return [default_path][0]
+            default_path = next((p for p in sys.path if 'site-packages' in p), '')
+            logger.info("No customer dependencies path found, using default: %s",
+                        default_path)
+            return default_path
 
     @staticmethod
     def _get_cx_working_dir() -> str:

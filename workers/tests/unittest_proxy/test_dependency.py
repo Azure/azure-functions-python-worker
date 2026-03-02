@@ -70,7 +70,7 @@ def test_get_cx_deps_path_with_matching_prefix(mock_logger):
         "/home/site/wwwroot"
     ]):
         result = DependencyManager._get_cx_deps_path()
-        
+
         assert result == "/home/site/wwwroot/.python_packages/lib/site-packages"
         mock_logger.info.assert_any_call(
             "Customer dependencies path candidates: %s. Default: %s",
@@ -89,7 +89,7 @@ def test_get_cx_deps_path_no_matching_prefix_returns_default(mock_logger):
         "/home/site/wwwroot"
     ]):
         result = DependencyManager._get_cx_deps_path()
-        
+
         assert result == "/usr/local/lib/python3.11/site-packages"
         mock_logger.info.assert_any_call(
             "Customer dependencies path candidates: %s. Default: %s",
@@ -111,7 +111,7 @@ def test_get_cx_deps_path_no_prefix_env_returns_default(mock_logger):
         "/some/other/path"
     ]):
         result = DependencyManager._get_cx_deps_path()
-        
+
         assert result == "/usr/local/lib/python3.11/site-packages"
         mock_logger.info.assert_any_call(
             "Customer dependencies path candidates: %s. Default: %s",
@@ -133,7 +133,7 @@ def test_get_cx_deps_path_no_site_packages_returns_empty(mock_logger):
         "/some/other/path"
     ]):
         result = DependencyManager._get_cx_deps_path()
-        
+
         assert result == ""
         mock_logger.info.assert_any_call(
             "Customer dependencies path candidates: %s. Default: %s",
@@ -156,7 +156,7 @@ def test_get_cx_deps_path_multiple_matches_returns_first(mock_logger):
         "/usr/local/lib/python3.11/site-packages"
     ]):
         result = DependencyManager._get_cx_deps_path()
-        
+
         assert result == "/home/site/wwwroot/.python_packages/lib/site-packages"
         # Verify that both paths matching the prefix were found
         call_args = mock_logger.info.call_args_list[0]

@@ -72,11 +72,8 @@ def test_get_cx_deps_path_with_matching_prefix(mock_logger):
         result = DependencyManager._get_cx_deps_path()
 
         assert result == "/home/site/wwwroot/.python_packages/lib/site-packages"
-        mock_logger.info.assert_any_call(
-            "Customer dependencies path candidates: %s. Default: %s",
-            ["/home/site/wwwroot/.python_packages/lib/site-packages"],
-            "/home/site/wwwroot/.python_packages/lib/site-packages"
-        )
+        # No logging should occur when cx_paths is found
+        assert mock_logger.info.call_count == 0
 
 
 @patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
@@ -91,12 +88,7 @@ def test_get_cx_deps_path_no_matching_prefix_returns_default(mock_logger):
         result = DependencyManager._get_cx_deps_path()
 
         assert result == "/usr/local/lib/python3.11/site-packages"
-        mock_logger.info.assert_any_call(
-            "Customer dependencies path candidates: %s. Default: %s",
-            [],
-            "/usr/local/lib/python3.11/site-packages"
-        )
-        mock_logger.info.assert_any_call(
+        mock_logger.info.assert_called_once_with(
             "No customer dependencies path found, using default: %s",
             "/usr/local/lib/python3.11/site-packages"
         )
@@ -113,12 +105,7 @@ def test_get_cx_deps_path_no_prefix_env_returns_default(mock_logger):
         result = DependencyManager._get_cx_deps_path()
 
         assert result == "/usr/local/lib/python3.11/site-packages"
-        mock_logger.info.assert_any_call(
-            "Customer dependencies path candidates: %s. Default: %s",
-            [],
-            "/usr/local/lib/python3.11/site-packages"
-        )
-        mock_logger.info.assert_any_call(
+        mock_logger.info.assert_called_once_with(
             "No customer dependencies path found, using default: %s",
             "/usr/local/lib/python3.11/site-packages"
         )
@@ -135,12 +122,7 @@ def test_get_cx_deps_path_no_site_packages_returns_empty(mock_logger):
         result = DependencyManager._get_cx_deps_path()
 
         assert result == ""
-        mock_logger.info.assert_any_call(
-            "Customer dependencies path candidates: %s. Default: %s",
-            [],
-            ""
-        )
-        mock_logger.info.assert_any_call(
+        mock_logger.info.assert_called_once_with(
             "No customer dependencies path found, using default: %s",
             ""
         )
@@ -158,6 +140,5 @@ def test_get_cx_deps_path_multiple_matches_returns_first(mock_logger):
         result = DependencyManager._get_cx_deps_path()
 
         assert result == "/home/site/wwwroot/.python_packages/lib/site-packages"
-        # Verify that both paths matching the prefix were found
-        call_args = mock_logger.info.call_args_list[0]
-        assert len(call_args[0][1]) == 2  # Two paths should match
+        # No logging should occur when cx_paths is found
+        assert mock_logger.info.call_count == 0

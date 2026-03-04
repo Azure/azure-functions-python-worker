@@ -129,13 +129,12 @@ def get_current_invocation_id() -> Optional[Any]:
         return thread_invocation_id
 
     # Check contextvar from library worker
-    if _library_worker:
+    if _library_worker and _library_worker_has_cv:
         try:
-            cv = getattr(_library_worker, 'invocation_id_cv', None)
-            if cv:
-                val = cv.get()
-                if val is not None:
-                    return val
+            cv = _library_worker.invocation_id_cv
+            val = cv.get()
+            if val is not None:
+                return val
         except (AttributeError, LookupError):
             pass
 

@@ -257,7 +257,7 @@ class DependencyManager:
             p for p in sys.path
             if prefix and p.startswith(prefix) and ('site-packages' in p)
         ]
-        # Return first or default to first site-packages path in sys.path
+        # Return first or default of customer 
         return (cx_paths or [''])[0]
 
     @staticmethod

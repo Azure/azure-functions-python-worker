@@ -37,6 +37,7 @@ from .utils.dependency import DependencyManager
 
 # Library worker import reloaded in init and reload request
 _library_worker = None
+_library_worker_has_cv = False
 
 # Thread-local invocation ID registry for efficient lookup
 _thread_invocation_registry: typing.Dict[int, str] = {}
@@ -99,9 +100,9 @@ def get_global_current_invocation_id() -> Optional[str]:
 
 
 def get_current_invocation_id() -> Optional[Any]:
-    global _library_worker
+    global _library_worker, _library_worker_has_cv
     # Check global current invocation first (most up-to-date)
-    if _library_worker and not hasattr(_library_worker, 'invocation_id_cv'):
+    if _library_worker and not _library_worker_has_cv:
         global_invocation_id = get_global_current_invocation_id()
         if global_invocation_id is not None:
             return global_invocation_id
@@ -404,12 +405,13 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     @staticmethod
     def reload_library_worker(directory: str):
-        global _library_worker
+        global _library_worker, _library_worker_has_cv
         v2_scriptfile = os.path.join(directory, get_script_file_name())
         if os.path.exists(v2_scriptfile):
             try:
                 import azure_functions_runtime  # NoQA
                 _library_worker = azure_functions_runtime
+                _library_worker_has_cv = hasattr(_library_worker, 'invocation_id_cv')
                 logger.debug("azure_functions_runtime import succeeded: %s",
                              _library_worker.__file__)
             except ImportError:
@@ -419,6 +421,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             try:
                 import azure_functions_runtime_v1  # NoQA
                 _library_worker = azure_functions_runtime_v1
+                _library_worker_has_cv = hasattr(_library_worker, 'invocation_id_cv')
                 logger.debug("azure_functions_runtime_v1 import succeeded: %s",
                              _library_worker.__file__)  # type: ignore[union-attr]
             except ImportError:

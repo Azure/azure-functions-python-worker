@@ -176,9 +176,14 @@ def test_add_cx_deps_to_sys_path_no_duplicate():
     assert sys.path.count("/existing/path") == 1
 
 
+@patch("proxy_worker.utils.dependency.is_azure_environment",
+       return_value=False)
 @patch("proxy_worker.utils.dependency.logger")
-def test_add_cx_deps_to_sys_path_empty_path_with_default(mock_logger):
-    """Test _add_cx_deps_to_sys_path uses default when path is empty."""
+def test_add_cx_deps_to_sys_path_empty_path_with_default(
+    mock_logger, mock_is_azure
+):
+    """Test _add_cx_deps_to_sys_path uses default when path is empty
+    in local environment."""
     sys.path = ["/usr/local/lib/python3.11/site-packages", "/original/path"]
 
     DependencyManager._add_cx_deps_to_sys_path("", add_to_first=True)
@@ -189,11 +194,17 @@ def test_add_cx_deps_to_sys_path_empty_path_with_default(mock_logger):
         "No customer dependencies path found, using default: %s",
         "/usr/local/lib/python3.11/site-packages"
     )
+    mock_is_azure.assert_called_once()
 
 
+@patch("proxy_worker.utils.dependency.is_azure_environment",
+       return_value=False)
 @patch("proxy_worker.utils.dependency.logger")
-def test_add_cx_deps_to_sys_path_empty_path_no_site_packages(mock_logger):
-    """Test _add_cx_deps_to_sys_path handles empty path with no site-packages."""
+def test_add_cx_deps_to_sys_path_empty_path_no_site_packages(
+    mock_logger, mock_is_azure
+):
+    """Test _add_cx_deps_to_sys_path handles empty path with no
+    site-packages in local environment."""
     sys.path = ["/some/path", "/another/path"]
 
     DependencyManager._add_cx_deps_to_sys_path("", add_to_first=True)
@@ -204,6 +215,26 @@ def test_add_cx_deps_to_sys_path_empty_path_no_site_packages(mock_logger):
         "No customer dependencies path found, using default: %s",
         ""
     )
+    mock_is_azure.assert_called_once()
+
+
+@patch("proxy_worker.utils.dependency.is_azure_environment",
+       return_value=True)
+@patch("proxy_worker.utils.dependency.logger")
+def test_add_cx_deps_to_sys_path_empty_path_in_azure(
+    mock_logger, mock_is_azure
+):
+    """Test _add_cx_deps_to_sys_path takes no action when path is empty
+    in Azure environment."""
+    sys.path = ["/usr/local/lib/python3.11/site-packages", "/original/path"]
+    original_sys_path = sys.path.copy()
+
+    DependencyManager._add_cx_deps_to_sys_path("", add_to_first=True)
+
+    # sys.path should remain unchanged in Azure environment
+    assert sys.path == original_sys_path
+    mock_logger.info.assert_not_called()
+    mock_is_azure.assert_called_once()
 
 
 @patch(

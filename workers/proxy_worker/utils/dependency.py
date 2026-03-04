@@ -7,7 +7,7 @@ from types import ModuleType
 from typing import List, Optional
 
 from ..logging import logger
-from .common import is_envvar_true
+from .common import is_envvar_true, is_azure_environment
 from .constants import AZURE_WEBJOBS_SCRIPT_ROOT, CONTAINER_NAME
 
 
@@ -184,9 +184,10 @@ class DependencyManager:
             Should the path added to the first entry (highest priority)
         """
 
-        # Customer dependencies path has not been identified -> app is running locally
-        # with an environment not in Function App level
-        if not path:
+        # Customer dependencies path has not been identified & app is not in
+        # Azure environment -> app is running locally with an environment not
+        # in Function App level
+        if not path and not is_azure_environment():
             default_path = next((p for p in sys.path if 'site-packages' in p), '')
             logger.info("No customer dependencies path found, using default: %s",
                         default_path)

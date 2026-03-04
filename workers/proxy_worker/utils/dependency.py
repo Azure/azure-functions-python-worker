@@ -136,7 +136,7 @@ class DependencyManager:
 
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.worker_deps_path, True)
-        cls._add_to_sys_path(cls.cx_deps_path, True)
+        cls._add_cx_deps_to_sys_path(cls.cx_deps_path, True)
         cls._add_to_sys_path(working_directory, False)
 
         logger.info(
@@ -161,6 +161,38 @@ class DependencyManager:
             Should the path added to the first entry (highest priority)
         """
         if path and path not in sys.path:
+            if add_to_first:
+                sys.path.insert(0, path)
+            else:
+                sys.path.append(path)
+
+            # Only clear path importer and sys.modules cache if path is not
+            # defined in sys.path
+            cls._clear_path_importer_cache_and_modules(path)
+
+    @classmethod
+    def _add_cx_deps_to_sys_path(cls, path: str, add_to_first: bool):
+        """This will ensure no duplicated path are added into sys.path and
+        clear importer cache. No action if path already exists in sys.path.
+
+        Parameters
+        ----------
+        path: str
+            The path needs to be added into sys.path.
+            If the path is an empty string, no action will be taken.
+        add_to_first: bool
+            Should the path added to the first entry (highest priority)
+        """
+
+        # Customer dependencies path has not been identified -> app is running locally
+        # with an environment not in Function App level
+        if not path:
+            default_path = next((p for p in sys.path if 'site-packages' in p), '')
+            logger.info("No customer dependencies path found, using default: %s",
+                        default_path)
+            sys.path.insert(0, default_path)
+        # Otherwise, continue with normal flow
+        elif path and path not in sys.path:
             if add_to_first:
                 sys.path.insert(0, path)
             else:
@@ -225,15 +257,7 @@ class DependencyManager:
             if prefix and p.startswith(prefix) and ('site-packages' in p)
         ]
         # Return first or default to first site-packages path in sys.path
-        if cx_paths:
-            return cx_paths[0]
-        elif [''][0]:
-            return [''][0]
-        else:
-            default_path = next((p for p in sys.path if 'site-packages' in p), '')
-            logger.info("No customer dependencies path found, using default: %s",
-                        default_path)
-            return default_path
+        return (cx_paths or [''])[0]
 
     @staticmethod
     def _get_cx_working_dir() -> str:

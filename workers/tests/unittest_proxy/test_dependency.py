@@ -61,8 +61,7 @@ def test_prioritize_customer_dependencies(mock_logger, mock_env, mock_linux,
 
 
 @patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
-@patch("proxy_worker.utils.dependency.logger")
-def test_get_cx_deps_path_with_matching_prefix(mock_logger):
+def test_get_cx_deps_path_with_matching_prefix():
     """Test _get_cx_deps_path returns customer path when prefix matches."""
     with patch("proxy_worker.utils.dependency.sys.path", [
         "/home/site/wwwroot/.python_packages/lib/site-packages",
@@ -72,14 +71,11 @@ def test_get_cx_deps_path_with_matching_prefix(mock_logger):
         result = DependencyManager._get_cx_deps_path()
 
         assert result == "/home/site/wwwroot/.python_packages/lib/site-packages"
-        # No logging should occur when cx_paths is found
-        assert mock_logger.info.call_count == 0
 
 
 @patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
-@patch("proxy_worker.utils.dependency.logger")
-def test_get_cx_deps_path_no_matching_prefix_returns_default(mock_logger):
-    """Test _get_cx_deps_path returns first site-packages when no prefix match."""
+def test_get_cx_deps_path_no_matching_prefix_returns_empty():
+    """Test _get_cx_deps_path returns empty string when no prefix match."""
     with patch("proxy_worker.utils.dependency.sys.path", [
         "/usr/local/lib/python3.11/site-packages",
         "/some/other/path",
@@ -87,33 +83,25 @@ def test_get_cx_deps_path_no_matching_prefix_returns_default(mock_logger):
     ]):
         result = DependencyManager._get_cx_deps_path()
 
-        assert result == "/usr/local/lib/python3.11/site-packages"
-        mock_logger.info.assert_called_once_with(
-            "No customer dependencies path found, using default: %s",
-            "/usr/local/lib/python3.11/site-packages"
-        )
+        # When no cx_paths match, return empty string (not the first site-packages)
+        assert result == ""
 
 
 @patch.dict(os.environ, {}, clear=True)
-@patch("proxy_worker.utils.dependency.logger")
-def test_get_cx_deps_path_no_prefix_env_returns_default(mock_logger):
-    """Test _get_cx_deps_path returns first site-packages when no env var set."""
+def test_get_cx_deps_path_no_prefix_env_returns_empty():
+    """Test _get_cx_deps_path returns empty string when no env var set."""
     with patch("proxy_worker.utils.dependency.sys.path", [
         "/usr/local/lib/python3.11/site-packages",
         "/some/other/path"
     ]):
         result = DependencyManager._get_cx_deps_path()
 
-        assert result == "/usr/local/lib/python3.11/site-packages"
-        mock_logger.info.assert_called_once_with(
-            "No customer dependencies path found, using default: %s",
-            "/usr/local/lib/python3.11/site-packages"
-        )
+        # When env var is not set, prefix is None and cx_paths is empty
+        assert result == ""
 
 
 @patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
-@patch("proxy_worker.utils.dependency.logger")
-def test_get_cx_deps_path_no_site_packages_returns_empty(mock_logger):
+def test_get_cx_deps_path_no_site_packages_returns_empty():
     """Test _get_cx_deps_path returns empty string when no site-packages found."""
     with patch("proxy_worker.utils.dependency.sys.path", [
         "/home/site/wwwroot",
@@ -121,16 +109,12 @@ def test_get_cx_deps_path_no_site_packages_returns_empty(mock_logger):
     ]):
         result = DependencyManager._get_cx_deps_path()
 
+        # When no paths with site-packages match the prefix, return empty string
         assert result == ""
-        mock_logger.info.assert_called_once_with(
-            "No customer dependencies path found, using default: %s",
-            ""
-        )
 
 
 @patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
-@patch("proxy_worker.utils.dependency.logger")
-def test_get_cx_deps_path_multiple_matches_returns_first(mock_logger):
+def test_get_cx_deps_path_multiple_matches_returns_first():
     """Test _get_cx_deps_path returns first match when multiple cx paths exist."""
     with patch("proxy_worker.utils.dependency.sys.path", [
         "/home/site/wwwroot/.python_packages/lib/site-packages",
@@ -139,6 +123,100 @@ def test_get_cx_deps_path_multiple_matches_returns_first(mock_logger):
     ]):
         result = DependencyManager._get_cx_deps_path()
 
-        assert result == "/home/site/wwwroot/.python_packages/lib/site-packages"
-        # No logging should occur when cx_paths is found
-        assert mock_logger.info.call_count == 0
+        # When multiple paths match, return the first one
+        expected_path = "/home/site/wwwroot/.python_packages/lib/site-packages"
+        assert result == expected_path
+
+
+@patch(
+    "proxy_worker.utils.dependency.DependencyManager."
+    "_clear_path_importer_cache_and_modules"
+)
+def test_add_cx_deps_to_sys_path_adds_to_first(mock_clear):
+    """Test _add_cx_deps_to_sys_path adds path to first position."""
+    sys.path = ["/original/path", "/another/path"]
+
+    DependencyManager._add_cx_deps_to_sys_path(
+        "/new/cx/path", add_to_first=True
+    )
+
+    assert sys.path[0] == "/new/cx/path"
+    assert "/original/path" in sys.path
+    mock_clear.assert_called_once_with("/new/cx/path")
+
+
+@patch(
+    "proxy_worker.utils.dependency.DependencyManager."
+    "_clear_path_importer_cache_and_modules"
+)
+def test_add_cx_deps_to_sys_path_appends_to_end(mock_clear):
+    """Test _add_cx_deps_to_sys_path appends path to end."""
+    sys.path = ["/original/path", "/another/path"]
+
+    DependencyManager._add_cx_deps_to_sys_path(
+        "/new/cx/path", add_to_first=False
+    )
+
+    assert sys.path[-1] == "/new/cx/path"
+    assert sys.path[0] == "/original/path"
+    mock_clear.assert_called_once_with("/new/cx/path")
+
+
+def test_add_cx_deps_to_sys_path_no_duplicate():
+    """Test _add_cx_deps_to_sys_path does not add duplicate paths."""
+    sys.path = ["/existing/path", "/another/path"]
+    original_length = len(sys.path)
+
+    DependencyManager._add_cx_deps_to_sys_path(
+        "/existing/path", add_to_first=True
+    )
+
+    # Path should not be added again
+    assert len(sys.path) == original_length
+    assert sys.path.count("/existing/path") == 1
+
+
+@patch("proxy_worker.utils.dependency.logger")
+def test_add_cx_deps_to_sys_path_empty_path_with_default(mock_logger):
+    """Test _add_cx_deps_to_sys_path uses default when path is empty."""
+    sys.path = ["/usr/local/lib/python3.11/site-packages", "/original/path"]
+
+    DependencyManager._add_cx_deps_to_sys_path("", add_to_first=True)
+
+    # Should insert the first site-packages path to position 0
+    assert sys.path[0] == "/usr/local/lib/python3.11/site-packages"
+    mock_logger.info.assert_called_once_with(
+        "No customer dependencies path found, using default: %s",
+        "/usr/local/lib/python3.11/site-packages"
+    )
+
+
+@patch("proxy_worker.utils.dependency.logger")
+def test_add_cx_deps_to_sys_path_empty_path_no_site_packages(mock_logger):
+    """Test _add_cx_deps_to_sys_path handles empty path with no site-packages."""
+    sys.path = ["/some/path", "/another/path"]
+
+    DependencyManager._add_cx_deps_to_sys_path("", add_to_first=True)
+
+    # Should insert empty string at position 0 when no site-packages found
+    assert sys.path[0] == ""
+    mock_logger.info.assert_called_once_with(
+        "No customer dependencies path found, using default: %s",
+        ""
+    )
+
+
+@patch(
+    "proxy_worker.utils.dependency.DependencyManager."
+    "_clear_path_importer_cache_and_modules"
+)
+def test_add_cx_deps_to_sys_path_none_path_no_action(mock_clear):
+    """Test _add_cx_deps_to_sys_path takes no action for None path."""
+    sys.path = ["/original/path"]
+    original_sys_path = sys.path.copy()
+
+    DependencyManager._add_cx_deps_to_sys_path(None, add_to_first=True)
+
+    # sys.path should remain unchanged
+    assert sys.path == original_sys_path
+    mock_clear.assert_not_called()

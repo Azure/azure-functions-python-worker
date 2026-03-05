@@ -191,7 +191,13 @@ class DependencyManager:
             default_path = next((p for p in sys.path if 'site-packages' in p), '')
             logger.info("No customer dependencies path found, using default: %s",
                         default_path)
-            sys.path.insert(0, default_path)
+            if default_path not in sys.path:
+                sys.path.insert(0, default_path)
+            # Don't duplicate paths
+            else:
+                cls._remove_from_sys_path(default_path)
+                sys.path.insert(0, default_path)
+
         # Otherwise, continue with normal flow
         elif path and path not in sys.path:
             if add_to_first:

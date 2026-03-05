@@ -63,69 +63,89 @@ def test_prioritize_customer_dependencies(mock_logger, mock_env, mock_linux,
 @patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
 def test_get_cx_deps_path_with_matching_prefix():
     """Test _get_cx_deps_path returns customer path when prefix matches."""
-    with patch("proxy_worker.utils.dependency.sys.path", [
-        "/home/site/wwwroot/.python_packages/lib/site-packages",
-        "/usr/local/lib/python3.11/site-packages",
-        "/home/site/wwwroot"
-    ]):
+    original_sys_path = sys.path.copy()
+    try:
+        sys.path = [
+            "/home/site/wwwroot/.python_packages/lib/site-packages",
+            "/usr/local/lib/python3.11/site-packages",
+            "/home/site/wwwroot"
+        ]
         result = DependencyManager._get_cx_deps_path()
 
         assert result == "/home/site/wwwroot/.python_packages/lib/site-packages"
+    finally:
+        sys.path = original_sys_path
 
 
 @patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
 def test_get_cx_deps_path_no_matching_prefix_returns_empty():
     """Test _get_cx_deps_path returns empty string when no prefix match."""
-    with patch("proxy_worker.utils.dependency.sys.path", [
-        "/usr/local/lib/python3.11/site-packages",
-        "/some/other/path",
-        "/home/site/wwwroot"
-    ]):
+    original_sys_path = sys.path.copy()
+    try:
+        sys.path = [
+            "/usr/local/lib/python3.11/site-packages",
+            "/some/other/path",
+            "/home/site/wwwroot"
+        ]
         result = DependencyManager._get_cx_deps_path()
 
         # When no cx_paths match, return empty string (not the first site-packages)
         assert result == ""
+    finally:
+        sys.path = original_sys_path
 
 
 @patch.dict(os.environ, {}, clear=True)
 def test_get_cx_deps_path_no_prefix_env_returns_empty():
     """Test _get_cx_deps_path returns empty string when no env var set."""
-    with patch("proxy_worker.utils.dependency.sys.path", [
-        "/usr/local/lib/python3.11/site-packages",
-        "/some/other/path"
-    ]):
+    original_sys_path = sys.path.copy()
+    try:
+        sys.path = [
+            "/usr/local/lib/python3.11/site-packages",
+            "/some/other/path"
+        ]
         result = DependencyManager._get_cx_deps_path()
 
         # When env var is not set, prefix is None and cx_paths is empty
         assert result == ""
+    finally:
+        sys.path = original_sys_path
 
 
 @patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
 def test_get_cx_deps_path_no_site_packages_returns_empty():
     """Test _get_cx_deps_path returns empty string when no site-packages found."""
-    with patch("proxy_worker.utils.dependency.sys.path", [
-        "/home/site/wwwroot",
-        "/some/other/path"
-    ]):
+    original_sys_path = sys.path.copy()
+    try:
+        sys.path = [
+            "/home/site/wwwroot",
+            "/some/other/path"
+        ]
         result = DependencyManager._get_cx_deps_path()
 
         # When no paths with site-packages match the prefix, return empty string
         assert result == ""
+    finally:
+        sys.path = original_sys_path
 
 
 @patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
 def test_get_cx_deps_path_multiple_matches_returns_first():
     """Test _get_cx_deps_path returns first match when multiple cx paths exist."""
-    with patch("proxy_worker.utils.dependency.sys.path", [
-        "/home/site/wwwroot/.python_packages/lib/site-packages",
-        "/home/site/wwwroot/venv/lib/site-packages",
-        "/usr/local/lib/python3.11/site-packages"
-    ]):
+    original_sys_path = sys.path.copy()
+    try:
+        sys.path = [
+            "/home/site/wwwroot/.python_packages/lib/site-packages",
+            "/home/site/wwwroot/venv/lib/site-packages",
+            "/usr/local/lib/python3.11/site-packages"
+        ]
         result = DependencyManager._get_cx_deps_path()
 
         # When multiple paths match, return the first one
         expected_path = "/home/site/wwwroot/.python_packages/lib/site-packages"
         assert result == expected_path
+    finally:
+        sys.path = original_sys_path
 
 
 @patch(
@@ -237,12 +257,17 @@ def test_add_cx_deps_to_sys_path_empty_path_in_azure(
     mock_is_azure.assert_called_once()
 
 
+@patch("proxy_worker.utils.dependency.is_azure_environment",
+       return_value=True)
 @patch(
     "proxy_worker.utils.dependency.DependencyManager."
     "_clear_path_importer_cache_and_modules"
 )
-def test_add_cx_deps_to_sys_path_none_path_no_action(mock_clear):
-    """Test _add_cx_deps_to_sys_path takes no action for None path."""
+def test_add_cx_deps_to_sys_path_none_path_no_action(
+    mock_clear, mock_is_azure
+):
+    """Test _add_cx_deps_to_sys_path takes no action for None path
+    in Azure environment."""
     sys.path = ["/original/path"]
     original_sys_path = sys.path.copy()
 
@@ -251,3 +276,4 @@ def test_add_cx_deps_to_sys_path_none_path_no_action(mock_clear):
     # sys.path should remain unchanged
     assert sys.path == original_sys_path
     mock_clear.assert_not_called()
+    mock_is_azure.assert_called_once()

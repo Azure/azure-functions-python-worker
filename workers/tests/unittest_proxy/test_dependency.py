@@ -60,7 +60,7 @@ def test_prioritize_customer_dependencies(mock_logger, mock_env, mock_linux,
     )
 
 
-@patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
+@patch.dict(os.environ, {"AzureWebJobsScriptRoot": "/home/site/wwwroot"})
 def test_get_cx_deps_path_with_matching_prefix():
     """Test _get_cx_deps_path returns customer path when prefix matches."""
     original_sys_path = sys.path.copy()
@@ -77,7 +77,7 @@ def test_get_cx_deps_path_with_matching_prefix():
         sys.path = original_sys_path
 
 
-@patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
+@patch.dict(os.environ, {"AzureWebJobsScriptRoot": "/home/site/wwwroot"})
 def test_get_cx_deps_path_no_matching_prefix_returns_empty():
     """Test _get_cx_deps_path returns empty string when no prefix match."""
     original_sys_path = sys.path.copy()
@@ -112,7 +112,7 @@ def test_get_cx_deps_path_no_prefix_env_returns_empty():
         sys.path = original_sys_path
 
 
-@patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
+@patch.dict(os.environ, {"AzureWebJobsScriptRoot": "/home/site/wwwroot"})
 def test_get_cx_deps_path_no_site_packages_returns_empty():
     """Test _get_cx_deps_path returns empty string when no site-packages found."""
     original_sys_path = sys.path.copy()
@@ -129,7 +129,7 @@ def test_get_cx_deps_path_no_site_packages_returns_empty():
         sys.path = original_sys_path
 
 
-@patch.dict(os.environ, {"AZURE_WEBJOBS_SCRIPT_ROOT": "/home/site/wwwroot"})
+@patch.dict(os.environ, {"AzureWebJobsScriptRoot": "/home/site/wwwroot"})
 def test_get_cx_deps_path_multiple_matches_returns_first():
     """Test _get_cx_deps_path returns first match when multiple cx paths exist."""
     original_sys_path = sys.path.copy()

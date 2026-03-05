@@ -193,9 +193,9 @@ class DependencyManager:
                         default_path)
             if default_path not in sys.path:
                 sys.path.insert(0, default_path)
-            # Don't duplicate paths
+            # Don't duplicate paths - move to front without clearing cache
             else:
-                cls._remove_from_sys_path(default_path)
+                sys.path.remove(default_path)
                 sys.path.insert(0, default_path)
 
         # Otherwise, continue with normal flow

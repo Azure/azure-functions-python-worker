@@ -15,7 +15,10 @@ from fastapi import FastAPI
 
 from .converter import AzureFunctionInfo, FastAPIConverter
 from .handler import execute_fastapi_route
-from .indexer import index_fastapi_app
+from .loader import load_function_metadata
+from .utils.tracing import serialize_exception
+from .utils.helpers import get_worker_metadata
+from .logging import logger
 from .version import VERSION
 
 
@@ -25,8 +28,6 @@ _fastapi_app: Optional[FastAPI] = None
 _metadata_result: Optional[List] = None
 _function_path: Optional[str] = None
 protos = None
-
-logger = logging.getLogger('azure_functions_fastapi_runtime')
 
 
 async def worker_init_request(request):
@@ -51,21 +52,33 @@ async def worker_init_request(request):
         "RpcHttpTriggerMetadataRemoved": "true",
     }
     
-    # Try to index the FastAPI app during init
+    # Index in init by default. Fail if an exception occurs.
     try:
-        function_path = os.environ.get("PYTHON_SCRIPT_FILE_NAME", "function_app.py")
-        await load_function_metadata(function_path)
-    except Exception as e:
-        logger.warning(f"Could not index FastAPI app during init: {e}")
-    
-    return protos.StreamingMessage(
-        request_id=request.request.request_id,
-        worker_init_response=protos.WorkerInitResponse(
+        script_file_name = os.environ.get("PYTHON_SCRIPT_FILE_NAME", "function_app.py")
+        function_app_directory = init_request.function_app_directory
+        function_path = os.path.join(function_app_directory, script_file_name)
+        
+        # Index the FastAPI app
+        global _fastapi_app, _converter, _metadata_result
+        _fastapi_app, _metadata_result, _converter = load_function_metadata(
+            function_path, function_app_directory, protos)
+    except Exception as ex:
+        logger.error(f"Failed to index FastAPI app during init: {ex}", exc_info=True)
+        return protos.WorkerInitResponse(
             capabilities=capabilities,
-            result=protos.StatusResult(status=protos.StatusResult.Success)
+            worker_metadata=get_worker_metadata(protos),
+            result=protos.StatusResult(
+                status=protos.StatusResult.Failure,
+                exception=serialize_exception(
+                    ex, protos))
         )
+    
+    logger.info("Successfully completed WorkerInitRequest")
+    return protos.WorkerInitResponse(
+        capabilities=capabilities,
+        worker_metadata=get_worker_metadata(protos),
+        result=protos.StatusResult(status=protos.StatusResult.Success)
     )
-
 
 async def functions_metadata_request(request):
     """
@@ -73,9 +86,11 @@ async def functions_metadata_request(request):
     
     This tells the host about all the functions (routes) available in the FastAPI app
     """
-    logger.info("FastAPI Runtime: received FunctionMetadataRequest")
+    script_file_name = os.environ.get("PYTHON_SCRIPT_FILE_NAME", "function_app.py")
+    function_app_directory = os.getcwd()
+    function_path = os.path.join(function_app_directory, script_file_name)
     
-    global _metadata_result
+    global _fastapi_app, _converter, _metadata_result
     
     # If we haven't indexed yet, do it now
     if not _metadata_result:
@@ -84,24 +99,18 @@ async def functions_metadata_request(request):
     
     if not _metadata_result:
         logger.error("No FastAPI functions were discovered")
-        return protos.StreamingMessage(
-            request_id=request.request.request_id,
-            function_metadata_response=protos.FunctionMetadataResponse(
-                function_metadata_results=[],
-                result=protos.StatusResult(
-                    status=protos.StatusResult.Failure,
-                    result="No FastAPI functions discovered"
-                )
-            )
+        return protos.FunctionMetadataResponse(
+            use_default_metadata_indexing=False,
+            function_metadata_results=[],
+            result=protos.StatusResult(
+                status=protos.StatusResult.Failure)
         )
     
-    return protos.StreamingMessage(
-        request_id=request.request.request_id,
-        function_metadata_response=protos.FunctionMetadataResponse(
-            function_metadata_results=_metadata_result,
-            result=protos.StatusResult(status=protos.StatusResult.Success)
-        )
-    )
+    return protos.FunctionMetadataResponse(
+        use_default_metadata_indexing=False,
+        function_metadata_results=_metadata_result,
+        result=protos.StatusResult(
+            status=protos.StatusResult.Success))
 
 
 async def function_load_request(request):
@@ -120,24 +129,16 @@ async def function_load_request(request):
         func_info = _converter.get_function(function_id)
         if func_info:
             logger.info(f"Function {function_id} loaded: {func_info.route_path}")
-            return protos.StreamingMessage(
-                request_id=request.request.request_id,
-                function_load_response=protos.FunctionLoadResponse(
-                    function_id=function_id,
-                    result=protos.StatusResult(status=protos.StatusResult.Success)
-                )
+            return protos.FunctionLoadResponse(
+                function_id=function_id,
+                result=protos.StatusResult(status=protos.StatusResult.Success)
             )
     
     logger.error(f"Function {function_id} not found")
-    return protos.StreamingMessage(
-        request_id=request.request.request_id,
-        function_load_response=protos.FunctionLoadResponse(
-            function_id=function_id,
-            result=protos.StatusResult(
-                status=protos.StatusResult.Failure,
-                result=f"Function {function_id} not found"
-            )
-        )
+    return protos.FunctionLoadResponse(
+        function_id=function_id,
+        result=protos.StatusResult(
+            status=protos.StatusResult.Failure)
     )
 
 
@@ -188,25 +189,19 @@ async def invocation_request(request):
             body=protos.TypedData(string=response.get('body', ''))
         )
         
-        return protos.StreamingMessage(
-            request_id=request.request.request_id,
-            invocation_response=protos.InvocationResponse(
-                invocation_id=invocation_id,
-                return_value=protos.TypedData(http=http_response),
-                result=protos.StatusResult(status=protos.StatusResult.Success)
-            )
+        return protos.InvocationResponse(
+            invocation_id=invocation_id,
+            return_value=protos.TypedData(http=http_response),
+            result=protos.StatusResult(status=protos.StatusResult.Success)
         )
         
     except Exception as e:
         logger.error(f"Error executing function {function_id}: {e}", exc_info=True)
-        return protos.StreamingMessage(
-            request_id=request.request.request_id,
-            invocation_response=protos.InvocationResponse(
-                invocation_id=invocation_id,
-                result=protos.StatusResult(
-                    status=protos.StatusResult.Failure,
-                    result=str(e)
-                )
+        return protos.InvocationResponse(
+            invocation_id=invocation_id,
+            result=protos.StatusResult(
+                status=protos.StatusResult.Failure,
+                exception=serialize_exception(e, protos)
             )
         )
 
@@ -221,93 +216,24 @@ async def function_environment_reload_request(request):
     
     # Re-index the FastAPI app
     try:
-        function_path = os.environ.get("PYTHON_SCRIPT_FILE_NAME", "function_app.py")
-        await load_function_metadata(function_path)
+        script_file_name = os.environ.get("PYTHON_SCRIPT_FILE_NAME", "function_app.py")
+        function_app_directory = os.getcwd()
+        function_path = os.path.join(function_app_directory, script_file_name)
         
-        return protos.StreamingMessage(
-            request_id=request.request.request_id,
-            function_environment_reload_response=protos.FunctionEnvironmentReloadResponse(
-                result=protos.StatusResult(status=protos.StatusResult.Success)
-            )
-        )
+        global _fastapi_app, _converter, _metadata_result
+        _fastapi_app, _metadata_result, _converter = load_function_metadata(
+            function_path, function_app_directory, protos)
+        
+        return protos.FunctionEnvironmentReloadResponse(
+            capabilities={},
+            worker_metadata=get_worker_metadata(protos),
+            result=protos.StatusResult(
+                status=protos.StatusResult.Success))
     except Exception as e:
         logger.error(f"Error reloading environment: {e}", exc_info=True)
-        return protos.StreamingMessage(
-            request_id=request.request.request_id,
-            function_environment_reload_response=protos.FunctionEnvironmentReloadResponse(
-                result=protos.StatusResult(
-                    status=protos.StatusResult.Failure,
-                    result=str(e)
-                )
+        return protos.FunctionEnvironmentReloadResponse(
+            result=protos.StatusResult(
+                status=protos.StatusResult.Failure,
+                exception=serialize_exception(e, protos)
             )
         )
-
-
-async def load_function_metadata(function_path: str):
-    """
-    Index the FastAPI app and generate function metadata
-    
-    This discovers all routes in the FastAPI app and converts them to Azure Functions
-    """
-    global _converter, _fastapi_app, _metadata_result, _function_path
-    
-    logger.info(f"Indexing FastAPI app from {function_path}")
-    
-    # Add current directory to Python path
-    current_dir = os.getcwd()
-    if current_dir not in sys.path:
-        sys.path.insert(0, current_dir)
-    
-    # Index the FastAPI app
-    fastapi_functions = index_fastapi_app(function_path)
-    logger.info(f"Discovered {len(fastapi_functions)} FastAPI routes")
-    
-    # Get the FastAPI app instance for later use
-    import importlib
-    import pathlib
-    module_name = pathlib.Path(function_path).stem
-    imported_module = importlib.import_module(module_name)
-    
-    for attr_name in dir(imported_module):
-        attr = getattr(imported_module, attr_name, None)
-        if isinstance(attr, FastAPI):
-            _fastapi_app = attr
-            break
-    
-    # Convert to Azure Functions metadata
-    _converter = FastAPIConverter()
-    azure_functions = _converter.convert_to_azure_functions(fastapi_functions)
-    
-    # Build protobuf metadata
-    _metadata_result = []
-    for func in azure_functions:
-        # Build bindings proto
-        bindings_proto = {}
-        for binding in func.bindings:
-            direction_map = {
-                'in': protos.BindingInfo.Direction.in_,
-                'out': protos.BindingInfo.Direction.out,
-                'inout': protos.BindingInfo.Direction.inout
-            }
-            
-            bindings_proto[binding['name']] = protos.BindingInfo(
-                type=binding['type'],
-                direction=direction_map.get(binding['direction'], protos.BindingInfo.Direction.in_)
-            )
-        
-        # Create function metadata
-        metadata = protos.RpcFunctionMetadata(
-            name=func.name,
-            function_id=func.function_id,
-            directory=func.directory,
-            script_file=func.script_file,
-            entry_point=func.entry_point,
-            language="python",
-            bindings=bindings_proto,
-            properties={"WorkerIndexed": "True", "FastAPIRoute": func.route_path}
-        )
-        
-        _metadata_result.append(metadata)
-    
-    _function_path = function_path
-    logger.info(f"Successfully indexed {len(_metadata_result)} functions")

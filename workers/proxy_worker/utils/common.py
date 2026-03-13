@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import Callable, Optional
 
 from proxy_worker.utils.constants import (
+    AZURE_CONTAINER_NAME,
+    AZURE_WEBSITE_INSTANCE_ID,
     PYTHON_SCRIPT_FILE_NAME,
     PYTHON_SCRIPT_FILE_NAME_DEFAULT,
     PYTHON_EOL_DATES,
@@ -115,3 +117,9 @@ def check_python_eol():
         logger.warning(f"Python {version} will reach EOL on "
                        f"{eol_date.strftime('%Y-%m')}. Consider upgrading to "
                        f"a supported version: aka.ms/supported-python-versions")
+
+
+def is_azure_environment():
+    """Check if the function app is running on the cloud"""
+    return (AZURE_CONTAINER_NAME in os.environ
+            or AZURE_WEBSITE_INSTANCE_ID in os.environ)

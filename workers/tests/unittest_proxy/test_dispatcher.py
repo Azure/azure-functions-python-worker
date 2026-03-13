@@ -92,7 +92,8 @@ class TestDispatcher(unittest.TestCase):
                 expected_category = dispatcher_module._LOG_CATEGORY_USER
 
             # Verify RpcLog was initialized with correct mapped values
-            # We use call_args to verify kwargs, ignoring any extra kwargs like invocation_id if present
+            # We use call_args to verify kwargs, ignoring any extra kwargs
+            # like invocation_id if present
             args, kwargs = mock_rpc_log.call_args
             self.assertEqual(kwargs['level'], expected)
             self.assertEqual(kwargs['log_category'], expected_category)

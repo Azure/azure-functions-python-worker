@@ -242,7 +242,7 @@ class LinuxConsumptionWebHostController:
             '-extensions-dev/azurefunctions-extensions-base'
             '/azurefunctions/extensions/base'
         )
-        
+
         # Get paths to google.protobuf and grpcio packages to mount them
         # This ensures the container uses the same protobuf/grpc versions
         # as the host, which is critical when protobuf files are generated
@@ -252,7 +252,7 @@ class LinuxConsumptionWebHostController:
             import grpc
             protobuf_path = os.path.dirname(google.protobuf.__file__)
             grpc_path = os.path.dirname(grpc.__file__)
-            
+
             # Container paths for protobuf and grpcio
             container_protobuf_path = (
                 f"/azure-functions-host/workers/python/{self._py_version}/"
@@ -266,7 +266,7 @@ class LinuxConsumptionWebHostController:
             print(f"Warning: Could not import google.protobuf or grpc: {e}")
             protobuf_path = None
             grpc_path = None
-        
+
         run_cmd = []
         run_cmd.extend([self._docker_cmd, "run", "-p", "0:80", "-d"])
         run_cmd.extend(["--name", self._uuid, "--privileged"])
@@ -282,7 +282,7 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
         run_cmd.extend(["-v",
                         f'{base_ext_local_path}:{base_ext_container_path}'])
-        
+
         # Mount protobuf and grpcio packages if they were found
         if protobuf_path:
             run_cmd.extend(["-v", f'{protobuf_path}:{container_protobuf_path}'])

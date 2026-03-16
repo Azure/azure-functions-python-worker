@@ -661,12 +661,12 @@ class TestDependencyManager(unittest.TestCase):
 
         DependencyManager.prioritize_customer_dependencies()
 
-        # protobuf v4 is found
+        # protobuf v5 is found
         from google.protobuf import __version__
 
         protobuf_version = tuple(int(v) for v in __version__.split("."))
         self.assertIsNotNone(protobuf_version)
-        self.assertEqual(protobuf_version[0], 4)
+        self.assertEqual(protobuf_version[0], 5)
 
     @unittest.skipIf(sys.version_info.minor <= 7,
                      "The worker brings different protobuf versions"
@@ -692,8 +692,8 @@ class TestDependencyManager(unittest.TestCase):
         protobuf_version = tuple(int(v) for v in __version__.split("."))
         self.assertIsNotNone(protobuf_version)
 
-        # newrelic tries to import protobuf v4
-        self.assertEqual(protobuf_version[0], 4)
+        # newrelic tries to import protobuf v5
+        self.assertEqual(protobuf_version[0], 5)
 
         # newrelic tries to import protobuf v3
         self.assertNotEqual(protobuf_version[0], 3)

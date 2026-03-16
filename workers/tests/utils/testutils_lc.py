@@ -273,7 +273,7 @@ class LinuxConsumptionWebHostController:
                         f'{base_ext_local_path}:{base_ext_container_path}'])
         
         # Mount protobuf and grpcio packages if they were found
-        run_cmd.extend(["-v", f'{c}:{container_protobuf_path}'])
+        run_cmd.extend(["-v", f'{protobuf_path}:{container_protobuf_path}'])
         run_cmd.extend(["-v", f'{grpc_path}:{container_grpc_path}'])
 
         for key, value in env.items():

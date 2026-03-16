@@ -242,6 +242,20 @@ class LinuxConsumptionWebHostController:
             '-extensions-dev/azurefunctions-extensions-base'
             '/azurefunctions/extensions/base'
         )
+            
+        # Container paths for protobuf and grpcio
+        protobuf_path = os.path.join(PROJECT_ROOT, 'google/protobuf')
+        grpc_path = os.path.join(PROJECT_ROOT, 'grpc')
+        container_protobuf_path = (
+            f"/azure-functions-host/workers/python/{self._py_version}/"
+            "LINUX/X64/google/protobuf"
+        )
+        container_grpc_path = (
+            f"/azure-functions-host/workers/python/{self._py_version}/"
+            "LINUX/X64/grpc"
+        )
+
+        
         run_cmd = []
         run_cmd.extend([self._docker_cmd, "run", "-p", "0:80", "-d"])
         run_cmd.extend(["--name", self._uuid, "--privileged"])
@@ -257,6 +271,10 @@ class LinuxConsumptionWebHostController:
         run_cmd.extend(["-v", f'{worker_path}:{container_worker_path}'])
         run_cmd.extend(["-v",
                         f'{base_ext_local_path}:{base_ext_container_path}'])
+        
+        # Mount protobuf and grpcio packages if they were found
+        run_cmd.extend(["-v", f'{c}:{container_protobuf_path}'])
+        run_cmd.extend(["-v", f'{grpc_path}:{container_grpc_path}'])
 
         for key, value in env.items():
             run_cmd.extend(["-e", f"{key}={value}"])

@@ -66,6 +66,22 @@ class TestLoader(testutils.WebHostTestCase):
         self.assertEqual(protos.minimum_interval.seconds, 60)
         self.assertEqual(protos.maximum_interval.seconds, 120)
 
+    def test_loader_building_exponential_retry_protos_with_defaults(self):
+        """Test exponential backoff without explicit min/max intervals (uses defaults)"""
+        trigger = TimerTrigger(schedule="*/1 * * * * *", arg_name="mytimer",
+                               name="mytimer")
+        self.func.add_trigger(trigger=trigger)
+        setting = RetryPolicy(strategy="exponential_backoff",
+                              max_retry_count="3")
+        self.func.add_setting(setting=setting)
+
+        protos = build_retry_protos(self.func)
+        self.assertEqual(protos.max_retry_count, 3)
+        self.assertEqual(protos.retry_strategy,
+                         0)  # 0 enum for exponential backoff
+        self.assertEqual(protos.minimum_interval.seconds, 0)  # Default: 0 seconds
+        self.assertEqual(protos.maximum_interval.seconds, 2147483647)  # Default: max int32
+
     @patch('azure_functions_worker.logging.logger.warning')
     def test_loader_retry_policy_attribute_error(self, mock_logger):
         self.func = Mock()

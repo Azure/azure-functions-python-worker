@@ -91,23 +91,16 @@ def build_fixed_delay_retry(protos, retry, max_retry_count, retry_strategy):
 
 
 def build_variable_interval_retry(protos, retry, max_retry_count, retry_strategy):
-    try:
-        from google.protobuf.duration_pb2 import Duration
-    except ImportError:
-        raise ImportError(
-            "protobuf not found when trying to "
-            "import Duration."
-            "Sys Path: %s. "
-            "Sys Modules: %s. ",
-            sys.path, sys.modules)
-    minimum_interval = Duration(
-        seconds=convert_to_seconds(
-            retry.get(RetryPolicy.MINIMUM_INTERVAL.value))
-    )
-    maximum_interval = Duration(
-        seconds=convert_to_seconds(
-            retry.get(RetryPolicy.MAXIMUM_INTERVAL.value))
-    )
+    # Get minimum_interval with default of 00:00:00 (0 seconds)
+    min_interval_str = retry.get(RetryPolicy.MINIMUM_INTERVAL.value)
+    min_seconds = convert_to_seconds(min_interval_str) if min_interval_str else 0
+    minimum_interval = timedelta(seconds=min_seconds)
+    
+    # Get maximum_interval with default of TimeSpan.MaxValue equivalent (max int32 seconds)
+    max_interval_str = retry.get(RetryPolicy.MAXIMUM_INTERVAL.value)
+    max_seconds = convert_to_seconds(max_interval_str) if max_interval_str else 2147483647
+    maximum_interval = timedelta(seconds=max_seconds)
+    
     return protos.RpcRetryOptions(
         max_retry_count=max_retry_count,
         retry_strategy=retry_strategy,

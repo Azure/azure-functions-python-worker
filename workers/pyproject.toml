@@ -26,7 +26,8 @@ classifiers = [
 ]
 dependencies = [
      "azure-functions==1.24.0; python_version < '3.10'",
-     "azure-functions==1.25.0b4; python_version >= '3.10'",
+     "azure-functions==1.25.0b4; python_version >= '3.10' and python_version < '3.13'",
+     "azure-functions==1.25.0b4; python_version >= '3.13'",
      "python-dateutil~=2.9.0",
      "protobuf~=5.29.0; python_version <= '3.13'",
      "protobuf~=6.33.1; python_version == '3.14'",

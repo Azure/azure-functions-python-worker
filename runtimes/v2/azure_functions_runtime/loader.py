@@ -84,14 +84,19 @@ def build_fixed_delay_retry(protos, retry, max_retry_count, retry_strategy):
 
 def build_variable_interval_retry(protos, retry, max_retry_count, retry_strategy):
     # In protobuf 5.x, Duration fields expect timedelta objects, not Duration objects
-    minimum_interval = timedelta(
-        seconds=convert_to_seconds(
-            retry.get(RetryPolicy.MINIMUM_INTERVAL.value))
-    )
-    maximum_interval = timedelta(
-        seconds=convert_to_seconds(
-            retry.get(RetryPolicy.MAXIMUM_INTERVAL.value))
-    )
+    # Handle optional minimum_interval and maximum_interval with defaults
+    minimum_interval_str = retry.get(RetryPolicy.MINIMUM_INTERVAL.value)
+    maximum_interval_str = retry.get(RetryPolicy.MAXIMUM_INTERVAL.value)
+    
+    if minimum_interval_str:
+        minimum_interval = timedelta(seconds=convert_to_seconds(minimum_interval_str))
+    else:
+        minimum_interval = timedelta(seconds=0)  # Default: 0 seconds
+    
+    if maximum_interval_str:
+        maximum_interval = timedelta(seconds=convert_to_seconds(maximum_interval_str))
+    else:
+        maximum_interval = timedelta(seconds=2147483647)  # Default: max int32
     
     return protos.RpcRetryOptions(
         max_retry_count=max_retry_count,

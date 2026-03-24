@@ -45,11 +45,6 @@ extends:
       clean: all  # Clean all build directories before starting
 
     stages:
-    - stage: RunE2ETests
-      dependsOn: []
+    - stage: BuildPythonWorker
       jobs:
-      - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self
-    - stage: RunLCTests
-      dependsOn: []
-      jobs:
-      - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
+        - template: /eng/templates/official/jobs/build-artifacts.yml@self

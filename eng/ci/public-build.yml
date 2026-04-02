@@ -79,6 +79,7 @@ extends:
       - template: /eng/templates/jobs/ci-dependency-check.yml@self
         parameters:
           PoolName: 1es-pool-azfunc-public
+          ArtifactFeed: 'public/PythonWorker_PublicPackages'
     - stage: RunWorkerUnitTests
       dependsOn: BuildPythonWorker
       jobs:
@@ -86,12 +87,14 @@ extends:
           parameters:
             PROJECT_DIRECTORY: 'workers'
             PoolName: 1es-pool-azfunc-public
+            ArtifactFeed: 'public/PythonWorker_PublicPackages'
     - stage: RunWorkerEmulatorTests
       dependsOn: BuildPythonWorker
       jobs:
         - template: /eng/templates/jobs/ci-emulator-tests.yml@self
           parameters:
             PoolName: 1es-pool-azfunc-public
+            ArtifactFeed: 'public/PythonWorker_PublicPackages'
     
     # Python V2 Library Build and Test Stages
     - stage: BuildV2Library
@@ -110,6 +113,7 @@ extends:
             PROJECT_NAME: 'V2 Library'
             PROJECT_DIRECTORY: 'runtimes/v2'
             PoolName: 1es-pool-azfunc-public
+            ArtifactFeed: 'public/PythonWorker_PublicPackages'
 
     # Python V1 Library Build and Test Stages
     - stage: BuildV1Library
@@ -128,3 +132,4 @@ extends:
             PROJECT_NAME: 'V1 Library'
             PROJECT_DIRECTORY: 'runtimes/v1'
             PoolName: 1es-pool-azfunc-public
+            ArtifactFeed: 'public/PythonWorker_PublicPackages'

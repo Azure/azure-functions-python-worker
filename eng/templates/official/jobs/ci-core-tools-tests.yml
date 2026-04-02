@@ -13,6 +13,10 @@ jobs:
       inputs:
         versionSpec: "3.10"
         addToPath: true
+    - task: PipAuthenticate@1
+      displayName: 'Pip Authenticate'
+      inputs:
+        artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
     - task: UseDotNet@2
       displayName: 'Install DotNet 3'
       inputs:

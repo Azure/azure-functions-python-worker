@@ -10,6 +10,10 @@ steps:
     allowUnstable: true
     architecture: ${{ parameters.architecture }}
     addToPath: true
+- task: PipAuthenticate@1
+  displayName: 'Pip Authenticate'
+  inputs:
+    artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
 - powershell: |
     # Parse the Python minor version
     $PY_VER = "$(pythonVersion)"

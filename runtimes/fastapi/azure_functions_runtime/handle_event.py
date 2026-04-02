@@ -15,7 +15,14 @@ from fastapi import FastAPI
 
 from .converter import AzureFunctionInfo, FastAPIConverter
 from .handler import execute_fastapi_route
+from .http_v2 import (
+    HttpServerInitError,
+    HttpV2Registry,
+    http_coordinator,
+    initialize_http_server,
+)
 from .loader import load_function_metadata
+from .utils.constants import HTTP_URI, REQUIRES_ROUTE_PARAMETERS
 from .utils.tracing import serialize_exception
 from .utils.helpers import get_worker_metadata
 from .logging import logger
@@ -27,6 +34,7 @@ _converter: Optional[FastAPIConverter] = None
 _fastapi_app: Optional[FastAPI] = None
 _metadata_result: Optional[List] = None
 _function_path: Optional[str] = None
+_host: str = "127.0.0.1"
 protos = None
 
 
@@ -38,9 +46,10 @@ async def worker_init_request(request):
     """
     logger.info(f"FastAPI Runtime: received WorkerInitRequest, Version {VERSION}")
     
-    global protos
+    global protos, _host
     init_request = request.request.worker_init_request
     host_capabilities = init_request.capabilities
+    _host = request.properties.get("host", "127.0.0.1")
     protos = request.properties.get("protos")
     
     # Declare capabilities
@@ -62,6 +71,22 @@ async def worker_init_request(request):
         global _fastapi_app, _converter, _metadata_result
         _fastapi_app, _metadata_result, _converter = load_function_metadata(
             function_path, function_app_directory, protos)
+        
+        # Initialize HTTP streaming server if enabled (enabled by default for FastAPI)
+        try:
+            if HttpV2Registry.http_v2_enabled():
+                logger.info("HTTP streaming enabled for FastAPI runtime")
+                capabilities[HTTP_URI] = await initialize_http_server(_host, _fastapi_app)
+                capabilities[REQUIRES_ROUTE_PARAMETERS] = "true"
+        except HttpServerInitError as ex:
+            logger.error(f"Failed to initialize HTTP streaming server: {ex}")
+            return protos.WorkerInitResponse(
+                capabilities=capabilities,
+                worker_metadata=get_worker_metadata(protos),
+                result=protos.StatusResult(
+                    status=protos.StatusResult.Failure,
+                    exception=serialize_exception(ex, protos))
+            )
     except Exception as ex:
         logger.error(f"Failed to index FastAPI app during init: {ex}", exc_info=True)
         return protos.WorkerInitResponse(
@@ -154,6 +179,9 @@ async def invocation_request(request):
     function_id = invoc_request.function_id
     invocation_id = invoc_request.invocation_id
     
+    # Check if HTTP streaming is enabled
+    http_v2_enabled = HttpV2Registry.http_v2_enabled()
+    
     try:
         # Get the function info
         if not _converter:
@@ -163,12 +191,19 @@ async def invocation_request(request):
         if not func_info:
             raise RuntimeError(f"Function {function_id} not found")
         
-        # Extract HTTP request from input data
+        # Extract HTTP request
         azure_request = None
-        for input_data in invoc_request.input_data:
-            if input_data.data.http:
-                azure_request = input_data.data.http
-                break
+        
+        if http_v2_enabled:
+            # Get the HTTP request from the streaming coordinator
+            logger.info(f"Using HTTP streaming for invocation {invocation_id}")
+            azure_request = await http_coordinator.get_http_request_async(invocation_id)
+        else:
+            # Extract HTTP request from input data (traditional RPC)
+            for input_data in invoc_request.input_data:
+                if input_data.data.http:
+                    azure_request = input_data.data.http
+                    break
         
         if not azure_request:
             raise RuntimeError("No HTTP request data found")
@@ -182,21 +217,44 @@ async def invocation_request(request):
             is_async=func_info.is_async
         )
         
-        # Build response
-        http_response = protos.RpcHttp(
-            status_code=str(response.get('status_code', 200)),
-            headers=response.get('headers', {}),
-            body=protos.TypedData(string=response.get('body', ''))
-        )
-        
-        return protos.InvocationResponse(
-            invocation_id=invocation_id,
-            return_value=protos.TypedData(http=http_response),
-            result=protos.StatusResult(status=protos.StatusResult.Success)
-        )
+        if http_v2_enabled:
+            # For HTTP streaming, convert response to Starlette Response and send via coordinator
+            from starlette.responses import Response as StarletteResponse
+            
+            starlette_response = StarletteResponse(
+                content=response.get('body', ''),
+                status_code=response.get('status_code', 200),
+                headers=response.get('headers', {})
+            )
+            
+            http_coordinator.set_http_response(invocation_id, starlette_response)
+            
+            # Return empty response - the actual response goes via HTTP
+            return protos.InvocationResponse(
+                invocation_id=invocation_id,
+                result=protos.StatusResult(status=protos.StatusResult.Success)
+            )
+        else:
+            # Traditional RPC response
+            http_response = protos.RpcHttp(
+                status_code=str(response.get('status_code', 200)),
+                headers=response.get('headers', {}),
+                body=protos.TypedData(string=response.get('body', ''))
+            )
+            
+            return protos.InvocationResponse(
+                invocation_id=invocation_id,
+                return_value=protos.TypedData(http=http_response),
+                result=protos.StatusResult(status=protos.StatusResult.Success)
+            )
         
     except Exception as e:
         logger.error(f"Error executing function {function_id}: {e}", exc_info=True)
+        
+        if http_v2_enabled:
+            # Send exception via HTTP coordinator
+            http_coordinator.set_http_response(invocation_id, e)
+        
         return protos.InvocationResponse(
             invocation_id=invocation_id,
             result=protos.StatusResult(

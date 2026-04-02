@@ -11,7 +11,7 @@ runtimes/fastapi/
 ├── README.md                   # Package overview
 ├── ARCHITECTURE.md             # Detailed architecture documentation
 ├── USAGE.md                    # User guide and examples
-├── azure_functions_fastapi_runtime/
+├── azure_functions_runtime/
 │   ├── __init__.py            # Package exports
 │   ├── version.py             # Version info
 │   ├── handle_event.py        # Main event handler (worker protocol)
@@ -116,7 +116,7 @@ The FastAPI runtime is designed to be called by the proxy worker:
 
 ```python
 # In proxy worker
-from azure_functions_fastapi_runtime import (
+from azure_functions_runtime import (
     worker_init_request,
     functions_metadata_request,
     invocation_request,

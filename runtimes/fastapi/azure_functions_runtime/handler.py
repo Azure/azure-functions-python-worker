@@ -55,8 +55,8 @@ class FastAPIHandler:
             Dict with status_code, headers, and body for Azure Functions response
         """
         try:
-            # Get the request URL path
-            request_url = azure_request.url
+            # Get the request URL path (convert to string if it's a URL object)
+            request_url = str(azure_request.url) if hasattr(azure_request.url, '__str__') else azure_request.url
             
             # Extract path parameters by matching the route pattern
             path_params = self._extract_path_params(route_path, request_url)
@@ -130,8 +130,9 @@ class FastAPIHandler:
     
     def _build_scope(self, azure_request, route_path: str, path_params: Dict[str, str]) -> Dict[str, Any]:
         """Build ASGI scope from Azure Functions request"""
-        # Get the URL path
-        url_path = azure_request.url.split('?')[0]
+        # Get the URL path (convert to string if it's a URL object)
+        url_str = str(azure_request.url) if hasattr(azure_request.url, '__str__') else azure_request.url
+        url_path = url_str.split('?')[0]
         if '://' in url_path:
             url_path = '/' + url_path.split('/', 3)[-1] if url_path.count('/') >= 3 else '/'
         
@@ -157,19 +158,47 @@ class FastAPIHandler:
         # This creates a minimal Request-like object for FastAPI
         class MockRequest:
             def __init__(self, azure_req, scope_dict, path_params_dict):
-                self.method = azure_req.method.upper()
-                self.url = azure_req.url
+                self.method = azure_req.method.upper() if hasattr(azure_req.method, 'upper') else str(azure_req.method).upper()
+                self.url = str(azure_req.url) if hasattr(azure_req.url, '__str__') else azure_req.url
                 self.headers = Headers(azure_req.headers if azure_req.headers else {})
-                self.query_params = QueryParams(azure_req.params if hasattr(azure_req, 'params') and azure_req.params else {})
+                # Handle query_params from Starlette Request or Azure Functions params
+                if hasattr(azure_req, 'query_params'):
+                    self.query_params = azure_req.query_params
+                elif hasattr(azure_req, 'params'):
+                    self.query_params = QueryParams(azure_req.params if azure_req.params else {})
+                else:
+                    self.query_params = QueryParams({})
                 self.path_params = path_params_dict
-                self._body = azure_req.get_body() if hasattr(azure_req, 'get_body') else b''
                 self.scope = scope_dict
+                
+                # Store reference to original request for lazy body loading
+                self._azure_req = azure_req
+                self._body_cache = None
             
             async def body(self):
-                return self._body
+                """Lazily load and cache the request body"""
+                if self._body_cache is not None:
+                    return self._body_cache
+                
+                # Handle different request types
+                if hasattr(self._azure_req, 'get_body'):
+                    # Azure Functions RPC request
+                    self._body_cache = self._azure_req.get_body()
+                elif hasattr(self._azure_req, 'body'):
+                    # Starlette Request - body() is async
+                    if callable(self._azure_req.body):
+                        self._body_cache = await self._azure_req.body()
+                    else:
+                        self._body_cache = self._azure_req.body
+                else:
+                    self._body_cache = b''
+                
+                return self._body_cache
             
             async def json(self):
-                return json.loads(self._body) if self._body else {}
+                """Parse body as JSON"""
+                body_data = await self.body()
+                return json.loads(body_data) if body_data else {}
         
         return MockRequest(azure_request, scope, path_params)
     

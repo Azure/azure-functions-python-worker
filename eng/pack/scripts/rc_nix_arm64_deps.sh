@@ -39,12 +39,6 @@ pip download \
 echo "Downloaded wheels:"
 ls -la /tmp/arm64_wheels/
 
-# Install the main worker package (no deps)
-echo "Installing azure-functions-worker..."
-pip install . \
-    --target $BUILD_SOURCESDIRECTORY/deps \
-    --no-deps
-
 # Install ARM64 wheels from the downloaded files
 echo "Installing ARM64 dependencies from downloaded wheels..."
 # Extract wheel files manually to bypass platform compatibility checks

@@ -9,6 +9,10 @@ steps:
     versionSpec: ${{ parameters.pythonVersion }}
     allowUnstable: true
     addToPath: true
+- task: PipAuthenticate@1
+  displayName: 'Pip Authenticate'
+  inputs:
+    artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
 - powershell: |
     # Parse the Python minor version
     $PY_VER = "$(pythonVersion)"
@@ -51,12 +55,6 @@ steps:
     Write-Host "workerPath: $(workerPath)"
     Write-Host "proxyWorker: $(proxyWorker)"
   displayName: 'Display variables'
-- script: |
-    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  displayName: 'Docker login to avoid rate limits'
-  env:
-    DOCKER_USERNAME: $(DOCKER_USERNAME)
-    DOCKER_PASSWORD: $(DOCKER_PASSWORD)
 - task: ShellScript@2
   inputs:
     disableAutoCwd: true

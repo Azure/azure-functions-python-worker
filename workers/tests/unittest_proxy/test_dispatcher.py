@@ -60,6 +60,9 @@ class TestDispatcher(unittest.TestCase):
     @patch("proxy_worker.dispatcher.is_system_log_category")
     def test_on_logging_levels_and_categories(self, mock_is_system, mock_rpc_log,
                                               mock_streaming_message):
+        # Import module to access cached constants
+        import proxy_worker.dispatcher as dispatcher_module
+
         loop = Mock()
         dispatcher = Dispatcher(loop, "localhost", 5000, "worker",
                                 "req", 5.0)
@@ -68,23 +71,34 @@ class TestDispatcher(unittest.TestCase):
         mock_streaming_message.return_value = Mock()
 
         levels = [
-            (logging.CRITICAL, mock_rpc_log.Critical),
-            (logging.ERROR, mock_rpc_log.Error),
-            (logging.WARNING, mock_rpc_log.Warning),
-            (logging.INFO, mock_rpc_log.Information),
-            (logging.DEBUG, mock_rpc_log.Debug),
-            (5, getattr(mock_rpc_log, 'None')),
+            (logging.CRITICAL, dispatcher_module._LOG_LEVEL_CRITICAL),
+            (logging.ERROR, dispatcher_module._LOG_LEVEL_ERROR),
+            (logging.WARNING, dispatcher_module._LOG_LEVEL_WARNING),
+            (logging.INFO, dispatcher_module._LOG_LEVEL_INFO),
+            (logging.DEBUG, dispatcher_module._LOG_LEVEL_DEBUG),
+            (5, dispatcher_module._LOG_LEVEL_NONE),
         ]
 
         for level, expected in levels:
-            record = Mock(levelno=level, name="custom.logger")
+            record = Mock(levelno=level)
+            record.name = "custom.logger"
             mock_is_system.return_value = level % 2 == 0  # alternate True/False
             dispatcher.on_logging(record, "Test message")
 
+            # Determine expected category from cached constants
             if mock_is_system.return_value:
-                mock_rpc_log.RpcLogCategory.Value.assert_called_with("System")
+                expected_category = dispatcher_module._LOG_CATEGORY_SYSTEM
             else:
-                mock_rpc_log.RpcLogCategory.Value.assert_called_with("User")
+                expected_category = dispatcher_module._LOG_CATEGORY_USER
+
+            # Verify RpcLog was initialized with correct mapped values
+            # We use call_args to verify kwargs, ignoring any extra kwargs
+            # like invocation_id if present
+            args, kwargs = mock_rpc_log.call_args
+            self.assertEqual(kwargs['level'], expected)
+            self.assertEqual(kwargs['log_category'], expected_category)
+            self.assertEqual(kwargs['message'], "Test message")
+            self.assertEqual(kwargs['category'], "custom.logger")
 
 
 def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
@@ -96,7 +110,7 @@ def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
     mock_module.version.VERSION = AsyncMock(return_value="1.0.0")
     if name in ["azure_functions_runtime", "azure_functions_runtime_v1"]:
         return mock_module
-    return builtins.__import__(name, globals, locals, fromlist, level)
+    return _real_import(name, globals, locals, fromlist, level)
 
 
 @patch("proxy_worker.dispatcher.DependencyManager.should_load_cx_dependencies",

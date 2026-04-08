@@ -70,6 +70,10 @@ jobs:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
+      - task: PipAuthenticate@1
+        displayName: 'Pip Authenticate'
+        inputs:
+          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
       - task: UseDotNet@2
         displayName: 'Install .NET 8'
         inputs:

@@ -42,6 +42,10 @@ jobs:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
+      - task: PipAuthenticate@1
+        displayName: 'Pip Authenticate'
+        inputs:
+          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
       
       - bash: |
           # Start Azurite storage emulator in the background

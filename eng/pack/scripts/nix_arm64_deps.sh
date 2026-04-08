@@ -1,80 +1,81 @@
 #!/bin/bash
+# This script installs ARM64 Python dependencies without Docker
+# Uses pip's --platform flag to download ARM64-specific wheels
 
+set -e
+
+PYTHON_VERSION=$1
+version_minor=$(echo $PYTHON_VERSION | cut -d '.' -f 2)
+
+echo "Building ARM64 dependencies for Python version: $PYTHON_VERSION (minor: $version_minor)"
+
+# Create deps directory
+mkdir -p $BUILD_SOURCESDIRECTORY/deps
+
+# Setup Python environment
 python -m venv .env
 source .env/bin/activate
 python -m pip install --upgrade pip
 python -m pip install setuptools==81.0
 
-version_minor=$(echo $1 | cut -d '.' -f 2)
-mkdir -p $BUILD_SOURCESDIRECTORY/deps
+echo "Installing build tools (which must be platform-compatible)..."
+pip install grpcio-tools invoke
 
-# Targeting: grpcio manylinux_2_17_aarch64.whl build
-
-# Starts a docker container using the linux/arm64 platform
-# Inside the container, we perform the same steps as our typical builds
-# However, since we're running them on the linux/arm64 platform, we ensure
-# that we pull in the correct grpc, etc. builds
-docker run --privileged --rm tonistiigi/binfmt --install all
-docker run --name my-arm64-container --platform linux/arm64 \
-      -v ./:/src \
-      -w /src \
-      python:3.$version_minor bash -c "
-        ls -la /src  # debug: see what files exist
-        apt-get update && apt-get install -y git curl && \
-        pip install --upgrade pip && \
-        pip install setuptools==81.0 && \
-        cd workers && \
-        pip install . && \
-        pip install . --target /src && \
-        pip install invoke && \
-        cd tests && \
-        python -m invoke -c test_setup build-protos && \
-        ls -la /src
-      "
-
+# Navigate to workers directory
 cd workers
 
-# This copies over the build files from the docker container to the local pipeline
-docker cp my-arm64-container:/src/. $BUILD_SOURCESDIRECTORY/all/
-docker rm my-arm64-container
+# Create temp directory for downloading ARM64 wheels
+mkdir -p /tmp/arm64_wheels
 
-# From the container, we have many unnecessary files. Here, we only
-# copy over the relevant files to the 'deps/' directory.
-copy_list=(
-  "azure"
-  "azure_functions_worker"
-  "azure_functions_runtime"
-  "azure_functions_runtime_v1"
-  "azurefunctions"
-  "dateutil"
-  "google"
-  "grpc"
-  "markupsafe"
-  "proxy_worker"
-  "six.py"
-  "werkzeug"
-)
+# Download ARM64 wheels for the specific Python version
+echo "Downloading ARM64 wheels for Python ${PYTHON_VERSION}..."
+pip download \
+    --platform manylinux_2_17_aarch64 \
+    --only-binary=:all: \
+    --dest /tmp/arm64_wheels \
+    .
 
-for dir in "${copy_list[@]}"; do
-      src="$BUILD_SOURCESDIRECTORY/all/$dir"
-      dest="$BUILD_SOURCESDIRECTORY/deps"
+# List downloaded wheels for debugging
+echo "Downloaded wheels:"
+ls -la /tmp/arm64_wheels/
 
-      if [ -e $src ]; then
-        echo "Copying $dir..."
-        cp -r $src $dest
-      else
-        echo "Directory $dir not found in deps — skipping"
-      fi
-    done
+# Install ARM64 wheels from the downloaded files
+echo "Installing ARM64 dependencies from downloaded wheels..."
+# Extract wheel files manually to bypass platform compatibility checks
+# Wheels are just ZIP archives, so we can extract them directly
+for wheel in /tmp/arm64_wheels/*.whl; do
+    echo "Extracting $wheel..."
+    unzip -o -q "$wheel" -d $BUILD_SOURCESDIRECTORY/deps
+done
 
-cp .artifactignore "$BUILD_SOURCESDIRECTORY/deps"
+# Remove .dist-info directories to avoid conflicts
+rm -rf $BUILD_SOURCESDIRECTORY/deps/*.dist-info
 
-version_minor=$(echo $1 | cut -d '.' -f 2)
-if [[ $version_minor -lt 13 ]]; then
-    cp -r azure_functions_worker/protos "$BUILD_SOURCESDIRECTORY/deps/azure_functions_worker"
-else
-    cp -r proxy_worker/protos "$BUILD_SOURCESDIRECTORY/deps/proxy_worker"
+# Build protos
+cd tests
+python -m invoke -c test_setup build-protos
+cd ..
+
+echo "Current working directory after building protos & cd-ing one level back: $(pwd)"
+ls -la
+
+
+# Copy .artifactignore
+if [ -f .artifactignore ]; then
+  cp .artifactignore $BUILD_SOURCESDIRECTORY/deps
 fi
 
+# Copy protos based on Python version
+if [[ $version_minor -lt 13 ]]; then
+  echo "Copying azure_functions_worker protos..."
+  mkdir -p $BUILD_SOURCESDIRECTORY/deps/azure_functions_worker
+  cp -r azure_functions_worker/protos $BUILD_SOURCESDIRECTORY/deps/azure_functions_worker
+else
+  echo "Copying proxy_worker protos..."
+  mkdir -p $BUILD_SOURCESDIRECTORY/deps/proxy_worker
+  cp -r proxy_worker/protos $BUILD_SOURCESDIRECTORY/deps/proxy_worker
+fi
+
+echo "ARM64 dependencies installed successfully!"
 echo "Listing contents of deps directory:"
 ls -la $BUILD_SOURCESDIRECTORY/deps

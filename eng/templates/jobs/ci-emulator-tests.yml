@@ -1,5 +1,6 @@
 parameters:
   PROJECT_DIRECTORY: 'workers'
+  ArtifactFeed: ''
 
 jobs:
   - job: "TestPython"
@@ -46,6 +47,10 @@ jobs:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
+      - task: PipAuthenticate@1
+        displayName: 'Pip Authenticate'
+        inputs:
+          artifactFeeds: ${{ parameters.ArtifactFeed }}
       - task: UseDotNet@2
         displayName: 'Install .NET 8'
         inputs:

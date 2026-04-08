@@ -11,7 +11,7 @@ runtimes/fastapi/
 ├── README.md                   # Package overview
 ├── ARCHITECTURE.md             # Detailed architecture documentation
 ├── USAGE.md                    # User guide and examples
-├── azure_functions_runtime/
+├── azure_functions_runtime_fastapi/
 │   ├── __init__.py            # Package exports
 │   ├── version.py             # Version info
 │   ├── handle_event.py        # Main event handler (worker protocol)
@@ -87,13 +87,13 @@ runtimes/fastapi/
 ```
 
 ### Request Execution Flow
-```
-1. HTTP request arrives at Azure Functions host
+```1. HTTP request arrives at Azure Functions host
 2. Host identifies target function by route
 3. Proxy worker forwards invocation_request()
 4. FastAPI runtime looks up route handler
 5. Handler executes route (handler.py)
 6. Response formatted and returned
+
 ```
 
 ### Route-to-Function Conversion Example
@@ -116,7 +116,7 @@ The FastAPI runtime is designed to be called by the proxy worker:
 
 ```python
 # In proxy worker
-from azure_functions_runtime import (
+from azure_functions_runtime_fastapi import (
     worker_init_request,
     functions_metadata_request,
     invocation_request,

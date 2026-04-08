@@ -6,7 +6,7 @@ Test FastAPI Indexer
 import pytest
 from fastapi import FastAPI
 
-from azure_functions_runtime.indexer import FastAPIIndexer, index_fastapi_app
+from azure_functions_runtime_fastapi.indexer import FastAPIIndexer, index_fastapi_app
 
 
 def test_indexer_discovers_routes():

@@ -10,8 +10,8 @@ import pytest
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from azure_functions_runtime.indexer import index_fastapi_app, FastAPIIndexer
-from azure_functions_runtime.converter import FastAPIConverter
+from azure_functions_runtime_fastapi.indexer import index_fastapi_app, FastAPIIndexer
+from azure_functions_runtime_fastapi.converter import FastAPIConverter
 
 
 def test_example_app_indexing():

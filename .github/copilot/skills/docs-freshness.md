@@ -1,0 +1,130 @@
+---
+name: docs-freshness
+description: Cross-references documentation against source-of-truth files to detect drift. Opens a draft PR with findings and proposed fixes.
+---
+
+# Docs Freshness Review
+
+Cross-reference documentation in this repository against source-of-truth files. Detect drift, auto-fix what's certain, and flag what needs human judgment. Output a **draft** PR with structured findings.
+
+---
+
+## Source-of-Truth Files
+
+| File | Extract |
+|------|---------|
+| `workers/pyproject.toml` | Python version classifiers (`Programming Language :: Python :: 3.X`), dependency names and version pins in `[project.dependencies]` |
+| `eng/ci/public-build.yml` | `PYTHON_VERSION` parameters in build job templates — versions actually built/tested in CI |
+| `workers/azure_functions_worker/version.py` | Worker version constant |
+
+---
+
+## Target Documentation Files
+
+| File | Validate |
+|------|----------|
+| `README.md` (root) | Python version support table, feature/binding lists, "What's New" section, all external URLs |
+| `workers/README.md` | Python version support table, feature/binding lists, all external URLs |
+| `runtimes/v1/README.md` | Python version support table, feature/binding lists |
+| `runtimes/v2/README.md` | Python version support table, feature/binding lists |
+| `docs/*.rst` | Any factual content present |
+
+---
+
+## Checks to Perform
+
+### 1. Python Version Tables
+
+1. Read `workers/pyproject.toml` — collect every `Programming Language :: Python :: 3.X` classifier.
+2. Read `eng/ci/public-build.yml` — collect every `PYTHON_VERSION` value from build matrix parameters.
+3. For each target README, find the Python version support table and compare.
+4. **Important:** A version present in CI but NOT in pyproject.toml classifiers may be pre-release or experimental — classify as ⚠️ Suggested, not ✅ Certain.
+
+### 2. Dependency Versions
+
+1. Read `workers/pyproject.toml` `[project.dependencies]` — extract pinned dependency versions.
+2. Focus on: `azure-functions`, `protobuf`, `grpcio`, `azurefunctions-extensions-*`.
+3. Search target docs for any mention of specific versions of these packages.
+4. Flag where a doc states a version that differs from the pin in pyproject.toml.
+
+### 3. Feature Lists
+
+1. Collect trigger/binding feature lists from every target README.
+2. Compare them — they should be identical across all READMEs that list them.
+3. Flag any inconsistencies (missing items, extra items, different wording).
+
+### 4. External Links
+
+1. Find all `http://` and `https://` URLs in every target doc.
+2. Check each URL: `curl -sI -o /dev/null -w "%{http_code}" <URL>`
+3. Flag: **404** → broken, **301/302** → redirect, **timeout** → unreachable.
+
+### 5. Cross-README Consistency
+
+1. Compare "What's available?", "What's new?", "Give Feedback", and "Contribute" sections across all READMEs.
+2. Version tables should show the same data in every README that includes one.
+3. Flag any mismatches.
+
+---
+
+## Classifying Findings
+
+| Confidence | Meaning | Action |
+|------------|---------|--------|
+| ✅ Certain | Unambiguous mismatch against source of truth | Auto-fix in the PR commit |
+| ⚠️ Suggested | Likely outdated but needs human judgment | Flag in PR body — do **NOT** auto-fix |
+
+**✅ Certain examples:** version table doesn't match pyproject.toml classifiers, feature lists differ between READMEs, URL returns 404.
+
+**⚠️ Suggested examples:** "What's New" appears outdated, URL returns 301/302 redirect, version present in CI but not in classifiers, ambiguous dependency version mismatch.
+
+---
+
+## Output — Draft Pull Request
+
+> **Hard requirement:** The PR MUST be created in **draft** mode.
+
+If **no drift is found**, output:
+
+```
+✅ Docs freshness review complete — no drift detected
+```
+
+and do **NOT** create a PR.
+
+If drift is found, create a draft PR:
+
+1. **Branch:** `docs/freshness-update-YYYY-MM-DD`
+2. **Commit message:** `docs: fix documentation drift detected by freshness review`
+3. **PR title:** `docs: freshness review — N findings (YYYY-MM-DD)`
+4. **PR body** — use this structure:
+
+```markdown
+## Executive Summary
+<!-- 2-3 sentences: what was checked, how many findings, how many auto-fixed vs flagged -->
+
+## Findings
+
+| # | File | Finding | Confidence | Action Taken |
+|---|------|---------|------------|--------------|
+| 1 | `README.md:42` | Python 3.12 missing from version table | ✅ Certain | Auto-fixed |
+| 2 | `workers/README.md:15` | Redirect on contribution guide link | ⚠️ Suggested | Flagged |
+
+## Details Per Finding
+
+<details>
+<summary>#1 — Python 3.12 missing from version table (README.md:42)</summary>
+
+**Source of truth:** `workers/pyproject.toml` classifiers include `Programming Language :: Python :: 3.12`
+**Before:** table listed 3.9, 3.10, 3.11
+**After:** table lists 3.9, 3.10, 3.11, 3.12
+**Why:** pyproject.toml declares 3.12 support; README must reflect this.
+
+</details>
+
+## Items Requiring Human Judgment
+<!-- Bullet list of all ⚠️ Suggested findings with context -->
+
+---
+*Generated by the `docs-freshness` Copilot CLI skill. Re-run: `copilot-cli skill docs-freshness`*
+```

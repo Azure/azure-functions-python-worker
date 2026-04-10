@@ -1,0 +1,72 @@
+name: docs-freshness
+
+on:
+  schedule:
+    # Run monthly on the 1st at 9:00 AM UTC
+    # Repo averages ~3-6 commits/month; monthly cadence avoids noise
+    - cron: '0 9 1 * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    
+    steps:
+      - name: Check for existing open review issue
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'docs-freshness',
+              state: 'open'
+            });
+            
+            const exists = issues.data.length > 0 ? 'true' : 'false';
+            core.setOutput('exists', exists);
+      
+      - name: Create docs freshness review issue
+        if: steps.check.outputs.exists == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().split('T')[0];
+            
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `docs: scheduled freshness review (${today})`,
+              labels: ['docs-freshness', 'documentation'],
+              body: `## Docs Freshness Review
+
+This is an automated monthly review triggered by the scheduled workflow.
+
+### Instructions
+
+Please read \`.github/copilot/skills/docs-freshness.md\` and follow the workflow documented there. Open a **draft PR** with any necessary documentation updates.
+
+### Known Source of Truth Files
+
+These files are the source of truth for versioning and configuration:
+- \`workers/pyproject.toml\`
+- \`eng/ci/public-build.yml\`
+- \`workers/azure_functions_worker/version.py\`
+
+### Target Documentation Files
+
+Review the following documentation files for freshness:
+- \`README.md\`
+- \`workers/README.md\`
+- \`runtimes/v1/README.md\`
+- \`runtimes/v2/README.md\`
+- \`docs/*.rst\`
+
+---
+
+Triggered by scheduled workflow on ${today}`
+            });

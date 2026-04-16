@@ -62,3 +62,9 @@ PYTHON_THREADPOOL_THREAD_COUNT = "PYTHON_THREADPOOL_THREAD_COUNT"
 PYTHON_THREADPOOL_THREAD_COUNT_DEFAULT = 1
 PYTHON_THREADPOOL_THREAD_COUNT_MAX = sys.maxsize
 PYTHON_THREADPOOL_THREAD_COUNT_MIN = 1
+# Appsetting to enable process-based execution for CPU-bound workloads
+# When set, creates ProcessPoolExecutor instead of ThreadPoolExecutor
+# Value specifies number of worker processes
+PYTHON_PROCESS_COUNT = "PYTHON_PROCESS_COUNT"
+PYTHON_PROCESS_COUNT_MIN = 1
+PYTHON_PROCESS_COUNT_MAX = 32

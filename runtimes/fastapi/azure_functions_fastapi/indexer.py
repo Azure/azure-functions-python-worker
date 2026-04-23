@@ -68,24 +68,27 @@ class FastAPIIndexer:
     
     def _generate_function_name(self, route: APIRoute) -> str:
         """
-        Generate a unique function name from the route path and methods
-        Example: GET /users/{id} -> get_users_id
+        Get the function name from the route's endpoint function.
+        
+        Uses the actual function name defined by the developer, e.g.:
+        @app.get("/users/{id}")
+        async def get_user_by_id(id: int):  # <- Uses "get_user_by_id"
         """
-        # Clean up the path to create a valid function name
+        # Use the actual function name from the endpoint
+        if route.endpoint and hasattr(route.endpoint, '__name__'):
+            return route.endpoint.__name__
+        
+        # Fallback: generate from path if endpoint name not available
         path = route.path.strip('/')
         path = path.replace('/', '_').replace('{', '').replace('}', '')
         path = path.replace('-', '_')
         
-        # Get primary HTTP method
         method = list(route.methods)[0].lower() if route.methods else 'http'
         
-        # Combine method and path
         if path:
-            function_name = f"{method}_{path}"
+            return f"{method}_{path}"
         else:
-            function_name = f"{method}_root"
-        
-        return function_name
+            return f"{method}_root"
 
 
 def index_fastapi_app(function_path: str) -> List[FastAPIFunctionMetadata]:

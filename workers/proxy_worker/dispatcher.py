@@ -428,29 +428,7 @@ class Dispatcher(metaclass=DispatcherMeta):
         
         try:
             # Import runtime base package
-            import runtimes.base as runtime_base
-            
-            # Try to detect and import the appropriate runtime
-            # First, try FastAPI runtime
-            v2_scriptfile = os.path.join(directory, get_script_file_name())
-            if os.path.exists(v2_scriptfile):
-                # Check if it's a FastAPI app
-                try:
-                    with open(v2_scriptfile, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                        if 'FastAPI()' in content or 'from fastapi import' in content:
-                            logger.info("Detected FastAPI application, loading FastAPI runtime")
-                            import azure_functions_runtime_fastapi  # NoQA
-                        else:
-                            logger.info("Detected V2 application, loading V2 runtime")
-                            import azure_functions_runtime  # NoQA
-                except Exception:
-                    # Default to V2 if detection fails
-                    import azure_functions_runtime  # NoQA
-            else:
-                # V1 runtime
-                logger.info("Detected V1 application, loading V1 runtime")
-                import azure_functions_runtime_v1  # NoQA
+            import azurefunctions.extensions.base as runtime_base
             
             # Check if a runtime was registered
             if runtime_base.RuntimeFeatureChecker.runtime_loaded():

@@ -1,7 +1,7 @@
 [project]
 name = "victorias-fastapi-test"
 dynamic = ["version"]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 description = "FastAPI Runtime for Azure Functions Python Worker"
 authors = [
     { name = "Azure Functions team at Microsoft Corp.", email = "azurefunctions@microsoft.com" }
@@ -59,10 +59,10 @@ requires = ["setuptools>=61.0", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["azure_functions_runtime_fastapi"]
+packages = ["azure_functions_fastapi"]
 
 [tool.setuptools.dynamic]
-version = {attr = "azure_functions_runtime_fastapi.version.VERSION"}
+version = {attr = "azure_functions_fastapi.version.VERSION"}
 
 [tool.setuptools.package-data]
-azure_functions_runtime_fastapi = ["py.typed"]
+azure_functions_fastapi = ["py.typed"]

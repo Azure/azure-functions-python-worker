@@ -5,8 +5,8 @@ Test FastAPI Converter
 """
 import pytest
 
-from azure_functions_runtime_fastapi.converter import FastAPIConverter
-from azure_functions_runtime_fastapi.indexer import FastAPIIndexer
+from azure_functions_fastapi.converter import FastAPIConverter
+from azure_functions_fastapi.indexer import FastAPIIndexer
 from fastapi import FastAPI
 
 

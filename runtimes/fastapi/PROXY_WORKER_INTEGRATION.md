@@ -23,7 +23,7 @@ This document explains how the FastAPI runtime integrates with the proxy worker 
 │  │  Request Router                                           │ │
 │  │  ────────────────                                         │ │
 │  │  if is_fastapi_app():                                     │ │
-│  │      import azure_functions_runtime_fastapi               │ │
+│  │      import azure_functions_fastapi               │ │
 │  │      runtime.worker_init_request(...)                     │ │
 │  │  elif is_v2_app():                                        │ │
 │  │      import azure_functions_runtime                       │ │
@@ -56,7 +56,7 @@ The proxy worker needs to detect which runtime to use for a given app.
 runtime_type = os.environ.get("PYTHON_RUNTIME_TYPE", "auto")
 
 if runtime_type == "fastapi":
-    from azure_functions_runtime_fastapi import (
+    from azure_functions_fastapi import (
         worker_init_request,
         functions_metadata_request,
         invocation_request,
@@ -121,7 +121,7 @@ def load_runtime():
         runtime_type = detect_runtime()
     
     if runtime_type == "fastapi":
-        import azure_functions_runtime_fastapi as runtime
+        import azure_functions_fastapi as runtime
         runtime_handlers = {
             "worker_init": runtime.worker_init_request,
             "functions_metadata": runtime.functions_metadata_request,
@@ -232,7 +232,7 @@ request = {
 }
 
 # Proxy worker routes to FastAPI runtime
-response = await azure_functions_runtime_fastapi.worker_init_request(request)
+response = await azure_functions_fastapi.worker_init_request(request)
 
 # FastAPI runtime:
 # 1. Indexes FastAPI app
@@ -252,7 +252,7 @@ request = {
 }
 
 # Proxy worker routes to FastAPI runtime
-response = await azure_functions_runtime_fastapi.functions_metadata_request(request)
+response = await azure_functions_fastapi.functions_metadata_request(request)
 
 # FastAPI runtime returns metadata for all discovered routes
 # Each route is represented as an Azure Function

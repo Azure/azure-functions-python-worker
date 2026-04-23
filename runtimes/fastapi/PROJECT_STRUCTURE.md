@@ -14,7 +14,7 @@ runtimes/fastapi/
 │   ├── 📄 USAGE.md                      # User guide with examples
 │   └── 📄 IMPLEMENTATION_SUMMARY.md     # Development summary
 │
-├── 📦 azure_functions_runtime_fastapi/  # Main package
+├── 📦 azure_functions_fastapi/  # Main package
 │   ├── 📄 __init__.py                   # Package exports
 │   ├── 📄 version.py                    # Version info (0.1.0)
 │   │

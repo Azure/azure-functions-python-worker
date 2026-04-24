@@ -131,6 +131,11 @@ async def functions_metadata_request(request):
                 status=protos.StatusResult.Failure)
         )
     
+    logger.info(f"Returning metadata for {len(_metadata_result)} FastAPI functions")
+    for func_metadata in _metadata_result:
+        logger.info(f"  - Function: {func_metadata.name}, Route: {func_metadata.properties.get('FastAPIRoute', 'N/A')}")
+        logger.info(f"    Raw bindings: {func_metadata.raw_bindings}")
+    
     return protos.FunctionMetadataResponse(
         use_default_metadata_indexing=False,
         function_metadata_results=_metadata_result,
@@ -179,8 +184,11 @@ async def invocation_request(request):
     function_id = invoc_request.function_id
     invocation_id = invoc_request.invocation_id
     
+    logger.info(f"[Invocation] Function ID: {function_id}, Invocation ID: {invocation_id}")
+    
     # Check if HTTP streaming is enabled
     http_v2_enabled = HttpV2Registry.http_v2_enabled()
+    logger.info(f"[Invocation] HTTP streaming enabled: {http_v2_enabled}")
     
     try:
         # Get the function info
@@ -190,6 +198,8 @@ async def invocation_request(request):
         func_info = _converter.get_function(function_id)
         if not func_info:
             raise RuntimeError(f"Function {function_id} not found")
+        
+        logger.info(f"[Invocation] Found function: {func_info.name}, route: {func_info.route_path}")
         
         # Extract HTTP request
         azure_request = None

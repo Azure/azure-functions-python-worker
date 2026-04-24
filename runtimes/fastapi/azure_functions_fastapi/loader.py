@@ -77,9 +77,10 @@ def build_raw_bindings(func_info) -> List[str]:
         if binding['type'] == 'httpTrigger':
             raw_binding["authLevel"] = "ANONYMOUS"  # Uppercase to match v2 runtime
             raw_binding["methods"] = [m.lower() for m in func_info.http_methods]
-            # Remove leading slash from route for consistency
+            # For Azure Functions, omit 'route' key entirely for root path
+            # Setting route to empty string doesn't work - the host won't match it
             route = func_info.route_path.lstrip('/')
-            if route:
+            if route:  # Only set route if it's not empty (not root path)
                 raw_binding["route"] = route
         
         # Each binding becomes a separate JSON string

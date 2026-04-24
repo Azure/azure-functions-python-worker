@@ -28,6 +28,7 @@ classifiers = [
 ]
 dependencies = [
     "azure-functions",
+    "azurefunctions-extensions-base",
     "fastapi>=0.100.0",
     "uvicorn>=0.20.0",  # ASGI server for HTTP streaming
     "starlette>=0.27.0",  # FastAPI's underlying framework
@@ -66,3 +67,6 @@ version = {attr = "azure_functions_fastapi.version.VERSION"}
 
 [tool.setuptools.package-data]
 azure_functions_fastapi = ["py.typed"]
+
+[project.entry-points."azurefunctions.runtimes"]
+fastapi = "azure_functions_fastapi:Runtime"

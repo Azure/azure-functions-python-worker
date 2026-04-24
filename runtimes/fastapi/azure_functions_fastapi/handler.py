@@ -113,6 +113,16 @@ class FastAPIHandler:
         elif url_path.startswith('/api'):
             url_path = url_path[4:]  # Remove '/api'
         
+        # If path is empty after stripping prefix, it represents root path
+        if not url_path:
+            url_path = '/'
+        
+        # Debug logging
+        from .logging import logger
+        logger.info(f"[FastAPI Handler] Request URL: {request_url}")
+        logger.info(f"[FastAPI Handler] Extracted path: {url_path}")
+        logger.info(f"[FastAPI Handler] Route pattern: {route_path}")
+        
         # Ensure route_path has leading slash
         if not route_path.startswith('/'):
             route_path = '/' + route_path
@@ -122,10 +132,15 @@ class FastAPIHandler:
         pattern = re.sub(r'\{([^}]+)\}', r'(?P<\1>[^/]+)', route_path)
         pattern = '^' + pattern + '$'
         
+        logger.info(f"[FastAPI Handler] Regex pattern: {pattern}")
+        
         # Match the URL path against the pattern
         match = re.match(pattern, url_path)
         if match:
+            logger.info(f"[FastAPI Handler] Path matched! Params: {match.groupdict()}")
             return match.groupdict()
+        
+        logger.warning(f"[FastAPI Handler] No match! url_path='{url_path}' pattern='{pattern}'")
         return {}
     
     def _build_scope(self, azure_request, route_path: str, path_params: Dict[str, str]) -> Dict[str, Any]:

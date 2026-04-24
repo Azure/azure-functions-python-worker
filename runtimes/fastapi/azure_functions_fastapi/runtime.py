@@ -6,7 +6,7 @@ FastAPI Runtime - Extends the runtime base package
 This runtime implementation provides native FastAPI support for Azure Functions.
 It auto-registers with the runtime base when imported.
 """
-from runtimes.base import RuntimeBase
+from azurefunctions.extensions.base import RuntimeBase
 from .handle_event import (
     worker_init_request,
     functions_metadata_request,

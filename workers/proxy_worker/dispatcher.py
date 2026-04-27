@@ -32,6 +32,7 @@ from proxy_worker.utils.common import (
     check_python_eol
 )
 from proxy_worker.utils.constants import (
+    PYTHON_ENABLE_AGENT_RUNTIME,
     PYTHON_ENABLE_DEBUG_LOGGING,
 )
 from proxy_worker.version import VERSION
@@ -430,52 +431,52 @@ class Dispatcher(metaclass=DispatcherMeta):
         """
         global _library_worker, _library_worker_has_cv
 
-        # Import base package
-        import azurefunctions.extensions.base as runtime_base
+        if is_envvar_true(PYTHON_ENABLE_AGENT_RUNTIME):
+            # Import base package
+            import azurefunctions.extensions.base as runtime_base
 
-        # Discover all installed runtime packages via entry points
-        available_runtimes = entry_points(group='azurefunctions.runtimes')
+            # Discover all installed runtime packages via entry points
+            available_runtimes = entry_points(group='azurefunctions.runtimes')
 
-        for ep in available_runtimes:
-            try:
-                # Load the entry point (triggers import and
-                # metaclass registration)
-                ep.load()
-                logger.debug(f"Loaded runtime entry point: {ep.name}")
-            except Exception as e:
-                logger.debug(f"Could not load runtime {ep.name}: {e}")
-                continue
+            for ep in available_runtimes:
+                try:
+                    # Load the entry point (triggers import and
+                    # metaclass registration)
+                    ep.load()
+                    logger.debug(f"Loaded runtime entry point: {ep.name}")
+                except Exception as e:
+                    logger.debug(f"Could not load runtime {ep.name}: {e}")
+                    continue
 
-        # Check if a runtime was registered
-        if runtime_base.RuntimeFeatureChecker.runtime_loaded():
-            # Get the registered runtime module
-            # (e.g., "azure_functions_fastapi.runtime")
-            runtime_module_name = (
-                runtime_base.RuntimeTrackerMeta.get_module())
-            runtime_name = (
-                runtime_base.RuntimeTrackerMeta.get_runtime_name())
+            # Check if a runtime was registered
+            if runtime_base.RuntimeFeatureChecker.runtime_loaded():
+                # Get the registered runtime module
+                # (e.g., "azure_functions_fastapi.runtime")
+                runtime_module_name = (
+                    runtime_base.RuntimeTrackerMeta.get_module())
+                runtime_name = (
+                    runtime_base.RuntimeTrackerMeta.get_runtime_name())
 
-            logger.debug("Runtime registered: %s (module: %s)",
-                         runtime_name, runtime_module_name)
+                logger.debug("Runtime registered: %s (module: %s)",
+                             runtime_name, runtime_module_name)
 
-            # Extract the package name (e.g., "azure_functions_fastapi"
-            # from "azure_functions_fastapi.runtime")
-            # The package is everything before ".runtime"
-            if '.runtime' in runtime_module_name:
-                package_name = runtime_module_name.rsplit('.runtime', 1)[0]
-            else:
-                # Fallback: use the first part of the module name
-                package_name = runtime_module_name.split('.')[0]
+                # Extract the package name (e.g., "azure_functions_fastapi"
+                # from "azure_functions_fastapi.runtime")
+                # The package is everything before ".runtime"
+                if '.runtime' in runtime_module_name:
+                    package_name = runtime_module_name.rsplit('.runtime', 1)[0]
+                else:
+                    # Fallback: use the first part of the module name
+                    package_name = runtime_module_name.split('.')[0]
 
-            logger.debug("Importing runtime package: %s", package_name)
+                logger.debug("Importing runtime package: %s", package_name)
 
-            # Import the top-level runtime package (which exports
-            # the public API)
-            runtime_module = importlib.import_module(package_name)
-            _library_worker = runtime_module
-            _library_worker_has_cv = hasattr(_library_worker,
-                                             'invocation_id_cv')
-
+                # Import the top-level runtime package (which exports
+                # the public API)
+                runtime_module = importlib.import_module(package_name)
+                _library_worker = runtime_module
+                _library_worker_has_cv = hasattr(_library_worker,
+                                                 'invocation_id_cv')
         else:
             # Fallback: No runtime registered via base package
             # Use traditional detection

@@ -1,6 +1,7 @@
 parameters:
   PROJECT_NAME: ''
   PROJECT_DIRECTORY: ''
+  ArtifactFeed: ''
 
 jobs:
   - job: "TestPython"
@@ -20,10 +21,14 @@ jobs:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
-      - task: UseDotNet@2
-        displayName: 'Install .NET 8'
+      - task: PipAuthenticate@1
+        displayName: 'Pip Authenticate'
         inputs:
-          version: 8.0.x
+          artifactFeeds: ${{ parameters.ArtifactFeed }}
+      - task: UseDotNet@2
+        displayName: 'Install .NET 10'
+        inputs:
+          version: 10.0.x
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh          
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}

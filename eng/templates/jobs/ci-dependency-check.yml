@@ -1,3 +1,6 @@
+parameters:
+  ArtifactFeed: ''
+
 jobs:
   - job: "TestPython"
     displayName: "Run Dependency Checks"
@@ -25,6 +28,10 @@ jobs:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
+      - task: PipAuthenticate@1
+        displayName: 'Pip Authenticate'
+        inputs:
+          artifactFeeds: ${{ parameters.ArtifactFeed }}
       - powershell: |
           $PY_VER = "$(PYTHON_VERSION)"
           Write-Host "Python version: $PY_VER"

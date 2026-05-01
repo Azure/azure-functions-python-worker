@@ -79,6 +79,10 @@ jobs:
     displayName: 'Use Python 3.13'
     inputs:
       versionSpec: 3.13
+  - task: PipAuthenticate@1
+    displayName: 'Pip Authenticate'
+    inputs:
+      artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
   - pwsh: |
       $newLibraryVersion = "$(NewWorkerVersion)"
       $pypiToken = "$(PypiToken)"

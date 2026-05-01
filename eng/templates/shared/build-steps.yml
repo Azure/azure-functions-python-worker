@@ -2,11 +2,16 @@ parameters:
   PYTHON_VERSION: ''
   PROJECT_NAME: ''
   PROJECT_DIRECTORY: ''
+  ArtifactFeed: ''
 
 steps:
   - task: UsePythonVersion@0
     inputs:
       versionSpec: ${{ parameters.PYTHON_VERSION }}
+  - task: PipAuthenticate@1
+    displayName: 'Pip Authenticate'
+    inputs:
+      artifactFeeds: ${{ parameters.ArtifactFeed }}
   - bash: |
       python --version
     displayName: 'Check python version'

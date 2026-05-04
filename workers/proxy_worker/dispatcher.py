@@ -449,7 +449,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                     continue
 
             # Check if a runtime was registered
-            if runtime_base.RuntimeFeatureChecker.runtime_loaded():
+            # Only check if an available runtime was found
+            # Check if the runtime base package has the RuntimeFeatureChecker
+            if ep and hasattr(runtime_base, 'RuntimeFeatureChecker') \
+                    and runtime_base.RuntimeFeatureChecker.runtime_loaded():
                 # Get the registered runtime module
                 # (e.g., "azure_functions_fastapi.runtime")
                 runtime_module_name = (

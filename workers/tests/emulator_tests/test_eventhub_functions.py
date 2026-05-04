@@ -162,7 +162,7 @@ class TestEventHubRetryStein(testutils.WebHostTestCase):
         result = json.loads(r.text)
         
         # Verify the event was processed after retries
-        self.assertEqual(result['event_id'], event_id)
+        self.assertEqual(result['event_id'].id, event_id)
         self.assertEqual(result['retry_count'], 2)  # Should succeed on third attempt (count 2)
         self.assertEqual(result['max_retry_count'], 3)
         

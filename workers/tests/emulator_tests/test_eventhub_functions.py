@@ -121,12 +121,12 @@ class TestEventHubFunctionsSteinGeneric(TestEventHubFunctions):
 
 
 class TestEventHubRetryStein(testutils.WebHostTestCase):
-    """Test EventHub Trigger with Retry Policy (exponential backoff without explicit intervals)."""
+    """Test EventHub Trigger with Retry Policy"""
 
     @classmethod
     def get_script_dir(cls):
-        return (testutils.EMULATOR_TESTS_FOLDER /
-                'eventhub_functions' / 'eventhub_retry_stein')
+        return testutils.EMULATOR_TESTS_FOLDER / \
+            'eventhub_functions' / 'eventhub_retry_stein'
 
     @classmethod
     def get_libraries_to_install(cls):
@@ -134,7 +134,7 @@ class TestEventHubRetryStein(testutils.WebHostTestCase):
 
     @testutils.retryable_test(3, 5)
     def test_eventhub_retry_trigger_with_default_intervals(self):
-        """Test that exponential backoff retry works without explicit min/max intervals."""
+        """Test that exponential backoff retry works with default intervals."""
         # Generate a unique event ID
         event_id = f"retry-test-{round(time.time())}"
         doc = {'id': event_id}

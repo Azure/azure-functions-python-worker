@@ -125,8 +125,8 @@ class TestEventHubRetryStein(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.EMULATOR_TESTS_FOLDER / 'eventhub_functions' / \
-            'eventhub_retry_stein'
+        return (testutils.EMULATOR_TESTS_FOLDER /
+                'eventhub_functions' / 'eventhub_retry_stein')
 
     @classmethod
     def get_libraries_to_install(cls):
@@ -144,8 +144,8 @@ class TestEventHubRetryStein(testutils.WebHostTestCase):
         self.assertEqual(r.status_code, 200)
 
         # Send event to EventHub
-        r = self.webhost.request('POST', 'eventhub_retry_output',
-                                 data=json.dumps(doc))
+        r = self.webhost.request(
+            'POST', 'eventhub_retry_output', data=json.dumps(doc))
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, 'OK')
 
@@ -158,14 +158,15 @@ class TestEventHubRetryStein(testutils.WebHostTestCase):
         # Retrieve the result from blob storage
         r = self.webhost.request('GET', 'get_eventhub_retry_triggered')
         self.assertEqual(r.status_code, 200)
-        
+
         result = json.loads(r.text)
-        
+
         # Verify the event was processed after retries
         self.assertIn(event_id, result['event_id'])
-        self.assertEqual(result['retry_count'], 2)  # Should succeed on third attempt (count 2)
+        # Should succeed on third attempt (count 2)
+        self.assertEqual(result['retry_count'], 2)
         self.assertEqual(result['max_retry_count'], 3)
-        
+
         # Verify all retry attempts were tracked
         self.assertEqual(len(result['all_attempts']), 3)  # 0, 1, 2
         self.assertEqual(result['all_attempts'], [0, 1, 2])

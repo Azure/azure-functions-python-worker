@@ -130,6 +130,7 @@ jobs:
           AzureWebJobsStorage: $(AZURE_STORAGE_CONNECTION_STRING)
           _DUMMY_CONT_KEY: $(_DUMMY_CONT_KEY)
           CONTAINER_SAS_TOKEN: $(CONTAINER_SAS_TOKEN)
+          PYTHON_ENABLE_AGENT_RUNTIME: true  # Run tests with agent runtime enabled to validate related code paths and ensure compatibility. This will not enable the feature in prod, it's only for testing purposes.
         displayName: "Running $(PYTHON_VERSION) Linux Consumption tests"
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))

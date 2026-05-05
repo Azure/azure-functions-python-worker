@@ -470,8 +470,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                         runtime_base.RuntimeTrackerMeta.get_runtime_name())
                     package_name = runtime_base.RuntimeTrackerMeta.get_package_name()
 
-                    logger.debug("Runtime registered: %s (module: %s). Importing runtime package: %s",
-                                runtime_name, runtime_module_name, package_name)
+                    logger.debug("Runtime registered: %s (module: %s). "
+                                 "Importing runtime package: %s",
+                                 runtime_name, runtime_module_name, package_name)
 
                     # Import the top-level runtime package (which exports
                     # the public API)

@@ -468,20 +468,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                         runtime_base.RuntimeTrackerMeta.get_module())
                     runtime_name = (
                         runtime_base.RuntimeTrackerMeta.get_runtime_name())
+                    package_name = runtime_base.RuntimeTrackerMeta.get_package_name()
 
-                    logger.debug("Runtime registered: %s (module: %s)",
-                                runtime_name, runtime_module_name)
-
-                    # Extract the package name (e.g., "azure_functions_fastapi"
-                    # from "azure_functions_fastapi.runtime")
-                    # The package is everything before ".runtime"
-                    if '.runtime' in runtime_module_name:
-                        package_name = runtime_module_name.rsplit('.runtime', 1)[0]
-                    else:
-                        # Fallback: use the first part of the module name
-                        package_name = runtime_module_name.split('.')[0]
-
-                    logger.debug("Importing runtime package: %s", package_name)
+                    logger.debug("Runtime registered: %s (module: %s). Importing runtime package: %s",
+                                runtime_name, runtime_module_name, package_name)
 
                     # Import the top-level runtime package (which exports
                     # the public API)

@@ -157,7 +157,6 @@ jobs:
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
           skipTest: $(skipTest)
           PYAZURE_WEBHOST_DEBUG: true
-          PYTHON_ENABLE_AGENT_RUNTIME: true  # Run tests with agent runtime enabled to validate related code paths and ensure compatibility. This will not enable the feature in prod, it's only for testing purposes.
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
       

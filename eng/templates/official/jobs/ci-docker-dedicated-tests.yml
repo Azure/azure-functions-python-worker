@@ -61,6 +61,5 @@ jobs:
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
           AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
           AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
-          PYTHON_ENABLE_AGENT_RUNTIME: true  # Run tests with agent runtime enabled to validate related code paths and ensure compatibility. This will not enable the feature in prod, it's only for testing purposes.
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         displayName: "Running $(PYTHON_VERSION) Docker Dedicated tests"

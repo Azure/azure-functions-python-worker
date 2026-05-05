@@ -25,6 +25,7 @@ class TestLinuxConsumption(TestCase):
         cls._py_shortform = f'{sys.version_info.major}{sys.version_info.minor}'
 
         cls._storage = os.getenv('AzureWebJobsStorage')
+        cls._appinsights = os.getenv('APPLICATIONINSIGHTS_CONNECTION_STRING')
         if cls._storage is None:
             raise RuntimeError('Environment variable AzureWebJobsStorage is '
                                'required before running Linux Consumption test')
@@ -47,7 +48,8 @@ class TestLinuxConsumption(TestCase):
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("HttpNoAuth")
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("HttpNoAuth"),
+                "APPLICATIONINSIGHTS_CONNECTION_STRING": self._appinsights
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
@@ -72,7 +74,8 @@ class TestLinuxConsumption(TestCase):
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("CommonLibraries")
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("CommonLibraries"),
+                "APPLICATIONINSIGHTS_CONNECTION_STRING": self._appinsights
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
             resp = ctrl.send_request(req)
@@ -94,7 +97,8 @@ class TestLinuxConsumption(TestCase):
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("EnableDebugLogging")
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("EnableDebugLogging"),
+                "APPLICATIONINSIGHTS_CONNECTION_STRING": self._appinsights
             })
             req = Request('GET', f'{ctrl.url}/api/HttpTrigger1')
             resp = ctrl.send_request(req)
@@ -275,7 +279,8 @@ class TestLinuxConsumption(TestCase):
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("IndexingFailure")
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("IndexingFailure"),
+                "APPLICATIONINSIGHTS_CONNECTION_STRING": self._appinsights
             })
             req = Request('GET', f'{ctrl.url}/api/hello')
             resp = ctrl.send_request(req)

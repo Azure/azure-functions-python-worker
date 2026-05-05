@@ -451,7 +451,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             # Check if a runtime was registered
             # Only check if an available runtime was found
             # Check if the runtime base package has the RuntimeFeatureChecker
-            if ep and hasattr(runtime_base, 'RuntimeFeatureChecker') \
+            if available_runtimes and hasattr(runtime_base, 'RuntimeFeatureChecker') \
                     and runtime_base.RuntimeFeatureChecker.runtime_loaded():
                 # Get the registered runtime module
                 # (e.g., "azure_functions_fastapi.runtime")
@@ -480,39 +480,38 @@ class Dispatcher(metaclass=DispatcherMeta):
                 _library_worker = runtime_module
                 _library_worker_has_cv = hasattr(_library_worker,
                                                  'invocation_id_cv')
+                # Module has been imported, end check
+                return
+
+        # No runtime registered via base package
+        # Use traditional detection
+        logger.debug(
+            "No runtime registered via base package, using fallback")
+        v2_scriptfile = os.path.join(directory, get_script_file_name())
+        if os.path.exists(v2_scriptfile):
+            try:
+                import azure_functions_runtime  # NoQA
+                _library_worker = azure_functions_runtime
+                _library_worker_has_cv = hasattr(
+                    _library_worker, 'invocation_id_cv')
+                logger.debug(
+                    "azure_functions_runtime import succeeded: %s",
+                    _library_worker.__file__)
+            except ImportError:
+                logger.debug(
+                    "azure_functions_runtime library not found")
         else:
-            # Fallback: No runtime registered via base package
-            # Use traditional detection
-            logger.debug(
-                "No runtime registered via base package, using fallback")
-            v2_scriptfile = os.path.join(directory, get_script_file_name())
-            if os.path.exists(v2_scriptfile):
-                try:
-                    import azure_functions_runtime  # NoQA
-                    _library_worker = azure_functions_runtime
-                    _library_worker_has_cv = hasattr(
-                        _library_worker, 'invocation_id_cv')
-                    logger.debug(
-                        "azure_functions_runtime import succeeded: %s",
-                        _library_worker.__file__)
-                except ImportError:
-                    logger.debug(
-                        "azure_functions_runtime library not found")
-            else:
-                try:
-                    import azure_functions_runtime_v1  # NoQA
-                    _library_worker = azure_functions_runtime_v1
-                    _library_worker_has_cv = hasattr(
-                        _library_worker, 'invocation_id_cv')
-                    logger.debug(
-                        "azure_functions_runtime_v1 import succeeded: %s",
-                        _library_worker.__file__)  # type: ignore
-                except ImportError:
-                    logger.debug(
-                        "azure_functions_runtime_v1 library not found")
-        logger.info("Using runtime: %s, version: %s",
-                    _library_worker,
-                    getattr(_library_worker, 'VERSION', 'unknown'))
+            try:
+                import azure_functions_runtime_v1  # NoQA
+                _library_worker = azure_functions_runtime_v1
+                _library_worker_has_cv = hasattr(
+                    _library_worker, 'invocation_id_cv')
+                logger.debug(
+                    "azure_functions_runtime_v1 import succeeded: %s",
+                    _library_worker.__file__)  # type: ignore
+            except ImportError:
+                logger.debug(
+                    "azure_functions_runtime_v1 library not found")
 
     async def _handle__worker_init_request(self, request):
         logger.info('Received WorkerInitRequest, '

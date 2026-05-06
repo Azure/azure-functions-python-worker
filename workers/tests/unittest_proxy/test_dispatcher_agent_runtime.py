@@ -6,6 +6,7 @@ in dispatcher.reload_library_worker
 """
 import builtins
 import os
+import sys
 import types
 import unittest
 from unittest.mock import Mock, patch
@@ -62,6 +63,8 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
         mock_runtime_base.RuntimeTrackerMeta.get_module.return_value = (
             "azure_functions_fastapi.runtime")
         mock_runtime_base.RuntimeTrackerMeta.get_runtime_name.return_value = "fastapi"
+        mock_runtime_base.RuntimeTrackerMeta.get_package_name.return_value = (
+            "azure_functions_fastapi")
 
         # Setup mock runtime module
         mock_runtime_module = Mock()
@@ -69,7 +72,7 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
         mock_import_module.return_value = mock_runtime_module
 
         # Patch the runtime base import
-        with patch.dict('sys.modules', {
+        with patch.dict(sys.modules, {
             'azurefunctions.extensions.base': mock_runtime_base
         }):
             dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
@@ -110,6 +113,8 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
             "test_package.runtime")
         mock_runtime_base.RuntimeTrackerMeta.get_runtime_name.return_value = (
             "test")
+        mock_runtime_base.RuntimeTrackerMeta.get_package_name.return_value = (
+            "test_package")
 
         # Setup mock runtime module
         mock_runtime_module = Mock()
@@ -117,7 +122,7 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
         mock_import_module.return_value = mock_runtime_module
 
         # Patch the runtime base import
-        with patch.dict('sys.modules', {
+        with patch.dict(sys.modules, {
             'azurefunctions.extensions.base': mock_runtime_base
         }):
             dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
@@ -275,7 +280,7 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
                 mock_import.side_effect = custom_import
 
                 # Patch the runtime base import
-                with patch.dict('sys.modules', {
+                with patch.dict(sys.modules, {
                     'azurefunctions.extensions.base': mock_runtime_base
                 }):
                     dispatcher_module.Dispatcher.reload_library_worker(
@@ -285,12 +290,11 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
         # no runtime registers
         mock_entry_points.assert_called_once_with(group='azurefunctions.runtimes')
 
-        # But we should NOT fall back - agent runtime path doesn't have fallback
-        # Note: Based on current implementation, the fallback logic only runs
-        # when PYTHON_ENABLE_AGENT_RUNTIME is False/not set
-        # When True, if no runtime is loaded, _library_worker should remain None
-        # This documents the current behavior
-        self.assertIsNone(dispatcher_module._library_worker)
+        # Based on the updated implementation, when no runtime registers via
+        # entry points, the dispatcher falls back to traditional detection
+        # So we should have the v2 runtime loaded
+        self.assertEqual(dispatcher_module._library_worker, mock_runtime_v2)
+        self.assertTrue(dispatcher_module._library_worker_has_cv)
 
     @patch("proxy_worker.dispatcher.logger")
     @patch("proxy_worker.dispatcher.importlib.import_module")
@@ -316,6 +320,8 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
         mock_runtime_base.RuntimeTrackerMeta.get_module.return_value = (
             "azure_functions_fastapi.runtime")
         mock_runtime_base.RuntimeTrackerMeta.get_runtime_name.return_value = "fastapi"
+        mock_runtime_base.RuntimeTrackerMeta.get_package_name.return_value = (
+            "azure_functions_fastapi")
 
         # Setup mock runtime module
         mock_runtime_module = Mock()
@@ -323,7 +329,7 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
         mock_import_module.return_value = mock_runtime_module
 
         # Patch the runtime base import
-        with patch.dict('sys.modules', {
+        with patch.dict(sys.modules, {
             'azurefunctions.extensions.base': mock_runtime_base
         }):
             dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
@@ -332,21 +338,19 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
         mock_logger.debug.assert_any_call(
             f"Loaded runtime entry point: {mock_ep.name}")
 
-        # Verify debug logging for runtime registration
-        mock_logger.debug.assert_any_call(
+        # Verify info logging for runtime registration (changed from debug to info)
+        mock_logger.info.assert_any_call(
             "Runtime registered: %s (module: %s)",
             "fastapi",
             "azure_functions_fastapi.runtime"
         )
 
-        # Verify debug logging for package import
-        mock_logger.debug.assert_any_call(
-            "Importing runtime package: %s",
-            "azure_functions_fastapi"
+        # Verify info logging for runtime version
+        mock_logger.info.assert_any_call(
+            "Using runtime: %s, version: %s",
+            "fastapi",
+            "2.5.0"
         )
-
-        # Verify info logging
-        mock_logger.info.assert_called()
 
     @patch("proxy_worker.dispatcher.logger")
     @patch("proxy_worker.dispatcher.os.path.exists")

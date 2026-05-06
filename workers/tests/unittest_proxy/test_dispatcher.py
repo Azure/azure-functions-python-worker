@@ -1,6 +1,8 @@
 import asyncio
 import builtins
 import logging
+import os
+import sys
 import threading
 import types
 import unittest
@@ -18,6 +20,7 @@ from proxy_worker.dispatcher import (
     get_thread_invocation_id,
     clear_thread_invocation_id,
 )
+from proxy_worker.utils.constants import PYTHON_ENABLE_AGENT_RUNTIME
 
 
 _real_import = builtins.__import__
@@ -784,12 +787,17 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         import proxy_worker.dispatcher as dispatcher_module
         dispatcher_module._library_worker = None
         dispatcher_module._library_worker_has_cv = False
+        # Enable agent runtime for these tests
+        os.environ[PYTHON_ENABLE_AGENT_RUNTIME] = "true"
 
     def tearDown(self):
         """Clean up after each test"""
         import proxy_worker.dispatcher as dispatcher_module
         dispatcher_module._library_worker = None
         dispatcher_module._library_worker_has_cv = False
+        # Clean up environment variable
+        if PYTHON_ENABLE_AGENT_RUNTIME in os.environ:
+            del os.environ[PYTHON_ENABLE_AGENT_RUNTIME]
 
     @patch("proxy_worker.dispatcher.logger")
     @patch("proxy_worker.dispatcher.importlib.import_module")
@@ -811,6 +819,8 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         mock_runtime_base.RuntimeTrackerMeta.get_module.return_value = (
             "azure_functions_fastapi.runtime")
         mock_runtime_base.RuntimeTrackerMeta.get_runtime_name.return_value = "fastapi"
+        mock_runtime_base.RuntimeTrackerMeta.get_package_name.return_value = (
+            "azure_functions_fastapi")
 
         # Setup mock runtime module
         mock_runtime_module = Mock()
@@ -819,7 +829,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         mock_import_module.return_value = mock_runtime_module
 
         # Patch the runtime base import
-        with patch.dict('sys.modules', {
+        with patch.dict(sys.modules, {
             'azurefunctions.extensions.base': mock_runtime_base
         }):
             dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
@@ -866,6 +876,8 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         mock_runtime_base.RuntimeFeatureChecker.runtime_loaded.return_value = True
         mock_runtime_base.RuntimeTrackerMeta.get_module.return_value = "custom_package"
         mock_runtime_base.RuntimeTrackerMeta.get_runtime_name.return_value = "custom"
+        mock_runtime_base.RuntimeTrackerMeta.get_package_name.return_value = (
+            "custom_package")
 
         # Setup mock runtime module
         mock_runtime_module = Mock()
@@ -873,7 +885,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         mock_import_module.return_value = mock_runtime_module
 
         # Patch the runtime base import
-        with patch.dict('sys.modules', {
+        with patch.dict(sys.modules, {
             'azurefunctions.extensions.base': mock_runtime_base
         }):
             dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
@@ -907,7 +919,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         mock_runtime_base.RuntimeFeatureChecker.runtime_loaded.return_value = False
 
         # Patch the runtime base import and traditional fallback
-        with patch.dict('sys.modules', {
+        with patch.dict(sys.modules, {
             'azurefunctions.extensions.base': mock_runtime_base
         }):
             with patch("proxy_worker.dispatcher.os.path.exists",
@@ -963,7 +975,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         mock_import.side_effect = custom_import
 
         # Patch the runtime base import
-        with patch.dict('sys.modules', {
+        with patch.dict(sys.modules, {
             'azurefunctions.extensions.base': mock_runtime_base
         }):
             dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
@@ -1013,7 +1025,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         mock_import.side_effect = custom_import
 
         # Patch the runtime base import
-        with patch.dict('sys.modules', {
+        with patch.dict(sys.modules, {
             'azurefunctions.extensions.base': mock_runtime_base
         }):
             dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
@@ -1098,6 +1110,8 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         mock_runtime_base.RuntimeTrackerMeta.get_module.return_value = (
             "runtime1_package.runtime")
         mock_runtime_base.RuntimeTrackerMeta.get_runtime_name.return_value = "runtime1"
+        mock_runtime_base.RuntimeTrackerMeta.get_package_name.return_value = (
+            "runtime1_package")
 
         # Setup mock runtime module
         mock_runtime_module = Mock()
@@ -1105,7 +1119,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         mock_import_module.return_value = mock_runtime_module
 
         # Patch the runtime base import
-        with patch.dict('sys.modules', {
+        with patch.dict(sys.modules, {
             'azurefunctions.extensions.base': mock_runtime_base
         }):
             dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
@@ -1139,14 +1153,16 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
             "no_version_package.runtime")
         mock_runtime_base.RuntimeTrackerMeta.get_runtime_name.return_value = (
             "no_version")
+        mock_runtime_base.RuntimeTrackerMeta.get_package_name.return_value = (
+            "no_version_package")
 
         # Setup mock runtime module without VERSION
         mock_runtime_module = Mock(spec=[])  # No attributes
         del mock_runtime_module.VERSION  # Ensure VERSION doesn't exist
         mock_import_module.return_value = mock_runtime_module
 
-        # Patch the runtime base import
-        with patch.dict('sys.modules', {
+        # Patch the runtime base import - use sys directly instead of string
+        with patch.dict(sys.modules, {
             'azurefunctions.extensions.base': mock_runtime_base
         }):
             dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")

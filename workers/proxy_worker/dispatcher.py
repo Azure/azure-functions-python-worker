@@ -432,55 +432,59 @@ class Dispatcher(metaclass=DispatcherMeta):
         global _library_worker, _library_worker_has_cv
 
         if is_envvar_true(PYTHON_ENABLE_AGENT_RUNTIME):
-            # Import base package
-            import azurefunctions.extensions.base as runtime_base
+            try:
+                # Import base package
+                import azurefunctions.extensions.base as runtime_base
+                # Discover all installed runtime packages via entry points
+                available_runtimes = list(entry_points(group='azurefunctions.runtimes'))
 
-            # Discover all installed runtime packages via entry points
-            available_runtimes = list(entry_points(group='azurefunctions.runtimes'))
+                # Only one runtime should be defined
+                if len(available_runtimes) > 1:
+                    runtime_names = [ep.name for ep in available_runtimes]
+                    raise RuntimeError(
+                        f"Multiple runtimes detected: {runtime_names}. "
+                        f"Only one runtime should be defined."
+                    )
 
-            # Only one runtime should be defined
-            if len(available_runtimes) > 1:
-                runtime_names = [ep.name for ep in available_runtimes]
-                raise RuntimeError(
-                    f"Multiple runtimes detected: {runtime_names}. "
-                    f"Only one runtime should be defined."
-                )
+                # Load the single runtime entry point if available
+                if available_runtimes:
+                    ep = available_runtimes[0]
+                    try:
+                        # Load the entry point (triggers import and
+                        # metaclass registration)
+                        ep.load()
+                        logger.debug(f"Loaded runtime entry point: {ep.name}")
+                    except Exception as e:
+                        logger.debug(f"Could not load runtime {ep.name}: {e}")
 
-            # Load the single runtime entry point if available
-            if available_runtimes:
-                ep = available_runtimes[0]
-                try:
-                    # Load the entry point (triggers import and
-                    # metaclass registration)
-                    ep.load()
-                    logger.debug(f"Loaded runtime entry point: {ep.name}")
-                except Exception as e:
-                    logger.debug(f"Could not load runtime {ep.name}: {e}")
+                    # Check if a runtime was registered
+                    # Check if the runtime base package has the RuntimeFeatureChecker
+                    # Check if the runtime is loaded
+                    if hasattr(runtime_base, 'RuntimeFeatureChecker') \
+                            and runtime_base.RuntimeFeatureChecker.runtime_loaded():
+                        # Get the registered runtime module
+                        # (e.g., "azure_functions_fastapi.runtime")
+                        runtime_module_name = (
+                            runtime_base.RuntimeTrackerMeta.get_module())
+                        runtime_name = (
+                            runtime_base.RuntimeTrackerMeta.get_runtime_name())
+                        package_name = (
+                            runtime_base.RuntimeTrackerMeta.get_package_name())
 
-                # Check if a runtime was registered
-                # Check if the runtime base package has the RuntimeFeatureChecker
-                # Check if the runtime is loaded
-                if hasattr(runtime_base, 'RuntimeFeatureChecker') \
-                        and runtime_base.RuntimeFeatureChecker.runtime_loaded():
-                    # Get the registered runtime module
-                    # (e.g., "azure_functions_fastapi.runtime")
-                    runtime_module_name = (
-                        runtime_base.RuntimeTrackerMeta.get_module())
-                    runtime_name = (
-                        runtime_base.RuntimeTrackerMeta.get_runtime_name())
-                    package_name = runtime_base.RuntimeTrackerMeta.get_package_name()
+                        logger.debug("Runtime registered: %s (module: %s). "
+                                     "Importing runtime package: %s",
+                                     runtime_name, runtime_module_name, package_name)
 
-                    logger.debug("Runtime registered: %s (module: %s). "
-                                 "Importing runtime package: %s",
-                                 runtime_name, runtime_module_name, package_name)
-
-                    # Import the top-level runtime package (which exports
-                    # the public API)
-                    runtime_module = importlib.import_module(package_name)
-                    _library_worker = runtime_module
-                    _library_worker_has_cv = _library_worker.invocation_id_cv
-                    # Module has been imported, end check
-                    return
+                        # Import the top-level runtime package (which exports
+                        # the public API)
+                        runtime_module = importlib.import_module(package_name)
+                        _library_worker = runtime_module
+                        _library_worker_has_cv = _library_worker.invocation_id_cv
+                        # Module has been imported, end check
+                        return
+            except ImportError:
+                logger.debug("ImportError when importing base extension: %s",
+                             traceback.format_exc())
 
         # No runtime registered via base package
         # Use traditional detection

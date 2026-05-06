@@ -65,8 +65,6 @@ class TestDispatcher(unittest.TestCase):
     def test_on_logging_levels_and_categories(self, mock_is_system, mock_rpc_log,
                                               mock_streaming_message):
         # Import module to access cached constants
-        import proxy_worker.dispatcher as dispatcher_module
-
         loop = Mock()
         dispatcher = Dispatcher(loop, "localhost", 5000, "worker",
                                 "req", 5.0)
@@ -419,9 +417,6 @@ class TestInvocationTracking(unittest.TestCase):
 
     def setUp(self):
         """Clear any existing invocation state before each test"""
-        # Import the module-level variables properly
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Clear thread registry
         with dispatcher_module._registry_lock:
             dispatcher_module._thread_invocation_registry.clear()
@@ -435,9 +430,6 @@ class TestInvocationTracking(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after each test"""
-        # Import the module-level variables properly
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Clear thread registry
         with dispatcher_module._registry_lock:
             dispatcher_module._thread_invocation_registry.clear()
@@ -629,9 +621,6 @@ class TestDispatcherInvocationHandling(unittest.TestCase):
 
     def setUp(self):
         """Clear any existing invocation state before each test"""
-        # Import the module-level variables properly
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Clear thread registry
         with dispatcher_module._registry_lock:
             dispatcher_module._thread_invocation_registry.clear()
@@ -642,9 +631,6 @@ class TestDispatcherInvocationHandling(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after each test"""
-        # Import the module-level variables properly
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Clear thread registry
         with dispatcher_module._registry_lock:
             dispatcher_module._thread_invocation_registry.clear()

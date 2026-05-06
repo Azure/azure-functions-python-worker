@@ -130,7 +130,7 @@ jobs:
           AzureWebJobsStorage: $(AZURE_STORAGE_CONNECTION_STRING)
           _DUMMY_CONT_KEY: $(_DUMMY_CONT_KEY)
           CONTAINER_SAS_TOKEN: $(CONTAINER_SAS_TOKEN)
-          APPLICATIONINSIGHTS_CONNECTION_STRING: $(VICTORIAS_AI_KEY)
+          APPLICATIONINSIGHTS_CONNECTION_STRING: $(APPLICATIONINSIGHTS_CONNECTION_STRING)
         displayName: "Running $(PYTHON_VERSION) Linux Consumption tests"
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))

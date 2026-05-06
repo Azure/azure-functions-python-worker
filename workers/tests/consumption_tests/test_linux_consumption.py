@@ -279,13 +279,25 @@ class TestLinuxConsumption(TestCase):
                                                self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("IndexingFailure"),
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("IndexingFailureApp"),
                 "APPLICATIONINSIGHTS_CONNECTION_STRING": self._appinsights
             })
             req = Request('GET', f'{ctrl.url}/api/hello')
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 404)
 
+    def test_okay_app(self):
+        with LinuxConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                               self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE": self._get_blob_url("OkayApp"),
+                "APPLICATIONINSIGHTS_CONNECTION_STRING": self._appinsights
+            })
+            req = Request('GET', f'{ctrl.url}/api/HttpTrigger')
+            resp = ctrl.send_request(req)
+            self.assertEqual(resp.status_code, 200)
+    
     def _get_blob_url(self, scenario_name: str) -> str:
         base_url = "http://172.17.0.1:10000/devstoreaccount1/apps"
 

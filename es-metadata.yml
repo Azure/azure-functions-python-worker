@@ -9,4 +9,4 @@ providers:
     routing:
       defaultAreaPath:
         org: azfunc
-        path: internal\Azure Functions\Core
+        path: internal\Azure Functions

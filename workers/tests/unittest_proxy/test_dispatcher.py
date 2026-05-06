@@ -801,7 +801,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
 
     @patch("proxy_worker.dispatcher.logger")
     @patch("proxy_worker.dispatcher.importlib.import_module")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     def test_runtime_base_success_with_runtime_suffix(
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test successful runtime loading via base package with .runtime suffix"""
@@ -859,7 +859,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
 
     @patch("proxy_worker.dispatcher.logger")
     @patch("proxy_worker.dispatcher.importlib.import_module")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     def test_runtime_base_success_without_runtime_suffix(
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test successful runtime loading when module name has no .runtime suffix"""
@@ -897,7 +897,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         self.assertEqual(dispatcher_module._library_worker, mock_runtime_module)
 
     @patch("proxy_worker.dispatcher.logger")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     def test_runtime_base_entry_point_load_exception(
             self, mock_entry_points, mock_logger):
         """Test handling of exceptions when loading entry points"""
@@ -941,7 +941,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         )
 
     @patch("proxy_worker.dispatcher.logger")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     @patch("proxy_worker.dispatcher.os.path.exists")
     @patch("builtins.__import__")
     def test_runtime_base_no_runtime_registered_fallback_to_v2(
@@ -974,6 +974,10 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
 
         mock_import.side_effect = custom_import
 
+        # Clear sys.modules to force re-import
+        if 'azure_functions_runtime' in sys.modules:
+            del sys.modules['azure_functions_runtime']
+
         # Patch the runtime base import
         with patch.dict(sys.modules, {
             'azurefunctions.extensions.base': mock_runtime_base
@@ -994,7 +998,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         self.assertTrue(dispatcher_module._library_worker_has_cv)
 
     @patch("proxy_worker.dispatcher.logger")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     @patch("proxy_worker.dispatcher.os.path.exists")
     @patch("builtins.__import__")
     def test_runtime_base_no_runtime_registered_fallback_to_v1(
@@ -1024,6 +1028,10 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
 
         mock_import.side_effect = custom_import
 
+        # Clear sys.modules to force re-import
+        if 'azure_functions_runtime_v1' in sys.modules:
+            del sys.modules['azure_functions_runtime_v1']
+
         # Patch the runtime base import
         with patch.dict(sys.modules, {
             'azurefunctions.extensions.base': mock_runtime_base
@@ -1048,9 +1056,9 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         """Test fallback when runtime base package import fails"""
         import proxy_worker.dispatcher as dispatcher_module
 
-        # Mock runtime base import failure
+        # Mock runtime base import failure - raise error when importing base package
         def custom_import(name, *args, **kwargs):
-            if name == "importlib.metadata" or "azurefunctions.extensions.base" in name:
+            if "azurefunctions.extensions.base" in name:
                 raise ImportError("Runtime base not installed")
             if name == "azure_functions_runtime":
                 mock_runtime = types.SimpleNamespace(
@@ -1063,14 +1071,11 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         mock_import.side_effect = custom_import
         mock_exists.return_value = True
 
-        # This will trigger the import in reload_library_worker
-        # The ImportError should be caught and fallback should occur
-        with patch("proxy_worker.dispatcher.importlib") as mock_importlib_module:
-            # Make the entry_points import raise ImportError
-            mock_importlib_module.metadata.entry_points.side_effect = (
-                ImportError("Runtime base not installed"))
+        # Clear sys.modules to force re-import
+        if 'azure_functions_runtime' in sys.modules:
+            del sys.modules['azure_functions_runtime']
 
-            dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
+        dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
 
         # Verify error was logged
         mock_logger.error.assert_called_once()
@@ -1079,7 +1084,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
 
     @patch("proxy_worker.dispatcher.logger")
     @patch("proxy_worker.dispatcher.importlib.import_module")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     def test_runtime_base_multiple_entry_points(
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test handling of multiple entry points (only first
@@ -1134,7 +1139,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
 
     @patch("proxy_worker.dispatcher.logger")
     @patch("proxy_worker.dispatcher.importlib.import_module")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     def test_runtime_base_version_unknown(
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test handling when runtime module has no VERSION attribute"""

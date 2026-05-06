@@ -42,7 +42,7 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
 
     @patch("proxy_worker.dispatcher.logger")
     @patch("proxy_worker.dispatcher.importlib.import_module")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     def test_agent_runtime_enabled_with_true_string(
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test that entry points are used when PYTHON_ENABLE_AGENT_RUNTIME='true'"""
@@ -91,7 +91,7 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
 
     @patch("proxy_worker.dispatcher.logger")
     @patch("proxy_worker.dispatcher.importlib.import_module")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     def test_agent_runtime_enabled_with_1_string(
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test that entry points are used when PYTHON_ENABLE_AGENT_RUNTIME='1'"""
@@ -135,7 +135,7 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
         self.assertEqual(dispatcher_module._library_worker, mock_runtime_module)
 
     @patch("proxy_worker.dispatcher.logger")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     @patch("proxy_worker.dispatcher.os.path.exists")
     @patch("builtins.__import__")
     def test_agent_runtime_disabled_uses_traditional_detection(
@@ -162,6 +162,10 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
 
         mock_import.side_effect = custom_import
 
+        # Clear sys.modules to force re-import
+        if 'azure_functions_runtime' in sys.modules:
+            del sys.modules['azure_functions_runtime']
+
         dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
 
         # Verify entry points were NOT queried
@@ -172,7 +176,7 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
         self.assertTrue(dispatcher_module._library_worker_has_cv)
 
     @patch("proxy_worker.dispatcher.logger")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     @patch("proxy_worker.dispatcher.os.path.exists")
     @patch("builtins.__import__")
     def test_agent_runtime_disabled_with_false_string(
@@ -199,6 +203,10 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
 
         mock_import.side_effect = custom_import
 
+        # Clear sys.modules to force re-import
+        if 'azure_functions_runtime_v1' in sys.modules:
+            del sys.modules['azure_functions_runtime_v1']
+
         dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
 
         # Verify entry points were NOT queried
@@ -209,7 +217,7 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
         self.assertFalse(dispatcher_module._library_worker_has_cv)
 
     @patch("proxy_worker.dispatcher.logger")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     @patch("proxy_worker.dispatcher.os.path.exists")
     @patch("builtins.__import__")
     def test_agent_runtime_disabled_with_0_string(
@@ -237,6 +245,10 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
 
         mock_import.side_effect = custom_import
 
+        # Clear sys.modules to force re-import
+        if 'azure_functions_runtime' in sys.modules:
+            del sys.modules['azure_functions_runtime']
+
         dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
 
         # Verify entry points were NOT queried
@@ -246,7 +258,7 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
         self.assertEqual(dispatcher_module._library_worker, mock_runtime_v2)
 
     @patch("proxy_worker.dispatcher.logger")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     def test_agent_runtime_enabled_no_runtime_registered_fallback_still_used(
             self, mock_entry_points, mock_logger):
         """Test that when agent runtime is enabled but no runtime registers,
@@ -298,7 +310,7 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
 
     @patch("proxy_worker.dispatcher.logger")
     @patch("proxy_worker.dispatcher.importlib.import_module")
-    @patch("proxy_worker.dispatcher.importlib.metadata.entry_points")
+    @patch("proxy_worker.dispatcher.entry_points")
     def test_agent_runtime_enabled_logs_debug_messages(
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test that appropriate debug messages are logged when
@@ -379,6 +391,10 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
             return _real_import(name, *args, **kwargs)
 
         mock_import.side_effect = custom_import
+
+        # Clear sys.modules to force re-import
+        if 'azure_functions_runtime' in sys.modules:
+            del sys.modules['azure_functions_runtime']
 
         dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
 

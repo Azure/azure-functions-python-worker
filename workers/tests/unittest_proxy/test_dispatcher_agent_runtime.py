@@ -12,6 +12,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from proxy_worker.utils.constants import PYTHON_ENABLE_AGENT_RUNTIME
+import proxy_worker.dispatcher as dispatcher_module
 
 
 _real_import = builtins.__import__
@@ -22,7 +23,6 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
 
     def setUp(self):
         """Clear library worker state and environment before each test"""
-        import proxy_worker.dispatcher as dispatcher_module
         dispatcher_module._library_worker = None
         dispatcher_module._library_worker_has_cv = False
 
@@ -32,7 +32,6 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after each test"""
-        import proxy_worker.dispatcher as dispatcher_module
         dispatcher_module._library_worker = None
         dispatcher_module._library_worker_has_cv = False
 
@@ -46,8 +45,6 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
     def test_agent_runtime_enabled_with_true_string(
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test that entry points are used when PYTHON_ENABLE_AGENT_RUNTIME='true'"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Set environment variable to enable agent runtime
         os.environ[PYTHON_ENABLE_AGENT_RUNTIME] = "true"
 
@@ -95,8 +92,6 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
     def test_agent_runtime_enabled_with_1_string(
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test that entry points are used when PYTHON_ENABLE_AGENT_RUNTIME='1'"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Set environment variable to enable agent runtime
         os.environ[PYTHON_ENABLE_AGENT_RUNTIME] = "1"
 
@@ -142,8 +137,6 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
             self, mock_import, mock_exists, mock_entry_points, mock_logger):
         """Test that traditional detection is used when
         PYTHON_ENABLE_AGENT_RUNTIME is not set"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Do NOT set PYTHON_ENABLE_AGENT_RUNTIME - should use traditional detection
 
         # Mock traditional fallback
@@ -183,8 +176,6 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
             self, mock_import, mock_exists, mock_entry_points, mock_logger):
         """Test that traditional detection is used when
         PYTHON_ENABLE_AGENT_RUNTIME='false'"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Set environment variable to disable agent runtime
         os.environ[PYTHON_ENABLE_AGENT_RUNTIME] = "false"
 
@@ -224,8 +215,6 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
             self, mock_import, mock_exists, mock_entry_points, mock_logger):
         """Test that traditional detection is used when
         PYTHON_ENABLE_AGENT_RUNTIME='0'"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Set environment variable to disable agent runtime
         os.environ[PYTHON_ENABLE_AGENT_RUNTIME] = "0"
 
@@ -263,8 +252,6 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
             self, mock_entry_points, mock_logger):
         """Test that when agent runtime is enabled but no runtime registers,
         we still use the traditional fallback within the agent runtime path"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Set environment variable to enable agent runtime
         os.environ[PYTHON_ENABLE_AGENT_RUNTIME] = "true"
 
@@ -315,8 +302,6 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test that appropriate debug messages are logged when
         agent runtime is enabled"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Set environment variable to enable agent runtime
         os.environ[PYTHON_ENABLE_AGENT_RUNTIME] = "1"
 
@@ -370,8 +355,6 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
     def test_agent_runtime_disabled_logs_debug_fallback_message(
             self, mock_import, mock_exists, mock_logger):
         """Test that fallback message is logged when agent runtime is disabled"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Ensure agent runtime is disabled (not set)
         if PYTHON_ENABLE_AGENT_RUNTIME in os.environ:
             del os.environ[PYTHON_ENABLE_AGENT_RUNTIME]

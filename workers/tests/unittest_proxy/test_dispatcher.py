@@ -21,6 +21,7 @@ from proxy_worker.dispatcher import (
     clear_thread_invocation_id,
 )
 from proxy_worker.utils.constants import PYTHON_ENABLE_AGENT_RUNTIME
+import proxy_worker.dispatcher as dispatcher_module
 
 
 _real_import = builtins.__import__
@@ -784,7 +785,6 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
 
     def setUp(self):
         """Clear library worker state before each test"""
-        import proxy_worker.dispatcher as dispatcher_module
         dispatcher_module._library_worker = None
         dispatcher_module._library_worker_has_cv = False
         # Enable agent runtime for these tests
@@ -792,7 +792,6 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after each test"""
-        import proxy_worker.dispatcher as dispatcher_module
         dispatcher_module._library_worker = None
         dispatcher_module._library_worker_has_cv = False
         # Clean up environment variable
@@ -805,8 +804,6 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
     def test_runtime_base_success_with_runtime_suffix(
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test successful runtime loading via base package with .runtime suffix"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Setup mock entry point
         mock_ep = Mock()
         mock_ep.name = "fastapi"
@@ -863,8 +860,6 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
     def test_runtime_base_success_without_runtime_suffix(
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test successful runtime loading when module name has no .runtime suffix"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Setup mock entry point
         mock_ep = Mock()
         mock_ep.name = "custom_runtime"
@@ -901,8 +896,6 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
     def test_runtime_base_entry_point_load_exception(
             self, mock_entry_points, mock_logger):
         """Test handling of exceptions when loading entry points"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Setup mock entry points - first fails, second succeeds
         mock_ep1 = Mock()
         mock_ep1.name = "broken_runtime"
@@ -947,8 +940,6 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
     def test_runtime_base_no_runtime_registered_fallback_to_v2(
             self, mock_import, mock_exists, mock_entry_points, mock_logger):
         """Test fallback to traditional v2 when no runtime registered"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Setup mock entry points (none succeed in registration)
         mock_ep = Mock()
         mock_ep.name = "test_runtime"
@@ -1005,8 +996,6 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
             self, mock_import, mock_exists, mock_entry_points, mock_logger):
         """Test fallback to traditional v1 when no runtime registered
         and v2 script absent"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Setup mock entry points
         mock_entry_points.return_value = []
 
@@ -1054,8 +1043,6 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
     def test_runtime_base_import_error_fallback_to_traditional(
             self, mock_import, mock_exists, mock_logger):
         """Test fallback when runtime base package import fails"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Mock runtime base import failure - raise error when importing base package
         def custom_import(name, *args, **kwargs):
             if "azurefunctions.extensions.base" in name:
@@ -1089,8 +1076,6 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test handling of multiple entry points (only first
         registered runtime used)"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Setup multiple mock entry points
         mock_ep1 = Mock()
         mock_ep1.name = "runtime1"
@@ -1143,8 +1128,6 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
     def test_runtime_base_version_unknown(
             self, mock_entry_points, mock_import_module, mock_logger):
         """Test handling when runtime module has no VERSION attribute"""
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Setup mock entry point
         mock_ep = Mock()
         mock_ep.name = "no_version_runtime"

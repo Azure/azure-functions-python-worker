@@ -847,9 +847,18 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
 
         # Setup mock runtime base module
         mock_runtime_base = Mock()
+        mock_runtime_base.RuntimeFeatureChecker = Mock()
         mock_runtime_base.RuntimeFeatureChecker.runtime_loaded.return_value = False
 
-        dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
+        mock_azurefunctions = Mock()
+        mock_azurefunctions.extensions = Mock()
+        mock_azurefunctions.extensions.base = mock_runtime_base
+        with patch.dict(sys.modules, {
+            'azurefunctions': mock_azurefunctions,
+            'azurefunctions.extensions': mock_azurefunctions.extensions,
+            'azurefunctions.extensions.base': mock_runtime_base
+        }):
+            dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
 
         # Verify entry point was attempted
         mock_ep1.load.assert_called_once()
@@ -1030,6 +1039,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
             return call_count[0] == 1  # True after first load
 
         mock_runtime_base = Mock()
+        mock_runtime_base.RuntimeFeatureChecker = Mock()
         mock_runtime_base.RuntimeFeatureChecker.runtime_loaded.side_effect = (
             runtime_loaded_side_effect)
         mock_runtime_base.RuntimeTrackerMeta.get_module.return_value = (
@@ -1045,4 +1055,12 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
 
         # Patch the runtime base import
         with self.assertRaises(RuntimeError):
-            dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
+            mock_azurefunctions = Mock()
+            mock_azurefunctions.extensions = Mock()
+            mock_azurefunctions.extensions.base = mock_runtime_base
+            with patch.dict(sys.modules, {
+                'azurefunctions': mock_azurefunctions,
+                'azurefunctions.extensions': mock_azurefunctions.extensions,
+                'azurefunctions.extensions.base': mock_runtime_base
+            }):
+                dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")

@@ -434,7 +434,13 @@ class Dispatcher(metaclass=DispatcherMeta):
         if is_envvar_true(PYTHON_ENABLE_AGENT_RUNTIME):
             try:
                 # Import base package
-                import azurefunctions.extensions.base as runtime_base
+                try:
+                    import azurefunctions.extensions.base as runtime_base
+                except ImportError:
+                    logger.debug("Base extension package not found: %s",
+                                 traceback.format_exc())
+                    runtime_base = None
+
                 # Discover all installed runtime packages via entry points
                 available_runtimes = list(entry_points(group='azurefunctions.runtimes'))
 
@@ -455,12 +461,15 @@ class Dispatcher(metaclass=DispatcherMeta):
                         ep.load()
                         logger.debug(f"Loaded runtime entry point: {ep.name}")
                     except Exception as e:
-                        logger.debug(f"Could not load runtime {ep.name}: {e}")
+                        raise RuntimeError(
+                            f"Failed to load runtime entry point {ep.name}: {e}"
+                        )
 
                     # Check if a runtime was registered
                     # Check if the runtime base package has the RuntimeFeatureChecker
                     # Check if the runtime is loaded
-                    if hasattr(runtime_base, 'RuntimeFeatureChecker') \
+                    if runtime_base is not None \
+                        and hasattr(runtime_base, 'RuntimeFeatureChecker') \
                             and runtime_base.RuntimeFeatureChecker.runtime_loaded():
                         # Get the registered runtime module
                         # (e.g., "azure_functions_fastapi.runtime")
@@ -480,11 +489,13 @@ class Dispatcher(metaclass=DispatcherMeta):
                         runtime_module = importlib.import_module(package_name)
                         _library_worker = runtime_module
                         _library_worker_has_cv = _library_worker.invocation_id_cv
+
                         # Module has been imported, end check
                         return
-            except ImportError:
-                logger.debug("ImportError when importing base extension: %s",
-                             traceback.format_exc())
+            except Exception as e:
+                logger.info("Error when loading runtime: %s",
+                            traceback.format_exc())
+                raise e
 
         # No runtime registered via base package
         # Use traditional detection

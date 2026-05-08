@@ -78,6 +78,8 @@ jobs:
         displayName: 'Install .NET 10'
         inputs:
           version: 10.0.x
+      - task: NuGetAuthenticate@1
+        displayName: 'NuGet Authenticate'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
           chmod +x eng/scripts/test-setup.sh

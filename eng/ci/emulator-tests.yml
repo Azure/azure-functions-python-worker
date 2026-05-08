@@ -51,3 +51,4 @@ extends:
         parameters:
           PoolName: 1es-pool-azfunc
           ArtifactFeed: 'internal/PythonWorker_Internal_PublicPackages'
+          NuGetServiceConnection: 'PythonWorker_Internal_PublicPackages'

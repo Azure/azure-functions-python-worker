@@ -88,6 +88,7 @@ extends:
             PROJECT_DIRECTORY: 'workers'
             PoolName: 1es-pool-azfunc-public
             ArtifactFeed: 'public/PythonWorker_PublicPackages'
+            NuGetServiceConnection: 'PythonWorker_PublicPackages'
     - stage: RunWorkerEmulatorTests
       dependsOn: BuildPythonWorker
       jobs:
@@ -95,6 +96,7 @@ extends:
           parameters:
             PoolName: 1es-pool-azfunc-public
             ArtifactFeed: 'public/PythonWorker_PublicPackages'
+            NuGetServiceConnection: 'PythonWorker_PublicPackages'
     
     # Python V2 Library Build and Test Stages
     - stage: BuildV2Library
@@ -114,6 +116,7 @@ extends:
             PROJECT_DIRECTORY: 'runtimes/v2'
             PoolName: 1es-pool-azfunc-public
             ArtifactFeed: 'public/PythonWorker_PublicPackages'
+            NuGetServiceConnection: 'PythonWorker_PublicPackages'
 
     # Python V1 Library Build and Test Stages
     - stage: BuildV1Library
@@ -133,3 +136,4 @@ extends:
             PROJECT_DIRECTORY: 'runtimes/v1'
             PoolName: 1es-pool-azfunc-public
             ArtifactFeed: 'public/PythonWorker_PublicPackages'
+            NuGetServiceConnection: 'PythonWorker_PublicPackages'

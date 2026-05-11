@@ -342,11 +342,6 @@ class TestReloadLibraryWorkerAgentRuntime(unittest.TestCase):
 
         dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
 
-        # Verify fallback debug message is logged
-        mock_logger.debug.assert_any_call(
-            "No runtime registered via base package, using fallback"
-        )
-
         # Verify traditional runtime import logged
         mock_logger.debug.assert_any_call(
             "azure_functions_runtime import succeeded: %s",

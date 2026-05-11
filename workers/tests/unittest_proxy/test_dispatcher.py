@@ -873,20 +873,57 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
 
     @patch("proxy_worker.dispatcher.logger")
     @patch("proxy_worker.dispatcher.entry_points")
+    def test_runtime_base_missing_feature_checker(
+            self, mock_entry_points, mock_logger):
+        """
+        Test that RuntimeError is raised when base extension
+        lacks RuntimeFeatureChecker
+        """
+        # Setup mock entry point that loads successfully
+        mock_ep = Mock()
+        mock_ep.name = "test_runtime"
+        mock_ep.load = Mock()  # Loads successfully
+        mock_entry_points.return_value = [mock_ep]
+
+        # Setup mock runtime base module WITHOUT RuntimeFeatureChecker attribute
+        mock_runtime_base = Mock(spec=[])  # Empty spec means no attributes
+
+        mock_azurefunctions = Mock()
+        mock_azurefunctions.extensions = Mock()
+        mock_azurefunctions.extensions.base = mock_runtime_base
+
+        # Verify that RuntimeError is raised with the expected message
+        with self.assertRaises(RuntimeError) as context:
+            with patch.dict(sys.modules, {
+                'azurefunctions': mock_azurefunctions,
+                'azurefunctions.extensions': mock_azurefunctions.extensions,
+                'azurefunctions.extensions.base': mock_runtime_base
+            }):
+                dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
+
+        # Verify the error message
+        error_message = str(context.exception)
+        self.assertIn("Base extension version is not compatible", error_message)
+        self.assertIn("Please update to version 1.2.0 or greater", error_message)
+
+        # Verify entry point was loaded
+        mock_ep.load.assert_called_once()
+
+        # Verify error was logged
+        mock_logger.error.assert_called()
+
+    @patch("proxy_worker.dispatcher.logger")
+    @patch("proxy_worker.dispatcher.entry_points")
     @patch("proxy_worker.dispatcher.os.path.exists")
     @patch("builtins.__import__")
     def test_runtime_base_no_runtime_registered_fallback_to_v2(
             self, mock_import, mock_exists, mock_entry_points, mock_logger):
-        """Test fallback to traditional v2 when no runtime registered"""
-        # Setup mock entry points (none succeed in registration)
-        mock_ep = Mock()
-        mock_ep.name = "test_runtime"
-        mock_ep.load = Mock()
-        mock_entry_points.return_value = [mock_ep]
+        """Test fallback to traditional v2 when no entry points are available"""
+        # Setup mock entry points - no entry points available
+        mock_entry_points.return_value = []
 
-        # Setup mock runtime base module - no runtime registered
+        # Setup mock runtime base module
         mock_runtime_base = Mock()
-        mock_runtime_base.RuntimeFeatureChecker.runtime_loaded.return_value = False
 
         # Mock traditional fallback
         mock_exists.return_value = True  # v2 script exists
@@ -918,10 +955,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         }):
             dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
 
-        # Verify fallback logging
-        mock_logger.debug.assert_any_call(
-            "No runtime registered via base package, using fallback"
-        )
+        # Verify v2 import logging
         mock_logger.debug.assert_any_call(
             "azure_functions_runtime import succeeded: %s",
             "azure_functions_runtime.py"
@@ -1088,7 +1122,7 @@ class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
         # Verify the exception message
         self.assertIn("Unexpected error", str(context.exception))
 
-        # Verify error was logged at info level
-        mock_logger.info.assert_called()
+        # Verify error was logged at error level
+        mock_logger.error.assert_called()
         self.assertIn("Error when loading runtime",
-                      str(mock_logger.info.call_args_list))
+                      str(mock_logger.error.call_args_list))

@@ -448,8 +448,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 if len(available_runtimes) > 1:
                     runtime_names = [ep.name for ep in available_runtimes]
                     raise RuntimeError(
-                        f"Multiple runtimes detected: {runtime_names}. "
-                        f"Only one runtime should be defined."
+                        "Multiple runtimes detected: %s. "
+                        "Only one runtime should be defined." % runtime_names
                     )
 
                 # Load the single runtime entry point if available
@@ -459,10 +459,10 @@ class Dispatcher(metaclass=DispatcherMeta):
                         # Load the entry point (triggers import and
                         # metaclass registration)
                         ep.load()
-                        logger.debug(f"Loaded runtime entry point: {ep.name}")
+                        logger.debug("Loaded runtime entry point: %s" % ep.name)
                     except Exception as e:
                         raise RuntimeError(
-                            f"Failed to load runtime entry point {ep.name}: {e}"
+                            "Failed to load runtime entry point %s: %s" % (ep.name, e)
                         )
 
                     # Check if a runtime was registered
@@ -492,15 +492,20 @@ class Dispatcher(metaclass=DispatcherMeta):
 
                         # Module has been imported, end check
                         return
+                    else:
+                        logger.error("Base extension version is not compatible "
+                                     "for custom runtimes. "
+                                     "Please update to version 1.2.0 or greater.")
+                        raise RuntimeError("Base extension version is not compatible "
+                                           "for custom runtimes. "
+                                           "Please update to version 1.2.0 or greater.")
             except Exception as e:
-                logger.info("Error when loading runtime: %s",
-                            traceback.format_exc())
+                logger.error("Error when loading runtime: %s",
+                             traceback.format_exc())
                 raise e
 
         # No runtime registered via base package
         # Use traditional detection
-        logger.debug(
-            "No runtime registered via base package, using fallback")
         v2_scriptfile = os.path.join(directory, get_script_file_name())
         if os.path.exists(v2_scriptfile):
             try:

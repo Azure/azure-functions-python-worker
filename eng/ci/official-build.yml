@@ -64,6 +64,7 @@ extends:
             parameters:
               PoolName: 1es-pool-azfunc
               ArtifactFeed: 'internal/PythonWorker_Internal_PublicPackages'
+              NuGetServiceConnection: 'PythonWorker_Internal_PublicPackages'
       - stage: RunWorkerUnitTests
         dependsOn: BuildPythonWorker
         jobs:
@@ -71,6 +72,7 @@ extends:
             parameters:
               PoolName: 1es-pool-azfunc
               ArtifactFeed: 'internal/PythonWorker_Internal_PublicPackages'
+              NuGetServiceConnection: 'PythonWorker_Internal_PublicPackages'
       - stage: RunWorkerDockerConsumptionTests
         dependsOn: BuildPythonWorker
         jobs:
@@ -102,6 +104,7 @@ extends:
               PROJECT_DIRECTORY: 'runtimes/v2'
               PoolName: 1es-pool-azfunc
               ArtifactFeed: 'internal/PythonWorker_Internal_PublicPackages'
+              NuGetServiceConnection: 'PythonWorker_Internal_PublicPackages'
 
       # Python V1 Library Build and Test Stages
       - stage: BuildV1Library
@@ -121,3 +124,4 @@ extends:
               PROJECT_DIRECTORY: 'runtimes/v1'
               PoolName: 1es-pool-azfunc
               ArtifactFeed: 'internal/PythonWorker_Internal_PublicPackages'
+              NuGetServiceConnection: 'PythonWorker_Internal_PublicPackages'

@@ -1,5 +1,6 @@
 parameters:
   PROJECT_DIRECTORY: 'workers'
+  NuGetServiceConnection: 'PythonWorker_Internal_PublicPackages'
 
 jobs:
   - job: "TestPython"
@@ -78,6 +79,20 @@ jobs:
         displayName: 'Install .NET 10'
         inputs:
           version: 10.0.x
+      - task: NuGetAuthenticate@1
+        displayName: 'NuGet Authenticate'
+      - bash: |
+          # Remove the feed that doesn't match the current service connection
+          if [[ "${{ parameters.NuGetServiceConnection }}" == "PythonWorker_PublicPackages" ]]; then
+            # Remove internal feed for public builds
+            sed -i '/_Internal_PublicPackages/d' nuget.config
+          else
+            # Remove public feed for internal builds
+            sed -i '/PythonWorker_PublicPackages[^_]/d' nuget.config
+          fi
+          echo "Updated nuget.config:"
+          cat nuget.config
+        displayName: 'Configure NuGet feed for current organization'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
           chmod +x eng/scripts/test-setup.sh

@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import asyncio
+import importlib
 import logging
 import os
 import queue
@@ -11,6 +12,7 @@ import traceback
 import typing
 from asyncio import AbstractEventLoop
 from dataclasses import dataclass
+from importlib.metadata import entry_points
 from typing import Any, Optional
 
 import grpc
@@ -30,6 +32,7 @@ from proxy_worker.utils.common import (
     check_python_eol
 )
 from proxy_worker.utils.constants import (
+    PYTHON_ENABLE_AGENT_RUNTIME,
     PYTHON_ENABLE_DEBUG_LOGGING,
 )
 from proxy_worker.version import VERSION
@@ -417,7 +420,92 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     @staticmethod
     def reload_library_worker(directory: str):
+        """
+        Load the appropriate runtime using the base package pattern.
+
+        This uses the runtime base package to automatically discover which
+        runtime is loaded.
+
+        If no runtime is registered via the base package, it falls back to
+        the traditional detection method.
+        """
         global _library_worker, _library_worker_has_cv
+
+        if is_envvar_true(PYTHON_ENABLE_AGENT_RUNTIME):
+            try:
+                # Import base package
+                try:
+                    import azurefunctions.extensions.base as runtime_base
+                except ImportError:
+                    logger.debug("Base extension package not found: %s",
+                                 traceback.format_exc())
+                    runtime_base = None
+
+                # Discover all installed runtime packages via entry points
+                available_runtimes = list(entry_points(group='azurefunctions.runtimes'))
+
+                # Only one runtime should be defined
+                if len(available_runtimes) > 1:
+                    runtime_names = [ep.name for ep in available_runtimes]
+                    raise RuntimeError(
+                        "Multiple runtimes detected: %s. "
+                        "Only one runtime should be defined." % runtime_names
+                    )
+
+                # Load the single runtime entry point if available
+                if available_runtimes:
+                    ep = available_runtimes[0]
+                    try:
+                        # Load the entry point (triggers import and
+                        # metaclass registration)
+                        ep.load()
+                        logger.debug("Loaded runtime entry point: %s" % ep.name)
+                    except Exception as e:
+                        raise RuntimeError(
+                            "Failed to load runtime entry point %s: %s" % (ep.name, e)
+                        )
+
+                    # Check if a runtime was registered
+                    # Check if the runtime base package has the RuntimeFeatureChecker
+                    # Check if the runtime is loaded
+                    if runtime_base is not None \
+                        and hasattr(runtime_base, 'RuntimeFeatureChecker') \
+                            and runtime_base.RuntimeFeatureChecker.runtime_loaded():
+                        # Get the registered runtime module
+                        # (e.g., "azure_functions_fastapi.runtime")
+                        runtime_module_name = (
+                            runtime_base.RuntimeTrackerMeta.get_module())
+                        runtime_name = (
+                            runtime_base.RuntimeTrackerMeta.get_runtime_name())
+                        package_name = (
+                            runtime_base.RuntimeTrackerMeta.get_package_name())
+
+                        logger.debug("Runtime registered: %s (module: %s). "
+                                     "Importing runtime package: %s",
+                                     runtime_name, runtime_module_name, package_name)
+
+                        # Import the top-level runtime package (which exports
+                        # the public API)
+                        runtime_module = importlib.import_module(package_name)
+                        _library_worker = runtime_module
+                        _library_worker_has_cv = _library_worker.invocation_id_cv
+
+                        # Module has been imported, end check
+                        return
+                    else:
+                        logger.error("Base extension version is not compatible "
+                                     "for custom runtimes. "
+                                     "Please update to version 1.2.0 or greater.")
+                        raise RuntimeError("Base extension version is not compatible "
+                                           "for custom runtimes. "
+                                           "Please update to version 1.2.0 or greater.")
+            except Exception as e:
+                logger.error("Error when loading runtime: %s",
+                             traceback.format_exc())
+                raise e
+
+        # No runtime registered via base package
+        # Use traditional detection
         v2_scriptfile = os.path.join(directory, get_script_file_name())
         if os.path.exists(v2_scriptfile):
             try:

@@ -1,6 +1,8 @@
 import asyncio
 import builtins
 import logging
+import os
+import sys
 import threading
 import types
 import unittest
@@ -18,6 +20,8 @@ from proxy_worker.dispatcher import (
     get_thread_invocation_id,
     clear_thread_invocation_id,
 )
+from proxy_worker.utils.constants import PYTHON_ENABLE_AGENT_RUNTIME
+import proxy_worker.dispatcher as dispatcher_module
 
 
 _real_import = builtins.__import__
@@ -61,8 +65,6 @@ class TestDispatcher(unittest.TestCase):
     def test_on_logging_levels_and_categories(self, mock_is_system, mock_rpc_log,
                                               mock_streaming_message):
         # Import module to access cached constants
-        import proxy_worker.dispatcher as dispatcher_module
-
         loop = Mock()
         dispatcher = Dispatcher(loop, "localhost", 5000, "worker",
                                 "req", 5.0)
@@ -415,9 +417,6 @@ class TestInvocationTracking(unittest.TestCase):
 
     def setUp(self):
         """Clear any existing invocation state before each test"""
-        # Import the module-level variables properly
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Clear thread registry
         with dispatcher_module._registry_lock:
             dispatcher_module._thread_invocation_registry.clear()
@@ -431,9 +430,6 @@ class TestInvocationTracking(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after each test"""
-        # Import the module-level variables properly
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Clear thread registry
         with dispatcher_module._registry_lock:
             dispatcher_module._thread_invocation_registry.clear()
@@ -625,9 +621,6 @@ class TestDispatcherInvocationHandling(unittest.TestCase):
 
     def setUp(self):
         """Clear any existing invocation state before each test"""
-        # Import the module-level variables properly
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Clear thread registry
         with dispatcher_module._registry_lock:
             dispatcher_module._thread_invocation_registry.clear()
@@ -638,9 +631,6 @@ class TestDispatcherInvocationHandling(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after each test"""
-        # Import the module-level variables properly
-        import proxy_worker.dispatcher as dispatcher_module
-
         # Clear thread registry
         with dispatcher_module._registry_lock:
             dispatcher_module._thread_invocation_registry.clear()
@@ -774,3 +764,365 @@ class TestDispatcherInvocationHandling(unittest.TestCase):
 
         # Verify response
         self.assertEqual(result, "mocked_stream_response")
+
+
+class TestReloadLibraryWorkerWithRuntimeBase(unittest.TestCase):
+    """Test suite for reload_library_worker with runtime base package pattern"""
+
+    def setUp(self):
+        """Clear library worker state before each test"""
+        dispatcher_module._library_worker = None
+        dispatcher_module._library_worker_has_cv = False
+        # Enable agent runtime for these tests
+        os.environ[PYTHON_ENABLE_AGENT_RUNTIME] = "true"
+
+    def tearDown(self):
+        """Clean up after each test"""
+        dispatcher_module._library_worker = None
+        dispatcher_module._library_worker_has_cv = False
+        # Clean up environment variable
+        if PYTHON_ENABLE_AGENT_RUNTIME in os.environ:
+            del os.environ[PYTHON_ENABLE_AGENT_RUNTIME]
+
+    @patch("proxy_worker.dispatcher.logger")
+    @patch("proxy_worker.dispatcher.importlib.import_module")
+    @patch("proxy_worker.dispatcher.entry_points")
+    def test_runtime_base_success_with_runtime_suffix(
+            self, mock_entry_points, mock_import_module, mock_logger):
+        """Test successful runtime loading via base package with .runtime suffix"""
+        # Setup mock entry point
+        mock_ep = Mock()
+        mock_ep.name = "fastapi"
+        mock_ep.load = Mock()
+        mock_entry_points.return_value = [mock_ep]
+
+        # Setup mock runtime base module
+        mock_runtime_base = Mock()
+        mock_runtime_base.RuntimeFeatureChecker = Mock()
+        mock_runtime_base.RuntimeFeatureChecker.runtime_loaded.return_value = True
+        mock_runtime_base.RuntimeTrackerMeta.get_module.return_value = (
+            "azure_functions_fastapi.runtime")
+        mock_runtime_base.RuntimeTrackerMeta.get_runtime_name.return_value = "fastapi"
+        mock_runtime_base.RuntimeTrackerMeta.get_package_name.return_value = (
+            "azure_functions_fastapi")
+
+        # Setup mock runtime module
+        mock_runtime_module = Mock()
+        mock_runtime_module.version.VERSION = "2.0.0"
+        mock_runtime_module.invocation_id_cv = Mock()
+        mock_import_module.return_value = mock_runtime_module
+
+        # Patch the runtime base import (including parent packages)
+        mock_azurefunctions = Mock()
+        mock_azurefunctions.extensions = Mock()
+        mock_azurefunctions.extensions.base = mock_runtime_base
+        with patch.dict(sys.modules, {
+            'azurefunctions': mock_azurefunctions,
+            'azurefunctions.extensions': mock_azurefunctions.extensions,
+            'azurefunctions.extensions.base': mock_runtime_base
+        }):
+            dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
+
+        # Verify entry points were queried
+        mock_entry_points.assert_called_once_with(group='azurefunctions.runtimes')
+
+        # Verify entry point was loaded
+        mock_ep.load.assert_called_once()
+
+        # Verify library worker was set
+        self.assertEqual(dispatcher_module._library_worker, mock_runtime_module)
+        self.assertTrue(dispatcher_module._library_worker_has_cv)
+
+    @patch("proxy_worker.dispatcher.logger")
+    @patch("proxy_worker.dispatcher.entry_points")
+    def test_runtime_base_entry_point_load_exception(
+            self, mock_entry_points, mock_logger):
+        """Test that RuntimeError is raised when entry point load fails"""
+        # Setup mock entry point that raises an exception
+        mock_ep = Mock()
+        mock_ep.name = "broken_runtime"
+        mock_ep.load.side_effect = Exception("Load failed")
+
+        mock_entry_points.return_value = [mock_ep]
+
+        # Setup mock runtime base module
+        mock_runtime_base = Mock()
+        mock_runtime_base.RuntimeFeatureChecker = Mock()
+        mock_runtime_base.RuntimeFeatureChecker.runtime_loaded.return_value = False
+
+        mock_azurefunctions = Mock()
+        mock_azurefunctions.extensions = Mock()
+        mock_azurefunctions.extensions.base = mock_runtime_base
+
+        # Verify that RuntimeError is raised with the expected message
+        with self.assertRaises(RuntimeError) as context:
+            with patch.dict(sys.modules, {
+                'azurefunctions': mock_azurefunctions,
+                'azurefunctions.extensions': mock_azurefunctions.extensions,
+                'azurefunctions.extensions.base': mock_runtime_base
+            }):
+                dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
+
+        # Verify the error message contains the runtime name and original exception
+        self.assertIn("Failed to load runtime entry point broken_runtime",
+                      str(context.exception))
+        self.assertIn("Load failed", str(context.exception))
+
+        # Verify entry point load was attempted
+        mock_ep.load.assert_called_once()
+
+    @patch("proxy_worker.dispatcher.logger")
+    @patch("proxy_worker.dispatcher.entry_points")
+    def test_runtime_base_missing_feature_checker(
+            self, mock_entry_points, mock_logger):
+        """
+        Test that RuntimeError is raised when base extension
+        lacks RuntimeFeatureChecker
+        """
+        # Setup mock entry point that loads successfully
+        mock_ep = Mock()
+        mock_ep.name = "test_runtime"
+        mock_ep.load = Mock()  # Loads successfully
+        mock_entry_points.return_value = [mock_ep]
+
+        # Setup mock runtime base module WITHOUT RuntimeFeatureChecker attribute
+        mock_runtime_base = Mock(spec=[])  # Empty spec means no attributes
+
+        mock_azurefunctions = Mock()
+        mock_azurefunctions.extensions = Mock()
+        mock_azurefunctions.extensions.base = mock_runtime_base
+
+        # Verify that RuntimeError is raised with the expected message
+        with self.assertRaises(RuntimeError) as context:
+            with patch.dict(sys.modules, {
+                'azurefunctions': mock_azurefunctions,
+                'azurefunctions.extensions': mock_azurefunctions.extensions,
+                'azurefunctions.extensions.base': mock_runtime_base
+            }):
+                dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
+
+        # Verify the error message
+        error_message = str(context.exception)
+        self.assertIn("Base extension version is not compatible", error_message)
+        self.assertIn("Please update to version 1.2.0 or greater", error_message)
+
+        # Verify entry point was loaded
+        mock_ep.load.assert_called_once()
+
+        # Verify error was logged
+        mock_logger.error.assert_called()
+
+    @patch("proxy_worker.dispatcher.logger")
+    @patch("proxy_worker.dispatcher.entry_points")
+    @patch("proxy_worker.dispatcher.os.path.exists")
+    @patch("builtins.__import__")
+    def test_runtime_base_no_runtime_registered_fallback_to_v2(
+            self, mock_import, mock_exists, mock_entry_points, mock_logger):
+        """Test fallback to traditional v2 when no entry points are available"""
+        # Setup mock entry points - no entry points available
+        mock_entry_points.return_value = []
+
+        # Setup mock runtime base module
+        mock_runtime_base = Mock()
+
+        # Mock traditional fallback
+        mock_exists.return_value = True  # v2 script exists
+
+        mock_runtime_v2 = types.SimpleNamespace(
+            __file__="azure_functions_runtime.py",
+            invocation_id_cv=Mock()
+        )
+
+        def custom_import(name, *args, **kwargs):
+            if name == "azure_functions_runtime":
+                return mock_runtime_v2
+            return _real_import(name, *args, **kwargs)
+
+        mock_import.side_effect = custom_import
+
+        # Clear sys.modules to force re-import
+        if 'azure_functions_runtime' in sys.modules:
+            del sys.modules['azure_functions_runtime']
+
+        # Patch the runtime base import (including parent packages)
+        mock_azurefunctions = Mock()
+        mock_azurefunctions.extensions = Mock()
+        mock_azurefunctions.extensions.base = mock_runtime_base
+        with patch.dict(sys.modules, {
+            'azurefunctions': mock_azurefunctions,
+            'azurefunctions.extensions': mock_azurefunctions.extensions,
+            'azurefunctions.extensions.base': mock_runtime_base
+        }):
+            dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
+
+        # Verify v2 import logging
+        mock_logger.debug.assert_any_call(
+            "azure_functions_runtime import succeeded: %s",
+            "azure_functions_runtime.py"
+        )
+
+        # Verify library worker was set to v2
+        self.assertEqual(dispatcher_module._library_worker, mock_runtime_v2)
+        self.assertTrue(dispatcher_module._library_worker_has_cv)
+
+    @patch("proxy_worker.dispatcher.logger")
+    @patch("proxy_worker.dispatcher.entry_points")
+    @patch("proxy_worker.dispatcher.os.path.exists")
+    @patch("builtins.__import__")
+    def test_runtime_base_no_runtime_registered_fallback_to_v1(
+            self, mock_import, mock_exists, mock_entry_points, mock_logger):
+        """Test fallback to traditional v1 when no runtime registered
+        and v2 script absent"""
+        # Setup mock entry points
+        mock_entry_points.return_value = []
+
+        # Setup mock runtime base module - no runtime registered
+        mock_runtime_base = Mock()
+        mock_runtime_base.RuntimeFeatureChecker.runtime_loaded.return_value = False
+
+        # Mock traditional fallback - v2 script doesn't exist
+        mock_exists.return_value = False
+
+        mock_runtime_v1 = types.SimpleNamespace(
+            __file__="azure_functions_runtime_v1.py"
+        )
+
+        def custom_import(name, *args, **kwargs):
+            if name == "azure_functions_runtime_v1":
+                return mock_runtime_v1
+            return _real_import(name, *args, **kwargs)
+
+        mock_import.side_effect = custom_import
+
+        # Clear sys.modules to force re-import
+        if 'azure_functions_runtime_v1' in sys.modules:
+            del sys.modules['azure_functions_runtime_v1']
+
+        # Patch the runtime base import (including parent packages)
+        mock_azurefunctions = Mock()
+        mock_azurefunctions.extensions = Mock()
+        mock_azurefunctions.extensions.base = mock_runtime_base
+        with patch.dict(sys.modules, {
+            'azurefunctions': mock_azurefunctions,
+            'azurefunctions.extensions': mock_azurefunctions.extensions,
+            'azurefunctions.extensions.base': mock_runtime_base
+        }):
+            dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
+
+        # Verify fallback logging
+        mock_logger.debug.assert_any_call(
+            "azure_functions_runtime_v1 import succeeded: %s",
+            "azure_functions_runtime_v1.py"
+        )
+
+        # Verify library worker was set to v1
+        self.assertEqual(dispatcher_module._library_worker, mock_runtime_v1)
+        self.assertFalse(dispatcher_module._library_worker_has_cv)
+
+    @patch("proxy_worker.dispatcher.logger")
+    @patch("proxy_worker.dispatcher.os.path.exists")
+    @patch("builtins.__import__")
+    def test_runtime_base_import_error_fallback_to_traditional(
+            self, mock_import, mock_exists, mock_logger):
+        """Test fallback when runtime base package import fails"""
+        # Mock runtime base import failure - raise error when importing base package
+        def custom_import(name, *args, **kwargs):
+            if "azurefunctions.extensions.base" in name:
+                raise ImportError("Runtime base not installed")
+            if name == "azure_functions_runtime":
+                mock_runtime = types.SimpleNamespace(
+                    __file__="azure_functions_runtime.py",
+                    invocation_id_cv=Mock()
+                )
+                return mock_runtime
+            return _real_import(name, *args, **kwargs)
+
+        mock_import.side_effect = custom_import
+        mock_exists.return_value = True
+
+        # Clear sys.modules to force re-import
+        if 'azure_functions_runtime' in sys.modules:
+            del sys.modules['azure_functions_runtime']
+
+        dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
+
+        # Verify error was logged with correct message
+        mock_logger.debug.assert_called()
+        self.assertIn("Base extension package not found",
+                      str(mock_logger.debug.call_args_list))
+
+    @patch("proxy_worker.dispatcher.logger")
+    @patch("proxy_worker.dispatcher.importlib.import_module")
+    @patch("proxy_worker.dispatcher.entry_points")
+    def test_runtime_base_multiple_entry_points(
+            self, mock_entry_points, mock_import_module, mock_logger):
+        """Test that RuntimeError is raised when multiple runtimes are detected"""
+        # Setup multiple mock entry points
+        mock_ep1 = Mock()
+        mock_ep1.name = "runtime1"
+        mock_ep1.load = Mock()
+
+        mock_ep2 = Mock()
+        mock_ep2.name = "runtime2"
+        mock_ep2.load = Mock()
+
+        mock_entry_points.return_value = [mock_ep1, mock_ep2]
+
+        # Setup mock runtime base module
+        mock_runtime_base = Mock()
+        mock_runtime_base.RuntimeFeatureChecker = Mock()
+
+        mock_azurefunctions = Mock()
+        mock_azurefunctions.extensions = Mock()
+        mock_azurefunctions.extensions.base = mock_runtime_base
+
+        # Verify that RuntimeError is raised with the expected message
+        with self.assertRaises(RuntimeError) as context:
+            with patch.dict(sys.modules, {
+                'azurefunctions': mock_azurefunctions,
+                'azurefunctions.extensions': mock_azurefunctions.extensions,
+                'azurefunctions.extensions.base': mock_runtime_base
+            }):
+                dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
+
+        # Verify the error message contains both runtime names
+        error_message = str(context.exception)
+        self.assertIn("Multiple runtimes detected", error_message)
+        self.assertIn("runtime1", error_message)
+        self.assertIn("runtime2", error_message)
+        self.assertIn("Only one runtime should be defined", error_message)
+
+        # Verify neither entry point was loaded (error occurs before loading)
+        mock_ep1.load.assert_not_called()
+        mock_ep2.load.assert_not_called()
+
+    @patch("proxy_worker.dispatcher.logger")
+    @patch("proxy_worker.dispatcher.entry_points")
+    def test_runtime_base_outer_exception_handler(
+            self, mock_entry_points, mock_logger):
+        """Test that outer exception handler logs and re-raises exceptions"""
+        # Setup entry points to raise an unexpected exception
+        mock_entry_points.side_effect = ValueError("Unexpected error")
+
+        # Setup mock runtime base module
+        mock_runtime_base = Mock()
+        mock_azurefunctions = Mock()
+        mock_azurefunctions.extensions = Mock()
+        mock_azurefunctions.extensions.base = mock_runtime_base
+
+        # Verify that the exception is re-raised
+        with self.assertRaises(ValueError) as context:
+            with patch.dict(sys.modules, {
+                'azurefunctions': mock_azurefunctions,
+                'azurefunctions.extensions': mock_azurefunctions.extensions,
+                'azurefunctions.extensions.base': mock_runtime_base
+            }):
+                dispatcher_module.Dispatcher.reload_library_worker("/home/site/wwwroot")
+
+        # Verify the exception message
+        self.assertIn("Unexpected error", str(context.exception))
+
+        # Verify error was logged at error level
+        mock_logger.error.assert_called()
+        self.assertIn("Error when loading runtime",
+                      str(mock_logger.error.call_args_list))

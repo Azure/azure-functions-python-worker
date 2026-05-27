@@ -206,6 +206,16 @@ def copy_tree_merge(src, dst):
 
 
 def make_absolute_imports(compiled_files):
+    # The worker's generated protobuf stubs must resolve `google.protobuf`
+    # to the worker's vendored copy, not whatever the customer ships in
+    # their `.python_packages`. The proxy worker (Python 3.13+) runs out
+    # of process and is unaffected, so we only rewrite for the in-process
+    # worker.
+    rewrite_protobuf = WORKER_DIR == "azure_functions_worker"
+    vendored_protobuf = (
+        f"{WORKER_DIR}._vendored.google.protobuf"
+    )
+
     for compiled in compiled_files:
         with open(compiled, "r+") as f:
             content = f.read()
@@ -226,6 +236,33 @@ def make_absolute_imports(compiled_files):
                 fr"from {WORKER_DIR}.protos.\g<1> \g<2>",
                 p1,
             )
+
+            if rewrite_protobuf:
+                # Redirect every `from google.protobuf[...] import ...`
+                # statement to the vendored copy. Anchored at line start
+                # (after a newline or at file start) so we don't touch
+                # string literals or comments.
+                p2 = re.sub(
+                    r"(?m)^from google\.protobuf"
+                    r"(?P<tail>(?:\.[A-Za-z0-9_.]+)?\s+import\b)",
+                    fr"from {vendored_protobuf}\g<tail>",
+                    p2,
+                )
+                # Redirect `import google.protobuf[.X]` statements. The
+                # generated stubs only emit the `from ...` form today,
+                # but be defensive in case future protoc output changes.
+                p2 = re.sub(
+                    r"(?m)^import google\.protobuf"
+                    r"(?P<sub>\.[A-Za-z0-9_.]+)?"
+                    r"(?P<asname>\s+as\s+[A-Za-z_][A-Za-z0-9_]*)?$",
+                    lambda m: (
+                        f"import {vendored_protobuf}"
+                        f"{m.group('sub') or ''}"
+                        f"{m.group('asname') or ' as google_protobuf'}"
+                    ),
+                    p2,
+                )
+
             f.write(p2)
             f.truncate()
 

@@ -336,7 +336,9 @@ def vendor_deps(c, target=None):
         )
         return
 
-    repo_root = ROOT_DIR.parent.parent
+    # ROOT_DIR is the `workers/` directory (see top of file), so its parent
+    # is the repository root.
+    repo_root = ROOT_DIR.parent
     script = repo_root / "eng" / "scripts" / "vendor_deps.py"
     if not script.exists():
         raise RuntimeError(
@@ -345,7 +347,7 @@ def vendor_deps(c, target=None):
         )
 
     default_target = (
-        repo_root / "workers" / "azure_functions_worker" / "_vendored"
+        ROOT_DIR / "azure_functions_worker" / "_vendored"
     )
     target_path = pathlib.Path(target) if target else default_target
 

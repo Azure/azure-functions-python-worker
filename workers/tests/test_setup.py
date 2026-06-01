@@ -317,12 +317,65 @@ def extensions(c, clean=False, extensions_dir=None):
 
 
 @task
+def vendor_deps(c, target=None):
+    """Vendor third-party deps into azure_functions_worker._vendored.
+
+    Copies the currently-installed ``google.protobuf`` package into
+    ``azure_functions_worker/_vendored/google/protobuf/`` and rewrites its
+    internal imports so the worker resolves protobuf from the vendored copy
+    regardless of any version the customer ships in ``.python_packages``.
+    Safe to re-run; the script is idempotent.
+
+    Skipped for the proxy worker (Python >= 3.13) which is out-of-process
+    and unaffected by the protobuf shadowing issue.
+    """
+    if WORKER_DIR != "azure_functions_worker":
+        print(
+            f"Skipping vendor_deps for {WORKER_DIR} "
+            "(only required for in-process worker)."
+        )
+        return
+
+    repo_root = ROOT_DIR.parent.parent
+    script = repo_root / "eng" / "scripts" / "vendor_deps.py"
+    if not script.exists():
+        raise RuntimeError(
+            f"vendor_deps.py not found at {script}. "
+            "Expected it in eng/scripts/."
+        )
+
+    default_target = (
+        repo_root / "workers" / "azure_functions_worker" / "_vendored"
+    )
+    target_path = pathlib.Path(target) if target else default_target
+
+    print(f"Vendoring google.protobuf into {target_path} ...")
+    try:
+        subprocess.check_call([
+            sys.executable, str(script),
+            "--target", str(target_path),
+            "--package", "google.protobuf",
+        ])
+    except subprocess.CalledProcessError as ex:
+        raise RuntimeError(
+            "vendor_deps.py failed. Ensure 'protobuf' is installed in the "
+            "current environment (pip install -e workers/[dev])."
+        ) from ex
+    print("Vendoring complete.")
+
+
+@task
 def build_protos(c, clean=False):
     """Build gRPC bindings."""
 
     if clean:
         shutil.rmtree(BUILD_DIR / 'protos')
         return
+    # Populate azure_functions_worker/_vendored/ before generating stubs.
+    # make_absolute_imports rewrites the generated *_pb2.py files to import
+    # from the vendored google.protobuf, so the vendored tree must exist
+    # before anything imports the freshly generated stubs.
+    vendor_deps(c)
     print("Generating gRPC bindings...")
     gen_grpc()
     print("gRPC bindings generated successfully.")

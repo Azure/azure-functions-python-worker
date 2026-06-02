@@ -99,6 +99,7 @@ steps:
       !*.dist-info/**
       !werkzeug/debug/shared/debugger.js
       !proxy_worker/**
+      !google/**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: eq(variables['proxyWorker'], false)
   displayName: 'Copy azure_functions_worker files'
@@ -111,6 +112,7 @@ steps:
         ".artifactignore",
         "azure",
         "azure_functions_worker",
+        "azure_functions_worker/_vendored/google",
         "azurefunctions",
         "azure_functions_worker/protos/FunctionRpc_pb2.py",
         "azure_functions_worker/protos/FunctionRpc_pb2_grpc.py",
@@ -122,7 +124,6 @@ steps:
         "azure_functions_worker/protos/shared/NullableTypes_pb2.py",
         "azure_functions_worker/protos/shared/NullableTypes_pb2_grpc.py",
         "dateutil",
-        "google",
         "grpc",
         "markupsafe",
         "six.py",

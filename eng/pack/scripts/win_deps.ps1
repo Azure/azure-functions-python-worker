@@ -26,6 +26,11 @@ Copy-Item -Path ".artifactignore" -Destination $depsPath.ToString()
 if ($versionMinor -lt 13) {
     $protosPath = Join-Path -Path $depsPath -ChildPath "azure_functions_worker/protos"
     Copy-Item -Path "azure_functions_worker/protos/*" -Destination $protosPath.ToString() -Recurse -Force
+    # Vendored google.protobuf is built into the source tree by vendor_deps
+    # (invoked from build-protos). Merge it into deps/ so CopyFiles@2 picks it up.
+    $vendoredPath = Join-Path -Path $depsPath -ChildPath "azure_functions_worker/_vendored"
+    New-Item -ItemType Directory -Force -Path $vendoredPath | Out-Null
+    Copy-Item -Path "azure_functions_worker/_vendored/*" -Destination $vendoredPath.ToString() -Recurse -Force
 } else {
     $protosPath = Join-Path -Path $depsPath -ChildPath "proxy_worker/protos"
     Copy-Item -Path "proxy_worker/protos/*" -Destination $protosPath.ToString() -Recurse -Force

@@ -2,7 +2,14 @@ import datetime
 import unittest
 
 import pytest
-from google.protobuf.timestamp_pb2 import Timestamp
+
+# Must use the vendored Timestamp here: ``to_nullable_timestamp`` returns
+# a NullableTimestamp whose ``value`` is built from the vendored Timestamp,
+# so equality comparison only succeeds when the expected value is also
+# constructed from the same descriptor pool.
+from azure_functions_worker._vendored.google.protobuf.timestamp_pb2 import (
+    Timestamp,
+)
 
 from azure_functions_worker import protos
 from azure_functions_worker.bindings.nullable_converters import (

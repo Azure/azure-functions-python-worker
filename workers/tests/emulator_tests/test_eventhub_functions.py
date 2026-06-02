@@ -120,6 +120,58 @@ class TestEventHubFunctionsSteinGeneric(TestEventHubFunctions):
             'eventhub_functions_stein' / 'generic'
 
 
+class TestEventHubRetryStein(testutils.WebHostTestCase):
+    """Test EventHub Trigger with Retry Policy"""
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.EMULATOR_TESTS_FOLDER / \
+            'eventhub_functions' / 'eventhub_retry_stein'
+
+    @classmethod
+    def get_libraries_to_install(cls):
+        return ['azure-eventhub']
+
+    @testutils.retryable_test(3, 5)
+    def test_eventhub_retry_trigger_with_default_intervals(self):
+        """Test that exponential backoff retry works with default intervals."""
+        # Generate a unique event ID
+        event_id = f"retry-test-{round(time.time())}"
+        doc = {'id': event_id}
+
+        # Reset retry state
+        r = self.webhost.request('POST', 'reset_retry_state')
+        self.assertEqual(r.status_code, 200)
+
+        # Send event to EventHub
+        r = self.webhost.request(
+            'POST', 'eventhub_retry_output', data=json.dumps(doc))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK')
+
+        # Wait for retries to complete (with exponential backoff)
+        # First attempt: immediate
+        # Second attempt: after backoff
+        # Third attempt: after longer backoff
+        time.sleep(15)
+
+        # Retrieve the result from blob storage
+        r = self.webhost.request('GET', 'get_eventhub_retry_triggered')
+        self.assertEqual(r.status_code, 200)
+
+        result = json.loads(r.text)
+
+        # Verify the event was processed after retries
+        self.assertIn(event_id, result['event_id'])
+        # Should succeed on third attempt (count 2)
+        self.assertEqual(result['retry_count'], 2)
+        self.assertEqual(result['max_retry_count'], 3)
+
+        # Verify all retry attempts were tracked
+        self.assertEqual(len(result['all_attempts']), 3)  # 0, 1, 2
+        self.assertEqual(result['all_attempts'], [0, 1, 2])
+
+
 @skipIf(sys.version_info.minor >= 14, "Skip to figure out uamqp.")
 class TestEventHubFunctionsSDK(TestEventHubFunctions):
 

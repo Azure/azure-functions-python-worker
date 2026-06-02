@@ -41,6 +41,8 @@ extends:
       name: 1es-pool-azfunc
       image: 1es-windows-2022
       os: windows
+    settings:
+      clean: all  # Clean all build directories before starting
 
     stages:
     - stage: RunE2ETests

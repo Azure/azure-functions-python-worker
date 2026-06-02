@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import asyncio
+import importlib
 import logging
 import os
 import queue
@@ -11,6 +12,7 @@ import traceback
 import typing
 from asyncio import AbstractEventLoop
 from dataclasses import dataclass
+from importlib.metadata import entry_points
 from typing import Any, Optional
 
 import grpc
@@ -30,13 +32,28 @@ from proxy_worker.utils.common import (
     check_python_eol
 )
 from proxy_worker.utils.constants import (
+    PYTHON_ENABLE_AGENT_RUNTIME,
     PYTHON_ENABLE_DEBUG_LOGGING,
 )
 from proxy_worker.version import VERSION
 from .utils.dependency import DependencyManager
 
+# Cache protobuf constants to avoid repeated lookups in hot paths
+_RpcLog = protos.RpcLog
+_LOG_LEVEL_CRITICAL = _RpcLog.Critical
+_LOG_LEVEL_ERROR = _RpcLog.Error
+_LOG_LEVEL_WARNING = _RpcLog.Warning
+_LOG_LEVEL_INFO = _RpcLog.Information
+_LOG_LEVEL_DEBUG = _RpcLog.Debug
+_LOG_LEVEL_NONE = getattr(_RpcLog, 'None')
+
+_RpcLogCategory = _RpcLog.RpcLogCategory
+_LOG_CATEGORY_SYSTEM = _RpcLogCategory.Value('System')
+_LOG_CATEGORY_USER = _RpcLogCategory.Value('User')
+
 # Library worker import reloaded in init and reload request
 _library_worker = None
+_library_worker_has_cv = False
 
 # Thread-local invocation ID registry for efficient lookup
 _thread_invocation_registry: typing.Dict[int, str] = {}
@@ -99,9 +116,9 @@ def get_global_current_invocation_id() -> Optional[str]:
 
 
 def get_current_invocation_id() -> Optional[Any]:
-    global _library_worker
+    global _library_worker, _library_worker_has_cv
     # Check global current invocation first (most up-to-date)
-    if _library_worker and not hasattr(_library_worker, 'invocation_id_cv'):
+    if _library_worker and not _library_worker_has_cv:
         global_invocation_id = get_global_current_invocation_id()
         if global_invocation_id is not None:
             return global_invocation_id
@@ -121,22 +138,21 @@ def get_current_invocation_id() -> Optional[Any]:
         # No event loop running
         pass
 
+    # Check contextvar from library worker
+    if _library_worker and _library_worker_has_cv:
+        try:
+            cv = _library_worker.invocation_id_cv
+            val = cv.get()
+            if val is not None:
+                return val
+        except (AttributeError, LookupError):
+            pass
+
     # Check the thread-local invocation ID registry
     current_thread_id = threading.get_ident()
     thread_invocation_id = get_thread_invocation_id(current_thread_id)
     if thread_invocation_id is not None:
         return thread_invocation_id
-
-    # Check contextvar from library worker
-    if _library_worker:
-        try:
-            cv = getattr(_library_worker, 'invocation_id_cv', None)
-            if cv:
-                val = cv.get()
-                if val is not None:
-                    return val
-        except (AttributeError, LookupError):
-            pass
 
     return getattr(_invocation_id_local, 'invocation_id', None)
 
@@ -204,22 +220,22 @@ class Dispatcher(metaclass=DispatcherMeta):
     def on_logging(self, record: logging.LogRecord,
                    formatted_msg: str) -> None:
         if record.levelno >= logging.CRITICAL:
-            log_level = protos.RpcLog.Critical
+            log_level = _LOG_LEVEL_CRITICAL
         elif record.levelno >= logging.ERROR:
-            log_level = protos.RpcLog.Error
+            log_level = _LOG_LEVEL_ERROR
         elif record.levelno >= logging.WARNING:
-            log_level = protos.RpcLog.Warning
+            log_level = _LOG_LEVEL_WARNING
         elif record.levelno >= logging.INFO:
-            log_level = protos.RpcLog.Information
+            log_level = _LOG_LEVEL_INFO
         elif record.levelno >= logging.DEBUG:
-            log_level = protos.RpcLog.Debug
+            log_level = _LOG_LEVEL_DEBUG
         else:
-            log_level = getattr(protos.RpcLog, 'None')
+            log_level = _LOG_LEVEL_NONE
 
         if is_system_log_category(record.name):
-            log_category = protos.RpcLog.RpcLogCategory.Value('System')
+            log_category = _LOG_CATEGORY_SYSTEM
         else:  # customers using logging will yield 'root' in record.name
-            log_category = protos.RpcLog.RpcLogCategory.Value('User')
+            log_category = _LOG_CATEGORY_USER
 
         log = dict(
             level=log_level,
@@ -404,12 +420,98 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     @staticmethod
     def reload_library_worker(directory: str):
-        global _library_worker
+        """
+        Load the appropriate runtime using the base package pattern.
+
+        This uses the runtime base package to automatically discover which
+        runtime is loaded.
+
+        If no runtime is registered via the base package, it falls back to
+        the traditional detection method.
+        """
+        global _library_worker, _library_worker_has_cv
+
+        if is_envvar_true(PYTHON_ENABLE_AGENT_RUNTIME):
+            try:
+                # Import base package
+                try:
+                    import azurefunctions.extensions.base as runtime_base
+                except ImportError:
+                    logger.debug("Base extension package not found: %s",
+                                 traceback.format_exc())
+                    runtime_base = None
+
+                # Discover all installed runtime packages via entry points
+                available_runtimes = list(entry_points(group='azurefunctions.runtimes'))
+
+                # Only one runtime should be defined
+                if len(available_runtimes) > 1:
+                    runtime_names = [ep.name for ep in available_runtimes]
+                    raise RuntimeError(
+                        "Multiple runtimes detected: %s. "
+                        "Only one runtime should be defined." % runtime_names
+                    )
+
+                # Load the single runtime entry point if available
+                if available_runtimes:
+                    ep = available_runtimes[0]
+                    try:
+                        # Load the entry point (triggers import and
+                        # metaclass registration)
+                        ep.load()
+                        logger.debug("Loaded runtime entry point: %s" % ep.name)
+                    except Exception as e:
+                        raise RuntimeError(
+                            "Failed to load runtime entry point %s: %s" % (ep.name, e)
+                        )
+
+                    # Check if a runtime was registered
+                    # Check if the runtime base package has the RuntimeFeatureChecker
+                    # Check if the runtime is loaded
+                    if runtime_base is not None \
+                        and hasattr(runtime_base, 'RuntimeFeatureChecker') \
+                            and runtime_base.RuntimeFeatureChecker.runtime_loaded():
+                        # Get the registered runtime module
+                        # (e.g., "azure_functions_fastapi.runtime")
+                        runtime_module_name = (
+                            runtime_base.RuntimeTrackerMeta.get_module())
+                        runtime_name = (
+                            runtime_base.RuntimeTrackerMeta.get_runtime_name())
+                        package_name = (
+                            runtime_base.RuntimeTrackerMeta.get_package_name())
+
+                        logger.debug("Runtime registered: %s (module: %s). "
+                                     "Importing runtime package: %s",
+                                     runtime_name, runtime_module_name, package_name)
+
+                        # Import the top-level runtime package (which exports
+                        # the public API)
+                        runtime_module = importlib.import_module(package_name)
+                        _library_worker = runtime_module
+                        _library_worker_has_cv = _library_worker.invocation_id_cv
+
+                        # Module has been imported, end check
+                        return
+                    else:
+                        logger.error("Base extension version is not compatible "
+                                     "for custom runtimes. "
+                                     "Please update to version 1.2.0 or greater.")
+                        raise RuntimeError("Base extension version is not compatible "
+                                           "for custom runtimes. "
+                                           "Please update to version 1.2.0 or greater.")
+            except Exception as e:
+                logger.error("Error when loading runtime: %s",
+                             traceback.format_exc())
+                raise e
+
+        # No runtime registered via base package
+        # Use traditional detection
         v2_scriptfile = os.path.join(directory, get_script_file_name())
         if os.path.exists(v2_scriptfile):
             try:
                 import azure_functions_runtime  # NoQA
                 _library_worker = azure_functions_runtime
+                _library_worker_has_cv = hasattr(_library_worker, 'invocation_id_cv')
                 logger.debug("azure_functions_runtime import succeeded: %s",
                              _library_worker.__file__)
             except ImportError:
@@ -419,6 +521,7 @@ class Dispatcher(metaclass=DispatcherMeta):
             try:
                 import azure_functions_runtime_v1  # NoQA
                 _library_worker = azure_functions_runtime_v1
+                _library_worker_has_cv = hasattr(_library_worker, 'invocation_id_cv')
                 logger.debug("azure_functions_runtime_v1 import succeeded: %s",
                              _library_worker.__file__)  # type: ignore[union-attr]
             except ImportError:

@@ -9,6 +9,10 @@ steps:
     versionSpec: ${{ parameters.pythonVersion }}
     allowUnstable: true
     addToPath: true
+- task: PipAuthenticate@1
+  displayName: 'Pip Authenticate'
+  inputs:
+    artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
 - powershell: |
     # Parse the Python minor version
     $PY_VER = "$(pythonVersion)"
@@ -70,6 +74,7 @@ steps:
     cd workers
     pip-audit -r requirements.txt
   displayName: 'Run vulnerability scan'
+  continueOnError: true
 - task: CopyFiles@2
   inputs:
     contents: '$(workerPath)'

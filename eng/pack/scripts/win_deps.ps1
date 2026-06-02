@@ -7,6 +7,7 @@ $versionMinor = [int]$versionParts[1]
 python -m venv .env
 .env\Scripts\Activate.ps1
 python -m pip install --upgrade pip
+python -m pip install "setuptools>=62,<82.0"
 
 cd workers
 python -m pip install .

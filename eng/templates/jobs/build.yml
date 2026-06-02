@@ -1,11 +1,12 @@
 parameters:
   PYTHON_VERSION: ''
+  SIMPLE_VERSION: ''
   PROJECT_NAME: ''
   PROJECT_DIRECTORY: ''
 
 jobs:
-  - job: "Build"
-    displayName: 'Build'
+  - job: "Build${{ parameters.SIMPLE_VERSION }}"
+    displayName: 'Build ${{ parameters.PROJECT_NAME }}'
 
     pool:
       name: 1es-pool-azfunc-public
@@ -18,3 +19,4 @@ jobs:
           PYTHON_VERSION: ${{ parameters.PYTHON_VERSION }}
           PROJECT_NAME: ${{ parameters.PROJECT_NAME }}
           PROJECT_DIRECTORY: ${{ parameters.PROJECT_DIRECTORY }}
+          ArtifactFeed: 'public/PythonWorker_PublicPackages'

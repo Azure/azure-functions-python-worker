@@ -56,7 +56,20 @@ extends:
       - template: /eng/templates/jobs/build.yml@self
         parameters:
           PYTHON_VERSION: '3.11'
-          PROJECT_NAME: 'Azure Functions Python Worker'
+          SIMPLE_VERSION: '311'
+          PROJECT_NAME: 'Azure Functions Python Worker <= 3.12'
+          PROJECT_DIRECTORY: 'workers'
+      - template: /eng/templates/jobs/build.yml@self
+        parameters:
+          PYTHON_VERSION: '3.13'
+          SIMPLE_VERSION: '313'
+          PROJECT_NAME: 'Azure Functions Python Worker == 3.13'
+          PROJECT_DIRECTORY: 'workers'
+      - template: /eng/templates/jobs/build.yml@self
+        parameters:
+          PYTHON_VERSION: '3.14'
+          SIMPLE_VERSION: '314'
+          PROJECT_NAME: 'Azure Functions Python Worker == 3.14'
           PROJECT_DIRECTORY: 'workers'
       # Skip the build stage for SDK and Extensions release branches. This stage will fail because pyproject.toml contains the updated (and unreleased) library version
       condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
@@ -66,6 +79,7 @@ extends:
       - template: /eng/templates/jobs/ci-dependency-check.yml@self
         parameters:
           PoolName: 1es-pool-azfunc-public
+          ArtifactFeed: 'public/PythonWorker_PublicPackages'
     - stage: RunWorkerUnitTests
       dependsOn: BuildPythonWorker
       jobs:
@@ -73,12 +87,16 @@ extends:
           parameters:
             PROJECT_DIRECTORY: 'workers'
             PoolName: 1es-pool-azfunc-public
+            ArtifactFeed: 'public/PythonWorker_PublicPackages'
+            NuGetServiceConnection: 'PythonWorker_PublicPackages'
     - stage: RunWorkerEmulatorTests
       dependsOn: BuildPythonWorker
       jobs:
         - template: /eng/templates/jobs/ci-emulator-tests.yml@self
           parameters:
             PoolName: 1es-pool-azfunc-public
+            ArtifactFeed: 'public/PythonWorker_PublicPackages'
+            NuGetServiceConnection: 'PythonWorker_PublicPackages'
     
     # Python V2 Library Build and Test Stages
     - stage: BuildV2Library
@@ -97,8 +115,8 @@ extends:
             PROJECT_NAME: 'V2 Library'
             PROJECT_DIRECTORY: 'runtimes/v2'
             PoolName: 1es-pool-azfunc-public
-
-
+            ArtifactFeed: 'public/PythonWorker_PublicPackages'
+            NuGetServiceConnection: 'PythonWorker_PublicPackages'
 
     # Python V1 Library Build and Test Stages
     - stage: BuildV1Library
@@ -117,3 +135,5 @@ extends:
             PROJECT_NAME: 'V1 Library'
             PROJECT_DIRECTORY: 'runtimes/v1'
             PoolName: 1es-pool-azfunc-public
+            ArtifactFeed: 'public/PythonWorker_PublicPackages'
+            NuGetServiceConnection: 'PythonWorker_PublicPackages'

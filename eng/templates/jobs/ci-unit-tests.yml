@@ -1,5 +1,7 @@
 parameters:
   PROJECT_DIRECTORY: 'workers'
+  ArtifactFeed: ''
+  NuGetServiceConnection: ''
 
 jobs:
   - job: "TestPython"
@@ -25,13 +27,49 @@ jobs:
         Python314:
           PYTHON_VERSION: '3.14'
     steps:
+      - bash: |
+          echo "Disk space before cleanup:"
+          df -h
+          
+          # Clean up Docker resources
+          docker system prune -af --volumes || true
+          
+          # Clean pip cache
+          pip cache purge || true
+          
+          # Clean apt cache
+          sudo apt-get clean || true
+          sudo rm -rf /var/lib/apt/lists/* || true
+          
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Free disk space'
+        
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
-      - task: UseDotNet@2
-        displayName: 'Install .NET 8'
+      - task: PipAuthenticate@1
+        displayName: 'Pip Authenticate'
         inputs:
-          version: 8.0.x
+          artifactFeeds: ${{ parameters.ArtifactFeed }}
+      - task: UseDotNet@2
+        displayName: 'Install .NET 10'
+        inputs:
+          version: 10.0.x
+      - task: NuGetAuthenticate@1
+        displayName: 'NuGet Authenticate'
+      - bash: |
+          # Remove the feed that doesn't match the current service connection
+          if [[ "${{ parameters.NuGetServiceConnection }}" == "PythonWorker_PublicPackages" ]]; then
+            # Remove internal feed for public builds
+            sed -i '/_Internal_PublicPackages/d' nuget.config
+          else
+            # Remove public feed for internal builds
+            sed -i '/PythonWorker_PublicPackages[^_]/d' nuget.config
+          fi
+          echo "Updated nuget.config:"
+          cat nuget.config
+        displayName: 'Configure NuGet feed for current organization'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
           chmod +x eng/scripts/test-setup.sh
@@ -63,4 +101,21 @@ jobs:
           PYTHON_VERSION: $(PYTHON_VERSION)
           AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+      
+      - bash: |
+          echo "Cleaning up after tests..."
+          # Remove build artifacts and caches
+          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/build || true
+          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.pytest_cache || true
+          
+          # Clean Docker resources
+          docker system prune -f || true
+          
+          # Clean pip cache
+          pip cache purge || true
+          
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Cleanup after tests'
+        condition: always()
   

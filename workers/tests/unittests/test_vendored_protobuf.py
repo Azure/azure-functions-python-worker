@@ -160,8 +160,11 @@ class TestVendoredProtobuf(unittest.TestCase):
         "Vendored protobuf is not populated.",
     )
     def test_vendored_init_sets_pure_python_implementation(self):
-        """Importing the vendored namespace must set the env var that
-        forces the pure-Python protobuf implementation."""
+        """Importing anything under the vendored namespace must guarantee
+        that ``PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python`` is set,
+        because the vendored protobuf is shipped without C extensions.
+        The env var is set by ``azure_functions_worker/__init__.py``,
+        which runs before any submodule (including ``_vendored``)."""
         code = textwrap.dedent(
             """
             import os
@@ -176,7 +179,7 @@ class TestVendoredProtobuf(unittest.TestCase):
         env = os.environ.copy()
         env["PYTHONPATH"] = str(WORKER_ROOT)
         # Avoid inheriting the parent's setting; we want to verify the
-        # vendored __init__.py is what installs it.
+        # azure_functions_worker package __init__ installs it.
         env.pop("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", None)
         result = subprocess.run(
             [sys.executable, "-c", code],

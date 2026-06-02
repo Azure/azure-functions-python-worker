@@ -2,5 +2,3 @@
 # eng/scripts/vendor_deps.py. Do not commit them.
 *
 !.gitignore
-!README.md
-!__init__.py

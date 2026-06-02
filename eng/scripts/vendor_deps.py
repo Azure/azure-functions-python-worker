@@ -20,7 +20,7 @@ Design notes
 ------------
 * Pure-Python only: native C extensions are skipped. The vendored
   protobuf runs under ``PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python``
-  (set in ``_vendored/__init__.py``).
+  (set in ``azure_functions_worker/__init__.py``).
 * Rewrites are AST-aware to avoid mangling string literals, comments, or
   identifiers that merely contain the substring ``google.protobuf``.
   ``import`` and ``from ... import`` statements are detected via the
@@ -300,10 +300,10 @@ def main(argv: list[str] | None = None) -> int:
     if not target.exists() or not target.is_dir():
         parser.error(f"--target {target!s} does not exist or is not a directory")
 
-    init = target / "__init__.py"
+    init = target / ".gitignore"
     if not init.exists():
         parser.error(
-            f"--target {target!s} is missing __init__.py; expected the "
+            f"--target {target!s} is missing .gitignore; expected the "
             f"committed _vendored package skeleton."
         )
 

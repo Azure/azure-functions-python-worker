@@ -207,9 +207,9 @@ class TestEndToEnd(unittest.TestCase):
     def _make_target(self) -> Path:
         target = Path(self.workdir) / "_vendored"
         target.mkdir()
-        # The script requires _vendored/__init__.py to be present (it's
-        # part of the committed skeleton). Mirror that here.
-        (target / "__init__.py").write_text("", encoding="utf-8")
+        # The script requires a sentinel file in --target (the committed
+        # .gitignore). Mirror that here.
+        (target / ".gitignore").write_text("*\n!.gitignore\n", encoding="utf-8")
         return target
 
     def test_vendor_and_import(self):
@@ -257,9 +257,8 @@ class TestEndToEnd(unittest.TestCase):
         pkg.mkdir(parents=True)
         (pkg / "__init__.py").write_text("", encoding="utf-8")
         shutil.copytree(target, pkg / "_vendored", dirs_exist_ok=False)
-        # The committed _vendored/__init__.py was empty in setUp; restore
-        # a minimal one so importing _vendored does not break.
-        (pkg / "_vendored" / "__init__.py").write_text("", encoding="utf-8")
+        # No _vendored/__init__.py — it's an implicit namespace package
+        # (Python 3.3+). Imports under it must still resolve.
 
         verify = textwrap.dedent(
             """

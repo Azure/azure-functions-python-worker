@@ -74,7 +74,9 @@ class TestVendoredProtobuf(unittest.TestCase):
         )
         return root
 
-    def _run_in_subprocess(self, code: str, extra_path: Path) -> subprocess.CompletedProcess:
+    def _run_in_subprocess(
+        self, code: str, extra_path: Path
+    ) -> subprocess.CompletedProcess:
         """Run ``code`` in a fresh interpreter with ``extra_path`` first
         on ``PYTHONPATH``."""
         env = os.environ.copy()

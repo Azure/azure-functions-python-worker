@@ -293,6 +293,14 @@ class TestEndToEnd(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, "-c", verify],
             env=verify_env,
+            # Isolate from the parent's CWD: pytest typically runs from
+            # ``workers/``, which would put the real
+            # ``azure_functions_worker`` package on ``sys.path[0]`` and
+            # shadow the fake ``_vendored`` tree we just built under
+            # ``importer_root``. Setting ``cwd`` to a directory that
+            # contains no ``azure_functions_worker`` directory forces the
+            # subprocess to resolve the package through ``PYTHONPATH``.
+            cwd=self.workdir,
             capture_output=True,
             text=True,
             timeout=30,

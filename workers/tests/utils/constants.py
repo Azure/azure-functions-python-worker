@@ -80,3 +80,15 @@ ARCHIVE_WEBHOST_LOGS = "ARCHIVE_WEBHOST_LOGS"
 # CI test constants
 CONSUMPTION_DOCKER_TEST = "CONSUMPTION_DOCKER_TEST"
 DEDICATED_DOCKER_TEST = "DEDICATED_DOCKER_TEST"
+
+# Paths anchored on this file's location rather than on PROJECT_ROOT/TESTS_ROOT.
+# The `tests.utils` package exists in multiple trees in this repo
+# (workers/tests/utils and runtimes/v1/tests/utils), so PROJECT_ROOT/TESTS_ROOT
+# can resolve to the wrong tree depending on sys.path ordering. These
+# constants are stable and always point at the workers/ tree.
+WORKERS_TESTS_ROOT = pathlib.Path(__file__).resolve().parent.parent
+WORKERS_ROOT = WORKERS_TESTS_ROOT.parent
+REPO_ROOT = WORKERS_ROOT.parent
+FUNCTION_APP_ZIPS_DIR = (
+    WORKERS_TESTS_ROOT / 'consumption_tests' / 'function_app_zips'
+)

@@ -12,7 +12,7 @@ from azure_functions_worker.constants import (
     PYTHON_ISOLATE_WORKER_DEPENDENCIES,
 )
 from requests import Request
-from tests.utils.testutils_lc import FlexConsumptionWebHostController
+from ..utils.testutils_lc import FlexConsumptionWebHostController
 
 _DEFAULT_HOST_VERSION = "4"
 

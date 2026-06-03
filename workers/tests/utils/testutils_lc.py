@@ -21,9 +21,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import padding
 
-from tests.utils.constants import PROJECT_ROOT, TESTS_ROOT
-
-_FUNCTION_APP_ZIPS_DIR = TESTS_ROOT / 'consumption_tests' / 'function_app_zips'
+from ..utils import constants
 
 # Flex Consumption Testing Constants
 _DOCKER_PATH = "DOCKER_PATH"
@@ -101,7 +99,7 @@ class FlexConsumptionWebHostController:
             "WEBSITE_RUN_FROM_PACKAGE"
         )
         if pkg_name:
-            local_zip = _FUNCTION_APP_ZIPS_DIR / pkg_name
+            local_zip = constants.FUNCTION_APP_ZIPS_DIR / pkg_name
             if not local_zip.exists():
                 raise RuntimeError(
                     f"Local function app zip not found: {local_zip}"
@@ -277,7 +275,7 @@ class FlexConsumptionWebHostController:
         worker_name = 'azure_functions_worker' \
             if sys.version_info.minor < 13 else 'proxy_worker'
 
-        worker_path = os.path.join(PROJECT_ROOT, worker_name)
+        worker_path = os.path.join(constants.WORKERS_ROOT, worker_name)
         container_worker_path = (
             f"/azure-functions-host/workers/python/{self._py_version}/"
             f"LINUX/X64/{worker_name}"
@@ -290,7 +288,7 @@ class FlexConsumptionWebHostController:
         container_runtime_v1_path = None
 
         if sys.version_info.minor >= 13:
-            repo_root = os.path.dirname(PROJECT_ROOT)
+            repo_root = constants.REPO_ROOT
             runtime_v2_path = os.path.join(
                 repo_root, 'runtimes', 'v2', 'azure_functions_runtime'
             )
@@ -322,26 +320,37 @@ class FlexConsumptionWebHostController:
         # Get paths to google.protobuf and grpcio packages to mount them
         # This ensures the container uses the same protobuf/grpc versions
         # as the host, which is critical when protobuf files are generated
-        # with v5.x but the container has v4.x
-        try:
-            import google.protobuf
-            import grpc
-            protobuf_path = os.path.dirname(google.protobuf.__file__)
-            grpc_path = os.path.dirname(grpc.__file__)
+        # with v5.x but the container has v4.x.
+        protobuf_path = None
+        grpc_path = None
+        container_protobuf_path = None
+        container_grpc_path = None
+        # Only mount the host's grpc/protobuf into the Linux mesh container
+        # when the host itself is Linux. Windows/macOS hosts ship the
+        # compiled extensions for their own platform (e.g. cygrpc.*.pyd on
+        # Windows), and bind-mounting them into the container produces:
+        #   ImportError: cannot import name 'cygrpc' from 'grpc._cython'
+        # On non-Linux hosts we fall back to the grpc/protobuf bundled in
+        # the mesh image.
+        if sys.platform.startswith("linux"):
+            try:
+                import google.protobuf
+                import grpc
+                protobuf_path = os.path.dirname(google.protobuf.__file__)
+                grpc_path = os.path.dirname(grpc.__file__)
 
-            # Container paths for protobuf and grpcio
-            container_protobuf_path = (
-                f"/azure-functions-host/workers/python/{self._py_version}/"
-                "LINUX/X64/google/protobuf"
-            )
-            container_grpc_path = (
-                f"/azure-functions-host/workers/python/{self._py_version}/"
-                "LINUX/X64/grpc"
-            )
-        except ImportError as e:
-            print(f"Warning: Could not import google.protobuf or grpc: {e}")
-            protobuf_path = None
-            grpc_path = None
+                # Container paths for protobuf and grpcio
+                container_protobuf_path = (
+                    f"/azure-functions-host/workers/python/{self._py_version}/"
+                    "LINUX/X64/google/protobuf"
+                )
+                container_grpc_path = (
+                    f"/azure-functions-host/workers/python/{self._py_version}/"
+                    "LINUX/X64/grpc"
+                )
+            except ImportError:
+                protobuf_path = None
+                grpc_path = None
 
         run_cmd = []
         run_cmd.extend([self._docker_cmd, "run", "-p", "0:80", "-d"])

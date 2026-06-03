@@ -136,7 +136,7 @@ class DependencyManager:
 
         cls._remove_from_sys_path(cls.worker_deps_path)
         cls._add_to_sys_path(cls.worker_deps_path, True)
-        cls._add_to_sys_path(cls.cx_deps_path, True)
+        cls._add_cx_deps_to_sys_path(cls.cx_deps_path, True)
         cls._add_to_sys_path(working_directory, False)
 
         logger.info(

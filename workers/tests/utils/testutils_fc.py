@@ -130,9 +130,8 @@ class FlexConsumptionWebHostController:
         Flex Consumption is zip-only end-to-end: Core Tools' Flex publish
         path uploads a raw zip via `api/publish`, the Legion platform layer
         mounts that zip's contents onto the worker pod, and the host's
-        LegionInstanceManager.ApplyContextAsync is a no-op. SquashFS was
-        only used by legacy Linux Consumption (Atlas) via Core Tools'
-        `--build-native-deps` flag, which Flex does not support.
+        LegionInstanceManager.ApplyContextAsync is a no-op. The local
+        fixtures in `function_app_zips/` are real zip archives.
         """
         with open(local_path, "rb") as f:
             magic = f.read(4)
@@ -343,17 +342,9 @@ class FlexConsumptionWebHostController:
 
         run_cmd = []
         run_cmd.extend([self._docker_cmd, "run", "-p", "0:80", "-d"])
-        run_cmd.extend(["--name", self._uuid, "--privileged"])
-        run_cmd.extend(["--cap-add", "SYS_ADMIN"])
-        run_cmd.extend(["--device", "/dev/fuse"])
+        run_cmd.extend(["--name", self._uuid])
         run_cmd.extend(["-e", f"CONTAINER_NAME={self._uuid}"])
         encryption_key = os.getenv('_DUMMY_CONT_KEY')
-        if not encryption_key:
-            raise RuntimeError(
-                "_DUMMY_CONT_KEY environment variable is required. "
-                "It is provided by the CI pipeline; for local runs, "
-                "export it before invoking the test."
-            )
         full_key_bytes = base64.b64decode(encryption_key.encode())
         aes_key_bytes = full_key_bytes[:32]
         aes_key_base64 = base64.b64encode(aes_key_bytes).decode()

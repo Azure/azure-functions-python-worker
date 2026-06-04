@@ -160,6 +160,13 @@ class TestFlexConsumption(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Func Version: 1.11.1", resp.text)
 
+    @skipIf(
+        sys.version_info >= (3, 14),
+        "Opencensus bundles protobuf 4.24.0, which generates message "
+        "classes with a custom-tp_new metaclass that Python 3.14 rejects "
+        "(TypeError: Metaclasses with custom tp_new are not supported). "
+        "Re-enable when the fixture is rebuilt with protobuf>=5.x."
+    )
     def test_opencensus_with_extensions_enabled(self):
         """A function app with extensions enabled containing the
          following libraries:
@@ -179,6 +186,13 @@ class TestFlexConsumption(TestCase):
             resp = ctrl.send_request(req)
             self.assertEqual(resp.status_code, 200)
 
+    @skipIf(
+        sys.version_info >= (3, 14),
+        "Opencensus bundles protobuf 4.24.0, which generates message "
+        "classes with a custom-tp_new metaclass that Python 3.14 rejects "
+        "(TypeError: Metaclasses with custom tp_new are not supported). "
+        "Re-enable when the fixture is rebuilt with protobuf>=5.x."
+    )
     def test_opencensus_with_extensions_enabled_init_indexing(self):
         """
         A function app with init indexing enabled

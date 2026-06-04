@@ -85,7 +85,7 @@ class FlexConsumptionWebHostController:
                 ping_response = self.send_request(ping_req)
                 if ping_response.ok:
                     break
-            except Exception as e:
+            except Exception:
                 pass
             time.sleep(1)
         else:
@@ -271,7 +271,10 @@ class FlexConsumptionWebHostController:
                         image: str,
                         env: Dict[str, str] = {}) -> int:
         """Create a docker container and record its port."""
-        os.environ['_DUMMY_CONT_KEY'] = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+        os.environ['_DUMMY_CONT_KEY'] = (
+            "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6"
+            "IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+        )
         worker_name = 'azure_functions_worker' \
             if sys.version_info.minor < 13 else 'proxy_worker'
 
@@ -456,25 +459,14 @@ class FlexConsumptionWebHostController:
         try:
             import jwt
         except ImportError as e:
-            raise RuntimeError("PyJWT library required. Install with: pip install pyjwt") from e
+            raise RuntimeError(
+                "PyJWT library required. Install with: pip install pyjwt"
+            ) from e
 
         exp_time = int(time.time()) + (24 * 60 * 60)
         iat_time = int(time.time())
         site_name = self._uuid
         issuer = f"https://{site_name}.azurewebsites.net"
-        
-        # Flex Consumption Host validation can be tricky with exact audience matching.
-        # Provide a comprehensive list of potential expected audiences.
-        audience = [
-            issuer,
-            f"{issuer}/",
-            site_name,
-            f"{site_name}.azurewebsites.net",
-            f"https://{site_name}.azurewebsites.net",
-            f"https://{site_name}.azurewebsites.net/",
-            "https://azure-functions-host", 
-            "https://localhost",
-        ]
 
         payload = {
             'exp': exp_time,
@@ -513,7 +505,11 @@ class FlexConsumptionWebHostController:
         plain_text_bytes = padder.update(plain_text.encode()) + padder.finalize()
 
         iv_bytes = '0123456789abcedf'.encode()
-        cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv_bytes), backend=default_backend())
+        cipher = Cipher(
+            algorithms.AES(aes_key),
+            modes.CBC(iv_bytes),
+            backend=default_backend(),
+        )
         encryptor = cipher.encryptor()
         encrypted_bytes = encryptor.update(plain_text_bytes) + encryptor.finalize()
 

@@ -34,7 +34,7 @@ class TestFlexConsumption(TestCase):
         even when it is not specialized.
         """
         with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
+                                              self._py_version) as ctrl:
             req = Request('GET', ctrl.url)
             resp = ctrl.send_request(req)
             self.assertTrue(resp.ok)
@@ -44,7 +44,7 @@ class TestFlexConsumption(TestCase):
         should return 200.
         """
         with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
+                                              self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_function_app("HttpNoAuth")
@@ -69,7 +69,7 @@ class TestFlexConsumption(TestCase):
         should return 200 after importing all libraries.
         """
         with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
+                                              self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_function_app("CommonLibraries")
@@ -91,7 +91,7 @@ class TestFlexConsumption(TestCase):
         disabled.
         """
         with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
+                                              self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_function_app("EnableDebugLogging")
@@ -118,7 +118,7 @@ class TestFlexConsumption(TestCase):
         should be written to container logs.
         """
         with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
+                                              self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_function_app(
@@ -146,7 +146,7 @@ class TestFlexConsumption(TestCase):
         since dependency isolation is enabled by default for all py versions
         """
         with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
+                                              self._py_version) as ctrl:
 
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
@@ -169,7 +169,7 @@ class TestFlexConsumption(TestCase):
         should return 200 after importing all libraries.
         """
         with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
+                                              self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_function_app("Opencensus"),
@@ -184,7 +184,7 @@ class TestFlexConsumption(TestCase):
         A function app with init indexing enabled
         """
         with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
+                                              self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_function_app("Opencensus"),
@@ -200,7 +200,7 @@ class TestFlexConsumption(TestCase):
         A function app with HTTPtrigger mocking error code 137
         """
         with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
+                                              self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE": self._get_function_app(
@@ -224,7 +224,7 @@ class TestFlexConsumption(TestCase):
          download
         """
         with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
-                                               self._py_version) as ctrl:
+                                              self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
                 "SCM_RUN_FROM_PACKAGE":

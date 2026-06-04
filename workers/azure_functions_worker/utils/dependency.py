@@ -161,7 +161,7 @@ class DependencyManager:
             is_envvar_true("WEBSITE_PLACEHOLDER_MODE"))
 
         cls._remove_from_sys_path(cls.worker_deps_path)
-        cls._add_to_sys_path(cx_deps_path, True)
+        cls._add_to_sys_path(cls.cx_deps_path, True)
 
         # Deprioritize worker dependencies but don't completely remove it
         # Otherwise, it will break some really old function apps, those

@@ -38,6 +38,12 @@ WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
 WEBHOST_GIT_REPO = "https://github.com/Azure/azure-functions-host/archive"
 WEBHOST_TAG_PREFIX = "v4."
 WORKER_DIR = "azure_functions_worker" if sys.version_info.minor < 13 else "proxy_worker"
+# The worker's generated protobuf stubs must resolve `google.protobuf`
+# to the worker's vendored copy, not whatever the customer ships in
+# their `.python_packages`. The proxy worker (Python 3.13+) is a
+# separate worker with its own dependency isolation and is unaffected,
+# so we only rewrite for azure_functions_worker.
+REWRITE_PROTOBUF = WORKER_DIR == "azure_functions_worker"
 
 
 def get_webhost_version() -> str:
@@ -206,12 +212,6 @@ def copy_tree_merge(src, dst):
 
 
 def make_absolute_imports(compiled_files):
-    # The worker's generated protobuf stubs must resolve `google.protobuf`
-    # to the worker's vendored copy, not whatever the customer ships in
-    # their `.python_packages`. The proxy worker (Python 3.13+) runs out
-    # of process and is unaffected, so we only rewrite for the in-process
-    # worker.
-    rewrite_protobuf = WORKER_DIR == "azure_functions_worker"
     vendored_protobuf = (
         f"{WORKER_DIR}._vendored.google.protobuf"
     )
@@ -237,7 +237,7 @@ def make_absolute_imports(compiled_files):
                 p1,
             )
 
-            if rewrite_protobuf:
+            if REWRITE_PROTOBUF:
                 # Redirect every `from google.protobuf[...] import ...`
                 # statement to the vendored copy. Anchored at line start
                 # (after a newline or at file start) so we don't touch
@@ -326,13 +326,13 @@ def vendor_deps(c, target=None):
     regardless of any version the customer ships in ``.python_packages``.
     Safe to re-run; the script is idempotent.
 
-    Skipped for the proxy worker (Python >= 3.13) which is out-of-process
-    and unaffected by the protobuf shadowing issue.
+    Skipped for the proxy worker (Python >= 3.13) which has its own
+    dependency isolation and is unaffected by the protobuf shadowing issue.
     """
     if WORKER_DIR != "azure_functions_worker":
         print(
             f"Skipping vendor_deps for {WORKER_DIR} "
-            "(only required for in-process worker)."
+            "(only required for the azure_functions_worker)."
         )
         return
 

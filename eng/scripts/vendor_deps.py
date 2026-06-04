@@ -102,12 +102,14 @@ def _copy_package(src: Path, dst: Path) -> int:
 
 
 def _build_rewriter(top_level_names: Iterable[str]):
-    """Build a per-file rewriter for the given top-level package names.
+    """Build a rewriter for copied vendored package files.
 
-    A "top-level name" is the first dotted segment of an absolute import,
-    e.g. ``google`` for ``google.protobuf.descriptor``. Every import that
-    starts with one of these names is rewritten to live under
-    ``VENDORED_PREFIX``.
+    ``_rewrite_tree`` applies this to the package files after ``_copy_package``
+    copies them, not to worker source code. Imports targeting an original
+    top-level name (for example, ``google.protobuf...``) are rewritten under
+    ``VENDORED_PREFIX`` so vendored files reference the private namespace.
+    Worker source imports are hand-edited; generated ``*_pb2.py`` stubs are
+    rewritten separately by ``make_absolute_imports`` in ``workers/tests``.
     """
     top_levels = frozenset(top_level_names)
 

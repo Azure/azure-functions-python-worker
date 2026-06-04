@@ -12,12 +12,8 @@ from datetime import timedelta
 from os import PathLike, fspath
 from typing import Dict, Optional
 
-# The worker's protobuf message classes (azure_functions_worker.protos.*)
-# are bound to the vendored protobuf descriptor pool. A ``Duration`` value
-# assigned onto a vendored field (e.g. ``RpcRetryOptions.delay_interval``)
-# must therefore come from the same vendored protobuf — a ``Duration``
-# imported from the customer-facing ``google.protobuf`` namespace lives in
-# a different descriptor pool and the assignment would fail at runtime.
+# Worker code references _vendored.google.protobuf instead of
+# importing directly from google.protobuf.
 from azure_functions_worker._vendored.google.protobuf.duration_pb2 import (
     Duration,
 )

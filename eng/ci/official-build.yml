@@ -81,10 +81,10 @@ extends:
         dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/official/jobs/ci-docker-dedicated-tests.yml@self
-      - stage: RunWorkerLinuxConsumptionTests
+      - stage: RunWorkerFlexConsumptionTests
         dependsOn: BuildPythonWorker
         jobs:
-          - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
+          - template: /eng/templates/official/jobs/ci-fc-tests.yml@self
 
       # Python V2 Library Build and Test Stages
       - stage: BuildV2Library

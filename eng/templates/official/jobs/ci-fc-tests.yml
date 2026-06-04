@@ -1,0 +1,158 @@
+parameters:
+  PROJECT_DIRECTORY: 'workers'
+
+jobs:
+  - job: "TestPython"
+    displayName: "Run Python Flex Consumption Tests"
+
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-ubuntu-22.04
+      os: linux
+    
+    strategy:
+      matrix:
+         Python310:
+           PYTHON_VERSION: '3.10'
+         Python311:
+           PYTHON_VERSION: '3.11'
+         Python312:
+           PYTHON_VERSION: '3.12'
+         Python313:
+           PYTHON_VERSION: '3.13'
+         Python314:
+           PYTHON_VERSION: '3.14'
+    steps:
+      - bash: |
+          echo "Disk space before cleanup:"
+          df -h
+          
+          # Clean up Docker resources
+          docker system prune -af --volumes || true
+          
+          # Clean pip cache
+          pip cache purge || true
+          
+          # Clean apt cache
+          sudo apt-get clean || true
+          sudo rm -rf /var/lib/apt/lists/* || true
+          
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Free disk space'
+
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(PYTHON_VERSION)
+      - task: PipAuthenticate@1
+        displayName: 'Pip Authenticate'
+        inputs:
+          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
+
+      - bash: |
+          # Start Azurite storage emulator in the background
+          docker run -d -p 10000:10000 -p 10001:10001 -p 10002:10002 \
+            --name azurite-storage \
+            mcr.microsoft.com/azure-storage/azurite:latest \
+            azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --skipApiVersionCheck
+          
+          # Wait for Azurite to be ready
+          sleep 5
+          
+          # Verify Azurite is running
+          docker ps | grep azurite-storage
+        displayName: 'Start Azurite Storage Emulator'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+
+      - bash: |
+          python -m pip install --upgrade pip
+          pip install "setuptools<82.0"
+          python -m pip install -U -e ${{ parameters.PROJECT_DIRECTORY }}/[dev]
+
+          cd ${{ parameters.PROJECT_DIRECTORY }}/tests
+          python -m invoke -c test_setup build-protos
+        displayName: 'Install dependencies and the worker'
+        # Skip the installation stage for SDK and Extensions release branches. This stage will fail because pyproject.toml contains the updated (and unreleased) library version
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+      
+      - bash: |
+          # Install Azure CLI (if not already present)
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          
+          # Create the apps container in Azurite
+          az storage container create \
+            --name apps \
+            --connection-string  "$(AZURE_STORAGE_CONNECTION_STRING)"
+          
+          # Upload all function app packages to the container
+          FUNCTION_APPS_DIR="$(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/tests/consumption_tests/function_app_zips"
+          for zipfile in "$FUNCTION_APPS_DIR"/*.zip; do
+            filename=$(basename "$zipfile")
+            echo "Uploading $filename..."
+            az storage blob upload \
+              --container-name apps \
+              --name "$filename" \
+              --file "$zipfile" \
+              --connection-string "$(AZURE_STORAGE_CONNECTION_STRING)" \
+              --overwrite
+          done
+
+          # Generate a container-level SAS token valid for 1 day
+          SAS_TOKEN=$(az storage container generate-sas \
+            --name apps \
+            --permissions r \
+            --expiry $(date -u -d '+1 day' +%Y-%m-%dT%H:%M:%SZ) \
+            --connection-string "$(AZURE_STORAGE_CONNECTION_STRING)" \
+            --output tsv)
+          
+          echo "##vso[task.setvariable variable=CONTAINER_SAS_TOKEN]$SAS_TOKEN"
+
+          # List blobs in the container to verify uploads
+          echo "Verifying uploaded blobs in 'apps' container..."
+          az storage blob list \
+            --container-name apps \
+            --connection-string "$(AZURE_STORAGE_CONNECTION_STRING)" \
+            --output table
+
+        env:
+          AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)      
+          
+        displayName: 'Setup Function App Packages in Azurite'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+
+      - powershell: |
+          Write-Host "CONTAINER_SAS_TOKEN: $(CONTAINER_SAS_TOKEN)"
+        displayName: 'Display CONTAINER_SAS_TOKEN variable'
+        # Skip as this variable is defined only for non-release branches
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+
+      - bash: |
+             python -m pytest --dist loadfile -vv --instafail tests/consumption_tests
+        env:
+          AzureWebJobsStorage: $(AZURE_STORAGE_CONNECTION_STRING)
+          _DUMMY_CONT_KEY: $(_DUMMY_CONT_KEY)
+          CONTAINER_SAS_TOKEN: $(CONTAINER_SAS_TOKEN)
+        displayName: "Running $(PYTHON_VERSION) Flex Consumption tests"
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+  
+      - bash: |
+          echo "Cleaning up after tests..."
+          # Cleanup: Stop and remove Azurite container
+          docker stop azurite-storage || true
+          docker rm azurite-storage || true
+          
+          # Remove build artifacts and caches
+          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/build || true
+          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.pytest_cache || true
+          
+          # Clean Docker resources
+          docker system prune -f || true
+          
+          # Clean pip cache
+          pip cache purge || true
+          
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Cleanup after tests'
+        condition: always()

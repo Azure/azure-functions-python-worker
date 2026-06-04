@@ -49,7 +49,7 @@ extends:
       dependsOn: []
       jobs:
       - template: /eng/templates/official/jobs/ci-e2e-tests.yml@self
-    - stage: RunLCTests
+    - stage: RunFCTests
       dependsOn: []
       jobs:
-      - template: /eng/templates/official/jobs/ci-lc-tests.yml@self
+      - template: /eng/templates/official/jobs/ci-fc-tests.yml@self

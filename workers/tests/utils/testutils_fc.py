@@ -124,55 +124,45 @@ class FlexConsumptionWebHostController:
                                f' stdout: {stdout}')
 
     def _mount_package_in_container(self, local_path: str):
-        """Copy a local function app package into the container and
-        mount/extract it at /home/site/wwwroot.
+        """Copy a local function app zip into the container and extract it
+        at /home/site/wwwroot.
 
-        Supports both regular zip files (PK magic) and SquashFS images
-        (hsqs magic) which Azure Functions uses for Flex Consumption.
+        Flex Consumption is zip-only end-to-end: Core Tools' Flex publish
+        path uploads a raw zip via `api/publish`, the Legion platform layer
+        mounts that zip's contents onto the worker pod, and the host's
+        LegionInstanceManager.ApplyContextAsync is a no-op. SquashFS was
+        only used by legacy Linux Consumption (Atlas) via Core Tools'
+        `--build-native-deps` flag, which Flex does not support.
         """
         with open(local_path, "rb") as f:
             magic = f.read(4)
 
-        is_squashfs = (magic == b'hsqs')
-        is_zip = (magic[:2] == b'PK')
-
-        if not is_squashfs and not is_zip:
+        if magic[:2] != b'PK':
             raise RuntimeError(
-                f"{local_path} is neither a zip nor a squashfs image. "
-                f"First 4 bytes: {magic}"
+                f"{local_path} is not a zip archive. "
+                f"First 4 bytes: {magic!r}"
             )
 
-        container_pkg = "/tmp/app.sqsh" if is_squashfs else "/tmp/app.zip"
+        container_pkg = "/tmp/app.zip"
 
-        # Copy the package into the container
+        # Copy the zip into the container
         subprocess.run(
             [self._docker_cmd, "cp", local_path,
              f"{self._uuid}:{container_pkg}"],
             check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         )
 
-        if is_squashfs:
-            # Mount squashfs image at /home/site/wwwroot
-            subprocess.run(
-                [self._docker_cmd, "exec", self._uuid,
-                 "bash", "-c",
-                 "mkdir -p /home/site/wwwroot "
-                 f"&& mount -t squashfs -o loop {container_pkg} "
-                 "/home/site/wwwroot"],
-                check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            )
-        else:
-            # Extract zip using Python's zipfile
-            subprocess.run(
-                [self._docker_cmd, "exec", self._uuid,
-                 "python", "-c",
-                 "import zipfile, os; "
-                 "os.makedirs('/home/site/wwwroot', exist_ok=True); "
-                 f"zipfile.ZipFile('{container_pkg}').extractall("
-                 "'/home/site/wwwroot'); "
-                 f"os.remove('{container_pkg}')"],
-                check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            )
+        # Extract zip using Python's zipfile
+        subprocess.run(
+            [self._docker_cmd, "exec", self._uuid,
+             "python", "-c",
+             "import zipfile, os; "
+             "os.makedirs('/home/site/wwwroot', exist_ok=True); "
+             f"zipfile.ZipFile('{container_pkg}').extractall("
+             "'/home/site/wwwroot'); "
+             f"os.remove('{container_pkg}')"],
+            check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
 
     def send_request(
             self,
@@ -271,10 +261,6 @@ class FlexConsumptionWebHostController:
                         image: str,
                         env: Dict[str, str] = {}) -> int:
         """Create a docker container and record its port."""
-        os.environ['_DUMMY_CONT_KEY'] = (
-            "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6"
-            "IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
-        )
         worker_name = 'azure_functions_worker' \
             if sys.version_info.minor < 13 else 'proxy_worker'
 
@@ -362,6 +348,12 @@ class FlexConsumptionWebHostController:
         run_cmd.extend(["--device", "/dev/fuse"])
         run_cmd.extend(["-e", f"CONTAINER_NAME={self._uuid}"])
         encryption_key = os.getenv('_DUMMY_CONT_KEY')
+        if not encryption_key:
+            raise RuntimeError(
+                "_DUMMY_CONT_KEY environment variable is required. "
+                "It is provided by the CI pipeline; for local runs, "
+                "export it before invoking the test."
+            )
         full_key_bytes = base64.b64decode(encryption_key.encode())
         aes_key_bytes = full_key_bytes[:32]
         aes_key_base64 = base64.b64encode(aes_key_bytes).decode()

@@ -55,8 +55,10 @@ jobs:
       - bash: |
             echo "Checking azure_functions_worker (Python < 3.13)..."
             cd workers
-            pip install "setuptools<82.0"
-            pip install . invoke
+            python -m pip install --upgrade pip
+            python -m pip install uv
+            python -m uv pip install --system "setuptools<82.0"
+            python -m uv pip install --system . invoke
             cd tests
             python -m invoke -c test_setup build-protos
             cd ..
@@ -66,7 +68,9 @@ jobs:
       - bash: |
             echo "Checking proxy_worker (Python >= 3.13)..."
             cd workers
-            pip install . invoke
+            python -m pip install --upgrade pip
+            python -m pip install uv
+            python -m uv pip install --system . invoke
             cd tests
             python -m invoke -c test_setup build-protos
             cd ..
@@ -76,14 +80,18 @@ jobs:
       - bash: |
             echo "Checking V1 Library Worker (Python >= 3.13)..."
             cd runtimes/v1
-            pip install .
+            python -m pip install --upgrade pip
+            python -m pip install uv
+            python -m uv pip install --system .
             python -c "import pkgutil, importlib; [importlib.import_module(f'azure_functions_runtime_v1.{name}') for _, name, _ in pkgutil.walk_packages(['azure_functions_runtime_v1'])]"
         displayName: 'Python Library V1: check for missing dependencies'
         condition: eq(variables['proxyWorker'], true)
       - bash: |
             echo "Checking V2 Library Worker (Python >= 3.13)..."
             cd runtimes/v2
-            pip install .
+            python -m pip install --upgrade pip
+            python -m pip install uv
+            python -m uv pip install --system .
             python -c "import pkgutil, importlib; [importlib.import_module(f'azure_functions_runtime.{name}') for _, name, _ in pkgutil.walk_packages(['azure_functions_runtime'])]"
         displayName: 'Python Library V2: check for missing dependencies'
         condition: eq(variables['proxyWorker'], true)

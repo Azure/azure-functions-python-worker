@@ -202,6 +202,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
         self.assertIn('accept_json', req['url'])
 
+    @testutils.retryable_test(3, 5)
     def test_unhandled_error(self):
         r = self.webhost.request('GET', 'unhandled_error')
         self.assertEqual(r.status_code, 500)

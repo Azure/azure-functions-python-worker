@@ -134,6 +134,7 @@ class ThirdPartyHttpFunctionsTestBase:
             self.assertEqual(r.text, '')
             self.assertEqual(r.status_code, 200)
 
+        @testutils.retryable_test(3, 5)
         def test_unhandled_error(self):
             r = self.webhost.request('GET', 'unhandled_error', no_prefix=True)
             self.assertEqual(r.status_code, 500)

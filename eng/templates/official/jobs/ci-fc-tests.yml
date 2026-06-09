@@ -66,8 +66,10 @@ jobs:
 
       - bash: |
           python -m pip install --upgrade pip
-          pip install "setuptools<82.0"
-          python -m pip install -U -e ${{ parameters.PROJECT_DIRECTORY }}/[dev]
+          python -m pip install uv
+          UV_PIP="python -m uv pip install --system"
+          $UV_PIP "setuptools<82.0"
+          $UV_PIP -U -e ${{ parameters.PROJECT_DIRECTORY }}/[dev]
 
           cd ${{ parameters.PROJECT_DIRECTORY }}/tests
           python -m invoke -c test_setup build-protos

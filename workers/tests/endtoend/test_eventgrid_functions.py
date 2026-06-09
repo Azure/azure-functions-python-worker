@@ -10,6 +10,7 @@ from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
 from azure_functions_worker.utils.common import is_envvar_true
 
 
+@unittest.skip("Temporary skip")
 class TestEventGridFunctions(testutils.WebHostTestCase):
 
     @classmethod

@@ -10,8 +10,17 @@ python -m pip install uv
 UV_PIP="python -m uv pip install --system"
 
 $UV_PIP "setuptools>=62,<82.0"
-$UV_PIP -e runtimes/v2
-$UV_PIP -e runtimes/v1
+
+# runtimes/v1 and runtimes/v2 require Python >= 3.13. Old pip would silently
+# install them on lower versions; uv (correctly) refuses, so install them
+# conditionally. They are only consumed by proxy_worker (Python >= 3.13).
+PY_VER="$1"
+PY_MINOR="${PY_VER#*.}"
+if [ "${PY_MINOR:-0}" -ge 13 ]; then
+    $UV_PIP -e runtimes/v2
+    $UV_PIP -e runtimes/v1
+fi
+
 $UV_PIP -U --prerelease=allow azure-functions
 $UV_PIP -U --prerelease=allow -e $2/[dev]
 

@@ -806,6 +806,41 @@ class _WebHostProxy:
         r = self.request('GET', '', no_prefix=True)
         return 200 <= r.status_code < 300
 
+    def wait_until_ready(self, timeout: float = 90.0,
+                         poll_interval: float = 1.0) -> bool:
+        """Poll the host's status endpoint until it reports `Running`.
+
+        The Functions Host exposes `/admin/host/status` which returns
+        ``{"state": "Running", ...}`` only after the worker has connected
+        and the function app has been loaded/indexed. This is a much more
+        reliable readiness signal than a fixed sleep or hitting `/`
+        (which returns 200 as soon as the HTTP listener binds, before
+        any functions are actually registered).
+        """
+        deadline = time.time() + timeout
+        status_url = self._addr + '/admin/host/status'
+        last_state = None
+        while time.time() < deadline:
+            if self._proc.poll() is not None:
+                # Host process exited.
+                return False
+            try:
+                r = requests.get(status_url, timeout=5)
+                if r.status_code == 200:
+                    try:
+                        last_state = r.json().get('state')
+                    except ValueError:
+                        last_state = None
+                    if last_state == 'Running':
+                        return True
+            except requests.RequestException:
+                pass
+            time.sleep(poll_interval)
+        logging.getLogger('webhosttests').warning(
+            "Webhost did not reach 'Running' state within %.0fs "
+            "(last state: %r)", timeout, last_state)
+        return False
+
     def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
         params = dict(kwargs.pop('params', {}))
@@ -980,10 +1015,15 @@ def start_webhost(*, script_dir=None, stdout=None):
 
     proc = popen_webhost(stdout=stdout, stderr=subprocess.STDOUT,
                          script_root=script_root, port=port)
-    time.sleep(10)  # Giving host some time to start fully.
 
     addr = f'http://{LOCALHOST}:{port}'
-    return _WebHostProxy(proc, addr)
+    proxy = _WebHostProxy(proc, addr)
+    # Poll the host's /admin/host/status until the host reports `Running`,
+    # rather than relying on a fixed sleep. The previous `time.sleep(10)`
+    # was racy on slower agents (Python 3.9-3.11 cold starts in particular)
+    # which caused intermittent test failures like flaky `test_unhandled_error`.
+    proxy.wait_until_ready(timeout=90.0)
+    return proxy
 
 
 def create_dummy_dispatcher():

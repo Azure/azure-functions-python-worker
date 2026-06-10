@@ -95,11 +95,13 @@ jobs:
         displayName: 'Configure NuGet feed for current organization'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
-          chmod +x eng/scripts/test-setup.sh
-          
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
+        displayName: 'Install Python dependencies (uv)'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+      - bash: |
+          chmod +x eng/scripts/test-setup.sh
           eng/scripts/test-setup.sh
-        displayName: 'Install dependencies and the worker'
+        displayName: 'Build webhost and extensions (dotnet)'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - task: DownloadPipelineArtifact@2
         displayName: 'Download Python SDK Artifact'

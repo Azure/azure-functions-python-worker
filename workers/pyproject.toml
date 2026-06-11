@@ -54,7 +54,7 @@ dev = [
     "azure-monitor-opentelemetry", # Used for Azure Monitor unit tests
     "azure-storage-blob~=12.27.1", # Used for Blob Emulator tests
     "flask",
-    "fastapi~=0.103.2",
+    "fastapi",
     "pydantic",
     "flake8==6.*",
     "mypy",

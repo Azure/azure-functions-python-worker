@@ -8,3 +8,11 @@ pipelines:
           lastModifiedDate: 2026-06-10
         armory:
           lastModifiedDate: 2026-06-10
+  658:
+    usedNonDefaultBranch: true
+    retail:
+      source:
+        eslint:
+          lastModifiedDate: 2026-06-16
+        armory:
+          lastModifiedDate: 2026-06-16

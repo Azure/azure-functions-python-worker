@@ -7,7 +7,7 @@ import pytest
 # a NullableTimestamp whose ``value`` is built from the vendored Timestamp,
 # so equality comparison only succeeds when the expected value is also
 # constructed from the same descriptor pool.
-from azure_functions_worker._vendored.google.protobuf.timestamp_pb2 import (
+from google.protobuf.timestamp_pb2 import (
     Timestamp,
 )
 

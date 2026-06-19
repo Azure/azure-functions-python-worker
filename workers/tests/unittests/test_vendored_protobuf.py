@@ -89,9 +89,15 @@ class TestVendoredProtobufActivation(unittest.TestCase):
         *,
         extra_path: Path = None,
         script_root: str = None,
+        use_vendored_override: str = None,
     ) -> subprocess.CompletedProcess:
         """Run ``code`` in a fresh interpreter with the worker on
         PYTHONPATH plus an optional ``extra_path`` prepended.
+
+        ``use_vendored_override`` sets ``_AZFUNC_USE_VENDORED_PROTOBUF``
+        in the child env when provided (``"1"`` to force activation,
+        ``"0"`` to force no activation). When ``None`` (default), the
+        env var is unset and the child uses the autodetect path.
         """
         env = os.environ.copy()
         path_parts = []
@@ -105,6 +111,11 @@ class TestVendoredProtobufActivation(unittest.TestCase):
         # Don't carry parent's protobuf impl forcing — the worker's
         # __init__ sets it based on detection.
         env.pop("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", None)
+        # Don't carry the launcher's vendored-protobuf override —
+        # each test sets it (or leaves it unset) deliberately.
+        env.pop("_AZFUNC_USE_VENDORED_PROTOBUF", None)
+        if use_vendored_override is not None:
+            env["_AZFUNC_USE_VENDORED_PROTOBUF"] = use_vendored_override
         if script_root is not None:
             env["AzureWebJobsScriptRoot"] = script_root
         else:
@@ -333,6 +344,100 @@ class TestVendoredProtobufActivation(unittest.TestCase):
             msg=(
                 "Worker bootstrap shadowed customer's other google.* "
                 "packages after activating vendored protobuf.\n"
+                f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+            ),
+        )
+        self.assertIn("OK", result.stdout)
+
+    @unittest.skipUnless(
+        _vendored_protobuf_present(),
+        "Vendored protobuf is not populated. Run "
+        "`python eng/scripts/vendor_deps.py --target "
+        "workers/azure_functions_worker/_vendored` first.",
+    )
+    def test_launcher_override_forces_activation(self):
+        """The local-dev launcher sets ``_AZFUNC_USE_VENDORED_PROTOBUF=1``
+        before importing the worker so that the worker is isolated from
+        whatever protobuf version sits in the customer's venv. This test
+        simulates that path: env var set to ``"1"``, no ``.python_packages``
+        layout, no customer protobuf on ``sys.path``. The worker must
+        still activate the vendored fallback.
+        """
+        code = textwrap.dedent(
+            """
+            import os
+            import sys
+            import azure_functions_worker  # noqa: F401  triggers bootstrap
+
+            assert (
+                os.environ.get("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION")
+                == "python"
+            ), "launcher override did not force pure-Python"
+
+            from azure_functions_worker._vendored.google import (
+                protobuf as vendored_pb,
+            )
+            assert sys.modules["google.protobuf"] is vendored_pb, (
+                "launcher override did not alias vendored google.protobuf"
+            )
+            print("OK")
+            """
+        )
+        result = self._run_subprocess(code, use_vendored_override="1")
+        self.assertEqual(
+            result.returncode,
+            0,
+            msg=(
+                "Worker did not honor _AZFUNC_USE_VENDORED_PROTOBUF=1.\n"
+                f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+            ),
+        )
+        self.assertIn("OK", result.stdout)
+
+    def test_launcher_override_can_force_no_activation(self):
+        """``_AZFUNC_USE_VENDORED_PROTOBUF=0`` is the escape hatch for
+        users debugging protobuf-version-specific behavior against the
+        worker's bundled protobuf. It must skip activation even when
+        the canonical ``.python_packages`` layout would normally trigger
+        autodetect.
+        """
+        hostile_root = self._write_hostile_protobuf(Path(self.tmp_dir))
+        hostile_site = (
+            hostile_root / ".python_packages" / "lib" / "site-packages"
+        )
+
+        code = textwrap.dedent(
+            """
+            import os
+            import sys
+            import azure_functions_worker  # noqa: F401  triggers bootstrap
+
+            # Opt-out must beat autodetect: env var must remain unset
+            # and the vendored modules must not be aliased.
+            assert (
+                os.environ.get("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION")
+                is None
+            ), "opt-out did not prevent forcing pure-Python"
+
+            top_pb = sys.modules.get("google.protobuf")
+            if top_pb is not None:
+                assert "_vendored" not in (top_pb.__file__ or ""), (
+                    "opt-out did not prevent vendored activation"
+                )
+            print("OK")
+            """
+        )
+        result = self._run_subprocess(
+            code,
+            extra_path=hostile_site,
+            script_root=str(hostile_root),
+            use_vendored_override="0",
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            msg=(
+                "Worker did not honor _AZFUNC_USE_VENDORED_PROTOBUF=0.\n"
                 f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
             ),
         )

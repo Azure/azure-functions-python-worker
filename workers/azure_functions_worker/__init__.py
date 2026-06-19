@@ -41,24 +41,46 @@ import sys
 # necessary because protobuf's runtime assumes a single coherent
 # ``google.protobuf`` package per process.
 #
-# Detection cost: a single ``os.path.isdir`` call (and at most one
-# ``importlib.util.find_spec`` fallback) at worker startup. Zero per
-# invocation.
+# Detection cost: a single env-var lookup plus at most one
+# ``os.path.isdir`` call at worker startup. Zero per invocation.
+#
+# Policy override via ``_AZFUNC_USE_VENDORED_PROTOBUF``:
+#   ``"1"`` — force activation. The launcher (``worker.py``) sets this
+#            in local-dev mode so we always isolate the worker from
+#            whatever protobuf version sits in the customer's venv.
+#   ``"0"`` — force no activation. Escape hatch for users who need to
+#            debug protobuf-version-specific behavior against the
+#            worker's bundled protobuf.
+#   unset   — autodetect via the canonical Azure Functions layout
+#            (``.python_packages``). This is the production path; the
+#            override env var is not set in cloud launches.
+
+_USE_VENDORED_PROTOBUF_ENV = "_AZFUNC_USE_VENDORED_PROTOBUF"
 
 
-def _customer_ships_protobuf() -> bool:
-    """Return True if the function app ships its own google.protobuf
-    (directly or as a transitive dependency).
+def _should_use_vendored_protobuf() -> bool:
+    """Return True if the worker should activate its private pure-Python
+    ``google.protobuf`` fallback for this process.
 
-    We only check the canonical Azure Functions deployment layout —
-    ``<AzureWebJobsScriptRoot>/.python_packages/lib/site-packages/google/
-    protobuf``. We deliberately do *not* fall back to a generic
-    ``importlib.util.find_spec`` lookup because that would also match
-    the worker's own protobuf install (which is always on ``sys.path``
-    and is not "customer protobuf"). A false positive there would
-    activate the pure-Python vendored fallback for every function app,
-    erasing the perf benefit of running the worker on ``upb``.
+    The launcher (``worker.py``) is the policy layer: it knows whether
+    we are running in Azure or locally and sets
+    ``_AZFUNC_USE_VENDORED_PROTOBUF`` accordingly. If the env var is
+    unset (e.g. the worker was imported directly by a test or a
+    third-party host) we fall back to checking the canonical Azure
+    Functions deployment layout.
+
+    We deliberately do *not* use a generic ``importlib.util.find_spec``
+    lookup as a fallback because that would also match the worker's
+    own protobuf install (which is always on ``sys.path`` and is not
+    "customer protobuf"). A false positive there would activate the
+    pure-Python vendored fallback for every function app and erase
+    the perf benefit of running the worker on ``upb``.
     """
+    override = os.environ.get(_USE_VENDORED_PROTOBUF_ENV)
+    if override == "1":
+        return True
+    if override == "0":
+        return False
     script_root = os.environ.get("AzureWebJobsScriptRoot")
     if not script_root:
         return False
@@ -113,7 +135,7 @@ def _activate_vendored_protobuf() -> None:
         return
 
 
-if _customer_ships_protobuf():
+if _should_use_vendored_protobuf():
     # Force the vendored copy onto pure-Python BEFORE pre-importing
     # any of its modules, so that vendored ``api_implementation``
     # doesn't try to load a (potentially incompatible) ``_upb``.
@@ -125,8 +147,8 @@ if _customer_ships_protobuf():
         # Opt-in diagnostic. Off by default to avoid polluting
         # customer logs / log scrapers that treat stderr as warning.
         print(
-            "[azure_functions_worker] Customer ships google.protobuf; "
-            "activated vendored pure-Python fallback.",
+            "[azure_functions_worker] Activated vendored pure-Python "
+            "protobuf fallback.",
             file=sys.stderr,
         )
 # else: nothing to do. Worker's pb2 stubs will resolve top-level
@@ -136,5 +158,5 @@ if _customer_ships_protobuf():
 # actionable signal to customers.
 
 
-del _customer_ships_protobuf
+del _should_use_vendored_protobuf
 del _activate_vendored_protobuf

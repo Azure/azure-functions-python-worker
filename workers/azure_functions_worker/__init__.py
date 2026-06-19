@@ -143,14 +143,6 @@ if _should_use_vendored_protobuf():
         "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python"
     )
     _activate_vendored_protobuf()
-    if os.environ.get("AZURE_FUNCTIONS_PYTHON_PROTOBUF_DEBUG"):
-        # Opt-in diagnostic. Off by default to avoid polluting
-        # customer logs / log scrapers that treat stderr as warning.
-        print(
-            "[azure_functions_worker] Activated vendored pure-Python "
-            "protobuf fallback.",
-            file=sys.stderr,
-        )
 # else: nothing to do. Worker's pb2 stubs will resolve top-level
 # google.protobuf to the worker's own protobuf install and use upb
 # naturally. We deliberately do NOT log on the no-op path: it would

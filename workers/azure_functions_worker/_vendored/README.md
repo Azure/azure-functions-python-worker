@@ -26,8 +26,20 @@ fast `upb` C extension natively. Most function apps fall in this
 branch and pay no runtime cost for vendoring.
 
 The selection happens once at worker startup in
-`azure_functions_worker/__init__.py`. See `_customer_ships_protobuf()`
+`azure_functions_worker/__init__.py`. See `_should_use_vendored_protobuf()`
 there.
+
+## Local development always uses the vendored copy
+
+When the worker runs locally (not in an Azure environment), the
+launcher (`workers/python/prodV4/worker.py`,
+`workers/python/test/worker.py`) sets
+`_AZFUNC_USE_VENDORED_PROTOBUF=1` before importing
+`azure_functions_worker`, which unconditionally activates the vendored
+fallback. This keeps the local dev experience aligned with the
+customer-ships-protobuf production path and isolates the worker from
+whatever `protobuf` happens to be installed in the developer's venv.
+The pure-Python perf cost only matters in production.
 
 ## Pure-Python only
 

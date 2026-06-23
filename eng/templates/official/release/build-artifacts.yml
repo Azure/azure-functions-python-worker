@@ -1,0 +1,70 @@
+parameters:
+  - name: artifactName
+    type: string
+    default: 'azure-functions-runtime'
+    displayName: 'Pipeline artifact name produced by the Build stage'
+  - name: projectDisplayName
+    type: string
+    default: 'Azure Functions Runtime'
+    displayName: 'Human-readable project name for job titles'
+  - name: libraryVersion
+    type: string
+    default: ''
+    displayName: 'Library version to build (if set, checks out release branch)'
+  - name: releaseBranchPrefix
+    type: string
+    default: 'release'
+    displayName: 'Prefix for release branch (e.g., release or release-v2)'
+  - name: projectDirectory
+    type: string
+    default: '.'
+    displayName: 'Directory containing pyproject.toml (e.g., runtimes/v2)'
+  - name: githubOrg
+    type: string
+    default: 'Azure'
+    displayName: 'GitHub organization that owns the source repository'
+  - name: githubRepo
+    type: string
+    default: 'azure-functions-python-worker'
+    displayName: 'GitHub repository name'
+
+jobs:
+  - job: "Build"
+    displayName: 'Build ${{ parameters.projectDisplayName }}'
+
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-ubuntu-22.04
+      os: linux
+
+    templateContext:
+      outputParentDirectory: $(Build.ArtifactStagingDirectory)
+      outputs:
+        - output: pipelineArtifact
+          targetPath: $(Build.SourcesDirectory)/${{ parameters.projectDirectory }}
+          artifactName: ${{ parameters.artifactName }}
+
+    steps:
+      - ${{ if ne(parameters.libraryVersion, '') }}:
+        - checkout: none
+        - bash: |
+            git clone --branch "${{ parameters.releaseBranchPrefix }}/${{ parameters.libraryVersion }}" --single-branch \
+              "https://$(GithubUser):$(GithubPat)@github.com/${{ parameters.githubOrg }}/${{ parameters.githubRepo }}.git" .
+          displayName: 'Checkout ${{ parameters.releaseBranchPrefix }}/${{ parameters.libraryVersion }} branch'
+
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.13"
+      - bash: |
+          python --version
+        displayName: 'Check python version'
+      - task: PipAuthenticate@1
+        displayName: 'Pip Authenticate'
+        inputs:
+          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
+      - bash: |
+          python -m pip install -U pip
+          python -m pip install build
+          cd ${{ parameters.projectDirectory }}
+          python -m build
+        displayName: 'Build ${{ parameters.projectDisplayName }}'

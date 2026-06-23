@@ -124,16 +124,45 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
     @skipIf(is_envvar_true('skipTest'),
             'Running tests using an editable azure-functions package.')
     def test_loading_libraries_from_customers_package(self):
-        """Since the Python now loaded the customer's dependencies, the
-        libraries version should match the ones in
-        .python_packages_grpc_protobuf/ folder
+        """The worker vendors a private copy of ``google.protobuf`` and
+        activates it whenever the customer ships their own protobuf (or
+        when running locally). Activation aliases ``google.protobuf`` in
+        ``sys.modules`` to the vendored copy so the worker's pb2 stubs
+        never see a customer-pinned (potentially incompatible)
+        protobuf. Because protobuf's runtime requires a single coherent
+        ``google.protobuf`` package per process, customer code's
+        ``import google.protobuf`` also resolves to the vendored copy
+        — the customer's pinned version is deliberately shadowed.
+
+        ``grpc`` is not vendored and is still loaded from the customer's
+        package, so its version assertion is preserved.
         """
         r: Response = self.webhost.request('GET', 'report_dependencies')
         libraries = r.json()['libraries']
-        self.assertEqual(
-            libraries['proto.expected.version'], libraries['proto.version']
+
+        # protobuf: functionapp pin (3.9.0) must NOT be what was loaded;
+        # the vendored fallback should have shadowed it. We verify
+        # both the version doesn't match the pin and the module path
+        # points into the worker's _vendored tree.
+        self.assertNotEqual(
+            libraries['proto.version'],
+            libraries['proto.expected.version'],
+            msg=(
+                "Customer's pinned protobuf was loaded; the vendored "
+                "fallback should have shadowed it for worker safety."
+            ),
+        )
+        self.assertIn(
+            '_vendored',
+            libraries['proto.file'],
+            msg=(
+                "google.protobuf did not resolve to the worker's "
+                "vendored copy. proto.file="
+                f"{libraries['proto.file']!r}"
+            ),
         )
 
+        # grpc is not vendored
         self.assertEqual(
             libraries['grpc.expected.version'], libraries['grpc.version']
         )

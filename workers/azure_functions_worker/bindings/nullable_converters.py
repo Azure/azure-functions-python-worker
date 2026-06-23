@@ -1,11 +1,14 @@
 from datetime import datetime
 from typing import Optional, Union
 
-# Use the vendored Timestamp so the value can be assigned to a vendored
-# protobuf field (``NullableTimestamp.value``). A ``Timestamp`` from the
-# customer-facing ``google.protobuf`` namespace lives in a different
-# descriptor pool and would be rejected at assignment time.
-from azure_functions_worker._vendored.google.protobuf.timestamp_pb2 import (
+# Import from top-level ``google.protobuf``. In the no-customer-protobuf
+# branch this resolves to the worker's own protobuf (with upb); in the
+# customer-ships-protobuf branch the bootstrap in
+# ``azure_functions_worker/__init__.py`` aliases it to the vendored
+# pure-Python copy. Either way the worker uses a single descriptor pool
+# end-to-end (matching the pb2 stubs), avoiding cross-pool serialization
+# on the hot path that runs for every invocation.
+from google.protobuf.timestamp_pb2 import (
     Timestamp,
 )
 

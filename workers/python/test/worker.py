@@ -17,6 +17,11 @@ if __name__ == '__main__':
     add_script_root_to_sys_path()
     minor_version = sys.version_info[1]
     if minor_version < 13:
+        # Local/test launch of the azure_functions_worker. Activate
+        # the worker's private pure-Python google.protobuf fallback
+        # so the worker is isolated from whatever protobuf version
+        # sits in the local environment.
+        os.environ.setdefault("_AZFUNC_USE_VENDORED_PROTOBUF", "1")
         from azure_functions_worker import main
         main.main()
     else:

@@ -12,11 +12,14 @@ from datetime import timedelta
 from os import PathLike, fspath
 from typing import Dict, Optional
 
-# Worker code references _vendored.google.protobuf instead of
-# importing directly from google.protobuf.
-from azure_functions_worker._vendored.google.protobuf.duration_pb2 import (
-    Duration,
-)
+# Import from top-level ``google.protobuf``. In the no-customer-protobuf
+# branch this resolves to the worker's own protobuf (with upb); in the
+# customer-ships-protobuf branch the bootstrap in
+# ``azure_functions_worker/__init__.py`` aliases it to the vendored
+# pure-Python copy. Either way the worker uses a single descriptor pool
+# end-to-end (matching the pb2 stubs), avoiding cross-pool serialization
+# on the hot path.
+from google.protobuf.duration_pb2 import Duration
 
 from . import bindings, functions, protos
 from .bindings.retrycontext import RetryPolicy

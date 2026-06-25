@@ -101,26 +101,80 @@ class TestLoadBindingRegistryNoEagerExtImport(unittest.TestCase):
 class TestGetDeferredBindingRegistry(unittest.TestCase):
     """Behaviour of the lazy ``_get_deferred_binding_registry`` helper."""
 
+    # Sentinel used by _restore_module_state to indicate that the attribute
+    # did not exist before we set it.
+    _MISSING = object()
+
     def setUp(self):
         _reset_meta_state()
-        # Stash any pre-existing base extension import so we can control
-        # sys.modules presence per-test.
-        self._stashed_modules = {
-            k: sys.modules.pop(k)
-            for k in list(sys.modules)
-            if k == 'azurefunctions.extensions.base'
-            or k.startswith('azurefunctions.extensions.base.')
-        }
+        # Stash any pre-existing entries for the entire azurefunctions.* tree
+        # we touch, plus the attribute values on parent packages. This is
+        # critical on Linux CI where the real azurefunctions.extensions
+        # package is installed and used by other test files. Without it we
+        # would leave a stale MagicMock at azurefunctions.extensions.base,
+        # which leaks to subsequent tests that do `import
+        # azurefunctions.extensions.base as x` and pick up the MagicMock
+        # via parent-package attribute traversal.
+        self._stashed_modules = {}
+        for key in list(sys.modules):
+            if (key == 'azurefunctions'
+                    or key == 'azurefunctions.extensions'
+                    or key == 'azurefunctions.extensions.base'
+                    or key.startswith('azurefunctions.extensions.base.')):
+                self._stashed_modules[key] = sys.modules.pop(key)
+        self._saved_attrs = []
 
     def tearDown(self):
         _reset_meta_state()
+        self._restore_module_state()
+
+    def _save_attr(self, module_name, attr_name):
+        """Snapshot module.attr so it can be restored verbatim later."""
+        module = sys.modules.get(module_name)
+        if module is None:
+            return
+        if hasattr(module, attr_name):
+            self._saved_attrs.append(
+                (module_name, attr_name, getattr(module, attr_name))
+            )
+        else:
+            self._saved_attrs.append(
+                (module_name, attr_name, self._MISSING)
+            )
+
+    def _restore_module_state(self):
+        """Reverse the mutations made by _install_fake_base_extension.
+
+        Restores parent-package attributes first (so any sys.modules
+        restore below picks up the right object), then pops any
+        leftover fake modules, then re-inserts the originals.
+        """
+        for module_name, attr_name, original in self._saved_attrs:
+            module = sys.modules.get(module_name)
+            if module is None:
+                continue
+            if original is self._MISSING:
+                try:
+                    delattr(module, attr_name)
+                except AttributeError:
+                    pass
+            else:
+                setattr(module, attr_name, original)
+        self._saved_attrs = []
+
+        for key in list(sys.modules):
+            if (key == 'azurefunctions'
+                    or key == 'azurefunctions.extensions'
+                    or key == 'azurefunctions.extensions.base'
+                    or key.startswith('azurefunctions.extensions.base.')):
+                sys.modules.pop(key, None)
         sys.modules.update(self._stashed_modules)
 
-    @staticmethod
-    def _install_fake_base_extension(fake_module):
+    def _install_fake_base_extension(self, fake_module):
         """Place fake_module at sys.modules['azurefunctions.extensions.base']
-        AND wire up its parent packages so ``import azurefunctions.extensions.base
-        as clients`` resolves ``clients`` to fake_module without touching disk.
+        AND wire up its parent packages so ``import azurefunctions.extensions
+        .base as clients`` resolves ``clients`` to fake_module without
+        touching disk.
 
         The ``as`` form of import does attribute lookup on the parent
         package after ``__import__`` returns, so the parents must be real
@@ -128,30 +182,27 @@ class TestGetDeferredBindingRegistry(unittest.TestCase):
         a fresh child for any attribute access, which would shadow our
         fake_module).
 
-        Returns a list of keys that were inserted so the caller can pop
-        them at teardown.
+        Parent-module attributes that we overwrite are recorded for
+        restoration in tearDown.
         """
-        inserted = []
-        # Build (or stash) the namespace-package chain.
+        # Build the namespace-package chain if absent. setUp already
+        # popped any real azurefunctions/* entries into _stashed_modules,
+        # so these inserts are guaranteed to be clean adds.
         if 'azurefunctions' not in sys.modules:
             sys.modules['azurefunctions'] = types.ModuleType('azurefunctions')
-            inserted.append('azurefunctions')
         if 'azurefunctions.extensions' not in sys.modules:
             sys.modules['azurefunctions.extensions'] = types.ModuleType(
                 'azurefunctions.extensions')
-            inserted.append('azurefunctions.extensions')
-        # Wire attributes so attribute traversal returns the right child.
+
+        # Snapshot the attributes we are about to overwrite so tearDown
+        # can put them back exactly as they were.
+        self._save_attr('azurefunctions', 'extensions')
+        self._save_attr('azurefunctions.extensions', 'base')
+
         sys.modules['azurefunctions'].extensions = \
             sys.modules['azurefunctions.extensions']
         sys.modules['azurefunctions.extensions'].base = fake_module
         sys.modules['azurefunctions.extensions.base'] = fake_module
-        inserted.append('azurefunctions.extensions.base')
-        return inserted
-
-    @staticmethod
-    def _pop_fake_modules(keys):
-        for k in keys:
-            sys.modules.pop(k, None)
 
     def test_short_circuits_when_base_extension_not_in_sys_modules(self):
         # Customer hasn't loaded any azurefunctions.extensions.* package,
@@ -180,12 +231,9 @@ class TestGetDeferredBindingRegistry(unittest.TestCase):
         fake_registry = mock.Mock(name='fake_registry')
         fake_module = mock.MagicMock()
         fake_module.get_binding_registry.return_value = fake_registry
-        keys = self._install_fake_base_extension(fake_module)
+        self._install_fake_base_extension(fake_module)
 
-        try:
-            result = meta._get_deferred_binding_registry()
-        finally:
-            self._pop_fake_modules(keys)
+        result = meta._get_deferred_binding_registry()
 
         self.assertIs(result, fake_registry)
         self.assertIs(meta.DEFERRED_BINDING_REGISTRY, fake_registry)
@@ -194,15 +242,12 @@ class TestGetDeferredBindingRegistry(unittest.TestCase):
         fake_registry = mock.Mock(name='fake_registry')
         fake_module = mock.MagicMock()
         fake_module.get_binding_registry.return_value = fake_registry
-        keys = self._install_fake_base_extension(fake_module)
+        self._install_fake_base_extension(fake_module)
 
-        try:
-            first = meta._get_deferred_binding_registry()
-            # Drop the module again; cached value must still be returned.
-            self._pop_fake_modules(keys)
-            second = meta._get_deferred_binding_registry()
-        finally:
-            self._pop_fake_modules(keys)
+        first = meta._get_deferred_binding_registry()
+        # Drop the module again; cached value must still be returned.
+        sys.modules.pop('azurefunctions.extensions.base', None)
+        second = meta._get_deferred_binding_registry()
 
         self.assertIs(first, second)
         # get_binding_registry should only be invoked once across calls.
@@ -222,11 +267,9 @@ class TestGetDeferredBindingRegistry(unittest.TestCase):
         # result wins to avoid repeated import work in the hot path.
         fake_module = mock.MagicMock()
         fake_module.get_binding_registry.return_value = mock.Mock()
-        keys = self._install_fake_base_extension(fake_module)
-        try:
-            second = meta._get_deferred_binding_registry()
-        finally:
-            self._pop_fake_modules(keys)
+        self._install_fake_base_extension(fake_module)
+
+        second = meta._get_deferred_binding_registry()
 
         self.assertIsNone(second)
         fake_module.get_binding_registry.assert_not_called()
@@ -327,36 +370,80 @@ class TestHttpV2RegistryShortCircuit(unittest.TestCase):
     """``HttpV2Registry._check_http_v2_enabled`` must not import the
     base extension when it is not already in ``sys.modules``."""
 
+    # Sentinel for attribute snapshots (see _save_attr).
+    _MISSING = object()
+
     def setUp(self):
         _reset_http_v2_state()
-        self._stashed_modules = {
-            k: sys.modules.pop(k)
-            for k in list(sys.modules)
-            if k == 'azurefunctions.extensions.base'
-            or k.startswith('azurefunctions.extensions.base.')
-        }
-        self._inserted_keys = []
+        # See TestGetDeferredBindingRegistry.setUp for the rationale. We
+        # stash entries across the full azurefunctions.* tree we touch
+        # and snapshot the parent-package attributes we will overwrite,
+        # so tearDown can put everything back exactly as it was. This
+        # prevents test pollution on Linux CI where the real
+        # azurefunctions.extensions package is installed.
+        self._stashed_modules = {}
+        for key in list(sys.modules):
+            if (key == 'azurefunctions'
+                    or key == 'azurefunctions.extensions'
+                    or key == 'azurefunctions.extensions.base'
+                    or key.startswith('azurefunctions.extensions.base.')):
+                self._stashed_modules[key] = sys.modules.pop(key)
+        self._saved_attrs = []
 
     def tearDown(self):
         _reset_http_v2_state()
-        for k in self._inserted_keys:
-            sys.modules.pop(k, None)
+        self._restore_module_state()
+
+    def _save_attr(self, module_name, attr_name):
+        module = sys.modules.get(module_name)
+        if module is None:
+            return
+        if hasattr(module, attr_name):
+            self._saved_attrs.append(
+                (module_name, attr_name, getattr(module, attr_name))
+            )
+        else:
+            self._saved_attrs.append(
+                (module_name, attr_name, self._MISSING)
+            )
+
+    def _restore_module_state(self):
+        for module_name, attr_name, original in self._saved_attrs:
+            module = sys.modules.get(module_name)
+            if module is None:
+                continue
+            if original is self._MISSING:
+                try:
+                    delattr(module, attr_name)
+                except AttributeError:
+                    pass
+            else:
+                setattr(module, attr_name, original)
+        self._saved_attrs = []
+
+        for key in list(sys.modules):
+            if (key == 'azurefunctions'
+                    or key == 'azurefunctions.extensions'
+                    or key == 'azurefunctions.extensions.base'
+                    or key.startswith('azurefunctions.extensions.base.')):
+                sys.modules.pop(key, None)
         sys.modules.update(self._stashed_modules)
 
     def _install_fake_base_extension(self, fake_module):
         """See TestGetDeferredBindingRegistry._install_fake_base_extension."""
         if 'azurefunctions' not in sys.modules:
             sys.modules['azurefunctions'] = types.ModuleType('azurefunctions')
-            self._inserted_keys.append('azurefunctions')
         if 'azurefunctions.extensions' not in sys.modules:
             sys.modules['azurefunctions.extensions'] = types.ModuleType(
                 'azurefunctions.extensions')
-            self._inserted_keys.append('azurefunctions.extensions')
+
+        self._save_attr('azurefunctions', 'extensions')
+        self._save_attr('azurefunctions.extensions', 'base')
+
         sys.modules['azurefunctions'].extensions = \
             sys.modules['azurefunctions.extensions']
         sys.modules['azurefunctions.extensions'].base = fake_module
         sys.modules['azurefunctions.extensions.base'] = fake_module
-        self._inserted_keys.append('azurefunctions.extensions.base')
 
     def test_returns_false_without_importing_when_extension_absent(self):
         self.assertNotIn('azurefunctions.extensions.base', sys.modules)

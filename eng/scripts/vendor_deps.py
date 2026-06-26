@@ -73,28 +73,121 @@ def _resolve_package_root(dotted_name: str) -> Path:
     return origin.parent
 
 
+def _safe_makedirs(path: Path) -> None:
+    """Create ``path`` and any missing parents, tolerating bind-mount races.
+
+    Docker-on-Windows bind mounts can leave stale metadata after a previous
+    ``rmtree`` so that ``Path.exists()``, ``os.mkdir`` and even kernel
+    ``mkdir`` disagree. We work around it by:
+
+    1. Trying ``os.makedirs(exist_ok=True)`` (the common case).
+    2. If that fails, walking parents and creating each segment individually
+       via ``os.mkdir`` while swallowing ``FileExistsError``.
+    3. As a last resort (POSIX only), shelling out to ``mkdir -p``.
+    """
+    import os
+    import subprocess
+
+    str_path = str(path)
+    try:
+        os.makedirs(str_path, exist_ok=True)
+        if path.is_dir():
+            return
+    except OSError:
+        pass
+
+    # Per-segment fallback.
+    segments: list[Path] = []
+    cur = path
+    while cur.parent != cur:
+        segments.append(cur)
+        cur = cur.parent
+    for seg in reversed(segments):
+        try:
+            os.mkdir(str(seg))
+        except FileExistsError:
+            continue
+        except FileNotFoundError:
+            break
+    if path.is_dir():
+        return
+
+    # Final fallback: kernel mkdir -p (POSIX only; on Windows the prior
+    # steps are sufficient because there is no bind-mount weirdness).
+    if os.name == "posix":
+        rc = subprocess.run(
+            ["mkdir", "-p", str_path], capture_output=True, text=True
+        )
+        if rc.returncode == 0 and path.is_dir():
+            return
+        raise RuntimeError(
+            f"Could not create directory {str_path!r}: {rc.stderr.strip()}"
+        )
+    raise RuntimeError(f"Could not create directory {str_path!r}")
+
+
+def _safe_rmtree(path: Path) -> None:
+    """Remove ``path`` recursively, falling back to ``rm -rf`` on POSIX.
+
+    Docker Desktop on Windows occasionally leaves stale cache entries after
+    ``shutil.rmtree`` so that subsequent ``mkdir`` calls fail with confusing
+    errors. Doing the removal through the kernel as a final step appears to
+    flush the cache reliably.
+
+    Raises ``OSError`` if the directory still exists after both attempts.
+    Silent failure here would let stale files from an older vendoring
+    survive the re-copy (the import-rewriter only touches files it copies)
+    and ship in the artifact.
+    """
+    import os
+    import subprocess
+
+    last_err: Exception | None = None
+    if path.exists():
+        try:
+            shutil.rmtree(path)
+        except OSError as e:
+            last_err = e
+    if os.name == "posix":
+        # Kernel-level ``rm -rf`` even if Python thought the path was already
+        # gone; this nudges Docker Desktop into invalidating its cache.
+        subprocess.run(
+            ["rm", "-rf", str(path)],
+            capture_output=True, text=True, check=False,
+        )
+    if path.exists():
+        # Both attempts failed to actually remove the tree. Surface the
+        # original error so callers don't silently merge new files on
+        # top of a stale tree.
+        raise OSError(
+            f"Failed to remove {path!s}; stale files would be shipped. "
+            f"Original error: {last_err!r}"
+        )
+
+
+
 def _copy_package(src: Path, dst: Path) -> int:
     """Copy ``src`` to ``dst`` recursively, skipping native extensions.
 
     Returns the number of Python source files copied.
     """
     if dst.exists():
-        shutil.rmtree(dst)
-    dst.mkdir(parents=True)
+        _safe_rmtree(dst)
+    _safe_makedirs(dst)
 
     copied = 0
     for path in src.rglob("*"):
         rel = path.relative_to(src)
         target = dst / rel
         if path.is_dir():
-            target.mkdir(parents=True, exist_ok=True)
+            _safe_makedirs(target)
             continue
         if path.suffix in NATIVE_EXTENSION_SUFFIXES:
             continue
         # Drop bytecode caches; they will be regenerated.
         if "__pycache__" in path.parts:
             continue
-        target.parent.mkdir(parents=True, exist_ok=True)
+        _safe_makedirs(target.parent)
         shutil.copy2(path, target)
         if path.suffix == ".py":
             copied += 1
@@ -262,6 +355,15 @@ def vendor_package(dotted_name: str, target_root: Path) -> dict:
     src = _resolve_package_root(dotted_name)
     parts = dotted_name.split(".")
     dst = target_root.joinpath(*parts)
+
+    # Wipe the top-level (e.g. ``_vendored/google``) entirely before
+    # re-vendoring. Removing only the leaf (``_vendored/google/protobuf``)
+    # leaves the parent in a half-state that confuses ``Path.mkdir`` on
+    # Docker-on-Windows bind mounts (``parent.is_dir()`` can return
+    # ``False`` for a parent that exists, causing the recursive
+    # ``parents=True`` path to raise ``FileExistsError``).
+    top_level = target_root / parts[0]
+    _safe_rmtree(top_level)
 
     copied = _copy_package(src, dst)
     _ensure_namespace_packages(target_root, dotted_name)

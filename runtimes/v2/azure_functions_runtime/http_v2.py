@@ -4,6 +4,7 @@ import abc
 import asyncio
 import importlib
 import socket
+import sys
 
 from typing import Any, Dict
 
@@ -277,6 +278,11 @@ class HttpV2Registry:
 
     @classmethod
     def _check_http_v2_enabled(cls):
+        # HTTP v2 support requires azurefunctions.extensions.base. If the
+        # function_app.py did not transitively import that package, HTTP
+        # v2 cannot be in use, so skip the cold-import cost
+        if 'azurefunctions.extensions.base' not in sys.modules:
+            return False
         try:
             # Attempt to import the base extension module
             import azurefunctions.extensions.base as ext_base

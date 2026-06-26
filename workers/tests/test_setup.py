@@ -38,12 +38,13 @@ WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
 WEBHOST_GIT_REPO = "https://github.com/Azure/azure-functions-host/archive"
 WEBHOST_TAG_PREFIX = "v4."
 WORKER_DIR = "azure_functions_worker" if sys.version_info.minor < 13 else "proxy_worker"
-# The worker's generated protobuf stubs must resolve `google.protobuf`
-# to the worker's vendored copy, not whatever the customer ships in
-# their `.python_packages`. The proxy worker (Python 3.13+) is a
-# separate worker with its own dependency isolation and is unaffected,
-# so we only rewrite for azure_functions_worker.
-REWRITE_PROTOBUF = WORKER_DIR == "azure_functions_worker"
+# The worker's generated protobuf stubs continue to import top-level
+# ``google.protobuf``. ``azure_functions_worker/__init__.py`` decides at
+# package-import time whether to redirect those imports to the vendored
+# copy (via ``sys.modules`` aliases) based on whether the customer ships
+# their own protobuf. Build-time rewriting of the stubs is no longer
+# needed, so this flag stays False.
+REWRITE_PROTOBUF = False
 
 
 def get_webhost_version() -> str:
@@ -321,9 +322,14 @@ def vendor_deps(c, target=None):
     """Vendor third-party deps into azure_functions_worker._vendored.
 
     Copies the currently-installed ``google.protobuf`` package into
-    ``azure_functions_worker/_vendored/google/protobuf/`` and rewrites its
-    internal imports so the worker resolves protobuf from the vendored copy
-    regardless of any version the customer ships in ``.python_packages``.
+    ``azure_functions_worker/_vendored/google/protobuf/`` (pure-Python
+    only — native extensions are skipped) and rewrites its internal
+    imports so the vendored copy is fully self-contained. The worker
+    only uses the vendored copy when the customer ships their own
+    ``google.protobuf``; otherwise the worker uses the protobuf install
+    on its own ``sys.path``. The decision is made at runtime in
+    ``azure_functions_worker/__init__.py``.
+
     Safe to re-run; the script is idempotent.
 
     Skipped for the proxy worker (Python >= 3.13) which has its own

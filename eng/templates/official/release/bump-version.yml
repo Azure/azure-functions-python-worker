@@ -1,0 +1,145 @@
+parameters:
+  - name: libraryVersion
+    type: string
+  - name: projectDisplayName
+    type: string
+    default: 'Azure Functions Runtime'
+    displayName: 'Human-readable project name for commit messages and logs'
+  - name: versionFilePath
+    type: string
+    displayName: 'Path to version file (e.g., runtimes/v2/azure_functions_runtime/version.py)'
+  - name: versionPattern
+    type: string
+    default: "VERSION = '([0-9])+\\.([0-9])+.*'"
+    displayName: 'Regex pattern to match version string in version file'
+  - name: versionReplacement
+    type: string
+    default: "VERSION = '{{VERSION}}'"
+    displayName: 'Replacement pattern for version (use {{VERSION}} as placeholder)'
+  - name: releaseBranchPrefix
+    type: string
+    default: 'release'
+    displayName: 'Prefix for release branch (e.g., release or release-v2)'
+  - name: createPullRequest
+    type: boolean
+    default: true
+    displayName: 'Create a draft PR to base branch after creating release branch'
+  - name: baseBranch
+    type: string
+    default: 'dev'
+    displayName: 'Base branch for PR creation (e.g., main or dev)'
+  - name: githubOrg
+    type: string
+    default: 'Azure'
+    displayName: 'GitHub organization that owns the source repository'
+  - name: githubRepo
+    type: string
+    default: 'azure-functions-python-worker'
+    displayName: 'GitHub repository name (used in URLs and as the local clone folder)'
+
+jobs:
+  - job: "CreateReleaseBranch"
+    displayName: 'Create Release Branch'
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-ubuntu-22.04
+      os: linux
+    steps:
+    - powershell: |
+        $githubUser = "$(GithubUser)"
+        $githubToken = "$(GithubPat)"
+        $newLibraryVersion = "${{ parameters.libraryVersion }}"
+        $branchPrefix = "${{ parameters.releaseBranchPrefix }}"
+        
+        # Strict version pattern: major.minor.patch with optional PEP 440 or SemVer pre-release suffix.
+        # PEP 440:  a/b/rc must be followed by a number (e.g., 1.5.0a1, 1.5.0rc2, 1.5.0.dev4, 1.5.0.post1)
+        # SemVer:   hyphen-separated identifiers (e.g., 1.5.0-alpha.1, 1.5.0-rc.1)
+        $versionValidation = '^\d+\.\d+\.\d+((a|b|rc)\d+|\.dev\d+|\.post\d+|-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$'
+
+        if ($newLibraryVersion -notmatch $versionValidation) {
+            Write-Host "NewLibraryVersion '$newLibraryVersion' is malformed. Expected major.minor.patch with an optional pre-release suffix."
+            Write-Host "Valid examples: 1.5.0, 1.5.0-alpha.1, 1.5.0rc1, 1.5.0a2, 1.5.0b3, 1.5.0.dev4, 1.5.0.post1"
+            exit -1
+        }
+
+        # Validate that the resulting branch ref is a valid Git ref name
+        $releaseBranch = "$branchPrefix/$newLibraryVersion"
+        git check-ref-format --branch $releaseBranch 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "The derived branch name '$releaseBranch' is not a valid Git ref name (see 'git check-ref-format' rules)."
+            Write-Host "Please use a version string that produces a valid branch name."
+            exit -1
+        }
+
+        # Create GitHub credential
+        git config --global user.name "AzureFunctions"
+        git config --global user.email "azurefunctions@microsoft.com"
+        $credential = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("${githubUser}:${githubToken}"))
+
+        # Heading to Artifact Repository
+        Write-Host "Operating based on ${{ parameters.githubRepo }}"
+        git checkout -b "$releaseBranch"
+
+        # Change version file
+        $versionFilePath = "${{ parameters.versionFilePath }}"
+        $versionPattern = '${{ parameters.versionPattern }}'
+        $versionReplacement = '${{ parameters.versionReplacement }}' -replace '\{\{VERSION\}\}', $newLibraryVersion
+        
+        Write-Host "Change version number in $versionFilePath to $newLibraryVersion"
+        Write-Host "  Pattern: $versionPattern"
+        Write-Host "  Replacement: $versionReplacement"
+        
+        ((Get-Content $versionFilePath) -replace $versionPattern, $versionReplacement -join "`n") + "`n" | Set-Content -NoNewline $versionFilePath
+        git add $versionFilePath
+
+        git commit -m "build: update ${{ parameters.projectDisplayName }} version to $newLibraryVersion"
+
+        # Create release branch
+        Write-Host "Creating release branch $releaseBranch"
+        git remote set-url origin "https://${githubUser}:${githubToken}@github.com/${{ parameters.githubOrg }}/${{ parameters.githubRepo }}.git"
+        git push --set-upstream origin "$releaseBranch"
+
+        # Create PR if requested
+        $createPR = [System.Convert]::ToBoolean("${{ parameters.createPullRequest }}")
+        if ($createPR) {
+            Write-Host "Creating PR draft in GitHub"
+            $prBody = @{
+                head = "$releaseBranch"
+                base = "${{ parameters.baseBranch }}"
+                title = "build: update ${{ parameters.projectDisplayName }} version to $newLibraryVersion"
+                body = "Version $newLibraryVersion"
+                draft = $true
+                maintainer_can_modify = $true
+            } | ConvertTo-Json -Compress
+
+            $headers = @{
+                "Authorization" = "Basic $credential"
+                "Content-Type" = "application/json"
+                "Accept" = "application/vnd.github.v3+json"
+                "User-Agent" = "AzureDevOpsPipeline"
+            }
+
+            $response = Invoke-WebRequest -Headers $headers -Method Post -Body $prBody -Uri "https://api.github.com/repos/${{ parameters.githubOrg }}/${{ parameters.githubRepo }}/pulls"
+            
+            if ($response.StatusCode -ne 201) {
+                Write-Host "##[warning]Failed to create PR draft. HTTP $($response.StatusCode)"
+            } else {
+                $draftUrl = ($response.Content | ConvertFrom-Json).html_url
+                Write-Host "PR draft created: $draftUrl"
+            }
+        }
+      displayName: 'Push ${{ parameters.releaseBranchPrefix }}/x.y.z'
+
+  - job: "CheckReleaseBranch"
+    dependsOn: ['CreateReleaseBranch']
+    displayName: '(Manual) Check Release Branch'
+    pool: server
+    steps:
+    - task: ManualValidation@1
+      displayName: '(Optional) Modify release branch'
+      inputs:
+        notifyUsers: ''  # No email notifications sent
+        instructions: |
+          1. Check if the https://github.com/${{ parameters.githubOrg }}/${{ parameters.githubRepo }}/tree/${{ parameters.releaseBranchPrefix }}/${{ parameters.libraryVersion }} build succeeds and passes all unit tests.
+          2. If not, modify the ${{ parameters.releaseBranchPrefix }}/${{ parameters.libraryVersion }} branch.
+          3. Ensure ${{ parameters.releaseBranchPrefix }}/${{ parameters.libraryVersion }} branch contains all necessary changes.

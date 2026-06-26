@@ -13,6 +13,14 @@ parameters:
     displayName: 'V2 Library Release (PyPI)'
     type: boolean
     default: false
+  - name: V2LibraryVersion
+    displayName: 'V2 Library version to release (e.g., 0.1.0)'
+    type: string
+    default: ''
+  - name: V1LibraryVersion
+    displayName: 'V1 Library version to release (e.g., 0.1.0)'
+    type: string
+    default: ''
 
 resources:
   repositories:
@@ -43,25 +51,79 @@ extends:
         jobs:
           - template: /eng/templates/official/jobs/publish-release.yml@self
         condition: eq(${{ parameters.WorkerRelease }}, True)
-      - stage: ReleasePythonV2Library
+      - stage: ReleasePythonV2Library_BumpVersion
         dependsOn: []
-        displayName: 'Release V2 Library (PyPI)'
-        jobs:
-          - template: /eng/templates/official/jobs/publish-library-release.yml@self
-            parameters:
-              PROJECT_DIRECTORY: 'runtimes/v2'
-              VERSION_FILE: 'runtimes/v2/azure_functions_runtime/version.py'
-              PROJECT_NAME: 'azure-functions-runtime'
-              BRANCH_NAME: 'release-v2'
+        displayName: 'V2 Library - Bump Version'
         condition: eq(${{ parameters.V2LibraryRelease }}, True)
-      - stage: ReleasePythonV1Library
-        dependsOn: []
-        displayName: 'Release V1 Library (PyPI)'
         jobs:
-          - template: /eng/templates/official/jobs/publish-library-release.yml@self
+          - template: /eng/templates/official/release/bump-version.yml@self
             parameters:
-              PROJECT_DIRECTORY: 'runtimes/v1'
-              VERSION_FILE: 'runtimes/v1/azure_functions_runtime_v1/version.py'
-              PROJECT_NAME: 'azure-functions-runtime-v1'
-              BRANCH_NAME: 'release-v1'
+              libraryVersion: ${{ parameters.V2LibraryVersion }}
+              projectDisplayName: 'Azure Functions Runtime V2'
+              versionFilePath: 'runtimes/v2/azure_functions_runtime/version.py'
+              releaseBranchPrefix: 'release-v2'
+              createPullRequest: true
+              baseBranch: 'dev'
+      - stage: ReleasePythonV2Library_Build
+        dependsOn: ReleasePythonV2Library_BumpVersion
+        displayName: 'V2 Library - Build'
+        condition: eq(${{ parameters.V2LibraryRelease }}, True)
+        jobs:
+          - template: /eng/templates/official/release/build-artifacts.yml@self
+            parameters:
+              artifactName: 'azure-functions-runtime'
+              projectDisplayName: 'Azure Functions Runtime V2'
+              libraryVersion: ${{ parameters.V2LibraryVersion }}
+              releaseBranchPrefix: 'release-v2'
+              projectDirectory: 'runtimes/v2'
+      - stage: ReleasePythonV2Library_Release
+        dependsOn: ReleasePythonV2Library_Build
+        displayName: 'V2 Library - Release (PyPI)'
+        condition: eq(${{ parameters.V2LibraryRelease }}, True)
+        jobs:
+          - template: /eng/templates/official/release/publish-release.yml@self
+            parameters:
+              libraryVersion: ${{ parameters.V2LibraryVersion }}
+              projectDisplayName: 'Azure Functions Runtime V2'
+              releaseBranchPrefix: 'release-v2'
+              tagPrefix: 'runtimes/v2-'
+              blobPath: 'azure-functions/python/azure-functions-runtime'
+              artifactName: 'azure-functions-runtime'
+      - stage: ReleasePythonV1Library_BumpVersion
+        dependsOn: []
+        displayName: 'V1 Library - Bump Version'
         condition: eq(${{ parameters.V1LibraryRelease }}, True)
+        jobs:
+          - template: /eng/templates/official/release/bump-version.yml@self
+            parameters:
+              libraryVersion: ${{ parameters.V1LibraryVersion }}
+              projectDisplayName: 'Azure Functions Runtime V1'
+              versionFilePath: 'runtimes/v1/azure_functions_runtime_v1/version.py'
+              releaseBranchPrefix: 'release-v1'
+              createPullRequest: true
+              baseBranch: 'dev'
+      - stage: ReleasePythonV1Library_Build
+        dependsOn: ReleasePythonV1Library_BumpVersion
+        displayName: 'V1 Library - Build'
+        condition: eq(${{ parameters.V1LibraryRelease }}, True)
+        jobs:
+          - template: /eng/templates/official/release/build-artifacts.yml@self
+            parameters:
+              artifactName: 'azure-functions-runtime-v1'
+              projectDisplayName: 'Azure Functions Runtime V1'
+              libraryVersion: ${{ parameters.V1LibraryVersion }}
+              releaseBranchPrefix: 'release-v1'
+              projectDirectory: 'runtimes/v1'
+      - stage: ReleasePythonV1Library_Release
+        dependsOn: ReleasePythonV1Library_Build
+        displayName: 'V1 Library - Release (PyPI)'
+        condition: eq(${{ parameters.V1LibraryRelease }}, True)
+        jobs:
+          - template: /eng/templates/official/release/publish-release.yml@self
+            parameters:
+              libraryVersion: ${{ parameters.V1LibraryVersion }}
+              projectDisplayName: 'Azure Functions Runtime V1'
+              releaseBranchPrefix: 'release-v1'
+              tagPrefix: 'runtimes/v1-'
+              blobPath: 'azure-functions/python/azure-functions-runtime-v1'
+              artifactName: 'azure-functions-runtime-v1'

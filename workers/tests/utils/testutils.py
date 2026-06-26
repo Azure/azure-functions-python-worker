@@ -326,6 +326,36 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     if test_exception is not None:
                         raise test_exception
 
+    def wait_for_host_log(self, substring: str,
+                          timeout: float = 10.0,
+                          poll_interval: float = 0.5) -> bool:
+        """Wait until `substring` appears in the host stdout written so far.
+
+        The worker forwards exception logs to the host over gRPC, so a log
+        line can land in the host's stdout slightly after the corresponding
+        HTTP response is returned. The check_log_* assertions read a snapshot
+        of host_out taken right after the test method returns; without waiting,
+        that snapshot can miss the late-arriving line, making such tests flaky.
+        Call this at the end of a test_* method so the snapshot includes the
+        line. Best-effort: returns True if found, False on timeout (the
+        check_log_* assertion still runs and decides).
+        """
+        if self.host_stdout is None:
+            return True
+        start = self.host_stdout.tell()
+        deadline = time.time() + timeout
+        try:
+            while time.time() < deadline:
+                self.host_stdout.seek(start)
+                if substring in self.host_stdout.read():
+                    return True
+                time.sleep(poll_interval)
+            return False
+        finally:
+            # Restore the read position so the framework captures host_out
+            # from the same point regardless of our polling reads.
+            self.host_stdout.seek(start)
+
 
 # This is not supported in 3.13+
 if sys.version_info.minor < 13:

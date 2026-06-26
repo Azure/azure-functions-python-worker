@@ -138,6 +138,9 @@ class ThirdPartyHttpFunctionsTestBase:
         def test_unhandled_error(self):
             r = self.webhost.request('GET', 'unhandled_error', no_prefix=True)
             self.assertEqual(r.status_code, 500)
+            # The worker forwards the traceback to the host asynchronously, so
+            # wait for it before check_log_unhandled_error reads its snapshot.
+            self.wait_for_host_log('ZeroDivisionError: division by zero')
             # https://github.com/Azure/azure-functions-host/issues/2706
             # self.assertIn('ZeroDivisionError', r.text)
 

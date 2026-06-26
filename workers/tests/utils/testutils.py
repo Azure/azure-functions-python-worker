@@ -122,7 +122,6 @@ SECRETS_TEMPLATE = """\
 MASTER_KEY = "testMasterKey"
 
 
-
 class AsyncTestCaseMeta(type(unittest.TestCase)):
 
     def __new__(mcls, name, bases, ns):

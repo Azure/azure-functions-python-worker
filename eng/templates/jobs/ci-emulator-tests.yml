@@ -146,6 +146,24 @@ jobs:
           docker container rm --force eventhubs-emulator
           docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/servicebus/docker-compose.yml pull
           docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/servicebus/docker-compose.yml up -d
+
+          # Wait for the Service Bus emulator (and its SQL Edge dependency) to
+          # be ready before running tests. Starting the webhost while the
+          # emulator is still booting makes the ServiceBus listener fail at
+          # startup, so the host never binds and tests see connection refused.
+          echo "Waiting for the Service Bus emulator to be ready..."
+          for i in $(seq 1 90); do
+            if docker logs servicebus-emulator 2>&1 | grep -q "Emulator Service is Successfully Up"; then
+              echo "Service Bus emulator is ready."
+              break
+            fi
+            if [ "$i" -eq 90 ]; then
+              echo "Service Bus emulator did not become ready in time. Logs:"
+              docker logs servicebus-emulator || true
+              exit 1
+            fi
+            sleep 2
+          done
         env:
           AzureWebJobsSQLPassword: $(AzureWebJobsSQLPassword)
         displayName: 'Install Azurite and Start ServiceBus Emulator'

@@ -27,6 +27,11 @@ PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 BINDING_REGISTRY = None
 DEFERRED_BINDING_REGISTRY = None
 
+# Tracks whether the lazy load of azurefunctions.extensions.base has
+# already been attempted (independent of success). This prevents repeated
+# import attempts when the extension isn't installed.
+_DEFERRED_BINDING_REGISTRY_LOADED = False
+
 
 def _check_http_input_type_annotation(bind_name: str, pytype: type,
                                       is_deferred_binding: bool) -> bool:
@@ -61,7 +66,10 @@ def load_binding_registry() -> None:
     not found, it loads the builtin. If the BINDING_REGISTRY is None,
     azure-functions hasn't been loaded in properly.
 
-    Tries to load the base extension.
+    Note: ``azurefunctions.extensions.base`` is NOT eagerly imported
+    here. Only apps that use deferred bindings or HTTP v2 actually
+    need it. The deferred binding registry is populated lazily on first
+    use via :func:`_get_deferred_binding_registry`.
     """
 
     func = sys.modules.get('azure.functions')
@@ -82,9 +90,45 @@ def load_binding_registry() -> None:
                              sys.path, sys.modules,
                              os.path.exists(CUSTOMER_PACKAGES_PATH))
 
+
+def _get_deferred_binding_registry():
+    """
+    Lazily resolve the deferred binding registry from
+    ``azurefunctions.extensions.base``.
+
+    The first call attempts the import. On success the registry is
+    cached in :data:`DEFERRED_BINDING_REGISTRY` and returned on every
+    subsequent call without re-importing. If the extension is not
+    installed or the customer's code never imported it, the result is
+    cached as ``None`` and no further work is done.
+
+    Deferred binding parameter types come from
+    ``azurefunctions.extensions.bindings.*`` packages, which all
+    transitively import ``azurefunctions.extensions.base``. So if the
+    base extension is not in ``sys.modules`` by the time we are asked
+    (always called after `function_app.py` has been imported), the
+    function app cannot be using deferred bindings.
+
+    Tests may set :data:`DEFERRED_BINDING_REGISTRY` directly; that
+    value is honored.
+    """
+    global DEFERRED_BINDING_REGISTRY, _DEFERRED_BINDING_REGISTRY_LOADED
+
+    if DEFERRED_BINDING_REGISTRY is not None:
+        return DEFERRED_BINDING_REGISTRY
+    if _DEFERRED_BINDING_REGISTRY_LOADED:
+        return None
+
+    # Short-circuit: if the customer hasn't (transitively) imported the
+    # base extension, they cannot be using deferred bindings. Skip the
+    # cold-import cost entirely.
+    if 'azurefunctions.extensions.base' not in sys.modules:
+        _DEFERRED_BINDING_REGISTRY_LOADED = True
+        return None
+
+    _DEFERRED_BINDING_REGISTRY_LOADED = True
     try:
         import azurefunctions.extensions.base as clients
-        global DEFERRED_BINDING_REGISTRY
         DEFERRED_BINDING_REGISTRY = clients.get_binding_registry()
     except ImportError:
         logger.debug('Base extension not found. '
@@ -92,6 +136,7 @@ def load_binding_registry() -> None:
                      'Sys Module: %s, python-packages Path exists: %s.',
                      sys.version_info.minor, sys.path,
                      sys.modules, os.path.exists(CUSTOMER_PACKAGES_PATH))
+    return DEFERRED_BINDING_REGISTRY
 
 
 def get_binding(bind_name: str,
@@ -107,7 +152,9 @@ def get_binding(bind_name: str,
     if binding is None and not is_deferred_binding:
         binding = BINDING_REGISTRY.get(bind_name)  # type: ignore
     if binding is None and is_deferred_binding:
-        binding = DEFERRED_BINDING_REGISTRY.get(bind_name)  # type: ignore
+        deferred_registry = _get_deferred_binding_registry()
+        if deferred_registry is not None:
+            binding = deferred_registry.get(bind_name)
     if binding is None:
         binding = GenericBinding
     return binding
@@ -270,8 +317,9 @@ def check_deferred_bindings_enabled(param_anno: Union[type, None],
     The first bool represents if deferred bindings is enabled at a fx level
     The second represents if the current binding is deferred binding
     """
-    if (DEFERRED_BINDING_REGISTRY is not None
-            and DEFERRED_BINDING_REGISTRY.check_supported_type(param_anno)):
+    deferred_registry = _get_deferred_binding_registry()
+    if (deferred_registry is not None
+            and deferred_registry.check_supported_type(param_anno)):
         return True, True
     else:
         return deferred_bindings_enabled, False
@@ -284,13 +332,15 @@ def get_deferred_raw_bindings(indexed_function, input_types):
     the defined binding type and if deferred bindings is enabled for that
     binding.
     """
-    raw_bindings, bindings_logs = DEFERRED_BINDING_REGISTRY.get_raw_bindings(
+    deferred_registry = _get_deferred_binding_registry()
+    raw_bindings, bindings_logs = deferred_registry.get_raw_bindings(
         indexed_function, input_types)
     return raw_bindings, bindings_logs
 
 
 def get_settlement_client():
-    return DEFERRED_BINDING_REGISTRY.get(SERVICE_BUS_CLIENT_NAME).get_client()
+    deferred_registry = _get_deferred_binding_registry()
+    return deferred_registry.get(SERVICE_BUS_CLIENT_NAME).get_client()
 
 
 def validate_settlement_param(params: dict,
@@ -318,7 +368,10 @@ def validate_settlement_param(params: dict,
     try:
         param_type = annotations.get(settlement_param)
         # Check if the type is a supported type for the settlement client
-        if DEFERRED_BINDING_REGISTRY.check_supported_grpc_client_type(param_type):
+        deferred_registry = _get_deferred_binding_registry()
+        if (deferred_registry is not None
+                and deferred_registry.check_supported_grpc_client_type(
+                    param_type)):
             return settlement_param
     except Exception:
         param_type = None

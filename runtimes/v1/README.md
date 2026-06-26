@@ -4,15 +4,15 @@
 |--------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | dev    | [![Build Status](https://img.shields.io/azure-devops/build/azfunc/public/658/dev)](https://azfunc.visualstudio.com/public/_build/latest?definitionId=658&branchName=dev) | [![codecov](https://codecov.io/gh/Azure/azure-functions-python-worker/branch/dev/graph/badge.svg)](https://codecov.io/gh/Azure/azure-functions-python-worker)  | [![Test Status](https://img.shields.io/azure-devops/build/azfunc/public/658/dev)](https://azfunc.visualstudio.com/public/_build/latest?definitionId=658&branchName=dev) |
 
-Python support for Azure Functions is based on Python 3.13 serverless hosting on Linux and the Functions 4.0 runtime.
+Python support for Azure Functions is based on Python 3.13 and 3.14 serverless hosting on Linux and the Functions 4.0 runtime.
 
 Here is the current status of Python in Azure Functions:
 
 What are the supported Python versions?
 
-| Azure Functions Runtime          | Python 3.13 |
-|----------------------------------|-------------|
-| Azure Functions 4.0              | ✔           |     
+| Azure Functions Runtime          | Python 3.13 | Python 3.14 |
+|----------------------------------|-------------|-------------|
+| Azure Functions 4.0              | ✔           | ✔           |
 
 For information about Azure Functions Runtime, please refer to [Azure Functions runtime versions overview](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) page.
 

@@ -117,6 +117,11 @@ SECRETS_TEMPLATE = """\
 }
 """
 
+# Master key defined in SECRETS_TEMPLATE above; required to call the
+# host's protected /admin endpoints (e.g. /admin/host/status).
+MASTER_KEY = "testMasterKey"
+
+
 
 class AsyncTestCaseMeta(type(unittest.TestCase)):
 
@@ -806,8 +811,8 @@ class _WebHostProxy:
         r = self.request('GET', '', no_prefix=True)
         return 200 <= r.status_code < 300
 
-    def wait_until_ready(self, timeout: float = 90.0,
-                         poll_interval: float = 1.0) -> bool:
+    def wait_until_ready(self, timeout: float = 60.0,
+                         poll_interval: float = 0.5) -> bool:
         """Poll the host's status endpoint until it reports `Running`.
 
         The Functions Host exposes `/admin/host/status` which returns
@@ -816,16 +821,21 @@ class _WebHostProxy:
         reliable readiness signal than a fixed sleep or hitting `/`
         (which returns 200 as soon as the HTTP listener binds, before
         any functions are actually registered).
+
+        The admin endpoint is protected by the master key, so the request
+        must include it; otherwise the host replies 401 and we would block
+        until the full timeout on every webhost start.
         """
         deadline = time.time() + timeout
         status_url = self._addr + '/admin/host/status'
+        headers = {'x-functions-key': MASTER_KEY}
         last_state = None
         while time.time() < deadline:
             if self._proc.poll() is not None:
                 # Host process exited.
                 return False
             try:
-                r = requests.get(status_url, timeout=5)
+                r = requests.get(status_url, headers=headers, timeout=5)
                 if r.status_code == 200:
                     try:
                         last_state = r.json().get('state')
@@ -1022,7 +1032,7 @@ def start_webhost(*, script_dir=None, stdout=None):
     # rather than relying on a fixed sleep. The previous `time.sleep(10)`
     # was racy on slower agents (Python 3.9-3.11 cold starts in particular)
     # which caused intermittent test failures like flaky `test_unhandled_error`.
-    proxy.wait_until_ready(timeout=90.0)
+    proxy.wait_until_ready(timeout=60.0)
     return proxy
 
 

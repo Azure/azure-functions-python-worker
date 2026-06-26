@@ -160,6 +160,27 @@ class TestFlexConsumption(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Func Version: 1.11.1", resp.text)
 
+    @skipIf(sys.version_info.minor != 14,
+            "The BlobSdkBindings fixture bundles binary dependencies "
+            "(cryptography, cffi) built for Python 3.14.")
+    def test_blob_sdk_bindings(self):
+        """A function app using the azurefunctions blob SDK (deferred)
+        bindings extension should index and serve requests under Flex
+        Consumption, confirming SDK bindings work with Flex.
+        """
+        with FlexConsumptionWebHostController(_DEFAULT_HOST_VERSION,
+                                              self._py_version) as ctrl:
+            ctrl.assign_container(env={
+                "AzureWebJobsStorage": self._storage,
+                "SCM_RUN_FROM_PACKAGE": self._get_function_app(
+                    "BlobSdkBindings"),
+            })
+            req = Request('GET', f'{ctrl.url}/api/sdk_bindings_check')
+            resp = ctrl.send_request(req)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("BlobClient", resp.text)
+
     @skipIf(
         sys.version_info >= (3, 14),
         "Opencensus bundles protobuf 4.24.0, which generates message "

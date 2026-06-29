@@ -38,6 +38,7 @@ from tests.utils.constants import (
     CONSUMPTION_DOCKER_TEST,
     DEDICATED_DOCKER_TEST,
     EXTENSIONS_CSPROJ_TEMPLATE,
+    MASTER_KEY,
     PROJECT_ROOT,
     PYAZURE_INTEGRATION_TEST,
     PYAZURE_WEBHOST_DEBUG,
@@ -116,10 +117,6 @@ SECRETS_TEMPLATE = """\
   "source": "runtime"
 }
 """
-
-# Master key defined in SECRETS_TEMPLATE above; required to call the
-# host's protected /admin endpoints (e.g. /admin/host/status).
-MASTER_KEY = "testMasterKey"
 
 
 class AsyncTestCaseMeta(type(unittest.TestCase)):

@@ -81,6 +81,10 @@ ARCHIVE_WEBHOST_LOGS = "ARCHIVE_WEBHOST_LOGS"
 CONSUMPTION_DOCKER_TEST = "CONSUMPTION_DOCKER_TEST"
 DEDICATED_DOCKER_TEST = "DEDICATED_DOCKER_TEST"
 
+# Master key used in the webhost Secrets/host.json template; required to call
+# the host's protected /admin endpoints (e.g. /admin/host/status).
+MASTER_KEY = "testMasterKey"
+
 # Paths anchored on this file's location rather than on PROJECT_ROOT/TESTS_ROOT.
 # The `tests.utils` package exists in multiple trees in this repo
 # (workers/tests/utils and runtimes/v1/tests/utils), so PROJECT_ROOT/TESTS_ROOT

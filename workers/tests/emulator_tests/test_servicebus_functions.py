@@ -67,7 +67,12 @@ class TestServiceBusFunctionsSteinGeneric(TestServiceBusFunctions):
             'servicebus_functions_stein' / 'generic'
 
 
-@unittest.skipIf(sys.version_info.minor >= 14, "Skip to figure out uamqp.")
+@unittest.skipUnless(
+    sys.version_info.minor == 13,
+    "ServiceBus SDK bindings require protobuf>=6.32 and grpcio>=1.74. The "
+    "classic worker (Python <=3.12) pins protobuf~=5.29/grpcio~=1.70, so "
+    "importing the binding fails there; on 3.14 uamqp has no wheels. These "
+    "tests run on the 3.13 library worker only.")
 class TestServiceBusSDKFunctions(testutils.WebHostTestCase):
 
     @classmethod

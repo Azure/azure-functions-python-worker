@@ -172,10 +172,6 @@ class TestFlexConsumption(TestCase):
                                               self._py_version) as ctrl:
             ctrl.assign_container(env={
                 "AzureWebJobsStorage": self._storage,
-                # Use file-based secret storage so the host does not depend on
-                # blob storage (Azurite) being reachable from inside the mesh
-                # container for key management, which otherwise returns 503.
-                "AzureWebJobsSecretStorageType": "files",
                 "SCM_RUN_FROM_PACKAGE": self._get_function_app(
                     "BlobSdkBindings"),
             })

@@ -839,42 +839,69 @@ class _WebHostProxy:
 
     def wait_until_ready(self, timeout: float = 60.0,
                          poll_interval: float = 0.5) -> bool:
-        """Poll the host's status endpoint until it reports `Running`.
+        """Poll the host until it is running AND has registered functions.
 
-        The Functions Host exposes `/admin/host/status` which returns
-        ``{"state": "Running", ...}`` only after the worker has connected
-        and the function app has been loaded/indexed. This is a much more
-        reliable readiness signal than a fixed sleep or hitting `/`
-        (which returns 200 as soon as the HTTP listener binds, before
-        any functions are actually registered).
+        Readiness is confirmed in two phases:
 
-        The admin endpoint is protected by the master key, so the request
-        must include it; otherwise the host replies 401 and we would block
-        until the full timeout on every webhost start.
+        1. ``/admin/host/status`` reports ``{"state": "Running", ...}``,
+           which means the host has started and the worker has connected.
+        2. ``/admin/functions`` returns a non-empty list, which means the
+           worker finished importing ``function_app.py`` and the host has
+           registered the routes.
+
+        Phase 2 matters for the v2 programming model with a heavy
+        ``function_app.py`` (e.g. the ServiceBus SDK app, which imports
+        uamqp): the host can report ``Running`` while the worker is still
+        indexing, so HTTP routes intermittently return 404. Waiting for the
+        function list to be populated closes that gap.
+
+        Both admin endpoints are protected by the master key, so the
+        requests must include it; otherwise the host replies 401 and we
+        would block until the full timeout on every webhost start. If the
+        host does not expose ``/admin/functions`` (404), we fall back to
+        treating ``Running`` as ready so older hosts are not regressed.
         """
         deadline = time.time() + timeout
         status_url = self._addr + '/admin/host/status'
+        functions_url = self._addr + '/admin/functions'
         headers = {'x-functions-key': MASTER_KEY}
         last_state = None
+        running = False
         while time.time() < deadline:
             if self._proc.poll() is not None:
                 # Host process exited.
                 return False
             try:
-                r = requests.get(status_url, headers=headers, timeout=5)
-                if r.status_code == 200:
-                    try:
-                        last_state = r.json().get('state')
-                    except ValueError:
-                        last_state = None
-                    if last_state == 'Running':
+                if not running:
+                    r = requests.get(status_url, headers=headers, timeout=5)
+                    if r.status_code == 200:
+                        try:
+                            last_state = r.json().get('state')
+                        except ValueError:
+                            last_state = None
+                        running = last_state == 'Running'
+
+                if running:
+                    fr = requests.get(functions_url, headers=headers,
+                                      timeout=5)
+                    if fr.status_code == 404:
+                        # Functions admin endpoint not available on this
+                        # host; Running is the best signal we have.
                         return True
+                    if fr.status_code == 200:
+                        try:
+                            functions = fr.json()
+                        except ValueError:
+                            functions = None
+                        if functions:
+                            return True
             except requests.RequestException:
                 pass
             time.sleep(poll_interval)
         logging.getLogger('webhosttests').warning(
-            "Webhost did not reach 'Running' state within %.0fs "
-            "(last state: %r)", timeout, last_state)
+            "Webhost did not become ready within %.0fs "
+            "(last state: %r, functions registered: %s)",
+            timeout, last_state, running)
         return False
 
     def request(self, meth, funcname, *args, **kwargs):

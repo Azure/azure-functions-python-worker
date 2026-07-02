@@ -66,11 +66,10 @@ if __name__ == '__main__':
         # third-party user packages (in .venv)
         sys.path.insert(1, func_worker_dir)
         add_script_root_to_sys_path()
-        # In local dev we always activate the worker's private
-        # pure-Python ``google.protobuf`` fallback so the worker is
-        # isolated from whatever protobuf version sits in the
-        # user's environment
-        os.environ.setdefault("_AZFUNC_USE_VENDORED_PROTOBUF", "1")
+        # Let the worker autodetect protobuf: it falls back to the vendored
+        # pure-Python google.protobuf only when the function app ships an
+        # older protobuf, and otherwise uses the app's protobuf (e.g. 6.x
+        # from an extension).
         from azure_functions_worker import main
 
         main.main()

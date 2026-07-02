@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import importlib.util
 import os
 import re
 import sys
@@ -9,33 +10,23 @@ import sys
 # The worker's generated ``*_pb2.py`` stubs, loader and converters all
 # import top-level ``google.protobuf``, so the whole worker shares one
 # protobuf runtime and descriptor pool. Which protobuf that is depends on
-# what the function app ships:
+# what is first on ``sys.path`` (the function app's ``.python_packages`` and
+# PYTHONPATH precede the worker's own protobuf):
 #
-# 1. Function app ships no ``google.protobuf``: top-level resolves to the
-#    worker's own protobuf (with the fast ``upb`` C extension). Nothing to do.
+# 1. The protobuf on the path is the same or newer than the worker's
+#    vendored copy (including the worker's own protobuf, or protobuf 6.x
+#    shipped by an extension): use it directly. The worker's stubs run fine
+#    on a same-or-newer runtime.
 #
-# 2. Function app ships ``google.protobuf`` in ``.python_packages`` (its
-#    path precedes the worker's on ``sys.path``):
+# 2. The protobuf on the path is older than the vendored copy (e.g. an app
+#    pins protobuf 4.x): alias top-level ``google.protobuf`` to the vendored
+#    copy in ``sys.modules`` and force pure-Python
+#    (``PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python``), so the worker's
+#    stubs do not load against an incompatible protobuf. The app's older
+#    protobuf is shadowed for the whole process.
 #
-#    2a. Its protobuf is OLDER than the vendored copy (commonly 4.x): the
-#        worker's pb2 stubs would fail on it. Alias top-level
-#        ``google.protobuf`` to the vendored copy in ``sys.modules`` and
-#        force pure-Python (``PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python``)
-#        so it does not load a mismatched ``_upb``.
-#
-#    2b. Its protobuf is the SAME or NEWER (e.g. protobuf 6.x from an
-#        extension like the ServiceBus SDK binding): use it directly, no
-#        alias. The worker's stubs run fine on a newer runtime, and forcing
-#        a newer copy onto the older vendored one would raise a gencode
-#        ``VersionError``.
-#
-# Note for 2a: function app code that imports ``google.protobuf`` then
-# resolves to the vendored copy, since protobuf assumes one coherent
-# ``google.protobuf`` per process.
-#
-# Override via ``_AZFUNC_USE_VENDORED_PROTOBUF``: ``"1"`` forces activation
-# (set by the local-dev launcher ``worker.py``), ``"0"`` forces off, unset
-# autodetects via ``.python_packages`` (the production path).
+# Override via ``_AZFUNC_USE_VENDORED_PROTOBUF``: ``"1"`` forces activation,
+# ``"0"`` forces off, unset autodetects by comparing versions.
 
 _USE_VENDORED_PROTOBUF_ENV = "_AZFUNC_USE_VENDORED_PROTOBUF"
 
@@ -81,49 +72,48 @@ def _vendored_protobuf_dir():
     )
 
 
+def _find_importable_protobuf_dir():
+    """Return the directory of the top-level ``google.protobuf`` that would
+    be imported from ``sys.path``, without importing it. None if not found.
+    """
+    try:
+        spec = importlib.util.find_spec("google.protobuf")
+    except (ImportError, ValueError, AttributeError):
+        return None
+    if spec is None or not spec.origin:
+        return None
+    return os.path.dirname(spec.origin)
+
+
 def _should_use_vendored_protobuf() -> bool:
     """Return True if the worker should activate its private pure-Python
     ``google.protobuf`` fallback for this process.
 
-    The launcher (``worker.py``) sets ``_AZFUNC_USE_VENDORED_PROTOBUF`` to
-    force the choice; when unset we autodetect via the ``.python_packages``
-    layout.
-
-    When the function app ships its own ``google.protobuf`` we fall back to
-    the vendored copy only if that protobuf is older than ours. If it is the
-    same or newer (e.g. protobuf 6.x from an extension) we use it directly,
-    since the worker's stubs run on a newer runtime and forcing the newer
-    copy onto the older vendored one would raise a ``VersionError``.
-
-    We avoid a generic ``importlib.util.find_spec`` fallback: it would also
-    match the worker's own protobuf install and needlessly force pure-Python
-    for every function app.
+    ``_AZFUNC_USE_VENDORED_PROTOBUF`` forces the choice when set. Otherwise
+    we look at the ``google.protobuf`` that would be imported from
+    ``sys.path`` and fall back to the vendored copy only when it is older
+    than ours; a same-or-newer protobuf (including the worker's own) is used
+    directly, so protobuf-6 extensions load and the worker keeps ``upb``.
     """
     override = os.environ.get(_USE_VENDORED_PROTOBUF_ENV)
     if override == "1":
         return True
     if override == "0":
         return False
-    script_root = os.environ.get("AzureWebJobsScriptRoot")
-    if not script_root:
+
+    protobuf_dir = _find_importable_protobuf_dir()
+    if protobuf_dir is None:
         return False
-    candidate = os.path.join(
-        script_root,
-        ".python_packages",
-        "lib",
-        "site-packages",
-        "google",
-        "protobuf",
-    )
-    if not os.path.isdir(candidate):
+    if "_vendored" in protobuf_dir.split(os.sep):
+        # Already resolves to our vendored copy.
         return False
 
-    app_version = _read_protobuf_version(candidate)
+    app_version = _read_protobuf_version(protobuf_dir)
     vendored_version = _read_protobuf_version(_vendored_protobuf_dir())
     if app_version is None or vendored_version is None:
         # Cannot compare versions; insulate the worker (old behavior).
         return True
-    # Fall back to vendored only when the app's protobuf is older than ours.
+    # Fall back to vendored only when the path protobuf is older than ours.
     return app_version < vendored_version
 
 

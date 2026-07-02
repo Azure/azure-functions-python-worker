@@ -443,6 +443,86 @@ class TestVendoredProtobufActivation(unittest.TestCase):
         )
         self.assertIn("OK", result.stdout)
 
+    def _write_app_protobuf(self, root: Path, version: str) -> Path:
+        """Create a fake function app ``google.protobuf`` with a given
+        ``__version__`` under a simulated ``.python_packages`` tree.
+        Returns the script-root path (parent of ``.python_packages``).
+        """
+        site_packages = (
+            root / ".python_packages" / "lib" / "site-packages"
+        )
+        pkg = site_packages / "google" / "protobuf"
+        pkg.mkdir(parents=True)
+        (site_packages / "google" / "__init__.py").write_text(
+            "# Stub function app google namespace package.\n",
+            encoding="utf-8",
+        )
+        (pkg / "__init__.py").write_text(
+            f'__version__ = "{version}"\n', encoding="utf-8",
+        )
+        return root
+
+    @unittest.skipUnless(
+        _vendored_protobuf_present(),
+        "Vendored protobuf is not populated. Run "
+        "`python eng/scripts/vendor_deps.py --target "
+        "workers/azure_functions_worker/_vendored` first.",
+    )
+    def test_newer_app_protobuf_does_not_activate_vendored(self):
+        """A function app protobuf newer than the vendored copy (e.g.
+        protobuf 6.x from an extension) must NOT activate the vendored
+        fallback. The worker's stubs run on the newer runtime, and forcing
+        the newer copy onto the older vendored one would raise a
+        ``VersionError``.
+        """
+        newer_root = self._write_app_protobuf(
+            Path(self.tmp_dir), "6.99.0")
+        newer_site = (
+            newer_root / ".python_packages" / "lib" / "site-packages"
+        )
+
+        code = textwrap.dedent(
+            """
+            import os
+            import sys
+            import azure_functions_worker  # noqa: F401  triggers detection
+
+            # A newer function app protobuf must NOT force pure-Python.
+            assert (
+                os.environ.get("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION")
+                is None
+            ), (
+                "worker forced pure-Python despite the app protobuf "
+                "being newer than the vendored copy"
+            )
+
+            # The vendored copy must NOT be aliased over google.protobuf.
+            top_pb = sys.modules.get("google.protobuf")
+            if top_pb is not None:
+                assert "_vendored" not in (top_pb.__file__ or ""), (
+                    "vendored protobuf was activated despite the app "
+                    "protobuf being newer"
+                )
+            print("OK")
+            """
+        )
+
+        result = self._run_subprocess(
+            code,
+            extra_path=newer_site,
+            script_root=str(newer_root),
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            msg=(
+                "Worker activated the vendored fallback for a newer "
+                "app protobuf.\n"
+                f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+            ),
+        )
+        self.assertIn("OK", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

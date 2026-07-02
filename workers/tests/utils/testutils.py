@@ -900,8 +900,10 @@ class _WebHostProxy:
             time.sleep(poll_interval)
         logging.getLogger('webhosttests').warning(
             "Webhost did not become ready within %.0fs "
-            "(last state: %r, functions registered: %s)",
-            timeout, last_state, running)
+            "(host running: %s, last state: %r, functions registered: no). "
+            "The function app likely failed to index; see the captured "
+            "WebHost log for the worker error.",
+            timeout, running, last_state)
         return False
 
     def request(self, meth, funcname, *args, **kwargs):

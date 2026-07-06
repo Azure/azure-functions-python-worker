@@ -1,0 +1,560 @@
+[
+  {
+    "module": "azure_functions_runtime_v1.bindings",
+    "self_ms": 5.631,
+    "cum_ms": 5.631,
+    "depth": 4
+  },
+  {
+    "module": "azure_functions_runtime_v1.bindings.nullable_converters",
+    "self_ms": 10.551,
+    "cum_ms": 10.551,
+    "depth": 5
+  },
+  {
+    "module": "azure_functions_runtime_v1.bindings.datumdef",
+    "self_ms": 10.125,
+    "cum_ms": 20.676,
+    "depth": 4
+  },
+  {
+    "module": "azure_functions_runtime_v1.bindings.generic",
+    "self_ms": 9.653,
+    "cum_ms": 9.653,
+    "depth": 4
+  },
+  {
+    "module": "azure_functions_runtime_v1.utils",
+    "self_ms": 11.561,
+    "cum_ms": 11.561,
+    "depth": 5
+  },
+  {
+    "module": "azure_functions_runtime_v1.utils.constants",
+    "self_ms": 9.301,
+    "cum_ms": 20.862,
+    "depth": 4
+  },
+  {
+    "module": "azure_functions_runtime_v1.logging",
+    "self_ms": 7.418,
+    "cum_ms": 7.418,
+    "depth": 5
+  },
+  {
+    "module": "azure_functions_runtime_v1.version",
+    "self_ms": 6.498,
+    "cum_ms": 6.498,
+    "depth": 5
+  },
+  {
+    "module": "azure_functions_runtime_v1.utils.helpers",
+    "self_ms": 9.016,
+    "cum_ms": 22.931,
+    "depth": 4
+  },
+  {
+    "module": "azure_functions_runtime_v1.bindings.meta",
+    "self_ms": 9.928,
+    "cum_ms": 89.678,
+    "depth": 3
+  },
+  {
+    "module": "azure_functions_runtime_v1.utils.typing_inspect",
+    "self_ms": 9.315,
+    "cum_ms": 9.315,
+    "depth": 3
+  },
+  {
+    "module": "azure_functions_runtime_v1.functions",
+    "self_ms": 8.306,
+    "cum_ms": 107.298,
+    "depth": 2
+  },
+  {
+    "module": "azure_functions_runtime_v1.utils.app_setting_manager",
+    "self_ms": 9.357,
+    "cum_ms": 9.357,
+    "depth": 4
+  },
+  {
+    "module": "azure_functions_runtime_v1.utils.tracing",
+    "self_ms": 9.881,
+    "cum_ms": 9.881,
+    "depth": 4
+  },
+  {
+    "module": "azure_functions_runtime_v1.utils.wrappers",
+    "self_ms": 9.698,
+    "cum_ms": 28.934,
+    "depth": 3
+  },
+  {
+    "module": "azure_functions_runtime_v1.loader",
+    "self_ms": 6.287,
+    "cum_ms": 35.221,
+    "depth": 2
+  },
+  {
+    "module": "azure_functions_runtime_v1.otel",
+    "self_ms": 7.01,
+    "cum_ms": 7.01,
+    "depth": 2
+  },
+  {
+    "module": "azure_functions_runtime_v1.bindings.retrycontext",
+    "self_ms": 9.548,
+    "cum_ms": 9.548,
+    "depth": 3
+  },
+  {
+    "module": "azure_functions_runtime_v1.bindings.tracecontext",
+    "self_ms": 9.415,
+    "cum_ms": 9.415,
+    "depth": 3
+  },
+  {
+    "module": "azure_functions_runtime_v1.bindings.context",
+    "self_ms": 9.281,
+    "cum_ms": 28.243,
+    "depth": 2
+  },
+  {
+    "module": "azure_functions_runtime_v1.bindings.out",
+    "self_ms": 9.258,
+    "cum_ms": 9.258,
+    "depth": 2
+  },
+  {
+    "module": "azure_functions_runtime_v1.utils.executor",
+    "self_ms": 9.495,
+    "cum_ms": 9.495,
+    "depth": 2
+  },
+  {
+    "module": "azure_functions_runtime_v1.utils.threadpool",
+    "self_ms": 9.425,
+    "cum_ms": 9.425,
+    "depth": 2
+  },
+  {
+    "module": "azure_functions_runtime_v1.handle_event",
+    "self_ms": 7.875,
+    "cum_ms": 213.821,
+    "depth": 1
+  },
+  {
+    "module": "azure_functions_runtime_v1",
+    "self_ms": 9.509,
+    "cum_ms": 223.33,
+    "depth": 0
+  },
+  {
+    "module": "azure",
+    "self_ms": 2.233,
+    "cum_ms": 2.233,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions._thirdparty",
+    "self_ms": 0.199,
+    "cum_ms": 0.199,
+    "depth": 4
+  },
+  {
+    "module": "azure.functions._thirdparty.werkzeug",
+    "self_ms": 0.325,
+    "cum_ms": 0.523,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions._thirdparty.werkzeug._compat",
+    "self_ms": 1.83,
+    "cum_ms": 1.83,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions._thirdparty.werkzeug._internal",
+    "self_ms": 2.845,
+    "cum_ms": 2.845,
+    "depth": 4
+  },
+  {
+    "module": "urllib.response",
+    "self_ms": 0.646,
+    "cum_ms": 0.646,
+    "depth": 7
+  },
+  {
+    "module": "urllib.error",
+    "self_ms": 0.834,
+    "cum_ms": 1.48,
+    "depth": 6
+  },
+  {
+    "module": "urllib.request",
+    "self_ms": 2.617,
+    "cum_ms": 4.097,
+    "depth": 5
+  },
+  {
+    "module": "azure.functions._thirdparty.werkzeug.urls",
+    "self_ms": 6.916,
+    "cum_ms": 6.916,
+    "depth": 5
+  },
+  {
+    "module": "azure.functions._thirdparty.werkzeug.http",
+    "self_ms": 6.309,
+    "cum_ms": 17.321,
+    "depth": 4
+  },
+  {
+    "module": "azure.functions._thirdparty.werkzeug.utils",
+    "self_ms": 3.935,
+    "cum_ms": 3.935,
+    "depth": 4
+  },
+  {
+    "module": "azure.functions._thirdparty.werkzeug.exceptions",
+    "self_ms": 3.225,
+    "cum_ms": 27.325,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions._thirdparty.werkzeug.datastructures",
+    "self_ms": 19.552,
+    "cum_ms": 49.229,
+    "depth": 2
+  },
+  {
+    "module": "azure.functions._abc",
+    "self_ms": 2.904,
+    "cum_ms": 52.133,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions._thirdparty.typing_inspect",
+    "self_ms": 1.708,
+    "cum_ms": 1.708,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions._utils",
+    "self_ms": 0.577,
+    "cum_ms": 0.577,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.meta",
+    "self_ms": 2.482,
+    "cum_ms": 4.766,
+    "depth": 2
+  },
+  {
+    "module": "azure.functions._eventhub",
+    "self_ms": 0.963,
+    "cum_ms": 5.729,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions._eventgrid",
+    "self_ms": 0.812,
+    "cum_ms": 0.812,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions._cosmosdb",
+    "self_ms": 0.601,
+    "cum_ms": 0.601,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions._thirdparty.werkzeug.wsgi",
+    "self_ms": 4.083,
+    "cum_ms": 4.083,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions._thirdparty.werkzeug.formparser",
+    "self_ms": 3.068,
+    "cum_ms": 7.151,
+    "depth": 2
+  },
+  {
+    "module": "azure.functions._http",
+    "self_ms": 1.693,
+    "cum_ms": 8.843,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions.decorators.utils",
+    "self_ms": 1.63,
+    "cum_ms": 1.63,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.decorators.core",
+    "self_ms": 1.959,
+    "cum_ms": 3.589,
+    "depth": 2
+  },
+  {
+    "module": "azure.functions.decorators.constants",
+    "self_ms": 0.321,
+    "cum_ms": 0.321,
+    "depth": 4
+  },
+  {
+    "module": "azure.functions.decorators.blob",
+    "self_ms": 0.678,
+    "cum_ms": 0.999,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.decorators.cosmosdb",
+    "self_ms": 1.415,
+    "cum_ms": 1.415,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.decorators.eventgrid",
+    "self_ms": 0.492,
+    "cum_ms": 0.492,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.decorators.eventhub",
+    "self_ms": 0.587,
+    "cum_ms": 0.587,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.decorators.http",
+    "self_ms": 1.237,
+    "cum_ms": 1.237,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.decorators.queue",
+    "self_ms": 0.596,
+    "cum_ms": 0.596,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.decorators.servicebus",
+    "self_ms": 0.886,
+    "cum_ms": 0.886,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.decorators.table",
+    "self_ms": 0.53,
+    "cum_ms": 0.53,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.decorators.timer",
+    "self_ms": 0.536,
+    "cum_ms": 0.536,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.http",
+    "self_ms": 1.299,
+    "cum_ms": 1.299,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.decorators.generic",
+    "self_ms": 0.768,
+    "cum_ms": 0.768,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.decorators.warmup",
+    "self_ms": 0.346,
+    "cum_ms": 0.346,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions._http_wsgi",
+    "self_ms": 1.716,
+    "cum_ms": 1.716,
+    "depth": 4
+  },
+  {
+    "module": "azure.functions._http_asgi",
+    "self_ms": 1.645,
+    "cum_ms": 3.361,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.decorators.function_app",
+    "self_ms": 8.462,
+    "cum_ms": 21.508,
+    "depth": 2
+  },
+  {
+    "module": "azure.functions.decorators",
+    "self_ms": 0.453,
+    "cum_ms": 25.549,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions._durable_functions",
+    "self_ms": 0.936,
+    "cum_ms": 0.936,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions.extension.extension_hook_meta",
+    "self_ms": 0.343,
+    "cum_ms": 0.343,
+    "depth": 4
+  },
+  {
+    "module": "azure.functions.extension.app_extension_hooks",
+    "self_ms": 0.487,
+    "cum_ms": 0.829,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.extension.func_extension_hooks",
+    "self_ms": 0.418,
+    "cum_ms": 0.418,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.extension.extension_scope",
+    "self_ms": 0.859,
+    "cum_ms": 0.859,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.extension.function_extension_exception",
+    "self_ms": 0.305,
+    "cum_ms": 0.305,
+    "depth": 3
+  },
+  {
+    "module": "azure.functions.extension.extension_meta",
+    "self_ms": 1.447,
+    "cum_ms": 3.856,
+    "depth": 2
+  },
+  {
+    "module": "azure.functions.extension.app_extension_base",
+    "self_ms": 0.648,
+    "cum_ms": 0.648,
+    "depth": 2
+  },
+  {
+    "module": "azure.functions.extension.func_extension_base",
+    "self_ms": 0.582,
+    "cum_ms": 0.582,
+    "depth": 2
+  },
+  {
+    "module": "azure.functions.extension",
+    "self_ms": 0.535,
+    "cum_ms": 5.62,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions._kafka",
+    "self_ms": 0.542,
+    "cum_ms": 0.542,
+    "depth": 2
+  },
+  {
+    "module": "azure.functions.kafka",
+    "self_ms": 2.1,
+    "cum_ms": 2.641,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions._queue",
+    "self_ms": 0.689,
+    "cum_ms": 0.689,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions._servicebus",
+    "self_ms": 0.999,
+    "cum_ms": 0.999,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions._sql",
+    "self_ms": 0.719,
+    "cum_ms": 0.719,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions.blob",
+    "self_ms": 1.326,
+    "cum_ms": 1.326,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions.cosmosdb",
+    "self_ms": 0.781,
+    "cum_ms": 0.781,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions.eventgrid",
+    "self_ms": 1.008,
+    "cum_ms": 1.008,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions.eventhub",
+    "self_ms": 2.229,
+    "cum_ms": 2.229,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions.queue",
+    "self_ms": 1.235,
+    "cum_ms": 1.235,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions.servicebus",
+    "self_ms": 9.371,
+    "cum_ms": 9.371,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions.timer",
+    "self_ms": 1.121,
+    "cum_ms": 1.121,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions.durable_functions",
+    "self_ms": 1.28,
+    "cum_ms": 1.28,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions.sql",
+    "self_ms": 0.848,
+    "cum_ms": 0.848,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions.warmup",
+    "self_ms": 0.381,
+    "cum_ms": 0.381,
+    "depth": 1
+  },
+  {
+    "module": "azure.functions",
+    "self_ms": 2.682,
+    "cum_ms": 129.756,
+    "depth": 0
+  }
+]

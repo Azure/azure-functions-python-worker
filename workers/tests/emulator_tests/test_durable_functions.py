@@ -38,7 +38,7 @@ class TestDurableFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'durable_functions'
+        return testutils.EMULATOR_TESTS_FOLDER / 'durable_functions'
 
     @testutils.retryable_test(3, 5)
     def test_durable(self):
@@ -61,5 +61,5 @@ class TestDurableFunctionsStein(TestDurableFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'durable_functions' / \
-                                            'durable_functions_stein'
+        return testutils.EMULATOR_TESTS_FOLDER / 'durable_functions' / \
+            'durable_functions_stein'

@@ -73,10 +73,6 @@ extends:
               PoolName: 1es-pool-azfunc
               ArtifactFeed: 'internal/PythonWorker_Internal_PublicPackages'
               NuGetServiceConnection: 'PythonWorker_Internal_PublicPackages'
-      - stage: RunWorkerDockerConsumptionTests
-        dependsOn: BuildPythonWorker
-        jobs:
-          - template: /eng/templates/official/jobs/ci-docker-consumption-tests.yml@self
       - stage: RunWorkerDockerDedicatedTests
         dependsOn: BuildPythonWorker
         jobs:

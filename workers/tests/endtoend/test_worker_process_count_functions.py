@@ -8,11 +8,10 @@ from unittest import skipIf
 
 from tests.utils import testutils
 from azure_functions_worker.utils.common import is_envvar_true
-from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
+from tests.utils.constants import DEDICATED_DOCKER_TEST
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST),
         "Tests are flaky when running on Docker")
 class TestWorkerProcessCount(testutils.WebHostTestCase):
     """Test the Http Trigger with setting up the python worker process count
@@ -70,8 +69,7 @@ class TestWorkerProcessCount(testutils.WebHostTestCase):
         self.assertTrue(time_diff_in_seconds < 1)
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST),
         "Tests are flaky when running on Docker")
 class TestWorkerProcessCountStein(TestWorkerProcessCount):
     @classmethod
@@ -80,8 +78,7 @@ class TestWorkerProcessCountStein(TestWorkerProcessCount):
                                             'http_functions_stein'
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST),
         "Tests are flaky when running on Docker")
 class TestWorkerProcessCountWithBlueprintStein(TestWorkerProcessCount):
     @classmethod
@@ -90,8 +87,7 @@ class TestWorkerProcessCountWithBlueprintStein(TestWorkerProcessCount):
                                             'functions_in_blueprint_only'
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST),
         "Tests are flaky when running on Docker")
 class TestWorkerProcessCountWithBlueprintDiffDirStein(TestWorkerProcessCount):
     @classmethod

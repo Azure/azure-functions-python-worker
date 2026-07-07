@@ -221,7 +221,7 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         The input is string of larger than the allowed size.
         """
         class _LargeString(str):
-            """Stub that reports a 2GB+ equivalent length without allocating real memory."""
+            """Stub that reports a 2GB+ length without allocating real memory."""
             def __len__(self):
                 return math.floor(
                     (consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER + 10)

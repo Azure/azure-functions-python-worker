@@ -3,6 +3,7 @@
 
 import mmap
 import os
+import re
 from io import BufferedRandom
 from typing import List, Optional
 
@@ -13,6 +14,10 @@ from ...utils.common import get_app_setting
 from .file_accessor import FileAccessor
 from .shared_memory_constants import SharedMemoryConstants as consts
 from .shared_memory_exception import SharedMemoryException
+
+# A valid memory map name is a single filename component containing only
+# these characters.
+_MEM_MAP_NAME_PATTERN = re.compile(r'^[A-Za-z0-9_.-]+$')
 
 
 class FileAccessorUnix(FileAccessor):
@@ -43,6 +48,7 @@ class FileAccessorUnix(FileAccessor):
         if mem_map_size < 0:
             raise SharedMemoryException(
                 f'Cannot open memory map. Invalid size {mem_map_size}')
+        self._validate_mem_map_name(mem_map_name)
         fd = self._open_mem_map_file(mem_map_name)
         if fd is None:
             logger.warning('Cannot open file: %s', mem_map_name)
@@ -58,6 +64,7 @@ class FileAccessorUnix(FileAccessor):
         if mem_map_size <= 0:
             raise SharedMemoryException(
                 f'Cannot create memory map. Invalid size {mem_map_size}')
+        self._validate_mem_map_name(mem_map_name)
         file = self._create_mem_map_file(mem_map_name, mem_map_size)
         if file is None:
             logger.warning('Cannot create file: %s', mem_map_name)
@@ -75,6 +82,7 @@ class FileAccessorUnix(FileAccessor):
             raise SharedMemoryException(
                 f'Cannot delete memory map. Invalid name {mem_map_name}')
         try:
+            self._validate_mem_map_name(mem_map_name)
             fd = self._open_mem_map_file(mem_map_name)
             os.remove(fd.name)
         except Exception as e:
@@ -142,6 +150,23 @@ class FileAccessorUnix(FileAccessor):
                          allowed_dirs)
         return valid_dirs
 
+    def _validate_mem_map_name(self, mem_map_name: str) -> None:
+        if (not isinstance(mem_map_name, str)
+                or not _MEM_MAP_NAME_PATTERN.match(mem_map_name)
+                or mem_map_name in ('.', '..')
+                or os.path.basename(mem_map_name) != mem_map_name):
+            raise SharedMemoryException(
+                f'Invalid memory map name: {mem_map_name}')
+
+    def _get_confined_file_path(self, temp_dir: str, mem_map_name: str) -> str:
+        file_path = os.path.join(temp_dir, mem_map_name)
+        real_dir = os.path.realpath(temp_dir)
+        real_path = os.path.realpath(file_path)
+        if os.path.commonpath([real_dir, real_path]) != real_dir:
+            raise SharedMemoryException(
+                f'Invalid memory map path for name: {mem_map_name}')
+        return file_path
+
     def _open_mem_map_file(self, mem_map_name: str) -> Optional[BufferedRandom]:
         """
         Get the file descriptor of an existing memory map.
@@ -150,7 +175,7 @@ class FileAccessorUnix(FileAccessor):
         # Iterate over all the possible directories where the memory map could
         # be present and try to open it.
         for temp_dir in self.valid_dirs:
-            file_path = os.path.join(temp_dir, mem_map_name)
+            file_path = self._get_confined_file_path(temp_dir, mem_map_name)
             if os.path.exists(file_path):
                 try:
                     fd = open(file_path, 'r+b')
@@ -173,14 +198,14 @@ class FileAccessorUnix(FileAccessor):
         """
         # Ensure that the file does not already exist
         for temp_dir in self.valid_dirs:
-            file_path = os.path.join(temp_dir, mem_map_name)
+            file_path = self._get_confined_file_path(temp_dir, mem_map_name)
             if os.path.exists(file_path):
                 raise SharedMemoryException(
                     f'File {file_path} for memory map {mem_map_name} '
                     f'already exists')
         # Create the file
         for temp_dir in self.valid_dirs:
-            file_path = os.path.join(temp_dir, mem_map_name)
+            file_path = self._get_confined_file_path(temp_dir, mem_map_name)
             try:
                 file = open(file_path, 'wb+')
                 file.truncate(mem_map_size)

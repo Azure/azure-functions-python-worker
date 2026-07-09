@@ -35,7 +35,6 @@ import grpc
 import requests
 from tests.utils.constants import (
     ARCHIVE_WEBHOST_LOGS,
-    CONSUMPTION_DOCKER_TEST,
     DEDICATED_DOCKER_TEST,
     EXTENSIONS_CSPROJ_TEMPLATE,
     MASTER_KEY,
@@ -47,7 +46,6 @@ from tests.utils.constants import (
 )
 from tests.utils.testutils_docker import (
     DockerConfigs,
-    WebHostConsumption,
     WebHostDedicated,
 )
 
@@ -145,8 +143,7 @@ class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
 class WebHostTestCaseMeta(type(unittest.TestCase)):
 
     def __new__(mcls, name, bases, dct):
-        if is_envvar_true(DEDICATED_DOCKER_TEST) \
-                or is_envvar_true(CONSUMPTION_DOCKER_TEST):
+        if is_envvar_true(DEDICATED_DOCKER_TEST):
             return super().__new__(mcls, name, bases, dct)
 
         for attrname, attr in dct.items():
@@ -216,13 +213,10 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     @classmethod
     def docker_tests_enabled(self) -> (bool, str):
         """
-        Returns True if the environment variables
-        CONSUMPTION_DOCKER_TEST or DEDICATED_DOCKER_TEST
-        is enabled else returns False
+        Returns True if the environment variable
+        DEDICATED_DOCKER_TEST is enabled else returns False
         """
-        if is_envvar_true(CONSUMPTION_DOCKER_TEST):
-            return True, CONSUMPTION_DOCKER_TEST
-        elif is_envvar_true(DEDICATED_DOCKER_TEST):
+        if is_envvar_true(DEDICATED_DOCKER_TEST):
             return True, DEDICATED_DOCKER_TEST
         else:
             return False, None
@@ -243,10 +237,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     script_path=script_dir,
                     libraries=cls.get_libraries_to_install(),
                     env=cls.get_environment_variables() or {})
-                if sku == CONSUMPTION_DOCKER_TEST:
-                    cls.webhost = \
-                        WebHostConsumption(docker_configs).spawn_container()
-                elif sku == DEDICATED_DOCKER_TEST:
+                if sku == DEDICATED_DOCKER_TEST:
                     cls.webhost = \
                         WebHostDedicated(docker_configs).spawn_container()
             else:

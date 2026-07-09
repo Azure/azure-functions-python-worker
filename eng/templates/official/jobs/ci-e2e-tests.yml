@@ -39,16 +39,16 @@ jobs:
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
         Python313:
           PYTHON_VERSION: '3.13'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
-          SQL_CONNECTION: $(LinuxSqlConnectionString312)
-          EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
-          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString37)
+          SQL_CONNECTION: $(LinuxSqlConnectionString37)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString37)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString37)
         Python314:
           PYTHON_VERSION: '3.14'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
-          SQL_CONNECTION: $(LinuxSqlConnectionString312)
-          EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
-          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
+          SQL_CONNECTION: $(LinuxSqlConnectionString38)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)
     steps:
       - bash: |
           echo "Disk space before cleanup:"

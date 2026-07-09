@@ -29,7 +29,6 @@ jobs:
              python -m pytest --reruns 4 -vv --instafail tests/endtoend
         env:
           DEDICATED_DOCKER_TEST: $(CUSTOM_DED_IMAGE)
-          CONSUMPTION_DOCKER_TEST: $(CUSTOM_CON_IMAGE)
           IMAGE_NAME: $(CUSTOM_IMAGE_NAME)
           AzureWebJobsStorage: $(LinuxStorageConnectionString311)
           AzureWebJobsCosmosDBConnectionString: $(LinuxCosmosDBConnectionString311)

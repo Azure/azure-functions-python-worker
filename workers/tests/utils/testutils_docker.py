@@ -204,17 +204,6 @@ class WebHostDockerContainerBase(unittest.TestCase):
         return WebHostProxy(run_process, self._addr)
 
 
-class WebHostConsumption(WebHostDockerContainerBase):
-
-    def __init__(self, configs: DockerConfigs):
-        self.configs = configs
-
-    def spawn_container(self):
-        return self.create_container(_MESH_IMAGE_REPO,
-                                     _MESH_IMAGE_URL,
-                                     self.configs)
-
-
 class WebHostDedicated(WebHostDockerContainerBase):
 
     def __init__(self, configs: DockerConfigs):

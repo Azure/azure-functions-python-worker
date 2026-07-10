@@ -7,13 +7,12 @@ from unittest import skipIf
 
 import requests
 from tests.utils import testutils
-from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
+from tests.utils.constants import DEDICATED_DOCKER_TEST
 
 from azure_functions_worker.utils.common import is_envvar_true
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST),
         "Docker tests cannot retrieve port needed for a webhook")
 class TestDurableFunctions(testutils.WebHostTestCase):
 
@@ -38,7 +37,7 @@ class TestDurableFunctions(testutils.WebHostTestCase):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'durable_functions'
+        return testutils.EMULATOR_TESTS_FOLDER / 'durable_functions'
 
     @testutils.retryable_test(3, 5)
     def test_durable(self):
@@ -61,5 +60,5 @@ class TestDurableFunctionsStein(TestDurableFunctions):
 
     @classmethod
     def get_script_dir(cls):
-        return testutils.E2E_TESTS_FOLDER / 'durable_functions' / \
-                                            'durable_functions_stein'
+        return testutils.EMULATOR_TESTS_FOLDER / 'durable_functions' / \
+            'durable_functions_stein'

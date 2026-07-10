@@ -1,120 +1,136 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import importlib.util
 import os
+import re
 import sys
 
-# ---------------------------------------------------------------------------
 # Protobuf runtime selection
-# ---------------------------------------------------------------------------
 #
-# The worker's generated ``*_pb2.py`` stubs import ``google.protobuf``
-# at the top level. Two scenarios:
+# The worker's generated ``*_pb2.py`` stubs, loader and converters all
+# import top-level ``google.protobuf``, so the whole worker shares one
+# protobuf runtime and descriptor pool. Which protobuf that is depends on
+# what is first on ``sys.path`` (the function app's ``.python_packages`` and
+# PYTHONPATH precede the worker's own protobuf):
 #
-# 1. The function app does NOT ship its own ``google.protobuf``. The
-#    top-level lookup resolves to the protobuf install that ships with
-#    the worker runtime (under ``worker_deps_path`` on Azure Functions),
-#    which is guaranteed compatible with the worker's pb2 stubs and
-#    includes the fast ``upb`` C extension. Nothing to do here.
+# 1. The protobuf on the path is the same or newer than the worker's
+#    vendored copy (including the worker's own protobuf, or protobuf 6.x
+#    shipped by an extension): use it directly. The worker's stubs run fine
+#    on a same-or-newer runtime.
 #
-# 2. The function app DOES ship ``google.protobuf`` in
-#    ``.python_packages``. On Azure Functions the customer's path
-#    precedes the worker's on ``sys.path``, so a top-level
-#    ``import google.protobuf`` resolves to the customer's copy. If the
-#    customer pinned an older protobuf (the common case is 4.x) the
-#    worker's pb2 stubs fail to load — for example ``from
-#    google.protobuf import runtime_version`` does not exist before
-#    protobuf 5.27. To insulate the worker from the customer's pin we:
-#       a. Pre-import the vendored ``google.protobuf`` modules and
-#          register them in ``sys.modules`` under their top-level names
-#          so subsequent ``from google.protobuf import X`` resolves to
-#          the vendored copy.
-#       b. Force the vendored copy onto its pure-Python implementation
-#          via ``PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python`` so the
-#          vendored ``api_implementation`` does not try to load the
-#          customer's ``google._upb._message`` C extension (which would
-#          be incompatible with vendored protobuf and unsafe to load
-#          alongside another ``_upb`` instance).
+# 2. The protobuf on the path is older than the vendored copy (e.g. an app
+#    pins protobuf 4.x): alias top-level ``google.protobuf`` to the vendored
+#    copy in ``sys.modules`` and force pure-Python
+#    (``PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python``), so the worker's
+#    stubs do not load against an incompatible protobuf. The app's older
+#    protobuf is shadowed for the whole process.
 #
-# Side effect of scenario 2: customer code that does ``import
-# google.protobuf`` later in the process will resolve to the vendored
-# copy rather than the customer's pinned copy. This trade-off is
-# necessary because protobuf's runtime assumes a single coherent
-# ``google.protobuf`` package per process.
-#
-# Detection cost: a single env-var lookup plus at most one
-# ``os.path.isdir`` call at worker startup. Zero per invocation.
-#
-# Policy override via ``_AZFUNC_USE_VENDORED_PROTOBUF``:
-#   ``"1"`` — force activation. The launcher (``worker.py``) sets this
-#            in local-dev mode so we always isolate the worker from
-#            whatever protobuf version sits in the customer's venv.
-#   ``"0"`` — force no activation. Escape hatch for users who need to
-#            debug protobuf-version-specific behavior against the
-#            worker's bundled protobuf.
-#   unset   — autodetect via the canonical Azure Functions layout
-#            (``.python_packages``). This is the production path; the
-#            override env var is not set in cloud launches.
+# Override via ``_AZFUNC_USE_VENDORED_PROTOBUF``: ``"1"`` forces activation,
+# ``"0"`` forces off, unset autodetects by comparing versions.
 
 _USE_VENDORED_PROTOBUF_ENV = "_AZFUNC_USE_VENDORED_PROTOBUF"
+
+
+def _parse_protobuf_version(version_str):
+    """Parse a protobuf version string into a comparable tuple of ints.
+
+    Only the leading numeric dotted components are used; any pre-release
+    or local suffix (e.g. ``rc1``) is ignored. Returns ``None`` if no
+    numeric version can be parsed.
+    """
+    parts = []
+    for token in version_str.split('.'):
+        match = re.match(r'\d+', token.strip())
+        if not match:
+            break
+        parts.append(int(match.group()))
+    return tuple(parts) if parts else None
+
+
+def _read_protobuf_version(protobuf_dir):
+    """Read ``__version__`` from a ``google/protobuf`` package directory
+    without importing it. Returns a comparable version tuple or ``None``
+    when it cannot be determined.
+    """
+    init_path = os.path.join(protobuf_dir, "__init__.py")
+    try:
+        with open(init_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except OSError:
+        return None
+    match = re.search(
+        r"__version__\s*=\s*['\"]([^'\"]+)['\"]", content)
+    if not match:
+        return None
+    return _parse_protobuf_version(match.group(1))
+
+
+def _vendored_protobuf_dir():
+    return os.path.join(
+        os.path.dirname(__file__),
+        "_vendored", "google", "protobuf",
+    )
+
+
+def _find_importable_protobuf_dir():
+    """Return the directory of the top-level ``google.protobuf`` that would
+    be imported from ``sys.path``, without importing it. None if not found.
+    """
+    try:
+        spec = importlib.util.find_spec("google.protobuf")
+    except (ImportError, ValueError, AttributeError):
+        return None
+    if spec is None or not spec.origin:
+        return None
+    return os.path.dirname(spec.origin)
 
 
 def _should_use_vendored_protobuf() -> bool:
     """Return True if the worker should activate its private pure-Python
     ``google.protobuf`` fallback for this process.
 
-    The launcher (``worker.py``) is the policy layer: it knows whether
-    we are running in Azure or locally and sets
-    ``_AZFUNC_USE_VENDORED_PROTOBUF`` accordingly. If the env var is
-    unset (e.g. the worker was imported directly by a test or a
-    third-party host) we fall back to checking the canonical Azure
-    Functions deployment layout.
-
-    We deliberately do *not* use a generic ``importlib.util.find_spec``
-    lookup as a fallback because that would also match the worker's
-    own protobuf install (which is always on ``sys.path`` and is not
-    "customer protobuf"). A false positive there would activate the
-    pure-Python vendored fallback for every function app and erase
-    the perf benefit of running the worker on ``upb``.
+    ``_AZFUNC_USE_VENDORED_PROTOBUF`` forces the choice when set. Otherwise
+    we look at the ``google.protobuf`` that would be imported from
+    ``sys.path`` and fall back to the vendored copy only when it is older
+    than ours; a same-or-newer protobuf (including the worker's own) is used
+    directly, so protobuf-6 extensions load and the worker keeps ``upb``.
     """
     override = os.environ.get(_USE_VENDORED_PROTOBUF_ENV)
     if override == "1":
         return True
     if override == "0":
         return False
-    script_root = os.environ.get("AzureWebJobsScriptRoot")
-    if not script_root:
+
+    protobuf_dir = _find_importable_protobuf_dir()
+    if protobuf_dir is None:
         return False
-    candidate = os.path.join(
-        script_root,
-        ".python_packages",
-        "lib",
-        "site-packages",
-        "google",
-        "protobuf",
-    )
-    return os.path.isdir(candidate)
+    if "_vendored" in protobuf_dir.split(os.sep):
+        # Already resolves to our vendored copy.
+        return False
+
+    app_version = _read_protobuf_version(protobuf_dir)
+    vendored_version = _read_protobuf_version(_vendored_protobuf_dir())
+    if app_version is None or vendored_version is None:
+        # Cannot compare versions; insulate the worker (old behavior).
+        return True
+    # Fall back to vendored only when the path protobuf is older than ours.
+    return app_version < vendored_version
 
 
 def _activate_vendored_protobuf() -> None:
-    """Pre-import the vendored protobuf modules and alias them under
-    the top-level ``google.protobuf`` names so the worker's pb2 stubs
-    resolve to the vendored copy instead of the customer's pinned one.
+    """Pre-import the vendored protobuf modules and alias them under the
+    top-level ``google.protobuf`` names so the worker's pb2 stubs resolve to
+    the vendored copy instead of the function app's.
     """
     try:
         import importlib
 
-        # Alias only the protobuf-specific names. Do NOT alias the
-        # top-level ``google`` package: the vendored ``google`` is a
-        # regular package whose ``__path__`` covers only our vendored
-        # tree, so aliasing it would shadow every other ``google.*``
-        # the customer ships (``google.cloud.*``, ``google.auth``,
-        # ``google.api_core``, etc.). Those packages are the most
-        # common reason a customer ends up with protobuf in their
-        # dependencies in the first place, so breaking them would
-        # defeat the purpose of the fallback. ``from google.protobuf
-        # import X`` short-circuits on ``sys.modules["google.protobuf"]``
-        # without consulting ``sys.modules["google"]``, so aliasing
-        # only the leaves is sufficient.
+        # Alias only the protobuf-specific names, not the top-level
+        # ``google`` package: the vendored ``google`` covers only our tree,
+        # so aliasing it would shadow other ``google.*`` the function app
+        # ships (``google.cloud.*``, ``google.auth``, etc.). ``from
+        # google.protobuf import X`` short-circuits on
+        # ``sys.modules["google.protobuf"]``, so aliasing the leaves is enough.
         modules_to_alias = (
             "google.protobuf",
             "google.protobuf.internal",
@@ -122,32 +138,25 @@ def _activate_vendored_protobuf() -> None:
         for top_name in modules_to_alias:
             vendored_name = "azure_functions_worker._vendored." + top_name
             mod = importlib.import_module(vendored_name)
-            # Force the alias even if something already populated
-            # ``sys.modules`` for the top-level name. The whole point
-            # of activation is "the customer's protobuf must not be
-            # what the worker's pb2 stubs see"; ``setdefault`` would
-            # let an early customer import keep the slot.
+            # Force the alias even if the name is already in ``sys.modules``;
+            # ``setdefault`` would let an early import keep the slot.
             sys.modules[top_name] = mod
     except ImportError:
         # Vendored tree may be absent in some dev workflows (before
-        # ``vendor_deps.py`` has been run). Stay quiet here; the next
-        # worker import will surface a clearer error.
+        # ``vendor_deps.py`` runs). Stay quiet; a later import surfaces it.
         return
 
 
 if _should_use_vendored_protobuf():
-    # Force the vendored copy onto pure-Python BEFORE pre-importing
-    # any of its modules, so that vendored ``api_implementation``
-    # doesn't try to load a (potentially incompatible) ``_upb``.
+    # Force pure-Python before importing the vendored modules so its
+    # ``api_implementation`` does not load an incompatible ``_upb``.
     os.environ.setdefault(
         "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python"
     )
     _activate_vendored_protobuf()
-# else: nothing to do. Worker's pb2 stubs will resolve top-level
-# google.protobuf to the worker's own protobuf install and use upb
-# naturally. We deliberately do NOT log on the no-op path: it would
-# run on every worker startup for the entire fleet and provides no
-# actionable signal to customers.
+# else: nothing to do. Stubs resolve top-level google.protobuf to the
+# worker's own protobuf and use upb. No log on this path; it runs on every
+# startup and gives no actionable signal.
 
 
 del _should_use_vendored_protobuf

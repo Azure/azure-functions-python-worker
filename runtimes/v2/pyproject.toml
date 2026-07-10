@@ -42,14 +42,11 @@ dev = [
     "grpcio~=1.70.0",
     "grpcio-tools~=1.70.0",
     "protobuf~=5.29.0",
-    "pytest-sugar",
     "pytest-cov",
     "pytest-xdist",
-    "pytest-randomly",
     "pytest-instafail",
     "pytest-rerunfailures",
     "pytest-asyncio",
-    "pre-commit",
     "invoke"
 ]
 test-http-v2 = [

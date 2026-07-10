@@ -35,9 +35,9 @@ import grpc
 import requests
 from tests.utils.constants import (
     ARCHIVE_WEBHOST_LOGS,
-    CONSUMPTION_DOCKER_TEST,
     DEDICATED_DOCKER_TEST,
     EXTENSIONS_CSPROJ_TEMPLATE,
+    MASTER_KEY,
     PROJECT_ROOT,
     PYAZURE_INTEGRATION_TEST,
     PYAZURE_WEBHOST_DEBUG,
@@ -46,7 +46,6 @@ from tests.utils.constants import (
 )
 from tests.utils.testutils_docker import (
     DockerConfigs,
-    WebHostConsumption,
     WebHostDedicated,
 )
 
@@ -144,8 +143,7 @@ class AsyncTestCase(unittest.TestCase, metaclass=AsyncTestCaseMeta):
 class WebHostTestCaseMeta(type(unittest.TestCase)):
 
     def __new__(mcls, name, bases, dct):
-        if is_envvar_true(DEDICATED_DOCKER_TEST) \
-                or is_envvar_true(CONSUMPTION_DOCKER_TEST):
+        if is_envvar_true(DEDICATED_DOCKER_TEST):
             return super().__new__(mcls, name, bases, dct)
 
         for attrname, attr in dct.items():
@@ -215,13 +213,10 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
     @classmethod
     def docker_tests_enabled(self) -> (bool, str):
         """
-        Returns True if the environment variables
-        CONSUMPTION_DOCKER_TEST or DEDICATED_DOCKER_TEST
-        is enabled else returns False
+        Returns True if the environment variable
+        DEDICATED_DOCKER_TEST is enabled else returns False
         """
-        if is_envvar_true(CONSUMPTION_DOCKER_TEST):
-            return True, CONSUMPTION_DOCKER_TEST
-        elif is_envvar_true(DEDICATED_DOCKER_TEST):
+        if is_envvar_true(DEDICATED_DOCKER_TEST):
             return True, DEDICATED_DOCKER_TEST
         else:
             return False, None
@@ -242,10 +237,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     script_path=script_dir,
                     libraries=cls.get_libraries_to_install(),
                     env=cls.get_environment_variables() or {})
-                if sku == CONSUMPTION_DOCKER_TEST:
-                    cls.webhost = \
-                        WebHostConsumption(docker_configs).spawn_container()
-                elif sku == DEDICATED_DOCKER_TEST:
+                if sku == DEDICATED_DOCKER_TEST:
                     cls.webhost = \
                         WebHostDedicated(docker_configs).spawn_container()
             else:
@@ -321,6 +313,36 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                 finally:
                     if test_exception is not None:
                         raise test_exception
+
+    def wait_for_host_log(self, substring: str,
+                          timeout: float = 10.0,
+                          poll_interval: float = 0.5) -> bool:
+        """Wait until `substring` appears in the host stdout written so far.
+
+        The worker forwards exception logs to the host over gRPC, so a log
+        line can land in the host's stdout slightly after the corresponding
+        HTTP response is returned. The check_log_* assertions read a snapshot
+        of host_out taken right after the test method returns; without waiting,
+        that snapshot can miss the late-arriving line, making such tests flaky.
+        Call this at the end of a test_* method so the snapshot includes the
+        line. Best-effort: returns True if found, False on timeout (the
+        check_log_* assertion still runs and decides).
+        """
+        if self.host_stdout is None:
+            return True
+        start = self.host_stdout.tell()
+        deadline = time.time() + timeout
+        try:
+            while time.time() < deadline:
+                self.host_stdout.seek(start)
+                if substring in self.host_stdout.read():
+                    return True
+                time.sleep(poll_interval)
+            return False
+        finally:
+            # Restore the read position so the framework captures host_out
+            # from the same point regardless of our polling reads.
+            self.host_stdout.seek(start)
 
 
 # This is not supported in 3.13+
@@ -806,6 +828,75 @@ class _WebHostProxy:
         r = self.request('GET', '', no_prefix=True)
         return 200 <= r.status_code < 300
 
+    def wait_until_ready(self, timeout: float = 60.0,
+                         poll_interval: float = 0.5) -> bool:
+        """Poll the host until it is running AND has registered functions.
+
+        Readiness is confirmed in two phases:
+
+        1. ``/admin/host/status`` reports ``{"state": "Running", ...}``,
+           which means the host has started and the worker has connected.
+        2. ``/admin/functions`` returns a non-empty list, which means the
+           worker finished importing ``function_app.py`` and the host has
+           registered the routes.
+
+        Phase 2 matters for the v2 programming model with a heavy
+        ``function_app.py`` (e.g. the ServiceBus SDK app, which imports
+        uamqp): the host can report ``Running`` while the worker is still
+        indexing, so HTTP routes intermittently return 404. Waiting for the
+        function list to be populated closes that gap.
+
+        Both admin endpoints are protected by the master key, so the
+        requests must include it; otherwise the host replies 401 and we
+        would block until the full timeout on every webhost start. If the
+        host does not expose ``/admin/functions`` (404), we fall back to
+        treating ``Running`` as ready so older hosts are not regressed.
+        """
+        deadline = time.time() + timeout
+        status_url = self._addr + '/admin/host/status'
+        functions_url = self._addr + '/admin/functions'
+        headers = {'x-functions-key': MASTER_KEY}
+        last_state = None
+        running = False
+        while time.time() < deadline:
+            if self._proc.poll() is not None:
+                # Host process exited.
+                return False
+            try:
+                if not running:
+                    r = requests.get(status_url, headers=headers, timeout=5)
+                    if r.status_code == 200:
+                        try:
+                            last_state = r.json().get('state')
+                        except ValueError:
+                            last_state = None
+                        running = last_state == 'Running'
+
+                if running:
+                    fr = requests.get(functions_url, headers=headers,
+                                      timeout=5)
+                    if fr.status_code == 404:
+                        # Functions admin endpoint not available on this
+                        # host; Running is the best signal we have.
+                        return True
+                    if fr.status_code == 200:
+                        try:
+                            functions = fr.json()
+                        except ValueError:
+                            functions = None
+                        if functions:
+                            return True
+            except requests.RequestException:
+                pass
+            time.sleep(poll_interval)
+        logging.getLogger('webhosttests').warning(
+            "Webhost did not become ready within %.0fs "
+            "(host running: %s, last state: %r, functions registered: no). "
+            "The function app likely failed to index; see the captured "
+            "WebHost log for the worker error.",
+            timeout, running, last_state)
+        return False
+
     def request(self, meth, funcname, *args, **kwargs):
         request_method = getattr(requests, meth.lower())
         params = dict(kwargs.pop('params', {}))
@@ -980,10 +1071,15 @@ def start_webhost(*, script_dir=None, stdout=None):
 
     proc = popen_webhost(stdout=stdout, stderr=subprocess.STDOUT,
                          script_root=script_root, port=port)
-    time.sleep(10)  # Giving host some time to start fully.
 
     addr = f'http://{LOCALHOST}:{port}'
-    return _WebHostProxy(proc, addr)
+    proxy = _WebHostProxy(proc, addr)
+    # Poll the host's /admin/host/status until the host reports `Running`,
+    # rather than relying on a fixed sleep. The previous `time.sleep(10)`
+    # was racy on slower agents (Python 3.9-3.11 cold starts in particular)
+    # which caused intermittent test failures like flaky `test_unhandled_error`.
+    proxy.wait_until_ready(timeout=60.0)
+    return proxy
 
 
 def create_dummy_dispatcher():

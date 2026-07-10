@@ -9,7 +9,6 @@ from unittest.mock import patch
 from requests import Response
 from tests.utils import testutils
 from tests.utils.constants import (
-    CONSUMPTION_DOCKER_TEST,
     DEDICATED_DOCKER_TEST,
     PYAZURE_INTEGRATION_TEST,
 )
@@ -19,8 +18,7 @@ from azure_functions_worker.utils.common import is_envvar_true
 REQUEST_TIMEOUT_SEC = 5
 
 
-@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-        or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+@skipIf(is_envvar_true(DEDICATED_DOCKER_TEST),
         'Docker tests do not work with dependency isolation ')
 class TestGRPCandProtobufDependencyIsolationOnDedicated(
         testutils.WebHostTestCase):

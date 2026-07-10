@@ -115,10 +115,19 @@ def chmod_protobuf_generation_script(webhost_dir):
 
 def compile_webhost(webhost_dir):
     print(f"Compiling Functions Host from {webhost_dir}")
+    # Build only the WebHost project (and its dependencies) instead of the
+    # entire WebJobs.Script.sln. The solution also contains test projects,
+    # benchmarks and isolated-worker samples that the tests never run; building
+    # them is slow, consumes far more disk, and pulls many extra NuGet packages
+    # that can fail to restore on the internal CI feed. The WebHost project
+    # output already contains the full runtime dependency closure needed to run
+    # the host.
+    webhost_project = (pathlib.Path("src") / "WebJobs.Script.WebHost"
+                       / "WebJobs.Script.WebHost.csproj")
     try:
         subprocess.run(
             [
-                "dotnet", "build", "WebJobs.Script.sln",
+                "dotnet", "build", str(webhost_project),
                 "/m:1",  # Disable parallel MSBuild
                 "/nodeReuse:false",  # Prevent MSBuild node reuse
                 f"--property:OutputPath={webhost_dir}/bin",  # Set output folder

@@ -6,11 +6,10 @@ import uuid
 
 import requests
 from tests.utils import testutils
-from tests.utils.constants import DEDICATED_DOCKER_TEST, CONSUMPTION_DOCKER_TEST
+from tests.utils.constants import DEDICATED_DOCKER_TEST
 from azure_functions_worker.utils.common import is_envvar_true
 
 
-@unittest.skip("Temporary skip")
 class TestEventGridFunctions(testutils.WebHostTestCase):
 
     @classmethod
@@ -93,8 +92,7 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
             else:
                 break
 
-    @unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-                     or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+    @unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST),
                      'EventGrid connection string not available in docker tests')
     def test_eventgrid_output_binding(self):
         """test event_grid output binding

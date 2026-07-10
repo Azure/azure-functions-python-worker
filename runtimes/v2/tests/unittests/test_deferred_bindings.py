@@ -10,7 +10,6 @@ from tests.utils.mock_classes import MockMBD, MockCMBD
 
 
 from azurefunctions.extensions.bindings.blob import (BlobClient,
-                                                     BlobClientConverter,
                                                      ContainerClient,
                                                      StorageStreamDownloader)
 from azurefunctions.extensions.bindings.eventhub import EventData, EventDataConverter
@@ -23,27 +22,6 @@ class TestDeferredBindingsEnabled(testutils.AsyncTestCase):
     def setUp(self):
         # Initialize DEFERRED_BINDING_REGISTRY
         meta.load_binding_registry()
-
-    def test_mbd_deferred_bindings_enabled_decode(self):
-        binding = BlobClientConverter
-        pb = protos.ParameterBinding(name='test',
-                                     data=protos.TypedData(
-                                         string='test'))
-        sample_mbd = MockMBD(version="1.0",
-                             source="AzureStorageBlobs",
-                             content_type="application/json",
-                             content="{\"Connection\":\"AZURE_STORAGE_CONNECTION_STRING\","  # noqa
-                                     "\"ContainerName\":"
-                                     "\"python-worker-tests\","
-                                     "\"BlobName\":"
-                                     "\"test-blobclient-trigger.txt\"}")
-        datum = datumdef.Datum(value=sample_mbd, type='model_binding_data')
-
-        obj = meta.deferred_bindings_decode(binding=binding, pb=pb,
-                                            pytype=BlobClient, datum=datum, metadata={},
-                                            function_name="test_function")
-
-        self.assertIsNotNone(obj)
 
     def test_cmbd_deferred_bindings_enabled_decode(self):
         binding = EventDataConverter

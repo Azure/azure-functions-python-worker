@@ -72,11 +72,13 @@ jobs:
         displayName: 'Configure NuGet feed for current organization'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
-          chmod +x eng/scripts/test-setup.sh
-
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
+        displayName: 'Install Python dependencies (uv)'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+      - bash: |
+          chmod +x eng/scripts/test-setup.sh
           eng/scripts/test-setup.sh
-        displayName: 'Install dependencies and the worker'
+        displayName: 'Build webhost and extensions (dotnet)'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - task: DownloadPipelineArtifact@2
         displayName: 'Download Python SDK Artifact'
@@ -128,7 +130,7 @@ jobs:
           docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/eventhub/docker-compose.yml up -d
         displayName: 'Install Azurite and Start EventHub Emulator'
       - bash: |
-            python -m pytest -q --dist loadfile --reruns 4 --ignore=tests/emulator_tests/test_servicebus_functions.py tests/emulator_tests
+            python -m pytest -q -n 2 --dist loadfile --reruns 4 --ignore=tests/emulator_tests/test_servicebus_functions.py tests/emulator_tests
         env:
           AzureWebJobsStorage: $(AzureWebJobsStorage)
           AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
@@ -144,6 +146,24 @@ jobs:
           docker container rm --force eventhubs-emulator
           docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/servicebus/docker-compose.yml pull
           docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/servicebus/docker-compose.yml up -d
+
+          # Wait for the Service Bus emulator (and its SQL Edge dependency) to
+          # be ready before running tests. Starting the webhost while the
+          # emulator is still booting makes the ServiceBus listener fail at
+          # startup, so the host never binds and tests see connection refused.
+          echo "Waiting for the Service Bus emulator to be ready..."
+          for i in $(seq 1 90); do
+            if docker logs servicebus-emulator 2>&1 | grep -q "Emulator Service is Successfully Up"; then
+              echo "Service Bus emulator is ready."
+              break
+            fi
+            if [ "$i" -eq 90 ]; then
+              echo "Service Bus emulator did not become ready in time. Logs:"
+              docker logs servicebus-emulator || true
+              exit 1
+            fi
+            sleep 2
+          done
         env:
           AzureWebJobsSQLPassword: $(AzureWebJobsSQLPassword)
         displayName: 'Install Azurite and Start ServiceBus Emulator'

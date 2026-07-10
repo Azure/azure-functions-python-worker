@@ -78,8 +78,11 @@ PYAZURE_WEBHOST_DEBUG = "PYAZURE_WEBHOST_DEBUG"
 ARCHIVE_WEBHOST_LOGS = "ARCHIVE_WEBHOST_LOGS"
 
 # CI test constants
-CONSUMPTION_DOCKER_TEST = "CONSUMPTION_DOCKER_TEST"
 DEDICATED_DOCKER_TEST = "DEDICATED_DOCKER_TEST"
+
+# Master key used in the webhost Secrets/host.json template; required to call
+# the host's protected /admin endpoints (e.g. /admin/host/status).
+MASTER_KEY = "testMasterKey"
 
 # Paths anchored on this file's location rather than on PROJECT_ROOT/TESTS_ROOT.
 # The `tests.utils` package exists in multiple trees in this repo

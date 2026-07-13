@@ -44,7 +44,30 @@ jobs:
           echo "Disk space after cleanup:"
           df -h
         displayName: 'Free disk space'
-        
+
+      - bash: |
+          echo "Memory before cleanup:"
+          free -h
+
+          # Stop Docker daemon to reclaim memory used by the daemon itself
+          # (docker system prune above removes artifacts but the daemon stays resident)
+          sudo systemctl stop docker || true
+          sudo systemctl stop docker.socket || true
+          sudo systemctl stop containerd || true
+
+          # Stop background services not needed for unit tests
+          sudo systemctl stop snapd || true
+          sudo systemctl stop unattended-upgrades || true
+          sudo systemctl stop packagekit || true
+
+          # Drop Linux filesystem caches (page cache, dentries, inodes)
+          sudo sync
+          sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' || true
+
+          echo "Memory after cleanup:"
+          free -h
+        displayName: 'Free memory'
+
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)

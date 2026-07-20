@@ -148,11 +148,14 @@ jobs:
       - bash: |
           # The minimal image (1es-ubuntu-24.04-min) does not ship the Docker
           # Compose v2 CLI plugin, so `docker compose` fails with an
-          # "unknown shorthand flag: 'f'" error. Install it if it is missing.
+          # "unknown shorthand flag: 'f'" error. Install it from the Ubuntu
+          # archive (already reachable in the pipeline) via the
+          # docker-compose-v2 package. Docker's own apt repo is not configured,
+          # so docker-compose-plugin is not an option here.
           if ! docker compose version >/dev/null 2>&1; then
             echo "Docker Compose v2 plugin not found; installing..."
             sudo apt-get update
-            sudo apt-get install -y docker-compose-plugin
+            sudo apt-get install -y docker-compose-v2
           fi
           docker compose version
         displayName: 'Ensure Docker Compose v2 is installed'

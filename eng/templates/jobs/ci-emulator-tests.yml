@@ -137,6 +137,25 @@ jobs:
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |
+          # The minimal image (1es-ubuntu-24.04-min) does not ship the Docker
+          # Compose v2 CLI plugin, so `docker compose` fails with an
+          # "unknown shorthand flag: 'f'" error. Install it from the Ubuntu
+          # archive (already reachable in the pipeline) via the
+          # docker-compose-v2 package. Docker's own apt repo is not configured,
+          # so docker-compose-plugin is not an option here.
+          #
+          # This must run BEFORE any emulator container is started: installing
+          # docker-compose-v2 also upgrades moby-engine/moby-cli, which restarts
+          # the Docker daemon and would kill already-running containers (e.g. the
+          # CosmosDB emulator), causing connection-refused errors during tests.
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "Docker Compose v2 plugin not found; installing..."
+            sudo apt-get update
+            sudo apt-get install -y docker-compose-v2
+          fi
+          docker compose version
+        displayName: 'Ensure Docker Compose v2 is installed'
+      - bash: |
           # Clean up Docker resources to free disk space
           docker system prune -af --volumes
           df -h
@@ -145,20 +164,6 @@ jobs:
           docker run --detach --publish 8081:8081 --publish 1234:1234 mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
           docker ps
         displayName: "Start CosmosDB Emulator"
-      - bash: |
-          # The minimal image (1es-ubuntu-24.04-min) does not ship the Docker
-          # Compose v2 CLI plugin, so `docker compose` fails with an
-          # "unknown shorthand flag: 'f'" error. Install it from the Ubuntu
-          # archive (already reachable in the pipeline) via the
-          # docker-compose-v2 package. Docker's own apt repo is not configured,
-          # so docker-compose-plugin is not an option here.
-          if ! docker compose version >/dev/null 2>&1; then
-            echo "Docker Compose v2 plugin not found; installing..."
-            sudo apt-get update
-            sudo apt-get install -y docker-compose-v2
-          fi
-          docker compose version
-        displayName: 'Ensure Docker Compose v2 is installed'
       - bash: |
           docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/eventhub/docker-compose.yml pull
           docker compose -f ${{ parameters.PROJECT_DIRECTORY }}/tests/emulator_tests/utils/eventhub/docker-compose.yml up -d

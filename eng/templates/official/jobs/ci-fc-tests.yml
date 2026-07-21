@@ -23,6 +23,10 @@ jobs:
          Python314:
            PYTHON_VERSION: '3.14'
     steps:
+      - task: PipAuthenticate@1
+        displayName: 'Pip Authenticate'
+        inputs:
+          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
       - bash: |
           echo "Disk space before cleanup:"
           df -h
@@ -44,10 +48,6 @@ jobs:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
-      - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
-        inputs:
-          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
 
       - bash: |
           # Start Azurite storage emulator in the background

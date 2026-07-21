@@ -4,16 +4,16 @@ parameters:
   grpcBuild: ''
 
 steps:
+- task: PipAuthenticate@1
+  displayName: 'Pip Authenticate'
+  inputs:
+    artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
 - task: UsePythonVersion@0
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
     allowUnstable: true
     architecture: ${{ parameters.architecture }}
     addToPath: true
-- task: PipAuthenticate@1
-  displayName: 'Pip Authenticate'
-  inputs:
-    artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
 - powershell: |
     # Parse the Python minor version
     $PY_VER = "$(pythonVersion)"

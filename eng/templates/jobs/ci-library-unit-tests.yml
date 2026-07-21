@@ -19,13 +19,13 @@ jobs:
           PYTHON_VERSION: '3.13'
     
     steps:
-      - task: UsePythonVersion@0
-        inputs:
-          versionSpec: $(PYTHON_VERSION)
       - task: PipAuthenticate@1
         displayName: 'Pip Authenticate'
         inputs:
           artifactFeeds: ${{ parameters.ArtifactFeed }}
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(PYTHON_VERSION)
       - task: UseDotNet@2
         displayName: 'Install .NET 10'
         inputs:

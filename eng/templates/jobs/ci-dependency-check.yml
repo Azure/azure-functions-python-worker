@@ -25,13 +25,13 @@ jobs:
         Python314:
           PYTHON_VERSION: '3.14'
     steps:
-      - task: UsePythonVersion@0
-        inputs:
-          versionSpec: $(PYTHON_VERSION)
       - task: PipAuthenticate@1
         displayName: 'Pip Authenticate'
         inputs:
           artifactFeeds: ${{ parameters.ArtifactFeed }}
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(PYTHON_VERSION)
       - powershell: |
           $PY_VER = "$(PYTHON_VERSION)"
           Write-Host "Python version: $PY_VER"

@@ -20,13 +20,13 @@ jobs:
           artifactName: "${{ parameters.ARTIFACT_NAME }}"
 
     steps:
-      - task: UsePythonVersion@0
-        inputs:
-          versionSpec: "3.13"
       - task: PipAuthenticate@1
         displayName: 'Pip Authenticate'
         inputs:
           artifactFeeds: 'public/PythonWorker_PublicPackages'
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "3.13"
       - bash: |
           python --version
         displayName: 'Check python version'

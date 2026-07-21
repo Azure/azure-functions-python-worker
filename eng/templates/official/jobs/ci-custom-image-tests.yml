@@ -11,13 +11,13 @@ jobs:
       os: linux
     
     steps:
-      - task: UsePythonVersion@0
-        inputs:
-          versionSpec: $(CUSTOM_PYTHON_VERSION)
       - task: PipAuthenticate@1
         displayName: 'Pip Authenticate'
         inputs:
           artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(CUSTOM_PYTHON_VERSION)
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
 

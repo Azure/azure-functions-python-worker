@@ -41,11 +41,13 @@ ls -la /tmp/arm64_wheels/
 
 # Install ARM64 wheels from the downloaded files
 echo "Installing ARM64 dependencies from downloaded wheels..."
-# Extract wheel files manually to bypass platform compatibility checks
-# Wheels are just ZIP archives, so we can extract them directly
+# Extract wheel files manually to bypass platform compatibility checks.
+# Wheels are just ZIP archives, so we extract them with Python's built-in
+# zipfile module (unzip is not available on the minimal image and the venv
+# Python is already on PATH here).
 for wheel in /tmp/arm64_wheels/*.whl; do
     echo "Extracting $wheel..."
-    unzip -o -q "$wheel" -d $BUILD_SOURCESDIRECTORY/deps
+    python -m zipfile -e "$wheel" $BUILD_SOURCESDIRECTORY/deps
 done
 
 # Remove .dist-info directories to avoid conflicts

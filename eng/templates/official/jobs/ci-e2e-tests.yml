@@ -8,7 +8,7 @@ jobs:
 
     pool:
       name: 1es-pool-azfunc
-      image: 1es-ubuntu-22.04
+      image: 1es-ubuntu-24.04-min
       os: linux
 
     strategy:
@@ -67,7 +67,16 @@ jobs:
           echo "Disk space after cleanup:"
           df -h
         displayName: 'Free disk space'
-        
+
+      - bash: |
+          # The minimal image (1es-ubuntu-24.04-min) does not ship the system
+          # libraries that opencv-python (cv2) needs at import time, e.g.
+          # libGL.so.1 and libgthread-2.0.so.0. Install them so the endtoend
+          # opencv_func test can load cv2.
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libglib2.0-0
+        displayName: 'Install system libraries for opencv (cv2)'
+
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)

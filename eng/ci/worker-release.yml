@@ -13,12 +13,8 @@ parameters:
     displayName: 'V2 Library Release (PyPI)'
     type: boolean
     default: false
-  - name: V2LibraryVersion
-    displayName: 'V2 Library version to release (e.g., 0.1.0)'
-    type: string
-    default: ''
-  - name: V1LibraryVersion
-    displayName: 'V1 Library version to release (e.g., 0.1.0)'
+  - name: ReleaseVersion
+    displayName: 'Version to release (e.g., 0.1.0). Applies to whichever release is selected above (Worker, V1, or V2).'
     type: string
     default: ''
 
@@ -36,6 +32,10 @@ resources:
 variables:
   - name: codeql.excludePathPatterns
     value: deps/,build/
+  # Maps the single ReleaseVersion parameter to the worker release, which
+  # consumes it via the $(NewWorkerVersion) pipeline variable.
+  - name: NewWorkerVersion
+    value: ${{ parameters.ReleaseVersion }}
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1es
@@ -58,7 +58,7 @@ extends:
         jobs:
           - template: /eng/templates/official/release/bump-version.yml@self
             parameters:
-              libraryVersion: ${{ parameters.V2LibraryVersion }}
+              libraryVersion: ${{ parameters.ReleaseVersion }}
               projectDisplayName: 'Azure Functions Runtime V2'
               versionFilePath: 'runtimes/v2/azure_functions_runtime/version.py'
               releaseBranchPrefix: 'release-v2'
@@ -73,7 +73,7 @@ extends:
             parameters:
               artifactName: 'azure-functions-runtime'
               projectDisplayName: 'Azure Functions Runtime V2'
-              libraryVersion: ${{ parameters.V2LibraryVersion }}
+              libraryVersion: ${{ parameters.ReleaseVersion }}
               releaseBranchPrefix: 'release-v2'
               projectDirectory: 'runtimes/v2'
       - stage: ReleasePythonV2Library_Release
@@ -83,7 +83,7 @@ extends:
         jobs:
           - template: /eng/templates/official/release/publish-release.yml@self
             parameters:
-              libraryVersion: ${{ parameters.V2LibraryVersion }}
+              libraryVersion: ${{ parameters.ReleaseVersion }}
               projectDisplayName: 'Azure Functions Runtime V2'
               releaseBranchPrefix: 'release-v2'
               tagPrefix: 'runtimes/v2-'
@@ -96,7 +96,7 @@ extends:
         jobs:
           - template: /eng/templates/official/release/bump-version.yml@self
             parameters:
-              libraryVersion: ${{ parameters.V1LibraryVersion }}
+              libraryVersion: ${{ parameters.ReleaseVersion }}
               projectDisplayName: 'Azure Functions Runtime V1'
               versionFilePath: 'runtimes/v1/azure_functions_runtime_v1/version.py'
               releaseBranchPrefix: 'release-v1'
@@ -111,7 +111,7 @@ extends:
             parameters:
               artifactName: 'azure-functions-runtime-v1'
               projectDisplayName: 'Azure Functions Runtime V1'
-              libraryVersion: ${{ parameters.V1LibraryVersion }}
+              libraryVersion: ${{ parameters.ReleaseVersion }}
               releaseBranchPrefix: 'release-v1'
               projectDirectory: 'runtimes/v1'
       - stage: ReleasePythonV1Library_Release
@@ -121,7 +121,7 @@ extends:
         jobs:
           - template: /eng/templates/official/release/publish-release.yml@self
             parameters:
-              libraryVersion: ${{ parameters.V1LibraryVersion }}
+              libraryVersion: ${{ parameters.ReleaseVersion }}
               projectDisplayName: 'Azure Functions Runtime V1'
               releaseBranchPrefix: 'release-v1'
               tagPrefix: 'runtimes/v1-'

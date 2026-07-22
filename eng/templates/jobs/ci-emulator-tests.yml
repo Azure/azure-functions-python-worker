@@ -9,7 +9,7 @@ jobs:
 
     pool:
       name: ${{ parameters.PoolName }}
-      image: 1es-ubuntu-22.04
+      image: 1es-ubuntu-24.04-min
       os: linux
 
     strategy:
@@ -44,7 +44,27 @@ jobs:
           echo "Disk space after cleanup:"
           df -h
         displayName: 'Free disk space'
-        
+
+      - bash: |
+          echo "Memory before cleanup:"
+          free -h
+
+          # Stop background services not needed for emulator tests.
+          # NOTE: Docker must remain running for CosmosDB/EventHub/ServiceBus emulators,
+          # so do NOT stop docker, docker.socket, or containerd here.
+          sudo systemctl stop snapd || true
+          sudo systemctl stop unattended-upgrades || true
+          sudo systemctl stop packagekit || true
+
+          # Drop Linux filesystem caches (page cache, dentries, inodes).
+          # This is safe for running processes, including Docker containers.
+          sudo sync
+          sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' || true
+
+          echo "Memory after cleanup:"
+          free -h
+        displayName: 'Free memory'
+
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
@@ -116,6 +136,25 @@ jobs:
           eng/scripts/test-setup.sh
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
+      - bash: |
+          # The minimal image (1es-ubuntu-24.04-min) does not ship the Docker
+          # Compose v2 CLI plugin, so `docker compose` fails with an
+          # "unknown shorthand flag: 'f'" error. Install it from the Ubuntu
+          # archive (already reachable in the pipeline) via the
+          # docker-compose-v2 package. Docker's own apt repo is not configured,
+          # so docker-compose-plugin is not an option here.
+          #
+          # This must run BEFORE any emulator container is started: installing
+          # docker-compose-v2 also upgrades moby-engine/moby-cli, which restarts
+          # the Docker daemon and would kill already-running containers (e.g. the
+          # CosmosDB emulator), causing connection-refused errors during tests.
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "Docker Compose v2 plugin not found; installing..."
+            sudo apt-get update
+            sudo apt-get install -y docker-compose-v2
+          fi
+          docker compose version
+        displayName: 'Ensure Docker Compose v2 is installed'
       - bash: |
           # Clean up Docker resources to free disk space
           docker system prune -af --volumes

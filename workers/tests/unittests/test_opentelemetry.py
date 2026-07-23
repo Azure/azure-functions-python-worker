@@ -8,6 +8,7 @@ from tests.unittests.test_dispatcher import FUNCTION_APP_DIRECTORY
 from tests.utils import testutils
 
 from azure_functions_worker import protos
+from azure_functions_worker.dispatcher import ContextEnabledTask
 
 
 class TestOpenTelemetry(unittest.TestCase):
@@ -228,9 +229,20 @@ class TestOpenTelemetryContextPropagation(unittest.TestCase):
     """
 
     def setUp(self):
+        # Import directly from azure_functions_worker so this test always tests
+        # the correct dispatcher regardless of the Python version (testutils
+        # redirects to proxy_worker on Python >= 3.13).
+        from azure_functions_worker.dispatcher import Dispatcher, ContextEnabledTask
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        self.dispatcher = testutils.create_dummy_dispatcher()
+        # Use ContextEnabledTask factory so dispatcher's assertion passes
+        self.loop.set_task_factory(
+            lambda loop, coro, context=None: ContextEnabledTask(
+                coro, loop=loop, context=context))
+        self.dispatcher = Dispatcher(
+            self.loop, '127.0.0.1', 0,
+            'test_worker_id', 'test_request_id',
+            1.0, 1000)
         self.call_order = []
 
     def tearDown(self):
@@ -303,9 +315,9 @@ class TestOpenTelemetryContextPropagation(unittest.TestCase):
         )
 
         # Mock _run_async_func to return None
-        self.dispatcher._run_async_func = MagicMock(
-            return_value=asyncio.coroutine(lambda: None)()
-        )
+        async def _noop():
+            return None
+        self.dispatcher._run_async_func = MagicMock(return_value=_noop())
 
         # Run the invocation request (will fail but we only care about call order)
         try:
@@ -316,22 +328,21 @@ class TestOpenTelemetryContextPropagation(unittest.TestCase):
             # but we only care about verifying call order
             pass
 
-        # Verify configure_opentelemetry was called
+        # Assert both events were observed
         self.assertIn('configure_opentelemetry', self.call_order,
                       "configure_opentelemetry should have been called")
+        self.assertIn('logger_info', self.call_order,
+                      "logger.info should have been called")
 
-        # Find the position of configure_opentelemetry and first logger.info
-        if 'configure_opentelemetry' in self.call_order and \
-           'logger_info' in self.call_order:
-            otel_index = self.call_order.index('configure_opentelemetry')
-            first_log_index = self.call_order.index('logger_info')
-
-            self.assertLess(
-                otel_index, first_log_index,
-                f"configure_opentelemetry (index {otel_index}) should be called "
-                f"before the first logger.info (index {first_log_index}). "
-                f"Call order: {self.call_order}"
-            )
+        # Assert configure_opentelemetry was called before the first logger.info
+        otel_index = self.call_order.index('configure_opentelemetry')
+        first_log_index = self.call_order.index('logger_info')
+        self.assertLess(
+            otel_index, first_log_index,
+            f"configure_opentelemetry (index {otel_index}) should be called "
+            f"before the first logger.info (index {first_log_index}). "
+            f"Call order: {self.call_order}"
+        )
 
     @patch.dict(os.environ, {'PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY': 'true'})
     @patch('azure_functions_worker.dispatcher.logger')
@@ -387,9 +398,9 @@ class TestOpenTelemetryContextPropagation(unittest.TestCase):
         )
 
         # Mock _run_async_func to return None
-        self.dispatcher._run_async_func = MagicMock(
-            return_value=asyncio.coroutine(lambda: None)()
-        )
+        async def _noop():
+            return None
+        self.dispatcher._run_async_func = MagicMock(return_value=_noop())
 
         # Run the invocation request
         try:
@@ -398,14 +409,17 @@ class TestOpenTelemetryContextPropagation(unittest.TestCase):
         except Exception:
             pass
 
-        # Verify configure_opentelemetry was called before first log
-        if 'configure_opentelemetry' in self.call_order and \
-           'logger_info' in self.call_order:
-            otel_index = self.call_order.index('configure_opentelemetry')
-            first_log_index = self.call_order.index('logger_info')
+        # Assert both events were observed
+        self.assertIn('configure_opentelemetry', self.call_order,
+                      "configure_opentelemetry should have been called")
+        self.assertIn('logger_info', self.call_order,
+                      "logger.info should have been called")
 
-            self.assertLess(
-                otel_index, first_log_index,
-                f"configure_opentelemetry should be called before first log. "
-                f"Call order: {self.call_order}"
-            )
+        # Assert configure_opentelemetry was called before the first logger.info
+        otel_index = self.call_order.index('configure_opentelemetry')
+        first_log_index = self.call_order.index('logger_info')
+        self.assertLess(
+            otel_index, first_log_index,
+            f"configure_opentelemetry should be called before first log. "
+            f"Call order: {self.call_order}"
+        )

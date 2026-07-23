@@ -28,6 +28,7 @@ from .FunctionRpc_pb2 import (  # NoQA
     RpcLog,
     RpcSharedMemory,
     RpcDataType,
+    RpcTraceContext,
     CloseSharedMemoryResourcesRequest,
     CloseSharedMemoryResourcesResponse,
     FunctionsMetadataRequest,

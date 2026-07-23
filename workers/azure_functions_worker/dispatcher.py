@@ -611,8 +611,8 @@ class Dispatcher(metaclass=DispatcherMeta):
                 function_id)
             assert fi is not None
 
-            # Initialize context and configure OpenTelemetry early
-            # to ensure all logs have proper trace context (Operation Id)
+            # Initialize context and configure OpenTelemetry before emitting
+            # invocation-scoped logs so they include trace context (Operation Id)
             fi_context = self._get_context(invoc_request, fi.name,
                                            fi.directory)
             if self._azure_monitor_available or self._otel_libs_available:

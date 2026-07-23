@@ -157,11 +157,12 @@ async def invocation_request(request):
             function_id)
         assert fi is not None
 
-        # Initialize context and configure OpenTelemetry early
-        # to ensure all logs have proper trace context (Operation Id)
+        # Initialize context and configure OpenTelemetry before emitting
+        # invocation-scoped logs so they include trace context (Operation Id)
         fi_context = get_context(invoc_request, fi.name,
                                  fi.directory)
-        if otel_manager.get_azure_monitor_available():
+        if (otel_manager.get_azure_monitor_available()
+                or otel_manager.get_otel_libs_available()):
             configure_opentelemetry(fi_context)
 
         logger.info("Function name: %s, Function Type: %s",

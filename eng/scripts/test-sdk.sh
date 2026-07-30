@@ -1,9 +1,13 @@
 #!/bin/bash
 set -e
 
-export UV_INDEX_URL="https://pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
-export UV_KEYRING_PROVIDER=subprocess
-echo "UV index: $UV_INDEX_URL"
+_feed="https://pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
+if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
+    export UV_INDEX_URL="https://build:${SYSTEM_ACCESSTOKEN}@pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
+else
+    export UV_INDEX_URL="$_feed"
+fi
+echo "UV index: $(echo "$UV_INDEX_URL" | sed 's|://[^@]*@|://***@|')"
 
 python -m pip install --upgrade pip
 python -m pip install uv

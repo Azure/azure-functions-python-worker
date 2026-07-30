@@ -3,9 +3,14 @@ set -e
 
 # Route uv through the internal Azure Artifacts feed. PipAuthenticate handles
 # pip's auth separately; setting PIP_INDEX_URL would override that and hang.
-export UV_INDEX_URL="https://pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
-export UV_KEYRING_PROVIDER=subprocess
-echo "UV index: $UV_INDEX_URL"
+# SYSTEM_ACCESSTOKEN is mapped from $(System.AccessToken) by the pipeline step's env block.
+_feed="https://pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
+if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
+    export UV_INDEX_URL="https://build:${SYSTEM_ACCESSTOKEN}@pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
+else
+    export UV_INDEX_URL="$_feed"
+fi
+echo "UV index: $(echo "$UV_INDEX_URL" | sed 's|://[^@]*@|://***@|')"
 
 # Install uv for faster dependency resolution / installation.
 python -m pip install --upgrade pip

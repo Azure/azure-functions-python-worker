@@ -18,5 +18,5 @@ $UV_PIP "setuptools>=62,<82.0"
 $UV_PIP -e $1/PythonSdkArtifact
 $UV_PIP -e workers/[dev]
 
-$UV_PIP -U --prerelease=allow -e workers/[test-http-v2]
-$UV_PIP -U --prerelease=allow -e workers/[test-deferred-bindings]
+$UV_PIP -U --prerelease=if-necessary-or-explicit -e workers/[test-http-v2]
+$UV_PIP -U --prerelease=if-necessary-or-explicit -e workers/[test-deferred-bindings]

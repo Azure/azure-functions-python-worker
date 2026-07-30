@@ -16,7 +16,7 @@ UV_PIP="python -m uv pip install --system"
 
 $UV_PIP "setuptools>=62,<82.0"
 $UV_PIP -e $1/PythonExtensionArtifact/$3
-$UV_PIP --prerelease=allow -e workers/[test-http-v2]
-$UV_PIP -U --prerelease=allow -e workers/[test-deferred-bindings]
+$UV_PIP --prerelease=if-necessary-or-explicit -e workers/[test-http-v2]
+$UV_PIP -U --prerelease=if-necessary-or-explicit -e workers/[test-deferred-bindings]
 
 $UV_PIP -U -e workers/[dev]

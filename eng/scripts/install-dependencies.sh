@@ -35,7 +35,7 @@ fi
 
 # Install everything else in a single uv invocation so the resolver runs once
 # and all wheels are downloaded in parallel.
-$UV_PIP -U --prerelease=allow \
+$UV_PIP -U --prerelease=if-necessary-or-explicit \
     azure-functions \
     -e "$2/[dev]" \
     -e "$2/[test-http-v2]" \

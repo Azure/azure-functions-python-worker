@@ -67,6 +67,7 @@ jobs:
       - bash: |
           python -m pip install --upgrade pip
           python -m pip install uv
+          [ -n "${PIP_EXTRA_INDEX_URL:-}" ] && export UV_INDEX_URL="$PIP_EXTRA_INDEX_URL"
           UV_PIP="python -m uv pip install --system"
           $UV_PIP "setuptools<82.0"
           $UV_PIP -U -e ${{ parameters.PROJECT_DIRECTORY }}/[dev]

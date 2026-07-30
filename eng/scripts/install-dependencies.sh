@@ -1,17 +1,16 @@
 #!/bin/bash
 set -e
 
-# Forward the PipAuthenticate-supplied feed URL to uv. PipAuthenticate@1 sets
-# PIP_EXTRA_INDEX_URL so that pip uses the internal feed, but uv does not read
-# pip's config or environment variables. Setting UV_INDEX_URL makes uv use the
-# internal feed as its primary index instead of going directly to pypi.org.
-if [ -n "${PIP_EXTRA_INDEX_URL:-}" ]; then
-    export UV_INDEX_URL="$PIP_EXTRA_INDEX_URL"
-fi
-
 # Install uv for faster dependency resolution / installation.
 python -m pip install --upgrade pip
 python -m pip install uv
+
+# PipAuthenticate@1 writes the authenticated feed URL to pip's config file but
+# does not expose it as a plain env var (the URL contains a PAT token). uv does
+# not read pip's config, so extract the URL here and forward it via UV_INDEX_URL.
+_uv_index=$(python -m pip config get global.index-url 2>/dev/null || \
+            python -m pip config get global.extra-index-url 2>/dev/null || true)
+[ -n "$_uv_index" ] && export UV_INDEX_URL="$_uv_index"
 
 # Use uv as a drop-in replacement for pip. `--system` installs into the active
 # Python environment (the agent's Python), matching previous `pip install` behavior.

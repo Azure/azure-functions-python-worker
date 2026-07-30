@@ -65,13 +65,9 @@ jobs:
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
 
       - bash: |
-          _feed_url=$(grep -h -m1 -E '^\s*(extra-)?index-url\s*=' /etc/pip.conf "${HOME}/.config/pip/pip.conf" "${HOME}/.pip/pip.ini" 2>/dev/null | sed 's/^[^=]*=\s*//' | awk '{print $1}')
-          if [ -n "$_feed_url" ]; then
-            echo "Internal feed: $(echo "$_feed_url" | sed 's|://[^@]*@|://***@|')"
-            export PIP_INDEX_URL="$_feed_url" UV_INDEX_URL="$_feed_url" UV_KEYRING_PROVIDER=subprocess
-          else
-            echo "No internal feed detected; installs will use PyPI"
-          fi
+          export PIP_INDEX_URL="https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/pypi/simple/"
+          export UV_INDEX_URL="$PIP_INDEX_URL" UV_KEYRING_PROVIDER=subprocess
+          echo "Using index: $PIP_INDEX_URL"
           python -m pip install --upgrade pip
           python -m pip install uv
           UV_PIP="python -m uv pip install --system"

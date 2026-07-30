@@ -54,13 +54,9 @@ jobs:
         displayName: 'Set necessary variables'
       - bash: |
             echo "Checking azure_functions_worker (Python < 3.13)..."
-            _feed_url=$(grep -h -m1 -E '^\s*(extra-)?index-url\s*=' /etc/pip.conf "${HOME}/.config/pip/pip.conf" "${HOME}/.pip/pip.ini" 2>/dev/null | sed 's/^[^=]*=\s*//' | awk '{print $1}')
-            if [ -n "$_feed_url" ]; then
-                echo "Internal feed: $(echo "$_feed_url" | sed 's|://[^@]*@|://***@|')"
-                export PIP_INDEX_URL="$_feed_url" UV_INDEX_URL="$_feed_url" UV_KEYRING_PROVIDER=subprocess
-            else
-                echo "No internal feed detected; installs will use PyPI"
-            fi
+            export PIP_INDEX_URL="https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/pypi/simple/"
+            export UV_INDEX_URL="$PIP_INDEX_URL" UV_KEYRING_PROVIDER=subprocess
+            echo "Using index: $PIP_INDEX_URL"
             cd workers
             python -m pip install --upgrade pip
             python -m pip install uv
@@ -74,13 +70,9 @@ jobs:
         condition: eq(variables['proxyWorker'], false)
       - bash: |
             echo "Checking proxy_worker (Python >= 3.13)..."
-            _feed_url=$(grep -h -m1 -E '^\s*(extra-)?index-url\s*=' /etc/pip.conf "${HOME}/.config/pip/pip.conf" "${HOME}/.pip/pip.ini" 2>/dev/null | sed 's/^[^=]*=\s*//' | awk '{print $1}')
-            if [ -n "$_feed_url" ]; then
-                echo "Internal feed: $(echo "$_feed_url" | sed 's|://[^@]*@|://***@|')"
-                export PIP_INDEX_URL="$_feed_url" UV_INDEX_URL="$_feed_url" UV_KEYRING_PROVIDER=subprocess
-            else
-                echo "No internal feed detected; installs will use PyPI"
-            fi
+            export PIP_INDEX_URL="https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/pypi/simple/"
+            export UV_INDEX_URL="$PIP_INDEX_URL" UV_KEYRING_PROVIDER=subprocess
+            echo "Using index: $PIP_INDEX_URL"
             cd workers
             python -m pip install --upgrade pip
             python -m pip install uv
@@ -93,13 +85,9 @@ jobs:
         condition: eq(variables['proxyWorker'], true)
       - bash: |
             echo "Checking V1 Library Worker (Python >= 3.13)..."
-            _feed_url=$(grep -h -m1 -E '^\s*(extra-)?index-url\s*=' /etc/pip.conf "${HOME}/.config/pip/pip.conf" "${HOME}/.pip/pip.ini" 2>/dev/null | sed 's/^[^=]*=\s*//' | awk '{print $1}')
-            if [ -n "$_feed_url" ]; then
-                echo "Internal feed: $(echo "$_feed_url" | sed 's|://[^@]*@|://***@|')"
-                export PIP_INDEX_URL="$_feed_url" UV_INDEX_URL="$_feed_url" UV_KEYRING_PROVIDER=subprocess
-            else
-                echo "No internal feed detected; installs will use PyPI"
-            fi
+            export PIP_INDEX_URL="https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/pypi/simple/"
+            export UV_INDEX_URL="$PIP_INDEX_URL" UV_KEYRING_PROVIDER=subprocess
+            echo "Using index: $PIP_INDEX_URL"
             cd runtimes/v1
             python -m pip install --upgrade pip
             python -m pip install uv
@@ -109,13 +97,9 @@ jobs:
         condition: eq(variables['proxyWorker'], true)
       - bash: |
             echo "Checking V2 Library Worker (Python >= 3.13)..."
-            _feed_url=$(grep -h -m1 -E '^\s*(extra-)?index-url\s*=' /etc/pip.conf "${HOME}/.config/pip/pip.conf" "${HOME}/.pip/pip.ini" 2>/dev/null | sed 's/^[^=]*=\s*//' | awk '{print $1}')
-            if [ -n "$_feed_url" ]; then
-                echo "Internal feed: $(echo "$_feed_url" | sed 's|://[^@]*@|://***@|')"
-                export PIP_INDEX_URL="$_feed_url" UV_INDEX_URL="$_feed_url" UV_KEYRING_PROVIDER=subprocess
-            else
-                echo "No internal feed detected; installs will use PyPI"
-            fi
+            export PIP_INDEX_URL="https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/pypi/simple/"
+            export UV_INDEX_URL="$PIP_INDEX_URL" UV_KEYRING_PROVIDER=subprocess
+            echo "Using index: $PIP_INDEX_URL"
             cd runtimes/v2
             python -m pip install --upgrade pip
             python -m pip install uv

@@ -1,26 +1,11 @@
 #!/bin/bash
 set -e
 
-# PipAuthenticate@1 writes the feed URL to pip.conf and installs artifacts-keyring
-# for auth, but does not expose the URL as a plain env var. Read it from pip.conf
-# before any installs so pip (PIP_INDEX_URL) and uv (UV_INDEX_URL) both use the
-# internal feed. UV_KEYRING_PROVIDER=subprocess delegates uv auth to artifacts-keyring.
-echo "--- pip index configuration ---"
-for _f in /etc/pip.conf "${HOME}/.config/pip/pip.conf" "${HOME}/.pip/pip.ini"; do
-    if [ -f "$_f" ]; then echo "  found: $_f"; else echo "  not found: $_f"; fi
-done
-_feed_url=$(grep -h -m1 -E '^\s*(extra-)?index-url\s*=' \
-                /etc/pip.conf "${HOME}/.config/pip/pip.conf" "${HOME}/.pip/pip.ini" \
-                2>/dev/null | sed 's/^[^=]*=\s*//' | awk '{print $1}')
-if [ -n "$_feed_url" ]; then
-    echo "  feed URL: $(echo "$_feed_url" | sed 's|://[^@]*@|://***@|')"
-    echo "  setting PIP_INDEX_URL, UV_INDEX_URL, UV_KEYRING_PROVIDER=subprocess"
-    export PIP_INDEX_URL="$_feed_url"
-    export UV_INDEX_URL="$_feed_url"
-    export UV_KEYRING_PROVIDER=subprocess
-else
-    echo "  no internal feed detected; installs will use PyPI"
-fi
+# Route all installs through the internal Azure Artifacts feed instead of pypi.org.
+export PIP_INDEX_URL="https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/pypi/simple/"
+export UV_INDEX_URL="$PIP_INDEX_URL"
+export UV_KEYRING_PROVIDER=subprocess
+echo "Using index: $PIP_INDEX_URL"
 
 # Install uv for faster dependency resolution / installation.
 python -m pip install --upgrade pip

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-export PIP_INDEX_URL="https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/pypi/simple/"
+export PIP_INDEX_URL="https://pkgs.dev.azure.com/azfunc/internal/_packaging/upstream/pypi/simple/"
 export UV_INDEX_URL="$PIP_INDEX_URL"
 export UV_KEYRING_PROVIDER=subprocess
 echo "Using index: $PIP_INDEX_URL"

@@ -3,10 +3,10 @@ set -e
 
 # Route uv through the internal Azure Artifacts feed. PipAuthenticate handles
 # pip's auth separately; setting PIP_INDEX_URL would override that and hang.
-# SYSTEM_ACCESSTOKEN is mapped from $(System.AccessToken) by the pipeline step's env block.
-_feed="https://pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
+# UV_FEED_URL is set by the pipeline step env block based on the ArtifactFeed parameter.
+_feed="${UV_FEED_URL:-https://pkgs.dev.azure.com/azfunc/internal/_packaging/upstream/pypi/simple/}"
 if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
-    export UV_INDEX_URL="https://build:${SYSTEM_ACCESSTOKEN}@pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
+    export UV_INDEX_URL="https://build:${SYSTEM_ACCESSTOKEN}@${_feed#https://}"
 else
     export UV_INDEX_URL="$_feed"
 fi

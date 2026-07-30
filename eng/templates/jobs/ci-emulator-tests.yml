@@ -6,6 +6,13 @@ parameters:
 jobs:
   - job: "TestPython"
     displayName: "Run Python Emulator Tests"
+    variables:
+      - ${{ if eq(parameters.ArtifactFeed, 'public/PythonWorker_PublicPackages') }}:
+        - name: pyFeedUrl
+          value: 'https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/pypi/simple/'
+      - ${{ else }}:
+        - name: pyFeedUrl
+          value: 'https://pkgs.dev.azure.com/azfunc/internal/_packaging/upstream/pypi/simple/'
 
     pool:
       name: ${{ parameters.PoolName }}
@@ -96,6 +103,7 @@ jobs:
         displayName: 'Install Python dependencies (uv)'
         env:
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          UV_FEED_URL: $(pyFeedUrl)
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - bash: |
           chmod +x eng/scripts/test-setup.sh
@@ -121,6 +129,7 @@ jobs:
         displayName: 'Install test python sdk, dependencies and the worker'
         env:
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          UV_FEED_URL: $(pyFeedUrl)
         condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
       - task: DownloadPipelineArtifact@2
         displayName: 'Download Python Extension Artifact'
@@ -141,6 +150,7 @@ jobs:
         displayName: 'Install test python extension, dependencies and the worker'
         env:
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          UV_FEED_URL: $(pyFeedUrl)
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |
           # The minimal image (1es-ubuntu-24.04-min) does not ship the Docker

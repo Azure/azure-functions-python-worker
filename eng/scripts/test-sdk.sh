@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-_feed="https://pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
+_feed="${UV_FEED_URL:-https://pkgs.dev.azure.com/azfunc/internal/_packaging/upstream/pypi/simple/}"
 if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
-    export UV_INDEX_URL="https://build:${SYSTEM_ACCESSTOKEN}@pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
+    export UV_INDEX_URL="https://build:${SYSTEM_ACCESSTOKEN}@${_feed#https://}"
 else
     export UV_INDEX_URL="$_feed"
 fi

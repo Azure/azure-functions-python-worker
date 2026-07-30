@@ -30,7 +30,7 @@ import zipfile
 
 from invoke import task
 
-from utils.constants import EXTENSIONS_CSPROJ_TEMPLATE, NUGET_CONFIG
+from utils.constants import EXTENSIONS_CSPROJ_TEMPLATE
 
 ROOT_DIR = pathlib.Path(__file__).parent.parent
 BUILD_DIR = ROOT_DIR / 'build'
@@ -288,9 +288,6 @@ def install_extensions(extensions_dir):
     if not (extensions_dir / "extensions.csproj").exists():
         with open(extensions_dir / "extensions.csproj", "w") as f:
             f.write(EXTENSIONS_CSPROJ_TEMPLATE)
-
-    with open(extensions_dir / "NuGet.config", "w") as f:
-        f.write(NUGET_CONFIG)
 
     env = os.environ.copy()
     env["TERM"] = "xterm"  # ncurses 6.1 workaround

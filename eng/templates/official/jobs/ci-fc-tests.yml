@@ -65,10 +65,15 @@ jobs:
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
 
       - bash: |
+          _feed_url=$(grep -h -m1 -E '^\s*(extra-)?index-url\s*=' /etc/pip.conf "${HOME}/.config/pip/pip.conf" "${HOME}/.pip/pip.ini" 2>/dev/null | sed 's/^[^=]*=\s*//' | awk '{print $1}')
+          if [ -n "$_feed_url" ]; then
+            echo "Internal feed: $(echo "$_feed_url" | sed 's|://[^@]*@|://***@|')"
+            export PIP_INDEX_URL="$_feed_url" UV_INDEX_URL="$_feed_url" UV_KEYRING_PROVIDER=subprocess
+          else
+            echo "No internal feed detected; installs will use PyPI"
+          fi
           python -m pip install --upgrade pip
           python -m pip install uv
-          _uv_index=$(python -m pip config get global.index-url 2>/dev/null || python -m pip config get global.extra-index-url 2>/dev/null || true)
-          [ -n "$_uv_index" ] && export UV_INDEX_URL="$_uv_index"
           UV_PIP="python -m uv pip install --system"
           $UV_PIP "setuptools<82.0"
           $UV_PIP -U -e ${{ parameters.PROJECT_DIRECTORY }}/[dev]

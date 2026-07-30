@@ -2,7 +2,7 @@
 set -e
 
 # Route all installs through the internal Azure Artifacts feed instead of pypi.org.
-export PIP_INDEX_URL="https://pkgs.dev.azure.com/azfunc/internal/_packaging/upstream/pypi/simple/"
+export PIP_INDEX_URL="https://pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
 export UV_INDEX_URL="$PIP_INDEX_URL"
 export UV_KEYRING_PROVIDER=subprocess
 echo "Using index: $PIP_INDEX_URL"

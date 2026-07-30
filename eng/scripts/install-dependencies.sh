@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-# Route all installs through the internal Azure Artifacts feed instead of pypi.org.
-export PIP_INDEX_URL="https://pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
-export UV_INDEX_URL="$PIP_INDEX_URL"
+# Route uv through the internal Azure Artifacts feed. PipAuthenticate handles
+# pip's auth separately; setting PIP_INDEX_URL would override that and hang.
+export UV_INDEX_URL="https://pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
 export UV_KEYRING_PROVIDER=subprocess
-echo "Using index: $PIP_INDEX_URL"
+echo "UV index: $UV_INDEX_URL"
 
 # Install uv for faster dependency resolution / installation.
 python -m pip install --upgrade pip

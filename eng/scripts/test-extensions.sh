@@ -1,10 +1,9 @@
 #!/bin/bash
 set -e
 
-export PIP_INDEX_URL="https://pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
-export UV_INDEX_URL="$PIP_INDEX_URL"
+export UV_INDEX_URL="https://pkgs.dev.azure.com/azfunc/internal/_packaging/PythonWorker_Internal_PublicPackages/pypi/simple/"
 export UV_KEYRING_PROVIDER=subprocess
-echo "Using index: $PIP_INDEX_URL"
+echo "UV index: $UV_INDEX_URL"
 
 python -m pip install --upgrade pip
 python -m pip install uv

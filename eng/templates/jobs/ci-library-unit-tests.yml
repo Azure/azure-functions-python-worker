@@ -48,6 +48,8 @@ jobs:
           chmod +x eng/scripts/install-dependencies.sh          
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
         displayName: 'Install dependencies'
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
       - bash: |
           python -m pytest -q -n auto --dist loadfile --reruns 4 --reruns-delay 5 --instafail --cov=./${{ parameters.PROJECT_DIRECTORY }} --cov-report xml --cov-branch tests/unittests
         displayName: "Running $(PYTHON_VERSION) Unit Tests"

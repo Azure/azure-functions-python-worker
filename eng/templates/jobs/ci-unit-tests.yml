@@ -97,6 +97,8 @@ jobs:
           chmod +x eng/scripts/install-dependencies.sh
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
         displayName: 'Install Python dependencies (uv)'
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - bash: |
           chmod +x eng/scripts/test-setup.sh

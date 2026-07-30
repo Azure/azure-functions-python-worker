@@ -106,6 +106,8 @@ jobs:
           chmod +x eng/scripts/install-dependencies.sh
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
         displayName: 'Install Python dependencies (uv)'
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - bash: |
           chmod +x eng/scripts/test-setup.sh
@@ -129,6 +131,8 @@ jobs:
           eng/scripts/test-sdk.sh $(Pipeline.Workspace) $(PYTHON_VERSION)
           eng/scripts/test-setup.sh
         displayName: 'Install test python sdk, dependencies and the worker'
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
         condition: or(eq(variables.isSdkRelease, true), eq(variables['USETESTPYTHONSDK'], true))
       - task: DownloadPipelineArtifact@2
         displayName: 'Download Python Extension Artifact'
@@ -147,6 +151,8 @@ jobs:
           eng/scripts/test-extensions.sh $(Pipeline.Workspace) $(PYTHON_VERSION) $(PYTHONEXTENSIONNAME)
           eng/scripts/test-setup.sh
         displayName: 'Install test python extension, dependencies and the worker'
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - powershell: |
           $pipelineVarSet = "$(USETESTPYTHONSDK)"

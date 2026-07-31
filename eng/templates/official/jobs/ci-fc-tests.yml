@@ -26,7 +26,7 @@ jobs:
       - task: PipAuthenticate@1
         displayName: 'Pip Authenticate'
         inputs:
-          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
+          artifactFeeds: 'internal/upstream'
       - bash: |
           echo "Disk space before cleanup:"
           df -h

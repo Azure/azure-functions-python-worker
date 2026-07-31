@@ -80,12 +80,12 @@ jobs:
         displayName: 'NuGet Authenticate'
       - bash: |
           # Remove the feed that doesn't match the current service connection
-          if [[ "${{ parameters.NuGetServiceConnection }}" == "PythonWorker_PublicPackages" ]]; then
+          if [[ "${{ parameters.NuGetServiceConnection }}" == "upstream-public" ]]; then
             # Remove internal feed for public builds
-            sed -i '/_Internal_PublicPackages/d' nuget.config
+            sed -i '/key="upstream" /d' nuget.config
           else
             # Remove public feed for internal builds
-            sed -i '/PythonWorker_PublicPackages[^_]/d' nuget.config
+            sed -i '/key="upstream-public"/d' nuget.config
           fi
           echo "Updated nuget.config:"
           cat nuget.config

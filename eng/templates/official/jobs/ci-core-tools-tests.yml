@@ -11,7 +11,7 @@ jobs:
     - task: PipAuthenticate@1
       displayName: 'Pip Authenticate'
       inputs:
-        artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
+        artifactFeeds: 'internal/upstream'
     - task: UsePythonVersion@0
       displayName: 'Install Python'
       inputs:

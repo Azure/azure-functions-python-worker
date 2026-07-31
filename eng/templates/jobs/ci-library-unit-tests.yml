@@ -7,13 +7,6 @@ parameters:
 jobs:
   - job: "TestPython"
     displayName: "Run ${{ parameters.PROJECT_NAME }} Unit Tests"
-    variables:
-      - ${{ if eq(parameters.ArtifactFeed, 'public/PythonWorker_PublicPackages') }}:
-        - name: pyFeedUrl
-          value: 'https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/pypi/simple/'
-      - ${{ else }}:
-        - name: pyFeedUrl
-          value: 'https://pkgs.dev.azure.com/azfunc/internal/_packaging/upstream/pypi/simple/'
 
     pool:
       name: ${{ parameters.PoolName }}
@@ -55,9 +48,6 @@ jobs:
           chmod +x eng/scripts/install-dependencies.sh          
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
         displayName: 'Install dependencies'
-        env:
-          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-          UV_FEED_URL: $(pyFeedUrl)
       - bash: |
           python -m pytest -q -n auto --dist loadfile --reruns 4 --reruns-delay 5 --instafail --cov=./${{ parameters.PROJECT_DIRECTORY }} --cov-report xml --cov-branch tests/unittests
         displayName: "Running $(PYTHON_VERSION) Unit Tests"

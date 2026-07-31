@@ -6,13 +6,6 @@ parameters:
 jobs:
   - job: "TestPython"
     displayName: "Run Python Unit Tests"
-    variables:
-      - ${{ if eq(parameters.ArtifactFeed, 'public/PythonWorker_PublicPackages') }}:
-        - name: pyFeedUrl
-          value: 'https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/pypi/simple/'
-      - ${{ else }}:
-        - name: pyFeedUrl
-          value: 'https://pkgs.dev.azure.com/azfunc/internal/_packaging/upstream/pypi/simple/'
 
     pool:
       name: ${{ parameters.PoolName }}
@@ -104,9 +97,6 @@ jobs:
           chmod +x eng/scripts/install-dependencies.sh
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
         displayName: 'Install Python dependencies (uv)'
-        env:
-          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-          UV_FEED_URL: $(pyFeedUrl)
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - bash: |
           chmod +x eng/scripts/test-setup.sh

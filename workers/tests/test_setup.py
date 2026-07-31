@@ -289,6 +289,9 @@ def install_extensions(extensions_dir):
         with open(extensions_dir / "extensions.csproj", "w") as f:
             f.write(EXTENSIONS_CSPROJ_TEMPLATE)
 
+    with open(extensions_dir / "NuGet.config", "w") as f:
+        f.write(ROOT_DIR.parent.joinpath("nuget.config").read_text())
+
     env = os.environ.copy()
     env["TERM"] = "xterm"  # ncurses 6.1 workaround
     try:
@@ -418,6 +421,9 @@ def webhost(c, clean=False, webhost_version=None, webhost_dir=None,
     create_webhost_folder(webhost_dir)
     version = branch_name or webhost_version
     extract_webhost_zip(version.replace("/", "-"), zip_path, webhost_dir)
+    # The webhost repo ships its own NuGet.config pointing to api.nuget.org.
+    # Overwrite it with the repo root config so the build uses the internal feed.
+    shutil.copy2(ROOT_DIR.parent / "nuget.config", webhost_dir / "NuGet.config")
     chmod_protobuf_generation_script(webhost_dir)
     compile_webhost(webhost_dir)
 

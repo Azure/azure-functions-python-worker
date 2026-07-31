@@ -1,16 +1,10 @@
 #!/bin/bash
 set -e
 
-# Route uv through the internal Azure Artifacts feed. PipAuthenticate handles
-# pip's auth separately; setting PIP_INDEX_URL would override that and hang.
-# UV_FEED_URL is set by the pipeline step env block based on the ArtifactFeed parameter.
-_feed="${UV_FEED_URL:-https://pkgs.dev.azure.com/azfunc/internal/_packaging/upstream/pypi/simple/}"
-if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
-    export UV_INDEX_URL="https://build:${SYSTEM_ACCESSTOKEN}@${_feed#https://}"
-else
-    export UV_INDEX_URL="$_feed"
+# Forward PipAuthenticate's index URL to uv, which does not read pip's config.
+if [ -n "${PIP_INDEX_URL:-}" ] && [ -z "${UV_DEFAULT_INDEX:-}" ]; then
+  export UV_DEFAULT_INDEX="$PIP_INDEX_URL"
 fi
-echo "UV index: $(echo "$UV_INDEX_URL" | sed 's|://[^@]*@|://***@|')"
 
 # Install uv for faster dependency resolution / installation.
 python -m pip install --upgrade pip

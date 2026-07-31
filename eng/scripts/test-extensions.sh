@@ -1,13 +1,9 @@
 #!/bin/bash
 set -e
 
-_feed="${UV_FEED_URL:-https://pkgs.dev.azure.com/azfunc/internal/_packaging/upstream/pypi/simple/}"
-if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
-    export UV_INDEX_URL="https://build:${SYSTEM_ACCESSTOKEN}@${_feed#https://}"
-else
-    export UV_INDEX_URL="$_feed"
+if [ -n "${PIP_INDEX_URL:-}" ] && [ -z "${UV_DEFAULT_INDEX:-}" ]; then
+  export UV_DEFAULT_INDEX="$PIP_INDEX_URL"
 fi
-echo "UV index: $(echo "$UV_INDEX_URL" | sed 's|://[^@]*@|://***@|')"
 
 python -m pip install --upgrade pip
 python -m pip install uv

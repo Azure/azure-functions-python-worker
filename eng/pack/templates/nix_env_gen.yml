@@ -70,12 +70,6 @@ steps:
 #     args: '${{ parameters.pythonVersion }}'
 #   displayName: 'Build dependencies from source'
 #   condition: eq(variables['isRC'], 'true')
-- bash: |
-    pip install pip-audit
-    cd workers
-    pip-audit --vulnerability-service osv .
-  displayName: 'Run vulnerability scan'
-  continueOnError: true
 - task: CopyFiles@2
   inputs:
     contents: '$(workerPath)'

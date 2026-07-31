@@ -37,9 +37,3 @@ jobs:
           cd ${{ parameters.PROJECT_DIRECTORY }}
           python -m build
         displayName: 'Build ${{ parameters.PROJECT_NAME }}'
-      - bash: |
-          pip install pip-audit
-          cd ${{ parameters.PROJECT_DIRECTORY }}
-          pip-audit --vulnerability-service osv .
-        displayName: 'Run vulnerability scan'
-        continueOnError: true

@@ -2,13 +2,13 @@ parameters:
   PYTHON_VERSION: ''
   PROJECT_NAME: ''
   PROJECT_DIRECTORY: ''
-  ArtifactFeed: ''
 
 steps:
   - task: PipAuthenticate@1
-    displayName: 'Pip Authenticate'
+    displayName: 'Authenticate pip to CFS'
     inputs:
-      artifactFeeds: ${{ parameters.ArtifactFeed }}
+      artifactFeeds: 'public/upstream-public'
+      onlyAddExtraIndex: false
   - task: UsePythonVersion@0
     inputs:
       versionSpec: ${{ parameters.PYTHON_VERSION }}

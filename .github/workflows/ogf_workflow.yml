@@ -79,6 +79,9 @@ jobs:
     # V. IMPORTANT: Copy this strategy section to the dependent cleanup job as well,
     # if you are making changes. Make sure they are the same.
     steps:         
+      - name: Check out repository configuration
+        uses: actions/checkout@v4
+
       - name: Install node and npm
         uses: actions/setup-node@v2
         with:
@@ -91,6 +94,8 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Install Core Tools and K6
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
         run: |
           npm i -g azure-functions-core-tools@3 --unsafe-perm true
           

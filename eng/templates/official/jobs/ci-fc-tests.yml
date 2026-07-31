@@ -24,9 +24,10 @@ jobs:
            PYTHON_VERSION: '3.14'
     steps:
       - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
+        displayName: 'Authenticate pip to CFS'
         inputs:
-          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - bash: |
           echo "Disk space before cleanup:"
           df -h
@@ -65,6 +66,7 @@ jobs:
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
 
       - bash: |
+          export UV_DEFAULT_INDEX="${UV_DEFAULT_INDEX:-$PIP_INDEX_URL}"
           python -m pip install --upgrade pip
           python -m pip install uv
           UV_PIP="python -m uv pip install --system"

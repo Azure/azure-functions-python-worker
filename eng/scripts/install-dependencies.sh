@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+export UV_DEFAULT_INDEX="${UV_DEFAULT_INDEX:-$PIP_INDEX_URL}"
+
 # Install uv for faster dependency resolution / installation.
 python -m pip install --upgrade pip
 python -m pip install uv

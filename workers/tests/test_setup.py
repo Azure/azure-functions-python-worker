@@ -30,10 +30,11 @@ import zipfile
 
 from invoke import task
 
-from utils.constants import EXTENSIONS_CSPROJ_TEMPLATE, NUGET_CONFIG
+from utils.constants import EXTENSIONS_CSPROJ_TEMPLATE
 
 ROOT_DIR = pathlib.Path(__file__).parent.parent
 BUILD_DIR = ROOT_DIR / 'build'
+NUGET_CONFIG_PATH = ROOT_DIR.parent / 'nuget.config'
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
 WEBHOST_GIT_REPO = "https://github.com/Azure/azure-functions-host/archive"
 WEBHOST_TAG_PREFIX = "v4."
@@ -115,6 +116,8 @@ def chmod_protobuf_generation_script(webhost_dir):
 
 def compile_webhost(webhost_dir):
     print(f"Compiling Functions Host from {webhost_dir}")
+    nuget_config_path = webhost_dir / "NuGet.config"
+    shutil.copy2(NUGET_CONFIG_PATH, nuget_config_path)
     # Build only the WebHost project (and its dependencies) instead of the
     # entire WebJobs.Script.sln. The solution also contains test projects,
     # benchmarks and isolated-worker samples that the tests never run; building
@@ -131,6 +134,7 @@ def compile_webhost(webhost_dir):
                 "/m:1",  # Disable parallel MSBuild
                 "/nodeReuse:false",  # Prevent MSBuild node reuse
                 f"--property:OutputPath={webhost_dir}/bin",  # Set output folder
+                f"--property:RestoreConfigFile={nuget_config_path}",
                 "/p:TreatWarningsAsErrors=false"
             ],
             check=True,
@@ -289,14 +293,17 @@ def install_extensions(extensions_dir):
         with open(extensions_dir / "extensions.csproj", "w") as f:
             f.write(EXTENSIONS_CSPROJ_TEMPLATE)
 
-    with open(extensions_dir / "NuGet.config", "w") as f:
-        f.write(NUGET_CONFIG)
+    nuget_config_path = extensions_dir / "NuGet.config"
+    shutil.copy2(NUGET_CONFIG_PATH, nuget_config_path)
 
     env = os.environ.copy()
     env["TERM"] = "xterm"  # ncurses 6.1 workaround
     try:
         subprocess.run(
-            args=["dotnet", "build", "-o", "."],
+            args=[
+                "dotnet", "build", "-o", ".",
+                f"--property:RestoreConfigFile={nuget_config_path}",
+            ],
             check=True,
             cwd=str(extensions_dir),
             stdout=sys.stdout,

@@ -9,9 +9,10 @@ jobs:
     
     steps:
     - task: PipAuthenticate@1
-      displayName: 'Pip Authenticate'
+      displayName: 'Authenticate pip to CFS'
       inputs:
-        artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
+        artifactFeeds: 'public/upstream-public'
+        onlyAddExtraIndex: false
     - task: UsePythonVersion@0
       displayName: 'Install Python'
       inputs:
@@ -27,6 +28,8 @@ jobs:
       inputs:
         packageType: 'sdk'
         version: "6.x"
+    - task: NuGetAuthenticate@1
+      displayName: 'Authenticate NuGet to CFS'
     - pwsh: '$(Build.SourcesDirectory)/.ci/e2e_integration_test/start-e2e.ps1'
       env:
         AzureWebJobsStorage: $(LinuxStorageConnectionString311)

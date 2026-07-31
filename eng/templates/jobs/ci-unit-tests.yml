@@ -1,7 +1,5 @@
 parameters:
   PROJECT_DIRECTORY: 'workers'
-  ArtifactFeed: ''
-  NuGetServiceConnection: ''
 
 jobs:
   - job: "TestPython"
@@ -28,9 +26,10 @@ jobs:
           PYTHON_VERSION: '3.14'
     steps:
       - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
+        displayName: 'Authenticate pip to CFS'
         inputs:
-          artifactFeeds: ${{ parameters.ArtifactFeed }}
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - bash: |
           echo "Disk space before cleanup:"
           df -h
@@ -80,19 +79,7 @@ jobs:
         inputs:
           version: 10.0.x
       - task: NuGetAuthenticate@1
-        displayName: 'NuGet Authenticate'
-      - bash: |
-          # Remove the feed that doesn't match the current service connection
-          if [[ "${{ parameters.NuGetServiceConnection }}" == "PythonWorker_PublicPackages" ]]; then
-            # Remove internal feed for public builds
-            sed -i '/_Internal_PublicPackages/d' nuget.config
-          else
-            # Remove public feed for internal builds
-            sed -i '/PythonWorker_PublicPackages[^_]/d' nuget.config
-          fi
-          echo "Updated nuget.config:"
-          cat nuget.config
-        displayName: 'Configure NuGet feed for current organization'
+        displayName: 'Authenticate NuGet to CFS'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}

@@ -39,9 +39,10 @@ jobs:
 
     steps:
       - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
+        displayName: 'Authenticate pip to CFS'
         inputs:
-          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)

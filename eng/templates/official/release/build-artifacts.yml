@@ -49,6 +49,7 @@ jobs:
         displayName: 'Pip Authenticate'
         inputs:
           artifactFeeds: 'internal/upstream'
+          onlyAddExtraIndex: false
       - ${{ if ne(parameters.libraryVersion, '') }}:
         - checkout: none
         - bash: |

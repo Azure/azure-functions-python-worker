@@ -54,6 +54,7 @@ jobs:
         displayName: 'Pip Authenticate'
         inputs:
           artifactFeeds: 'internal/upstream'
+          onlyAddExtraIndex: false
       - bash: |
           echo "Disk space before cleanup:"
           df -h

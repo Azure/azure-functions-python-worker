@@ -9,6 +9,7 @@ steps:
     displayName: 'Pip Authenticate'
     inputs:
       artifactFeeds: ${{ parameters.ArtifactFeed }}
+      onlyAddExtraIndex: false
   - task: UsePythonVersion@0
     inputs:
       versionSpec: ${{ parameters.PYTHON_VERSION }}

@@ -31,6 +31,7 @@ jobs:
         displayName: 'Pip Authenticate'
         inputs:
           artifactFeeds: ${{ parameters.ArtifactFeed }}
+          onlyAddExtraIndex: false
       - bash: |
           echo "Disk space before cleanup:"
           df -h

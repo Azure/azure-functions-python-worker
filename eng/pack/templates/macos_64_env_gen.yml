@@ -8,6 +8,7 @@ steps:
   displayName: 'Pip Authenticate'
   inputs:
     artifactFeeds: 'internal/upstream'
+    onlyAddExtraIndex: false
 - task: UsePythonVersion@0
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
@@ -147,7 +148,7 @@ steps:
     if (-not $grpcMatch) {
         $missing += "grpc/_cython/$grpcPattern"
     } else {
-        Write-Host "✅ Found gRPC binary: $grpcMatch"
+        Write-Host "âœ… Found gRPC binary: $grpcMatch"
     }
 
     if ($missing.Count -gt 0) {
@@ -155,7 +156,7 @@ steps:
         exit 1
     }
     else {
-        Write-Host "✅ Validation passed. All expected files/folders are present."
+        Write-Host "âœ… Validation passed. All expected files/folders are present."
     }
   displayName: "Validate azure_functions_worker artifact contents"
   condition: eq(variables['proxyWorker'], false)
@@ -237,7 +238,7 @@ steps:
     if (-not $grpcMatch) {
         $missing += "grpc/_cython/$grpcPattern"
     } else {
-        Write-Host "✅ Found gRPC binary: $grpcMatch"
+        Write-Host "âœ… Found gRPC binary: $grpcMatch"
     }
 
     if ($missing.Count -gt 0) {
@@ -245,7 +246,7 @@ steps:
         exit 1
     }
     else {
-        Write-Host "✅ Validation passed. All expected files/folders are present."
+        Write-Host "âœ… Validation passed. All expected files/folders are present."
     }
   displayName: "Validate proxy_worker artifact contents"
   condition: eq(variables['proxyWorker'], true)

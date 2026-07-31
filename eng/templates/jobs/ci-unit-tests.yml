@@ -86,10 +86,10 @@ jobs:
           # Remove the feed that doesn't match the current service connection
           if [[ "${{ parameters.NuGetServiceConnection }}" == "upstream-public" ]]; then
             # Remove internal feed for public builds
-            sed -i '/key="upstream" /d' nuget.config
+            sed -i '/_Internal_PublicPackages/d' nuget.config
           else
             # Remove public feed for internal builds
-            sed -i '/key="upstream-public"/d' nuget.config
+            sed -i '/PythonWorker_PublicPackages[^_]/d' nuget.config
           fi
           echo "Updated nuget.config:"
           cat nuget.config

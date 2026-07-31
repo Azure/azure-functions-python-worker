@@ -23,7 +23,7 @@ jobs:
       - task: PipAuthenticate@1
         displayName: 'Pip Authenticate'
         inputs:
-          artifactFeeds: 'public/upstream-public'
+          artifactFeeds: 'public/PythonWorker_PublicPackages'
           onlyAddExtraIndex: false
       - task: UsePythonVersion@0
         inputs:

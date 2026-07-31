@@ -93,7 +93,7 @@ jobs:
         displayName: 'NuGet Authenticate'
       - bash: |
           # Remove the feed that doesn't match the current service connection
-          if [[ "${{ parameters.NuGetServiceConnection }}" == "upstream-public" ]]; then
+          if [[ "${{ parameters.NuGetServiceConnection }}" == "PythonWorker_PublicPackages" ]]; then
             # Remove internal feed for public builds
             sed -i '/_Internal_PublicPackages/d' nuget.config
           else

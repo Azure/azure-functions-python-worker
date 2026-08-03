@@ -116,6 +116,8 @@ def chmod_protobuf_generation_script(webhost_dir):
 
 def compile_webhost(webhost_dir):
     print(f"Compiling Functions Host from {webhost_dir}")
+    nuget_config_path = webhost_dir / "NuGet.config"
+    shutil.copy2(NUGET_CONFIG_PATH, nuget_config_path)
     # Build only the WebHost project (and its dependencies) instead of the
     # entire WebJobs.Script.sln. The solution also contains test projects,
     # benchmarks and isolated-worker samples that the tests never run; building
@@ -132,6 +134,7 @@ def compile_webhost(webhost_dir):
                 "/m:1",  # Disable parallel MSBuild
                 "/nodeReuse:false",  # Prevent MSBuild node reuse
                 f"--property:OutputPath={webhost_dir}/bin",  # Set output folder
+                f"--property:RestoreConfigFile={nuget_config_path}",
                 "/p:TreatWarningsAsErrors=false"
             ],
             check=True,

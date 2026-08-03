@@ -13,6 +13,8 @@ jobs:
       inputs:
         artifactFeeds: 'public/upstream-public'
         onlyAddExtraIndex: false
+    - task: NuGetAuthenticate@1
+      displayName: 'Authenticate NuGet to CFS'
     - task: UsePythonVersion@0
       displayName: 'Install Python'
       inputs:

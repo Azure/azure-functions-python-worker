@@ -1,5 +1,3 @@
-parameters:
-
 jobs:
   - job: "TestPython"
     displayName: "Run Dependency Checks"

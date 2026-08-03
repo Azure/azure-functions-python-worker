@@ -48,7 +48,7 @@ jobs:
       - task: PipAuthenticate@1
         displayName: 'Authenticate pip to CFS'
         inputs:
-          artifactFeeds: 'internal/upstream'
+          artifactFeeds: 'public/upstream-public'
           onlyAddExtraIndex: false
       - ${{ if ne(parameters.libraryVersion, '') }}:
         - checkout: none

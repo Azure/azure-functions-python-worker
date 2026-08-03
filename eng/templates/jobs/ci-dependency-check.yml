@@ -1,5 +1,4 @@
 parameters:
-  ArtifactFeed: ''
 
 jobs:
   - job: "TestPython"
@@ -28,7 +27,7 @@ jobs:
       - task: PipAuthenticate@1
         displayName: 'Authenticate pip to CFS'
         inputs:
-          artifactFeeds: ${{ parameters.ArtifactFeed }}
+          artifactFeeds: 'public/upstream-public'
           onlyAddExtraIndex: false
       - task: UsePythonVersion@0
         inputs:

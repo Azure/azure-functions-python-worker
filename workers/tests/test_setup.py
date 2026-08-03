@@ -116,27 +116,6 @@ def chmod_protobuf_generation_script(webhost_dir):
 
 def compile_webhost(webhost_dir):
     print(f"Compiling Functions Host from {webhost_dir}")
-    nuget_config_path = webhost_dir / "NuGet.config"
-    shutil.copy2(NUGET_CONFIG_PATH, nuget_config_path)
-    # Pin packages to the highest versions cached in the upstream feed.
-    # The feed is offline-only (nuget.org blocked) so missing versions cause
-    # NU1102/NU1103 failures; these pins use the nearest available versions.
-    # Only the Python worker is under test — PowerShell/Isolated worker
-    # behaviour is not exercised, so older versions are safe here.
-    (webhost_dir / "Directory.Build.targets").write_text(
-        '<?xml version="1.0" encoding="utf-8"?>\n'
-        '<Project>\n'
-        '  <ItemGroup>\n'
-        '    <PackageReference Include="Microsoft.Azure.Functions.DotNetIsolatedNativeHost"'
-        ' Version="1.1.0-alpha.1" PrivateAssets="all" />\n'
-        '    <PackageReference Include="Microsoft.Azure.Functions.PowerShellWorker.PS7.4"'
-        ' Version="4.0.5203" PrivateAssets="all" />\n'
-        '    <PackageReference Include="Microsoft.Azure.Functions.PowerShellWorker.PS7.6"'
-        ' Version="4.0.5201" PrivateAssets="all" />\n'
-        '  </ItemGroup>\n'
-        '</Project>\n',
-        encoding="utf-8",
-    )
     # Build only the WebHost project (and its dependencies) instead of the
     # entire WebJobs.Script.sln. The solution also contains test projects,
     # benchmarks and isolated-worker samples that the tests never run; building
@@ -153,7 +132,6 @@ def compile_webhost(webhost_dir):
                 "/m:1",  # Disable parallel MSBuild
                 "/nodeReuse:false",  # Prevent MSBuild node reuse
                 f"--property:OutputPath={webhost_dir}/bin",  # Set output folder
-                f"--property:RestoreConfigFile={nuget_config_path}",
                 "/p:TreatWarningsAsErrors=false"
             ],
             check=True,

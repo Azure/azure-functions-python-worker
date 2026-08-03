@@ -63,14 +63,12 @@ extends:
           - template: /eng/templates/jobs/ci-emulator-tests.yml@self
             parameters:
               PoolName: 1es-pool-azfunc
-    
       - stage: RunWorkerUnitTests
         dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/jobs/ci-unit-tests.yml@self
             parameters:
               PoolName: 1es-pool-azfunc
-
       - stage: RunWorkerDockerDedicatedTests
         dependsOn: BuildPythonWorker
         jobs:

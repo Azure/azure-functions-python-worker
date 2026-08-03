@@ -79,7 +79,6 @@ extends:
       - template: /eng/templates/jobs/ci-dependency-check.yml@self
         parameters:
           PoolName: 1es-pool-azfunc-public
-          
     - stage: RunWorkerUnitTests
       dependsOn: BuildPythonWorker
       jobs:
@@ -87,14 +86,12 @@ extends:
           parameters:
             PROJECT_DIRECTORY: 'workers'
             PoolName: 1es-pool-azfunc-public
-
     - stage: RunWorkerEmulatorTests
       dependsOn: BuildPythonWorker
       jobs:
         - template: /eng/templates/jobs/ci-emulator-tests.yml@self
           parameters:
             PoolName: 1es-pool-azfunc-public
-
     # Python V2 Library Build and Test Stages
     - stage: BuildV2Library
       dependsOn: []

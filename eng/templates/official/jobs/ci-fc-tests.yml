@@ -24,9 +24,9 @@ jobs:
            PYTHON_VERSION: '3.14'
     steps:
       - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
+        displayName: 'Authenticate pip to CFS'
         inputs:
-          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
+          artifactFeeds: 'internal/upstream'
           onlyAddExtraIndex: false
       - bash: |
           echo "Disk space before cleanup:"

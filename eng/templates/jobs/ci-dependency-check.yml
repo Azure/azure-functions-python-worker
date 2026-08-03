@@ -26,7 +26,7 @@ jobs:
           PYTHON_VERSION: '3.14'
     steps:
       - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
+        displayName: 'Authenticate pip to CFS'
         inputs:
           artifactFeeds: ${{ parameters.ArtifactFeed }}
           onlyAddExtraIndex: false

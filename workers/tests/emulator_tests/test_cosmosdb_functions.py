@@ -108,3 +108,30 @@ class TestCosmosDBFunctionsSteinGeneric(TestCosmosDBFunctions):
     def get_script_dir(cls):
         return testutils.EMULATOR_TESTS_FOLDER / 'cosmosdb_functions' / \
             'cosmosdb_functions_stein' / 'generic'
+
+
+class TestCosmosDBSDKFunctions(testutils.WebHostTestCase):
+
+    @classmethod
+    def get_script_dir(cls):
+        return testutils.EMULATOR_TESTS_FOLDER / 'cosmosdb_functions' / \
+            'cosmosdb_functions_sdk'
+
+    @classmethod
+    def get_libraries_to_install(cls):
+        return ['azurefunctions-extensions-bindings-cosmosdb']
+
+    def test_cosmos_client_input(self):
+        r = self.webhost.request('GET', 'cosmos')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'ok')
+
+    def test_container_proxy_input(self):
+        r = self.webhost.request('GET', 'container')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'ok')
+
+    def test_database_proxy_input(self):
+        r = self.webhost.request('GET', 'database')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'ok')

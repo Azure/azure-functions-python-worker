@@ -8,15 +8,18 @@ jobs:
       os: linux
     
     steps:
+    - task: PipAuthenticate@1
+      displayName: 'Authenticate pip to CFS'
+      inputs:
+        artifactFeeds: 'public/upstream-public'
+        onlyAddExtraIndex: false
+    - task: NuGetAuthenticate@1
+      displayName: 'Authenticate NuGet to CFS'
     - task: UsePythonVersion@0
       displayName: 'Install Python'
       inputs:
         versionSpec: "3.10"
         addToPath: true
-    - task: PipAuthenticate@1
-      displayName: 'Pip Authenticate'
-      inputs:
-        artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
     - task: UseDotNet@2
       displayName: 'Install DotNet 3'
       inputs:

@@ -38,13 +38,14 @@ jobs:
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
 
     steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
-      - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
-        inputs:
-          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
 

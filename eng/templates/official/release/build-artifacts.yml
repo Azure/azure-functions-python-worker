@@ -34,7 +34,7 @@ jobs:
 
     pool:
       name: 1es-pool-azfunc
-      image: 1es-ubuntu-22.04
+      image: 1es-ubuntu-24.04
       os: linux
 
     templateContext:
@@ -45,6 +45,11 @@ jobs:
           artifactName: ${{ parameters.artifactName }}
 
     steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - ${{ if ne(parameters.libraryVersion, '') }}:
         - checkout: none
         - bash: |
@@ -58,10 +63,6 @@ jobs:
       - bash: |
           python --version
         displayName: 'Check python version'
-      - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
-        inputs:
-          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
       - bash: |
           python -m pip install -U pip
           python -m pip install build

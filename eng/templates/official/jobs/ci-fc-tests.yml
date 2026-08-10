@@ -23,6 +23,11 @@ jobs:
          Python314:
            PYTHON_VERSION: '3.14'
     steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - bash: |
           echo "Disk space before cleanup:"
           df -h
@@ -44,10 +49,6 @@ jobs:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
-      - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
-        inputs:
-          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
 
       - bash: |
           # Start Azurite storage emulator in the background
@@ -65,6 +66,9 @@ jobs:
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
 
       - bash: |
+          if [ -n "${PIP_INDEX_URL:-}" ] && [ -z "${UV_DEFAULT_INDEX:-}" ]; then
+            export UV_DEFAULT_INDEX="$PIP_INDEX_URL"
+          fi
           python -m pip install --upgrade pip
           python -m pip install uv
           UV_PIP="python -m uv pip install --system"

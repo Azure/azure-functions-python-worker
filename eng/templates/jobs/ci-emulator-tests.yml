@@ -1,7 +1,5 @@
 parameters:
   PROJECT_DIRECTORY: 'workers'
-  ArtifactFeed: ''
-  NuGetServiceConnection: ''
 
 jobs:
   - job: "TestPython"
@@ -27,6 +25,11 @@ jobs:
         Python314:
           PYTHON_VERSION: '3.14'
     steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - bash: |
           echo "Disk space before cleanup:"
           df -h
@@ -68,28 +71,12 @@ jobs:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
-      - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
-        inputs:
-          artifactFeeds: ${{ parameters.ArtifactFeed }}
       - task: UseDotNet@2
         displayName: 'Install .NET 10'
         inputs:
           version: 10.0.x
       - task: NuGetAuthenticate@1
-        displayName: 'NuGet Authenticate'
-      - bash: |
-          # Remove the feed that doesn't match the current service connection
-          if [[ "${{ parameters.NuGetServiceConnection }}" == "PythonWorker_PublicPackages" ]]; then
-            # Remove internal feed for public builds
-            sed -i '/_Internal_PublicPackages/d' nuget.config
-          else
-            # Remove public feed for internal builds
-            sed -i '/PythonWorker_PublicPackages[^_]/d' nuget.config
-          fi
-          echo "Updated nuget.config:"
-          cat nuget.config
-        displayName: 'Configure NuGet feed for current organization'
+        displayName: 'Authenticate NuGet to CFS'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
@@ -161,7 +148,7 @@ jobs:
           df -h
           
           docker pull mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
-          docker run --detach --publish 8081:8081 --publish 1234:1234 mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+          docker run --detach --env ENABLE_EXPLORER=false --publish 8081:8081 mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
           docker ps
         displayName: "Start CosmosDB Emulator"
       - bash: |

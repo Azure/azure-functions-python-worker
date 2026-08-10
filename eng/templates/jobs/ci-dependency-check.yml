@@ -1,6 +1,3 @@
-parameters:
-  ArtifactFeed: ''
-
 jobs:
   - job: "TestPython"
     displayName: "Run Dependency Checks"
@@ -25,13 +22,14 @@ jobs:
         Python314:
           PYTHON_VERSION: '3.14'
     steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
-      - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
-        inputs:
-          artifactFeeds: ${{ parameters.ArtifactFeed }}
       - powershell: |
           $PY_VER = "$(PYTHON_VERSION)"
           Write-Host "Python version: $PY_VER"
@@ -54,6 +52,9 @@ jobs:
         displayName: 'Set necessary variables'
       - bash: |
             echo "Checking azure_functions_worker (Python < 3.13)..."
+            if [ -n "${PIP_INDEX_URL:-}" ] && [ -z "${UV_DEFAULT_INDEX:-}" ]; then
+              export UV_DEFAULT_INDEX="$PIP_INDEX_URL"
+            fi
             cd workers
             python -m pip install --upgrade pip
             python -m pip install uv
@@ -67,6 +68,9 @@ jobs:
         condition: eq(variables['proxyWorker'], false)
       - bash: |
             echo "Checking proxy_worker (Python >= 3.13)..."
+            if [ -n "${PIP_INDEX_URL:-}" ] && [ -z "${UV_DEFAULT_INDEX:-}" ]; then
+              export UV_DEFAULT_INDEX="$PIP_INDEX_URL"
+            fi
             cd workers
             python -m pip install --upgrade pip
             python -m pip install uv
@@ -79,6 +83,9 @@ jobs:
         condition: eq(variables['proxyWorker'], true)
       - bash: |
             echo "Checking V1 Library Worker (Python >= 3.13)..."
+            if [ -n "${PIP_INDEX_URL:-}" ] && [ -z "${UV_DEFAULT_INDEX:-}" ]; then
+              export UV_DEFAULT_INDEX="$PIP_INDEX_URL"
+            fi
             cd runtimes/v1
             python -m pip install --upgrade pip
             python -m pip install uv
@@ -88,6 +95,9 @@ jobs:
         condition: eq(variables['proxyWorker'], true)
       - bash: |
             echo "Checking V2 Library Worker (Python >= 3.13)..."
+            if [ -n "${PIP_INDEX_URL:-}" ] && [ -z "${UV_DEFAULT_INDEX:-}" ]; then
+              export UV_DEFAULT_INDEX="$PIP_INDEX_URL"
+            fi
             cd runtimes/v2
             python -m pip install --upgrade pip
             python -m pip install uv

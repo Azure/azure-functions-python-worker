@@ -4,8 +4,11 @@ import unittest
 
 import tests.protos as protos
 
-from azure_functions_runtime_v1.handle_event import (otel_manager, worker_init_request,
-                                                       invocation_request)
+from azure_functions_runtime_v1.handle_event import (
+    invocation_request,
+    otel_manager,
+    worker_init_request,
+)
 from azure_functions_runtime_v1.otel import (initialize_azure_monitor,
                                              update_opentelemetry_status)
 from azure_functions_runtime_v1.logging import logger
@@ -335,6 +338,56 @@ class TestOpenTelemetryContextPropagation(testutils.AsyncTestCase):
                       "configure_opentelemetry should have been called")
         self.assertIn('logger_info', self.call_order,
                       "logger.info should have been called")
+
+        otel_index = self.call_order.index('configure_opentelemetry')
+        first_log_index = self.call_order.index('logger_info')
+        self.assertLess(
+            otel_index, first_log_index,
+            f"configure_opentelemetry (index {otel_index}) should be called "
+            f"before the first logger.info (index {first_log_index}). "
+            f"Call order: {self.call_order}"
+        )
+
+    @patch("azure_functions_runtime_v1.handle_event"
+           ".otel_manager.get_azure_monitor_available", return_value=True)
+    @patch("azure_functions_runtime_v1.handle_event"
+           ".otel_manager.get_otel_libs_available", return_value=False)
+    @patch("azure_functions_runtime_v1.handle_event.run_sync_func",
+           return_value=None)
+    @patch("azure_functions_runtime_v1.handle_event.get_context")
+    @patch("azure_functions_runtime_v1.handle_event._functions")
+    @patch("azure_functions_runtime_v1.handle_event.configure_opentelemetry")
+    @patch("azure_functions_runtime_v1.handle_event.logger")
+    async def test_otel_configured_before_first_log_sync_function(
+        self,
+        mock_logger,
+        mock_configure_otel,
+        mock_functions,
+        mock_get_context,
+        mock_run_sync_func,
+        mock_get_otel_libs,
+        mock_get_azure_monitor,
+    ):
+        """Verify configure_opentelemetry is called before first log (sync function)."""
+        mock_logger.info.side_effect = self._track_logger_info
+        mock_configure_otel.side_effect = self._track_configure_otel
+        mock_fi = self._make_mock_fi()
+        mock_fi.is_async = False
+        mock_functions.get_function.return_value = mock_fi
+        invocation_context = MagicMock()
+        mock_get_context.return_value = invocation_context
+        request = self._make_mock_request()
+
+        try:
+            await invocation_request(request)
+        except Exception:
+            pass
+
+        self.assertIn('configure_opentelemetry', self.call_order,
+                      "configure_opentelemetry should have been called")
+        self.assertIn('logger_info', self.call_order,
+                      "logger.info should have been called")
+        mock_configure_otel.assert_called_once_with(invocation_context)
 
         otel_index = self.call_order.index('configure_opentelemetry')
         first_log_index = self.call_order.index('logger_info')

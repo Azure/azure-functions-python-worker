@@ -7,8 +7,6 @@ import functools
 
 from typing import Any
 
-from ..otel import otel_manager, configure_opentelemetry
-
 
 def get_current_loop():
     return asyncio.events.get_event_loop()

@@ -82,7 +82,7 @@ extends:
         jobs:
           - template: /eng/templates/official/jobs/ci-fc-tests.yml@self
 
-      # Rust Worker Build & Package (Python 3.14+, Linux/X64). Independent of the
+      # Rust Worker Build & Package (Python 3.15+, Linux/X64). Independent of the
       # Python worker stages; produces the Microsoft.Azure.Functions.RustPythonWorker package.
       - stage: BuildRustWorker
         dependsOn: []

@@ -67,6 +67,6 @@ extends:
       jobs:
       - template: /eng/templates/jobs/rust-e2e.yml@self
         parameters:
-          PYTHON_VERSION: '3.14'
-          SIMPLE_VERSION: '314'
-          PROJECT_NAME: 'Rust Worker (Python 3.14)'
+          PYTHON_VERSION: '3.15'
+          SIMPLE_VERSION: '315'
+          PROJECT_NAME: 'Rust Worker (Python 3.15)'

@@ -57,12 +57,12 @@ extends:
     stages:
     # Rust Worker Build & Test (cargo fmt/clippy/build/test + Python bridge selftest).
     # The Rust binary embeds CPython via PyO3, so it is built once against the
-    # target interpreter (3.14 today; add versions as new CPython lines are supported).
+    # target interpreter (3.15 today; add versions as new CPython lines are supported).
     - stage: BuildRustWorker
       jobs:
       - template: /eng/templates/jobs/rust-build.yml@self
         parameters:
-          PYTHON_VERSION: '3.14'
-          SIMPLE_VERSION: '314'
-          PROJECT_NAME: 'Rust Proxy Worker (Python 3.14)'
+          PYTHON_VERSION: '3.15'
+          SIMPLE_VERSION: '315'
+          PROJECT_NAME: 'Rust Worker (Python 3.15)'
           PROJECT_DIRECTORY: 'workers/rust_worker'

@@ -40,11 +40,11 @@ app: the harness selects the Rust worker via `PYAZURE_WORKER_DIR`, and on Python
 
 ## Build & run
 
-Create a local Python 3.14 virtual environment first; do not assume a repo-level
+Create a local Python 3.15 virtual environment first; do not assume a repo-level
 venv already exists.
 
 ```powershell
-py -3.14 -m venv .venv
+py -3.15 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 $py = '.venv\Scripts\python.exe'
 
@@ -57,7 +57,7 @@ $env:PYO3_PYTHON = $py
 cargo build
 ```
 
-On Linux/macOS, use `python3.14 -m venv .venv`, activate with
+On Linux/macOS, use `python3.15 -m venv .venv`, activate with
 `source .venv/bin/activate`, then use `python` in place of `$py`.
 
 The compiled binary is named `rust_worker` (for example,

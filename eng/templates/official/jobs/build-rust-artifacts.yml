@@ -9,9 +9,9 @@ jobs:
     matrix:
       # The Rust binary embeds one CPython ABI; add versions as new CPython
       # lines are supported by the worker.
-      Python314Rust:
-        pythonVersion: '3.14'
-        normalizedPythonVersion: '3.14'
+      Python315Rust:
+        pythonVersion: '3.15'
+        normalizedPythonVersion: '3.15'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:

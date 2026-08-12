@@ -16,7 +16,7 @@
 # directory produced by docker/Dockerfile and is copied into the NuGet under
 # tools/<version>/LINUX/X64.
 #
-# Arg 1: python version (e.g. 3.14). The Rust binary is linked to exactly one
+# Arg 1: python version (e.g. 3.15). The Rust binary is linked to exactly one
 # CPython ABI, so this must match the interpreter the worker will run against.
 set -euo pipefail
 

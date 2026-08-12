@@ -1,0 +1,91 @@
+parameters:
+  PYTHON_VERSION: ''
+  PROJECT_NAME: ''
+  PROJECT_DIRECTORY: 'workers/rust_worker'
+
+steps:
+  - task: UsePythonVersion@0
+    displayName: 'Use Python ${{ parameters.PYTHON_VERSION }}'
+    inputs:
+      versionSpec: ${{ parameters.PYTHON_VERSION }}
+
+  - bash: |
+      set -euo pipefail
+      python --version
+      # PyO3 (auto-initialize) links against libpython, so expose the shared
+      # library from the UsePythonVersion interpreter and pin PYO3_PYTHON to it.
+      PY_BIN="$(which python)"
+      PY_LIBDIR="$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')"
+      echo "##vso[task.setvariable variable=PYO3_PYTHON]${PY_BIN}"
+      echo "##vso[task.setvariable variable=LD_LIBRARY_PATH]${PY_LIBDIR}:${LD_LIBRARY_PATH:-}"
+      echo "PYO3_PYTHON=${PY_BIN}"
+      echo "LD_LIBRARY_PATH=${PY_LIBDIR}"
+    displayName: 'Configure Python for PyO3'
+
+  - bash: |
+      set -euo pipefail
+      # Install the Rust toolchain with the components the checks need.
+      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+        | sh -s -- -y --profile minimal --component rustfmt clippy
+      echo "##vso[task.prependpath]$HOME/.cargo/bin"
+    displayName: 'Install Rust toolchain'
+
+  - bash: |
+      set -euo pipefail
+      rustc --version
+      cargo --version
+      cargo fmt --version
+      cargo clippy --version
+    displayName: 'Check Rust versions'
+
+  - bash: |
+      set -euo pipefail
+      python -m pip install --upgrade pip
+      # Bridge + v2 runtime deps for the Python-only selftest and flake8.
+      python -m pip install --only-binary=:all: 'grpcio>=1.75.1' 'protobuf>=5.29,<7'
+      python -m pip install -e runtimes/v2
+      python -m pip install flake8
+    displayName: 'Install Python dependencies'
+
+  - bash: |
+      set -euo pipefail
+      # Materialize the bridge's private, gRPC-free protobuf message stubs from
+      # the version-correct proxy_worker stubs (matches the Docker build step).
+      python workers/rust_worker/gen_protos.py \
+        --source workers/proxy_worker/protos \
+        --out workers/rust_worker/bridge/protos
+    displayName: 'Generate bridge protobuf stubs'
+
+  - bash: |
+      set -euo pipefail
+      flake8 bridge
+    displayName: 'flake8 (Python bridge)'
+    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+
+  - bash: |
+      set -euo pipefail
+      cargo fmt --all -- --check
+    displayName: 'cargo fmt --check'
+    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+
+  - bash: |
+      set -euo pipefail
+      cargo clippy --all-targets --locked -- -D warnings
+    displayName: 'cargo clippy'
+    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+
+  - bash: |
+      set -euo pipefail
+      cargo build --locked
+    displayName: 'cargo build'
+    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+
+  - bash: |
+      set -euo pipefail
+      cargo test --locked
+    displayName: 'cargo test'
+    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+
+  # End-to-end coverage (bridge + v2 runtime + real Host round trip) lives in the
+  # dedicated Docker E2E pipeline (eng/ci/rust-worker-e2e.yml), which stages the
+  # Rust binary into the Host image and runs workers/tests/endtoend against it.

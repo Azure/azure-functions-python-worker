@@ -1,0 +1,4 @@
+# Generated protobuf message stubs are produced at build time by
+# workers/rust_worker/gen_protos.py. Do not commit them.
+*_pb2.py
+__pycache__/

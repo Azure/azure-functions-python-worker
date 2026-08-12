@@ -1,0 +1,30 @@
+parameters:
+  PYTHON_VERSION: ''
+  PROJECT_NAME: ''
+  IMAGE_TAG: 'rust-worker:e2e'
+
+steps:
+  - bash: |
+      set -euo pipefail
+      docker --version
+      echo "Building Rust worker E2E image (${{ parameters.IMAGE_TAG }})"
+      # Build context is the repository root so the Dockerfile can COPY the
+      # worker source, the v1 + v2 runtimes, and the pytest harness.
+      docker build \
+        -f _rust_worker_extras/docker/Dockerfile.e2e \
+        -t ${{ parameters.IMAGE_TAG }} \
+        .
+    displayName: 'Build Rust worker E2E image'
+    workingDirectory: $(Build.SourcesDirectory)
+
+  - bash: |
+      set -euo pipefail
+      # The image entrypoint (run_e2e.sh) locates the Host DLL, exports the
+      # harness env (PYAZURE_WEBHOST_DLL / PYAZURE_WORKER_DIR), and runs the
+      # shared endtoend suite against the staged Rust worker via the
+      # WebHostTestCase harness. A non-zero pytest exit fails the job.
+      docker run --rm \
+        --name rust-worker-e2e \
+        ${{ parameters.IMAGE_TAG }}
+    displayName: 'Run Rust worker E2E tests'
+    workingDirectory: $(Build.SourcesDirectory)

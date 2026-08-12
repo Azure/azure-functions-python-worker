@@ -78,6 +78,13 @@ DEFAULT_WEBHOST_DLL_PATH = (PROJECT_ROOT / 'build' / 'webhost' / 'bin' / WEBHOST
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
 WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
+# Under Python 3.15+ the published Python worker IS the Rust worker (the classic
+# in-proc worker is not shipped for 3.15+). When PYAZURE_WORKER_DIR is not set
+# explicitly, the E2E Host defaults to this staged Rust worker directory. CI
+# stages the Rust worker here (or, equivalently, sets PYAZURE_WORKER_DIR).
+RUST_WORKER_PATH = PROJECT_ROOT / 'python' / 'test_rust'
+# The Python version at/above which the Rust worker is the default worker.
+RUST_WORKER_MIN_VERSION = (3, 15)
 ON_WINDOWS = platform.system() == 'Windows'
 LOCALHOST = "127.0.0.1"
 
@@ -995,7 +1002,15 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
         ]))
 
     worker_path = os.environ.get(PYAZURE_WORKER_DIR)
-    worker_path = WORKER_PATH if not worker_path else pathlib.Path(worker_path)
+    if worker_path:
+        worker_path = pathlib.Path(worker_path)
+    elif sys.version_info[:2] >= RUST_WORKER_MIN_VERSION:
+        # No explicit worker dir and running under Python 3.15+: the shipped
+        # worker is the Rust worker, so drive the Host with the staged Rust
+        # worker directory. Set PYAZURE_WORKER_DIR to override.
+        worker_path = RUST_WORKER_PATH
+    else:
+        worker_path = WORKER_PATH
     if not worker_path.exists():
         raise RuntimeError(f'Worker path {worker_path} does not exist')
 

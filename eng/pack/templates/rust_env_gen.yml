@@ -1,0 +1,101 @@
+parameters:
+  pythonVersion: ''
+  artifactName: ''
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: ${{ parameters.pythonVersion }}
+    allowUnstable: true
+    addToPath: true
+- task: PipAuthenticate@1
+  displayName: 'Pip Authenticate'
+  inputs:
+    artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
+- powershell: |
+    $PY_VER = "$(pythonVersion)"
+    $versionParts = $PY_VER.Split('.')
+    Write-Host "##vso[task.setvariable variable=majorVersion;]$([int]$versionParts[0])"
+    Write-Host "##vso[task.setvariable variable=minorVersion;]$([int]$versionParts[1])"
+  displayName: 'Set version variables'
+  env:
+    pythonVersion: ${{ parameters.pythonVersion }}
+- task: ShellScript@2
+  inputs:
+    disableAutoCwd: true
+    scriptPath: 'eng/pack/scripts/rust_deps.sh'
+    args: '${{ parameters.pythonVersion }}'
+  displayName: 'Build Rust worker + dependencies'
+- bash: |
+    pip install pip-audit
+    pip-audit -r runtimes/v2/requirements.txt || true
+  displayName: 'Run vulnerability scan'
+  continueOnError: true
+- task: CopyFiles@2
+  inputs:
+    sourceFolder: '$(Build.SourcesDirectory)/deps'
+    contents: |
+      **
+      !grpc/**
+      !grpc_tools/**/*
+      !grpcio*/**
+      !build/**
+      !docs/**
+      !eng/**
+      !python/**
+      !tests/**
+      !setuptools*/**
+      !_distutils_hack/**
+      !distutils-precedence.pth
+      !pkg_resources/**
+      !*.dist-info/**
+      !werkzeug/debug/shared/debugger.js
+      !proxy_worker/**
+      !uvloop/**
+      !six.py
+      !typing_extensions.py
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+  displayName: 'Copy Rust worker artifact files'
+- powershell: |
+    $root = "$(Build.ArtifactStagingDirectory)"
+
+    # The Rust worker owns the gRPC transport (tonic), so the Python grpc stack
+    # and proxy_worker are intentionally absent. Both the v2 and v1 runtimes are
+    # staged; the bridge selects one per programming model and drives its native
+    # path.
+    $expected = @(
+        "rust_worker",
+        "noop.txt",
+        "bridge/bridge.py",
+        "bridge/protos/FunctionRpc_pb2.py",
+        "azure_functions_runtime",
+        "azure_functions_runtime/native_invocation.py",
+        "azure_functions_runtime/utils/executor.py",
+        "azure_functions_runtime_v1",
+        "azure_functions_runtime_v1/native_invocation.py",
+        "azure_functions_runtime_v1/utils/executor.py",
+        "azure",
+        "azurefunctions",
+        "google"
+    )
+    $forbidden = @("grpc", "proxy_worker", "uvloop")
+
+    $missing = @()
+    foreach ($item in $expected) {
+        if (-not (Test-Path (Join-Path $root $item))) { $missing += $item }
+    }
+    $present = @()
+    foreach ($item in $forbidden) {
+        if (Test-Path (Join-Path $root $item)) { $present += $item }
+    }
+
+    if ($missing.Count -gt 0) {
+        Write-Error "Validation failed. Missing expected files/folders:`n$($missing -join "`n")"
+        exit 1
+    }
+    if ($present.Count -gt 0) {
+        Write-Error "Validation failed. Pruned packages unexpectedly present:`n$($present -join "`n")"
+        exit 1
+    }
+    Write-Host "Validation passed. Rust worker artifact contents are correct."
+  displayName: 'Validate Rust worker artifact contents'

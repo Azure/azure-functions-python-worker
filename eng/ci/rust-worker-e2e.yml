@@ -1,0 +1,72 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - dev
+  paths:
+    include:
+    - workers/rust_worker/*
+    - workers/python/rust_worker/*
+    - runtimes/v1/*
+    - runtimes/v2/*
+    - workers/tests/endtoend/*
+    - workers/tests/utils/*
+    - _rust_worker_extras/docker/Dockerfile.e2e
+    - _rust_worker_extras/docker/run_e2e.sh
+    - _rust_worker_extras/docker/worker.config.json
+    - eng/ci/rust-worker-e2e.yml
+    - eng/templates/jobs/rust-e2e.yml
+    - eng/templates/shared/rust-e2e-steps.yml
+
+pr:
+  branches:
+    include:
+    - dev
+  paths:
+    include:
+    - workers/rust_worker/*
+    - workers/python/rust_worker/*
+    - runtimes/v1/*
+    - runtimes/v2/*
+    - workers/tests/endtoend/*
+    - workers/tests/utils/*
+    - _rust_worker_extras/docker/Dockerfile.e2e
+    - _rust_worker_extras/docker/run_e2e.sh
+    - _rust_worker_extras/docker/worker.config.json
+    - eng/ci/rust-worker-e2e.yml
+    - eng/templates/jobs/rust-e2e.yml
+    - eng/templates/shared/rust-e2e-steps.yml
+
+resources:
+  repositories:
+  - repository: 1es
+    type: git
+    name: 1ESPipelineTemplates/1ESPipelineTemplates
+    ref: refs/tags/release
+
+variables:
+  - template: /eng/templates/utils/variables.yml@self
+
+extends:
+  template: v1/1ES.Unofficial.PipelineTemplate.yml@1es
+  parameters:
+    pool:
+      name: 1es-pool-azfunc-public
+      image: 1es-ubuntu-22.04
+      os: linux
+
+    settings:
+      skipBuildTagsForGitHubPullRequests: ${{ variables['System.PullRequest.IsFork'] }}
+
+    stages:
+    # Rust Worker end-to-end tests: build the Docker image that stages the Rust
+    # worker into the real Host image, then run the shared pytest E2E harness
+    # (WebHostTestCase) against it using the full endtoend function-app suite
+    # (the same apps that validate the classic Python worker).
+    - stage: E2ERustWorker
+      jobs:
+      - template: /eng/templates/jobs/rust-e2e.yml@self
+        parameters:
+          PYTHON_VERSION: '3.14'
+          SIMPLE_VERSION: '314'
+          PROJECT_NAME: 'Rust Worker (Python 3.14)'

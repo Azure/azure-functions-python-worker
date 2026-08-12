@@ -82,6 +82,13 @@ extends:
         jobs:
           - template: /eng/templates/official/jobs/ci-fc-tests.yml@self
 
+      # Rust Worker Build & Package (Python 3.14+, Linux/X64). Independent of the
+      # Python worker stages; produces the Microsoft.Azure.Functions.RustPythonWorker package.
+      - stage: BuildRustWorker
+        dependsOn: []
+        jobs:
+          - template: /eng/templates/official/jobs/build-rust-artifacts.yml@self
+
       # Python V2 Library Build and Test Stages
       - stage: BuildV2Library
         dependsOn: []

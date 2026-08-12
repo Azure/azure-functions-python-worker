@@ -1,0 +1,18 @@
+// Vendored copy of the protobuf well-known type google.protobuf.Duration so the
+// bundled (protoc-bin-vendored) compiler can resolve the import without a system
+// protobuf include path. prost maps this to prost_types::Duration.
+syntax = "proto3";
+
+package google.protobuf;
+
+option go_package = "google.golang.org/protobuf/types/known/durationpb";
+option java_package = "com.google.protobuf";
+option java_outer_classname = "DurationProto";
+option java_multiple_files = true;
+option objc_class_prefix = "GPB";
+option csharp_namespace = "Google.Protobuf.WellKnownTypes";
+
+message Duration {
+  int64 seconds = 1;
+  int32 nanos = 2;
+}

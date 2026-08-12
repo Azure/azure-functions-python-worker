@@ -1,0 +1,32 @@
+[package]
+name = "rust_worker"
+version = "0.0.1"
+edition = "2021"
+description = "Rust transport shell (tonic) embedding CPython (PyO3) for the Azure Functions Python worker"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "rust_worker"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
+tokio-stream = "0.1"
+tonic = { version = "0.12", default-features = false, features = ["transport", "codegen", "prost"] }
+prost = "0.13"
+prost-types = "0.13"
+bytes = "1"
+http = "1"
+futures = "0.3"
+pyo3 = { version = "0.29", features = ["auto-initialize"] }
+anyhow = "1"
+
+[build-dependencies]
+tonic-build = { version = "0.12", default-features = false, features = ["prost", "transport"] }
+protoc-bin-vendored = "3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

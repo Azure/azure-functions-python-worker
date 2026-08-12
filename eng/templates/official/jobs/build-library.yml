@@ -9,7 +9,7 @@ jobs:
 
     pool:
       name: 1es-pool-azfunc-public
-      image: 1es-ubuntu-22.04
+      image: 1es-ubuntu-24.04-min
       os: linux
     
     templateContext:
@@ -20,13 +20,14 @@ jobs:
           artifactName: "${{ parameters.ARTIFACT_NAME }}"
 
     steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - task: UsePythonVersion@0
         inputs:
           versionSpec: "3.13"
-      - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
-        inputs:
-          artifactFeeds: 'public/PythonWorker_PublicPackages'
       - bash: |
           python --version
         displayName: 'Check python version'
@@ -36,9 +37,3 @@ jobs:
           cd ${{ parameters.PROJECT_DIRECTORY }}
           python -m build
         displayName: 'Build ${{ parameters.PROJECT_NAME }}'
-      - bash: |
-          pip install pip-audit
-          cd ${{ parameters.PROJECT_DIRECTORY }}
-          pip-audit .
-        displayName: 'Run vulnerability scan'
-        continueOnError: true

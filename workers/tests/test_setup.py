@@ -30,14 +30,22 @@ import zipfile
 
 from invoke import task
 
-from utils.constants import EXTENSIONS_CSPROJ_TEMPLATE, NUGET_CONFIG
+from utils.constants import EXTENSIONS_CSPROJ_TEMPLATE
 
 ROOT_DIR = pathlib.Path(__file__).parent.parent
 BUILD_DIR = ROOT_DIR / 'build'
+NUGET_CONFIG_PATH = ROOT_DIR.parent / 'nuget.config'
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
 WEBHOST_GIT_REPO = "https://github.com/Azure/azure-functions-host/archive"
 WEBHOST_TAG_PREFIX = "v4."
 WORKER_DIR = "azure_functions_worker" if sys.version_info.minor < 13 else "proxy_worker"
+# The worker's generated protobuf stubs continue to import top-level
+# ``google.protobuf``. ``azure_functions_worker/__init__.py`` decides at
+# package-import time whether to redirect those imports to the vendored
+# copy (via ``sys.modules`` aliases) based on whether the customer ships
+# their own protobuf. Build-time rewriting of the stubs is no longer
+# needed, so this flag stays False.
+REWRITE_PROTOBUF = False
 
 
 def get_webhost_version() -> str:
@@ -108,10 +116,19 @@ def chmod_protobuf_generation_script(webhost_dir):
 
 def compile_webhost(webhost_dir):
     print(f"Compiling Functions Host from {webhost_dir}")
+    # Build only the WebHost project (and its dependencies) instead of the
+    # entire WebJobs.Script.sln. The solution also contains test projects,
+    # benchmarks and isolated-worker samples that the tests never run; building
+    # them is slow, consumes far more disk, and pulls many extra NuGet packages
+    # that can fail to restore on the internal CI feed. The WebHost project
+    # output already contains the full runtime dependency closure needed to run
+    # the host.
+    webhost_project = (pathlib.Path("src") / "WebJobs.Script.WebHost"
+                       / "WebJobs.Script.WebHost.csproj")
     try:
         subprocess.run(
             [
-                "dotnet", "build", "WebJobs.Script.sln",
+                "dotnet", "build", str(webhost_project),
                 "/m:1",  # Disable parallel MSBuild
                 "/nodeReuse:false",  # Prevent MSBuild node reuse
                 f"--property:OutputPath={webhost_dir}/bin",  # Set output folder
@@ -206,6 +223,10 @@ def copy_tree_merge(src, dst):
 
 
 def make_absolute_imports(compiled_files):
+    vendored_protobuf = (
+        f"{WORKER_DIR}._vendored.google.protobuf"
+    )
+
     for compiled in compiled_files:
         with open(compiled, "r+") as f:
             content = f.read()
@@ -226,6 +247,33 @@ def make_absolute_imports(compiled_files):
                 fr"from {WORKER_DIR}.protos.\g<1> \g<2>",
                 p1,
             )
+
+            if REWRITE_PROTOBUF:
+                # Redirect every `from google.protobuf[...] import ...`
+                # statement to the vendored copy. Anchored at line start
+                # (after a newline or at file start) so we don't touch
+                # string literals or comments.
+                p2 = re.sub(
+                    r"(?m)^from google\.protobuf"
+                    r"(?P<tail>(?:\.[A-Za-z0-9_.]+)?\s+import\b)",
+                    fr"from {vendored_protobuf}\g<tail>",
+                    p2,
+                )
+                # Redirect `import google.protobuf[.X]` statements. The
+                # generated stubs only emit the `from ...` form today,
+                # but be defensive in case future protoc output changes.
+                p2 = re.sub(
+                    r"(?m)^import google\.protobuf"
+                    r"(?P<sub>\.[A-Za-z0-9_.]+)?"
+                    r"(?P<asname>\s+as\s+[A-Za-z_][A-Za-z0-9_]*)?$",
+                    lambda m: (
+                        f"import {vendored_protobuf}"
+                        f"{m.group('sub') or ''}"
+                        f"{m.group('asname') or ' as google_protobuf'}"
+                    ),
+                    p2,
+                )
+
             f.write(p2)
             f.truncate()
 
@@ -242,14 +290,17 @@ def install_extensions(extensions_dir):
         with open(extensions_dir / "extensions.csproj", "w") as f:
             f.write(EXTENSIONS_CSPROJ_TEMPLATE)
 
-    with open(extensions_dir / "NuGet.config", "w") as f:
-        f.write(NUGET_CONFIG)
+    nuget_config_path = extensions_dir / "NuGet.config"
+    shutil.copy2(NUGET_CONFIG_PATH, nuget_config_path)
 
     env = os.environ.copy()
     env["TERM"] = "xterm"  # ncurses 6.1 workaround
     try:
         subprocess.run(
-            args=["dotnet", "build", "-o", "."],
+            args=[
+                "dotnet", "build", "-o", ".",
+                f"--property:RestoreConfigFile={nuget_config_path}",
+            ],
             check=True,
             cwd=str(extensions_dir),
             stdout=sys.stdout,
@@ -280,12 +331,72 @@ def extensions(c, clean=False, extensions_dir=None):
 
 
 @task
+def vendor_deps(c, target=None):
+    """Vendor third-party deps into azure_functions_worker._vendored.
+
+    Copies the currently-installed ``google.protobuf`` package into
+    ``azure_functions_worker/_vendored/google/protobuf/`` (pure-Python
+    only — native extensions are skipped) and rewrites its internal
+    imports so the vendored copy is fully self-contained. The worker
+    only uses the vendored copy when the customer ships their own
+    ``google.protobuf``; otherwise the worker uses the protobuf install
+    on its own ``sys.path``. The decision is made at runtime in
+    ``azure_functions_worker/__init__.py``.
+
+    Safe to re-run; the script is idempotent.
+
+    Skipped for the proxy worker (Python >= 3.13) which has its own
+    dependency isolation and is unaffected by the protobuf shadowing issue.
+    """
+    if WORKER_DIR != "azure_functions_worker":
+        print(
+            f"Skipping vendor_deps for {WORKER_DIR} "
+            "(only required for the azure_functions_worker)."
+        )
+        return
+
+    # ROOT_DIR is the `workers/` directory (see top of file), so its parent
+    # is the repository root.
+    repo_root = ROOT_DIR.parent
+    script = repo_root / "eng" / "scripts" / "vendor_deps.py"
+    if not script.exists():
+        raise RuntimeError(
+            f"vendor_deps.py not found at {script}. "
+            "Expected it in eng/scripts/."
+        )
+
+    default_target = (
+        ROOT_DIR / "azure_functions_worker" / "_vendored"
+    )
+    target_path = pathlib.Path(target) if target else default_target
+
+    print(f"Vendoring google.protobuf into {target_path} ...")
+    try:
+        subprocess.check_call([
+            sys.executable, str(script),
+            "--target", str(target_path),
+            "--package", "google.protobuf",
+        ])
+    except subprocess.CalledProcessError as ex:
+        raise RuntimeError(
+            "vendor_deps.py failed. Ensure 'protobuf' is installed in the "
+            "current environment (pip install -e workers/[dev])."
+        ) from ex
+    print("Vendoring complete.")
+
+
+@task
 def build_protos(c, clean=False):
     """Build gRPC bindings."""
 
     if clean:
         shutil.rmtree(BUILD_DIR / 'protos')
         return
+    # Populate azure_functions_worker/_vendored/ before generating stubs.
+    # make_absolute_imports rewrites the generated *_pb2.py files to import
+    # from the vendored google.protobuf, so the vendored tree must exist
+    # before anything imports the freshly generated stubs.
+    vendor_deps(c)
     print("Generating gRPC bindings...")
     gen_grpc()
     print("gRPC bindings generated successfully.")

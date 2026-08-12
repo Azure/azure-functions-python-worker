@@ -22,6 +22,7 @@ services:
   azurite:
     container_name: "azurite"
     image: "mcr.microsoft.com/azure-storage/azurite:latest"
+    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --skipApiVersionCheck --loose"
     ports:
       - "10000:10000"
       - "10001:10001"

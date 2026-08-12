@@ -45,23 +45,6 @@ EXTENSIONS_CSPROJ_TEMPLATE = """\
 </Project>
 """
 
-NUGET_CONFIG = """\
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-   <packageSources>
-      <add key="nuget.org"
-        value="https://www.nuget.org/api/v2/" />
-      <add key="azure_app_service"
-        value="https://www.myget.org/F/azure-appservice/api/v2" />
-      <add key="azure_app_service_staging"
-        value="https://www.myget.org/F/azure-appservice-staging/api/v2" />
-      <add key="buildTools"
-        value="https://www.myget.org/F/30de4ee06dd54956a82013fa17a3accb/" />
-      <add key="AspNetVNext"
-        value="https://www.myget.org/F/aspnetcore-dev/api/v3/index.json" />
-   </packageSources>
-</configuration>
-"""
 
 # PROJECT_ROOT refers to the path to azure-functions-python-worker
 # TODO: Find root folder without .parent
@@ -78,5 +61,20 @@ PYAZURE_WEBHOST_DEBUG = "PYAZURE_WEBHOST_DEBUG"
 ARCHIVE_WEBHOST_LOGS = "ARCHIVE_WEBHOST_LOGS"
 
 # CI test constants
-CONSUMPTION_DOCKER_TEST = "CONSUMPTION_DOCKER_TEST"
 DEDICATED_DOCKER_TEST = "DEDICATED_DOCKER_TEST"
+
+# Master key used in the webhost Secrets/host.json template; required to call
+# the host's protected /admin endpoints (e.g. /admin/host/status).
+MASTER_KEY = "testMasterKey"
+
+# Paths anchored on this file's location rather than on PROJECT_ROOT/TESTS_ROOT.
+# The `tests.utils` package exists in multiple trees in this repo
+# (workers/tests/utils and runtimes/v1/tests/utils), so PROJECT_ROOT/TESTS_ROOT
+# can resolve to the wrong tree depending on sys.path ordering. These
+# constants are stable and always point at the workers/ tree.
+WORKERS_TESTS_ROOT = pathlib.Path(__file__).resolve().parent.parent
+WORKERS_ROOT = WORKERS_TESTS_ROOT.parent
+REPO_ROOT = WORKERS_ROOT.parent
+FUNCTION_APP_ZIPS_DIR = (
+    WORKERS_TESTS_ROOT / 'consumption_tests' / 'function_app_zips'
+)

@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from tests.utils import testutils
-from tests.utils.constants import CONSUMPTION_DOCKER_TEST, DEDICATED_DOCKER_TEST
+from tests.utils.constants import DEDICATED_DOCKER_TEST
 
 # This app setting is only present for Python < 3.13
 from azure_functions_worker.constants import PYTHON_ENABLE_INIT_INDEXING
@@ -21,8 +21,7 @@ else:
 REQUEST_TIMEOUT_SEC = 5
 
 
-@unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-                 or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+@unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST),
                  "Tests are flaky when running on Docker")
 @unittest.skipIf(sys.version_info.minor < 8, "HTTPv2"
                                              "is only supported for 3.8+.")
@@ -197,8 +196,7 @@ class TestHttpFunctionsWithInitIndexing(testutils.WebHostTestCase):
             self.assertEqual(content, complete_data)
 
 
-@unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST)
-                 or is_envvar_true(CONSUMPTION_DOCKER_TEST),
+@unittest.skipIf(is_envvar_true(DEDICATED_DOCKER_TEST),
                  "Tests are flaky when running on Docker")
 @unittest.skipIf(sys.version_info.minor >= 13,
                  "App Setting is not needed for 3.13+")

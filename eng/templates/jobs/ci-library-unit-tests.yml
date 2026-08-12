@@ -1,7 +1,6 @@
 parameters:
   PROJECT_NAME: ''
   PROJECT_DIRECTORY: ''
-  ArtifactFeed: ''
 
 jobs:
   - job: "TestPython"
@@ -9,7 +8,7 @@ jobs:
 
     pool:
       name: ${{ parameters.PoolName }}
-      image: 1es-ubuntu-22.04
+      image: 1es-ubuntu-24.04-min
       os: linux
     
     strategy:
@@ -18,23 +17,26 @@ jobs:
           PYTHON_VERSION: '3.13'
     
     steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
-      - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
-        inputs:
-          artifactFeeds: ${{ parameters.ArtifactFeed }}
       - task: UseDotNet@2
-        displayName: 'Install .NET 8'
+        displayName: 'Install .NET 10'
         inputs:
-          version: 8.0.x
+          version: 10.0.x
+      - task: NuGetAuthenticate@1
+        displayName: 'Authenticate NuGet to CFS'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh          
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
         displayName: 'Install dependencies'
       - bash: |
-          python -m pytest -q --dist loadfile --reruns 4 --instafail --cov=./${{ parameters.PROJECT_DIRECTORY }} --cov-report xml --cov-branch tests/unittests
+          python -m pytest -q -n auto --dist loadfile --reruns 4 --reruns-delay 5 --instafail --cov=./${{ parameters.PROJECT_DIRECTORY }} --cov-report xml --cov-branch tests/unittests
         displayName: "Running $(PYTHON_VERSION) Unit Tests"
         env:
           AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)

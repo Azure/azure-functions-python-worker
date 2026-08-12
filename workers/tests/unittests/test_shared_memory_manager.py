@@ -191,12 +191,13 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         be transfered over shared memory.
         The input is bytes of larger than the allowed size.
         """
+        class _LargeBytes(bytes):
+            """Stub that reports a 2GB+ length without allocating real memory."""
+            def __len__(self):
+                return consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER + 10
+
         manager = SharedMemoryManager()
-        content_size = consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER + 10
-        # Not using get_random_bytes to avoid slowing down for creating a large
-        # random input
-        content = b'x01' * content_size
-        bytes_datum = bind_meta.Datum(type='bytes', value=content)
+        bytes_datum = bind_meta.Datum(type='bytes', value=_LargeBytes())
         is_supported = manager.is_supported(bytes_datum)
         self.assertFalse(is_supported)
 
@@ -219,13 +220,16 @@ class TestSharedMemoryManager(testutils.SharedMemoryTestCase):
         be transfered over shared memory.
         The input is string of larger than the allowed size.
         """
+        class _LargeString(str):
+            """Stub that reports a 2GB+ length without allocating real memory."""
+            def __len__(self):
+                return math.floor(
+                    (consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER + 10)
+                    / consts.SIZE_OF_CHAR_BYTES
+                )
+
         manager = SharedMemoryManager()
-        content_size = consts.MAX_BYTES_FOR_SHARED_MEM_TRANSFER + 10
-        num_chars = math.floor(content_size / consts.SIZE_OF_CHAR_BYTES)
-        # Not using get_random_string to avoid slowing down for creating a large
-        # random input
-        content = 'a' * num_chars
-        string_datum = bind_meta.Datum(type='string', value=content)
+        string_datum = bind_meta.Datum(type='string', value=_LargeString())
         is_supported = manager.is_supported(string_datum)
         self.assertFalse(is_supported)
 

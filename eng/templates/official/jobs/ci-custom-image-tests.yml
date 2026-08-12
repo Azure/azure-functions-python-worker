@@ -7,17 +7,18 @@ jobs:
 
     pool:
       name: 1es-pool-azfunc
-      image: 1es-ubuntu-22.04
+      image: 1es-ubuntu-24.04-min
       os: linux
     
     steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(CUSTOM_PYTHON_VERSION)
-      - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
-        inputs:
-          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
 
@@ -29,7 +30,6 @@ jobs:
              python -m pytest --reruns 4 -vv --instafail tests/endtoend
         env:
           DEDICATED_DOCKER_TEST: $(CUSTOM_DED_IMAGE)
-          CONSUMPTION_DOCKER_TEST: $(CUSTOM_CON_IMAGE)
           IMAGE_NAME: $(CUSTOM_IMAGE_NAME)
           AzureWebJobsStorage: $(LinuxStorageConnectionString311)
           AzureWebJobsCosmosDBConnectionString: $(LinuxCosmosDBConnectionString311)

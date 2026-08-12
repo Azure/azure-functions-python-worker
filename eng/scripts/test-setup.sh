@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 cd workers/tests
 python -m invoke -c test_setup build-protos

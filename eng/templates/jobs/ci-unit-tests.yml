@@ -1,6 +1,5 @@
 parameters:
   PROJECT_DIRECTORY: 'workers'
-  ArtifactFeed: ''
 
 jobs:
   - job: "TestPython"
@@ -8,7 +7,7 @@ jobs:
 
     pool:
       name: ${{ parameters.PoolName }}
-      image: 1es-ubuntu-22.04
+      image: 1es-ubuntu-24.04-min
       os: linux
     
     strategy:
@@ -26,6 +25,11 @@ jobs:
         Python314:
           PYTHON_VERSION: '3.14'
     steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - bash: |
           echo "Disk space before cleanup:"
           df -h
@@ -43,25 +47,48 @@ jobs:
           echo "Disk space after cleanup:"
           df -h
         displayName: 'Free disk space'
-        
+
+      - bash: |
+          echo "Memory before cleanup:"
+          free -h
+
+          # Stop Docker daemon to reclaim memory used by the daemon itself
+          # (docker system prune above removes artifacts but the daemon stays resident)
+          sudo systemctl stop docker || true
+          sudo systemctl stop docker.socket || true
+          sudo systemctl stop containerd || true
+
+          # Stop background services not needed for unit tests
+          sudo systemctl stop snapd || true
+          sudo systemctl stop unattended-upgrades || true
+          sudo systemctl stop packagekit || true
+
+          # Drop Linux filesystem caches (page cache, dentries, inodes)
+          sudo sync
+          sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' || true
+
+          echo "Memory after cleanup:"
+          free -h
+        displayName: 'Free memory'
+
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
-      - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
-        inputs:
-          artifactFeeds: ${{ parameters.ArtifactFeed }}
       - task: UseDotNet@2
-        displayName: 'Install .NET 8'
+        displayName: 'Install .NET 10'
         inputs:
-          version: 8.0.x
+          version: 10.0.x
+      - task: NuGetAuthenticate@1
+        displayName: 'Authenticate NuGet to CFS'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
-          chmod +x eng/scripts/test-setup.sh
-          
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
+        displayName: 'Install Python dependencies (uv)'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+      - bash: |
+          chmod +x eng/scripts/test-setup.sh
           eng/scripts/test-setup.sh
-        displayName: 'Install dependencies'
+        displayName: 'Build webhost and extensions (dotnet)'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - bash: |
           PY_VER="$(PYTHON_VERSION)"
@@ -72,11 +99,11 @@ jobs:
 
           if [ "$PY_MINOR" -ge 13 ]; then
               echo "Running proxy_worker tests (Python >= 3.13)..."
-              python -m pytest -q --dist loadfile --reruns 4 --instafail \
+              python -m pytest -q -n auto --dist loadfile --reruns 4 --reruns-delay 5 --instafail \
                     --cov=./proxy_worker --cov-report xml --cov-branch tests/unittest_proxy
           else
               echo "Running unittests (Python < 3.13)..."
-              python -m pytest -q --dist loadfile --reruns 4 --instafail \
+              python -m pytest -q -n auto --dist loadfile --reruns 4 --reruns-delay 5 --instafail \
                     --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
           fi
         displayName: "Running $(PYTHON_VERSION) Unit Tests"

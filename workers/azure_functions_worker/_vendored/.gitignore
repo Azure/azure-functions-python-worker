@@ -1,0 +1,5 @@
+# Vendored third-party packages are populated at build time by
+# eng/scripts/vendor_deps.py. Do not commit them.
+*
+!.gitignore
+!README.md

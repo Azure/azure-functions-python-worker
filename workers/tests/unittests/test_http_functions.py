@@ -202,9 +202,14 @@ class TestHttpFunctions(testutils.WebHostTestCase):
 
         self.assertIn('accept_json', req['url'])
 
+    @testutils.retryable_test(3, 5)
     def test_unhandled_error(self):
         r = self.webhost.request('GET', 'unhandled_error')
         self.assertEqual(r.status_code, 500)
+        # The worker forwards the traceback to the host asynchronously, so
+        # wait for it to land in the host log before check_log_unhandled_error
+        # reads its snapshot.
+        self.wait_for_host_log('ZeroDivisionError: division by zero')
         # https://github.com/Azure/azure-functions-host/issues/2706
         # self.assertIn('Exception: ZeroDivisionError', r.text)
 

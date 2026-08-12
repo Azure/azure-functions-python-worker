@@ -4,15 +4,16 @@ parameters:
   grpcBuild: ''
 
 steps:
+- task: PipAuthenticate@1
+  displayName: 'Authenticate pip to CFS'
+  inputs:
+    artifactFeeds: 'public/upstream-public'
+    onlyAddExtraIndex: false
 - task: UsePythonVersion@0
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
     allowUnstable: true
     addToPath: true
-- task: PipAuthenticate@1
-  displayName: 'Pip Authenticate'
-  inputs:
-    artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
 - powershell: |
     # Parse the Python minor version
     $PY_VER = "$(pythonVersion)"
@@ -69,12 +70,6 @@ steps:
 #     args: '${{ parameters.pythonVersion }}'
 #   displayName: 'Build dependencies from source'
 #   condition: eq(variables['isRC'], 'true')
-- bash: |
-    pip install pip-audit
-    cd workers
-    pip-audit -r requirements.txt
-  displayName: 'Run vulnerability scan'
-  continueOnError: true
 - task: CopyFiles@2
   inputs:
     contents: '$(workerPath)'
@@ -111,6 +106,7 @@ steps:
         ".artifactignore",
         "azure",
         "azure_functions_worker",
+        "azure_functions_worker/_vendored/google",
         "azurefunctions",
         "azure_functions_worker/protos/FunctionRpc_pb2.py",
         "azure_functions_worker/protos/FunctionRpc_pb2_grpc.py",

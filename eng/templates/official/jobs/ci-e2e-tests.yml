@@ -1,5 +1,6 @@
 parameters:
   PROJECT_DIRECTORY: 'workers'
+  
 
 jobs:
   - job: "TestPython"
@@ -7,7 +8,7 @@ jobs:
 
     pool:
       name: 1es-pool-azfunc
-      image: 1es-ubuntu-22.04
+      image: 1es-ubuntu-24.04-min
       os: linux
 
     strategy:
@@ -38,17 +39,22 @@ jobs:
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
         Python313:
           PYTHON_VERSION: '3.13'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
-          SQL_CONNECTION: $(LinuxSqlConnectionString312)
-          EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
-          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString37)
+          SQL_CONNECTION: $(LinuxSqlConnectionString37)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString37)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString37)
         Python314:
           PYTHON_VERSION: '3.14'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
-          SQL_CONNECTION: $(LinuxSqlConnectionString312)
-          EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
-          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
+          SQL_CONNECTION: $(LinuxSqlConnectionString38)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)
     steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - bash: |
           echo "Disk space before cleanup:"
           df -h
@@ -66,25 +72,34 @@ jobs:
           echo "Disk space after cleanup:"
           df -h
         displayName: 'Free disk space'
-        
+
+      - bash: |
+          # The minimal image (1es-ubuntu-24.04-min) does not ship the system
+          # libraries that opencv-python (cv2) needs at import time, e.g.
+          # libGL.so.1 and libgthread-2.0.so.0. Install them so the endtoend
+          # opencv_func test can load cv2.
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libglib2.0-0
+        displayName: 'Install system libraries for opencv (cv2)'
+
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
-      - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
-        inputs:
-          artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
       - task: UseDotNet@2
-        displayName: 'Install .NET 8'
+        displayName: 'Install .NET 10'
         inputs:
-          version: 8.0.x
+          version: 10.0.x
+      - task: NuGetAuthenticate@1
+        displayName: 'Authenticate NuGet to CFS'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
-          chmod +x eng/scripts/test-setup.sh
-          
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
+        displayName: 'Install Python dependencies (uv)'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+      - bash: |
+          chmod +x eng/scripts/test-setup.sh
           eng/scripts/test-setup.sh
-        displayName: 'Install dependencies and the worker'
+        displayName: 'Build webhost and extensions (dotnet)'
         condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - task: DownloadPipelineArtifact@2
         displayName: 'Download Python SDK Artifact'

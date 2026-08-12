@@ -59,6 +59,10 @@ echo "=== Copying protos ==="
 version_minor=$(echo $1 | cut -d '.' -f 2)
 if [[ $version_minor -lt 13 ]]; then
     cp -r azure_functions_worker/protos "$BUILD_SOURCESDIRECTORY/deps/azure_functions_worker"
+    # Vendored google.protobuf is built into the source tree by vendor_deps
+    # (invoked from build-protos). Merge it into deps/ so CopyFiles@2 picks it up.
+    mkdir -p "$BUILD_SOURCESDIRECTORY/deps/azure_functions_worker/_vendored"
+    cp -r azure_functions_worker/_vendored/. "$BUILD_SOURCESDIRECTORY/deps/azure_functions_worker/_vendored/"
 else
     cp -r proxy_worker/protos "$BUILD_SOURCESDIRECTORY/deps/proxy_worker"
 fi

@@ -16,6 +16,23 @@ class TestDeferredBindingsBlobFunctions(testutils.WebHostTestCase):
     def get_libraries_to_install(cls):
         return ['azurefunctions-extensions-bindings-blob']
 
+    def test_mbd_deferred_bindings_enabled_decode(self):
+        # Moved from the runtimes/v2 unit test of the same name (which only
+        # asserted deferred_bindings_decode returned a BlobClient). Here the
+        # same decode path is exercised end-to-end against the storage
+        # emulator: a blob is written, then read back through a function whose
+        # input is typed as the BlobClient SDK type, confirming the model
+        # binding data was decoded into a usable BlobClient.
+        r = self.webhost.request('POST', 'put_blob_str', data='test-data')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'OK')
+
+        time.sleep(5)
+
+        r = self.webhost.request('GET', 'get_bc_str')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, 'test-data')
+
     def test_blob_str(self):
         r = self.webhost.request('POST', 'put_blob_str', data='test-data')
         self.assertEqual(r.status_code, 200)

@@ -34,10 +34,9 @@ rust_worker/
 
 End-to-end tests reuse the shared `WebHostTestCase` harness and the **whole
 `workers/tests/endtoend` suite** (the same function apps that validate the
-classic Python worker) run against the real Host via Docker (see below). There
-is no bespoke Rust test app: the harness selects the Rust worker via
-`PYAZURE_WORKER_DIR`, and on Python 3.15+ it defaults to the staged Rust worker
-automatically.
+classic Python worker) run against the real Host. There is no bespoke Rust test
+app: the harness selects the Rust worker via `PYAZURE_WORKER_DIR`, and on Python
+3.15+ it defaults to the staged Rust worker automatically.
 
 ## Build & run
 
@@ -68,20 +67,14 @@ The compiled binary is named `rust_worker` (for example,
 
 The Rust worker is validated end-to-end through the real Azure Functions Host,
 reusing the shared `WebHostTestCase` harness and the full endtoend function-app
-suite in `workers/tests/endtoend`. The `Dockerfile.e2e` image stages the Rust
-binary into the official Host image (in place of the Python `worker.py`), points
-`PYAZURE_WORKER_DIR` at it, and runs the suite. Suites that need external
-services (e.g. SQL, Event Grid) or app-specific third-party wheels skip or
-require configured connection strings (`.testconfig`); the runner passes
-`--continue-on-collection-errors` so they do not abort the run:
+suite in `workers/tests/endtoend`. The harness stages the Rust worker (in place
+of the Python `worker.py`) and selects it via `PYAZURE_WORKER_DIR`; on Python
+3.15+ it is the default worker. Suites that need external services (e.g. SQL,
+Event Grid) or app-specific third-party wheels skip or require configured
+connection strings (`.testconfig`); the runner passes
+`--continue-on-collection-errors` so they do not abort the run.
 
-```bash
-# from the repository root (build context must be the repo root)
-docker build -f _rust_worker_extras/docker/Dockerfile.e2e -t rust-worker:e2e .
-docker run --rm rust-worker:e2e
-```
-
-The same flow runs in CI via `eng/ci/rust-worker-e2e.yml`.
+This flow runs in CI via `eng/ci/rust-worker-e2e.yml`.
 
 ## Notes
 

@@ -65,9 +65,8 @@ steps:
     # path.
     $expected = @(
         "rust_worker",
-        "noop.txt",
         "bridge/bridge.py",
-        "bridge/protos/FunctionRpc_pb2.py",
+        "bridge/protos_adapter.py",
         "azure_functions_runtime",
         "azure_functions_runtime/native_invocation.py",
         "azure_functions_runtime/utils/executor.py",

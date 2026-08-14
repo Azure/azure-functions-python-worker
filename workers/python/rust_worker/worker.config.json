@@ -7,7 +7,6 @@
         "supportedArchitectures": ["X64"],
         "extensions": [".py"],
         "defaultExecutablePath": "%FUNCTIONS_WORKER_RUNTIME_VERSION%/{os}/{architecture}/rust_worker",
-        "defaultWorkerPath": "%FUNCTIONS_WORKER_RUNTIME_VERSION%/{os}/{architecture}/noop.txt",
         "workerIndexing": "true"
     },
     "processOptions": {

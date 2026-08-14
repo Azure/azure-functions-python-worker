@@ -41,20 +41,11 @@ steps:
   - bash: |
       set -euo pipefail
       python -m pip install --upgrade pip
-      # Bridge + v2 runtime deps for the Python-only selftest and flake8.
-      python -m pip install --only-binary=:all: 'grpcio>=1.75.1' 'protobuf>=5.29,<7'
+      # v2 runtime (for flake8 import resolution) + flake8. The bridge is
+      # protobuf-free (Rust/prost owns the wire), so no grpcio/protobuf here.
       python -m pip install -e runtimes/v2
       python -m pip install flake8
     displayName: 'Install Python dependencies'
-
-  - bash: |
-      set -euo pipefail
-      # Materialize the bridge's private, gRPC-free protobuf message stubs from
-      # the version-correct proxy_worker stubs (matches the Docker build step).
-      python workers/rust_worker/gen_protos.py \
-        --source workers/proxy_worker/protos \
-        --out workers/rust_worker/bridge/protos
-    displayName: 'Generate bridge protobuf stubs'
 
   - bash: |
       set -euo pipefail

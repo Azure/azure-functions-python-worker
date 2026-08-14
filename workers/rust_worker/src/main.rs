@@ -9,6 +9,7 @@
 
 mod bridge;
 mod codec;
+mod control;
 mod convert;
 mod log;
 mod pb;

@@ -62,6 +62,73 @@ class _InvocShim:
         self.retry_context = _RetryCtx()
 
 
+# --- Shared Datum-currency helpers -------------------------------------------
+#
+# The sync and async native paths differ ONLY in how the handler is executed
+# (directly on the calling thread vs. on the event loop / threadpool). Decoding
+# inputs, preparing the invocation context, validating the return, and encoding
+# outputs are identical and protobuf-free, so they live here and are reused by
+# both entries below. Keeping them here (not in ``handle_event``) preserves the
+# "no Python protobuf on the hot path" boundary.
+
+
+def _decode_inputs(fi, inputs, trigger_metadata):
+    """Rust-provided ``(name, Datum)`` inputs -> decoded handler args dict."""
+    metadata = trigger_metadata or {}
+    args = {}
+    for name, datum in inputs:
+        pb_type_info = fi.input_types[name]
+        tm = metadata if is_trigger_binding(pb_type_info.binding_name) else {}
+        binding_obj = get_binding(
+            pb_type_info.binding_name,
+            pb_type_info.deferred_bindings_enabled)
+        args[name] = binding_obj.decode(datum, trigger_metadata=tm)
+    return args
+
+
+def _prepare_context(fi, invocation_id, args):
+    """Build the invocation context and scaffold ``Out`` params into *args*.
+
+    Does NOT stamp ``thread_local_storage.invocation_id`` -- the sync path lets
+    ``run_sync_func`` do that on the executing thread, while the async path sets
+    it explicitly on the caller's context (see below)."""
+    fi_context = get_context(_InvocShim(invocation_id), fi.name, fi.directory)
+    if fi.requires_context:
+        args['context'] = fi_context
+    if fi.output_types:
+        for name in fi.output_types:
+            args[name] = Out()
+    return fi_context
+
+
+def _check_return(fi, call_result):
+    if call_result is not None and not fi.has_return:
+        raise RuntimeError(
+            'function %s without a $return binding returned a non-None value'
+            % repr(fi.name))
+
+
+def _collect_output(fi, args):
+    """Decoded ``Out`` params -> ``[(name, Datum)]`` for Rust to prost-encode."""
+    output_data = []
+    if fi.output_types:
+        for out_name, out_type_info in fi.output_types.items():
+            val = args[out_name].get()
+            if val is None:
+                continue
+            datum = get_datum(out_type_info.binding_name, val,
+                              out_type_info.pytype)
+            output_data.append((out_name, datum))
+    return output_data
+
+
+def _encode_return(fi, call_result):
+    if fi.return_type is not None:
+        return get_datum(fi.return_type.binding_name, call_result,
+                         fi.return_type.pytype)
+    return None
+
+
 async def invocation_request_native(invocation_id, function_id, inputs,
                                     trigger_metadata):
     threadpool = get_threadpool_executor()
@@ -69,26 +136,10 @@ async def invocation_request_native(invocation_id, function_id, inputs,
     if fi is None:
         return (False, None, [], "function %s not loaded" % function_id)
 
-    metadata = trigger_metadata or {}
-    args = {}
-
     try:
-        for name, datum in inputs:
-            pb_type_info = fi.input_types[name]
-            tm = metadata if is_trigger_binding(pb_type_info.binding_name) else {}
-            binding_obj = get_binding(
-                pb_type_info.binding_name,
-                pb_type_info.deferred_bindings_enabled)
-            args[name] = binding_obj.decode(datum, trigger_metadata=tm)
-
-        fi_context = get_context(_InvocShim(invocation_id), fi.name, fi.directory)
+        args = _decode_inputs(fi, inputs, trigger_metadata)
+        fi_context = _prepare_context(fi, invocation_id, args)
         fi_context.thread_local_storage.invocation_id = invocation_id
-        if fi.requires_context:
-            args['context'] = fi_context
-
-        if fi.output_types:
-            for name in fi.output_types:
-                args[name] = Out()
 
         if fi.is_async:
             # Correlate user logs emitted from async handlers with this
@@ -108,25 +159,9 @@ async def invocation_request_native(invocation_id, function_id, inputs,
                 threadpool, run_sync_func,
                 invocation_id, fi_context, fi.func, args)
 
-        if call_result is not None and not fi.has_return:
-            raise RuntimeError(
-                'function %s without a $return binding returned a non-None value'
-                % repr(fi.name))
-
-        output_data = []
-        if fi.output_types:
-            for out_name, out_type_info in fi.output_types.items():
-                val = args[out_name].get()
-                if val is None:
-                    continue
-                datum = get_datum(out_type_info.binding_name, val,
-                                  out_type_info.pytype)
-                output_data.append((out_name, datum))
-
-        return_datum = None
-        if fi.return_type is not None:
-            return_datum = get_datum(fi.return_type.binding_name, call_result,
-                                     fi.return_type.pytype)
+        _check_return(fi, call_result)
+        output_data = _collect_output(fi, args)
+        return_datum = _encode_return(fi, call_result)
 
         sys.stdout.flush()
         return (True, return_datum, output_data, None)
@@ -155,44 +190,14 @@ def run_invocation_sync(invocation_id, function_id, inputs, trigger_metadata):
         return (False, None, None, [], None)
 
     try:
-        metadata = trigger_metadata or {}
-        args = {}
-        for name, datum in inputs:
-            pb_type_info = fi.input_types[name]
-            tm = metadata if is_trigger_binding(pb_type_info.binding_name) else {}
-            binding_obj = get_binding(
-                pb_type_info.binding_name,
-                pb_type_info.deferred_bindings_enabled)
-            args[name] = binding_obj.decode(datum, trigger_metadata=tm)
-
-        fi_context = get_context(_InvocShim(invocation_id), fi.name, fi.directory)
-        if fi.requires_context:
-            args['context'] = fi_context
-        if fi.output_types:
-            for name in fi.output_types:
-                args[name] = Out()
+        args = _decode_inputs(fi, inputs, trigger_metadata)
+        fi_context = _prepare_context(fi, invocation_id, args)
 
         call_result = run_sync_func(invocation_id, fi_context, fi.func, args)
 
-        if call_result is not None and not fi.has_return:
-            raise RuntimeError(
-                'function %s without a $return binding returned a non-None value'
-                % repr(fi.name))
-
-        output_data = []
-        if fi.output_types:
-            for out_name, out_type_info in fi.output_types.items():
-                val = args[out_name].get()
-                if val is None:
-                    continue
-                datum = get_datum(out_type_info.binding_name, val,
-                                  out_type_info.pytype)
-                output_data.append((out_name, datum))
-
-        return_datum = None
-        if fi.return_type is not None:
-            return_datum = get_datum(fi.return_type.binding_name, call_result,
-                                     fi.return_type.pytype)
+        _check_return(fi, call_result)
+        output_data = _collect_output(fi, args)
+        return_datum = _encode_return(fi, call_result)
 
         return (True, True, return_datum, output_data, None)
 

@@ -21,7 +21,7 @@ use anyhow::{anyhow, Result};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyString, PyTuple};
 
-use crate::pb::messages::{typed_data, RpcHttp, TypedData};
+use crate::pb::messages::{typed_data, ModelBindingData, RpcHttp, TypedData};
 
 /// prost `TypedData` -> Python datum tuple (or `None` for empty payloads).
 pub fn typed_data_to_tuple<'py>(py: Python<'py>, td: &TypedData) -> Result<Bound<'py, PyAny>> {
@@ -43,6 +43,29 @@ pub fn typed_data_to_tuple<'py>(py: Python<'py>, td: &TypedData) -> Result<Bound
             f.into_pyobject(py).map_err(|e| anyhow!("{e}"))?.into_any(),
         ),
         typed_data::Data::Http(h) => ("http", http_in_to_dict(py, h)?.into_any()),
+        typed_data::Data::ModelBindingData(m) => (
+            "model_binding_data",
+            model_binding_data_to_dict(py, m)?.into_any(),
+        ),
+        typed_data::Data::CollectionString(c) => (
+            "collection_string",
+            pyo3::types::PyList::new(py, &c.string)?.into_any(),
+        ),
+        typed_data::Data::CollectionBytes(c) => ("collection_bytes", {
+            let l = pyo3::types::PyList::empty(py);
+            for b in &c.bytes {
+                l.append(PyBytes::new(py, b))?;
+            }
+            l.into_any()
+        }),
+        typed_data::Data::CollectionSint64(c) => (
+            "collection_sint64",
+            pyo3::types::PyList::new(py, &c.sint64)?.into_any(),
+        ),
+        typed_data::Data::CollectionDouble(c) => (
+            "collection_double",
+            pyo3::types::PyList::new(py, &c.double)?.into_any(),
+        ),
         other => {
             return Err(anyhow!(
                 "native path: unsupported inbound TypedData variant: {:?}",
@@ -67,6 +90,19 @@ fn http_in_to_dict<'py>(py: Python<'py>, h: &RpcHttp) -> Result<Bound<'py, PyDic
         None => py.None().into_bound(py),
     };
     d.set_item("body", body)?;
+    Ok(d)
+}
+
+/// Build the model_binding_data INPUT dict (deferred / SDK-type bindings).
+fn model_binding_data_to_dict<'py>(
+    py: Python<'py>,
+    m: &ModelBindingData,
+) -> Result<Bound<'py, PyDict>> {
+    let d = PyDict::new(py);
+    d.set_item("version", &m.version)?;
+    d.set_item("source", &m.source)?;
+    d.set_item("content_type", &m.content_type)?;
+    d.set_item("content", PyBytes::new(py, &m.content))?;
     Ok(d)
 }
 

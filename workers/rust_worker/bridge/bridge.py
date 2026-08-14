@@ -3,10 +3,11 @@
 """
 FFI bridge between the Rust proxy worker and the Python v2 runtime.
 
-The Rust side owns the gRPC transport (tonic) and embeds CPython (PyO3). It hands
-raw ``StreamingMessage`` bytes to this module and expects raw ``StreamingMessage``
-bytes back. ALL protobuf parsing/serialization and request routing lives here, so
-the Rust side needs no protobuf toolchain.
+The Rust side owns the gRPC transport (tonic) and embeds CPython (PyO3). It
+decodes/encodes every ``StreamingMessage`` with prost and calls into this module
+with plain Python values (dicts / datum tuples), getting plain values back. NO
+protobuf or gRPC toolchain runs in the Python process; request routing lives on
+the Rust side (see src/bridge.rs + src/control.rs).
 
 This mirrors what ``proxy_worker/dispatcher.py`` does, minus the console<->gRPC
 logging switch and OpenTelemetry (out of scope here). Dependency handling:
@@ -17,24 +18,20 @@ logging switch and OpenTelemetry (out of scope here). Dependency handling:
   ``DependencyManager.prioritize_customer_dependencies`` produces (customer deps
   -> worker runtime deps -> app dir). This lets an app pin its own
   ``azure-functions`` (etc.) and actually have it loaded.
-* **Protobuf.** The control-plane pb2 stubs import top-level
-  ``google.protobuf``. The Rust ``bridge::configure`` puts the worker deps dir on
-  ``sys.path`` *before* importing this module, so ``import protos`` (below)
-  resolves ``google.protobuf`` to the worker's own bundled runtime and caches it
-  in ``sys.modules`` -- before ``configure`` re-prioritizes customer deps. The
-  worker therefore always runs on its own standard protobuf (fast ``upb`` C
-  impl), matching the Python 3.13+ worker's default. Because there is one
-  interpreter/descriptor pool, that one runtime is shared with the app's code;
-  an app pinning an *older* protobuf is fine (its gencode runs on the worker's
-  same-or-newer runtime), but an app whose ``*_pb2`` was generated against a
-  *newer* protobuf than the worker's would hit a ``VersionError``. The 3.13+
-  worker handles that with a vendored fallback; it is intentionally not carried
-  here.
+* **No protobuf.** The worker links NO ``google.protobuf`` and no gRPC
+  toolchain. Rust (prost/tonic) owns every byte on the wire; this bridge speaks
+  to the runtime through ``protos_adapter`` -- a pure-Python stand-in for the
+  ``protos`` object the runtime expects. That removes the descriptor-pool
+  version coupling the classic worker carried (an app may ship any protobuf, or
+  none, without affecting the worker). See protos_adapter.py + D-029.
 
-Contract exposed to Rust:
-    configure(workers_dir, function_app_directory, host) -> None
-    start_stream(worker_id) -> bytes           # StreamingMessage(start_stream=...)
-    handle(raw: bytes) -> bytes | None         # response StreamingMessage or None
+Contract exposed to Rust (Rust owns all prost encoding/decoding):
+    configure(workers_dir, function_app_directory, host, request_id, sink)
+    handle_control(verb, req: dict) -> dict | None   # control-plane verbs
+    handle_invocation_control(req: dict) -> dict | None  # deferred / http-v2
+    invoke_native(function_id, invocation_id, inputs, meta) -> tuple  # hot path
+    requires_control_path(function_id) -> bool
+    log_unhandled(desc) -> None
     shutdown() -> None
 """
 import asyncio
@@ -43,16 +40,19 @@ import os
 import sys
 import threading
 import traceback
+from types import SimpleNamespace
 
-# The bridge's own gRPC-free protobuf messages (see bridge/protos/). Imported
-# at module load -- before configure() prepends the customer app dir -- so it
-# always resolves to the package next to this module (bridge dir is on
-# sys.path) and never to a same-named module the app ships. The pb2 stubs
-# import top-level ``google.protobuf``; the Rust side has already put the worker
-# deps dir on sys.path, so this binds the control plane to the worker's own
-# standard protobuf runtime (see the module docstring), same idea as the Python
-# 3.13+ worker's default.
-import protos  # noqa: E402
+# Protobuf-free ``protos`` stand-in (see protos_adapter.py + D-029). The runtime
+# handlers are transport-agnostic: they read request fields off
+# ``request.request.<verb>`` and build responses through a ``protos`` object
+# injected at worker_init. The classic worker injects the ``google.protobuf``
+# gencode; the Rust worker injects THIS pure-Python module, so nothing in the
+# worker process links ``google.protobuf`` or the gRPC toolchain. Rust (prost)
+# owns all wire encoding; the adapter objects only carry the shapes + a
+# ``to_dict()`` Rust maps back onto the wire. Imported at module load (before
+# configure() prepends the customer app dir) so it always resolves to the
+# package next to this module and never to a same-named module the app ships.
+import protos_adapter as protos  # noqa: E402
 
 # RpcLog level + category enum values (resolved once from the bridge's protos).
 _RpcLog = protos.RpcLog
@@ -208,10 +208,7 @@ class _RpcLogHandler(logging.Handler):
             inv = _current_invocation_id()
             if inv is not None:
                 fields["invocation_id"] = inv
-            sm = protos.StreamingMessage(
-                request_id=_request_id,
-                rpc_log=protos.RpcLog(**fields))
-            sink.emit(sm.SerializeToString())
+            sink.emit_log(fields)
         except Exception as e:  # never recurse into logging
             print(f"{_CONSOLE_LOG_PREFIX} ERROR: rpc-log emit failed: {e}",
                   file=sys.stderr, flush=True)
@@ -309,8 +306,8 @@ def configure(workers_dir, function_app_directory, host, request_id="",
     #   1. customer deps (.python_packages)  -- so an app can pin azure-functions
     #   2. worker runtime deps (workers_dir) -- azure_functions_runtime lives here
     #   3. customer app dir                  -- function_app.py for indexing
-    # protos was already imported at module load, so the worker's control-plane
-    # protobuf runtime is fixed before this reordering takes effect.
+    # ``protos_adapter`` was imported at module load, so the runtime's
+    # protobuf-free control-plane surface is fixed before this reordering.
     if workers_dir:
         _reprioritize_path(workers_dir, front=True)
     cx_deps = _customer_deps_path(function_app_directory)
@@ -369,109 +366,179 @@ class _WorkerRequest:
         self.properties = properties
 
 
-def start_stream(worker_id):
-    """Build the initial StreamingMessage(start_stream=...) handshake bytes."""
-    msg = protos.StreamingMessage(
-        start_stream=protos.StartStream(worker_id=worker_id))
-    return msg.SerializeToString()
+def _binding_ns(b):
+    """One BindingInfo (v1 function.json binding) as an attribute object."""
+    return SimpleNamespace(
+        type=b.get("type", ""),
+        direction=int(b.get("direction", 0)),
+        data_type=int(b.get("data_type", 0)),
+    )
 
 
-def _log_received(msg, content):
-    """Emit one System log line per inbound StreamingMessage (parity with the
-    proxy worker's `Received WorkerInitRequest, ...`). Routed as an RpcLog
-    System message once the handler is installed; a no-op content is skipped.
-    """
+def _metadata_ns(m):
+    """RpcFunctionMetadata (v1 function_load) as an attribute object."""
+    if m is None:
+        return None
+    return SimpleNamespace(
+        name=m.get("name", ""),
+        directory=m.get("directory", ""),
+        script_file=m.get("script_file", ""),
+        entry_point=m.get("entry_point", ""),
+        bindings={k: _binding_ns(v)
+                  for k, v in (m.get("bindings") or {}).items()},
+    )
+
+
+def _build_control_message(verb, req):
+    """Turn Rust's decoded request dict into the ``request.request.<verb>``
+    attribute shape the (unchanged) runtime handlers read. String maps
+    (capabilities/env vars) stay dicts; nested messages become namespaces."""
+    if verb == "worker_init_request":
+        msg = SimpleNamespace(
+            capabilities=dict(req.get("capabilities") or {}),
+            function_app_directory=req.get("function_app_directory", ""),
+            host_version=req.get("host_version", ""))
+    elif verb == "functions_metadata_request":
+        msg = SimpleNamespace()
+    elif verb == "function_load_request":
+        msg = SimpleNamespace(
+            function_id=req.get("function_id", ""),
+            metadata=_metadata_ns(req.get("metadata")))
+    elif verb == "function_environment_reload_request":
+        msg = SimpleNamespace(
+            function_app_directory=req.get("function_app_directory", ""),
+            environment_variables=dict(req.get("environment_variables") or {}))
+    else:
+        return None
+    return SimpleNamespace(**{verb: msg})
+
+
+def _log_control_received(verb):
+    """System log line per inbound control verb (parity with the proxy worker's
+    `Received WorkerInitRequest, ...`)."""
     try:
-        if content == "worker_init_request":
+        if verb == "worker_init_request":
             _syslog.info(
                 "Received WorkerInitRequest, python version %s, "
-                "worker version %s, request ID %s.",
-                sys.version.split()[0], _worker_version(), msg.request_id)
-        elif content == "invocation_request":
-            ir = msg.invocation_request
-            _syslog.info(
-                "Received FunctionInvocationRequest, request ID %s, "
-                "function ID %s, invocation ID %s.",
-                msg.request_id, ir.function_id, ir.invocation_id)
-        elif content == "worker_status_request":
-            # High-frequency scale probe; keep it at debug to avoid log spam.
-            _syslog.debug("Received WorkerStatusRequest, request ID %s.",
-                          msg.request_id)
-        elif content:
-            # functions_metadata_request -> "Received FunctionsMetadataRequest"
-            name = "".join(p.capitalize() for p in content.split("_"))
-            _syslog.info("Received %s, request ID %s.", name, msg.request_id)
+                "worker version %s.",
+                sys.version.split()[0], _worker_version())
+        else:
+            name = "".join(p.capitalize() for p in verb.split("_"))
+            _syslog.info("Received %s.", name)
     except Exception as e:  # logging must never break dispatch
         print(f"{_CONSOLE_LOG_PREFIX} ERROR: received-log failed: {e}",
               file=sys.stderr, flush=True)
 
 
-async def _dispatch(msg):
-    content = msg.WhichOneof("content")
-    props = {"protos": protos, "host": _host}
+def handle_control(verb, req):
+    """Run one control-plane verb. Rust prost-decodes the request into ``req``
+    (a dict); we shape it for the runtime handler, run it, and return the
+    response as a flat dict Rust maps back to a prost message. Returns None for
+    an unknown verb."""
+    msg = _build_control_message(verb, req)
+    if msg is None:
+        _log(f"unknown control verb: {verb!r}", level="WARNING")
+        return None
 
-    _log_received(msg, content)
+    _log_control_received(verb)
 
-    if content == "worker_init_request":
-        # The real Functions Host supplies the function app directory in the
-        # init message (not via CLI). The v2 runtime imports ``function_app``
-        # during indexing but does NOT add that directory to sys.path itself,
-        # so we must do it here before worker_init runs.
-        app_dir = msg.worker_init_request.function_app_directory
+    if verb == "worker_init_request":
+        # The Host supplies the function app directory in the init message (not
+        # via CLI). The v2 runtime imports ``function_app`` during indexing but
+        # does NOT add that directory to sys.path, so do it before init runs.
+        app_dir = req.get("function_app_directory", "")
         if app_dir and app_dir not in sys.path:
             sys.path.insert(0, app_dir)
             _log(f"added function_app_directory to sys.path: {app_dir!r}")
-        req = _WorkerRequest("WorkerInitRequest", msg, props)
         try:
             _rt.start_threadpool_executor()
         except AttributeError:
             pass
-        resp = await _rt.worker_init_request(req)
-        return protos.StreamingMessage(
-            request_id=msg.request_id, worker_init_response=resp)
 
-    if content == "functions_metadata_request":
-        req = _WorkerRequest("FunctionsMetadataRequest", msg, props)
-        resp = await _rt.functions_metadata_request(req)
-        return protos.StreamingMessage(
-            request_id=msg.request_id, function_metadata_response=resp)
-
-    if content == "function_load_request":
-        req = _WorkerRequest("FunctionLoadRequest", msg, props)
-        resp = await _rt.function_load_request(req)
-        return protos.StreamingMessage(
-            request_id=msg.request_id, function_load_response=resp)
-
-    if content == "invocation_request":
-        # Runtime uses its module-global protos set during worker_init; the
-        # dispatcher intentionally omits properties here.
-        req = _WorkerRequest("FunctionInvocationRequest", msg)
-        resp = await _rt.invocation_request(req)
-        return protos.StreamingMessage(
-            request_id=msg.request_id, invocation_response=resp)
-
-    if content == "worker_status_request":
-        # Answered locally, never touches the runtime (fast scale path).
-        return protos.StreamingMessage(
-            request_id=msg.request_id,
-            worker_status_response=protos.WorkerStatusResponse())
-
-    _log(f"unhandled content type: {content!r}", level="WARNING")
-    return None
-
-
-def handle(raw):
-    """Parse one StreamingMessage, route it, return response bytes (or None)."""
-    msg = protos.StreamingMessage()
-    msg.ParseFromString(bytes(raw))
+    # worker_init / env_reload set the runtime's module-global ``protos`` from
+    # properties; pass it (harmless for the other verbs, which reuse the global).
+    props = {"protos": protos, "host": _host}
+    req_obj = _WorkerRequest(verb, msg, props)
+    handler = getattr(_rt, verb)
     try:
-        resp = _run_coro(_dispatch(msg))
+        resp = _run_coro(handler(req_obj))
     except Exception:  # pragma: no cover - surfaced to Rust as a log
-        _log("handler error:\n" + traceback.format_exc(), level="ERROR")
+        _log(f"{verb} handler error:\n" + traceback.format_exc(),
+             level="ERROR")
         raise
     if resp is None:
         return None
-    return resp.SerializeToString()
+    return resp.to_dict()
+
+
+def handle_invocation_control(req):
+    """Run an invocation on the pure-Python control path (deferred / http-v2).
+
+    Native invocations go through ``invoke_native``; only deferred (SDK-type)
+    bindings and http-v2 streaming reach here, running the runtime's standard
+    ``invocation_request``. Rust passes datum tuples (see convert.rs); we rebuild
+    the adapter ``ParameterBinding``/``TypedData`` inputs, run the handler, and
+    return the ``InvocationResponse`` as a flat dict Rust maps to prost.
+    """
+    invocation_id = req.get("invocation_id", "")
+    function_id = req.get("function_id", "")
+    try:
+        _syslog.info(
+            "Received FunctionInvocationRequest, function ID %s, "
+            "invocation ID %s.", function_id, invocation_id)
+    except Exception:
+        pass
+
+    input_data = [
+        protos.ParameterBinding(
+            name=name, data=protos.TypedData.from_tuple(t))
+        for name, t in (req.get("input_data") or [])
+    ]
+    trigger_metadata = {
+        k: protos.TypedData.from_tuple(t)
+        for k, t in (req.get("trigger_metadata") or {}).items()
+    }
+
+    tc = req.get("trace_context") or {}
+    trace_context = SimpleNamespace(
+        trace_parent=tc.get("trace_parent", ""),
+        trace_state=tc.get("trace_state", ""),
+        attributes=dict(tc.get("attributes") or {}))
+
+    rc = req.get("retry_context") or {}
+    exc = rc.get("exception")
+    retry_context = SimpleNamespace(
+        retry_count=int(rc.get("retry_count", 0)),
+        max_retry_count=int(rc.get("max_retry_count", 0)),
+        exception=(SimpleNamespace(**exc) if exc else
+                   SimpleNamespace(message="", stack_trace="", source="")))
+
+    invoc = SimpleNamespace(
+        invocation_id=invocation_id,
+        function_id=function_id,
+        input_data=input_data,
+        trigger_metadata=trigger_metadata,
+        trace_context=trace_context,
+        retry_context=retry_context)
+    shim = SimpleNamespace(invocation_request=invoc)
+
+    # The runtime reuses its module-global ``protos`` set at worker_init; the
+    # dispatcher intentionally omits properties on invocations.
+    req_obj = _WorkerRequest("FunctionInvocationRequest", shim)
+    try:
+        resp = _run_coro(_rt.invocation_request(req_obj))
+    except Exception:  # pragma: no cover - surfaced to Rust as a log
+        _log("invocation handler error:\n" + traceback.format_exc(),
+             level="ERROR")
+        raise
+    if resp is None:
+        return None
+    return resp.to_dict()
+
+
+def log_unhandled(desc):
+    """Rust routes an unrecognized StreamingMessage content type here."""
+    _log(f"unhandled content type: {desc}", level="WARNING")
 
 
 # --- Native invocation path (no Python protobuf on the hot path) -------------

@@ -15,7 +15,6 @@ rust_worker/
 ├── Cargo.toml
 ├── Cargo.lock
 ├── build.rs           # compiles the vendored .proto set (prost + tonic client)
-├── gen_protos.py      # materializes bridge/protos from version-correct *_pb2 stubs
 ├── .gitignore
 ├── README.md
 ├── proto/             # vendored FunctionRpc.proto + deps (no system protoc needed)
@@ -23,13 +22,13 @@ rust_worker/
 │   ├── main.rs        # entrypoint: args, embed CPython, dial Host, EventStream pump
 │   ├── codec.rs       # raw-bytes tonic Codec for the control path
 │   ├── pb.rs          # includes the generated prost types
+│   ├── control.rs     # prost <-> Python control-plane + invocation-control codec
 │   ├── convert.rs     # prost <-> Python "datum tuple" conversion (native path)
 │   ├── log.rs         # console logging matching the Python proxy worker format
 │   └── bridge.rs      # PyO3 FFI: configure / start_stream / handle / invoke / shutdown
 ├── bridge/
-│   ├── bridge.py      # protobuf + routing + persistent asyncio loop -> v2 runtime
-│   └── protos/        # private gRPC-free protobuf messages (stubs populated at build)
-└── gen_protos.py      # materializes bridge/protos from version-correct stubs
+│   ├── bridge.py         # prost-driven control routing (protobuf-free) -> v2/v1 runtime
+│   └── protos_adapter.py # pure-Python, protobuf-free `protos` stand-in for the runtime
 ```
 
 End-to-end tests reuse the shared `WebHostTestCase` harness and the **whole
@@ -48,8 +47,8 @@ py -3.15 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 $py = '.venv\Scripts\python.exe'
 
-# install runtime + transport deps into the interpreter (one-time)
-& $py -m pip install --only-binary=:all: 'grpcio>=1.75.1' 'protobuf>=5.29,<7'
+# install the v2 runtime into the interpreter (one-time). The bridge is
+# protobuf-free -- Rust/prost owns the wire -- so no grpcio/protobuf needed.
 & $py -m pip install -e ..\..\runtimes\v2
 
 # build against that interpreter

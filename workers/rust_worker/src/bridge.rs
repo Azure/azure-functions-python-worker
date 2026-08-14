@@ -9,14 +9,16 @@
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyList, PyString, PyTuple};
+use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 use tokio::sync::mpsc::UnboundedSender;
 
+use crate::control;
 use crate::convert::{tuple_to_typed_data, typed_data_to_tuple};
 use crate::pb::messages::{
-    parameter_binding, status_result, InvocationRequest, InvocationResponse, ParameterBinding,
-    RpcException, StatusResult,
+    parameter_binding, status_result, streaming_message, InvocationRequest, InvocationResponse,
+    ParameterBinding, RpcException, StatusResult, StreamingMessage,
 };
+use prost::Message as _;
 
 /// A Rust-owned sink handed to the Python logging handler. Its `emit` is a
 /// non-blocking, thread-safe enqueue onto the single outbound gRPC channel, so
@@ -25,6 +27,7 @@ use crate::pb::messages::{
 #[pyclass]
 pub struct LogSink {
     tx: UnboundedSender<Bytes>,
+    request_id: String,
 }
 
 #[pymethods]
@@ -34,6 +37,20 @@ impl LogSink {
     /// swallowed so logging can't crash user code.
     fn emit(&self, data: &[u8]) {
         let _ = self.tx.send(Bytes::copy_from_slice(data));
+    }
+
+    /// Build + enqueue an RpcLog StreamingMessage from a flat fields dict. Lets
+    /// the Python log handler stay protobuf-free: it passes primitives and Rust
+    /// (prost) owns the wire encoding. `request_id` is the worker request id.
+    fn emit_log(&self, fields: &Bound<'_, PyAny>) {
+        match control::py_log_to_streaming_message(fields, &self.request_id) {
+            Ok(sm) => {
+                let _ = self.tx.send(Bytes::from(sm.encode_to_vec()));
+            }
+            Err(e) => {
+                eprintln!("LanguageWorkerConsoleLog ERROR: emit_log failed: {e}");
+            }
+        }
     }
 }
 
@@ -55,42 +72,128 @@ pub fn configure(
             .cast_into::<PyList>()
             .map_err(|e| anyhow!("sys.path is not a list: {e}"))?;
         path.insert(0, bridge_dir)?;
-        // Make the worker's bundled deps (google.protobuf lives here) importable
-        // BEFORE `import bridge` runs `import protos` at module load. configure()
-        // re-prioritizes sys.path afterwards (customer deps first); this just
-        // ensures the control-plane protobuf resolves to the worker's own copy.
+        // Make the worker's bundled runtime importable BEFORE `import bridge`.
+        // configure() re-prioritizes sys.path afterwards (customer deps first).
         if !workers_dir.is_empty() {
             path.insert(1, workers_dir)?;
         }
 
         let bridge = py.import("bridge")?;
-        let sink = Py::new(py, LogSink { tx })?;
+        let sink = Py::new(
+            py,
+            LogSink {
+                tx,
+                request_id: request_id.to_string(),
+            },
+        )?;
         bridge.call_method1("configure", (workers_dir, app_dir, host, request_id, sink))?;
         Ok(())
     })
 }
 
-/// Build the initial `StreamingMessage(start_stream=...)` payload.
+/// Build the initial `StreamingMessage(start_stream=...)` payload. Built in Rust
+/// (prost) so Python never touches protobuf.
 pub fn start_stream(worker_id: &str) -> Result<Vec<u8>> {
-    Python::attach(|py| -> Result<Vec<u8>> {
-        let bridge = py.import("bridge")?;
-        let r = bridge.call_method1("start_stream", (worker_id,))?;
-        Ok(r.extract::<Vec<u8>>()?)
-    })
+    Ok(control::start_stream_message(worker_id).encode_to_vec())
 }
 
-/// Route one inbound `StreamingMessage` (raw bytes) and return the response
-/// bytes, or `None` when no reply is warranted.
+/// Route one inbound control-plane `StreamingMessage` (raw bytes) and return the
+/// response bytes, or `None` when no reply is warranted. Invocations are routed
+/// separately (see `invoke`); this handles worker_init / functions_metadata /
+/// function_load / env_reload / worker_status. Requests are prost-decoded here,
+/// the (unchanged) runtime handler runs against a protobuf-free adapter, and its
+/// returned dict is prost-encoded back onto the wire.
 pub fn handle(raw: &[u8]) -> Result<Option<Vec<u8>>> {
+    let sm = StreamingMessage::decode(raw)?;
+    let request_id = sm.request_id.clone();
+    use streaming_message::Content;
+
+    // worker_status is answered locally without touching Python (fast scale
+    // probe), mirroring the previous bridge behavior.
+    if let Some(Content::WorkerStatusRequest(_)) = &sm.content {
+        let out = StreamingMessage {
+            request_id,
+            content: Some(Content::WorkerStatusResponse(Default::default())),
+        };
+        return Ok(Some(out.encode_to_vec()));
+    }
+
+    // Invocation control path (deferred / http-v2). Runs the runtime's standard
+    // invocation_request handler through the protobuf-free adapter, unlike the
+    // native fast path in `invoke`.
+    if let Some(Content::InvocationRequest(r)) = &sm.content {
+        let rid = sm.request_id.clone();
+        return Python::attach(|py| -> Result<Option<Vec<u8>>> {
+            let bridge = py.import("bridge")?;
+            let req = control::invocation_request_to_py(py, r)?;
+            let resp = bridge.call_method1("handle_invocation_control", (req,))?;
+            if resp.is_none() {
+                return Ok(None);
+            }
+            let ir = control::py_to_invocation_response(py, &resp, &r.invocation_id)?;
+            let out = StreamingMessage {
+                request_id: rid,
+                content: Some(Content::InvocationResponse(ir)),
+            };
+            Ok(Some(out.encode_to_vec()))
+        });
+    }
+
     Python::attach(|py| -> Result<Option<Vec<u8>>> {
         let bridge = py.import("bridge")?;
-        let arg = PyBytes::new(py, raw);
-        let r = bridge.call_method1("handle", (arg,))?;
-        if r.is_none() {
-            Ok(None)
-        } else {
-            Ok(Some(r.extract::<Vec<u8>>()?))
+
+        // (verb name the runtime handler is dispatched under, request dict)
+        let (verb, req): (&str, Bound<'_, PyAny>) = match &sm.content {
+            Some(Content::WorkerInitRequest(r)) => (
+                "worker_init_request",
+                control::worker_init_req_to_py(py, r)?.into_any(),
+            ),
+            Some(Content::FunctionsMetadataRequest(_)) => {
+                ("functions_metadata_request", PyDict::new(py).into_any())
+            }
+            Some(Content::FunctionLoadRequest(r)) => (
+                "function_load_request",
+                control::function_load_req_to_py(py, r)?.into_any(),
+            ),
+            Some(Content::FunctionEnvironmentReloadRequest(r)) => (
+                "function_environment_reload_request",
+                control::env_reload_req_to_py(py, r)?.into_any(),
+            ),
+            other => {
+                let _ = bridge.call_method1(
+                    "log_unhandled",
+                    (format!("{:?}", other.as_ref().map(std::mem::discriminant)),),
+                );
+                return Ok(None);
+            }
+        };
+
+        let resp = bridge.call_method1("handle_control", (verb, req))?;
+        if resp.is_none() {
+            return Ok(None);
         }
+
+        let content = match verb {
+            "worker_init_request" => {
+                Content::WorkerInitResponse(control::py_to_worker_init_response(&resp)?)
+            }
+            "functions_metadata_request" => {
+                Content::FunctionMetadataResponse(control::py_to_function_metadata_response(&resp)?)
+            }
+            "function_load_request" => {
+                Content::FunctionLoadResponse(control::py_to_function_load_response(&resp)?)
+            }
+            "function_environment_reload_request" => Content::FunctionEnvironmentReloadResponse(
+                control::py_to_env_reload_response(&resp)?,
+            ),
+            _ => unreachable!(),
+        };
+
+        let out = StreamingMessage {
+            request_id,
+            content: Some(content),
+        };
+        Ok(Some(out.encode_to_vec()))
     })
 }
 

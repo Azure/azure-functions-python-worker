@@ -15,6 +15,11 @@ pub fn info(msg: &str) {
 }
 
 /// Warning log line (stdout), matching the Python worker's `logger.warning`.
+#[expect(
+    dead_code,
+    reason = "completes the info/warning/error stream trio mirroring the Python worker; \
+              retained as a stable logging API even though no caller emits WARNING yet"
+)]
 pub fn warning(msg: &str) {
     println!("{CONSOLE_LOG_PREFIX} WARNING: {msg}");
 }

@@ -235,7 +235,6 @@ async def invocation_request(request):
 
         # Actively flush customer print() function to console
         sys.stdout.flush()
-
         logger.debug("Successfully completed WorkerInvocationRequest.")
         return protos.InvocationResponse(
             invocation_id=invocation_id,

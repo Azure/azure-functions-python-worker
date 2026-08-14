@@ -14,11 +14,11 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
     "Operating System :: MacOS :: MacOS X",
@@ -28,7 +28,7 @@ classifiers = [
 ]
 dependencies = [
     "azure-functions",
-    "azurefunctions-extensions-base",
+    "azurefunctions-extensions-base>=1.3.0b1",
     "fastapi>=0.100.0",
     "uvicorn>=0.20.0",  # ASGI server for HTTP streaming
     "starlette>=0.27.0",  # FastAPI's underlying framework

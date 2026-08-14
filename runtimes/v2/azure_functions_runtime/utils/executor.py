@@ -25,7 +25,6 @@ invocation_id_cv = contextvars.ContextVar('invocation_id', default=None)
 def run_sync_func(invocation_id, context, func, params):
     # This helper exists because we need to access the current
     # invocation_id from ThreadPoolExecutor's threads.
-    context.thread_local_storage.invocation_id = invocation_id
     token = invocation_id_cv.set(invocation_id)
     try:
         result = functools.partial(execute_sync, func)

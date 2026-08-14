@@ -1013,7 +1013,6 @@ class Dispatcher(metaclass=DispatcherMeta):
     def _run_sync_func(self, invocation_id, context, func, params):
         # This helper exists because we need to access the current
         # invocation_id from ThreadPoolExecutor's threads.
-        context.thread_local_storage.invocation_id = invocation_id
         try:
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)

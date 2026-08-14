@@ -8,6 +8,7 @@ from tests.unittests.test_dispatcher import FUNCTION_APP_DIRECTORY
 from tests.utils import testutils
 
 from azure_functions_worker import protos
+from azure_functions_worker.protos.FunctionRpc_pb2 import RpcTraceContext
 
 
 class TestOpenTelemetry(unittest.TestCase):
@@ -309,7 +310,7 @@ class TestOpenTelemetryContextPropagation(unittest.TestCase):
             invocation_request=protos.InvocationRequest(
                 invocation_id="test-inv-123",
                 function_id="test-func-id",
-                trace_context=protos.RpcTraceContext(
+                trace_context=RpcTraceContext(
                     trace_parent="00-trace-parent",
                     trace_state="state"
                 )
@@ -392,7 +393,7 @@ class TestOpenTelemetryContextPropagation(unittest.TestCase):
             invocation_request=protos.InvocationRequest(
                 invocation_id="test-inv-456",
                 function_id="test-func-id",
-                trace_context=protos.RpcTraceContext(
+                trace_context=RpcTraceContext(
                     trace_parent="00-trace-parent",
                     trace_state="state"
                 )
@@ -466,7 +467,7 @@ class TestOpenTelemetryContextPropagation(unittest.TestCase):
             invocation_request=protos.InvocationRequest(
                 invocation_id="test-inv-sync",
                 function_id="test-func-id",
-                trace_context=protos.RpcTraceContext(
+                trace_context=RpcTraceContext(
                     trace_parent="00-trace-parent",
                     trace_state="state"
                 )

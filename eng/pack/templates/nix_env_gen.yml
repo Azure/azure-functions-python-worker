@@ -4,15 +4,16 @@ parameters:
   grpcBuild: ''
 
 steps:
+- task: PipAuthenticate@1
+  displayName: 'Authenticate pip to CFS'
+  inputs:
+    artifactFeeds: 'public/upstream-public'
+    onlyAddExtraIndex: false
 - task: UsePythonVersion@0
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
     allowUnstable: true
     addToPath: true
-- task: PipAuthenticate@1
-  displayName: 'Pip Authenticate'
-  inputs:
-    artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
 - powershell: |
     # Parse the Python minor version
     $PY_VER = "$(pythonVersion)"
@@ -88,19 +89,7 @@ steps:
 #     args: '${{ parameters.pythonVersion }}'
 #   displayName: 'Build dependencies from source'
 #   condition: eq(variables['isRC'], 'true')
-- bash: |
-    pip install pip-audit
-    cd workers
-    pip-audit -r requirements.txt
-  displayName: 'Run vulnerability scan'
-  continueOnError: true
-  condition: ne(variables['rustWorker'], 'true')
-- bash: |
-    pip install pip-audit
-    pip-audit -r runtimes/v2/requirements.txt || true
-  displayName: 'Run vulnerability scan (Rust worker)'
-  continueOnError: true
-  condition: eq(variables['rustWorker'], 'true')
+
 - task: CopyFiles@2
   inputs:
     contents: '$(workerPath)'

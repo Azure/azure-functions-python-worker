@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# Forward PipAuthenticate's index URL to uv, which does not read pip's config.
+if [ -n "${PIP_INDEX_URL:-}" ] && [ -z "${UV_DEFAULT_INDEX:-}" ]; then
+  export UV_DEFAULT_INDEX="$PIP_INDEX_URL"
+fi
+
 # Install uv for faster dependency resolution / installation.
 python -m pip install --upgrade pip
 python -m pip install uv
@@ -24,7 +29,7 @@ fi
 
 # Install everything else in a single uv invocation so the resolver runs once
 # and all wheels are downloaded in parallel.
-$UV_PIP -U --prerelease=allow \
+$UV_PIP -U --prerelease=if-necessary-or-explicit \
     azure-functions \
     -e "$2/[dev]" \
     -e "$2/[test-http-v2]" \

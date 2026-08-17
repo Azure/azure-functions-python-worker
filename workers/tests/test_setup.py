@@ -30,10 +30,11 @@ import zipfile
 
 from invoke import task
 
-from utils.constants import EXTENSIONS_CSPROJ_TEMPLATE, NUGET_CONFIG
+from utils.constants import EXTENSIONS_CSPROJ_TEMPLATE
 
 ROOT_DIR = pathlib.Path(__file__).parent.parent
 BUILD_DIR = ROOT_DIR / 'build'
+NUGET_CONFIG_PATH = ROOT_DIR.parent / 'nuget.config'
 WEBHOST_GITHUB_API = "https://api.github.com/repos/Azure/azure-functions-host"
 WEBHOST_GIT_REPO = "https://github.com/Azure/azure-functions-host/archive"
 WEBHOST_TAG_PREFIX = "v4."
@@ -289,14 +290,17 @@ def install_extensions(extensions_dir):
         with open(extensions_dir / "extensions.csproj", "w") as f:
             f.write(EXTENSIONS_CSPROJ_TEMPLATE)
 
-    with open(extensions_dir / "NuGet.config", "w") as f:
-        f.write(NUGET_CONFIG)
+    nuget_config_path = extensions_dir / "NuGet.config"
+    shutil.copy2(NUGET_CONFIG_PATH, nuget_config_path)
 
     env = os.environ.copy()
     env["TERM"] = "xterm"  # ncurses 6.1 workaround
     try:
         subprocess.run(
-            args=["dotnet", "build", "-o", "."],
+            args=[
+                "dotnet", "build", "-o", ".",
+                f"--property:RestoreConfigFile={nuget_config_path}",
+            ],
             check=True,
             cwd=str(extensions_dir),
             stdout=sys.stdout,

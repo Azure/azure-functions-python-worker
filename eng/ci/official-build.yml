@@ -82,12 +82,12 @@ extends:
         jobs:
           - template: /eng/templates/official/jobs/ci-fc-tests.yml@self
 
-      # Rust Worker Build & Package (Python 3.15+, Linux/X64). Independent of the
-      # Python worker stages; produces the Microsoft.Azure.Functions.RustPythonWorker package.
-      - stage: BuildRustWorker
-        dependsOn: []
-        jobs:
-          - template: /eng/templates/official/jobs/build-rust-artifacts.yml@self
+      # Rust Worker Build & Package (Python 3.15+, Linux/X64).
+      # NOTE: The Rust worker is built and packaged as part of the
+      # BuildPythonWorker stage (Build_LINUX_X64 matrix, 3.15) and shipped inside
+      # the shared Microsoft.Azure.Functions.V4.PythonWorker NuGet (see D-030).
+      # The former standalone stage/templates/nuspec were removed once the merge
+      # landed to avoid a duplicate 3.15 build and a second package.
 
       # Python V2 Library Build and Test Stages
       - stage: BuildV2Library

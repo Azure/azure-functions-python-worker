@@ -104,7 +104,7 @@ jobs:
         pythonVersion: '3.14'
         normalizedPythonVersion: '3.14'
       Python315Rust:
-        pythonVersion: '3.15'
+        pythonVersion: '3.15.0-rc.1'
         normalizedPythonVersion: '3.15'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)

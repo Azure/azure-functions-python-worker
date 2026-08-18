@@ -64,9 +64,9 @@ steps:
   env:
     pythonVersion: ${{ parameters.pythonVersion }}
 - powershell: |
-    Write-Host "workerPath: $(workerPath)"
-    Write-Host "proxyWorker: $(proxyWorker)"
-    Write-Host "rustWorker: $(rustWorker)"
+    Write-Host "workerPath: $env:WORKERPATH"
+    Write-Host "proxyWorker: $env:PROXYWORKER"
+    Write-Host "rustWorker: $env:RUSTWORKER"
   displayName: 'Display variables'
 - task: ShellScript@2
   inputs:
@@ -75,6 +75,11 @@ steps:
     args: '${{ parameters.pythonVersion }}'
   displayName: 'Install Dependencies'
   condition: ne(variables['rustWorker'], 'true')
+- task: CargoAuthenticate@0
+  displayName: 'Authenticate Cargo to CFS'
+  inputs:
+    configFile: '$(Build.SourcesDirectory)/workers/rust_worker/.cargo/config.toml'
+  condition: eq(variables['rustWorker'], 'true')
 - task: ShellScript@2
   inputs:
     disableAutoCwd: true
@@ -90,22 +95,6 @@ steps:
 #     args: '${{ parameters.pythonVersion }}'
 #   displayName: 'Build dependencies from source'
 #   condition: eq(variables['isRC'], 'true')
-<<<<<<< HEAD
-- bash: |
-    pip install pip-audit
-    cd workers
-    pip-audit -r requirements.txt
-  displayName: 'Run vulnerability scan'
-  continueOnError: true
-  condition: ne(variables['rustWorker'], 'true')
-- bash: |
-    pip install pip-audit
-    pip-audit -r runtimes/v2/requirements.txt || true
-  displayName: 'Run vulnerability scan (Rust worker)'
-  continueOnError: true
-  condition: eq(variables['rustWorker'], 'true')
-=======
->>>>>>> 63ede0799fb6879ce3d43acee9b3f21e61a7e7bf
 - task: CopyFiles@2
   inputs:
     contents: '$(workerPath)'
@@ -324,8 +313,7 @@ steps:
         "azure_functions_runtime_v1/native_invocation.py",
         "azure_functions_runtime_v1/utils/executor.py",
         "azure",
-        "azurefunctions",
-        "google"
+        "azurefunctions"
     )
     $forbidden = @("grpc", "proxy_worker", "uvloop")
 

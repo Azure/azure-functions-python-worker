@@ -38,6 +38,11 @@ steps:
       cargo clippy --version
     displayName: 'Check Rust versions'
 
+  - task: CargoAuthenticate@0
+    displayName: 'Authenticate Cargo to CFS'
+    inputs:
+      configFile: '$(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.cargo/config.toml'
+
   - bash: |
       set -euo pipefail
       python -m pip install --upgrade pip

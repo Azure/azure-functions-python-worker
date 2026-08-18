@@ -63,9 +63,9 @@ steps:
   env:
     pythonVersion: ${{ parameters.pythonVersion }}
 - powershell: |
-    Write-Host "workerPath: $(workerPath)"
-    Write-Host "proxyWorker: $(proxyWorker)"
-    Write-Host "rustWorker: $(rustWorker)"
+    Write-Host "workerPath: $env:WORKERPATH"
+    Write-Host "proxyWorker: $env:PROXYWORKER"
+    Write-Host "rustWorker: $env:RUSTWORKER"
   displayName: 'Display variables'
 - task: ShellScript@2
   inputs:
@@ -74,6 +74,11 @@ steps:
     args: '${{ parameters.pythonVersion }}'
   displayName: 'Install Dependencies'
   condition: ne(variables['rustWorker'], 'true')
+- task: CargoAuthenticate@0
+  displayName: 'Authenticate Cargo to CFS'
+  inputs:
+    configFile: '$(Build.SourcesDirectory)/workers/rust_worker/.cargo/config.toml'
+  condition: eq(variables['rustWorker'], 'true')
 - task: ShellScript@2
   inputs:
     disableAutoCwd: true
@@ -308,8 +313,7 @@ steps:
         "azure_functions_runtime_v1/native_invocation.py",
         "azure_functions_runtime_v1/utils/executor.py",
         "azure",
-        "azurefunctions",
-        "google"
+        "azurefunctions"
     )
     $forbidden = @("grpc", "proxy_worker", "uvloop")
 

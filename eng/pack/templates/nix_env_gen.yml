@@ -4,15 +4,16 @@ parameters:
   grpcBuild: ''
 
 steps:
+- task: PipAuthenticate@1
+  displayName: 'Authenticate pip to CFS'
+  inputs:
+    artifactFeeds: 'public/upstream-public'
+    onlyAddExtraIndex: false
 - task: UsePythonVersion@0
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
     allowUnstable: true
     addToPath: true
-- task: PipAuthenticate@1
-  displayName: 'Pip Authenticate'
-  inputs:
-    artifactFeeds: 'internal/PythonWorker_Internal_PublicPackages'
 - powershell: |
     # Parse the Python minor version
     $PY_VER = "$(pythonVersion)"
@@ -43,6 +44,7 @@ steps:
     #   <= 3.12        -> azure_functions_worker (legacy in-worker runtime)
     if( $PY_MINOR -ge 15 )
     {
+      Write-Host "##vso[task.setvariable variable=workerPath;]"
       Write-Host "##vso[task.setvariable variable=proxyWorker;]false"
       Write-Host "##vso[task.setvariable variable=rustWorker;]true"
     }
@@ -88,6 +90,7 @@ steps:
 #     args: '${{ parameters.pythonVersion }}'
 #   displayName: 'Build dependencies from source'
 #   condition: eq(variables['isRC'], 'true')
+<<<<<<< HEAD
 - bash: |
     pip install pip-audit
     cd workers
@@ -101,6 +104,8 @@ steps:
   displayName: 'Run vulnerability scan (Rust worker)'
   continueOnError: true
   condition: eq(variables['rustWorker'], 'true')
+=======
+>>>>>>> 63ede0799fb6879ce3d43acee9b3f21e61a7e7bf
 - task: CopyFiles@2
   inputs:
     contents: '$(workerPath)'

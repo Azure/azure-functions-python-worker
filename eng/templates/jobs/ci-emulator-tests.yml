@@ -1,7 +1,5 @@
 parameters:
   PROJECT_DIRECTORY: 'workers'
-  ArtifactFeed: ''
-  NuGetServiceConnection: ''
 
 jobs:
   - job: "TestPython"
@@ -9,7 +7,7 @@ jobs:
 
     pool:
       name: ${{ parameters.PoolName }}
-      image: 1es-ubuntu-22.04
+      image: 1es-ubuntu-24.04-min
       os: linux
 
     strategy:
@@ -27,6 +25,11 @@ jobs:
         Python314:
           PYTHON_VERSION: '3.14'
     steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
       - bash: |
           echo "Disk space before cleanup:"
           df -h
@@ -68,28 +71,12 @@ jobs:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
-      - task: PipAuthenticate@1
-        displayName: 'Pip Authenticate'
-        inputs:
-          artifactFeeds: ${{ parameters.ArtifactFeed }}
       - task: UseDotNet@2
         displayName: 'Install .NET 10'
         inputs:
           version: 10.0.x
       - task: NuGetAuthenticate@1
-        displayName: 'NuGet Authenticate'
-      - bash: |
-          # Remove the feed that doesn't match the current service connection
-          if [[ "${{ parameters.NuGetServiceConnection }}" == "PythonWorker_PublicPackages" ]]; then
-            # Remove internal feed for public builds
-            sed -i '/_Internal_PublicPackages/d' nuget.config
-          else
-            # Remove public feed for internal builds
-            sed -i '/PythonWorker_PublicPackages[^_]/d' nuget.config
-          fi
-          echo "Updated nuget.config:"
-          cat nuget.config
-        displayName: 'Configure NuGet feed for current organization'
+        displayName: 'Authenticate NuGet to CFS'
       - bash: |
           chmod +x eng/scripts/install-dependencies.sh
           eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
@@ -137,12 +124,31 @@ jobs:
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |
+          # The minimal image (1es-ubuntu-24.04-min) does not ship the Docker
+          # Compose v2 CLI plugin, so `docker compose` fails with an
+          # "unknown shorthand flag: 'f'" error. Install it from the Ubuntu
+          # archive (already reachable in the pipeline) via the
+          # docker-compose-v2 package. Docker's own apt repo is not configured,
+          # so docker-compose-plugin is not an option here.
+          #
+          # This must run BEFORE any emulator container is started: installing
+          # docker-compose-v2 also upgrades moby-engine/moby-cli, which restarts
+          # the Docker daemon and would kill already-running containers (e.g. the
+          # CosmosDB emulator), causing connection-refused errors during tests.
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "Docker Compose v2 plugin not found; installing..."
+            sudo apt-get update
+            sudo apt-get install -y docker-compose-v2
+          fi
+          docker compose version
+        displayName: 'Ensure Docker Compose v2 is installed'
+      - bash: |
           # Clean up Docker resources to free disk space
           docker system prune -af --volumes
           df -h
           
           docker pull mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
-          docker run --detach --publish 8081:8081 --publish 1234:1234 mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+          docker run --detach --env ENABLE_EXPLORER=false --publish 8081:8081 mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
           docker ps
         displayName: "Start CosmosDB Emulator"
       - bash: |

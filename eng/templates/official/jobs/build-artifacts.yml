@@ -81,7 +81,7 @@ jobs:
   timeoutInMinutes: 180
   pool:
     name: 1es-pool-azfunc
-    image: 1es-ubuntu-22.04
+    image: 1es-ubuntu-24.04-min
     os: linux
   strategy:
     matrix:
@@ -103,8 +103,33 @@ jobs:
       Python314V4:
         pythonVersion: '3.14'
         normalizedPythonVersion: '3.14'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_LINUX_X64"
+  steps:
+  - template: ../../../pack/templates/nix_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_LINUX_X64'
+      grpcBuild: 'x86_64-linux-gnu.so'
+# Rust worker (Python 3.15+, Linux/X64). Runs on the *public* pool because the
+# build compiles the Rust binary with cargo, which needs outbound access to
+# crates.io — the secure 1es-pool-azfunc has no internet. Produces the same
+# 3.15_LINUX_X64 artifact that the V4 nuspec packs into tools/3.15/LINUX/X64,
+# so the Rust worker still ships inside the single Python worker NuGet.
+- job: Build_RUST_LINUX_X64
+  timeoutInMinutes: 180
+  pool:
+    name: 1es-pool-azfunc-public
+    image: 1es-ubuntu-22.04
+    os: linux
+  strategy:
+    matrix:
       Python315Rust:
-        pythonVersion: '3.15'
+        pythonVersion: '3.15.0-rc.1'
         normalizedPythonVersion: '3.15'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
@@ -198,7 +223,7 @@ jobs:
   timeoutInMinutes: 240
   pool:
     name: 1es-pool-azfunc
-    image: 1es-ubuntu-22.04
+    image: 1es-ubuntu-24.04-min
     os: linux
   strategy:
     matrix:
@@ -234,7 +259,7 @@ jobs:
       grpcBuild: 'aarch64-linux-gnu.so'
 
 - job: PackageWorkers
-  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
+  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_RUST_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
   templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:

@@ -40,7 +40,6 @@ from tests.utils.constants import (
     MASTER_KEY,
     PROJECT_ROOT,
     PYAZURE_INTEGRATION_TEST,
-    PYAZURE_WEBHOST_DEBUG,
     PYAZURE_WORKER_DIR,
     WORKER_CONFIG,
 )

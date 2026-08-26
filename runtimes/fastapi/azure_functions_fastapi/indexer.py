@@ -11,8 +11,22 @@ import sys
 import typing
 from typing import Dict, List, Optional
 
+import fastapi.routing as fastapi_routing
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
+
+from .utils.constants import PYTHON_SCRIPT_FILE_NAME_DEFAULT
+
+
+def _iter_effective_routes(routes):
+    route_iterator = getattr(
+        fastapi_routing, "_iter_routes_with_context", None)
+    if route_iterator is None:
+        for route in routes:
+            yield route, None
+        return
+
+    yield from route_iterator(routes)
 
 
 class FastAPIFunctionMetadata(typing.NamedTuple):
@@ -30,8 +44,13 @@ class FastAPIFunctionMetadata(typing.NamedTuple):
 class FastAPIIndexer:
     """Indexes a FastAPI application and generates function metadata"""
     
-    def __init__(self, fastapi_app: FastAPI):
+    def __init__(
+        self,
+        fastapi_app: FastAPI,
+        function_script_file: str = PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+    ):
         self.app = fastapi_app
+        self.function_script_file = function_script_file
         self.functions: List[FastAPIFunctionMetadata] = []
     
     def index_routes(self) -> List[FastAPIFunctionMetadata]:
@@ -41,24 +60,28 @@ class FastAPIIndexer:
         """
         functions = []
         
-        for route in self.app.routes:
+        for route, route_context in _iter_effective_routes(self.app.routes):
             if isinstance(route, APIRoute):
                 # Generate a unique function name from the route
                 function_name = self._generate_function_name(route)
                 
                 # Get HTTP methods for this route
                 http_methods = list(route.methods)
+                route_path = (
+                    route_context.path if route_context else route.path)
+                route_handler = (
+                    route_context.endpoint if route_context else route.endpoint)
                 
                 # Create metadata for this route
                 metadata = FastAPIFunctionMetadata(
                     name=function_name,
                     function_id=function_name,  # Using name as ID for now
-                    route_path=route.path,
+                    route_path=route_path,
                     http_methods=http_methods,
-                    function_script_file="function_app.py",  # Default
+                    function_script_file=self.function_script_file,
                     directory=os.getcwd(),
-                    route_handler=route.endpoint,
-                    is_async=inspect.iscoroutinefunction(route.endpoint)
+                    route_handler=route_handler,
+                    is_async=inspect.iscoroutinefunction(route_handler)
                 )
                 
                 functions.append(metadata)
@@ -124,5 +147,6 @@ def index_fastapi_app(function_path: str) -> List[FastAPIFunctionMetadata]:
         )
     
     # Index all routes
-    indexer = FastAPIIndexer(app)
+    indexer = FastAPIIndexer(
+        app, function_script_file=pathlib.Path(function_path).name)
     return indexer.index_routes()

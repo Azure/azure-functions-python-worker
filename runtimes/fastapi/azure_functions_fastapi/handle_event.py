@@ -22,7 +22,13 @@ from .http_v2 import (
     initialize_http_server,
 )
 from .loader import load_function_metadata
-from .utils.constants import HTTP_URI, REQUIRES_ROUTE_PARAMETERS
+from .utils.constants import (
+    HTTP_URI,
+    PYTHON_SCRIPT_FILE_NAME,
+    PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+    PYTHON_SCRIPT_FILE_NAME_FALLBACK,
+    REQUIRES_ROUTE_PARAMETERS,
+)
 from .utils.tracing import serialize_exception
 from .utils.helpers import get_worker_metadata
 from .logging import logger
@@ -36,6 +42,21 @@ _metadata_result: Optional[List] = None
 _function_path: Optional[str] = None
 _host: str = "127.0.0.1"
 protos = None
+
+
+def _get_function_app_script_file(function_app_directory: str) -> str:
+    configured_script_file = os.environ.get(PYTHON_SCRIPT_FILE_NAME)
+    if configured_script_file:
+        return configured_script_file
+
+    for script_file in (
+        PYTHON_SCRIPT_FILE_NAME_DEFAULT,
+        PYTHON_SCRIPT_FILE_NAME_FALLBACK,
+    ):
+        if os.path.isfile(os.path.join(function_app_directory, script_file)):
+            return script_file
+
+    return PYTHON_SCRIPT_FILE_NAME_DEFAULT
 
 
 async def worker_init_request(request):
@@ -63,8 +84,9 @@ async def worker_init_request(request):
     
     # Index in init by default. Fail if an exception occurs.
     try:
-        script_file_name = os.environ.get("PYTHON_SCRIPT_FILE_NAME", "function_app.py")
         function_app_directory = init_request.function_app_directory
+        script_file_name = _get_function_app_script_file(
+            function_app_directory)
         function_path = os.path.join(function_app_directory, script_file_name)
         
         # Index the FastAPI app
@@ -111,15 +133,14 @@ async def functions_metadata_request(request):
     
     This tells the host about all the functions (routes) available in the FastAPI app
     """
-    script_file_name = os.environ.get("PYTHON_SCRIPT_FILE_NAME", "function_app.py")
     function_app_directory = os.getcwd()
+    script_file_name = _get_function_app_script_file(function_app_directory)
     function_path = os.path.join(function_app_directory, script_file_name)
     
     global _fastapi_app, _converter, _metadata_result
     
     # If we haven't indexed yet, do it now
     if not _metadata_result:
-        function_path = os.environ.get("PYTHON_SCRIPT_FILE_NAME", "function_app.py")
         await load_function_metadata(function_path)
     
     if not _metadata_result:
@@ -284,8 +305,9 @@ async def function_environment_reload_request(request):
     
     # Re-index the FastAPI app
     try:
-        script_file_name = os.environ.get("PYTHON_SCRIPT_FILE_NAME", "function_app.py")
         function_app_directory = os.getcwd()
+        script_file_name = _get_function_app_script_file(
+            function_app_directory)
         function_path = os.path.join(function_app_directory, script_file_name)
         
         global _fastapi_app, _converter, _metadata_result

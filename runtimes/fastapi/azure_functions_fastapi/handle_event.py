@@ -141,7 +141,8 @@ async def functions_metadata_request(request):
     
     # If we haven't indexed yet, do it now
     if not _metadata_result:
-        await load_function_metadata(function_path)
+        _fastapi_app, _metadata_result, _converter = load_function_metadata(
+            function_path, function_app_directory, protos)
     
     if not _metadata_result:
         logger.error("No FastAPI functions were discovered")

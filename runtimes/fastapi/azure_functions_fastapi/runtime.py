@@ -21,6 +21,8 @@ from .handle_event import (
 from .utils.executor import invocation_id_cv as _invocation_id_cv
 from .version import VERSION as _VERSION
 
+VERSION = _VERSION
+
 
 class Runtime(RuntimeBase):
     """

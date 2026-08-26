@@ -133,7 +133,8 @@ async def functions_metadata_request(request):
     
     This tells the host about all the functions (routes) available in the FastAPI app
     """
-    function_app_directory = os.getcwd()
+    metadata_request = request.request.functions_metadata_request
+    function_app_directory = metadata_request.function_app_directory
     script_file_name = _get_function_app_script_file(function_app_directory)
     function_path = os.path.join(function_app_directory, script_file_name)
     
@@ -306,7 +307,8 @@ async def function_environment_reload_request(request):
     
     # Re-index the FastAPI app
     try:
-        function_app_directory = os.getcwd()
+        reload_request = request.request.function_environment_reload_request
+        function_app_directory = reload_request.function_app_directory
         script_file_name = _get_function_app_script_file(
             function_app_directory)
         function_path = os.path.join(function_app_directory, script_file_name)

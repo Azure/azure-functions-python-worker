@@ -171,10 +171,13 @@ class HttpCoordinator(metaclass=SingletonMeta):
         raise ValueError("No http request found for invocation %s" % invoc_id)
 
     def _pop_http_response(self, invoc_id):
-        context_ref = self._context_references.get(invoc_id)
+        context_ref = self._context_references.pop(invoc_id, None)
+        if context_ref is None:
+            raise KeyError(
+                "No context reference found for invocation %s" % invoc_id)
+
         response = context_ref.http_response
         if response is not None:
-            context_ref.http_response = None
             return response
 
         raise ValueError("No http response found for invocation %s" % invoc_id)

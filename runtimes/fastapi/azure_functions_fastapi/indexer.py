@@ -14,6 +14,7 @@ from typing import Dict, List, Optional
 import fastapi.routing as fastapi_routing
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
+from starlette.routing import Route
 
 from .utils.constants import PYTHON_SCRIPT_FILE_NAME_DEFAULT
 
@@ -59,11 +60,30 @@ class FastAPIIndexer:
         for each route that will be converted to an Azure Function
         """
         functions = []
+        documentation_paths = {
+            path
+            for path in (
+                self.app.openapi_url,
+                self.app.docs_url,
+                self.app.redoc_url,
+                self.app.swagger_ui_oauth2_redirect_url,
+            )
+            if path is not None
+        }
         
         for route, route_context in _iter_effective_routes(self.app.routes):
-            if isinstance(route, APIRoute):
+            is_documentation_route = (
+                not isinstance(route, APIRoute)
+                and isinstance(route, Route)
+                and route.path in documentation_paths
+            )
+            if isinstance(route, APIRoute) or is_documentation_route:
                 # Generate a unique function name from the route
-                function_name = self._generate_function_name(route)
+                function_name = (
+                    f"fastapi_{route.name}"
+                    if is_documentation_route
+                    else self._generate_function_name(route)
+                )
                 
                 # Get HTTP methods for this route
                 http_methods = list(route.methods)

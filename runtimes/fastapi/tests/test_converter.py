@@ -12,7 +12,7 @@ from fastapi import FastAPI
 
 def test_converter_creates_azure_functions():
     """Test that converter creates proper Azure Functions metadata"""
-    app = FastAPI()
+    app = FastAPI(openapi_url=None)
     
     @app.get("/api/hello")
     def hello():
@@ -29,7 +29,7 @@ def test_converter_creates_azure_functions():
     func = azure_functions[0]
     
     # Check basic properties
-    assert func.name == "get_api_hello"
+    assert func.name == "hello"
     assert func.route_path == "/api/hello"
     assert func.http_methods == ["GET"]
     
@@ -53,7 +53,7 @@ def test_converter_creates_azure_functions():
 
 def test_converter_handles_multiple_methods():
     """Test converter handles routes with multiple HTTP methods"""
-    app = FastAPI()
+    app = FastAPI(openapi_url=None)
     
     @app.api_route("/items", methods=["GET", "POST"])
     def items():
@@ -74,7 +74,7 @@ def test_converter_handles_multiple_methods():
 
 def test_converter_get_function():
     """Test that converter can retrieve functions by ID"""
-    app = FastAPI()
+    app = FastAPI(openapi_url=None)
     
     @app.get("/test")
     def test():
@@ -89,7 +89,7 @@ def test_converter_get_function():
     # Should be able to retrieve by function_id
     func = converter.get_function(azure_functions[0].function_id)
     assert func is not None
-    assert func.name == "get_test"
+    assert func.name == "test"
     
     # Non-existent ID should return None
     assert converter.get_function("nonexistent") is None

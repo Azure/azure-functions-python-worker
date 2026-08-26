@@ -36,12 +36,12 @@ def test_example_app_indexing():
         function_names = [f.name for f in functions]
         
         expected_routes = [
-            "get_root",  # GET /
-            "get_health",  # GET /health
-            "get_items",  # GET /items
-            "post_items",  # POST /items
-            "get_users",  # GET /users
-            "post_users",  # POST /users
+            "root",  # GET /
+            "health_check",  # GET /health
+            "list_items",  # GET /items
+            "create_item",  # POST /items
+            "list_users",  # GET /users
+            "create_user",  # POST /users
         ]
         
         for expected in expected_routes:

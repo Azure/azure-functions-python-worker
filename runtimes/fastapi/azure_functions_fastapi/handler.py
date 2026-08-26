@@ -10,6 +10,7 @@ import re
 import typing
 from typing import Any, Dict, List, Optional
 from io import BytesIO
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI
 from starlette.requests import Request
@@ -147,9 +148,13 @@ class FastAPIHandler:
         """Build ASGI scope from Azure Functions request"""
         # Get the URL path (convert to string if it's a URL object)
         url_str = str(azure_request.url) if hasattr(azure_request.url, '__str__') else azure_request.url
-        url_path = url_str.split('?')[0]
-        if '://' in url_path:
-            url_path = '/' + url_path.split('/', 3)[-1] if url_path.count('/') >= 3 else '/'
+        url_path = urlsplit(url_str).path
+
+        root_path = ''
+        if route_path == '/' and url_path.endswith('/'):
+            root_path = url_path[:-1].rstrip('/')
+        elif url_path.endswith(route_path):
+            root_path = url_path[:-len(route_path)].rstrip('/')
         
         # Build query string from params
         query_string = b''
@@ -165,6 +170,7 @@ class FastAPIHandler:
             'headers': list((k.lower().encode(), v.encode()) for k, v in azure_request.headers.items()) if azure_request.headers else [],
             'server': ('localhost', 80),
             'scheme': 'http',
+            'root_path': root_path,
             'path_params': path_params,
         }
     

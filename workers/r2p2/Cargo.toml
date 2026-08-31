@@ -1,5 +1,5 @@
 [package]
-name = "rust_worker"
+name = "r2p2"
 version = "0.0.1"
 edition = "2021"
 description = "Rust transport shell (tonic) embedding CPython (PyO3) for the Azure Functions Python worker"
@@ -7,7 +7,7 @@ license = "MIT"
 publish = false
 
 [[bin]]
-name = "rust_worker"
+name = "r2p2"
 path = "src/main.rs"
 
 [dependencies]

@@ -1,0 +1,128 @@
+parameters:
+  PYTHON_VERSION: ''
+  PROJECT_NAME: ''
+  PROJECT_DIRECTORY: 'workers/r2p2'
+  # 'linux' | 'windows' | 'macOS' -- informational only. The scripts below
+  # detect the OS at runtime via the pwsh $IsWindows / $IsMacOS automatic
+  # variables so a single step definition works on every agent (and both x64
+  # and arm64 hosts, including Windows ARM64).
+  POOL_OS: 'linux'
+
+steps:
+  - task: UsePythonVersion@0
+    displayName: 'Use Python ${{ parameters.PYTHON_VERSION }}'
+    inputs:
+      versionSpec: ${{ parameters.PYTHON_VERSION }}
+
+  - pwsh: |
+      $ErrorActionPreference = 'Stop'
+      $PSNativeCommandUseErrorActionPreference = $true
+      python --version
+      # PyO3 (auto-initialize) links against libpython, so point it at the
+      # interpreter selected by UsePythonVersion. Setting PYO3_PYTHON lets PyO3
+      # resolve the correct import library / shared object for THIS platform and
+      # architecture (x64 or arm64), so no target-triple juggling is needed.
+      $py = (Get-Command python).Source
+      Write-Host "##vso[task.setvariable variable=PYO3_PYTHON]$py"
+      if ($IsWindows) {
+        # python3XX.dll sits next to python.exe; put it on PATH so the binary
+        # built by `cargo test` can load the interpreter at runtime.
+        $pydir = Split-Path $py
+        Write-Host "##vso[task.prependpath]$pydir"
+        Write-Host "PYO3_PYTHON=$py (Windows; DLL dir on PATH: $pydir)"
+      } else {
+        $libdir = python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR') or '')"
+        if ($IsMacOS) {
+          Write-Host "##vso[task.setvariable variable=DYLD_LIBRARY_PATH]$libdir`:$env:DYLD_LIBRARY_PATH"
+        } else {
+          Write-Host "##vso[task.setvariable variable=LD_LIBRARY_PATH]$libdir`:$env:LD_LIBRARY_PATH"
+        }
+        Write-Host "PYO3_PYTHON=$py libdir=$libdir"
+      }
+    displayName: 'Configure Python for PyO3'
+
+  - pwsh: |
+      $ErrorActionPreference = 'Stop'
+      $PSNativeCommandUseErrorActionPreference = $true
+      # Install (or update) the Rust toolchain with the components the checks
+      # need. Windows agents bootstrap rustup via rustup-init.exe (architecture
+      # aware, so Windows ARM64 pulls the aarch64 host toolchain); Linux/macOS
+      # use the shell installer. If the image already ships rustup we only add
+      # the components.
+      if (Get-Command rustup -ErrorAction SilentlyContinue) {
+        rustup update stable
+        rustup default stable
+        rustup component add rustfmt clippy
+      } elseif ($IsWindows) {
+        $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
+        Invoke-WebRequest "https://win.rustup.rs/$arch" -OutFile rustup-init.exe
+        ./rustup-init.exe -y --profile minimal --component rustfmt clippy
+        Write-Host "##vso[task.prependpath]$env:USERPROFILE\.cargo\bin"
+      } else {
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --component rustfmt clippy
+        Write-Host "##vso[task.prependpath]$HOME/.cargo/bin"
+      }
+    displayName: 'Install Rust toolchain'
+
+  - pwsh: |
+      $ErrorActionPreference = 'Stop'
+      $PSNativeCommandUseErrorActionPreference = $true
+      rustc --version
+      cargo --version
+      cargo fmt --version
+      cargo clippy --version
+    displayName: 'Check Rust versions'
+
+  - task: CargoAuthenticate@0
+    displayName: 'Authenticate Cargo to CFS'
+    inputs:
+      configFile: '$(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.cargo/config.toml'
+
+  - pwsh: |
+      $ErrorActionPreference = 'Stop'
+      $PSNativeCommandUseErrorActionPreference = $true
+      python -m pip install --upgrade pip
+      # v2 runtime (for flake8 import resolution) + flake8. The bridge is
+      # protobuf-free (Rust/prost owns the wire), so no grpcio/protobuf here.
+      python -m pip install -e runtimes/v2
+      python -m pip install flake8
+    displayName: 'Install Python dependencies'
+
+  - pwsh: |
+      $ErrorActionPreference = 'Stop'
+      $PSNativeCommandUseErrorActionPreference = $true
+      flake8 bridge
+    displayName: 'flake8 (Python bridge)'
+    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+
+  - pwsh: |
+      $ErrorActionPreference = 'Stop'
+      $PSNativeCommandUseErrorActionPreference = $true
+      cargo fmt --all -- --check
+    displayName: 'cargo fmt --check'
+    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+
+  - pwsh: |
+      $ErrorActionPreference = 'Stop'
+      $PSNativeCommandUseErrorActionPreference = $true
+      cargo clippy --all-targets --locked -- -D warnings
+    displayName: 'cargo clippy'
+    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+
+  - pwsh: |
+      $ErrorActionPreference = 'Stop'
+      $PSNativeCommandUseErrorActionPreference = $true
+      cargo build --locked
+    displayName: 'cargo build'
+    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+
+  - pwsh: |
+      $ErrorActionPreference = 'Stop'
+      $PSNativeCommandUseErrorActionPreference = $true
+      cargo test --locked
+    displayName: 'cargo test'
+    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+
+  # End-to-end coverage (bridge + v2 runtime + real Host round trip) lives in the
+  # dedicated Docker E2E pipeline (eng/ci/r2p2-e2e.yml), which stages the
+  # Rust binary into the Host image and runs workers/tests/endtoend against it.

@@ -112,7 +112,7 @@ fn parse_args() -> Result<Args> {
     };
 
     let worker_id = get(&map, &["functions-worker-id", "workerId", "worker-id"])
-        .unwrap_or("rust-worker-0")
+        .unwrap_or("r2p2-0")
         .to_string();
     let request_id = get(&map, &["functions-request-id", "requestId", "request-id"])
         .unwrap_or("rust-request-0")
@@ -220,6 +220,7 @@ async fn main() -> Result<()> {
         &args.app_dir,
         &args.host,
         &args.request_id,
+        &args.worker_id,
         tx.clone(),
     )
     .context("configure python bridge")?;

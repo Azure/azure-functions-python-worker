@@ -2,9 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 #
-# Build the Rust worker release artifact tree for packaging (Linux/X64).
+# Build the R2P2 release artifact tree for packaging (Linux/X64).
 #
-# Unlike the Python workers (which are pure pip installs), the Rust worker is a
+# Unlike the Python workers (which are pure pip installs), the R2P2 is a
 # compiled binary that embeds CPython via PyO3. This script:
 #   1. compiles the release binary against the target interpreter,
 #   2. installs the v2 + v1 runtimes + azure-functions into $DEPS,
@@ -19,9 +19,9 @@
 # CPython ABI, so this must match the interpreter the worker will run against.
 set -euo pipefail
 
-PYTHON_VERSION="${1:?usage: rust_deps.sh <python-version>}"
+PYTHON_VERSION="${1:?usage: r2p2_deps.sh <python-version>}"
 DEPS="$BUILD_SOURCESDIRECTORY/deps"
-WORKER="$BUILD_SOURCESDIRECTORY/workers/rust_worker"
+WORKER="$BUILD_SOURCESDIRECTORY/workers/r2p2"
 
 python -m venv .env
 source .env/bin/activate
@@ -49,7 +49,7 @@ python -m pip install ./runtimes/v2 ./runtimes/v1 azure-functions \
     --no-compile --target "$DEPS"
 
 # --- Stage the runtime worker-directory layout ----------------------------
-cp "$WORKER/target/release/rust_worker" "$DEPS/rust_worker"
+cp "$WORKER/target/release/r2p2" "$DEPS/r2p2"
 rm -rf "$DEPS/bridge"
 cp -r "$WORKER/bridge" "$DEPS/bridge"
 
@@ -67,5 +67,5 @@ cp runtimes/v1/azure_functions_runtime_v1/utils/executor.py \
 
 cp workers/.artifactignore "$DEPS" 2>/dev/null || true
 
-echo "Rust worker artifact staged under: $DEPS"
+echo "R2P2 artifact staged under: $DEPS"
 ls -1 "$DEPS"

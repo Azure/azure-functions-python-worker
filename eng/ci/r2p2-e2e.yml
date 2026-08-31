@@ -5,18 +5,18 @@ trigger:
     - dev
   paths:
     include:
-    - workers/rust_worker/*
-    - workers/python/rust_worker/*
+    - workers/r2p2/*
+    - workers/python/r2p2/*
     - runtimes/v1/*
     - runtimes/v2/*
     - workers/tests/endtoend/*
     - workers/tests/utils/*
-    - _rust_worker_extras/docker/Dockerfile.e2e
-    - _rust_worker_extras/docker/run_e2e.sh
-    - _rust_worker_extras/docker/worker.config.json
-    - eng/ci/rust-worker-e2e.yml
-    - eng/templates/jobs/rust-e2e.yml
-    - eng/templates/shared/rust-e2e-steps.yml
+    - _r2p2_extras/docker/Dockerfile.e2e
+    - _r2p2_extras/docker/run_e2e.sh
+    - _r2p2_extras/docker/worker.config.json
+    - eng/ci/r2p2-e2e.yml
+    - eng/templates/jobs/r2p2-e2e.yml
+    - eng/templates/shared/r2p2-e2e-steps.yml
 
 pr:
   branches:
@@ -24,18 +24,18 @@ pr:
     - dev
   paths:
     include:
-    - workers/rust_worker/*
-    - workers/python/rust_worker/*
+    - workers/r2p2/*
+    - workers/python/r2p2/*
     - runtimes/v1/*
     - runtimes/v2/*
     - workers/tests/endtoend/*
     - workers/tests/utils/*
-    - _rust_worker_extras/docker/Dockerfile.e2e
-    - _rust_worker_extras/docker/run_e2e.sh
-    - _rust_worker_extras/docker/worker.config.json
-    - eng/ci/rust-worker-e2e.yml
-    - eng/templates/jobs/rust-e2e.yml
-    - eng/templates/shared/rust-e2e-steps.yml
+    - _r2p2_extras/docker/Dockerfile.e2e
+    - _r2p2_extras/docker/run_e2e.sh
+    - _r2p2_extras/docker/worker.config.json
+    - eng/ci/r2p2-e2e.yml
+    - eng/templates/jobs/r2p2-e2e.yml
+    - eng/templates/shared/r2p2-e2e-steps.yml
 
 resources:
   repositories:
@@ -59,14 +59,14 @@ extends:
       skipBuildTagsForGitHubPullRequests: ${{ variables['System.PullRequest.IsFork'] }}
 
     stages:
-    # Rust Worker end-to-end tests: build the Docker image that stages the Rust
+    # R2P2 end-to-end tests: build the Docker image that stages the Rust
     # worker into the real Host image, then run the shared pytest E2E harness
     # (WebHostTestCase) against it using the full endtoend function-app suite
     # (the same apps that validate the classic Python worker).
-    - stage: E2ERustWorker
+    - stage: E2ER2P2
       jobs:
-      - template: /eng/templates/jobs/rust-e2e.yml@self
+      - template: /eng/templates/jobs/r2p2-e2e.yml@self
         parameters:
           PYTHON_VERSION: '3.15'
           SIMPLE_VERSION: '315'
-          PROJECT_NAME: 'Rust Worker (Python 3.15)'
+          PROJECT_NAME: 'R2P2 (Python 3.15)'

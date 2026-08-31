@@ -2,13 +2,13 @@
 # Licensed under the MIT License.
 """
 Pure-Python, protobuf-free stand-in for the ``protos`` module the Azure
-Functions Python runtime expects (see D-029).
+Functions Python runtime expects.
 
 The shared runtime handlers (``handle_event``, ``loader``, ``functions``,
 ``meta``, ``tracing``, ``helpers``) are transport-agnostic: they never import
 protobuf directly. They read request fields off ``request.request.<verb>`` and
 build responses through a ``protos`` object injected at ``worker_init``. The
-classic worker injects the ``google.protobuf`` gencode; the Rust worker injects
+classic worker injects the ``google.protobuf`` gencode; the R2P2 injects
 THIS module instead.
 
 Nothing here touches ``google.protobuf``. Each message is a light data holder
@@ -355,7 +355,7 @@ class RpcLog:
 # are ONLY exercised on the control path.
 #
 # For the FFI boundary we exchange the same compact "datum tuple" the native
-# path uses (see workers/rust_worker/src/convert.rs):
+# path uses (see workers/r2p2/src/convert.rs):
 #   scalar  -> ("string"|"json"|"int"|"double"|"bytes", <primitive>)
 #   http in -> ("http", {method,url,headers,params,query,body:<tuple|None>})
 #   http out-> ("http", {status_code:str, headers:{..}, body:<tuple|None>, ...})

@@ -23,7 +23,7 @@ use prost::Message as _;
 /// A Rust-owned sink handed to the Python logging handler. Its `emit` is a
 /// non-blocking, thread-safe enqueue onto the single outbound gRPC channel, so
 /// Python can push `RpcLog` StreamingMessage bytes from any thread while holding
-/// the GIL without awaiting or deadlocking. See `docs/rustworker/logging-design.md`.
+/// the GIL without awaiting or deadlocking.
 #[pyclass]
 pub struct LogSink {
     tx: UnboundedSender<Bytes>,
@@ -55,14 +55,16 @@ impl LogSink {
 }
 
 /// Add the bridge directory to `sys.path` and call `bridge.configure(...)`,
-/// handing Python a `LogSink` (backed by `tx`) and the worker `request_id` so
-/// it can stamp and route `RpcLog` messages onto the outbound stream.
+/// handing Python a `LogSink` (backed by `tx`) plus the worker `request_id` and
+/// `worker_id` so it can stamp and route `RpcLog` messages onto the outbound
+/// stream and log them with the same identifiers as the classic proxy worker.
 pub fn configure(
     bridge_dir: &str,
     workers_dir: &str,
     app_dir: &str,
     host: &str,
     request_id: &str,
+    worker_id: &str,
     tx: UnboundedSender<Bytes>,
 ) -> Result<()> {
     Python::attach(|py| -> Result<()> {
@@ -86,7 +88,10 @@ pub fn configure(
                 request_id: request_id.to_string(),
             },
         )?;
-        bridge.call_method1("configure", (workers_dir, app_dir, host, request_id, sink))?;
+        bridge.call_method1(
+            "configure",
+            (workers_dir, app_dir, host, request_id, sink, worker_id),
+        )?;
         Ok(())
     })
 }
@@ -142,8 +147,8 @@ pub fn handle(raw: &[u8]) -> Result<Option<Vec<u8>>> {
     Python::attach(|py| -> Result<Option<Vec<u8>>> {
         let bridge = py.import("bridge")?;
 
-        // (verb name the runtime handler is dispatched under, request dict)
-        let (verb, req): (&str, Bound<'_, PyAny>) = match &sm.content {
+        // (request type the runtime handler is dispatched under, request dict)
+        let (request_type, req): (&str, Bound<'_, PyAny>) = match &sm.content {
             Some(Content::WorkerInitRequest(r)) => (
                 "worker_init_request",
                 control::worker_init_req_to_py(py, r)?.into_any(),
@@ -168,12 +173,12 @@ pub fn handle(raw: &[u8]) -> Result<Option<Vec<u8>>> {
             }
         };
 
-        let resp = bridge.call_method1("handle_control", (verb, req))?;
+        let resp = bridge.call_method1("handle_control", (request_type, req))?;
         if resp.is_none() {
             return Ok(None);
         }
 
-        let content = match verb {
+        let content = match request_type {
             "worker_init_request" => {
                 Content::WorkerInitResponse(control::py_to_worker_init_response(&resp)?)
             }

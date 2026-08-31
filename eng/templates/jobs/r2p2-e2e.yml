@@ -13,7 +13,7 @@ jobs:
       os: linux
 
     steps:
-      - template: /eng/templates/shared/rust-e2e-steps.yml@self
+      - template: /eng/templates/shared/r2p2-e2e-steps.yml@self
         parameters:
           PYTHON_VERSION: ${{ parameters.PYTHON_VERSION }}
           PROJECT_NAME: ${{ parameters.PROJECT_NAME }}

@@ -115,12 +115,15 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(normalizedPythonVersion)_LINUX_X64'
       grpcBuild: 'x86_64-linux-gnu.so'
-# Rust worker (Python 3.15+, Linux/X64). Runs on the *public* pool because the
-# build compiles the Rust binary with cargo, which needs outbound access to
-# crates.io — the secure 1es-pool-azfunc has no internet. Produces the same
-# 3.15_LINUX_X64 artifact that the V4 nuspec packs into tools/3.15/LINUX/X64,
-# so the Rust worker still ships inside the single Python worker NuGet.
-- job: Build_RUST_LINUX_X64
+# R2P2 (Python 3.15+). The R2P2 is a native binary that embeds CPython via
+# PyO3, so — unlike the pure-Python proxy/legacy workers — every OS must
+# compile it with cargo on a *native* agent with outbound access to crates.io.
+# That is why these jobs run on the *public* pool (the secure 1es-pool-azfunc
+# has no internet). Each job produces the same 3.15_<OS>_<ARCH> artifact that
+# the V4 nuspec packs into tools/3.15/<OS>/<Arch>, so the R2P2 ships inside the
+# single Python worker NuGet. Windows Arm64 is new for 3.15 (unsupported by the
+# Python transport workers on <=3.14).
+- job: Build_R2P2_LINUX_X64
   timeoutInMinutes: 180
   pool:
     name: 1es-pool-azfunc-public
@@ -128,7 +131,7 @@ jobs:
     os: linux
   strategy:
     matrix:
-      Python315Rust:
+      Python315R2P2:
         pythonVersion: '3.15.0-rc.1'
         normalizedPythonVersion: '3.15'
   templateContext:
@@ -138,11 +141,130 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "$(normalizedPythonVersion)_LINUX_X64"
   steps:
-  - template: ../../../pack/templates/nix_env_gen.yml
+  - template: ../../../pack/templates/r2p2_env_gen.yml
     parameters:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(normalizedPythonVersion)_LINUX_X64'
-      grpcBuild: 'x86_64-linux-gnu.so'
+      osName: 'LINUX'
+- job: Build_R2P2_WINDOWS_X64
+  timeoutInMinutes: 180
+  pool:
+    name: 1es-pool-azfunc-public
+    image: 1es-windows-2022
+    os: windows
+  strategy:
+    matrix:
+      Python315R2P2:
+        pythonVersion: '3.15.0-rc.1'
+        normalizedPythonVersion: '3.15'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_WINDOWS_X64"
+  steps:
+  - template: ../../../pack/templates/r2p2_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_WINDOWS_X64'
+      osName: 'WINDOWS'
+- job: Build_R2P2_WINDOWS_ARM64
+  timeoutInMinutes: 180
+  pool:
+    name: 1es-pool-azfunc-public
+    image: 1es-windows-11-arm64
+    os: windows
+  strategy:
+    matrix:
+      Python315R2P2:
+        pythonVersion: '3.15.0-rc.1'
+        normalizedPythonVersion: '3.15'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_WINDOWS_ARM64"
+  steps:
+  - template: ../../../pack/templates/r2p2_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_WINDOWS_ARM64'
+      osName: 'WINDOWS'
+- job: Build_R2P2_OSX_X64
+  timeoutInMinutes: 180
+  pool:
+    name: Azure Pipelines
+    image: macOS-13
+    os: macOS
+  strategy:
+    matrix:
+      Python315R2P2:
+        pythonVersion: '3.15.0-rc.1'
+        normalizedPythonVersion: '3.15'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_OSX_X64"
+  steps:
+  - template: ../../../pack/templates/r2p2_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_OSX_X64'
+      osName: 'OSX'
+- job: Build_R2P2_OSX_ARM64
+  timeoutInMinutes: 180
+  pool:
+    name: Azure Pipelines
+    image: macOS-latest
+    os: macOS
+  strategy:
+    matrix:
+      Python315R2P2:
+        pythonVersion: '3.15.0-rc.1'
+        normalizedPythonVersion: '3.15'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_OSX_ARM64"
+  steps:
+  - template: ../../../pack/templates/r2p2_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_OSX_ARM64'
+      osName: 'OSX'
+# LINUX_ARM64 for R2P2 needs a *native* arm64 Linux agent (cargo cannot
+# cross-compile the PyO3-embedded binary the way the proxy worker cross-
+# downloads arm64 wheels). Enable once a public native arm64 Linux pool image
+# is confirmed, then add the matching nuspec entry + PackageWorkers dependency.
+# - job: Build_R2P2_LINUX_ARM64
+#   timeoutInMinutes: 180
+#   pool:
+#     name: 1es-pool-azfunc-public
+#     image: <native-arm64-linux-image>
+#     os: linux
+#   strategy:
+#     matrix:
+#       Python315R2P2:
+#         pythonVersion: '3.15.0-rc.1'
+#         normalizedPythonVersion: '3.15'
+#   templateContext:
+#     outputParentDirectory: $(Build.ArtifactStagingDirectory)
+#     outputs:
+#       - output: pipelineArtifact
+#         targetPath: $(Build.ArtifactStagingDirectory)
+#         artifactName: "$(normalizedPythonVersion)_LINUX_ARM64"
+#   steps:
+#   - template: ../../../pack/templates/r2p2_env_gen.yml
+#     parameters:
+#       pythonVersion: '$(pythonVersion)'
+#       artifactName: '$(normalizedPythonVersion)_LINUX_ARM64'
+#       osName: 'LINUX'
 - job: Build_OSX_X64
   timeoutInMinutes: 180
   pool:
@@ -259,7 +381,7 @@ jobs:
       grpcBuild: 'aarch64-linux-gnu.so'
 
 - job: PackageWorkers
-  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_RUST_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
+  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_R2P2_LINUX_X64', 'Build_R2P2_WINDOWS_X64', 'Build_R2P2_WINDOWS_ARM64', 'Build_R2P2_OSX_X64', 'Build_R2P2_OSX_ARM64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
   templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:
@@ -285,10 +407,13 @@ jobs:
       else
         # this is only to test nuget related workflow because we are setting nuspec here
         echo "Generating Integration Test Package for $BUILD_SOURCEBRANCHNAME for testing purpose"
-        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
+        # Pick the latest *worker* release tag (numeric semver like 4.35.1). The
+        # repo also carries runtimes/v2-* and runtimes/v1-* tags, which contain a
+        # '/' and are not valid NuGet versions, so they must be filtered out.
+        LATEST_TAG=$(curl -s https://api.github.com/repos/Azure/azure-functions-python-worker/tags | jq -r '[.[].name | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))][0]' | cut -d'.' -f-2)
         NUSPEC="eng\pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
-        # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
-        WKVERSION="3.$LATEST_TAG-$(BUILD_BUILDID)-TEST"
+        # Only required for Integration Test. Version number contains build id (e.g. 3.4.35-1234-TEST)
+        WKVERSION="3.$LATEST_TAG-$(Build.BuildId)-TEST"
         echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
       fi
 

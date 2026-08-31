@@ -1,0 +1,117 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - dev
+  paths:
+    include:
+    - workers/r2p2/*
+    - workers/python/r2p2/*
+    - runtimes/v2/*
+    - eng/ci/r2p2-build.yml
+    - eng/templates/jobs/r2p2-build.yml
+    - eng/templates/shared/r2p2-build-steps.yml
+
+pr:
+  branches:
+    include:
+    - dev
+  paths:
+    include:
+    - workers/r2p2/*
+    - workers/python/r2p2/*
+    - runtimes/v2/*
+    - eng/ci/r2p2-build.yml
+    - eng/templates/jobs/r2p2-build.yml
+    - eng/templates/shared/r2p2-build-steps.yml
+
+resources:
+  repositories:
+  - repository: 1es
+    type: git
+    name: 1ESPipelineTemplates/1ESPipelineTemplates
+    ref: refs/tags/release
+
+variables:
+  - template: /eng/templates/utils/variables.yml@self
+
+extends:
+  template: v1/1ES.Unofficial.PipelineTemplate.yml@1es
+  parameters:
+    pool:
+      name: 1es-pool-azfunc-public
+      image: 1es-windows-2022
+      os: windows
+
+    sdl:
+      codeql:
+        compiled:
+          enabled: true # still only runs for default branch
+        sourceLanguages: python, powershell
+        excludePathPatterns: deps/,build/,workers/r2p2/target/
+        runSourceLanguagesInSourceAnalysis: true
+
+    settings:
+      skipBuildTagsForGitHubPullRequests: ${{ variables['System.PullRequest.IsFork'] }}
+
+    stages:
+    # R2P2 Build & Test (cargo fmt/clippy/build/test + Python bridge flake8).
+    # The Rust binary embeds CPython via PyO3, so it is built once per target
+    # interpreter (3.15 today) on EACH supported OS/architecture. Python 3.15 is
+    # the first line that supports Windows ARM64, so it is included here alongside
+    # Linux x64, Windows x64 and macOS ARM64. Add versions as new CPython lines
+    # are supported.
+    #
+    # NOTE on pool images: the x64/macOS images below match those the shipping
+    # build (eng/templates/official/jobs/build-artifacts.yml) already uses. The
+    # Windows ARM64 image alias (1es-windows-11-arm64) must exist in the
+    # 1es-pool-azfunc-public managed pool; if the org publishes it under a
+    # different alias, update POOL_IMAGE for the WINDOWS_ARM64 job only -- the
+    # other jobs are independent and still run.
+    - stage: BuildR2P2
+      jobs:
+      - template: /eng/templates/jobs/r2p2-build.yml@self
+        parameters:
+          PYTHON_VERSION: '3.15'
+          SIMPLE_VERSION: '315'
+          PROJECT_NAME: 'R2P2 (Python 3.15)'
+          PROJECT_DIRECTORY: 'workers/r2p2'
+          OS_ARCH: 'LINUX_X64'
+          POOL_NAME: '1es-pool-azfunc-public'
+          POOL_IMAGE: '1es-ubuntu-22.04'
+          POOL_OS: 'linux'
+      - template: /eng/templates/jobs/r2p2-build.yml@self
+        parameters:
+          PYTHON_VERSION: '3.15'
+          SIMPLE_VERSION: '315'
+          PROJECT_NAME: 'R2P2 (Python 3.15)'
+          PROJECT_DIRECTORY: 'workers/r2p2'
+          OS_ARCH: 'WINDOWS_X64'
+          POOL_NAME: '1es-pool-azfunc-public'
+          POOL_IMAGE: '1es-windows-2022'
+          POOL_OS: 'windows'
+      # New for Python 3.15: Windows ARM64 (unsupported on 3.14 and earlier).
+      - template: /eng/templates/jobs/r2p2-build.yml@self
+        parameters:
+          PYTHON_VERSION: '3.15'
+          SIMPLE_VERSION: '315'
+          PROJECT_NAME: 'R2P2 (Python 3.15)'
+          PROJECT_DIRECTORY: 'workers/r2p2'
+          OS_ARCH: 'WINDOWS_ARM64'
+          POOL_NAME: '1es-pool-azfunc-public'
+          POOL_IMAGE: '1es-windows-11-arm64'
+          POOL_OS: 'windows'
+      - template: /eng/templates/jobs/r2p2-build.yml@self
+        parameters:
+          PYTHON_VERSION: '3.15'
+          SIMPLE_VERSION: '315'
+          PROJECT_NAME: 'R2P2 (Python 3.15)'
+          PROJECT_DIRECTORY: 'workers/r2p2'
+          OS_ARCH: 'OSX_ARM64'
+          POOL_NAME: 'Azure Pipelines'
+          POOL_IMAGE: 'macOS-latest'
+          POOL_OS: 'macOS'
+      # To also cover macOS x64 and Linux ARM64, add jobs mirroring the above
+      # with OS_ARCH 'OSX_X64' (POOL_IMAGE 'macOS-13') and 'LINUX_ARM64'
+      # (a native arm64 Linux pool image) once the org confirms those pool
+      # aliases. The shared steps template is already OS/arch agnostic.

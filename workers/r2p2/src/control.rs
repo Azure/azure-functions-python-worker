@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 //
-// Control-plane codec (D-029). The invocation hot path lives in convert.rs;
+// Control-plane codec. The invocation hot path lives in convert.rs;
 // this module owns the *control* messages so the Python bridge never touches
 // protobuf. For each inbound control verb we prost-decode the request into a
 // Python dict the (unchanged) runtime handlers can read; the handler returns a

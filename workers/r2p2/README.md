@@ -1,17 +1,17 @@
-# rust_worker
+# R2P2 (Rust to Python Proxy)
 
-Rust transport shell for the Azure Functions Python worker. It owns
+R2P2 is the Rust transport shell for the Azure Functions Python worker. It owns
 the gRPC `EventStream` (tonic) and embeds CPython (PyO3), delegating actual
 function execution to the existing **v2 Python runtime** (`azure_functions_runtime`)
 via a thin Python bridge.
 
-See `docs/rustworker/design.md` for the full architecture, ROI analysis, and
+See `docs/r2p2/design.md` for the full architecture, ROI analysis, and
 file-by-file reference.
 
 ## Layout
 
 ```
-rust_worker/
+r2p2/
 ├── Cargo.toml
 ├── Cargo.lock
 ├── build.rs           # compiles the vendored .proto set (prost + tonic client)
@@ -34,8 +34,8 @@ rust_worker/
 End-to-end tests reuse the shared `WebHostTestCase` harness and the **whole
 `workers/tests/endtoend` suite** (the same function apps that validate the
 classic Python worker) run against the real Host. There is no bespoke Rust test
-app: the harness selects the Rust worker via `PYAZURE_WORKER_DIR`, and on Python
-3.15+ it defaults to the staged Rust worker automatically.
+app: the harness selects the R2P2 via `PYAZURE_WORKER_DIR`, and on Python
+3.15+ it defaults to the staged R2P2 automatically.
 
 ## Build & run
 
@@ -59,21 +59,21 @@ cargo build
 On Linux/macOS, use `python3.15 -m venv .venv`, activate with
 `source .venv/bin/activate`, then use `python` in place of `$py`.
 
-The compiled binary is named `rust_worker` (for example,
-`target\release\rust_worker` after `cargo build --release`).
+The compiled binary is named `r2p2` (for example,
+`target\release\r2p2` after `cargo build --release`).
 
 ## End-to-end tests
 
-The Rust worker is validated end-to-end through the real Azure Functions Host,
+The R2P2 is validated end-to-end through the real Azure Functions Host,
 reusing the shared `WebHostTestCase` harness and the full endtoend function-app
-suite in `workers/tests/endtoend`. The harness stages the Rust worker (in place
+suite in `workers/tests/endtoend`. The harness stages the R2P2 (in place
 of the Python `worker.py`) and selects it via `PYAZURE_WORKER_DIR`; on Python
 3.15+ it is the default worker. Suites that need external services (e.g. SQL,
 Event Grid) or app-specific third-party wheels skip or require configured
 connection strings (`.testconfig`); the runner passes
 `--continue-on-collection-errors` so they do not abort the run.
 
-This flow runs in CI via `eng/ci/rust-worker-e2e.yml`.
+This flow runs in CI via `eng/ci/r2p2-e2e.yml`.
 
 ## Notes
 
@@ -83,4 +83,4 @@ This flow runs in CI via `eng/ci/rust-worker-e2e.yml`.
   installs must expose their **source dir** on `PYTHONPATH` (`.pth` hooks are not
   honored for `PYTHONPATH` entries).
 - Docker image assets and k6 perf scripts moved out of this folder to
-  `_rust_worker_extras/docker` and `_rust_worker_extras/perf`.
+  `_r2p2_extras/docker` and `_r2p2_extras/perf`.

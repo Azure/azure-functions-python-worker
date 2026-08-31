@@ -39,26 +39,26 @@ steps:
     }
 
     # Set build-related variables based on Python minor version.
-    #   >= 3.15        -> Rust worker (native binary embedding CPython)
+    #   >= 3.15        -> R2P2 (native binary embedding CPython)
     #   3.13 / 3.14    -> proxy_worker (Python transport over the v1/v2 runtimes)
     #   <= 3.12        -> azure_functions_worker (legacy in-worker runtime)
     if( $PY_MINOR -ge 15 )
     {
       Write-Host "##vso[task.setvariable variable=workerPath;]"
       Write-Host "##vso[task.setvariable variable=proxyWorker;]false"
-      Write-Host "##vso[task.setvariable variable=rustWorker;]true"
+      Write-Host "##vso[task.setvariable variable=r2p2;]true"
     }
     elseif( $PY_MINOR -ge 13 )
     {
       Write-Host "##vso[task.setvariable variable=workerPath;]$(proxyV4Path)"
       Write-Host "##vso[task.setvariable variable=proxyWorker;]true"
-      Write-Host "##vso[task.setvariable variable=rustWorker;]false"
+      Write-Host "##vso[task.setvariable variable=r2p2;]false"
     }
     else
     {
       Write-Host "##vso[task.setvariable variable=workerPath;]$(prodV4Path)"
       Write-Host "##vso[task.setvariable variable=proxyWorker;]false"
-      Write-Host "##vso[task.setvariable variable=rustWorker;]false"
+      Write-Host "##vso[task.setvariable variable=r2p2;]false"
     }
   displayName: 'Set necessary variables'
   env:
@@ -66,7 +66,7 @@ steps:
 - powershell: |
     Write-Host "workerPath: $env:WORKERPATH"
     Write-Host "proxyWorker: $env:PROXYWORKER"
-    Write-Host "rustWorker: $env:RUSTWORKER"
+    Write-Host "r2p2: $env:R2P2"
   displayName: 'Display variables'
 - task: ShellScript@2
   inputs:
@@ -74,19 +74,19 @@ steps:
     scriptPath: 'eng/pack/scripts/nix_deps.sh'
     args: '${{ parameters.pythonVersion }}'
   displayName: 'Install Dependencies'
-  condition: ne(variables['rustWorker'], 'true')
+  condition: ne(variables['r2p2'], 'true')
 - task: CargoAuthenticate@0
   displayName: 'Authenticate Cargo to CFS'
   inputs:
-    configFile: '$(Build.SourcesDirectory)/workers/rust_worker/.cargo/config.toml'
-  condition: eq(variables['rustWorker'], 'true')
+    configFile: '$(Build.SourcesDirectory)/workers/r2p2/.cargo/config.toml'
+  condition: eq(variables['r2p2'], 'true')
 - task: ShellScript@2
   inputs:
     disableAutoCwd: true
-    scriptPath: 'eng/pack/scripts/rust_deps.sh'
+    scriptPath: 'eng/pack/scripts/r2p2_deps.sh'
     args: '${{ parameters.pythonVersion }}'
-  displayName: 'Build Rust worker + dependencies'
-  condition: eq(variables['rustWorker'], 'true')
+  displayName: 'Build R2P2 + dependencies'
+  condition: eq(variables['r2p2'], 'true')
 #   condition: eq(variables['isRC'], 'false')
 # - task: ShellScript@2
 #   inputs:
@@ -100,7 +100,7 @@ steps:
     contents: '$(workerPath)'
     targetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
-  condition: ne(variables['rustWorker'], 'true')
+  condition: ne(variables['r2p2'], 'true')
 - task: CopyFiles@2
   inputs:
     sourceFolder: '$(Build.SourcesDirectory)/deps'
@@ -121,7 +121,7 @@ steps:
       !werkzeug/debug/shared/debugger.js
       !proxy_worker/**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
-  condition: and(eq(variables['proxyWorker'], false), ne(variables['rustWorker'], 'true'))
+  condition: and(eq(variables['proxyWorker'], false), ne(variables['r2p2'], 'true'))
   displayName: 'Copy azure_functions_worker files'
 - powershell: |
     $root = "$(Build.ArtifactStagingDirectory)"
@@ -179,7 +179,7 @@ steps:
         Write-Host "✅ Validation passed. All expected files/folders are present."
     }
   displayName: "Validate azure_functions_worker artifact contents"
-  condition: and(eq(variables['proxyWorker'], false), ne(variables['rustWorker'], 'true'))
+  condition: and(eq(variables['proxyWorker'], false), ne(variables['r2p2'], 'true'))
 - task: CopyFiles@2
   inputs:
     sourceFolder: '$(Build.SourcesDirectory)/deps'
@@ -285,25 +285,26 @@ steps:
       !six.py
       !typing_extensions.py
     targetFolder: '$(Build.ArtifactStagingDirectory)'
-  condition: eq(variables['rustWorker'], 'true')
-  displayName: 'Copy Rust worker files'
+  condition: eq(variables['r2p2'], 'true')
+  displayName: 'Copy R2P2 files'
 - task: CopyFiles@2
   inputs:
-    sourceFolder: '$(Build.SourcesDirectory)/workers/python/rust_worker'
-    contents: 'worker.config.json'
+    sourceFolder: '$(Build.SourcesDirectory)/workers/python/r2p2'
+    contents: 'worker.py'
     targetFolder: '$(Build.ArtifactStagingDirectory)'
-  condition: eq(variables['rustWorker'], 'true')
-  displayName: 'Copy Rust worker.config.json'
+  condition: eq(variables['r2p2'], 'true')
+  displayName: 'Copy R2P2 launcher shim'
 - powershell: |
     $root = "$(Build.ArtifactStagingDirectory)"
 
-    # The Rust worker owns the gRPC transport (tonic), so the Python grpc stack
+    # The R2P2 owns the gRPC transport (tonic), so the Python grpc stack
     # and proxy_worker are intentionally absent. Both the v2 and v1 runtimes are
     # staged; the bridge selects one per programming model and drives its native
-    # path. The Rust-specific worker.config.json is copied alongside the binary.
+    # path. worker.py is the launcher shim the Host invokes (per the shared
+    # top-level worker.config.json); it os.execv's the native r2p2 binary.
     $expected = @(
-        "rust_worker",
-        "worker.config.json",
+        "r2p2",
+        "worker.py",
         "bridge/bridge.py",
         "bridge/protos_adapter.py",
         "azure_functions_runtime",
@@ -334,6 +335,6 @@ steps:
         Write-Error "Validation failed. Pruned packages unexpectedly present:`n$($present -join "`n")"
         exit 1
     }
-    Write-Host "✅ Validation passed. Rust worker artifact contents are correct."
-  displayName: "Validate Rust worker artifact contents"
-  condition: eq(variables['rustWorker'], 'true')
+    Write-Host "✅ Validation passed. R2P2 artifact contents are correct."
+  displayName: "Validate R2P2 artifact contents"
+  condition: eq(variables['r2p2'], 'true')

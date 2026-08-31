@@ -1,12 +1,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """
-Protobuf-free invocation entry for the v1 runtime (used by the Rust worker).
+Protobuf-free invocation entry for the v1 runtime (used by R2P2).
 
 The classic ``handle_event.invocation_request`` is coupled to protobuf: it reads
 fields off an ``InvocationRequest`` protobuf object and builds the response with
 the injected ``protos`` module (``from_incoming_proto`` -> ``Datum.from_typed_data``
-and ``to_outgoing_proto`` -> ``datum_as_proto``). When the Rust worker owns the
+and ``to_outgoing_proto`` -> ``datum_as_proto``). When R2P2 owns the
 wire (prost), the hot path should never touch Python protobuf.
 
 This is the v1 counterpart of the v2 runtime's ``native_invocation`` module. It

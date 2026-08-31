@@ -46,9 +46,18 @@
     <file src="..\..\3.14_OSX_X64\**" target="tools\3.14\OSX\X64" />
     <file src="..\..\3.14_OSX_ARM64\**" target="tools\3.14\OSX\Arm64" />
     <file src="..\..\3.14_LINUX_ARM64\**" target="tools\3.14\LINUX\Arm64" />
-    <!-- Rust worker (native binary embedding CPython 3.15). Linux/X64 only for
-         now; ships its own worker.config.json inside the version folder. -->
+    <!-- R2P2 (native binary embedding CPython 3.15). Ships for Linux/X64,
+         Windows/X64, Windows/Arm64 (new for 3.15), and macOS X64/Arm64. Each
+         version folder carries a launcher shim worker.py; the Host launches it
+         via the shared top-level Python worker.config.json
+         (defaultExecutablePath=python, defaultWorkerPath=.../worker.py) and the
+         shim os.execv's the native r2p2[.exe] binary next to it.
+         Linux/Arm64 is pending a native arm64 Linux build agent. -->
     <file src="..\..\3.15_LINUX_X64\**" target="tools\3.15\LINUX\X64" />
+    <file src="..\..\3.15_WINDOWS_X64\**" target="tools\3.15\WINDOWS\X64" />
+    <file src="..\..\3.15_WINDOWS_ARM64\**" target="tools\3.15\WINDOWS\Arm64" />
+    <file src="..\..\3.15_OSX_X64\**" target="tools\3.15\OSX\X64" />
+    <file src="..\..\3.15_OSX_ARM64\**" target="tools\3.15\OSX\Arm64" />
     <file src="..\..\workers\python\prodV4\worker.config.json" target="tools" />
     <file src="Microsoft.Azure.Functions.PythonWorker.targets" target="build" />
     <file src="..\..\_manifest\spdx_2.2\manifest.spdx.json" target="SBOM\manifest.spdx.json" />

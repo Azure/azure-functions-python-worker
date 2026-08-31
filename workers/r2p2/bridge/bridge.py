@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """
-FFI bridge between the Rust proxy worker and the Python v2 runtime.
+FFI bridge between the R2P2 and the Python v2 runtime.
 
 The Rust side owns the gRPC transport (tonic) and embeds CPython (PyO3). It
 decodes/encodes every ``StreamingMessage`` with prost and calls into this module
@@ -23,11 +23,11 @@ logging switch and OpenTelemetry (out of scope here). Dependency handling:
   to the runtime through ``protos_adapter`` -- a pure-Python stand-in for the
   ``protos`` object the runtime expects. That removes the descriptor-pool
   version coupling the classic worker carried (an app may ship any protobuf, or
-  none, without affecting the worker). See protos_adapter.py + D-029.
+  none, without affecting the worker). See protos_adapter.py.
 
 Contract exposed to Rust (Rust owns all prost encoding/decoding):
     configure(workers_dir, function_app_directory, host, request_id, sink)
-    handle_control(verb, req: dict) -> dict | None   # control-plane verbs
+    handle_control(request_type, req: dict) -> dict | None   # control-plane
     handle_invocation_control(req: dict) -> dict | None  # deferred / http-v2
     invoke_native(function_id, invocation_id, inputs, meta) -> tuple  # hot path
     requires_control_path(function_id) -> bool
@@ -42,11 +42,11 @@ import threading
 import traceback
 from types import SimpleNamespace
 
-# Protobuf-free ``protos`` stand-in (see protos_adapter.py + D-029). The runtime
+# Protobuf-free ``protos`` stand-in (see protos_adapter.py). The runtime
 # handlers are transport-agnostic: they read request fields off
-# ``request.request.<verb>`` and build responses through a ``protos`` object
+# ``request.request.<request_type>`` and build responses through a ``protos``
 # injected at worker_init. The classic worker injects the ``google.protobuf``
-# gencode; the Rust worker injects THIS pure-Python module, so nothing in the
+# gencode; the R2P2 injects THIS pure-Python module, so nothing in the
 # worker process links ``google.protobuf`` or the gRPC toolchain. Rust (prost)
 # owns all wire encoding; the adapter objects only carry the shapes + a
 # ``to_dict()`` Rust maps back onto the wire. Imported at module load (before
@@ -95,11 +95,20 @@ _rt_name = "azure_functions_runtime"
 _host = ""
 _function_app_directory = ""
 
+# Worker runtime deps dir (where ``azure_functions_runtime`` lives), captured in
+# configure() so the customer-dependency prioritization can be re-applied on
+# ``function_environment_reload_request`` (placeholder specialization / Flex).
+_workers_dir = ""
+
 # Rust-owned LogSink + worker request id, set in configure(). The bridge routes
 # both worker/system logs and user function logs to the Host as RpcLog
-# StreamingMessages through this sink. See docs/rustworker/logging-design.md.
+# StreamingMessages through this sink.
 _log_sink = None
 _request_id = ""
+# Worker id (startup CLI arg, plumbed from Rust). Logged alongside request_id to
+# match the classic proxy worker's dispatcher log lines. Both are startup-scoped
+# in the proxy worker too (DispatcherMeta.__init__), not per-message.
+_worker_id = ""
 _rpc_logging_installed = False
 
 # Persistent asyncio loop running on a dedicated thread. The runtime handlers are
@@ -290,31 +299,62 @@ def _customer_deps_path(function_app_directory):
     return ""
 
 
-def configure(workers_dir, function_app_directory, host, request_id="",
-              log_sink=None):
-    """Wire up imports and the runtime. Called once from Rust before use."""
-    global _rt, _rt_name, _rt_tls, _host, _function_app_directory, \
-        _log_sink, _request_id
-    _host = host or ""
-    _function_app_directory = function_app_directory
-    _log_sink = log_sink
-    _request_id = request_id or ""
+def _prioritize_customer_dependencies(function_app_directory):
+    """Order ``sys.path`` so the CUSTOMER's dependencies win over the worker's
+    bundled deps -- mirroring proxy_worker
+    ``DependencyManager.prioritize_customer_dependencies``. Final search order
+    (highest first):
 
-    # Order sys.path so the CUSTOMER's dependencies win over the worker's
-    # bundled deps -- mirroring proxy_worker DependencyManager
-    # .prioritize_customer_dependencies. Final search order (highest first):
-    #   1. customer deps (.python_packages)  -- so an app can pin azure-functions
-    #   2. worker runtime deps (workers_dir) -- azure_functions_runtime lives here
-    #   3. customer app dir                  -- function_app.py for indexing
-    # ``protos_adapter`` was imported at module load, so the runtime's
-    # protobuf-free control-plane surface is fixed before this reordering.
-    if workers_dir:
-        _reprioritize_path(workers_dir, front=True)
+      1. customer deps (``.python_packages``) -- so an app can pin azure-functions
+      2. worker runtime deps (``_workers_dir``) -- azure_functions_runtime lives here
+      3. customer app dir                     -- function_app.py for indexing
+
+    Called from ``configure()`` at startup AND from ``handle_control`` on
+    ``function_environment_reload_request`` so placeholder specialization
+    (Linux Consumption / Flex) re-prioritizes the newly mounted customer deps
+    -- the v2 runtime's reload handler only ``sys.path.append``s the app dir and
+    would otherwise leave customer packages at the back. Returns the resolved
+    customer deps path (``""`` if none).
+
+    Emits the same ``Finished prioritize_customer_dependencies: ...`` System log
+    as the classic proxy worker's ``DependencyManager`` so existing Kusto
+    queries and tests (e.g. test_flex_consumption) keep matching unchanged.
+    """
+    if _workers_dir:
+        _reprioritize_path(_workers_dir, front=True)
     cx_deps = _customer_deps_path(function_app_directory)
     if cx_deps:
         _reprioritize_path(cx_deps, front=True)
     if function_app_directory:
         _reprioritize_path(function_app_directory, front=False)
+    try:
+        placeholder = os.getenv("WEBSITE_PLACEHOLDER_MODE", "") == "1"
+        _syslog.info(
+            "Finished prioritize_customer_dependencies: "
+            "worker_dependencies_path: %s, customer_dependencies_path: %s, "
+            "working_directory: %s, Placeholder: %s, sys.path: %s",
+            _workers_dir, cx_deps, function_app_directory, placeholder,
+            sys.path)
+    except Exception:  # logging must never break dependency setup
+        pass
+    return cx_deps
+
+
+def configure(workers_dir, function_app_directory, host, request_id="",
+              log_sink=None, worker_id=""):
+    """Wire up imports and the runtime. Called once from Rust before use."""
+    global _rt, _rt_name, _rt_tls, _host, _function_app_directory, \
+        _log_sink, _request_id, _workers_dir, _worker_id
+    _host = host or ""
+    _function_app_directory = function_app_directory
+    _log_sink = log_sink
+    _request_id = request_id or ""
+    _worker_id = worker_id or ""
+    _workers_dir = workers_dir or ""
+
+    # ``protos_adapter`` was imported at module load, so the runtime's
+    # protobuf-free control-plane surface is fixed before this reordering.
+    cx_deps = _prioritize_customer_dependencies(function_app_directory)
 
     # Select the runtime by programming model, mirroring
     # proxy_worker/dispatcher.reload_library_worker: if the app ships the v2
@@ -389,60 +429,91 @@ def _metadata_ns(m):
     )
 
 
-def _build_control_message(verb, req):
-    """Turn Rust's decoded request dict into the ``request.request.<verb>``
+def _build_control_message(request_type, req):
+    """Turn Rust's decoded request dict into the ``request.request.<type>``
     attribute shape the (unchanged) runtime handlers read. String maps
     (capabilities/env vars) stay dicts; nested messages become namespaces."""
-    if verb == "worker_init_request":
+    if request_type == "worker_init_request":
         msg = SimpleNamespace(
             capabilities=dict(req.get("capabilities") or {}),
             function_app_directory=req.get("function_app_directory", ""),
             host_version=req.get("host_version", ""))
-    elif verb == "functions_metadata_request":
+    elif request_type == "functions_metadata_request":
         msg = SimpleNamespace()
-    elif verb == "function_load_request":
+    elif request_type == "function_load_request":
         msg = SimpleNamespace(
             function_id=req.get("function_id", ""),
             metadata=_metadata_ns(req.get("metadata")))
-    elif verb == "function_environment_reload_request":
+    elif request_type == "function_environment_reload_request":
         msg = SimpleNamespace(
             function_app_directory=req.get("function_app_directory", ""),
             environment_variables=dict(req.get("environment_variables") or {}))
     else:
         return None
-    return SimpleNamespace(**{verb: msg})
+    return SimpleNamespace(**{request_type: msg})
 
 
-def _log_control_received(verb):
-    """System log line per inbound control verb (parity with the proxy worker's
-    `Received WorkerInitRequest, ...`)."""
+def _log_using_library():
+    """`Using library: <module>, library version: <ver>` — matches the proxy
+    worker dispatcher line emitted after (re)loading the runtime library."""
     try:
-        if verb == "worker_init_request":
+        _syslog.info("Using library: %s, library version: %s",
+                     _rt, _worker_version())
+    except Exception:  # logging must never break dispatch
+        pass
+
+
+def _log_control_received(request_type, req):
+    """System log line per inbound control request. Text matches the classic
+    proxy worker's dispatcher verbatim -- including request ID and worker id --
+    so existing Kusto queries keep parsing without a Python-3.15-specific
+    variant. request_id/worker_id are startup-scoped (as in the proxy worker)."""
+    try:
+        if request_type == "worker_init_request":
             _syslog.info(
                 "Received WorkerInitRequest, python version %s, "
-                "worker version %s.",
-                sys.version.split()[0], _worker_version())
+                "worker version %s, request ID %s. To enable debug level "
+                "logging, please refer to "
+                "https://aka.ms/python-enable-debug-logging",
+                sys.version, _worker_version(), _request_id)
+        elif request_type == "functions_metadata_request":
+            _syslog.info(
+                "Received WorkerMetadataRequest, request ID %s, worker id: %s",
+                _request_id, _worker_id)
+        elif request_type == "function_load_request":
+            meta = req.get("metadata") or {}
+            _syslog.info(
+                "Received WorkerLoadRequest, request ID %s, function_id: %s, "
+                "function_name: %s, worker_id: %s",
+                _request_id, req.get("function_id", ""),
+                meta.get("name", ""), _worker_id)
+        elif request_type == "function_environment_reload_request":
+            _syslog.info(
+                "Received FunctionEnvironmentReloadRequest, request ID: %s, "
+                "To enable debug level logging, please refer to "
+                "https://aka.ms/python-enable-debug-logging",
+                _request_id)
         else:
-            name = "".join(p.capitalize() for p in verb.split("_"))
+            name = "".join(p.capitalize() for p in request_type.split("_"))
             _syslog.info("Received %s.", name)
     except Exception as e:  # logging must never break dispatch
         print(f"{_CONSOLE_LOG_PREFIX} ERROR: received-log failed: {e}",
               file=sys.stderr, flush=True)
 
 
-def handle_control(verb, req):
-    """Run one control-plane verb. Rust prost-decodes the request into ``req``
-    (a dict); we shape it for the runtime handler, run it, and return the
-    response as a flat dict Rust maps back to a prost message. Returns None for
-    an unknown verb."""
-    msg = _build_control_message(verb, req)
+def handle_control(request_type, req):
+    """Run one control-plane request. Rust prost-decodes it into ``req`` (a
+    dict); we shape it for the runtime handler, run it, and return the response
+    as a flat dict Rust maps back to a prost message. Returns None for an
+    unknown request type."""
+    msg = _build_control_message(request_type, req)
     if msg is None:
-        _log(f"unknown control verb: {verb!r}", level="WARNING")
+        _log(f"unknown control request: {request_type!r}", level="WARNING")
         return None
 
-    _log_control_received(verb)
+    _log_control_received(request_type, req)
 
-    if verb == "worker_init_request":
+    if request_type == "worker_init_request":
         # The Host supplies the function app directory in the init message (not
         # via CLI). The v2 runtime imports ``function_app`` during indexing but
         # does NOT add that directory to sys.path, so do it before init runs.
@@ -450,20 +521,31 @@ def handle_control(verb, req):
         if app_dir and app_dir not in sys.path:
             sys.path.insert(0, app_dir)
             _log(f"added function_app_directory to sys.path: {app_dir!r}")
+        _log_using_library()
         try:
             _rt.start_threadpool_executor()
         except AttributeError:
             pass
+    elif request_type == "function_environment_reload_request":
+        # Placeholder specialization (Linux Consumption / Flex): the customer
+        # app and its ``.python_packages`` are only mounted now, so re-run the
+        # dependency prioritization -- the v2 runtime's reload handler merely
+        # ``sys.path.append``s the app dir and would otherwise leave customer
+        # packages at the back. Mirrors proxy_worker's
+        # DependencyManager.prioritize_customer_dependencies on env reload.
+        app_dir = req.get("function_app_directory", "")
+        _prioritize_customer_dependencies(app_dir)
+        _log_using_library()
 
     # worker_init / env_reload set the runtime's module-global ``protos`` from
-    # properties; pass it (harmless for the other verbs, which reuse the global).
+    # properties; pass it (harmless for the others, which reuse the global).
     props = {"protos": protos, "host": _host}
-    req_obj = _WorkerRequest(verb, msg, props)
-    handler = getattr(_rt, verb)
+    req_obj = _WorkerRequest(request_type, msg, props)
+    handler = getattr(_rt, request_type)
     try:
         resp = _run_coro(handler(req_obj))
     except Exception:  # pragma: no cover - surfaced to Rust as a log
-        _log(f"{verb} handler error:\n" + traceback.format_exc(),
+        _log(f"{request_type} handler error:\n" + traceback.format_exc(),
              level="ERROR")
         raise
     if resp is None:
@@ -484,8 +566,9 @@ def handle_invocation_control(req):
     function_id = req.get("function_id", "")
     try:
         _syslog.info(
-            "Received FunctionInvocationRequest, function ID %s, "
-            "invocation ID %s.", function_id, invocation_id)
+            "Received FunctionInvocationRequest, request ID %s, "
+            "function_id: %s, invocation_id: %s, worker_id: %s",
+            _request_id, function_id, invocation_id, _worker_id)
     except Exception:
         pass
 
@@ -667,8 +750,9 @@ def invoke_native(function_id, invocation_id, inputs, trigger_metadata):
     # prost path, so it never reaches _dispatch -- log it here.
     try:
         _syslog.info(
-            "Received FunctionInvocationRequest, function ID %s, "
-            "invocation ID %s.", function_id, invocation_id)
+            "Received FunctionInvocationRequest, request ID %s, "
+            "function_id: %s, invocation_id: %s, worker_id: %s",
+            _request_id, function_id, invocation_id, _worker_id)
     except Exception:
         pass
     in_datums = [(name, _tuple_to_datum(t)) for name, t in inputs]

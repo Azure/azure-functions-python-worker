@@ -779,6 +779,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
+name = "r2p2"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "futures",
+ "http",
+ "prost",
+ "prost-types",
+ "protoc-bin-vendored",
+ "pyo3",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tonic-build",
+]
+
+[[package]]
 name = "rand"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -836,24 +854,6 @@ name = "regex-syntax"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
-
-[[package]]
-name = "r2p2"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "bytes",
- "futures",
- "http",
- "prost",
- "prost-types",
- "protoc-bin-vendored",
- "pyo3",
- "tokio",
- "tokio-stream",
- "tonic",
- "tonic-build",
-]
 
 [[package]]
 name = "rustix"

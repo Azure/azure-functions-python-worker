@@ -147,3 +147,167 @@ fn http_out_from_dict(py: Python<'_>, d: &Bound<'_, PyAny>) -> Result<RpcHttp> {
         ..Default::default()
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pb::messages::{typed_data, RpcHttp, TypedData};
+    use pyo3::types::{PyDict, PyString, PyTuple};
+
+    fn td(data: typed_data::Data) -> TypedData {
+        TypedData { data: Some(data) }
+    }
+
+    /// Wrap a `("<kind>", <value>)` pair into the datum tuple the bridge exchanges.
+    fn datum_tuple<'py>(
+        py: Python<'py>,
+        kind: &str,
+        value: Bound<'py, PyAny>,
+    ) -> Bound<'py, PyAny> {
+        PyTuple::new(py, vec![PyString::new(py, kind).into_any(), value])
+            .unwrap()
+            .into_any()
+    }
+
+    #[test]
+    fn scalar_string_round_trips() {
+        Python::attach(|py| {
+            let original = td(typed_data::Data::String("hello".into()));
+            let tup = typed_data_to_tuple(py, &original).unwrap();
+            let kind: String = tup.get_item(0).unwrap().extract().unwrap();
+            assert_eq!(kind, "string");
+            assert_eq!(tuple_to_typed_data(py, &tup).unwrap(), original);
+        });
+    }
+
+    #[test]
+    fn scalar_json_int_double_bytes_round_trip() {
+        Python::attach(|py| {
+            let cases = vec![
+                td(typed_data::Data::Json("{\"a\":1}".into())),
+                td(typed_data::Data::Int(42)),
+                td(typed_data::Data::Double(2.5)),
+                td(typed_data::Data::Bytes(vec![1, 2, 3, 255])),
+            ];
+            for original in cases {
+                let tup = typed_data_to_tuple(py, &original).unwrap();
+                assert_eq!(tuple_to_typed_data(py, &tup).unwrap(), original);
+            }
+        });
+    }
+
+    #[test]
+    fn empty_payload_maps_to_none_both_ways() {
+        Python::attach(|py| {
+            let empty = TypedData { data: None };
+            let tup = typed_data_to_tuple(py, &empty).unwrap();
+            assert!(tup.is_none());
+            assert_eq!(tuple_to_typed_data(py, &tup).unwrap(), empty);
+        });
+    }
+
+    #[test]
+    fn stream_variant_decodes_as_bytes() {
+        Python::attach(|py| {
+            let original = td(typed_data::Data::Stream(vec![9, 8, 7]));
+            let tup = typed_data_to_tuple(py, &original).unwrap();
+            let kind: String = tup.get_item(0).unwrap().extract().unwrap();
+            assert_eq!(kind, "bytes");
+            // Stream is inbound-only; it round-trips into the Bytes variant.
+            assert_eq!(
+                tuple_to_typed_data(py, &tup).unwrap(),
+                td(typed_data::Data::Bytes(vec![9, 8, 7]))
+            );
+        });
+    }
+
+    #[test]
+    fn http_input_expands_to_primitive_dict() {
+        Python::attach(|py| {
+            let mut headers = std::collections::HashMap::new();
+            headers.insert("content-type".to_string(), "application/json".to_string());
+            let http = RpcHttp {
+                method: "POST".into(),
+                url: "http://localhost/api/hello".into(),
+                headers,
+                body: Some(Box::new(td(typed_data::Data::String("payload".into())))),
+                ..Default::default()
+            };
+            let tup = typed_data_to_tuple(py, &td(typed_data::Data::Http(Box::new(http)))).unwrap();
+
+            let kind: String = tup.get_item(0).unwrap().extract().unwrap();
+            assert_eq!(kind, "http");
+            let d = tup.get_item(1).unwrap();
+            let method: String = d.get_item("method").unwrap().extract().unwrap();
+            assert_eq!(method, "POST");
+            let url: String = d.get_item("url").unwrap().extract().unwrap();
+            assert_eq!(url, "http://localhost/api/hello");
+            let hdrs: std::collections::HashMap<String, String> =
+                d.get_item("headers").unwrap().extract().unwrap();
+            assert_eq!(
+                hdrs.get("content-type").map(String::as_str),
+                Some("application/json")
+            );
+            // Nested body is itself a datum tuple.
+            let body = d.get_item("body").unwrap();
+            let body_kind: String = body.get_item(0).unwrap().extract().unwrap();
+            assert_eq!(body_kind, "string");
+        });
+    }
+
+    #[test]
+    fn http_output_dict_builds_rpc_http() {
+        Python::attach(|py| {
+            let d = PyDict::new(py);
+            d.set_item("status_code", "200").unwrap();
+            let hdrs = PyDict::new(py);
+            hdrs.set_item("Content-Type", "text/plain").unwrap();
+            d.set_item("headers", hdrs).unwrap();
+            d.set_item(
+                "body",
+                datum_tuple(py, "string", PyString::new(py, "ok").into_any()),
+            )
+            .unwrap();
+            let tup = datum_tuple(py, "http", d.into_any());
+
+            let out = tuple_to_typed_data(py, &tup).unwrap();
+            match out.data {
+                Some(typed_data::Data::Http(h)) => {
+                    assert_eq!(h.status_code, "200");
+                    assert_eq!(
+                        h.headers.get("Content-Type").map(String::as_str),
+                        Some("text/plain")
+                    );
+                    match h.body.as_deref().and_then(|b| b.data.as_ref()) {
+                        Some(typed_data::Data::String(s)) => assert_eq!(s.as_str(), "ok"),
+                        other => panic!("unexpected http body: {other:?}"),
+                    }
+                }
+                other => panic!("expected Http variant, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn collection_string_maps_to_list() {
+        Python::attach(|py| {
+            let coll = crate::pb::messages::CollectionString {
+                string: vec!["a".into(), "b".into(), "c".into()],
+            };
+            let tup =
+                typed_data_to_tuple(py, &td(typed_data::Data::CollectionString(coll))).unwrap();
+            let kind: String = tup.get_item(0).unwrap().extract().unwrap();
+            assert_eq!(kind, "collection_string");
+            let items: Vec<String> = tup.get_item(1).unwrap().extract().unwrap();
+            assert_eq!(items, vec!["a", "b", "c"]);
+        });
+    }
+
+    #[test]
+    fn unsupported_outbound_type_errors() {
+        Python::attach(|py| {
+            let tup = datum_tuple(py, "totally_unknown", PyString::new(py, "x").into_any());
+            assert!(tuple_to_typed_data(py, &tup).is_err());
+        });
+    }
+}

@@ -404,3 +404,240 @@ pub fn py_to_invocation_response(
         result: py_to_status_result(get_child(d, "result")),
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pb::messages::{
+        parameter_binding, streaming_message::Content, BindingInfo, FunctionLoadRequest,
+        InvocationRequest, ParameterBinding, RpcFunctionMetadata, TypedData, WorkerInitRequest,
+    };
+    use crate::pb::messages::{streaming_message, typed_data};
+    use pyo3::types::{PyDict, PyList, PyString, PyTuple};
+
+    fn datum_tuple<'py>(py: Python<'py>, kind: &str, value: &str) -> Bound<'py, PyAny> {
+        PyTuple::new(
+            py,
+            vec![
+                PyString::new(py, kind).into_any(),
+                PyString::new(py, value).into_any(),
+            ],
+        )
+        .unwrap()
+        .into_any()
+    }
+
+    // --- pure (no interpreter) -------------------------------------------
+    #[test]
+    fn start_stream_carries_worker_id_and_empty_request_id() {
+        let msg = start_stream_message("worker-123");
+        assert_eq!(msg.request_id, "");
+        match msg.content {
+            Some(Content::StartStream(s)) => assert_eq!(s.worker_id, "worker-123"),
+            other => panic!("expected StartStream, got {other:?}"),
+        }
+    }
+
+    // --- inbound request (prost -> dict) ---------------------------------
+    #[test]
+    fn worker_init_request_decodes_to_dict() {
+        Python::attach(|py| {
+            let mut caps = std::collections::HashMap::new();
+            caps.insert("RawHttpBodyBytes".to_string(), "true".to_string());
+            let r = WorkerInitRequest {
+                function_app_directory: "/home/site/wwwroot".into(),
+                host_version: "4.1.0".into(),
+                capabilities: caps,
+                ..Default::default()
+            };
+            let d = worker_init_req_to_py(py, &r).unwrap();
+            let dir: String = d
+                .get_item("function_app_directory")
+                .unwrap()
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert_eq!(dir, "/home/site/wwwroot");
+            let hv: String = d
+                .get_item("host_version")
+                .unwrap()
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert_eq!(hv, "4.1.0");
+        });
+    }
+
+    #[test]
+    fn function_load_request_decodes_nested_bindings() {
+        Python::attach(|py| {
+            let mut bindings = std::collections::HashMap::new();
+            bindings.insert(
+                "req".to_string(),
+                BindingInfo {
+                    r#type: "httpTrigger".into(),
+                    direction: 0,
+                    data_type: 0,
+                    ..Default::default()
+                },
+            );
+            let r = FunctionLoadRequest {
+                function_id: "fid-1".into(),
+                metadata: Some(RpcFunctionMetadata {
+                    name: "hello".into(),
+                    entry_point: "main".into(),
+                    bindings,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            };
+            let d = function_load_req_to_py(py, &r).unwrap();
+            let fid: String = d
+                .get_item("function_id")
+                .unwrap()
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert_eq!(fid, "fid-1");
+            let meta = d.get_item("metadata").unwrap().unwrap();
+            let name: String = meta.get_item("name").unwrap().extract().unwrap();
+            assert_eq!(name, "hello");
+            let btype: String = meta
+                .get_item("bindings")
+                .unwrap()
+                .get_item("req")
+                .unwrap()
+                .get_item("type")
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert_eq!(btype, "httpTrigger");
+        });
+    }
+
+    #[test]
+    fn invocation_request_decodes_inputs_and_metadata() {
+        Python::attach(|py| {
+            let mut trigger_metadata = std::collections::HashMap::new();
+            trigger_metadata.insert(
+                "Query".to_string(),
+                TypedData {
+                    data: Some(typed_data::Data::String("q".into())),
+                },
+            );
+            let r = InvocationRequest {
+                invocation_id: "inv-1".into(),
+                function_id: "fid-1".into(),
+                input_data: vec![ParameterBinding {
+                    name: "req".into(),
+                    rpc_data: Some(parameter_binding::RpcData::Data(TypedData {
+                        data: Some(typed_data::Data::String("body".into())),
+                    })),
+                }],
+                trigger_metadata,
+                ..Default::default()
+            };
+            let d = invocation_request_to_py(py, &r).unwrap();
+            let inv: String = d
+                .get_item("invocation_id")
+                .unwrap()
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert_eq!(inv, "inv-1");
+            let inputs = d.get_item("input_data").unwrap().unwrap();
+            let first = inputs.get_item(0).unwrap();
+            let name: String = first.get_item(0).unwrap().extract().unwrap();
+            assert_eq!(name, "req");
+            let datum_kind: String = first
+                .get_item(1)
+                .unwrap()
+                .get_item(0)
+                .unwrap()
+                .extract()
+                .unwrap();
+            assert_eq!(datum_kind, "string");
+        });
+    }
+
+    // --- adapter response dict (dict -> prost) ---------------------------
+    #[test]
+    fn worker_init_response_maps_capabilities_and_status() {
+        Python::attach(|py| {
+            let d = PyDict::new(py);
+            let caps = PyDict::new(py);
+            caps.set_item("WorkerStatus", "true").unwrap();
+            d.set_item("capabilities", caps).unwrap();
+            let result = PyDict::new(py);
+            result.set_item("status", 1).unwrap();
+            d.set_item("result", result).unwrap();
+
+            let resp = py_to_worker_init_response(&d.into_any()).unwrap();
+            assert_eq!(
+                resp.capabilities.get("WorkerStatus").map(String::as_str),
+                Some("true")
+            );
+            assert_eq!(resp.result.unwrap().status, 1);
+        });
+    }
+
+    #[test]
+    fn function_load_response_maps_id_and_status() {
+        Python::attach(|py| {
+            let d = PyDict::new(py);
+            d.set_item("function_id", "fid-1").unwrap();
+            let result = PyDict::new(py);
+            result.set_item("status", 1).unwrap();
+            d.set_item("result", result).unwrap();
+
+            let resp = py_to_function_load_response(&d.into_any()).unwrap();
+            assert_eq!(resp.function_id, "fid-1");
+            assert_eq!(resp.result.unwrap().status, 1);
+        });
+    }
+
+    #[test]
+    fn invocation_response_maps_return_value_and_result() {
+        Python::attach(|py| {
+            let d = PyDict::new(py);
+            d.set_item("return_value", datum_tuple(py, "string", "ok"))
+                .unwrap();
+            d.set_item("output_data", PyList::empty(py)).unwrap();
+            let result = PyDict::new(py);
+            result.set_item("status", 1).unwrap();
+            d.set_item("result", result).unwrap();
+
+            let resp = py_to_invocation_response(py, &d.into_any(), "inv-1").unwrap();
+            assert_eq!(resp.invocation_id, "inv-1");
+            assert_eq!(resp.result.unwrap().status, 1);
+            match resp.return_value.and_then(|t| t.data) {
+                Some(typed_data::Data::String(s)) => assert_eq!(s, "ok"),
+                other => panic!("unexpected return_value: {other:?}"),
+            }
+        });
+    }
+
+    // --- logging ----------------------------------------------------------
+    #[test]
+    fn log_dict_builds_rpc_log_streaming_message() {
+        Python::attach(|py| {
+            let d = PyDict::new(py);
+            d.set_item("invocation_id", "inv-1").unwrap();
+            d.set_item("category", "worker").unwrap();
+            d.set_item("level", 4).unwrap();
+            d.set_item("message", "hello logs").unwrap();
+
+            let msg = py_log_to_streaming_message(&d.into_any(), "req-9").unwrap();
+            assert_eq!(msg.request_id, "req-9");
+            match msg.content {
+                Some(streaming_message::Content::RpcLog(l)) => {
+                    assert_eq!(l.invocation_id, "inv-1");
+                    assert_eq!(l.category, "worker");
+                    assert_eq!(l.level, 4);
+                    assert_eq!(l.message, "hello logs");
+                }
+                other => panic!("expected RpcLog, got {other:?}"),
+            }
+        });
+    }
+}

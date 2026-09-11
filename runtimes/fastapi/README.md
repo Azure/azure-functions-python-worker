@@ -132,17 +132,10 @@ not passed to `include_router()` is intentionally not indexed.
 
 ### API documentation
 
-The runtime indexes FastAPI's configured documentation routes alongside the
-application's API routes. With the default FastAPI configuration, these are:
-
-- `/openapi.json` for the OpenAPI schema
-- `/docs` for Swagger UI
-- `/docs/oauth2-redirect` for the Swagger UI OAuth redirect
-- `/redoc` for ReDoc
-
-Custom `openapi_url`, `docs_url`, `swagger_ui_oauth2_redirect_url`, and
-`redoc_url` values are respected, including disabling a route with `None`.
-Generated documentation URLs include the route prefix used by Azure Functions.
+The runtime doesn't index FastAPI's built-in OpenAPI, Swagger UI, OAuth
+redirect, or ReDoc routes as Azure Functions. Only application routes declared
+as `APIRoute` entries are exposed. This avoids creating four additional host
+functions for every app that uses FastAPI's default documentation settings.
 
 ## Implementation
 
@@ -188,8 +181,7 @@ During `WorkerInitRequest`, the runtime:
     `function_app.py` and then `app.py`.
 3. Imports the module and finds its module-level `FastAPI` instance. Startup
      fails if none or more than one is present.
-4. Iterates over the app's registered `APIRoute` entries and configured FastAPI
-    documentation routes.
+4. Iterates over the app's registered `APIRoute` entries.
 5. Creates one Functions metadata entry for every route, with an HTTP trigger
      and HTTP output binding.
 6. Caches the app, route handlers, and generated metadata for invocation.
@@ -233,7 +225,7 @@ The implementation and existing tests establish the following behavior:
 | --- | --- |
 | Discover a module-level FastAPI app | Implemented |
 | Index `APIRoute` routes | Implemented and unit tested |
-| OpenAPI, Swagger UI, OAuth redirect, and ReDoc routes | Implemented and unit tested |
+| OpenAPI, Swagger UI, OAuth redirect, and ReDoc routes | Not indexed as Azure Functions |
 | Generate HTTP trigger and output metadata | Implemented and unit tested |
 | GET, POST, PUT, DELETE, PATCH, HEAD, and OPTIONS metadata | Implemented |
 | Async and sync endpoint calls | Implemented, without end-to-end coverage |

@@ -156,6 +156,15 @@ async def invocation_request(request):
         fi: FunctionInfo = _functions.get_function(
             function_id)
         assert fi is not None
+
+        # Initialize context and configure OpenTelemetry before emitting
+        # invocation-scoped logs so they include trace context (Operation Id)
+        fi_context = get_context(invoc_request, fi.name,
+                                 fi.directory)
+        if (otel_manager.get_azure_monitor_available()
+                or otel_manager.get_otel_libs_available()):
+            configure_opentelemetry(fi_context)
+
         logger.info("Function name: %s, Function Type: %s",
                     fi.name,
                     ("async" if fi.is_async else "sync"))
@@ -174,9 +183,6 @@ async def invocation_request(request):
                 pb,
                 trigger_metadata=trigger_metadata)
 
-        fi_context = get_context(invoc_request, fi.name,
-                                 fi.directory)
-
         # Use local thread storage to store the invocation ID
         # for a customer's threads
         fi_context.thread_local_storage.invocation_id = invocation_id
@@ -188,9 +194,6 @@ async def invocation_request(request):
                 args[name] = Out()
 
         if fi.is_async:
-            if otel_manager.get_azure_monitor_available():
-                configure_opentelemetry(fi_context)
-
             # Not supporting Extensions
             call_result = await execute_async(fi.func, args)
         else:
@@ -232,7 +235,6 @@ async def invocation_request(request):
 
         # Actively flush customer print() function to console
         sys.stdout.flush()
-
         logger.debug("Successfully completed WorkerInvocationRequest.")
         return protos.InvocationResponse(
             invocation_id=invocation_id,

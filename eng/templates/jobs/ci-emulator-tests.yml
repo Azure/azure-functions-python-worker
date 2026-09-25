@@ -4,6 +4,8 @@ parameters:
 jobs:
   - job: "TestPython"
     displayName: "Run Python Emulator Tests"
+    # Secret variables are unavailable to pull requests from forks.
+    condition: and(succeeded(), ne(variables['System.PullRequest.IsFork'], 'True'))
 
     pool:
       name: ${{ parameters.PoolName }}

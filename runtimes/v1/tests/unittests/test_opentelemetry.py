@@ -1,11 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
+import asyncio
 import os
 import unittest
 
 import tests.protos as protos
 
 from azure_functions_runtime_v1.handle_event import otel_manager, worker_init_request
-from azure_functions_runtime_v1.otel import (initialize_azure_monitor,
+from azure_functions_runtime_v1.otel import (configure_opentelemetry,
+                                             initialize_azure_monitor,
                                              update_opentelemetry_status)
 from azure_functions_runtime_v1.logging import logger
 from tests.utils.constants import UNIT_TESTS_FOLDER
@@ -17,6 +19,24 @@ FUNCTION_APP_DIRECTORY = UNIT_TESTS_FOLDER / 'basic_functions'
 
 
 class TestOpenTelemetry(unittest.TestCase):
+
+    def setUp(self):
+        self._otel_manager_state = (
+            otel_manager.get_azure_monitor_available(),
+            otel_manager.get_otel_libs_available(),
+            otel_manager.get_context_api(),
+            otel_manager.get_trace_context_propagator(),
+        )
+
+    def tearDown(self):
+        (azure_monitor_available,
+         otel_libs_available,
+         context_api,
+         trace_context_propagator) = self._otel_manager_state
+        otel_manager.set_azure_monitor_available(azure_monitor_available)
+        otel_manager.set_otel_libs_available(otel_libs_available)
+        otel_manager.set_context_api(context_api)
+        otel_manager.set_trace_context_propagator(trace_context_propagator)
 
     def test_update_opentelemetry_status_import_error(self):
         with patch.dict('sys.modules', {
@@ -41,6 +61,12 @@ class TestOpenTelemetry(unittest.TestCase):
         update_opentelemetry_status()
         self.assertIsNotNone(otel_manager.get_context_api())
         self.assertIsNotNone(otel_manager.get_trace_context_propagator())
+
+    def test_configure_opentelemetry_noops_when_not_initialized(self):
+        otel_manager.set_context_api(None)
+        otel_manager.set_trace_context_propagator(None)
+
+        configure_opentelemetry(MagicMock())
 
     @patch('builtins.__import__')
     @patch("azure_functions_runtime_v1.otel.update_opentelemetry_status")
@@ -145,7 +171,7 @@ class TestOpenTelemetry(unittest.TestCase):
         self.assertNotIn("WorkerOpenTelemetryEnabled", capabilities)
 
     @patch.dict(os.environ, {'PYTHON_ENABLE_OPENTELEMETRY': 'true'})
-    async def test_init_request_enable_opentelemetry_enabled_app_setting(
+    def test_init_request_enable_opentelemetry_enabled_app_setting(
         self,
     ):
         worker_request = WorkerRequest(name='worker_init_request',
@@ -154,13 +180,15 @@ class TestOpenTelemetry(unittest.TestCase):
                                            FUNCTION_APP_DIRECTORY)),
                                        properties={'host': '123',
                                                    'protos': protos})
-        init_response = await worker_init_request(worker_request)
+        init_response = asyncio.run(worker_init_request(worker_request))
 
         self.assertEqual(init_response.result.status,
                          protos.StatusResult.Success)
 
-        # Verify otel_libs_available is set to True
-        self.assertTrue(otel_manager.get_azure_monitor_available())
+        # Verify OpenTelemetry propagation is initialized
+        self.assertTrue(otel_manager.get_otel_libs_available())
+        self.assertIsNotNone(otel_manager.get_context_api())
+        self.assertIsNotNone(otel_manager.get_trace_context_propagator())
         # Verify that WorkerOpenTelemetryEnabled capability is set to _TRUE
         capabilities = init_response.capabilities
         self.assertIn("WorkerOpenTelemetryEnabled", capabilities)

@@ -11,7 +11,10 @@ import typing
 from .functions import FunctionInfo, Registry
 from .loader import load_function, install
 from .logging import logger
-from .otel import otel_manager, initialize_azure_monitor, configure_opentelemetry
+from .otel import (configure_opentelemetry,
+                   initialize_azure_monitor,
+                   otel_manager,
+                   update_opentelemetry_status)
 from .version import VERSION
 
 from .bindings.context import get_context
@@ -70,6 +73,7 @@ async def worker_init_request(request):
 
     if is_envvar_true(PYTHON_ENABLE_OPENTELEMETRY):
         otel_manager.set_otel_libs_available(True)
+        update_opentelemetry_status()
 
     if (otel_manager.get_azure_monitor_available()
             or otel_manager.get_otel_libs_available()):
@@ -293,6 +297,7 @@ async def function_environment_reload_request(request):
         capabilities = {}
         if is_envvar_true(PYTHON_ENABLE_OPENTELEMETRY):
             otel_manager.set_otel_libs_available(True)
+            update_opentelemetry_status()
 
         if is_envvar_true(PYTHON_APPLICATIONINSIGHTS_ENABLE_TELEMETRY):
             initialize_azure_monitor()

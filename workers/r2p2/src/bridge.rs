@@ -241,9 +241,25 @@ pub fn invoke(req: &InvocationRequest) -> Result<InvocationResponse> {
             meta.set_item(k, tup)?;
         }
 
+        // Trace context (W3C traceparent/tracestate) so the native path can
+        // parent customer OpenTelemetry spans and Azure Monitor export, matching
+        // the control path's configure_opentelemetry. Empty when the Host sends
+        // no trace context.
+        let (trace_parent, trace_state) = match &req.trace_context {
+            Some(tc) => (tc.trace_parent.as_str(), tc.trace_state.as_str()),
+            None => ("", ""),
+        };
+
         let result = bridge.call_method1(
             "invoke_native",
-            (&req.function_id, &req.invocation_id, inputs, meta),
+            (
+                &req.function_id,
+                &req.invocation_id,
+                inputs,
+                meta,
+                trace_parent,
+                trace_state,
+            ),
         )?;
 
         let ok: bool = result.get_item(0)?.extract()?;

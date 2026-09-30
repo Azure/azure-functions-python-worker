@@ -21,7 +21,11 @@ use anyhow::{anyhow, Result};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyString, PyTuple};
 
-use crate::pb::messages::{typed_data, ModelBindingData, RpcHttp, TypedData};
+use crate::pb::messages::{typed_data, ModelBindingData, RpcHttp, RpcHttpCookie, TypedData};
+use crate::pb::{
+    nullable_bool, nullable_double, nullable_string, nullable_timestamp, NullableBool,
+    NullableDouble, NullableString, NullableTimestamp,
+};
 
 /// prost `TypedData` -> Python datum tuple (or `None` for empty payloads).
 pub fn typed_data_to_tuple<'py>(py: Python<'py>, td: &TypedData) -> Result<Bound<'py, PyAny>> {
@@ -139,13 +143,85 @@ fn http_out_from_dict(py: Python<'_>, d: &Bound<'_, PyAny>) -> Result<RpcHttp> {
     } else {
         Some(Box::new(tuple_to_typed_data(py, &body_obj)?))
     };
+    let cookies = match d.get_item("cookies") {
+        Ok(c) => http_cookies_from_list(&c)?,
+        Err(_) => Vec::new(),
+    };
     Ok(RpcHttp {
         status_code,
         headers,
         body,
+        cookies,
         enable_content_negotiation: false,
         ..Default::default()
     })
+}
+
+/// Build the `RpcHttpCookie` list from the flat cookie dicts the bridge emits.
+///
+/// The bridge (bridge.py `_flatten_cookies`) pre-computes every field as a plain
+/// primitive so the native path stays Python-protobuf-free: `same_site` is the
+/// integer enum value, `expires` is epoch seconds (or `None`), and `max_age` is a
+/// float (or `None`). We wrap the optional scalars in the `Nullable*` messages the
+/// Host expects, matching the runtime's `parse_to_rpc_http_cookie_list`.
+fn http_cookies_from_list(list_obj: &Bound<'_, PyAny>) -> Result<Vec<RpcHttpCookie>> {
+    let mut cookies = Vec::new();
+    if list_obj.is_none() {
+        return Ok(cookies);
+    }
+    for item in list_obj.try_iter()? {
+        let c = item?;
+        let name: String = c.get_item("name")?.extract()?;
+        let value: String = c.get_item("value")?.extract()?;
+        let domain: String = c.get_item("domain")?.extract()?;
+        let path: String = c.get_item("path")?.extract()?;
+        let secure: bool = c.get_item("secure")?.extract()?;
+        let http_only: bool = c.get_item("http_only")?.extract()?;
+        let same_site: i32 = c.get_item("same_site")?.extract()?;
+
+        let expires_obj = c.get_item("expires")?;
+        let expires = if expires_obj.is_none() {
+            None
+        } else {
+            let secs: i64 = expires_obj.extract()?;
+            Some(NullableTimestamp {
+                timestamp: Some(nullable_timestamp::Timestamp::Value(prost_types::Timestamp {
+                    seconds: secs,
+                    nanos: 0,
+                })),
+            })
+        };
+        let max_age_obj = c.get_item("max_age")?;
+        let max_age = if max_age_obj.is_none() {
+            None
+        } else {
+            let v: f64 = max_age_obj.extract()?;
+            Some(NullableDouble {
+                double: Some(nullable_double::Double::Value(v)),
+            })
+        };
+
+        cookies.push(RpcHttpCookie {
+            name,
+            value,
+            domain: Some(NullableString {
+                string: Some(nullable_string::String::Value(domain)),
+            }),
+            path: Some(NullableString {
+                string: Some(nullable_string::String::Value(path)),
+            }),
+            expires,
+            secure: Some(NullableBool {
+                bool: Some(nullable_bool::Bool::Value(secure)),
+            }),
+            http_only: Some(NullableBool {
+                bool: Some(nullable_bool::Bool::Value(http_only)),
+            }),
+            same_site,
+            max_age,
+        });
+    }
+    Ok(cookies)
 }
 
 #[cfg(test)]

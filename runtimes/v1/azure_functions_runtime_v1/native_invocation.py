@@ -48,9 +48,10 @@ from .utils.threadpool import get_threadpool_executor
 
 
 class _TraceCtx:
-    trace_parent = ""
-    trace_state = ""
-    attributes: dict = {}
+    def __init__(self, trace_parent="", trace_state=""):
+        self.trace_parent = trace_parent
+        self.trace_state = trace_state
+        self.attributes: dict = {}
 
 
 class _RetryCtx:
@@ -63,10 +64,15 @@ class _InvocShim:
     """Minimal stand-in for the InvocationRequest proto that ``get_context`` reads."""
     __slots__ = ("invocation_id", "trace_context", "retry_context")
 
-    def __init__(self, invocation_id):
+    def __init__(self, invocation_id, trace_parent="", trace_state=""):
         self.invocation_id = invocation_id
-        self.trace_context = _TraceCtx()
+        self.trace_context = _TraceCtx(trace_parent, trace_state)
         self.retry_context = _RetryCtx()
+
+
+def _otel_available():
+    return (otel_manager.get_azure_monitor_available()
+            or otel_manager.get_otel_libs_available())
 
 
 # --- Shared Datum-currency helpers -------------------------------------------
@@ -90,13 +96,15 @@ def _decode_inputs(fi, inputs, trigger_metadata):
     return args
 
 
-def _prepare_context(fi, invocation_id, args):
+def _prepare_context(fi, invocation_id, args, trace_parent="", trace_state=""):
     """Build the invocation context and scaffold ``Out`` params into *args*.
 
     Does NOT stamp ``thread_local_storage.invocation_id`` -- the sync path lets
     ``run_sync_func`` do that on the executing thread, while the async path sets
     it explicitly on the caller's context (see below)."""
-    fi_context = get_context(_InvocShim(invocation_id), fi.name, fi.directory)
+    fi_context = get_context(
+        _InvocShim(invocation_id, trace_parent, trace_state),
+        fi.name, fi.directory)
     if fi.requires_context:
         args['context'] = fi_context
     if fi.output_types:
@@ -134,7 +142,8 @@ def _encode_return(fi, call_result):
 
 
 async def invocation_request_native(invocation_id, function_id, inputs,
-                                    trigger_metadata):
+                                    trigger_metadata, trace_parent="",
+                                    trace_state=""):
     threadpool = get_threadpool_executor()
     fi = _functions.get_function(function_id)
     if fi is None:
@@ -142,11 +151,12 @@ async def invocation_request_native(invocation_id, function_id, inputs,
 
     try:
         args = _decode_inputs(fi, inputs, trigger_metadata)
-        fi_context = _prepare_context(fi, invocation_id, args)
+        fi_context = _prepare_context(fi, invocation_id, args,
+                                      trace_parent, trace_state)
         fi_context.thread_local_storage.invocation_id = invocation_id
 
         if fi.is_async:
-            if otel_manager.get_azure_monitor_available():
+            if _otel_available():
                 configure_opentelemetry(fi_context)
             # Correlate user logs emitted from async handlers with this
             # invocation. The sync path sets invocation_id_cv inside
@@ -177,7 +187,8 @@ async def invocation_request_native(invocation_id, function_id, inputs,
         return (False, None, [], repr(ex))
 
 
-def run_invocation_sync(invocation_id, function_id, inputs, trigger_metadata):
+def run_invocation_sync(invocation_id, function_id, inputs, trigger_metadata,
+                        trace_parent="", trace_state=""):
     """Synchronous native invocation for *sync* customer functions.
 
     Runs the handler directly on the calling thread (no asyncio loop, no
@@ -197,7 +208,8 @@ def run_invocation_sync(invocation_id, function_id, inputs, trigger_metadata):
 
     try:
         args = _decode_inputs(fi, inputs, trigger_metadata)
-        fi_context = _prepare_context(fi, invocation_id, args)
+        fi_context = _prepare_context(fi, invocation_id, args,
+                                      trace_parent, trace_state)
 
         call_result = run_sync_func(invocation_id, fi_context, fi.func, args)
 

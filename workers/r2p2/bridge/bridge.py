@@ -718,27 +718,85 @@ def _tuple_to_datum(t):
     return _Datum(value, type_str)
 
 
+def _flatten_cookies(cookies):
+    """Flatten the runtime's ``List[SimpleCookie]`` into plain dicts of
+    primitives so Rust (convert.rs) can build ``RpcHttpCookie`` prost messages
+    without any Python protobuf on the native path.
+
+    Mirrors the runtime's ``parse_to_rpc_http_cookie_list`` semantics: ``domain``
+    and ``path`` are always emitted (possibly empty), ``secure``/``http_only`` are
+    always booleans, ``same_site`` is pre-resolved to the RpcHttpCookie.SameSite
+    enum integer (None=0, Lax=1, Strict=2, 'none'->ExplicitNone=3), ``expires`` is
+    epoch seconds (or None) and ``max_age`` is a float (or None).
+    """
+    import datetime as _dt
+    out = []
+    for cookie in (cookies or []):
+        for name, morsel in cookie.items():
+            raw_ss = (morsel['samesite'] or '').lower()
+            if raw_ss == 'lax':
+                same_site = 1
+            elif raw_ss == 'strict':
+                same_site = 2
+            elif raw_ss == 'none':
+                same_site = 3
+            else:
+                same_site = 0
+
+            expires = None
+            exp_raw = morsel['expires']
+            if exp_raw:
+                try:
+                    expires = int(_dt.datetime.strptime(
+                        exp_raw, "%a, %d %b %Y %H:%M:%S GMT").timestamp())
+                except Exception:
+                    expires = None
+
+            max_age = None
+            ma_raw = morsel['max-age']
+            if ma_raw not in (None, ''):
+                try:
+                    max_age = float(ma_raw)
+                except Exception:
+                    max_age = None
+
+            out.append({
+                'name': name,
+                'value': morsel.value,
+                'domain': morsel['domain'] or '',
+                'path': morsel['path'] or '',
+                'secure': bool(morsel['secure']),
+                'http_only': bool(morsel['httponly']),
+                'same_site': same_site,
+                'expires': expires,
+                'max_age': max_age,
+            })
+    return out
+
+
 def _datum_to_tuple(d):
     """runtime ``Datum`` -> datum tuple (for Rust to prost-encode)."""
     if d is None:
         return None
     if d.type == 'http':
         v = d.value
-        if v.get('cookies'):
-            raise NotImplementedError(
-                "native path: http cookies not supported")
         return ('http', {
             'status_code': str(v['status_code'].value),
             'headers': {k: str(hv.value) for k, hv in v['headers'].items()},
+            'cookies': _flatten_cookies(v.get('cookies')),
             'body': _datum_to_tuple(v['body']),
         })
     return (d.type, d.value)
 
 
-def invoke_native(function_id, invocation_id, inputs, trigger_metadata):
+def invoke_native(function_id, invocation_id, inputs, trigger_metadata,
+                  trace_parent="", trace_state=""):
     """Entry called by Rust for the native invocation hot path.
 
     Returns ``(ok, return_datum_tuple, output_data_tuples, exception_text)``.
+    ``trace_parent``/``trace_state`` are the W3C trace context from the Host,
+    forwarded to the native runtime so customer OpenTelemetry spans are parented
+    correctly (parity with the control path's ``configure_opentelemetry``).
     """
     ni = _ensure_native()
     if not getattr(invoke_native, "_marked", False):
@@ -762,11 +820,13 @@ def invoke_native(function_id, invocation_id, inputs, trigger_metadata):
     # (Rust-dispatched) thread with no event-loop funnel. async handlers are
     # not "handled" here and fall through to the single-loop coroutine path.
     handled, ok, ret, outputs, exc = ni.run_invocation_sync(
-        invocation_id, function_id, in_datums, meta)
+        invocation_id, function_id, in_datums, meta,
+        trace_parent, trace_state)
     if not handled:
         ok, ret, outputs, exc = _run_coro(
             ni.invocation_request_native(
-                invocation_id, function_id, in_datums, meta))
+                invocation_id, function_id, in_datums, meta,
+                trace_parent, trace_state))
     if not ok:
         return (False, None, [], exc)
     ret_tuple = _datum_to_tuple(ret)

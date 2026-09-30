@@ -35,15 +35,17 @@ from .bindings.meta import get_binding, get_datum, is_trigger_binding
 from .bindings.out import Out
 from .handle_event import _functions
 from .logging import logger
+from .otel import configure_opentelemetry, otel_manager
 from .utils.executor import (execute_async, get_current_loop,
                              invocation_id_cv, run_sync_func)
 from .utils.threadpool import get_threadpool_executor
 
 
 class _TraceCtx:
-    trace_parent = ""
-    trace_state = ""
-    attributes: dict = {}
+    def __init__(self, trace_parent="", trace_state=""):
+        self.trace_parent = trace_parent
+        self.trace_state = trace_state
+        self.attributes: dict = {}
 
 
 class _RetryCtx:
@@ -56,10 +58,15 @@ class _InvocShim:
     """Minimal stand-in for the InvocationRequest proto that ``get_context`` reads."""
     __slots__ = ("invocation_id", "trace_context", "retry_context")
 
-    def __init__(self, invocation_id):
+    def __init__(self, invocation_id, trace_parent="", trace_state=""):
         self.invocation_id = invocation_id
-        self.trace_context = _TraceCtx()
+        self.trace_context = _TraceCtx(trace_parent, trace_state)
         self.retry_context = _RetryCtx()
+
+
+def _otel_available():
+    return (otel_manager.get_azure_monitor_available()
+            or otel_manager.get_otel_libs_available())
 
 
 # --- Shared Datum-currency helpers -------------------------------------------
@@ -86,13 +93,15 @@ def _decode_inputs(fi, inputs, trigger_metadata):
     return args
 
 
-def _prepare_context(fi, invocation_id, args):
+def _prepare_context(fi, invocation_id, args, trace_parent="", trace_state=""):
     """Build the invocation context and scaffold ``Out`` params into *args*.
 
     Does NOT stamp ``thread_local_storage.invocation_id`` -- the sync path lets
     ``run_sync_func`` do that on the executing thread, while the async path sets
     it explicitly on the caller's context (see below)."""
-    fi_context = get_context(_InvocShim(invocation_id), fi.name, fi.directory)
+    fi_context = get_context(
+        _InvocShim(invocation_id, trace_parent, trace_state),
+        fi.name, fi.directory)
     if fi.requires_context:
         args['context'] = fi_context
     if fi.output_types:
@@ -130,7 +139,8 @@ def _encode_return(fi, call_result):
 
 
 async def invocation_request_native(invocation_id, function_id, inputs,
-                                    trigger_metadata):
+                                    trigger_metadata, trace_parent="",
+                                    trace_state=""):
     threadpool = get_threadpool_executor()
     fi = _functions.get_function(function_id)
     if fi is None:
@@ -138,7 +148,8 @@ async def invocation_request_native(invocation_id, function_id, inputs,
 
     try:
         args = _decode_inputs(fi, inputs, trigger_metadata)
-        fi_context = _prepare_context(fi, invocation_id, args)
+        fi_context = _prepare_context(fi, invocation_id, args,
+                                      trace_parent, trace_state)
         fi_context.thread_local_storage.invocation_id = invocation_id
 
         if fi.is_async:
@@ -150,6 +161,11 @@ async def invocation_request_native(invocation_id, function_id, inputs,
             # context), so concurrent invocations don't clobber each other.
             token = invocation_id_cv.set(invocation_id)
             try:
+                # Parent customer spans / Azure Monitor export under the Host's
+                # trace context. run_sync_func does this for sync handlers; the
+                # async handler runs here, so attach it on this context.
+                if _otel_available():
+                    configure_opentelemetry(fi_context)
                 call_result = await execute_async(fi.func, args)
             finally:
                 invocation_id_cv.reset(token)
@@ -171,7 +187,8 @@ async def invocation_request_native(invocation_id, function_id, inputs,
         return (False, None, [], repr(ex))
 
 
-def run_invocation_sync(invocation_id, function_id, inputs, trigger_metadata):
+def run_invocation_sync(invocation_id, function_id, inputs, trigger_metadata,
+                        trace_parent="", trace_state=""):
     """Synchronous native invocation for *sync* customer functions.
 
     Runs the handler directly on the calling thread (no asyncio loop, no
@@ -191,8 +208,11 @@ def run_invocation_sync(invocation_id, function_id, inputs, trigger_metadata):
 
     try:
         args = _decode_inputs(fi, inputs, trigger_metadata)
-        fi_context = _prepare_context(fi, invocation_id, args)
+        fi_context = _prepare_context(fi, invocation_id, args,
+                                      trace_parent, trace_state)
 
+        # run_sync_func calls configure_opentelemetry(fi_context) when otel is
+        # available, so the trace context prepared above parents customer spans.
         call_result = run_sync_func(invocation_id, fi_context, fi.func, args)
 
         _check_return(fi, call_result)

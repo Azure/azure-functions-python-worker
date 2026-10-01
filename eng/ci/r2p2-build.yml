@@ -1,29 +1,17 @@
+# R2P2 is the Python 3.15 worker. These build/unit checks run on every dev
+# commit and PR (no path filter) so Python 3.15 coverage gates PRs alongside
+# the classic 3.10-3.14 pytest suites, which cannot host 3.15 (grpcio/aiohttp
+# have no cp315 wheels and proxy_worker is not the 3.15 worker).
 trigger:
   batch: true
   branches:
     include:
     - dev
-  paths:
-    include:
-    - workers/r2p2/*
-    - workers/python/r2p2/*
-    - runtimes/v2/*
-    - eng/ci/r2p2-build.yml
-    - eng/templates/jobs/r2p2-build.yml
-    - eng/templates/shared/r2p2-build-steps.yml
 
 pr:
   branches:
     include:
     - dev
-  paths:
-    include:
-    - workers/r2p2/*
-    - workers/python/r2p2/*
-    - runtimes/v2/*
-    - eng/ci/r2p2-build.yml
-    - eng/templates/jobs/r2p2-build.yml
-    - eng/templates/shared/r2p2-build-steps.yml
 
 resources:
   repositories:

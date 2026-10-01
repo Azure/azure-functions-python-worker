@@ -1,0 +1,90 @@
+parameters:
+  PYTHON_VERSION: ''
+  PROJECT_NAME: ''
+  IMAGE_TAG: 'r2p2:emulator'
+
+steps:
+  - bash: |
+      set -euo pipefail
+      # The minimal agent image may not ship the Docker Compose v2 CLI plugin,
+      # which the Event Hubs emulator bring-up needs. Install it from the Ubuntu
+      # archive BEFORE starting any emulator (installing it can restart the
+      # Docker daemon and would kill already-running containers).
+      if ! docker compose version >/dev/null 2>&1; then
+        echo "Docker Compose v2 plugin not found; installing..."
+        sudo apt-get update
+        sudo apt-get install -y docker-compose-v2
+      fi
+      docker compose version
+    displayName: 'Ensure Docker Compose v2 is installed'
+
+  - bash: |
+      set -euo pipefail
+      docker system prune -af --volumes || true
+      docker pull mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+      docker run --detach --name cosmos-emulator \
+        --env ENABLE_EXPLORER=false \
+        --publish 8081:8081 \
+        mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+      docker ps
+    displayName: 'Start CosmosDB Emulator'
+
+  - bash: |
+      set -euo pipefail
+      docker compose -f workers/tests/emulator_tests/utils/eventhub/docker-compose.yml pull
+      docker compose -f workers/tests/emulator_tests/utils/eventhub/docker-compose.yml up -d
+      docker ps
+    displayName: 'Start EventHub Emulator and Azurite'
+
+  - bash: |
+      set -euo pipefail
+      docker --version
+      echo "Building R2P2 emulator image (${{ parameters.IMAGE_TAG }})"
+      # Build context is the repository root so the Dockerfile can COPY the
+      # worker source, the v1 + v2 runtimes, and the pytest harness.
+      docker build \
+        -f _r2p2_extras/docker/Dockerfile.emulator \
+        -t ${{ parameters.IMAGE_TAG }} \
+        .
+    displayName: 'Build R2P2 emulator image'
+    workingDirectory: $(Build.SourcesDirectory)
+
+  - bash: |
+      set -euo pipefail
+      # Run the staged R2P2 under the real Host + the emulator_tests suite.
+      # --network host lets the in-container Host/worker/pytest reach the
+      # sibling emulator containers published on the agent's localhost
+      # (Cosmos 8081, Event Hubs 5672, Azurite 10000-10002). The emulator
+      # connection strings/endpoints are injected as env vars, mirroring the
+      # classic emulator job. Durable + Service Bus suites are excluded inside
+      # run_emulator.sh (aiohttp / uamqp have no cp315 wheels yet).
+      docker run --rm \
+        --name r2p2-emulator \
+        --network host \
+        -e AzureWebJobsStorage="${AzureWebJobsStorage}" \
+        -e AZURE_STORAGE_CONNECTION_STRING="${AZURE_STORAGE_CONNECTION_STRING}" \
+        -e AzureWebJobsEventHubConnectionString="${AzureWebJobsEventHubConnectionString}" \
+        -e AzureWebJobsCosmosDBConnectionString="${AzureWebJobsCosmosDBConnectionString}" \
+        -e CosmosDBEmulatorUrl="${CosmosDBEmulatorUrl}" \
+        -e CosmosDBEmulatorKey="${CosmosDBEmulatorKey}" \
+        ${{ parameters.IMAGE_TAG }}
+    displayName: 'Run R2P2 emulator tests'
+    workingDirectory: $(Build.SourcesDirectory)
+    env:
+      # Map pipeline (variable-group) values into the step so they can be
+      # forwarded to the container. Secret variables are not auto-exported.
+      AzureWebJobsStorage: $(AzureWebJobsStorage)
+      AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
+      AzureWebJobsEventHubConnectionString: $(EmulatorEventHubConnectionString)
+      AzureWebJobsCosmosDBConnectionString: $(EmulatorCosmosDBConnectionString)
+      CosmosDBEmulatorUrl: $(CosmosDBEmulatorUrl)
+      CosmosDBEmulatorKey: $(CosmosDBEmulatorKey)
+
+  - bash: |
+      echo "Cleaning up emulators and image..."
+      docker stop r2p2-emulator cosmos-emulator eventhubs-emulator azurite 2>/dev/null || true
+      docker compose -f workers/tests/emulator_tests/utils/eventhub/docker-compose.yml down || true
+      docker rm -f cosmos-emulator 2>/dev/null || true
+      docker system prune -af --volumes || true
+    displayName: 'Cleanup after emulator tests'
+    condition: always()

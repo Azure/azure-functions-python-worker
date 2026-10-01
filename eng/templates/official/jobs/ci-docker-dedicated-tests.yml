@@ -12,12 +12,6 @@ jobs:
     
     strategy:
       matrix:
-        Python39:
-          PYTHON_VERSION: '3.9'
-          STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
-          SQL_CONNECTION: $(LinuxSqlConnectionString39)
-          EVENTGRID_URI: $(LinuxEventGridTopicUriString39)
-          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString39)
         Python310:
           PYTHON_VERSION: '3.10'
           STORAGE_CONNECTION: $(LinuxStorageConnectionString310)

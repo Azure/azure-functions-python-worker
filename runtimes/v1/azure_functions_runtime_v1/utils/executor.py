@@ -7,8 +7,6 @@ import functools
 
 from typing import Any
 
-from ..otel import otel_manager, configure_opentelemetry
-
 
 def get_current_loop():
     return asyncio.events.get_event_loop()
@@ -31,8 +29,6 @@ def run_sync_func(invocation_id, context, func, params):
     context.thread_local_storage.invocation_id = invocation_id
     token = invocation_id_cv.set(invocation_id)
     try:
-        if otel_manager.get_azure_monitor_available():
-            configure_opentelemetry(context)
         result = functools.partial(execute_sync, func)
         return result(params)
     finally:

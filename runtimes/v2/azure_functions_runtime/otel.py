@@ -107,10 +107,15 @@ def initialize_azure_monitor():
 
 
 def configure_opentelemetry(invocation_context):
+    trace_context_propagator = otel_manager.get_trace_context_propagator()
+    context_api = otel_manager.get_context_api()
+    if trace_context_propagator is None or context_api is None:
+        return
+
     carrier = {TRACEPARENT: invocation_context.trace_context.trace_parent,
                TRACESTATE: invocation_context.trace_context.trace_state}
-    ctx = otel_manager.get_trace_context_propagator().extract(carrier)
-    otel_manager.get_context_api().attach(ctx)
+    ctx = trace_context_propagator.extract(carrier)
+    context_api.attach(ctx)
 
 
 otel_manager = OTelManager()

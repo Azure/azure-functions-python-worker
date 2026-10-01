@@ -376,7 +376,7 @@ class TestHttpFunctions(testutils.WebHostTestCase):
                                  'set_cookie_resp_header_default_values')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers.get('Set-Cookie'),
-                         'foo=bar; domain=; path=')
+                         'foo=bar; path=')
 
     def test_response_cookie_header_nullable_timestamp_err(self):
         r = self.webhost.request(

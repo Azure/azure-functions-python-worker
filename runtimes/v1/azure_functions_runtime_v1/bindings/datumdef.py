@@ -166,7 +166,7 @@ def parse_to_rpc_http_cookie_list(cookies: Optional[List[SimpleCookie]], protos)
                 protos.RpcHttpCookie(name=name,
                                      value=cookie_entity.value,
                                      domain=to_nullable_string(
-                                         cookie_entity['domain'],
+                                         cookie_entity['domain'] or None,
                                          'cookie.domain',
                                          protos),
                                      path=to_nullable_string(

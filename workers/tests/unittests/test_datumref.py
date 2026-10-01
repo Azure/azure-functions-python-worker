@@ -66,6 +66,16 @@ class TestDatumRef(unittest.TestCase):
     def test_parse_to_rpc_http_cookie_list_none(self):
         self.assertEqual(parse_to_rpc_http_cookie_list(None), None)
 
+    def test_host_only_cookie_omits_domain(self):
+        cookie = SimpleCookie()
+        cookie.load('__Host-test=value; Path=/; Secure; HttpOnly; SameSite=Lax')
+
+        rpc_cookie = parse_to_rpc_http_cookie_list([cookie])[0]
+
+        self.assertFalse(rpc_cookie.HasField('domain'))
+        self.assertEqual(rpc_cookie.path.value, '/')
+        self.assertTrue(rpc_cookie.secure.value)
+
     def test_parse_to_rpc_http_cookie_list_valid(self):
         headers = [
             'foo=bar; Path=/some/path; Secure; HttpOnly; Domain=123; '

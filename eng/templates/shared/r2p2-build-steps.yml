@@ -123,6 +123,8 @@ steps:
     displayName: 'cargo test'
     workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
 
-  # End-to-end coverage (bridge + v2 runtime + real Host round trip) lives in the
-  # dedicated Docker E2E pipeline (eng/ci/r2p2-e2e.yml), which stages the
-  # Rust binary into the Host image and runs workers/tests/endtoend against it.
+  # End-to-end + emulator coverage (bridge + v2 runtime + real Host round trip)
+  # runs through the local-only Docker harness under _r2p2_extras/docker/
+  # (Dockerfile.e2e / Dockerfile.emulator), which is gitignored and run by
+  # developers on demand. It is deliberately not wired into a committed CI
+  # pipeline because the build context lives outside source control.

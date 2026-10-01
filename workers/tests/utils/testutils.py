@@ -31,7 +31,6 @@ import typing
 import unittest
 import uuid
 
-import grpc
 import requests
 from tests.utils.constants import (
     ARCHIVE_WEBHOST_LOGS,
@@ -50,6 +49,8 @@ from tests.utils.testutils_docker import (
 )
 
 if sys.version_info.minor < 13:
+    import grpc
+
     from azure_functions_worker import dispatcher, protos
     from azure_functions_worker.bindings.shared_memory_data_transfer import (
         FileAccessorFactory,

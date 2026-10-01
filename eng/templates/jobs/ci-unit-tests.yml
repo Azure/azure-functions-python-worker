@@ -128,4 +128,49 @@ jobs:
           df -h
         displayName: 'Cleanup after tests'
         condition: always()
+
+  # Python 3.15 unit tests run as a separate job, NOT a matrix line on
+  # TestPython above. On 3.15 the worker is R2P2 (Rust + PyO3), not
+  # proxy_worker/azure_functions_worker, and the shared setup used by TestPython
+  # is cp315-incompatible: install-dependencies.sh pulls the [dev] extra
+  # (aiohttp via durable, pandas, grpcio, ...) which has no cp315 wheels, and
+  # test-setup.sh's build-protos needs grpcio-tools (no cp315). The R2P2 bridge
+  # unit suite (tests/unittest_r2p2) imports only the pure-Python bridge
+  # (bridge + protos_adapter) and the standard library, so it needs none of
+  # that -- just pytest. Keep this in the same pipeline so all Python unit tests
+  # live together.
+  - job: "TestR2P2Unit"
+    displayName: "Run R2P2 Bridge Unit Tests (Python 3.15)"
+
+    pool:
+      name: ${{ parameters.PoolName }}
+      image: 1es-ubuntu-24.04-min
+      os: linux
+
+    steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.15'
+      - bash: |
+          python --version
+          python -m pip install --upgrade pip
+          # Minimal, cp315-safe install: just pytest + the plugins the shared
+          # invocation style uses. asyncio_mode=auto in the root pytest.ini
+          # requires pytest-asyncio even though these tests are synchronous.
+          # NO uv [dev] install, NO webhost/protos build -- the bridge suite is
+          # dependency-free (see tests/unittest_r2p2/conftest.py).
+          python -m pip install \
+            "pytest~=7.4.4" pytest-asyncio pytest-rerunfailures pytest-instafail
+        displayName: 'Install pytest (Python 3.15)'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+      - bash: |
+          python -m pytest -q --reruns 4 --reruns-delay 5 --instafail tests/unittest_r2p2
+        displayName: 'Running Python 3.15 R2P2 bridge unit tests'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
   

@@ -124,7 +124,6 @@ steps:
     workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
 
   # End-to-end + emulator coverage (bridge + v2 runtime + real Host round trip)
-  # runs through the local-only Docker harness under _r2p2_extras/docker/
-  # (Dockerfile.e2e / Dockerfile.emulator), which is gitignored and run by
-  # developers on demand. It is deliberately not wired into a committed CI
-  # pipeline because the build context lives outside source control.
+  # is run on demand during development and is intentionally not wired into a
+  # committed CI pipeline. This pipeline provides the committed Python 3.15
+  # coverage: cargo fmt/clippy/build/test plus the Python bridge flake8.

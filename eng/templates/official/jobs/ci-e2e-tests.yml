@@ -187,3 +187,188 @@ jobs:
           df -h
         displayName: 'Cleanup after tests'
         condition: always()
+
+  # ---------------------------------------------------------------------------
+  # Python 3.15 E2E against the R2P2 (Rust) worker.
+  #
+  # 3.15 CANNOT be a line in the TestPython matrix above: the shared setup
+  # scripts are cp315-hostile (install-dependencies.sh installs workers/[dev]
+  # -> opencv/pandas/scikit-learn/aiohttp, and test-setup.sh runs build-protos
+  # -> grpcio-tools; none ship cp315 wheels), and the 3.15 worker is the R2P2
+  # Rust binary that must be built and staged, not the in-proc Python worker.
+  #
+  # This job therefore builds the R2P2 from source, stages it into the worker
+  # directory the harness expects (testutils.R2P2_PATH), installs a minimal
+  # cp315-safe dependency set (NOT the [dev] extra), builds the Host webhost +
+  # extensions (SKIPPING build-protos -- the stubs are committed), and runs the
+  # SAME tests/endtoend suite the classic worker runs. Function apps whose
+  # third-party wheels have no cp315 build are guarded with
+  # @skipIf(sys.version_info.minor >= 15); --continue-on-collection-errors is a
+  # safety net. Live-Azure bindings reuse the Python 3.14 connection strings
+  # (the ...String38 variable group slot).
+  # ---------------------------------------------------------------------------
+  - job: "TestR2P2E2E"
+    displayName: "Run Python 3.15 R2P2 E2E Tests"
+
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-ubuntu-24.04-min
+      os: linux
+
+    variables:
+      PYTHON_VERSION: '3.15'
+      STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
+      SQL_CONNECTION: $(LinuxSqlConnectionString38)
+      EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
+      EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)
+
+    steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
+
+      - bash: |
+          echo "Disk space before cleanup:"
+          df -h
+          docker system prune -af --volumes || true
+          pip cache purge || true
+          sudo apt-get clean || true
+          sudo rm -rf /var/lib/apt/lists/* || true
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Free disk space'
+
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(PYTHON_VERSION)
+
+      - bash: |
+          set -euo pipefail
+          # PyO3 (auto-initialize) links against libpython, so point the Rust
+          # build at the interpreter UsePythonVersion selected, and put that
+          # interpreter's libdir on LD_LIBRARY_PATH so the staged r2p2 binary
+          # can load libpython3.15.so when the Host spawns it during the tests.
+          PY="$(which python)"
+          echo "##vso[task.setvariable variable=PYO3_PYTHON]$PY"
+          LIBDIR="$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR") or "")')"
+          echo "##vso[task.setvariable variable=LD_LIBRARY_PATH]$LIBDIR:${LD_LIBRARY_PATH:-}"
+          echo "PYO3_PYTHON=$PY LIBDIR=$LIBDIR"
+          python --version
+        displayName: 'Configure Python for PyO3'
+
+      - bash: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "##vso[task.prependpath]$HOME/.cargo/bin"
+        displayName: 'Install Rust toolchain'
+
+      - task: CargoAuthenticate@0
+        displayName: 'Authenticate Cargo to CFS'
+        inputs:
+          configFile: '$(Build.SourcesDirectory)/workers/r2p2/.cargo/config.toml'
+
+      - bash: |
+          set -euo pipefail
+          rustc --version && cargo --version
+          cargo build --release --locked
+        displayName: 'Build R2P2 (cargo build --release)'
+        workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
+
+      - task: UseDotNet@2
+        displayName: 'Install .NET 10'
+        inputs:
+          version: 10.0.x
+      - task: NuGetAuthenticate@1
+        displayName: 'Authenticate NuGet to CFS'
+
+      - bash: |
+          set -euo pipefail
+          # Minimal cp315-safe install. NOT workers/[dev] (opencv/pandas/
+          # scikit-learn/aiohttp have no cp315 wheels). grpcio + protobuf are
+          # required because the pytest harness imports proxy_worker.protos
+          # (-> FunctionRpc_pb2_grpc -> import grpc). invoke drives the Host
+          # webhost/extensions build. The R2P2's embedded interpreter imports
+          # the v2/v1 runtimes from these editable installs.
+          python -m pip install --upgrade pip
+          python -m pip install "setuptools>=62,<82.0"
+          python -m pip install \
+            "azure-functions==2.3.0b2" \
+            "grpcio>=1.75.1" "protobuf>=5.29,<7" "requests==2.*" \
+            "pytest~=7.4.4" pytest-asyncio pytest-rerunfailures pytest-instafail \
+            invoke \
+            -e runtimes/v2 -e runtimes/v1
+        displayName: 'Install Python dependencies (cp315-safe)'
+
+      - bash: |
+          set -euo pipefail
+          # Build the Host webhost + extensions. SKIP build-protos: the stubs
+          # are committed under workers/proxy_worker and grpcio-tools has no
+          # cp315 wheel.
+          cd workers/tests
+          python -m invoke -c test_setup webhost --branch-name=dev
+          python -m invoke -c test_setup extensions
+        displayName: 'Build webhost and extensions (skip build-protos)'
+
+      - bash: |
+          set -euo pipefail
+          # Stage the R2P2 into the worker directory the harness drives via
+          # PYAZURE_WORKER_DIR. r2p2 derives workers_dir/bridge_dir from its own
+          # location, so the binary, its bridge/ package and worker.config.json
+          # live side by side here. The v2/v1 runtimes are resolved from the
+          # editable installs in site-packages.
+          WORKER_DIR="$(Build.SourcesDirectory)/workers/python/test_r2p2"
+          rm -rf "$WORKER_DIR"
+          mkdir -p "$WORKER_DIR"
+          cp "$(Build.SourcesDirectory)/workers/r2p2/target/release/r2p2" "$WORKER_DIR/r2p2"
+          chmod +x "$WORKER_DIR/r2p2"
+          cp -r "$(Build.SourcesDirectory)/workers/r2p2/bridge" "$WORKER_DIR/bridge"
+          cat > "$WORKER_DIR/worker.config.json" <<JSON
+          {
+              "description": {
+                  "language": "python",
+                  "defaultRuntimeVersion": "3.15",
+                  "supportedRuntimeVersions": ["3.15"],
+                  "supportedOperatingSystems": ["LINUX"],
+                  "supportedArchitectures": ["X64"],
+                  "extensions": [".py"],
+                  "defaultExecutablePath": "$WORKER_DIR/r2p2",
+                  "workerIndexing": "true"
+              },
+              "processOptions": {
+                  "initializationTimeout": "00:02:00",
+                  "environmentReloadTimeout": "00:02:00"
+              }
+          }
+          JSON
+          echo "Staged R2P2 at $WORKER_DIR:"
+          ls -la "$WORKER_DIR"
+        displayName: 'Stage R2P2 worker'
+
+      - bash: |
+          python -m pytest -q --reruns 4 --continue-on-collection-errors --instafail tests/endtoend
+        env:
+          AzureWebJobsStorage: $(STORAGE_CONNECTION)
+          STORAGE_CONNECTION: $(STORAGE_CONNECTION)
+          AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
+          AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
+          AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
+          PYAZURE_WORKER_DIR: $(Build.SourcesDirectory)/workers/python/test_r2p2
+          PYTHONPATH: $(Build.SourcesDirectory)/workers
+          PYAZURE_WEBHOST_DEBUG: true
+        displayName: "Running Python 3.15 R2P2 E2E Tests"
+        workingDirectory: $(Build.SourcesDirectory)/workers
+
+      - bash: |
+          echo "Cleaning up after tests..."
+          rm -rf $(Build.SourcesDirectory)/workers/build || true
+          rm -rf $(Build.SourcesDirectory)/workers/.pytest_cache || true
+          rm -rf $(Build.SourcesDirectory)/workers/python/test_r2p2 || true
+          rm -rf $(Build.SourcesDirectory)/workers/r2p2/target || true
+          docker system prune -f || true
+          pip cache purge || true
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Cleanup after tests'
+        condition: always()

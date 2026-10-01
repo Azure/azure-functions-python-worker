@@ -73,7 +73,9 @@ Event Grid) or app-specific third-party wheels skip or require configured
 connection strings (`.testconfig`); the runner passes
 `--continue-on-collection-errors` so they do not abort the run.
 
-This flow runs in CI via `eng/ci/r2p2-e2e.yml`.
+These end-to-end and emulator suites are run on demand during development.
+Committed CI coverage for Python 3.15 is the cargo build/test pipeline
+(`eng/ci/r2p2-build.yml`).
 
 ## Notes
 

@@ -25,6 +25,9 @@ REQUEST_TIMEOUT_SEC = 5
                  "Tests are flaky when running on Docker")
 @unittest.skipIf(sys.version_info.minor < 8, "HTTPv2"
                                              "is only supported for 3.8+.")
+@unittest.skipIf(sys.version_info.minor >= 15,
+                 "azurefunctions-extensions-http-fastapi (fastapi/pydantic) "
+                 "has no Python 3.15 wheels yet (R2P2 worker).")
 class TestHttpFunctionsWithInitIndexing(testutils.WebHostTestCase):
     @classmethod
     def setUpClass(cls):

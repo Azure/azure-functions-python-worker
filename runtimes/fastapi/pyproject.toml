@@ -1,0 +1,72 @@
+[project]
+name = "victorias-fastapi-test"
+dynamic = ["version"]
+requires-python = ">=3.10"
+description = "FastAPI Runtime for Azure Functions Python Worker"
+authors = [
+    { name = "Azure Functions team at Microsoft Corp.", email = "azurefunctions@microsoft.com" }
+]
+keywords = ["azure", "functions", "azurefunctions",
+            "python", "serverless", "fastapi"]
+license = { name = "MIT", file = "LICENSE" }
+readme = { file = "README.md", content-type = "text/markdown" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS :: MacOS X",
+    "Environment :: Web Environment",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers"
+]
+dependencies = [
+    "azure-functions",
+    "azurefunctions-extensions-base>=1.3.0b1",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",  # ASGI server for HTTP streaming
+    "starlette>=0.27.0",  # FastAPI's underlying framework
+]
+
+[project.urls]
+Documentation = "https://github.com/Azure/azure-functions-python-worker/blob/dev/runtimes/fastapi/README.md"
+Repository = "https://github.com/Azure/azure-functions-python-worker"
+
+[project.optional-dependencies]
+dev = [
+    "flake8==6.*",
+    "mypy",
+    "pytest",
+    "pytest-asyncio",
+    "httpx",  # For FastAPI testing
+    "requests==2.*",
+    "coverage",
+    "pytest-sugar",
+    "pytest-cov",
+    "pytest-xdist",
+    "pytest-randomly",
+    "pytest-instafail",
+    "pytest-rerunfailures",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["azure_functions_fastapi"]
+
+[tool.setuptools.dynamic]
+version = {attr = "azure_functions_fastapi.version.VERSION"}
+
+[tool.setuptools.package-data]
+azure_functions_fastapi = ["py.typed"]
+
+[project.entry-points."azurefunctions.runtimes"]
+fastapi = "azure_functions_fastapi:Runtime"

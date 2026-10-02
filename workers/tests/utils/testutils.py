@@ -248,6 +248,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         cls.host_stdout = None if is_envvar_true(PYAZURE_WEBHOST_DEBUG) \
             else tempfile.NamedTemporaryFile('w+t')
+        cls.webhost = None
 
         try:
             if docker_tests_enabled:
@@ -274,14 +275,23 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     cls.host_stdout_logger.error(error_message)
                     raise RuntimeError(error_message)
         except Exception as ex:
+            if cls.host_stdout is not None:
+                cls.host_stdout.flush()
+                cls.host_stdout.seek(0)
+                cls.host_out = cls.host_stdout.read()
+                if cls.host_out:
+                    cls.host_stdout_logger.error(
+                        'Captured WebHost log during startup:\n%s',
+                        cls.host_out)
             cls.host_stdout_logger.error(f"WebHost is not started correctly. {ex}")
             cls.tearDownClass()
             raise
 
     @classmethod
     def tearDownClass(cls):
-        cls.webhost.close()
-        cls.webhost = None
+        if cls.webhost is not None:
+            cls.webhost.close()
+            cls.webhost = None
 
         if cls.host_stdout is not None:
             if is_envvar_true(ARCHIVE_WEBHOST_LOGS):
@@ -846,6 +856,7 @@ class _WebHostProxy:
     def __init__(self, proc, addr):
         self._proc = proc
         self._addr = addr
+        self.readiness_failure = None
 
     def is_healthy(self):
         r = self.request('GET', '', no_prefix=True)
@@ -882,8 +893,13 @@ class _WebHostProxy:
         last_state = None
         running = False
         while time.time() < deadline:
-            if self._proc.poll() is not None:
+            exit_code = self._proc.poll()
+            if exit_code is not None:
                 # Host process exited.
+                self.readiness_failure = (
+                    f'host process exited with code {exit_code} before '
+                    'becoming ready'
+                )
                 return False
             try:
                 if not running:
@@ -912,6 +928,14 @@ class _WebHostProxy:
             except requests.RequestException:
                 pass
             time.sleep(poll_interval)
+        if running:
+            self.readiness_failure = (
+                'host reported Running but registered no functions'
+            )
+        else:
+            self.readiness_failure = (
+                f'host did not report Running (last state: {last_state!r})'
+            )
         logging.getLogger('webhosttests').warning(
             "Webhost did not become ready within %.0fs "
             "(host running: %s, last state: %r, functions registered: no). "
@@ -937,6 +961,9 @@ class _WebHostProxy:
         if self._proc.stderr:
             self._proc.stderr.close()
 
+        if self._proc.poll() is not None:
+            return
+
         self._proc.terminate()
         try:
             self._proc.wait(20)
@@ -949,6 +976,15 @@ def _find_open_port():
         s.bind((LOCALHOST, 0))
         s.listen(1)
         return s.getsockname()[1]
+
+
+def _get_worker_path():
+    worker_path = os.environ.get(PYAZURE_WORKER_DIR)
+    if worker_path:
+        return pathlib.Path(worker_path)
+    if sys.version_info[:2] >= R2P2_MIN_VERSION:
+        return R2P2_PATH
+    return WORKER_PATH
 
 
 def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
@@ -1017,16 +1053,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             'stdout and stderr from function host.'
         ]))
 
-    worker_path = os.environ.get(PYAZURE_WORKER_DIR)
-    if worker_path:
-        worker_path = pathlib.Path(worker_path)
-    elif sys.version_info[:2] >= R2P2_MIN_VERSION:
-        # No explicit worker dir and running under Python 3.15+: the shipped
-        # worker is the R2P2, so drive the Host with the staged Rust
-        # worker directory. Set PYAZURE_WORKER_DIR to override.
-        worker_path = R2P2_PATH
-    else:
-        worker_path = WORKER_PATH
+    worker_path = _get_worker_path()
     if not worker_path.exists():
         raise RuntimeError(f'Worker path {worker_path} does not exist')
 
@@ -1109,7 +1136,16 @@ def start_webhost(*, script_dir=None, stdout=None):
     # rather than relying on a fixed sleep. The previous `time.sleep(10)`
     # was racy on slower agents (Python 3.9-3.11 cold starts in particular)
     # which caused intermittent test failures like flaky `test_unhandled_error`.
-    proxy.wait_until_ready(timeout=60.0)
+    if not proxy.wait_until_ready(timeout=60.0):
+        worker_path = _get_worker_path()
+        worker_config = worker_path / 'worker.config.json'
+        reason = proxy.readiness_failure or 'unknown readiness failure'
+        proxy.close()
+        raise RuntimeError(
+            f'WebHost failed to start: {reason}. '
+            f'Worker directory: {worker_path}. '
+            f'Worker config: {worker_config}'
+        )
     return proxy
 
 

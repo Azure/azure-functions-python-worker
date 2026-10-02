@@ -1,7 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+import sys
 import typing
+import unittest
 from unittest.mock import patch
 
 import requests
@@ -153,6 +155,9 @@ class TestHttpFunctionsSteinGeneric(TestHttpFunctionsStein):
                                             'generic'
 
 
+@unittest.skipIf(sys.version_info.minor >= 15,
+                 "opencv-python, pandas and scikit-learn have no Python 3.15 "
+                 "wheels yet (R2P2 worker).")
 class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
     """Test the common libs scenarios in the local webhost.
 

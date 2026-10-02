@@ -1,0 +1,128 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+#
+# OS-aware packaging template for the R2P2 (Python 3.15+).
+#
+# Unlike nix_env_gen / win_env_gen (which pip-install a pure-Python worker),
+# the R2P2 is a native binary that embeds CPython via PyO3, so every target OS
+# must compile it on a *native* agent with outbound access to crates.io. This
+# single template drives all R2P2 shipping jobs (Windows x64/arm64, Linux x64,
+# macOS x64/arm64); it selects the platform build script and stages an
+# identical artifact layout for the V4 nuspec (tools/<ver>/<OS>/<Arch>).
+#
+# parameters:
+#   pythonVersion : interpreter to link against (e.g. 3.15.0-rc.1)
+#   artifactName  : pipeline artifact name (e.g. 3.15_WINDOWS_ARM64)
+#   osName        : WINDOWS | LINUX | OSX (selects the build script)
+
+parameters:
+  pythonVersion: ''
+  artifactName: ''
+  osName: ''
+
+steps:
+- task: PipAuthenticate@1
+  displayName: 'Authenticate pip to CFS'
+  inputs:
+    artifactFeeds: 'public/upstream-public'
+    onlyAddExtraIndex: false
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: ${{ parameters.pythonVersion }}
+    allowUnstable: true
+    addToPath: true
+- task: CargoAuthenticate@0
+  displayName: 'Authenticate Cargo to CFS'
+  inputs:
+    configFile: '$(Build.SourcesDirectory)/workers/r2p2/.cargo/config.toml'
+- ${{ if eq(parameters.osName, 'WINDOWS') }}:
+  - task: PowerShell@2
+    displayName: 'Build R2P2 + dependencies'
+    inputs:
+      filePath: 'eng/pack/scripts/r2p2_deps.ps1'
+      arguments: '-PythonVersion ${{ parameters.pythonVersion }}'
+      pwsh: true
+- ${{ else }}:
+  - task: ShellScript@2
+    displayName: 'Build R2P2 + dependencies'
+    inputs:
+      disableAutoCwd: true
+      scriptPath: 'eng/pack/scripts/r2p2_deps.sh'
+      args: '${{ parameters.pythonVersion }}'
+- task: CopyFiles@2
+  displayName: 'Copy R2P2 files'
+  inputs:
+    sourceFolder: '$(Build.SourcesDirectory)/deps'
+    contents: |
+      **
+      !grpc/**
+      !grpc_tools/**/*
+      !grpcio*/**
+      !build/**
+      !docs/**
+      !eng/**
+      !python/**
+      !tests/**
+      !setuptools*/**
+      !_distutils_hack/**
+      !distutils-precedence.pth
+      !pkg_resources/**
+      !*.dist-info/**
+      !werkzeug/debug/shared/debugger.js
+      !proxy_worker/**
+      !uvloop/**
+      !six.py
+      !typing_extensions.py
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+- task: CopyFiles@2
+  displayName: 'Copy R2P2 launcher shim'
+  inputs:
+    sourceFolder: '$(Build.SourcesDirectory)/workers/python/r2p2'
+    contents: 'worker.py'
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+- powershell: |
+    $root = "$(Build.ArtifactStagingDirectory)"
+
+    # The R2P2 owns the gRPC transport (tonic), so the Python grpc stack
+    # and proxy_worker are intentionally absent. Both the v2 and v1 runtimes are
+    # staged; the bridge selects one per programming model and drives its native
+    # path. worker.py is the launcher shim the Host invokes (per the shared
+    # top-level worker.config.json); it os.execv's the native r2p2 binary.
+    # The binary is r2p2.exe on Windows, r2p2 elsewhere.
+    $binary = if ($IsWindows) { "r2p2.exe" } else { "r2p2" }
+    $expected = @(
+        $binary,
+        "worker.py",
+        "bridge/bridge.py",
+        "bridge/protos_adapter.py",
+        "azure_functions_runtime",
+        "azure_functions_runtime/native_invocation.py",
+        "azure_functions_runtime/utils/executor.py",
+        "azure_functions_runtime_v1",
+        "azure_functions_runtime_v1/native_invocation.py",
+        "azure_functions_runtime_v1/utils/executor.py",
+        "azure",
+        "azurefunctions"
+    )
+    $forbidden = @("grpc", "proxy_worker", "uvloop")
+
+    $missing = @()
+    foreach ($item in $expected) {
+        if (-not (Test-Path (Join-Path $root $item))) { $missing += $item }
+    }
+    $present = @()
+    foreach ($item in $forbidden) {
+        if (Test-Path (Join-Path $root $item)) { $present += $item }
+    }
+
+    if ($missing.Count -gt 0) {
+        Write-Error "Validation failed. Missing expected files/folders:`n$($missing -join "`n")"
+        exit 1
+    }
+    if ($present.Count -gt 0) {
+        Write-Error "Validation failed. Pruned packages unexpectedly present:`n$($present -join "`n")"
+        exit 1
+    }
+    Write-Host "✅ Validation passed. R2P2 artifact contents are correct."
+  displayName: "Validate R2P2 artifact contents"
+  pwsh: true

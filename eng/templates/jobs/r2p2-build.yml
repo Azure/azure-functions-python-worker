@@ -1,0 +1,29 @@
+parameters:
+  PYTHON_VERSION: ''
+  SIMPLE_VERSION: ''
+  PROJECT_NAME: ''
+  PROJECT_DIRECTORY: 'workers/r2p2'
+  # OS/arch matrix inputs. Defaults preserve the original Linux x64 job so
+  # existing callers keep working; the CI entry (eng/ci/r2p2-build.yml) overrides
+  # these per platform (Linux x64, Windows x64, Windows ARM64, macOS ARM64).
+  OS_ARCH: 'LINUX_X64'
+  POOL_NAME: '1es-pool-azfunc-public'
+  POOL_IMAGE: '1es-ubuntu-22.04'
+  POOL_OS: 'linux'
+
+jobs:
+  - job: "RustBuild${{ parameters.SIMPLE_VERSION }}_${{ parameters.OS_ARCH }}"
+    displayName: 'Build & Test ${{ parameters.PROJECT_NAME }} (${{ parameters.OS_ARCH }})'
+
+    pool:
+      name: ${{ parameters.POOL_NAME }}
+      image: ${{ parameters.POOL_IMAGE }}
+      os: ${{ parameters.POOL_OS }}
+
+    steps:
+      - template: /eng/templates/shared/r2p2-build-steps.yml@self
+        parameters:
+          PYTHON_VERSION: ${{ parameters.PYTHON_VERSION }}
+          PROJECT_NAME: ${{ parameters.PROJECT_NAME }}
+          PROJECT_DIRECTORY: ${{ parameters.PROJECT_DIRECTORY }}
+          POOL_OS: ${{ parameters.POOL_OS }}

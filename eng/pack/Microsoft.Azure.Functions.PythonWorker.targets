@@ -7,6 +7,7 @@
   <ItemGroup Condition="'$(RuntimeIdentifier)' != ''">
     <_PythonSupportedRuntime Include="win-x86" WorkerPath="WINDOWS/X86" />
     <_PythonSupportedRuntime Include="win-x64" WorkerPath="WINDOWS/X64" />
+    <_PythonSupportedRuntime Include="win-arm64" WorkerPath="WINDOWS/Arm64" />
     <_PythonSupportedRuntime Include="linux-x64" WorkerPath="LINUX/X64" />
     <_PythonSupportedRuntime Include="linux-arm64" WorkerPath="LINUX/Arm64" />
     <_PythonSupportedRuntime Include="osx-x64" WorkerPath="OSX/X64" />

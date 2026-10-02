@@ -864,7 +864,7 @@ class _WebHostProxy:
 
     def wait_until_ready(self, timeout: float = 60.0,
                          poll_interval: float = 0.5) -> bool:
-        """Poll the host until it is running AND has registered functions.
+        """Poll until the host is running and function indexing settles.
 
         Readiness is confirmed in two phases:
 
@@ -885,6 +885,10 @@ class _WebHostProxy:
         would block until the full timeout on every webhost start. If the
         host does not expose ``/admin/functions`` (404), we fall back to
         treating ``Running`` as ready so older hosts are not regressed.
+
+        Some tests intentionally exercise indexing failures or apps with no
+        registered functions. If the Host is Running when the timeout expires,
+        setup may proceed and those tests assert the expected behavior.
         """
         deadline = time.time() + timeout
         status_url = self._addr + '/admin/host/status'
@@ -929,13 +933,15 @@ class _WebHostProxy:
                 pass
             time.sleep(poll_interval)
         if running:
-            self.readiness_failure = (
-                'host reported Running but registered no functions'
-            )
-        else:
-            self.readiness_failure = (
-                f'host did not report Running (last state: {last_state!r})'
-            )
+            logging.getLogger('webhosttests').warning(
+                "Webhost is Running but registered no functions within %.0fs. "
+                "Continuing so tests can assert empty or failed indexing.",
+                timeout)
+            return True
+
+        self.readiness_failure = (
+            f'host did not report Running (last state: {last_state!r})'
+        )
         logging.getLogger('webhosttests').warning(
             "Webhost did not become ready within %.0fs "
             "(host running: %s, last state: %r, functions registered: no). "

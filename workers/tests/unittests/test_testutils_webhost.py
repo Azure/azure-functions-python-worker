@@ -21,7 +21,7 @@ class TestWebHostReadiness(unittest.TestCase):
     @mock.patch('tests.utils.testutils.time.sleep')
     @mock.patch('tests.utils.testutils.time.time', side_effect=[0, 0, 2])
     @mock.patch('tests.utils.testutils.requests.get')
-    def test_reports_missing_function_registration(
+    def test_accepts_running_host_without_registered_functions(
             self, request, _time, _sleep):
         status_response = mock.Mock(status_code=200)
         status_response.json.return_value = {'state': 'Running'}
@@ -32,10 +32,8 @@ class TestWebHostReadiness(unittest.TestCase):
         process.poll.return_value = None
         proxy = testutils._WebHostProxy(process, 'http://127.0.0.1:5000')
 
-        self.assertFalse(proxy.wait_until_ready(timeout=1))
-        self.assertEqual(
-            proxy.readiness_failure,
-            'host reported Running but registered no functions')
+        self.assertTrue(proxy.wait_until_ready(timeout=1))
+        self.assertIsNone(proxy.readiness_failure)
 
     @mock.patch('tests.utils.testutils._get_worker_path')
     @mock.patch('tests.utils.testutils._WebHostProxy')
@@ -69,6 +67,7 @@ class TestWebHostReadiness(unittest.TestCase):
             script_dir=pathlib.Path('endtoend/app'))
 
         self.assertIs(result, proxy)
+        proxy.wait_until_ready.assert_called_once_with(timeout=60.0)
         proxy.close.assert_not_called()
 
 

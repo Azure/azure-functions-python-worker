@@ -64,8 +64,18 @@ if sys.version_info.minor < 13:
     )
     from azure_functions_worker.utils.common import get_app_setting, is_envvar_true
 else:
-    from proxy_worker import dispatcher, protos
     from proxy_worker.utils.common import get_app_setting, is_envvar_true
+
+    try:
+        from proxy_worker import dispatcher, protos
+    except ImportError:
+        # Python 3.15+ runs on the R2P2 Rust worker, which is protobuf-free and
+        # ships no generated proxy_worker.protos gRPC stubs. The mock-host
+        # harness defined below is only exercised by the unit suites on <=3.14
+        # (the endtoend suite imports this module solely for path constants and
+        # is_envvar_true), so a missing protos/dispatcher is tolerated here.
+        dispatcher = None
+        protos = None
 
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')
@@ -475,7 +485,12 @@ if sys.version_info.minor < 13:
                               f'{result.stdout} - {result.stderr}')
 
 
-class _MockWebHostServicer(protos.FunctionRpcServicer):
+_FunctionRpcServicer = (
+    protos.FunctionRpcServicer if protos is not None else object
+)
+
+
+class _MockWebHostServicer(_FunctionRpcServicer):
     _STOP = object()
 
     def __init__(self, host):
@@ -643,9 +658,9 @@ class _MockWebHost:
     async def invoke_function(
             self,
             name,
-            input_data: typing.List[protos.ParameterBinding],
-            metadata: typing.Optional[
-                typing.Mapping[str, protos.TypedData]] = None):
+            input_data: "typing.List[protos.ParameterBinding]",
+            metadata: "typing.Optional[typing.Mapping[str, protos.TypedData]]"
+            = None):
 
         if metadata is None:
             metadata = {}
@@ -688,7 +703,7 @@ class _MockWebHost:
             self,
             environment: typing.Dict[str, str],
             function_project_path: str = '/home/site/wwwroot'
-    ) -> protos.FunctionEnvironmentReloadResponse:
+    ) -> "protos.FunctionEnvironmentReloadResponse":
 
         request_content = protos.FunctionEnvironmentReloadRequest(
             function_app_directory=function_project_path,

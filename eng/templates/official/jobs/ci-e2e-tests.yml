@@ -200,7 +200,8 @@ jobs:
   # This job therefore builds the R2P2 from source, stages it into the worker
   # directory the harness expects (testutils.R2P2_PATH), installs a minimal
   # cp315-safe dependency set (NOT the [dev] extra), builds the Host webhost +
-  # extensions (SKIPPING build-protos -- the stubs are committed), and runs the
+  # extensions (SKIPPING build-protos -- grpcio-tools has no cp315 wheel and
+  # the R2P2 path is protobuf-free), and runs the
   # SAME tests/endtoend suite the classic worker runs. Function apps whose
   # third-party wheels have no cp315 build are guarded with
   # @skipIf(sys.version_info.minor >= 15); --continue-on-collection-errors is a
@@ -292,16 +293,19 @@ jobs:
       - bash: |
           set -euo pipefail
           # Minimal cp315-safe install. NOT workers/[dev] (opencv/pandas/
-          # scikit-learn/aiohttp have no cp315 wheels). grpcio + protobuf are
-          # required because the pytest harness imports proxy_worker.protos
-          # (-> FunctionRpc_pb2_grpc -> import grpc). invoke drives the Host
+          # scikit-learn/aiohttp have no cp315 wheels). No grpcio: it has no
+          # cp315 wheel and is not needed -- the R2P2 worker is protobuf-free
+          # (Rust/prost owns the wire) and the pytest harness imports
+          # proxy_worker.protos lazily (absent on 3.15 -> protos=None). protobuf
+          # ships an abi3 wheel and backs the v2/v1 runtime's lazy
+          # google.protobuf Timestamp converter. invoke drives the Host
           # webhost/extensions build. The R2P2's embedded interpreter imports
           # the v2/v1 runtimes from these editable installs.
           python -m pip install --upgrade pip
           python -m pip install "setuptools>=62,<82.0"
           python -m pip install \
             "azure-functions==2.3.0b2" \
-            "grpcio>=1.75.1" "protobuf>=5.29,<7" "requests==2.*" \
+            "protobuf>=5.29,<7" "requests==2.*" \
             "pytest~=7.4.4" pytest-asyncio pytest-rerunfailures pytest-instafail \
             invoke \
             -e runtimes/v2 -e runtimes/v1
@@ -309,9 +313,10 @@ jobs:
 
       - bash: |
           set -euo pipefail
-          # Build the Host webhost + extensions. SKIP build-protos: the stubs
-          # are committed under workers/proxy_worker and grpcio-tools has no
-          # cp315 wheel.
+          # Build the Host webhost + extensions. SKIP build-protos: grpcio-tools
+          # has no cp315 wheel, and the R2P2 path needs no generated stubs --
+          # the worker is protobuf-free and the harness imports
+          # proxy_worker.protos lazily (tolerates their absence on 3.15).
           cd workers/tests
           python -m invoke -c test_setup webhost --branch-name=dev
           python -m invoke -c test_setup extensions

@@ -251,7 +251,7 @@ jobs:
     condition: and(succeeded(), ne(variables['System.PullRequest.IsFork'], 'True'))
 
     pool:
-      name: 1es-pool-azfunc
+      name: ${{ parameters.PoolName }}
       image: 1es-ubuntu-24.04-min
       os: linux
 

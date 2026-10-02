@@ -156,11 +156,12 @@ jobs:
       - task: UsePythonVersion@0
         displayName: 'Use Python 3.15'
         inputs:
-          versionSpec: '3.15'
-          # 3.15 ships as a release candidate on the agent tool cache; without
-          # allowUnstable the task silently fails to match it and never puts
-          # `python` on PATH (downstream steps then fail with
-          # `python: command not found`).
+          # Must be the EXACT prerelease string: a range like '3.15' means
+          # >=3.15.0 and an RC sorts BELOW 3.15.0, so it is never selected (even
+          # with allowUnstable). 3.15 is not GA yet and is absent from the 1es
+          # tool cache, so the task downloads it from the actions/python-versions
+          # registry. Bump to the next RC, or to '3.15' once 3.15.0 is GA.
+          versionSpec: '3.15.0-rc.1'
           allowUnstable: true
       - bash: |
           python --version

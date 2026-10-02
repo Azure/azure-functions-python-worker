@@ -154,8 +154,14 @@ jobs:
           artifactFeeds: 'public/upstream-public'
           onlyAddExtraIndex: false
       - task: UsePythonVersion@0
+        displayName: 'Use Python 3.15'
         inputs:
           versionSpec: '3.15'
+          # 3.15 ships as a release candidate on the agent tool cache; without
+          # allowUnstable the task silently fails to match it and never puts
+          # `python` on PATH (downstream steps then fail with
+          # `python: command not found`).
+          allowUnstable: true
       - bash: |
           python --version
           python -m pip install --upgrade pip
@@ -167,10 +173,10 @@ jobs:
           python -m pip install \
             "pytest~=7.4.4" pytest-asyncio pytest-rerunfailures pytest-instafail
         displayName: 'Install pytest (Python 3.15)'
-        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+        condition: and(succeeded(), eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
       - bash: |
           python -m pytest -q --reruns 4 --reruns-delay 5 --instafail tests/unittest_r2p2
         displayName: 'Running Python 3.15 R2P2 bridge unit tests'
-        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+        condition: and(succeeded(), eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
   

@@ -241,8 +241,13 @@ jobs:
         displayName: 'Free disk space'
 
       - task: UsePythonVersion@0
+        displayName: 'Use Python $(PYTHON_VERSION)'
         inputs:
           versionSpec: $(PYTHON_VERSION)
+          # 3.15 ships as a release candidate in the agent tool cache; without
+          # allowUnstable the task fails to match it and never puts `python` on
+          # PATH.
+          allowUnstable: true
 
       - bash: |
           set -euo pipefail

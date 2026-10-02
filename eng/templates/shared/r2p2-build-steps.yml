@@ -13,6 +13,10 @@ steps:
     displayName: 'Use Python ${{ parameters.PYTHON_VERSION }}'
     inputs:
       versionSpec: ${{ parameters.PYTHON_VERSION }}
+      # 3.15 ships as a release candidate in the agent tool cache; without
+      # allowUnstable the task fails to match it and never puts `python` on
+      # PATH. Harmless for already-stable versions.
+      allowUnstable: true
 
   - pwsh: |
       $ErrorActionPreference = 'Stop'

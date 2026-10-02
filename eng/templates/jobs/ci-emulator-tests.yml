@@ -225,3 +225,251 @@ jobs:
           df -h
         displayName: 'Cleanup after tests'
         condition: always()
+
+  # ---------------------------------------------------------------------------
+  # Python 3.15 emulator tests against the R2P2 (Rust) worker.
+  #
+  # 3.15 CANNOT be a line in the TestPython matrix above: the shared setup
+  # scripts are cp315-hostile (install-dependencies.sh installs workers/[dev]
+  # -> opencv/pandas/scikit-learn/aiohttp, and test-setup.sh runs build-protos
+  # -> grpcio-tools; none ship cp315 wheels), and the 3.15 worker is the R2P2
+  # Rust binary that must be built and staged, not the in-proc Python worker.
+  #
+  # This job mirrors TestR2P2E2E (ci-e2e-tests.yml): it builds the R2P2 from
+  # source, stages it into the worker dir the harness drives via
+  # PYAZURE_WORKER_DIR, installs a minimal cp315-safe dependency set (NOT the
+  # [dev] extra), builds the Host webhost + extensions (SKIPPING build-protos),
+  # starts the SAME public emulator containers the classic job uses (CosmosDB +
+  # EventHub/Azurite), and runs tests/emulator_tests. The Durable and
+  # Service Bus suites are --ignore'd: azure-functions-durable -> aiohttp and
+  # the Service Bus SDK binding -> uamqp have no cp315 wheels.
+  # ---------------------------------------------------------------------------
+  - job: "TestR2P2Emulator"
+    displayName: "Run Python 3.15 R2P2 Emulator Tests"
+    # Secret variables (emulator connection strings) are unavailable to PRs
+    # from forks.
+    condition: and(succeeded(), ne(variables['System.PullRequest.IsFork'], 'True'))
+
+    pool:
+      name: 1es-pool-azfunc
+      image: 1es-ubuntu-24.04-min
+      os: linux
+
+    variables:
+      PYTHON_VERSION: '3.15'
+
+    steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
+
+      - bash: |
+          echo "Disk space before cleanup:"
+          df -h
+          docker system prune -af --volumes || true
+          pip cache purge || true
+          sudo apt-get clean || true
+          sudo rm -rf /var/lib/apt/lists/* || true
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Free disk space'
+
+      - bash: |
+          echo "Memory before cleanup:"
+          free -h
+          # Stop background services not needed for emulator tests. Docker must
+          # remain running for the CosmosDB/EventHub emulators, so do NOT stop
+          # docker, docker.socket, or containerd here.
+          sudo systemctl stop snapd || true
+          sudo systemctl stop unattended-upgrades || true
+          sudo systemctl stop packagekit || true
+          sudo sync
+          sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' || true
+          echo "Memory after cleanup:"
+          free -h
+        displayName: 'Free memory'
+
+      - task: UsePythonVersion@0
+        displayName: 'Use Python $(PYTHON_VERSION)'
+        inputs:
+          # Exact prerelease string required: a range like '3.15' means
+          # >=3.15.0 and an RC sorts below 3.15.0, so it is never selected. 3.15
+          # is not GA and is absent from the tool cache, so it is downloaded
+          # from actions/python-versions. Bump to the next RC, or '3.15' at GA.
+          versionSpec: '3.15.0-rc.1'
+          allowUnstable: true
+
+      - bash: |
+          set -euo pipefail
+          # PyO3 (auto-initialize) links against libpython, so point the Rust
+          # build at the interpreter UsePythonVersion selected, and put that
+          # interpreter's libdir on LD_LIBRARY_PATH so the staged r2p2 binary
+          # can load libpython3.15.so when the Host spawns it during the tests.
+          PY="$(which python)"
+          echo "##vso[task.setvariable variable=PYO3_PYTHON]$PY"
+          LIBDIR="$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR") or "")')"
+          echo "##vso[task.setvariable variable=LD_LIBRARY_PATH]$LIBDIR:${LD_LIBRARY_PATH:-}"
+          echo "PYO3_PYTHON=$PY LIBDIR=$LIBDIR"
+          python --version
+        displayName: 'Configure Python for PyO3'
+
+      - bash: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "##vso[task.prependpath]$HOME/.cargo/bin"
+        displayName: 'Install Rust toolchain'
+
+      - task: CargoAuthenticate@0
+        displayName: 'Authenticate Cargo to CFS'
+        inputs:
+          configFile: '$(Build.SourcesDirectory)/workers/r2p2/.cargo/config.toml'
+
+      - bash: |
+          set -euo pipefail
+          rustc --version && cargo --version
+          cargo build --release --locked
+        displayName: 'Build R2P2 (cargo build --release)'
+        workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
+
+      - task: UseDotNet@2
+        displayName: 'Install .NET 10'
+        inputs:
+          version: 10.0.x
+      - task: NuGetAuthenticate@1
+        displayName: 'Authenticate NuGet to CFS'
+
+      - bash: |
+          set -euo pipefail
+          # Minimal cp315-safe install. NOT workers/[dev] (opencv/pandas/
+          # scikit-learn/aiohttp have no cp315 wheels). No grpcio: it has no
+          # cp315 wheel and is not needed -- the R2P2 worker is protobuf-free
+          # and the harness imports proxy_worker.protos lazily. protobuf ships
+          # an abi3 wheel (backs the v1/v2 runtime's lazy google.protobuf
+          # Timestamp converter). The emulator deps (azure-cosmos/azure-eventhub/
+          # python-dateutil + the blob/cosmosdb deferred-binding extensions) all
+          # ship universal py3 wheels. invoke drives the Host webhost/extensions
+          # build; the editable v2/v1 runtimes back the R2P2 embedded interpreter.
+          python -m pip install --upgrade pip
+          python -m pip install "setuptools>=62,<82.0"
+          python -m pip install \
+            "azure-functions==2.3.0b2" \
+            "protobuf>=5.29,<7" "requests==2.*" \
+            "pytest~=7.4.4" pytest-asyncio pytest-rerunfailures pytest-instafail \
+            invoke \
+            azure-cosmos azure-eventhub python-dateutil \
+            azurefunctions-extensions-bindings-blob \
+            azurefunctions-extensions-bindings-cosmosdb \
+            -e runtimes/v2 -e runtimes/v1
+        displayName: 'Install Python dependencies (cp315-safe)'
+
+      - bash: |
+          set -euo pipefail
+          # Build the Host webhost + extensions. SKIP build-protos: grpcio-tools
+          # has no cp315 wheel, and the R2P2 path needs no generated stubs --
+          # the worker is protobuf-free and the harness imports
+          # proxy_worker.protos lazily (tolerates their absence on 3.15).
+          cd workers/tests
+          python -m invoke -c test_setup webhost --branch-name=dev
+          python -m invoke -c test_setup extensions
+        displayName: 'Build webhost and extensions (skip build-protos)'
+
+      - bash: |
+          set -euo pipefail
+          # Stage the R2P2 into the worker directory the harness drives via
+          # PYAZURE_WORKER_DIR. r2p2 derives workers_dir/bridge_dir from its own
+          # location, so the binary, its bridge/ package and worker.config.json
+          # live side by side here. The v2/v1 runtimes are resolved from the
+          # editable installs in site-packages.
+          WORKER_DIR="$(Build.SourcesDirectory)/workers/python/test_r2p2"
+          rm -rf "$WORKER_DIR"
+          mkdir -p "$WORKER_DIR"
+          cp "$(Build.SourcesDirectory)/workers/r2p2/target/release/r2p2" "$WORKER_DIR/r2p2"
+          chmod +x "$WORKER_DIR/r2p2"
+          cp -r "$(Build.SourcesDirectory)/workers/r2p2/bridge" "$WORKER_DIR/bridge"
+          cat > "$WORKER_DIR/worker.config.json" <<JSON
+          {
+              "description": {
+                  "language": "python",
+                  "defaultRuntimeVersion": "3.15",
+                  "supportedRuntimeVersions": ["3.15"],
+                  "supportedOperatingSystems": ["LINUX"],
+                  "supportedArchitectures": ["X64"],
+                  "extensions": [".py"],
+                  "defaultExecutablePath": "$WORKER_DIR/r2p2",
+                  "workerIndexing": "true"
+              },
+              "processOptions": {
+                  "initializationTimeout": "00:02:00",
+                  "environmentReloadTimeout": "00:02:00"
+              }
+          }
+          JSON
+          echo "Staged R2P2 at $WORKER_DIR:"
+          ls -la "$WORKER_DIR"
+        displayName: 'Stage R2P2 worker'
+
+      - bash: |
+          # The minimal image (1es-ubuntu-24.04-min) does not ship the Docker
+          # Compose v2 CLI plugin. Install it from the Ubuntu archive. This must
+          # run BEFORE any emulator container is started: installing
+          # docker-compose-v2 also upgrades moby-engine/moby-cli, which restarts
+          # the Docker daemon and would kill already-running containers.
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "Docker Compose v2 plugin not found; installing..."
+            sudo apt-get update
+            sudo apt-get install -y docker-compose-v2
+          fi
+          docker compose version
+        displayName: 'Ensure Docker Compose v2 is installed'
+
+      - bash: |
+          docker system prune -af --volumes
+          df -h
+          docker pull mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+          docker run --detach --env ENABLE_EXPLORER=false --publish 8081:8081 mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+          docker ps
+        displayName: "Start CosmosDB Emulator"
+
+      - bash: |
+          docker compose -f workers/tests/emulator_tests/utils/eventhub/docker-compose.yml pull
+          docker compose -f workers/tests/emulator_tests/utils/eventhub/docker-compose.yml up -d
+        displayName: 'Install Azurite and Start EventHub Emulator'
+
+      - bash: |
+          # Durable (azure-functions-durable -> aiohttp) and Service Bus (SDK
+          # binding -> uamqp) have no cp315 wheels, so their suites are ignored
+          # here. --continue-on-collection-errors is a safety net for any other
+          # app whose third-party wheels are missing on 3.15.
+          python -m pytest -q --reruns 4 --continue-on-collection-errors --instafail \
+            --ignore=tests/emulator_tests/test_servicebus_functions.py \
+            --ignore=tests/emulator_tests/test_durable_functions.py \
+            tests/emulator_tests
+        env:
+          AzureWebJobsStorage: $(AzureWebJobsStorage)
+          AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
+          AzureWebJobsEventHubConnectionString: $(EmulatorEventHubConnectionString)
+          AzureWebJobsCosmosDBConnectionString: $(EmulatorCosmosDBConnectionString)
+          CosmosDBEmulatorUrl: $(CosmosDBEmulatorUrl)
+          CosmosDBEmulatorKey: $(CosmosDBEmulatorKey)
+          PYAZURE_WORKER_DIR: $(Build.SourcesDirectory)/workers/python/test_r2p2
+          PYTHONPATH: $(Build.SourcesDirectory)/workers
+          PYAZURE_WEBHOST_DEBUG: true
+        workingDirectory: $(Build.SourcesDirectory)/workers
+        displayName: "Running Python 3.15 R2P2 Emulator Tests"
+
+      - bash: |
+          echo "Cleaning up after tests..."
+          docker stop $(docker ps -aq) || true
+          docker rm $(docker ps -aq) || true
+          rm -rf $(Build.SourcesDirectory)/workers/build || true
+          rm -rf $(Build.SourcesDirectory)/workers/.pytest_cache || true
+          rm -rf $(Build.SourcesDirectory)/workers/python/test_r2p2 || true
+          rm -rf $(Build.SourcesDirectory)/workers/r2p2/target || true
+          docker system prune -af --volumes || true
+          pip cache purge || true
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Cleanup after R2P2 emulator tests'
+        condition: always()

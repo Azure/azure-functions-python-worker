@@ -6,7 +6,7 @@ parameters:
 
 jobs:
   - job: "RustBuild${{ parameters.SIMPLE_VERSION }}"
-    displayName: 'Build & Test ${{ parameters.PROJECT_NAME }}'
+    displayName: 'Build ${{ parameters.PROJECT_NAME }}'
 
     pool:
       name: 1es-pool-azfunc-public

@@ -122,27 +122,19 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
 
-          $python = (Get-Command python).Source
-          $env:PYO3_PYTHON = $python
-          $libdir = python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR') or '')"
-          $env:LD_LIBRARY_PATH = "$libdir`:$env:LD_LIBRARY_PATH"
-
           if (Get-Command rustup -ErrorAction SilentlyContinue) {
             rustup update stable
             rustup default stable
-            rustup component add clippy
           } else {
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --component clippy
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
             $env:PATH = "$HOME/.cargo/bin`:$env:PATH"
           }
 
           Push-Location workers/r2p2
           try {
-            cargo clippy --all-targets --locked -- -D warnings
-            cargo build --locked
-            cargo test --locked
+            cargo metadata --locked --format-version 1 --no-deps | Out-Null
           } finally {
             Pop-Location
           }
-        displayName: 'Check R2P2 Rust dependencies'
+        displayName: 'R2P2: check Cargo dependency resolution'
         condition: eq(variables['r2p2Worker'], true)

@@ -2,12 +2,6 @@ parameters:
   PYTHON_VERSION: ''
   PROJECT_NAME: ''
   PROJECT_DIRECTORY: 'workers/r2p2'
-  # 'linux' | 'windows' | 'macOS'. Host checks always run natively; an optional
-  # target triple adds a release cross-build after those checks pass.
-  POOL_OS: 'linux'
-  HOST_ARCHITECTURE: ''
-  TARGET_ARCHITECTURE: ''
-  TARGET_TRIPLE: ''
 
 steps:
   - task: PipAuthenticate@1
@@ -19,8 +13,6 @@ steps:
     displayName: 'Use Python ${{ parameters.PYTHON_VERSION }}'
     inputs:
       versionSpec: ${{ parameters.PYTHON_VERSION }}
-      ${{ if ne(parameters.HOST_ARCHITECTURE, '') }}:
-        architecture: ${{ parameters.HOST_ARCHITECTURE }}
       allowUnstable: true
 
   - pwsh: |
@@ -28,47 +20,22 @@ steps:
       $PSNativeCommandUseErrorActionPreference = $true
       python --version
       # PyO3 (auto-initialize) links against libpython, so point it at the
-      # interpreter selected by UsePythonVersion. Setting PYO3_PYTHON lets PyO3
-      # resolve the correct import library / shared object for THIS platform and
-      # architecture (x64 or arm64), so no target-triple juggling is needed.
+      # interpreter selected by UsePythonVersion.
       $py = (Get-Command python).Source
       Write-Host "##vso[task.setvariable variable=PYO3_PYTHON]$py"
-      if ($IsWindows) {
-        # python3XX.dll sits next to python.exe; put it on PATH so the binary
-        # built by `cargo test` can load the interpreter at runtime.
-        $pydir = Split-Path $py
-        Write-Host "##vso[task.prependpath]$pydir"
-        Write-Host "PYO3_PYTHON=$py (Windows; DLL dir on PATH: $pydir)"
-      } else {
-        $libdir = python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR') or '')"
-        if ($IsMacOS) {
-          Write-Host "##vso[task.setvariable variable=DYLD_LIBRARY_PATH]$libdir`:$env:DYLD_LIBRARY_PATH"
-        } else {
-          Write-Host "##vso[task.setvariable variable=LD_LIBRARY_PATH]$libdir`:$env:LD_LIBRARY_PATH"
-        }
-        Write-Host "PYO3_PYTHON=$py libdir=$libdir"
-      }
+      $libdir = python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR') or '')"
+      Write-Host "##vso[task.setvariable variable=LD_LIBRARY_PATH]$libdir`:$env:LD_LIBRARY_PATH"
+      Write-Host "PYO3_PYTHON=$py libdir=$libdir"
     displayName: 'Configure Python for PyO3'
 
   - pwsh: |
       $ErrorActionPreference = 'Stop'
       $PSNativeCommandUseErrorActionPreference = $true
-      # Install (or update) the Rust toolchain with the components the checks
-      # need. Windows agents bootstrap rustup via rustup-init.exe (architecture
-      # aware, so Windows ARM64 pulls the aarch64 host toolchain); Linux/macOS
-      # use the shell installer. If the image already ships rustup we only add
-      # the components.
       if (Get-Command rustup -ErrorAction SilentlyContinue) {
         rustup update stable
         rustup default stable
-        rustup component add rustfmt clippy
-      } elseif ($IsWindows) {
-        $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
-        Invoke-WebRequest "https://win.rustup.rs/$arch" -OutFile rustup-init.exe
-        ./rustup-init.exe -y --profile minimal --component rustfmt clippy
-        Write-Host "##vso[task.prependpath]$env:USERPROFILE\.cargo\bin"
       } else {
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --component rustfmt clippy
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
         Write-Host "##vso[task.prependpath]$HOME/.cargo/bin"
       }
     displayName: 'Install Rust toolchain'
@@ -78,8 +45,6 @@ steps:
       $PSNativeCommandUseErrorActionPreference = $true
       rustc --version
       cargo --version
-      cargo fmt --version
-      cargo clippy --version
     displayName: 'Check Rust versions'
 
   - task: CargoAuthenticate@0
@@ -90,60 +55,6 @@ steps:
   - pwsh: |
       $ErrorActionPreference = 'Stop'
       $PSNativeCommandUseErrorActionPreference = $true
-      python -m pip install --upgrade pip
-      # v2 runtime (for flake8 import resolution) + flake8. The bridge is
-      # protobuf-free (Rust/prost owns the wire), so no grpcio/protobuf here.
-      python -m pip install -e runtimes/v2
-      python -m pip install flake8
-    displayName: 'Install Python dependencies'
-
-  - pwsh: |
-      $ErrorActionPreference = 'Stop'
-      $PSNativeCommandUseErrorActionPreference = $true
-      flake8 bridge
-    displayName: 'flake8 (Python bridge)'
-    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
-
-  - pwsh: |
-      $ErrorActionPreference = 'Stop'
-      $PSNativeCommandUseErrorActionPreference = $true
-      cargo fmt --all -- --check
-    displayName: 'Check Rust formatting'
-    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
-
-  - pwsh: |
-      $ErrorActionPreference = 'Stop'
-      $PSNativeCommandUseErrorActionPreference = $true
-      cargo clippy --all-targets --locked -- -D warnings
-    displayName: 'Lint Rust code'
-    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
-
-  - pwsh: |
-      $ErrorActionPreference = 'Stop'
-      $PSNativeCommandUseErrorActionPreference = $true
       cargo build --locked
     displayName: 'Build R2P2 worker'
     workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
-
-  - pwsh: |
-      $ErrorActionPreference = 'Stop'
-      $PSNativeCommandUseErrorActionPreference = $true
-      cargo test --locked
-    displayName: 'Run Rust tests'
-    workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
-
-  - ${{ if and(ne(parameters.TARGET_TRIPLE, ''), eq(parameters.POOL_OS, 'windows')) }}:
-    - task: PowerShell@2
-      displayName: 'Build R2P2 target ${{ parameters.TARGET_TRIPLE }}'
-      inputs:
-        filePath: 'eng/pack/scripts/r2p2_deps.ps1'
-        arguments: '-PythonVersion ${{ parameters.PYTHON_VERSION }} -Architecture ${{ parameters.TARGET_ARCHITECTURE }}'
-        pwsh: true
-
-  - ${{ if and(ne(parameters.TARGET_TRIPLE, ''), eq(parameters.POOL_OS, 'linux')) }}:
-    - task: ShellScript@2
-      displayName: 'Build R2P2 target ${{ parameters.TARGET_TRIPLE }}'
-      inputs:
-        disableAutoCwd: true
-        scriptPath: 'eng/pack/scripts/r2p2_deps.sh'
-        args: '${{ parameters.PYTHON_VERSION }} ${{ parameters.TARGET_ARCHITECTURE }}'

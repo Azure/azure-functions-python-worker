@@ -702,6 +702,10 @@ def _tuple_to_datum(t):
     if t is None:
         return None
     type_str, value = t
+    if type_str in ('collection_string', 'collection_bytes',
+                    'collection_sint64', 'collection_double'):
+        typed_data = protos.TypedData.from_tuple(t)
+        return _Datum(getattr(typed_data, type_str), type_str)
     if type_str == 'http':
         body = value.get('body')
         return _Datum(dict(

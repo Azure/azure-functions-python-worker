@@ -6,6 +6,7 @@
 # the R2P2 bridge reproduces.
 
 import logging
+from types import SimpleNamespace
 
 import bridge
 
@@ -36,8 +37,22 @@ def test_worker_version_unknown_without_runtime(monkeypatch):
 
 
 def test_worker_version_reads_runtime_version(monkeypatch):
-    from types import SimpleNamespace
-
     fake_rt = SimpleNamespace(version=SimpleNamespace(VERSION="9.9.9"))
     monkeypatch.setattr(bridge, "_rt", fake_rt)
     assert bridge._worker_version() == "9.9.9"
+
+
+def test_tuple_to_datum_wraps_typed_data_collections(monkeypatch):
+    monkeypatch.setattr(
+        bridge, "_Datum",
+        lambda value, kind: SimpleNamespace(value=value, type=kind))
+
+    string_datum = bridge._tuple_to_datum(
+        ("collection_string", ["first", "second"]))
+    bytes_datum = bridge._tuple_to_datum(
+        ("collection_bytes", [b"first", b"second"]))
+
+    assert string_datum.value.string == ["first", "second"]
+    assert string_datum.value.bytes == []
+    assert bytes_datum.value.bytes == [b"first", b"second"]
+    assert bytes_datum.value.string == []

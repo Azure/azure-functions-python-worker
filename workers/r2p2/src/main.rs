@@ -57,6 +57,7 @@ struct Args {
     uri: String,
     worker_id: String,
     request_id: String,
+    grpc_max_message_length: Option<usize>,
     workers_dir: String,
     app_dir: String,
     bridge_dir: String,
@@ -70,6 +71,20 @@ fn get<'a>(map: &'a std::collections::HashMap<String, String>, keys: &[&str]) ->
         }
     }
     None
+}
+
+fn grpc_max_message_length(map: &HashMap<String, String>) -> Result<Option<usize>> {
+    get(
+        map,
+        &[
+            "functions-grpc-max-message-length",
+            "grpcMaxMessageLength",
+        ],
+    )
+    .filter(|value| !value.is_empty())
+    .map(str::parse)
+    .transpose()
+    .context("invalid gRPC max message length")
 }
 
 fn parse_args() -> Result<Args> {
@@ -146,6 +161,7 @@ fn parse_args() -> Result<Args> {
         uri,
         worker_id,
         request_id,
+        grpc_max_message_length: grpc_max_message_length(&map)?,
         workers_dir,
         app_dir: get(&map, &["functions-app-directory", "app-dir"])
             .unwrap_or("")
@@ -234,6 +250,11 @@ async fn main() -> Result<()> {
         .await
         .context("connect to Functions Host")?;
     let mut grpc = tonic::client::Grpc::new(channel);
+    if let Some(limit) = args.grpc_max_message_length {
+        grpc = grpc
+            .max_decoding_message_size(limit)
+            .max_encoding_message_size(limit);
+    }
     grpc.ready()
         .await
         .map_err(|e| anyhow!("gRPC channel not ready: {e}"))?;
@@ -288,4 +309,29 @@ async fn main() -> Result<()> {
 
     bridge::shutdown();
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_host_grpc_message_limit_aliases() {
+        for key in [
+            "functions-grpc-max-message-length",
+            "grpcMaxMessageLength",
+        ] {
+            let map = HashMap::from([(key.to_string(), "28312683".to_string())]);
+            assert_eq!(grpc_max_message_length(&map).unwrap(), Some(28_312_683));
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_grpc_message_limit() {
+        let map = HashMap::from([(
+            "functions-grpc-max-message-length".to_string(),
+            "invalid".to_string(),
+        )]);
+        assert!(grpc_max_message_length(&map).is_err());
+    }
 }

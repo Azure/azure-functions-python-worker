@@ -51,7 +51,8 @@ if [[ "$ARCHITECTURE" == "arm64" ]]; then
    RUST_TARGET="aarch64-unknown-linux-gnu"
    rustup target add "$RUST_TARGET"
    sudo apt-get update
-   sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu make pkg-config
+   sudo apt-get -o DPkg::Lock::Timeout=300 install -y \
+      gcc-aarch64-linux-gnu g++-aarch64-linux-gnu make pkg-config
 
    if [[ "$PYTHON_VERSION" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-(a|b|rc)\.?([0-9]+)$ ]]; then
       PYTHON_BASE_VERSION="${BASH_REMATCH[1]}"
@@ -93,7 +94,9 @@ EOF
          --build="$($PYTHON_SOURCE/config.guess)" \
          --host=aarch64-linux-gnu \
          --with-build-python="$(command -v python)" \
+         --with-pkg-config=no \
          --enable-shared \
+         --enable-ipv6 \
          --without-ensurepip \
          --disable-test-modules
       make -j"$(nproc)"

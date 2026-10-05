@@ -43,7 +43,7 @@ extends:
         compiled:
           enabled: true # still only runs for default branch
         sourceLanguages: python, powershell
-        excludePathPatterns: deps/,build/
+        excludePathPatterns: deps/,build/,workers/r2p2/target/
         runSourceLanguagesInSourceAnalysis: true
 
     settings:
@@ -71,6 +71,12 @@ extends:
           SIMPLE_VERSION: '314'
           PROJECT_NAME: 'Azure Functions Python Worker == 3.14'
           PROJECT_DIRECTORY: 'workers'
+      - template: /eng/templates/jobs/r2p2-build.yml@self
+        parameters:
+          PYTHON_VERSION: '3.15.0-rc.1'
+          SIMPLE_VERSION: '315'
+          PROJECT_NAME: 'R2P2 (Python 3.15)'
+          PROJECT_DIRECTORY: 'workers/r2p2'
       # Skip the build stage for SDK and Extensions release branches. This stage will fail because pyproject.toml contains the updated (and unreleased) library version
       condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
     - stage: CheckPythonWorkerDependencies

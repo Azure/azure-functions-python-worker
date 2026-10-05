@@ -75,7 +75,7 @@ connection strings (`.testconfig`); the runner passes
 
 These end-to-end and emulator suites are run on demand during development.
 Committed CI coverage for Python 3.15 is the cargo build/test pipeline
-(`eng/ci/r2p2-build.yml`).
+in `eng/ci/public-build.yml`.
 
 ## Notes
 

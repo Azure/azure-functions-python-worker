@@ -16,9 +16,6 @@ steps:
       versionSpec: ${{ parameters.PYTHON_VERSION }}
       ${{ if ne(parameters.HOST_ARCHITECTURE, '') }}:
         architecture: ${{ parameters.HOST_ARCHITECTURE }}
-      # 3.15 ships as a release candidate in the agent tool cache; without
-      # allowUnstable the task fails to match it and never puts `python` on
-      # PATH. Harmless for already-stable versions.
       allowUnstable: true
 
   - pwsh: |
@@ -106,33 +103,33 @@ steps:
       $ErrorActionPreference = 'Stop'
       $PSNativeCommandUseErrorActionPreference = $true
       cargo fmt --all -- --check
-    displayName: 'cargo fmt --check'
+    displayName: 'Check Rust formatting'
     workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
 
   - pwsh: |
       $ErrorActionPreference = 'Stop'
       $PSNativeCommandUseErrorActionPreference = $true
       cargo clippy --all-targets --locked -- -D warnings
-    displayName: 'cargo clippy'
+    displayName: 'Lint Rust code'
     workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
 
   - pwsh: |
       $ErrorActionPreference = 'Stop'
       $PSNativeCommandUseErrorActionPreference = $true
       cargo build --locked
-    displayName: 'cargo build'
+    displayName: 'Build R2P2 worker'
     workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
 
   - pwsh: |
       $ErrorActionPreference = 'Stop'
       $PSNativeCommandUseErrorActionPreference = $true
       cargo test --locked
-    displayName: 'cargo test'
+    displayName: 'Run Rust tests'
     workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
 
   - ${{ if and(ne(parameters.TARGET_TRIPLE, ''), eq(parameters.POOL_OS, 'windows')) }}:
     - task: PowerShell@2
-      displayName: 'cargo build --target ${{ parameters.TARGET_TRIPLE }}'
+      displayName: 'Build R2P2 target ${{ parameters.TARGET_TRIPLE }}'
       inputs:
         filePath: 'eng/pack/scripts/r2p2_deps.ps1'
         arguments: '-PythonVersion ${{ parameters.PYTHON_VERSION }} -Architecture ${{ parameters.TARGET_ARCHITECTURE }}'
@@ -140,13 +137,8 @@ steps:
 
   - ${{ if and(ne(parameters.TARGET_TRIPLE, ''), eq(parameters.POOL_OS, 'linux')) }}:
     - task: ShellScript@2
-      displayName: 'cargo build --target ${{ parameters.TARGET_TRIPLE }}'
+      displayName: 'Build R2P2 target ${{ parameters.TARGET_TRIPLE }}'
       inputs:
         disableAutoCwd: true
         scriptPath: 'eng/pack/scripts/r2p2_deps.sh'
         args: '${{ parameters.PYTHON_VERSION }} ${{ parameters.TARGET_ARCHITECTURE }}'
-
-  # End-to-end + emulator coverage (bridge + v2 runtime + real Host round trip)
-  # is run on demand during development and is intentionally not wired into a
-  # committed CI pipeline. This pipeline provides the committed Python 3.15
-  # coverage: cargo fmt/clippy/build/test plus the Python bridge flake8.

@@ -402,38 +402,8 @@ jobs:
         displayName: 'Build webhost and extensions (skip build-protos)'
 
       - bash: |
-          set -euo pipefail
-          # Stage the R2P2 into the worker directory the harness drives via
-          # PYAZURE_WORKER_DIR. r2p2 derives workers_dir/bridge_dir from its own
-          # location, so the binary, its bridge/ package and worker.config.json
-          # live side by side here. The v2/v1 runtimes are resolved from the
-          # editable installs in site-packages.
-          WORKER_DIR="$(Build.SourcesDirectory)/workers/python/test_r2p2"
-          rm -rf "$WORKER_DIR"
-          mkdir -p "$WORKER_DIR"
-          cp "$(Build.SourcesDirectory)/workers/r2p2/target/release/r2p2" "$WORKER_DIR/r2p2"
-          chmod +x "$WORKER_DIR/r2p2"
-          cp -r "$(Build.SourcesDirectory)/workers/r2p2/bridge" "$WORKER_DIR/bridge"
-          cat > "$WORKER_DIR/worker.config.json" <<JSON
-          {
-              "description": {
-                  "language": "python",
-                  "defaultRuntimeVersion": "3.15",
-                  "supportedRuntimeVersions": ["3.15"],
-                  "supportedOperatingSystems": ["LINUX"],
-                  "supportedArchitectures": ["X64"],
-                  "extensions": [".py"],
-                  "defaultExecutablePath": "$WORKER_DIR/r2p2",
-                  "workerIndexing": "true"
-              },
-              "processOptions": {
-                  "initializationTimeout": "00:02:00",
-                  "environmentReloadTimeout": "00:02:00"
-              }
-          }
-          JSON
-          echo "Staged R2P2 at $WORKER_DIR:"
-          ls -la "$WORKER_DIR"
+          chmod +x eng/scripts/stage-r2p2.sh
+          eng/scripts/stage-r2p2.sh
         displayName: 'Stage R2P2 worker'
 
       - bash: |

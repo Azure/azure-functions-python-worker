@@ -10,6 +10,11 @@ parameters:
   TARGET_TRIPLE: ''
 
 steps:
+  - task: PipAuthenticate@1
+    displayName: 'Authenticate pip to CFS'
+    inputs:
+      artifactFeeds: 'public/upstream-public'
+      onlyAddExtraIndex: false
   - task: UsePythonVersion@0
     displayName: 'Use Python ${{ parameters.PYTHON_VERSION }}'
     inputs:

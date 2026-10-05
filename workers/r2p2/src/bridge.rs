@@ -250,6 +250,24 @@ pub fn invoke(req: &InvocationRequest) -> Result<InvocationResponse> {
             None => ("", ""),
         };
 
+        let retry_context = match &req.retry_context {
+            Some(rc) => {
+                let d = PyDict::new(py);
+                d.set_item("retry_count", rc.retry_count)?;
+                d.set_item("max_retry_count", rc.max_retry_count)?;
+                if let Some(exc) = &rc.exception {
+                    let exception = PyDict::new(py);
+                    exception.set_item("message", &exc.message)?;
+                    exception.set_item("stack_trace", &exc.stack_trace)?;
+                    exception.set_item("source", &exc.source)?;
+                    exception.set_item("type", &exc.r#type)?;
+                    d.set_item("exception", exception)?;
+                }
+                d.into_any()
+            }
+            None => py.None().into_bound(py),
+        };
+
         let result = bridge.call_method1(
             "invoke_native",
             (
@@ -259,6 +277,7 @@ pub fn invoke(req: &InvocationRequest) -> Result<InvocationResponse> {
                 meta,
                 trace_parent,
                 trace_state,
+                retry_context,
             ),
         )?;
 

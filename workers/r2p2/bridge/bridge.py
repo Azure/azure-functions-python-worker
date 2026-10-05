@@ -794,7 +794,7 @@ def _datum_to_tuple(d):
 
 
 def invoke_native(function_id, invocation_id, inputs, trigger_metadata,
-                  trace_parent="", trace_state=""):
+                  trace_parent="", trace_state="", retry_context=None):
     """Entry called by Rust for the native invocation hot path.
 
     Returns ``(ok, return_datum_tuple, output_data_tuples, exception_text)``.
@@ -820,17 +820,30 @@ def invoke_native(function_id, invocation_id, inputs, trigger_metadata,
     in_datums = [(name, _tuple_to_datum(t)) for name, t in inputs]
     meta = {k: _tuple_to_datum(t)
             for k, t in (trigger_metadata or {}).items()}
+    retry_context = retry_context or {}
+    retry_exception_data = retry_context.get("exception")
+    retry_exception = None
+    if retry_exception_data:
+        retry_exception = protos.RpcException(
+            message=retry_exception_data.get("message", ""),
+            stack_trace=retry_exception_data.get("stack_trace", ""),
+            source=retry_exception_data.get("source", ""),
+            type=retry_exception_data.get("type", ""))
+    retry_count = int(retry_context.get("retry_count", 0))
+    max_retry_count = int(retry_context.get("max_retry_count", 0))
     # Prefer the synchronous native path: it runs the handler directly on THIS
     # (Rust-dispatched) thread with no event-loop funnel. async handlers are
     # not "handled" here and fall through to the single-loop coroutine path.
     handled, ok, ret, outputs, exc = ni.run_invocation_sync(
         invocation_id, function_id, in_datums, meta,
-        trace_parent, trace_state)
+        trace_parent, trace_state, retry_count, max_retry_count,
+        retry_exception)
     if not handled:
         ok, ret, outputs, exc = _run_coro(
             ni.invocation_request_native(
                 invocation_id, function_id, in_datums, meta,
-                trace_parent, trace_state))
+                trace_parent, trace_state, retry_count, max_retry_count,
+                retry_exception))
     if not ok:
         return (False, None, [], exc)
     ret_tuple = _datum_to_tuple(ret)

@@ -49,19 +49,22 @@ class _TraceCtx:
 
 
 class _RetryCtx:
-    retry_count = 0
-    max_retry_count = 0
-    exception = None
+    def __init__(self, retry_count=0, max_retry_count=0, exception=None):
+        self.retry_count = retry_count
+        self.max_retry_count = max_retry_count
+        self.exception = exception
 
 
 class _InvocShim:
     """Minimal stand-in for the InvocationRequest proto that ``get_context`` reads."""
     __slots__ = ("invocation_id", "trace_context", "retry_context")
 
-    def __init__(self, invocation_id, trace_parent="", trace_state=""):
+    def __init__(self, invocation_id, trace_parent="", trace_state="",
+                 retry_count=0, max_retry_count=0, retry_exception=None):
         self.invocation_id = invocation_id
         self.trace_context = _TraceCtx(trace_parent, trace_state)
-        self.retry_context = _RetryCtx()
+        self.retry_context = _RetryCtx(
+            retry_count, max_retry_count, retry_exception)
 
 
 def _otel_available():
@@ -93,14 +96,17 @@ def _decode_inputs(fi, inputs, trigger_metadata):
     return args
 
 
-def _prepare_context(fi, invocation_id, args, trace_parent="", trace_state=""):
+def _prepare_context(fi, invocation_id, args, trace_parent="", trace_state="",
+                     retry_count=0, max_retry_count=0,
+                     retry_exception=None):
     """Build the invocation context and scaffold ``Out`` params into *args*.
 
     Does NOT stamp ``thread_local_storage.invocation_id`` -- the sync path lets
     ``run_sync_func`` do that on the executing thread, while the async path sets
     it explicitly on the caller's context (see below)."""
     fi_context = get_context(
-        _InvocShim(invocation_id, trace_parent, trace_state),
+        _InvocShim(invocation_id, trace_parent, trace_state,
+                   retry_count, max_retry_count, retry_exception),
         fi.name, fi.directory)
     if fi.requires_context:
         args['context'] = fi_context
@@ -140,7 +146,8 @@ def _encode_return(fi, call_result):
 
 async def invocation_request_native(invocation_id, function_id, inputs,
                                     trigger_metadata, trace_parent="",
-                                    trace_state=""):
+                                    trace_state="", retry_count=0,
+                                    max_retry_count=0, retry_exception=None):
     threadpool = get_threadpool_executor()
     fi = _functions.get_function(function_id)
     if fi is None:
@@ -149,7 +156,8 @@ async def invocation_request_native(invocation_id, function_id, inputs,
     try:
         args = _decode_inputs(fi, inputs, trigger_metadata)
         fi_context = _prepare_context(fi, invocation_id, args,
-                                      trace_parent, trace_state)
+                                      trace_parent, trace_state, retry_count,
+                                      max_retry_count, retry_exception)
         fi_context.thread_local_storage.invocation_id = invocation_id
 
         if fi.is_async:
@@ -188,7 +196,8 @@ async def invocation_request_native(invocation_id, function_id, inputs,
 
 
 def run_invocation_sync(invocation_id, function_id, inputs, trigger_metadata,
-                        trace_parent="", trace_state=""):
+                        trace_parent="", trace_state="", retry_count=0,
+                        max_retry_count=0, retry_exception=None):
     """Synchronous native invocation for *sync* customer functions.
 
     Runs the handler directly on the calling thread (no asyncio loop, no
@@ -209,7 +218,8 @@ def run_invocation_sync(invocation_id, function_id, inputs, trigger_metadata,
     try:
         args = _decode_inputs(fi, inputs, trigger_metadata)
         fi_context = _prepare_context(fi, invocation_id, args,
-                                      trace_parent, trace_state)
+                                      trace_parent, trace_state, retry_count,
+                                      max_retry_count, retry_exception)
 
         # run_sync_func calls configure_opentelemetry(fi_context) when otel is
         # available, so the trace context prepared above parents customer spans.

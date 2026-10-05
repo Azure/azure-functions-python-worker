@@ -56,3 +56,29 @@ def test_tuple_to_datum_wraps_typed_data_collections(monkeypatch):
     assert string_datum.value.bytes == []
     assert bytes_datum.value.bytes == [b"first", b"second"]
     assert bytes_datum.value.string == []
+
+
+def test_invoke_native_forwards_retry_context(monkeypatch):
+    captured = {}
+
+    def run_invocation_sync(*args):
+        captured["args"] = args
+        return (True, True, None, [], None)
+
+    native = SimpleNamespace(run_invocation_sync=run_invocation_sync)
+    monkeypatch.setattr(bridge, "_ensure_native", lambda: native)
+
+    result = bridge.invoke_native(
+        "function-id", "invocation-id", [], {}, "trace-parent", "trace-state",
+        {"retry_count": 2, "max_retry_count": 3,
+         "exception": {"message": "previous attempt failed",
+                       "stack_trace": "stack", "source": "host",
+                       "type": "ExampleError"}})
+
+    assert result == (True, None, [], None)
+    assert captured["args"][6:8] == (2, 3)
+    retry_exception = captured["args"][8]
+    assert retry_exception.message == "previous attempt failed"
+    assert retry_exception.stack_trace == "stack"
+    assert retry_exception.source == "host"
+    assert retry_exception.type == "ExampleError"

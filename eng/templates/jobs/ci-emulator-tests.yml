@@ -227,24 +227,7 @@ jobs:
         displayName: 'Cleanup after tests'
         condition: always()
 
-  # ---------------------------------------------------------------------------
-  # Python 3.15 emulator tests against the R2P2 (Rust) worker.
-  #
-  # 3.15 CANNOT be a line in the TestPython matrix above: the shared setup
-  # scripts are cp315-hostile (install-dependencies.sh installs workers/[dev]
-  # -> opencv/pandas/scikit-learn/aiohttp, and test-setup.sh runs build-protos
-  # -> grpcio-tools; none ship cp315 wheels), and the 3.15 worker is the R2P2
-  # Rust binary that must be built and staged, not the in-proc Python worker.
-  #
-  # This job mirrors TestR2P2E2E (ci-e2e-tests.yml): it builds the R2P2 from
-  # source, stages it into the worker dir the harness drives via
-  # PYAZURE_WORKER_DIR, installs a minimal cp315-safe dependency set (NOT the
-  # [dev] extra), builds the Host webhost + extensions (SKIPPING build-protos),
-  # starts the SAME public emulator containers the classic job uses (CosmosDB +
-  # EventHub/Azurite), and runs tests/emulator_tests. The Durable and
-  # Service Bus suites are --ignore'd: azure-functions-durable -> aiohttp and
-  # the Service Bus SDK binding -> uamqp have no cp315 wheels.
-  # ---------------------------------------------------------------------------
+  # Temporary - run Python 3.15 tests as a separate job. Dev deps do not have cp315 wheels yet.
   - job: "TestR2P2Emulator"
     displayName: "Run Python 3.15 R2P2 Emulator Tests"
     # Secret variables (emulator connection strings) are unavailable to PRs
@@ -295,10 +278,6 @@ jobs:
       - task: UsePythonVersion@0
         displayName: 'Use Python $(PYTHON_VERSION)'
         inputs:
-          # Exact prerelease string required: a range like '3.15' means
-          # >=3.15.0 and an RC sorts below 3.15.0, so it is never selected. 3.15
-          # is not GA and is absent from the tool cache, so it is downloaded
-          # from actions/python-versions. Bump to the next RC, or '3.15' at GA.
           versionSpec: '3.15.0-rc.1'
           allowUnstable: true
 

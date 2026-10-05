@@ -2,17 +2,20 @@ parameters:
   PYTHON_VERSION: ''
   PROJECT_NAME: ''
   PROJECT_DIRECTORY: 'workers/r2p2'
-  # 'linux' | 'windows' | 'macOS' -- informational only. The scripts below
-  # detect the OS at runtime via the pwsh $IsWindows / $IsMacOS automatic
-  # variables so a single step definition works on every agent (and both x64
-  # and arm64 hosts, including Windows ARM64).
+  # 'linux' | 'windows' | 'macOS'. Host checks always run natively; an optional
+  # target triple adds a release cross-build after those checks pass.
   POOL_OS: 'linux'
+  HOST_ARCHITECTURE: ''
+  TARGET_ARCHITECTURE: ''
+  TARGET_TRIPLE: ''
 
 steps:
   - task: UsePythonVersion@0
     displayName: 'Use Python ${{ parameters.PYTHON_VERSION }}'
     inputs:
       versionSpec: ${{ parameters.PYTHON_VERSION }}
+      ${{ if ne(parameters.HOST_ARCHITECTURE, '') }}:
+        architecture: ${{ parameters.HOST_ARCHITECTURE }}
       # 3.15 ships as a release candidate in the agent tool cache; without
       # allowUnstable the task fails to match it and never puts `python` on
       # PATH. Harmless for already-stable versions.
@@ -126,6 +129,22 @@ steps:
       cargo test --locked
     displayName: 'cargo test'
     workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+
+  - ${{ if and(ne(parameters.TARGET_TRIPLE, ''), eq(parameters.POOL_OS, 'windows')) }}:
+    - task: PowerShell@2
+      displayName: 'cargo build --target ${{ parameters.TARGET_TRIPLE }}'
+      inputs:
+        filePath: 'eng/pack/scripts/r2p2_deps.ps1'
+        arguments: '-PythonVersion ${{ parameters.PYTHON_VERSION }} -Architecture ${{ parameters.TARGET_ARCHITECTURE }}'
+        pwsh: true
+
+  - ${{ if and(ne(parameters.TARGET_TRIPLE, ''), eq(parameters.POOL_OS, 'linux')) }}:
+    - task: ShellScript@2
+      displayName: 'cargo build --target ${{ parameters.TARGET_TRIPLE }}'
+      inputs:
+        disableAutoCwd: true
+        scriptPath: 'eng/pack/scripts/r2p2_deps.sh'
+        args: '${{ parameters.PYTHON_VERSION }} ${{ parameters.TARGET_ARCHITECTURE }}'
 
   # End-to-end + emulator coverage (bridge + v2 runtime + real Host round trip)
   # is run on demand during development and is intentionally not wired into a

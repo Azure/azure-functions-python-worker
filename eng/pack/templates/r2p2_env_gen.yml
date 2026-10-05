@@ -5,22 +5,25 @@
 #
 # Unlike nix_env_gen / win_env_gen (which pip-install a pure-Python worker),
 # the R2P2 is a native binary that embeds CPython via PyO3, so every target OS
-# must compile it on a *native* agent with outbound access to crates.io. This
-# single template drives all R2P2 shipping jobs (Windows x64/x86/arm64, Linux x64,
-# macOS x64/arm64); it selects the platform build script and stages an
+# must compile it for each target with outbound access to the Rust and CPython
+# sources. This single template drives all R2P2 shipping jobs (Windows
+# x64/x86/arm64, Linux x64/arm64, macOS x64/arm64); it selects the platform
+# build script and stages an
 # identical artifact layout for the V4 nuspec (tools/<ver>/<OS>/<Arch>).
 #
 # parameters:
 #   pythonVersion : interpreter to link against (e.g. 3.15.0-rc.1)
 #   artifactName  : pipeline artifact name (e.g. 3.15_WINDOWS_ARM64)
 #   osName        : WINDOWS | LINUX | OSX (selects the build script)
-#   architecture  : x64 | x86 | arm64 (selects the Python and Rust architecture)
+#   architecture  : x64 | x86 | arm64 (the package target architecture)
+#   hostArchitecture: executable Python architecture; defaults to the target
 
 parameters:
   pythonVersion: ''
   artifactName: ''
   osName: ''
   architecture: 'x64'
+  hostArchitecture: ''
 
 steps:
 - task: PipAuthenticate@1
@@ -31,7 +34,7 @@ steps:
 - task: UsePythonVersion@0
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
-    architecture: ${{ parameters.architecture }}
+    architecture: ${{ coalesce(parameters.hostArchitecture, parameters.architecture) }}
     allowUnstable: true
     addToPath: true
 - task: CargoAuthenticate@0
@@ -51,7 +54,7 @@ steps:
     inputs:
       disableAutoCwd: true
       scriptPath: 'eng/pack/scripts/r2p2_deps.sh'
-      args: '${{ parameters.pythonVersion }}'
+      args: '${{ parameters.pythonVersion }} ${{ parameters.architecture }}'
 - task: CopyFiles@2
   displayName: 'Copy R2P2 files'
   inputs:

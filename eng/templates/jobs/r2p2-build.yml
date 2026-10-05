@@ -10,6 +10,9 @@ parameters:
   POOL_NAME: '1es-pool-azfunc-public'
   POOL_IMAGE: '1es-ubuntu-22.04'
   POOL_OS: 'linux'
+  HOST_ARCHITECTURE: ''
+  TARGET_ARCHITECTURE: ''
+  TARGET_TRIPLE: ''
 
 jobs:
   - job: "RustBuild${{ parameters.SIMPLE_VERSION }}_${{ parameters.OS_ARCH }}"
@@ -27,3 +30,6 @@ jobs:
           PROJECT_NAME: ${{ parameters.PROJECT_NAME }}
           PROJECT_DIRECTORY: ${{ parameters.PROJECT_DIRECTORY }}
           POOL_OS: ${{ parameters.POOL_OS }}
+          HOST_ARCHITECTURE: ${{ parameters.HOST_ARCHITECTURE }}
+          TARGET_ARCHITECTURE: ${{ parameters.TARGET_ARCHITECTURE }}
+          TARGET_TRIPLE: ${{ parameters.TARGET_TRIPLE }}

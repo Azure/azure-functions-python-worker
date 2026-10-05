@@ -107,8 +107,7 @@ jobs:
       artifactName: '$(normalizedPythonVersion)_LINUX_X64'
       grpcBuild: 'x86_64-linux-gnu.so'
 # R2P2 (Python 3.15+). The R2P2 is a native binary that embeds CPython via
-# PyO3, so — unlike the pure-Python proxy/legacy workers — every OS must
-# compile it with cargo on a *native* agent. Each job produces the same
+# PyO3. Each job produces the same
 # 3.15_<OS>_<ARCH> artifact that the V4 nuspec packs into
 # tools/3.15/<OS>/<Arch>, so the R2P2 ships inside the single Python worker
 # NuGet. Windows Arm64 is new for 3.15 (unsupported by the Python transport
@@ -246,7 +245,7 @@ jobs:
   timeoutInMinutes: 180
   pool:
     name: 1es-pool-azfunc
-    image: 1es-windows-11-arm64
+    image: 1es-windows-2022
     os: windows
   strategy:
     matrix:
@@ -266,6 +265,7 @@ jobs:
       artifactName: '$(normalizedPythonVersion)_WINDOWS_ARM64'
       osName: 'WINDOWS'
       architecture: 'arm64'
+      hostArchitecture: 'x64'
   - template: ci/sign-files.yml@eng
     parameters:
       displayName: 'Sign R2P2 executable'
@@ -341,33 +341,31 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(normalizedPythonVersion)_OSX_ARM64'
       osName: 'OSX'
-# LINUX_ARM64 for R2P2 needs a *native* arm64 Linux agent (cargo cannot
-# cross-compile the PyO3-embedded binary the way the proxy worker cross-
-# downloads arm64 wheels). Enable once a native arm64 Linux image is available
-# in 1es-pool-azfunc, then add the matching nuspec entry + PackageWorkers dependency.
-# - job: Build_R2P2_LINUX_ARM64
-#   timeoutInMinutes: 180
-#   pool:
-#     name: 1es-pool-azfunc
-#     image: <native-arm64-linux-image>
-#     os: linux
-#   strategy:
-#     matrix:
-#       Python315R2P2:
-#         pythonVersion: '3.15.0-rc.1'
-#         normalizedPythonVersion: '3.15'
-#   templateContext:
-#     outputParentDirectory: $(Build.ArtifactStagingDirectory)
-#     outputs:
-#       - output: pipelineArtifact
-#         targetPath: $(Build.ArtifactStagingDirectory)
-#         artifactName: "$(normalizedPythonVersion)_LINUX_ARM64"
-#   steps:
-#   - template: ../../../pack/templates/r2p2_env_gen.yml
-#     parameters:
-#       pythonVersion: '$(pythonVersion)'
-#       artifactName: '$(normalizedPythonVersion)_LINUX_ARM64'
-#       osName: 'LINUX'
+- job: Build_R2P2_LINUX_ARM64
+  timeoutInMinutes: 240
+  pool:
+    name: 1es-pool-azfunc
+    image: 1es-ubuntu-24.04-min
+    os: linux
+  strategy:
+    matrix:
+      Python315R2P2:
+        pythonVersion: '3.15.0-rc.1'
+        normalizedPythonVersion: '3.15'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_LINUX_ARM64"
+  steps:
+  - template: ../../../pack/templates/r2p2_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_LINUX_ARM64'
+      osName: 'LINUX'
+      architecture: 'arm64'
+      hostArchitecture: 'x64'
 - job: Build_OSX_X64
   timeoutInMinutes: 180
   pool:
@@ -475,7 +473,7 @@ jobs:
       grpcBuild: 'aarch64-linux-gnu.so'
 
 - job: PackageWorkers
-  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_R2P2_LINUX_X64', 'Build_R2P2_WINDOWS_X64', 'Build_R2P2_WINDOWS_X86', 'Build_R2P2_WINDOWS_ARM64', 'Build_R2P2_OSX_X64', 'Build_R2P2_OSX_ARM64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
+  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_R2P2_LINUX_X64', 'Build_R2P2_LINUX_ARM64', 'Build_R2P2_WINDOWS_X64', 'Build_R2P2_WINDOWS_X86', 'Build_R2P2_WINDOWS_ARM64', 'Build_R2P2_OSX_X64', 'Build_R2P2_OSX_ARM64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
   templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:

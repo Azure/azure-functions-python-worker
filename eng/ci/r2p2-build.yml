@@ -45,17 +45,9 @@ extends:
     stages:
     # R2P2 Build & Test (cargo fmt/clippy/build/test + Python bridge flake8).
     # The Rust binary embeds CPython via PyO3, so it is built once per target
-    # interpreter (3.15 today) on EACH supported OS/architecture. Python 3.15 is
-    # the first line that supports Windows ARM64, so it is included here alongside
-    # Linux x64, Windows x64 and macOS ARM64. Add versions as new CPython lines
-    # are supported.
-    #
-    # NOTE on pool images: the x64/macOS images below match those the shipping
-    # build (eng/templates/official/jobs/build-artifacts.yml) already uses. The
-    # Windows ARM64 image alias (1es-windows-11-arm64) must exist in the
-    # 1es-pool-azfunc-public managed pool; if the org publishes it under a
-    # different alias, update POOL_IMAGE for the WINDOWS_ARM64 job only -- the
-    # other jobs are independent and still run.
+    # interpreter (3.15 today) on each supported OS/architecture. ARM64 Linux
+    # and Windows artifacts are cross-compiled after all host checks run on the
+    # same x64 images used by the native x64 jobs.
     - stage: BuildR2P2
       jobs:
       - template: /eng/templates/jobs/r2p2-build.yml@self
@@ -78,7 +70,19 @@ extends:
           POOL_NAME: '1es-pool-azfunc-public'
           POOL_IMAGE: '1es-windows-2022'
           POOL_OS: 'windows'
-      # New for Python 3.15: Windows ARM64 (unsupported on 3.14 and earlier).
+      - template: /eng/templates/jobs/r2p2-build.yml@self
+        parameters:
+          PYTHON_VERSION: '3.15.0-rc.1'
+          SIMPLE_VERSION: '315'
+          PROJECT_NAME: 'R2P2 (Python 3.15)'
+          PROJECT_DIRECTORY: 'workers/r2p2'
+          OS_ARCH: 'LINUX_ARM64'
+          POOL_NAME: '1es-pool-azfunc-public'
+          POOL_IMAGE: '1es-ubuntu-22.04'
+          POOL_OS: 'linux'
+          HOST_ARCHITECTURE: 'x64'
+          TARGET_ARCHITECTURE: 'arm64'
+          TARGET_TRIPLE: 'aarch64-unknown-linux-gnu'
       - template: /eng/templates/jobs/r2p2-build.yml@self
         parameters:
           PYTHON_VERSION: '3.15.0-rc.1'
@@ -87,8 +91,11 @@ extends:
           PROJECT_DIRECTORY: 'workers/r2p2'
           OS_ARCH: 'WINDOWS_ARM64'
           POOL_NAME: '1es-pool-azfunc-public'
-          POOL_IMAGE: '1es-windows-11-arm64'
+          POOL_IMAGE: '1es-windows-2022'
           POOL_OS: 'windows'
+          HOST_ARCHITECTURE: 'x64'
+          TARGET_ARCHITECTURE: 'arm64'
+          TARGET_TRIPLE: 'aarch64-pc-windows-msvc'
       - template: /eng/templates/jobs/r2p2-build.yml@self
         parameters:
           PYTHON_VERSION: '3.15.0-rc.1'
@@ -99,7 +106,4 @@ extends:
           POOL_NAME: 'Azure Pipelines'
           POOL_IMAGE: 'macOS-latest'
           POOL_OS: 'macOS'
-      # To also cover macOS x64 and Linux ARM64, add jobs mirroring the above
-      # with OS_ARCH 'OSX_X64' (POOL_IMAGE 'macOS-13') and 'LINUX_ARM64'
-      # (a native arm64 Linux pool image) once the org confirms those pool
-      # aliases. The shared steps template is already OS/arch agnostic.
+      # macOS x64 can be added with OS_ARCH 'OSX_X64' and POOL_IMAGE 'macOS-13'.

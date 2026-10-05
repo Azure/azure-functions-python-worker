@@ -330,7 +330,53 @@ jobs:
       - bash: |
           set -euo pipefail
           rustc --version && cargo --version
-          cargo --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' build --release --locked
+          cargo_config='$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+
+          if [[ "$cargo_config" == *.public.toml ]]; then
+            test "${CARGO_REGISTRIES_PYTHONWORKER_PUBLICPACKAGES_CREDENTIAL_PROVIDER:-}" = "cargo:token"
+
+            # The public feed advertises auth-required=false, but uncached
+            # upstream crates require authentication. Let Cargo initialize its
+            # sparse cache, then correct the cached metadata before retrying.
+            cargo --config "$cargo_config" fetch --locked || true
+            python - "$cargo_config" <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import sys
+          import tomllib
+          from urllib.request import urlopen
+
+          cargo_config = Path(sys.argv[1])
+          with cargo_config.open("rb") as config_file:
+            registries = tomllib.load(config_file)["registries"]
+
+          if len(registries) != 1:
+            raise RuntimeError(f"Expected one Cargo registry, found {len(registries)}")
+
+          index_url = next(iter(registries.values()))["index"].removeprefix("sparse+")
+          with urlopen(f"{index_url}config.json") as response:
+            expected_api = json.load(response)["api"].rstrip("/").lower()
+
+          cargo_home = Path(os.environ.get("CARGO_HOME", Path.home() / ".cargo"))
+          matches = []
+          for cached_config in (cargo_home / "registry" / "index").glob("*/config.json"):
+            with cached_config.open(encoding="utf-8") as config_file:
+              metadata = json.load(config_file)
+            if metadata.get("api", "").rstrip("/").lower() == expected_api:
+              metadata["auth-required"] = True
+              cached_config.write_text(json.dumps(metadata), encoding="utf-8")
+              matches.append(cached_config)
+
+          if len(matches) != 1:
+            raise RuntimeError(
+              f"Expected one cached config for {expected_api}, found {len(matches)}"
+            )
+          print(f"Enabled Cargo authentication in {matches[0]}")
+          PY
+          fi
+
+          cargo --config "$cargo_config" build --release --locked
         displayName: 'Build R2P2 (cargo build --release)'
         workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
 

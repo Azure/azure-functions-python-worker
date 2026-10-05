@@ -40,30 +40,90 @@ python -m pip install "setuptools>=62,<82.0"
 $expectedPointerWidth = if ($Architecture -eq 'x86') { 32 } else { 64 }
 $pythonPointerWidth = python -c "import struct; print(struct.calcsize('P') * 8)"
 if ([int]$pythonPointerWidth -ne $expectedPointerWidth) {
-    throw "Python for $Architecture must be $expectedPointerWidth-bit, but the selected interpreter is $pythonPointerWidth-bit."
+    throw "Host Python for $Architecture must be $expectedPointerWidth-bit, but the selected interpreter is $pythonPointerWidth-bit."
 }
 
 # --- Rust toolchain -------------------------------------------------------
 if (-not (Get-Command rustup -ErrorAction SilentlyContinue)) {
-    $rustupArchitecture = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
-    Invoke-WebRequest "https://win.rustup.rs/$rustupArchitecture" -OutFile rustup-init.exe
+    Invoke-WebRequest 'https://win.rustup.rs/x86_64' -OutFile rustup-init.exe
     ./rustup-init.exe -y --profile minimal --default-toolchain stable
     $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
 }
-$rustToolchain = switch ($Architecture) {
-    'x86' { 'stable-i686-pc-windows-msvc' }
-    'arm64' { 'stable-aarch64-pc-windows-msvc' }
-    default { 'stable-x86_64-pc-windows-msvc' }
+$rustToolchain = if ($Architecture -eq 'x86') {
+    'stable-i686-pc-windows-msvc'
+} else {
+    'stable-x86_64-pc-windows-msvc'
 }
+$rustTarget = if ($Architecture -eq 'arm64') { 'aarch64-pc-windows-msvc' } else { $null }
+
 rustup toolchain install $rustToolchain --profile minimal
+if ($rustTarget) {
+    rustup target add $rustTarget --toolchain $rustToolchain
+}
 rustup run $rustToolchain rustc --version
 rustup run $rustToolchain cargo --version
 
 # --- Compile the release binary against the target interpreter ------------
-# PyO3 (auto-initialize) links libpython; pin PYO3_PYTHON to the venv python.
-$env:PYO3_PYTHON = (Get-Command python).Source
+# Native builds query the selected interpreter. The ARM64 cross-build instead
+# uses the official target CPython SDK and PyO3's explicit cross configuration.
+$cargoArguments = @('build', '--release', '--locked')
+$binaryPath = Join-Path $WORKER 'target\release\r2p2.exe'
+if ($rustTarget) {
+    if ($PythonVersion -notmatch '^(?<base>\d+\.\d+\.\d+)-(?<level>a|b|rc)\.?(?<serial>\d+)$' -and
+        $PythonVersion -notmatch '^(?<base>\d+\.\d+\.\d+)$') {
+        throw "Unsupported Python version format for the CPython download: $PythonVersion"
+    }
+    $baseVersion = $Matches.base
+    $artifactVersion = if ($Matches.level) {
+        "$baseVersion$($Matches.level)$($Matches.serial)"
+    } else {
+        $baseVersion
+    }
+    if ($baseVersion -notmatch '^(?<major>\d+)\.(?<minor>\d+)') {
+        throw "Unable to determine the Python major/minor version from $PythonVersion"
+    }
+    $pythonMajorMinor = "$($Matches.major).$($Matches.minor)"
+    $pythonLibrary = "python$($Matches.major)$($Matches.minor).lib"
+    $pythonSdk = Join-Path $env:AGENT_TEMPDIRECTORY "cpython-$artifactVersion-arm64"
+    $pythonArchive = Join-Path $env:AGENT_TEMPDIRECTORY "python-$artifactVersion-arm64.zip"
+    $pythonUrl = "https://www.python.org/ftp/python/$baseVersion/python-$artifactVersion-arm64.zip"
+
+    Invoke-WebRequest $pythonUrl -OutFile $pythonArchive
+    Expand-Archive $pythonArchive -DestinationPath $pythonSdk -Force
+    $pythonHeader = Join-Path $pythonSdk 'include\Python.h'
+    $pythonImportLibrary = Join-Path $pythonSdk "libs\$pythonLibrary"
+    if (-not (Test-Path $pythonHeader) -or -not (Test-Path $pythonImportLibrary)) {
+        throw "The ARM64 CPython SDK is missing $pythonHeader or $pythonImportLibrary."
+    }
+
+    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+    $vsInstall = & $vswhere -latest -products * `
+        -requires Microsoft.VisualStudio.Component.VC.Tools.ARM64 `
+        -property installationPath
+    if (-not $vsInstall) {
+        throw 'Visual Studio ARM64 C++ cross tools are not installed.'
+    }
+    $devCmd = Join-Path $vsInstall 'Common7\Tools\VsDevCmd.bat'
+    & $env:COMSPEC /s /c "`"$devCmd`" -no_logo -arch=arm64 -host_arch=x64 >nul && set" |
+        ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') {
+                Set-Item -Path "Env:$($Matches[1])" -Value $Matches[2]
+            }
+        }
+
+    $env:PYO3_CROSS = '1'
+    $env:PYO3_CROSS_LIB_DIR = Join-Path $pythonSdk 'libs'
+    $env:PYO3_CROSS_PYTHON_VERSION = $pythonMajorMinor
+    $env:PYO3_CROSS_PYTHON_IMPLEMENTATION = 'CPython'
+    $env:PYO3_USE_RAW_DYLIB = '0'
+    $cargoArguments += @('--target', $rustTarget)
+    $binaryPath = Join-Path $WORKER "target\$rustTarget\release\r2p2.exe"
+} else {
+    $env:PYO3_PYTHON = (Get-Command python).Source
+}
+
 Push-Location $WORKER
-rustup run $rustToolchain cargo build --release --locked
+rustup run $rustToolchain cargo @cargoArguments
 Pop-Location
 
 # --- v2 + v1 runtimes + app SDK into the deps tree ------------------------
@@ -71,7 +131,7 @@ python -m pip install ./runtimes/v2 ./runtimes/v1 azure-functions `
     --no-compile --target $DEPS
 
 # --- Stage the runtime worker-directory layout ----------------------------
-Copy-Item "$WORKER\target\release\r2p2.exe" "$DEPS\r2p2.exe" -Force
+Copy-Item $binaryPath "$DEPS\r2p2.exe" -Force
 if (Test-Path "$DEPS\bridge") { Remove-Item "$DEPS\bridge" -Recurse -Force }
 Copy-Item "$WORKER\bridge" "$DEPS\bridge" -Recurse -Force
 

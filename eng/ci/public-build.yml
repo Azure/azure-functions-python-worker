@@ -92,6 +92,7 @@ extends:
         - template: /eng/templates/jobs/ci-emulator-tests.yml@self
           parameters:
             PoolName: 1es-pool-azfunc-public
+            CARGO_CONFIG_FILE: 'workers/r2p2/.cargo/config.public.toml'
     # Python V2 Library Build and Test Stages
     - stage: BuildV2Library
       dependsOn: []

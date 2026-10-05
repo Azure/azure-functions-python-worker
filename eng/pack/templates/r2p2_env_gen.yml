@@ -89,7 +89,7 @@ steps:
     # path. worker.py is the launcher shim the Host invokes (per the shared
     # top-level worker.config.json); it os.execv's the native r2p2 binary.
     # The binary is r2p2.exe on Windows, r2p2 elsewhere.
-    $binary = if ($IsWindows) { "r2p2.exe" } else { "r2p2" }
+    $binary = if ('${{ parameters.osName }}' -eq 'WINDOWS') { "r2p2.exe" } else { "r2p2" }
     $expected = @(
         $binary,
         "worker.py",
@@ -125,4 +125,3 @@ steps:
     }
     Write-Host "✅ Validation passed. R2P2 artifact contents are correct."
   displayName: "Validate R2P2 artifact contents"
-  pwsh: true

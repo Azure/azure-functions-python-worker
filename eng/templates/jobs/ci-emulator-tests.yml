@@ -1,5 +1,6 @@
 parameters:
   PROJECT_DIRECTORY: 'workers'
+  CARGO_CONFIG_FILE: 'workers/r2p2/.cargo/config.toml'
 
 jobs:
   - job: "TestPython"
@@ -324,12 +325,12 @@ jobs:
       - task: CargoAuthenticate@0
         displayName: 'Authenticate Cargo to CFS'
         inputs:
-          configFile: '$(Build.SourcesDirectory)/workers/r2p2/.cargo/config.toml'
+          configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
 
       - bash: |
           set -euo pipefail
           rustc --version && cargo --version
-          cargo build --release --locked
+          cargo --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' build --release --locked
         displayName: 'Build R2P2 (cargo build --release)'
         workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
 

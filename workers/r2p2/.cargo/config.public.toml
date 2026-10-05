@@ -1,0 +1,5 @@
+[registries]
+upstream = { index = "sparse+https://pkgs.dev.azure.com/azfunc/public/_packaging/PythonWorker_PublicPackages/Cargo/index/" }
+
+[source.crates-io]
+replace-with = "upstream"

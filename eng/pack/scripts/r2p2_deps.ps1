@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 #
-# Build the R2P2 release artifact tree for packaging (Windows X64 / Arm64).
+# Build the R2P2 release artifact tree for packaging (Windows X64 / X86 / Arm64).
 #
 # Windows analogue of r2p2_deps.sh. Unlike the Python workers (pure pip
 # installs), the R2P2 is a compiled binary that embeds CPython via PyO3. This
@@ -16,9 +16,13 @@
 #
 # Arg 1: python version (e.g. 3.15). The Rust binary is linked to exactly one
 # CPython ABI, so this must match the interpreter the worker will run against.
+# Arg 2: target architecture (x64, x86, or arm64).
 param(
     [Parameter(Mandatory = $true)]
-    [string]$PythonVersion
+    [string]$PythonVersion,
+
+    [ValidateSet('x64', 'x86', 'arm64')]
+    [string]$Architecture = 'x64'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -33,21 +37,33 @@ python -m venv .env
 python -m pip install --upgrade pip
 python -m pip install "setuptools>=62,<82.0"
 
+$expectedPointerWidth = if ($Architecture -eq 'x86') { 32 } else { 64 }
+$pythonPointerWidth = python -c "import struct; print(struct.calcsize('P') * 8)"
+if ([int]$pythonPointerWidth -ne $expectedPointerWidth) {
+    throw "Python for $Architecture must be $expectedPointerWidth-bit, but the selected interpreter is $pythonPointerWidth-bit."
+}
+
 # --- Rust toolchain -------------------------------------------------------
-if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
-    $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
-    Invoke-WebRequest "https://win.rustup.rs/$arch" -OutFile rustup-init.exe
+if (-not (Get-Command rustup -ErrorAction SilentlyContinue)) {
+    $rustupArchitecture = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
+    Invoke-WebRequest "https://win.rustup.rs/$rustupArchitecture" -OutFile rustup-init.exe
     ./rustup-init.exe -y --profile minimal --default-toolchain stable
     $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
 }
-rustc --version
-cargo --version
+$rustToolchain = switch ($Architecture) {
+    'x86' { 'stable-i686-pc-windows-msvc' }
+    'arm64' { 'stable-aarch64-pc-windows-msvc' }
+    default { 'stable-x86_64-pc-windows-msvc' }
+}
+rustup toolchain install $rustToolchain --profile minimal
+rustup run $rustToolchain rustc --version
+rustup run $rustToolchain cargo --version
 
 # --- Compile the release binary against the target interpreter ------------
 # PyO3 (auto-initialize) links libpython; pin PYO3_PYTHON to the venv python.
 $env:PYO3_PYTHON = (Get-Command python).Source
 Push-Location $WORKER
-cargo build --release --locked
+rustup run $rustToolchain cargo build --release --locked
 Pop-Location
 
 # --- v2 + v1 runtimes + app SDK into the deps tree ------------------------

@@ -78,13 +78,6 @@ extends:
         jobs:
           - template: /eng/templates/official/jobs/ci-fc-tests.yml@self
 
-      # R2P2 Build & Package (Python 3.15+, Linux/X64).
-      # NOTE: The R2P2 is built and packaged as part of the
-      # BuildPythonWorker stage (Build_LINUX_X64 matrix, 3.15) and shipped inside
-      # the shared Microsoft.Azure.Functions.V4.PythonWorker NuGet.
-      # The former standalone stage/templates/nuspec were removed once the merge
-      # landed to avoid a duplicate 3.15 build and a second package.
-
       # Python V2 Library Build and Test Stages
       - stage: BuildV2Library
         dependsOn: []

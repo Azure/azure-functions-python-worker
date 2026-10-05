@@ -129,16 +129,7 @@ jobs:
         displayName: 'Cleanup after tests'
         condition: always()
 
-  # Python 3.15 unit tests run as a separate job, NOT a matrix line on
-  # TestPython above. On 3.15 the worker is R2P2 (Rust + PyO3), not
-  # proxy_worker/azure_functions_worker, and the shared setup used by TestPython
-  # is cp315-incompatible: install-dependencies.sh pulls the [dev] extra
-  # (aiohttp via durable, pandas, grpcio, ...) which has no cp315 wheels, and
-  # test-setup.sh's build-protos needs grpcio-tools (no cp315). The R2P2 bridge
-  # unit suite (tests/unittest_r2p2) imports only the pure-Python bridge
-  # (bridge + protos_adapter) and the standard library, so it needs none of
-  # that -- just pytest. Keep this in the same pipeline so all Python unit tests
-  # live together.
+  # Temporary - run Python 3.15 tests as a separate job. Dev deps do not have cp315 wheels yet.
   - job: "TestR2P2Unit"
     displayName: "Run R2P2 Bridge Unit Tests (Python 3.15)"
 
@@ -156,11 +147,6 @@ jobs:
       - task: UsePythonVersion@0
         displayName: 'Use Python 3.15'
         inputs:
-          # Must be the EXACT prerelease string: a range like '3.15' means
-          # >=3.15.0 and an RC sorts BELOW 3.15.0, so it is never selected (even
-          # with allowUnstable). 3.15 is not GA yet and is absent from the 1es
-          # tool cache, so the task downloads it from the actions/python-versions
-          # registry. Bump to the next RC, or to '3.15' once 3.15.0 is GA.
           versionSpec: '3.15.0-rc.1'
           allowUnstable: true
       - bash: |

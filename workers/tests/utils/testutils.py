@@ -89,12 +89,7 @@ DEFAULT_WEBHOST_DLL_PATH = (PROJECT_ROOT / 'build' / 'webhost' / 'bin' / WEBHOST
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
 WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
-# Under Python 3.15+ the published Python worker IS the R2P2 (the classic
-# in-proc worker is not shipped for 3.15+). When PYAZURE_WORKER_DIR is not set
-# explicitly, the E2E Host defaults to this staged R2P2 directory. CI
-# stages the R2P2 here (or, equivalently, sets PYAZURE_WORKER_DIR).
 R2P2_PATH = PROJECT_ROOT / 'python' / 'test_r2p2'
-# The Python version at/above which the R2P2 is the default worker.
 R2P2_MIN_VERSION = (3, 15)
 ON_WINDOWS = platform.system() == 'Windows'
 LOCALHOST = "127.0.0.1"

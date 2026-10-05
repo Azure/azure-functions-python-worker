@@ -1,5 +1,6 @@
 parameters:
   PROJECT_DIRECTORY: 'workers'
+  CARGO_CONFIG_FILE: 'workers/r2p2/.cargo/config.toml'
 
 jobs:
   - job: "TestPython"
@@ -152,7 +153,11 @@ jobs:
       - task: CargoAuthenticate@0
         displayName: 'Authenticate Cargo to CFS'
         inputs:
-          configFile: '$(Build.SourcesDirectory)/workers/r2p2/.cargo/config.toml'
+          configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+      - bash: |
+          chmod +x eng/scripts/prepare-cargo-auth.sh
+          eng/scripts/prepare-cargo-auth.sh '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+        displayName: 'Validate Cargo authentication'
       - pwsh: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
@@ -182,13 +187,13 @@ jobs:
       - pwsh: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          cargo fmt --all -- --check
+          cargo --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' fmt --all -- --check
         displayName: 'Check R2P2 Rust formatting'
         workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
       - pwsh: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          cargo clippy --all-targets --locked -- -D warnings
+          cargo --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' clippy --all-targets --locked -- -D warnings
         displayName: 'Lint R2P2 Rust code'
         workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
       - pwsh: |
@@ -196,7 +201,7 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
           Push-Location workers/r2p2
           try {
-            cargo test --locked
+            cargo --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' test --locked
           } finally {
             Pop-Location
           }

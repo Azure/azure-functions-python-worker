@@ -3,6 +3,7 @@ parameters:
   SIMPLE_VERSION: ''
   PROJECT_NAME: ''
   PROJECT_DIRECTORY: 'workers/r2p2'
+  CARGO_CONFIG_FILE: 'workers/r2p2/.cargo/config.toml'
 
 jobs:
   - job: "RustBuild${{ parameters.SIMPLE_VERSION }}"
@@ -19,3 +20,4 @@ jobs:
           PYTHON_VERSION: ${{ parameters.PYTHON_VERSION }}
           PROJECT_NAME: ${{ parameters.PROJECT_NAME }}
           PROJECT_DIRECTORY: ${{ parameters.PROJECT_DIRECTORY }}
+          CARGO_CONFIG_FILE: ${{ parameters.CARGO_CONFIG_FILE }}

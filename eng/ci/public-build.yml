@@ -77,6 +77,7 @@ extends:
           SIMPLE_VERSION: '315'
           PROJECT_NAME: 'R2P2 (Python 3.15)'
           PROJECT_DIRECTORY: 'workers/r2p2'
+          CARGO_CONFIG_FILE: 'workers/r2p2/.cargo/config.public.toml'
       # Skip the build stage for SDK and Extensions release branches. This stage will fail because pyproject.toml contains the updated (and unreleased) library version
       condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
     - stage: CheckPythonWorkerDependencies
@@ -85,6 +86,7 @@ extends:
       - template: /eng/templates/jobs/ci-dependency-check.yml@self
         parameters:
           PoolName: 1es-pool-azfunc-public
+          CARGO_CONFIG_FILE: 'workers/r2p2/.cargo/config.public.toml'
     - stage: RunWorkerUnitTests
       dependsOn: BuildPythonWorker
       jobs:
@@ -92,6 +94,7 @@ extends:
           parameters:
             PROJECT_DIRECTORY: 'workers'
             PoolName: 1es-pool-azfunc-public
+            CARGO_CONFIG_FILE: 'workers/r2p2/.cargo/config.public.toml'
     - stage: RunWorkerEmulatorTests
       dependsOn: BuildPythonWorker
       jobs:

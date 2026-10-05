@@ -1,3 +1,6 @@
+parameters:
+  CARGO_CONFIG_FILE: 'workers/r2p2/.cargo/config.toml'
+
 jobs:
   - job: "TestPython"
     displayName: "Run Dependency Checks"
@@ -116,7 +119,12 @@ jobs:
       - task: CargoAuthenticate@0
         displayName: 'Authenticate Cargo to CFS'
         inputs:
-          configFile: '$(Build.SourcesDirectory)/workers/r2p2/.cargo/config.toml'
+          configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+        condition: eq(variables['r2p2Worker'], true)
+      - bash: |
+          chmod +x eng/scripts/prepare-cargo-auth.sh
+          eng/scripts/prepare-cargo-auth.sh '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+        displayName: 'Validate Cargo authentication'
         condition: eq(variables['r2p2Worker'], true)
       - pwsh: |
           $ErrorActionPreference = 'Stop'
@@ -132,7 +140,7 @@ jobs:
 
           Push-Location workers/r2p2
           try {
-            cargo metadata --locked --format-version 1 --no-deps | Out-Null
+            cargo --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' metadata --locked --format-version 1 --no-deps | Out-Null
           } finally {
             Pop-Location
           }

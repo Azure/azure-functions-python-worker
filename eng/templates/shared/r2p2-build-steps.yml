@@ -54,8 +54,8 @@ steps:
       configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
 
   - bash: |
-      chmod +x eng/scripts/prepare-cargo-auth.sh
-      eng/scripts/prepare-cargo-auth.sh '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+      chmod +x '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh'
+      '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh' '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
     displayName: 'Validate Cargo authentication'
 
   - pwsh: |

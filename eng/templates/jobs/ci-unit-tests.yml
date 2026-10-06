@@ -150,14 +150,6 @@ jobs:
         inputs:
           versionSpec: '3.15.0-rc.1'
           allowUnstable: true
-      - task: CargoAuthenticate@0
-        displayName: 'Authenticate Cargo to CFS'
-        inputs:
-          configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
-      - bash: |
-          chmod +x eng/scripts/prepare-cargo-auth.sh
-          eng/scripts/prepare-cargo-auth.sh '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
-        displayName: 'Validate Cargo authentication'
       - pwsh: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
@@ -184,6 +176,14 @@ jobs:
           cargo fmt --version
           cargo clippy --version
         displayName: 'Configure Rust toolchain'
+      - task: CargoAuthenticate@0
+        displayName: 'Authenticate Cargo to CFS'
+        inputs:
+          configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+      - bash: |
+          chmod +x '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh'
+          '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh' '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+        displayName: 'Validate Cargo authentication'
       - pwsh: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true

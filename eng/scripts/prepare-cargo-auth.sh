@@ -8,6 +8,11 @@ if [[ "$cargo_config" != *.public.toml ]]; then
     exit 0
 fi
 
+if ! command -v cargo >/dev/null 2>&1; then
+    echo "cargo is required before preparing Cargo authentication" >&2
+    exit 1
+fi
+
 test "${CARGO_REGISTRIES_PYTHONWORKER_PUBLICPACKAGES_CREDENTIAL_PROVIDER:-}" = "cargo:token"
 
 # The public feed advertises auth-required=false, but uncached upstream crates

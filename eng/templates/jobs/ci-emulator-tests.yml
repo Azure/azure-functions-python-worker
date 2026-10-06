@@ -310,8 +310,8 @@ jobs:
           set -euo pipefail
           rustc --version && cargo --version
           cargo_config='$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
-          chmod +x eng/scripts/prepare-cargo-auth.sh
-          eng/scripts/prepare-cargo-auth.sh "$cargo_config"
+          chmod +x '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh'
+          '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh' "$cargo_config"
           cargo --config "$cargo_config" build --release --locked
         displayName: 'Build R2P2 (cargo build --release)'
         workingDirectory: $(Build.SourcesDirectory)/workers/r2p2

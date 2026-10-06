@@ -116,16 +116,6 @@ jobs:
             python -c "import pkgutil, importlib; [importlib.import_module(f'azure_functions_runtime.{name}') for _, name, _ in pkgutil.walk_packages(['azure_functions_runtime'])]"
         displayName: 'Python Library V2: check for missing dependencies'
         condition: or(eq(variables['proxyWorker'], true), eq(variables['r2p2Worker'], true))
-      - task: CargoAuthenticate@0
-        displayName: 'Authenticate Cargo to CFS'
-        inputs:
-          configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
-        condition: eq(variables['r2p2Worker'], true)
-      - bash: |
-          chmod +x eng/scripts/prepare-cargo-auth.sh
-          eng/scripts/prepare-cargo-auth.sh '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
-        displayName: 'Validate Cargo authentication'
-        condition: eq(variables['r2p2Worker'], true)
       - pwsh: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
@@ -136,7 +126,23 @@ jobs:
           } else {
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
             $env:PATH = "$HOME/.cargo/bin`:$env:PATH"
+            Write-Host "##vso[task.prependpath]$HOME/.cargo/bin"
           }
+        displayName: 'Install Rust toolchain'
+        condition: eq(variables['r2p2Worker'], true)
+      - task: CargoAuthenticate@0
+        displayName: 'Authenticate Cargo to CFS'
+        inputs:
+          configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+        condition: eq(variables['r2p2Worker'], true)
+      - bash: |
+          chmod +x '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh'
+          '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh' '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+        displayName: 'Validate Cargo authentication'
+        condition: eq(variables['r2p2Worker'], true)
+      - pwsh: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
 
           Push-Location workers/r2p2
           try {

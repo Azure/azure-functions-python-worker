@@ -208,24 +208,6 @@ jobs:
           CosmosDBEmulatorKey: $(CosmosDBEmulatorKey)
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         displayName: "Running $(PYTHON_VERSION) Python Linux Emulator Tests"
-        condition: and(succeeded(), ne(variables['R2P2_WORKER'], 'true'))
-      - bash: |
-          python -m pytest -q --reruns 4 --continue-on-collection-errors --instafail \
-            --ignore=tests/emulator_tests/test_servicebus_functions.py \
-            tests/emulator_tests
-        env:
-          AzureWebJobsStorage: $(AzureWebJobsStorage)
-          AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
-          AzureWebJobsEventHubConnectionString: $(EmulatorEventHubConnectionString)
-          AzureWebJobsCosmosDBConnectionString: $(EmulatorCosmosDBConnectionString)
-          CosmosDBEmulatorUrl: $(CosmosDBEmulatorUrl)
-          CosmosDBEmulatorKey: $(CosmosDBEmulatorKey)
-          PYAZURE_WORKER_DIR: $(Build.SourcesDirectory)/workers/python/test_r2p2
-          PYTHONPATH: $(Build.SourcesDirectory)/workers
-          PYAZURE_WEBHOST_DEBUG: true
-        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
-        displayName: "Running $(PYTHON_VERSION) R2P2 Emulator Tests"
-        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
       - bash: |
           # Stop and remove EventHub Emulator container to free up the port
           docker stop eventhubs-emulator
@@ -262,20 +244,6 @@ jobs:
           AzureWebJobsServiceBusSDKConnectionString: $(AzureWebJobsServiceBusSDKConnectionString)
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         displayName: "Running $(PYTHON_VERSION) Python ServiceBus Linux Emulator Tests"
-        condition: and(succeeded(), ne(variables['R2P2_WORKER'], 'true'))
-      - bash: |
-          python -m pytest -q --reruns 4 --instafail \
-            tests/emulator_tests/test_servicebus_functions.py
-        env:
-          AzureWebJobsStorage: $(AzureWebJobsStorage)
-          AzureWebJobsServiceBusConnectionString: $(EmulatorServiceBusConnectionString)
-          AzureWebJobsServiceBusSDKConnectionString: $(AzureWebJobsServiceBusSDKConnectionString)
-          PYAZURE_WORKER_DIR: $(Build.SourcesDirectory)/workers/python/test_r2p2
-          PYTHONPATH: $(Build.SourcesDirectory)/workers
-          PYAZURE_WEBHOST_DEBUG: true
-        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
-        displayName: "Running $(PYTHON_VERSION) R2P2 ServiceBus Emulator Tests"
-        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
       
       - bash: |
           echo "Cleaning up after tests..."

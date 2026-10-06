@@ -106,12 +106,8 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(normalizedPythonVersion)_LINUX_X64'
       grpcBuild: 'x86_64-linux-gnu.so'
-# R2P2 (Python 3.15+). The R2P2 is a native binary that embeds CPython via
-# PyO3. Each job produces the same
-# 3.15_<OS>_<ARCH> artifact that the V4 nuspec packs into
-# tools/3.15/<OS>/<Arch>, so the R2P2 ships inside the single Python worker
-# NuGet. Windows Arm64 is new for 3.15 (unsupported by the Python transport
-# workers on <=3.14).
+
+# Starting with Python 3.15, worker builds use R2P2.
 - job: Build_R2P2_LINUX_X64
   timeoutInMinutes: 180
   pool:

@@ -70,10 +70,7 @@ else:
         from proxy_worker import dispatcher, protos
     except ImportError:
         # Python 3.15+ runs on the R2P2 Rust worker, which is protobuf-free and
-        # ships no generated proxy_worker.protos gRPC stubs. The mock-host
-        # harness defined below is only exercised by the unit suites on <=3.14
-        # (the endtoend suite imports this module solely for path constants and
-        # is_envvar_true), so a missing protos/dispatcher is tolerated here.
+        # ships no generated proxy_worker.protos gRPC stubs.
         dispatcher = None
         protos = None
 

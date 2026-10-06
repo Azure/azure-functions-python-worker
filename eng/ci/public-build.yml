@@ -94,6 +94,10 @@ extends:
           parameters:
             PROJECT_DIRECTORY: 'workers'
             PoolName: 1es-pool-azfunc-public
+        - template: /eng/templates/jobs/ci-r2p2-unit-tests.yml@self
+          parameters:
+            PROJECT_DIRECTORY: 'workers'
+            PoolName: 1es-pool-azfunc-public
             CARGO_CONFIG_FILE: 'workers/r2p2/.cargo/config.public.toml'
     - stage: RunWorkerEmulatorTests
       dependsOn: BuildPythonWorker

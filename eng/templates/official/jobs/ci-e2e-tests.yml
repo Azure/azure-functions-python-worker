@@ -210,22 +210,6 @@ jobs:
           PYAZURE_WEBHOST_DEBUG: true
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
-        condition: and(succeeded(), ne(variables['R2P2_WORKER'], 'true'))
-
-      - bash: |
-          python -m pytest -q --reruns 4 --continue-on-collection-errors --instafail tests/endtoend
-        env:
-          AzureWebJobsStorage: $(STORAGE_CONNECTION)
-          STORAGE_CONNECTION: $(STORAGE_CONNECTION)
-          AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
-          AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
-          AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
-          PYAZURE_WORKER_DIR: $(Build.SourcesDirectory)/workers/python/test_r2p2
-          PYTHONPATH: $(Build.SourcesDirectory)/workers
-          PYAZURE_WEBHOST_DEBUG: true
-        displayName: "Running $(PYTHON_VERSION) R2P2 E2E Tests"
-        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
-        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
 
       - bash: |
           echo "Cleaning up after tests..."

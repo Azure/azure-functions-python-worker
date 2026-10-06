@@ -1,9 +1,20 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-import time
 import typing
 
 from tests.utils import testutils
+
+
+RETURN_TYPE_LOGS = (
+    "This timer trigger function executed successfully",
+    "Return string",
+    "Return bytes",
+    "Return dict",
+    "Return list",
+    "Return int",
+    "Return double",
+    "Return bool",
+)
 
 
 class TestGenericFunctions(testutils.WebHostTestCase):
@@ -43,7 +54,7 @@ class TestGenericFunctions(testutils.WebHostTestCase):
         out_resp = self.webhost.request('POST', 'table_out_binding')
         self.assertEqual(out_resp.status_code, 200)
         # Checking that the function app is okay
-        time.sleep(10)
+        self.wait_for_host_logs(RETURN_TYPE_LOGS, timeout=30)
         # Checking webhost status.
         r = self.webhost.request('GET', '', no_prefix=True,
                                  timeout=5)
@@ -51,15 +62,8 @@ class TestGenericFunctions(testutils.WebHostTestCase):
 
     def check_log_return_types(self, host_out: typing.List[str]):
         # Checks that functions executed correctly
-        self.assertIn("This timer trigger function executed "
-                      "successfully", host_out)
-        self.assertIn("Return string", host_out)
-        self.assertIn("Return bytes", host_out)
-        self.assertIn("Return dict", host_out)
-        self.assertIn("Return list", host_out)
-        self.assertIn("Return int", host_out)
-        self.assertIn("Return double", host_out)
-        self.assertIn("Return bool", host_out)
+        for expected in RETURN_TYPE_LOGS:
+            self.assertIn(expected, host_out)
 
         # Checks for failed executions (TypeErrors, etc.)
         errors_found = False

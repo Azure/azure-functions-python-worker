@@ -80,6 +80,15 @@ def test_customer_deps_path_missing_returns_empty(tmp_path):
     assert bridge._customer_deps_path(str(tmp_path)) == ""
 
 
+def test_customer_deps_path_uses_existing_sys_path_entry(
+        tmp_path, restore_sys_path):
+    site = tmp_path / ".python_packages" / "lib" / "site-packages"
+    site.mkdir(parents=True)
+    sys.path.insert(0, str(site))
+
+    assert bridge._customer_deps_path("") == str(site)
+
+
 # --- _prioritize_customer_dependencies ------------------------------------
 def test_prioritization_orders_sys_path(monkeypatch, tmp_path,
                                         restore_sys_path):
@@ -128,3 +137,14 @@ def test_prioritization_emits_finished_log(monkeypatch, tmp_path,
                      "worker_dependencies_path: ")
         for m in messages
     )
+
+
+def test_empty_prioritization_tolerates_logging_error(monkeypatch):
+    class _BrokenLogger:
+        def info(self, *args):
+            raise RuntimeError("logger unavailable")
+
+    monkeypatch.setattr(bridge, "_workers_dir", "")
+    monkeypatch.setattr(bridge, "_syslog", _BrokenLogger())
+
+    assert bridge._prioritize_customer_dependencies("") == ""

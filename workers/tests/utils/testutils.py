@@ -334,12 +334,12 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     if test_exception is not None:
                         raise test_exception
 
-    def wait_for_host_log(self, substring: str,
-                          timeout: float = 10.0,
-                          poll_interval: float = 0.5) -> bool:
-        """Wait until `substring` appears in the host stdout written so far.
+    def wait_for_host_logs(self, substrings: typing.Iterable[str],
+                           timeout: float = 10.0,
+                           poll_interval: float = 0.5) -> bool:
+        """Wait until all `substrings` appear in host stdout written so far.
 
-        The worker forwards exception logs to the host over gRPC, so a log
+        The worker forwards invocation logs to the host over gRPC, so a log
         line can land in the host's stdout slightly after the corresponding
         HTTP response is returned. The check_log_* assertions read a snapshot
         of host_out taken right after the test method returns; without waiting,
@@ -350,12 +350,14 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         """
         if self.host_stdout is None:
             return True
+        expected = tuple(substrings)
         start = self.host_stdout.tell()
         deadline = time.time() + timeout
         try:
             while time.time() < deadline:
                 self.host_stdout.seek(start)
-                if substring in self.host_stdout.read():
+                output = self.host_stdout.read()
+                if all(substring in output for substring in expected):
                     return True
                 time.sleep(poll_interval)
             return False
@@ -363,6 +365,12 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
             # Restore the read position so the framework captures host_out
             # from the same point regardless of our polling reads.
             self.host_stdout.seek(start)
+
+    def wait_for_host_log(self, substring: str,
+                          timeout: float = 10.0,
+                          poll_interval: float = 0.5) -> bool:
+        return self.wait_for_host_logs(
+            (substring,), timeout=timeout, poll_interval=poll_interval)
 
 
 # This is not supported in 3.13+

@@ -48,6 +48,13 @@ Documentation = "https://github.com/Azure/azure-functions-python-worker?tab=read
 Repository = "https://github.com/Azure/azure-functions-python-worker"
 
 [project.optional-dependencies]
+dev-r2p2 = [
+    "flake8",
+    "pytest~=7.4.4",
+    "pytest-asyncio",
+    "pytest-instafail",
+    "pytest-rerunfailures"
+]
 dev = [
     "protobuf~=7.36.2; python_version == '3.15'",
     "grpcio-tools~=1.84.0; python_version == '3.15'",

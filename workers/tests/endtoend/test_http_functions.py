@@ -1,9 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
-import sys
 import typing
-import unittest
 from unittest.mock import patch
 
 import requests

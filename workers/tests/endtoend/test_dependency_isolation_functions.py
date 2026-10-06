@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 import importlib.util
 import os
-import sys
 from unittest import skip
 from unittest.case import skipIf
 from unittest.mock import patch

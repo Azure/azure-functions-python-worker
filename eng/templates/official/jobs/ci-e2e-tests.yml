@@ -43,6 +43,13 @@ jobs:
           SQL_CONNECTION: $(LinuxSqlConnectionString38)
           EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)
+        Python315:
+          PYTHON_VERSION: '3.15.0-rc.1'
+          R2P2_WORKER: 'true'
+          STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
+          SQL_CONNECTION: $(LinuxSqlConnectionString39)
+          EVENTGRID_URI: $(LinuxEventGridTopicUriString39)
+          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString39)
     steps:
       - task: PipAuthenticate@1
         displayName: 'Authenticate pip to CFS'
@@ -77,8 +84,38 @@ jobs:
         displayName: 'Install system libraries for opencv (cv2)'
 
       - task: UsePythonVersion@0
+        displayName: 'Use Python $(PYTHON_VERSION)'
         inputs:
           versionSpec: $(PYTHON_VERSION)
+          allowUnstable: true
+      - bash: |
+          set -euo pipefail
+          PY="$(which python)"
+          echo "##vso[task.setvariable variable=PYO3_PYTHON]$PY"
+          LIBDIR="$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR") or "")')"
+          echo "##vso[task.setvariable variable=LD_LIBRARY_PATH]$LIBDIR:${LD_LIBRARY_PATH:-}"
+          echo "PYO3_PYTHON=$PY LIBDIR=$LIBDIR"
+          python --version
+        displayName: 'Configure Python for PyO3'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+      - bash: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "##vso[task.prependpath]$HOME/.cargo/bin"
+        displayName: 'Install Rust toolchain'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+      - task: CargoAuthenticate@0
+        displayName: 'Authenticate Cargo to CFS'
+        inputs:
+          configFile: '$(Build.SourcesDirectory)/workers/r2p2/.cargo/config.toml'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+      - bash: |
+          set -euo pipefail
+          rustc --version && cargo --version
+          cargo build --release --locked
+        displayName: 'Build R2P2 (cargo build --release)'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+        workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
       - task: UseDotNet@2
         displayName: 'Install .NET 10'
         inputs:
@@ -131,6 +168,11 @@ jobs:
           eng/scripts/test-setup.sh
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
+      - bash: |
+          chmod +x eng/scripts/stage-r2p2.sh
+          eng/scripts/stage-r2p2.sh
+        displayName: 'Stage R2P2 worker'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
       - powershell: |
           $pipelineVarSet = "$(USETESTPYTHONSDK)"
           Write-Host "pipelineVarSet: $pipelineVarSet"
@@ -168,124 +210,7 @@ jobs:
           PYAZURE_WEBHOST_DEBUG: true
         displayName: "Running $(PYTHON_VERSION) Python E2E Tests"
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
-      
-      - bash: |
-          echo "Cleaning up after tests..."
-          # Remove build artifacts and caches
-          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/build || true
-          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.pytest_cache || true
-          rm -rf $(Pipeline.Workspace)/PythonSdkArtifact || true
-          rm -rf $(Pipeline.Workspace)/PythonExtensionArtifact || true
-          
-          # Clean Docker
-          docker system prune -f || true
-          
-          # Clean pip cache
-          pip cache purge || true
-          
-          echo "Disk space after cleanup:"
-          df -h
-        displayName: 'Cleanup after tests'
-        condition: always()
-
- # Temporary - run Python 3.15 R2P2 tests as a separate job.
-  - job: "TestR2P2E2E"
-    displayName: "Run Python 3.15 R2P2 E2E Tests"
-
-    pool:
-      name: 1es-pool-azfunc
-      image: 1es-ubuntu-24.04-min
-      os: linux
-
-    variables:
-      PYTHON_VERSION: '3.15'
-      STORAGE_CONNECTION: $(LinuxStorageConnectionString38)
-      SQL_CONNECTION: $(LinuxSqlConnectionString38)
-      EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
-      EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)
-
-    steps:
-      - task: PipAuthenticate@1
-        displayName: 'Authenticate pip to CFS'
-        inputs:
-          artifactFeeds: 'public/upstream-public'
-          onlyAddExtraIndex: false
-
-      - bash: |
-          echo "Disk space before cleanup:"
-          df -h
-          docker system prune -af --volumes || true
-          pip cache purge || true
-          sudo apt-get clean || true
-          sudo rm -rf /var/lib/apt/lists/* || true
-          echo "Disk space after cleanup:"
-          df -h
-        displayName: 'Free disk space'
-
-      - bash: |
-          sudo apt-get update
-          sudo apt-get install -y libgl1 libglib2.0-0
-        displayName: 'Install system libraries for opencv (cv2)'
-
-      - task: UsePythonVersion@0
-        displayName: 'Use Python $(PYTHON_VERSION)'
-        inputs:
-          versionSpec: '3.15.0-rc.1'
-          allowUnstable: true
-
-      - bash: |
-          set -euo pipefail
-          # PyO3 (auto-initialize) links against libpython, so point the Rust
-          # build at the interpreter UsePythonVersion selected, and put that
-          # interpreter's libdir on LD_LIBRARY_PATH so the staged r2p2 binary
-          # can load libpython3.15.so when the Host spawns it during the tests.
-          PY="$(which python)"
-          echo "##vso[task.setvariable variable=PYO3_PYTHON]$PY"
-          LIBDIR="$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR") or "")')"
-          echo "##vso[task.setvariable variable=LD_LIBRARY_PATH]$LIBDIR:${LD_LIBRARY_PATH:-}"
-          echo "PYO3_PYTHON=$PY LIBDIR=$LIBDIR"
-          python --version
-        displayName: 'Configure Python for PyO3'
-
-      - bash: |
-          set -euo pipefail
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
-          echo "##vso[task.prependpath]$HOME/.cargo/bin"
-        displayName: 'Install Rust toolchain'
-
-      - task: CargoAuthenticate@0
-        displayName: 'Authenticate Cargo to CFS'
-        inputs:
-          configFile: '$(Build.SourcesDirectory)/workers/r2p2/.cargo/config.toml'
-
-      - bash: |
-          set -euo pipefail
-          rustc --version && cargo --version
-          cargo build --release --locked
-        displayName: 'Build R2P2 (cargo build --release)'
-        workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
-
-      - task: UseDotNet@2
-        displayName: 'Install .NET 10'
-        inputs:
-          version: 10.0.x
-      - task: NuGetAuthenticate@1
-        displayName: 'Authenticate NuGet to CFS'
-
-      - bash: |
-          chmod +x eng/scripts/install-dependencies.sh
-          eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
-        displayName: 'Install Python dependencies (uv)'
-
-      - bash: |
-          chmod +x eng/scripts/test-setup.sh
-          eng/scripts/test-setup.sh
-        displayName: 'Build webhost and extensions (dotnet)'
-
-      - bash: |
-          chmod +x eng/scripts/stage-r2p2.sh
-          eng/scripts/stage-r2p2.sh
-        displayName: 'Stage R2P2 worker'
+        condition: and(succeeded(), ne(variables['R2P2_WORKER'], 'true'))
 
       - bash: |
           python -m pytest -q --reruns 4 --continue-on-collection-errors --instafail tests/endtoend
@@ -298,17 +223,26 @@ jobs:
           PYAZURE_WORKER_DIR: $(Build.SourcesDirectory)/workers/python/test_r2p2
           PYTHONPATH: $(Build.SourcesDirectory)/workers
           PYAZURE_WEBHOST_DEBUG: true
-        displayName: "Running Python 3.15 R2P2 E2E Tests"
-        workingDirectory: $(Build.SourcesDirectory)/workers
+        displayName: "Running $(PYTHON_VERSION) R2P2 E2E Tests"
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
 
       - bash: |
           echo "Cleaning up after tests..."
-          rm -rf $(Build.SourcesDirectory)/workers/build || true
-          rm -rf $(Build.SourcesDirectory)/workers/.pytest_cache || true
+          # Remove build artifacts and caches
+          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/build || true
+          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.pytest_cache || true
+          rm -rf $(Pipeline.Workspace)/PythonSdkArtifact || true
+          rm -rf $(Pipeline.Workspace)/PythonExtensionArtifact || true
           rm -rf $(Build.SourcesDirectory)/workers/python/test_r2p2 || true
           rm -rf $(Build.SourcesDirectory)/workers/r2p2/target || true
+
+          # Clean Docker
           docker system prune -f || true
+
+          # Clean pip cache
           pip cache purge || true
+
           echo "Disk space after cleanup:"
           df -h
         displayName: 'Cleanup after tests'

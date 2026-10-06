@@ -60,7 +60,8 @@ dev = [
     "azure-storage-blob~=12.27.1", # Used for Blob Emulator tests
     "flask",
     "fastapi",
-    "pydantic",
+    "pydantic; python_version < '3.15'",
+    "pydantic>=2.14.0b1; python_version >= '3.15'",
     "flake8==6.*",
     "mypy",
     "pytest~=7.4.4",

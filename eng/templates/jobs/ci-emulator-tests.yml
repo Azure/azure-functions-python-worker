@@ -25,6 +25,9 @@ jobs:
           PYTHON_VERSION: '3.13'
         Python314:
           PYTHON_VERSION: '3.14'
+        Python315:
+          PYTHON_VERSION: '3.15.0-rc.1'
+          R2P2_WORKER: 'true'
     steps:
       - task: PipAuthenticate@1
         displayName: 'Authenticate pip to CFS'
@@ -70,8 +73,41 @@ jobs:
         displayName: 'Free memory'
 
       - task: UsePythonVersion@0
+        displayName: 'Use Python $(PYTHON_VERSION)'
         inputs:
           versionSpec: $(PYTHON_VERSION)
+          allowUnstable: true
+      - bash: |
+          set -euo pipefail
+          PY="$(which python)"
+          echo "##vso[task.setvariable variable=PYO3_PYTHON]$PY"
+          LIBDIR="$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR") or "")')"
+          echo "##vso[task.setvariable variable=LD_LIBRARY_PATH]$LIBDIR:${LD_LIBRARY_PATH:-}"
+          echo "PYO3_PYTHON=$PY LIBDIR=$LIBDIR"
+          python --version
+        displayName: 'Configure Python for PyO3'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+      - bash: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "##vso[task.prependpath]$HOME/.cargo/bin"
+        displayName: 'Install Rust toolchain'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+      - task: CargoAuthenticate@0
+        displayName: 'Authenticate Cargo to CFS'
+        inputs:
+          configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+      - bash: |
+          set -euo pipefail
+          rustc --version && cargo --version
+          cargo_config='$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+          chmod +x '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh'
+          '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh' "$cargo_config"
+          cargo --config "$cargo_config" build --release --locked
+        displayName: 'Build R2P2 (cargo build --release)'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+        workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
       - task: UseDotNet@2
         displayName: 'Install .NET 10'
         inputs:
@@ -125,6 +161,11 @@ jobs:
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
       - bash: |
+          chmod +x eng/scripts/stage-r2p2.sh
+          eng/scripts/stage-r2p2.sh
+        displayName: 'Stage R2P2 worker'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+      - bash: |
           # The minimal image (1es-ubuntu-24.04-min) does not ship the Docker
           # Compose v2 CLI plugin, so `docker compose` fails with an
           # "unknown shorthand flag: 'f'" error. Install it from the Ubuntu
@@ -167,6 +208,24 @@ jobs:
           CosmosDBEmulatorKey: $(CosmosDBEmulatorKey)
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         displayName: "Running $(PYTHON_VERSION) Python Linux Emulator Tests"
+        condition: and(succeeded(), ne(variables['R2P2_WORKER'], 'true'))
+      - bash: |
+          python -m pytest -q --reruns 4 --continue-on-collection-errors --instafail \
+            --ignore=tests/emulator_tests/test_servicebus_functions.py \
+            tests/emulator_tests
+        env:
+          AzureWebJobsStorage: $(AzureWebJobsStorage)
+          AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
+          AzureWebJobsEventHubConnectionString: $(EmulatorEventHubConnectionString)
+          AzureWebJobsCosmosDBConnectionString: $(EmulatorCosmosDBConnectionString)
+          CosmosDBEmulatorUrl: $(CosmosDBEmulatorUrl)
+          CosmosDBEmulatorKey: $(CosmosDBEmulatorKey)
+          PYAZURE_WORKER_DIR: $(Build.SourcesDirectory)/workers/python/test_r2p2
+          PYTHONPATH: $(Build.SourcesDirectory)/workers
+          PYAZURE_WEBHOST_DEBUG: true
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+        displayName: "Running $(PYTHON_VERSION) R2P2 Emulator Tests"
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
       - bash: |
           # Stop and remove EventHub Emulator container to free up the port
           docker stop eventhubs-emulator
@@ -203,6 +262,20 @@ jobs:
           AzureWebJobsServiceBusSDKConnectionString: $(AzureWebJobsServiceBusSDKConnectionString)
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         displayName: "Running $(PYTHON_VERSION) Python ServiceBus Linux Emulator Tests"
+        condition: and(succeeded(), ne(variables['R2P2_WORKER'], 'true'))
+      - bash: |
+          python -m pytest -q --reruns 4 --instafail \
+            tests/emulator_tests/test_servicebus_functions.py
+        env:
+          AzureWebJobsStorage: $(AzureWebJobsStorage)
+          AzureWebJobsServiceBusConnectionString: $(EmulatorServiceBusConnectionString)
+          AzureWebJobsServiceBusSDKConnectionString: $(AzureWebJobsServiceBusSDKConnectionString)
+          PYAZURE_WORKER_DIR: $(Build.SourcesDirectory)/workers/python/test_r2p2
+          PYTHONPATH: $(Build.SourcesDirectory)/workers
+          PYAZURE_WEBHOST_DEBUG: true
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+        displayName: "Running $(PYTHON_VERSION) R2P2 ServiceBus Emulator Tests"
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
       
       - bash: |
           echo "Cleaning up after tests..."
@@ -215,6 +288,8 @@ jobs:
           rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.pytest_cache || true
           rm -rf $(Pipeline.Workspace)/PythonSdkArtifact || true
           rm -rf $(Pipeline.Workspace)/PythonExtensionArtifact || true
+          rm -rf $(Build.SourcesDirectory)/workers/python/test_r2p2 || true
+          rm -rf $(Build.SourcesDirectory)/workers/r2p2/target || true
           
           # Clean Docker resources
           docker system prune -af --volumes || true
@@ -225,216 +300,4 @@ jobs:
           echo "Disk space after cleanup:"
           df -h
         displayName: 'Cleanup after tests'
-        condition: always()
-
-  # Temporary - run Python 3.15 R2P2 tests as a separate job.
-  - job: "TestR2P2Emulator"
-    displayName: "Run Python 3.15 R2P2 Emulator Tests"
-    # Secret variables (emulator connection strings) are unavailable to PRs
-    # from forks.
-    condition: and(succeeded(), ne(variables['System.PullRequest.IsFork'], 'True'))
-
-    pool:
-      name: ${{ parameters.PoolName }}
-      image: 1es-ubuntu-24.04-min
-      os: linux
-
-    variables:
-      PYTHON_VERSION: '3.15'
-
-    steps:
-      - task: PipAuthenticate@1
-        displayName: 'Authenticate pip to CFS'
-        inputs:
-          artifactFeeds: 'public/upstream-public'
-          onlyAddExtraIndex: false
-
-      - bash: |
-          echo "Disk space before cleanup:"
-          df -h
-          docker system prune -af --volumes || true
-          pip cache purge || true
-          sudo apt-get clean || true
-          sudo rm -rf /var/lib/apt/lists/* || true
-          echo "Disk space after cleanup:"
-          df -h
-        displayName: 'Free disk space'
-
-      - bash: |
-          echo "Memory before cleanup:"
-          free -h
-          # Stop background services not needed for emulator tests. Docker must
-          # remain running for the CosmosDB/EventHub emulators, so do NOT stop
-          # docker, docker.socket, or containerd here.
-          sudo systemctl stop snapd || true
-          sudo systemctl stop unattended-upgrades || true
-          sudo systemctl stop packagekit || true
-          sudo sync
-          sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' || true
-          echo "Memory after cleanup:"
-          free -h
-        displayName: 'Free memory'
-
-      - task: UsePythonVersion@0
-        displayName: 'Use Python $(PYTHON_VERSION)'
-        inputs:
-          versionSpec: '3.15.0-rc.1'
-          allowUnstable: true
-
-      - bash: |
-          set -euo pipefail
-          # PyO3 (auto-initialize) links against libpython, so point the Rust
-          # build at the interpreter UsePythonVersion selected, and put that
-          # interpreter's libdir on LD_LIBRARY_PATH so the staged r2p2 binary
-          # can load libpython3.15.so when the Host spawns it during the tests.
-          PY="$(which python)"
-          echo "##vso[task.setvariable variable=PYO3_PYTHON]$PY"
-          LIBDIR="$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR") or "")')"
-          echo "##vso[task.setvariable variable=LD_LIBRARY_PATH]$LIBDIR:${LD_LIBRARY_PATH:-}"
-          echo "PYO3_PYTHON=$PY LIBDIR=$LIBDIR"
-          python --version
-        displayName: 'Configure Python for PyO3'
-
-      - bash: |
-          set -euo pipefail
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
-          echo "##vso[task.prependpath]$HOME/.cargo/bin"
-        displayName: 'Install Rust toolchain'
-
-      - task: CargoAuthenticate@0
-        displayName: 'Authenticate Cargo to CFS'
-        inputs:
-          configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
-
-      - bash: |
-          set -euo pipefail
-          rustc --version && cargo --version
-          cargo_config='$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
-          chmod +x '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh'
-          '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh' "$cargo_config"
-          cargo --config "$cargo_config" build --release --locked
-        displayName: 'Build R2P2 (cargo build --release)'
-        workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
-
-      - task: UseDotNet@2
-        displayName: 'Install .NET 10'
-        inputs:
-          version: 10.0.x
-      - task: NuGetAuthenticate@1
-        displayName: 'Authenticate NuGet to CFS'
-
-      - bash: |
-          chmod +x eng/scripts/install-dependencies.sh
-          eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
-        displayName: 'Install Python dependencies (uv)'
-
-      - bash: |
-          chmod +x eng/scripts/test-setup.sh
-          eng/scripts/test-setup.sh
-        displayName: 'Build webhost and extensions (dotnet)'
-
-      - bash: |
-          chmod +x eng/scripts/stage-r2p2.sh
-          eng/scripts/stage-r2p2.sh
-        displayName: 'Stage R2P2 worker'
-
-      - bash: |
-          # The minimal image (1es-ubuntu-24.04-min) does not ship the Docker
-          # Compose v2 CLI plugin. Install it from the Ubuntu archive. This must
-          # run BEFORE any emulator container is started: installing
-          # docker-compose-v2 also upgrades moby-engine/moby-cli, which restarts
-          # the Docker daemon and would kill already-running containers.
-          if ! docker compose version >/dev/null 2>&1; then
-            echo "Docker Compose v2 plugin not found; installing..."
-            sudo apt-get update
-            sudo apt-get install -y docker-compose-v2
-          fi
-          docker compose version
-        displayName: 'Ensure Docker Compose v2 is installed'
-
-      - bash: |
-          docker system prune -af --volumes
-          df -h
-          docker pull mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
-          docker run --detach --env ENABLE_EXPLORER=false --publish 8081:8081 mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
-          docker ps
-        displayName: "Start CosmosDB Emulator"
-
-      - bash: |
-          docker compose -f workers/tests/emulator_tests/utils/eventhub/docker-compose.yml pull
-          docker compose -f workers/tests/emulator_tests/utils/eventhub/docker-compose.yml up -d
-        displayName: 'Install Azurite and Start EventHub Emulator'
-
-      - bash: |
-          # Service Bus runs separately below after the Event Hubs emulator
-          # releases port 5672. Collection errors are a safety net for any other
-          # app missing third-party wheels on 3.15.
-          python -m pytest -q --reruns 4 --continue-on-collection-errors --instafail \
-            --ignore=tests/emulator_tests/test_servicebus_functions.py \
-            tests/emulator_tests
-        env:
-          AzureWebJobsStorage: $(AzureWebJobsStorage)
-          AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
-          AzureWebJobsEventHubConnectionString: $(EmulatorEventHubConnectionString)
-          AzureWebJobsCosmosDBConnectionString: $(EmulatorCosmosDBConnectionString)
-          CosmosDBEmulatorUrl: $(CosmosDBEmulatorUrl)
-          CosmosDBEmulatorKey: $(CosmosDBEmulatorKey)
-          PYAZURE_WORKER_DIR: $(Build.SourcesDirectory)/workers/python/test_r2p2
-          PYTHONPATH: $(Build.SourcesDirectory)/workers
-          PYAZURE_WEBHOST_DEBUG: true
-        workingDirectory: $(Build.SourcesDirectory)/workers
-        displayName: "Running Python 3.15 R2P2 Emulator Tests"
-
-      - bash: |
-          # Event Hubs and Service Bus both use port 5672.
-          docker stop eventhubs-emulator
-          docker container rm --force eventhubs-emulator
-          docker compose -f workers/tests/emulator_tests/utils/servicebus/docker-compose.yml pull
-          docker compose -f workers/tests/emulator_tests/utils/servicebus/docker-compose.yml up -d
-
-          echo "Waiting for the Service Bus emulator to be ready..."
-          for i in $(seq 1 90); do
-            if docker logs servicebus-emulator 2>&1 | grep -q "Emulator Service is Successfully Up"; then
-              echo "Service Bus emulator is ready."
-              break
-            fi
-            if [ "$i" -eq 90 ]; then
-              echo "Service Bus emulator did not become ready in time. Logs:"
-              docker logs servicebus-emulator || true
-              exit 1
-            fi
-            sleep 2
-          done
-        env:
-          AzureWebJobsSQLPassword: $(AzureWebJobsSQLPassword)
-        displayName: 'Install Azurite and Start ServiceBus Emulator'
-
-      - bash: |
-          # The SDK-binding class is skipped on Python 3.14+ because uamqp has
-          # no cp315 wheel; the remaining Service Bus tests exercise R2P2.
-          python -m pytest -q --reruns 4 --instafail \
-            tests/emulator_tests/test_servicebus_functions.py
-        env:
-          AzureWebJobsStorage: $(AzureWebJobsStorage)
-          AzureWebJobsServiceBusConnectionString: $(EmulatorServiceBusConnectionString)
-          AzureWebJobsServiceBusSDKConnectionString: $(AzureWebJobsServiceBusSDKConnectionString)
-          PYAZURE_WORKER_DIR: $(Build.SourcesDirectory)/workers/python/test_r2p2
-          PYTHONPATH: $(Build.SourcesDirectory)/workers
-          PYAZURE_WEBHOST_DEBUG: true
-        workingDirectory: $(Build.SourcesDirectory)/workers
-        displayName: "Running Python 3.15 R2P2 ServiceBus Emulator Tests"
-
-      - bash: |
-          echo "Cleaning up after tests..."
-          docker stop $(docker ps -aq) || true
-          docker rm $(docker ps -aq) || true
-          rm -rf $(Build.SourcesDirectory)/workers/build || true
-          rm -rf $(Build.SourcesDirectory)/workers/.pytest_cache || true
-          rm -rf $(Build.SourcesDirectory)/workers/python/test_r2p2 || true
-          rm -rf $(Build.SourcesDirectory)/workers/r2p2/target || true
-          docker system prune -af --volumes || true
-          pip cache purge || true
-          echo "Disk space after cleanup:"
-          df -h
-        displayName: 'Cleanup after R2P2 emulator tests'
         condition: always()

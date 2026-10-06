@@ -185,10 +185,12 @@ fn http_cookies_from_list(list_obj: &Bound<'_, PyAny>) -> Result<Vec<RpcHttpCook
         } else {
             let secs: i64 = expires_obj.extract()?;
             Some(NullableTimestamp {
-                timestamp: Some(nullable_timestamp::Timestamp::Value(prost_types::Timestamp {
-                    seconds: secs,
-                    nanos: 0,
-                })),
+                timestamp: Some(nullable_timestamp::Timestamp::Value(
+                    prost_types::Timestamp {
+                        seconds: secs,
+                        nanos: 0,
+                    },
+                )),
             })
         };
         let max_age_obj = c.get_item("max_age")?;

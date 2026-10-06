@@ -74,13 +74,7 @@ fn get<'a>(map: &'a std::collections::HashMap<String, String>, keys: &[&str]) ->
 }
 
 fn grpc_max_message_length(map: &HashMap<String, String>) -> Result<Option<usize>> {
-    get(
-        map,
-        &[
-            "functions-grpc-max-message-length",
-            "grpcMaxMessageLength",
-        ],
-    )
+    get(map, &["functions-grpc-max-message-length", "grpcMaxMessageLength"])
     .filter(|value| !value.is_empty())
     .map(str::parse)
     .transpose()
@@ -317,10 +311,7 @@ mod tests {
 
     #[test]
     fn parses_host_grpc_message_limit_aliases() {
-        for key in [
-            "functions-grpc-max-message-length",
-            "grpcMaxMessageLength",
-        ] {
+        for key in ["functions-grpc-max-message-length", "grpcMaxMessageLength"] {
             let map = HashMap::from([(key.to_string(), "28312683".to_string())]);
             assert_eq!(grpc_max_message_length(&map).unwrap(), Some(28_312_683));
         }

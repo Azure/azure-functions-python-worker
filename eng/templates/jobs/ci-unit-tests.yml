@@ -23,6 +23,9 @@ jobs:
           PYTHON_VERSION: '3.13'
         Python314:
           PYTHON_VERSION: '3.14'
+        Python315:
+          PYTHON_VERSION: '3.15.0-rc.1'
+          R2P2_WORKER: 'true'
     steps:
       - task: PipAuthenticate@1
         displayName: 'Authenticate pip to CFS'
@@ -71,84 +74,9 @@ jobs:
         displayName: 'Free memory'
 
       - task: UsePythonVersion@0
+        displayName: 'Use Python $(PYTHON_VERSION)'
         inputs:
           versionSpec: $(PYTHON_VERSION)
-      - task: UseDotNet@2
-        displayName: 'Install .NET 10'
-        inputs:
-          version: 10.0.x
-      - task: NuGetAuthenticate@1
-        displayName: 'Authenticate NuGet to CFS'
-      - bash: |
-          chmod +x eng/scripts/install-dependencies.sh
-          eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
-        displayName: 'Install Python dependencies (uv)'
-        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
-      - bash: |
-          chmod +x eng/scripts/test-setup.sh
-          eng/scripts/test-setup.sh
-        displayName: 'Build webhost and extensions (dotnet)'
-        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
-      - bash: |
-          PY_VER="$(PYTHON_VERSION)"
-          echo "Python version: $PY_VER"
-
-          # Extract minor version
-          PY_MINOR="${PY_VER#*.}"
-
-          if [ "$PY_MINOR" -ge 13 ]; then
-              echo "Running proxy_worker tests (Python >= 3.13)..."
-              python -m pytest -q -n auto --dist loadfile --reruns 4 --reruns-delay 5 --instafail \
-                    --cov=./proxy_worker --cov-report xml --cov-branch tests/unittest_proxy
-          else
-              echo "Running unittests (Python < 3.13)..."
-              python -m pytest -q -n auto --dist loadfile --reruns 4 --reruns-delay 5 --instafail \
-                    --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
-          fi
-        displayName: "Running $(PYTHON_VERSION) Unit Tests"
-        # Skip running tests for SDK and Extensions release branches. Public pipeline doesn't have permissions to download artifact.
-        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
-        env:
-          PYTHON_VERSION: $(PYTHON_VERSION)
-          AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
-        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
-      
-      - bash: |
-          echo "Cleaning up after tests..."
-          # Remove build artifacts and caches
-          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/build || true
-          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.pytest_cache || true
-          
-          # Clean Docker resources
-          docker system prune -f || true
-          
-          # Clean pip cache
-          pip cache purge || true
-          
-          echo "Disk space after cleanup:"
-          df -h
-        displayName: 'Cleanup after tests'
-        condition: always()
-
-  # Temporary - run Python 3.15 tests as a separate job. Dev deps do not have cp315 wheels yet.
-  - job: "TestR2P2Unit"
-    displayName: "Run R2P2 Unit Tests (Python 3.15)"
-
-    pool:
-      name: ${{ parameters.PoolName }}
-      image: 1es-ubuntu-24.04-min
-      os: linux
-
-    steps:
-      - task: PipAuthenticate@1
-        displayName: 'Authenticate pip to CFS'
-        inputs:
-          artifactFeeds: 'public/upstream-public'
-          onlyAddExtraIndex: false
-      - task: UsePythonVersion@0
-        displayName: 'Use Python 3.15'
-        inputs:
-          versionSpec: '3.15.0-rc.1'
           allowUnstable: true
       - pwsh: |
           $ErrorActionPreference = 'Stop'
@@ -176,25 +104,30 @@ jobs:
           cargo fmt --version
           cargo clippy --version
         displayName: 'Configure Rust toolchain'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
       - task: CargoAuthenticate@0
         displayName: 'Authenticate Cargo to CFS'
         inputs:
           configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
       - bash: |
           chmod +x '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh'
           '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh' '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
         displayName: 'Validate Cargo authentication'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
       - pwsh: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           cargo --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' fmt --all -- --check
         displayName: 'Check R2P2 Rust formatting'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
         workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
       - pwsh: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           cargo --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' clippy --all-targets --locked -- -D warnings
         displayName: 'Lint R2P2 Rust code'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
         workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
       - pwsh: |
           $ErrorActionPreference = 'Stop'
@@ -206,35 +139,74 @@ jobs:
             Pop-Location
           }
         displayName: 'Run R2P2 Rust unit tests'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+      - task: UseDotNet@2
+        displayName: 'Install .NET 10'
+        inputs:
+          version: 10.0.x
+      - task: NuGetAuthenticate@1
+        displayName: 'Authenticate NuGet to CFS'
       - bash: |
-          python --version
-          python -m pip install --upgrade pip
-          # Minimal, cp315-safe install: just pytest + the plugins the shared
-          # invocation style uses. asyncio_mode=auto in the root pytest.ini
-          # requires pytest-asyncio even though these tests are synchronous.
-          # NO uv [dev] install, NO webhost/protos build -- the bridge suite is
-          # dependency-free (see tests/unittest_r2p2/conftest.py).
-          python -m pip install \
-            "pytest~=7.4.4" pytest-asyncio pytest-rerunfailures pytest-instafail flake8
-        displayName: 'Install R2P2 test dependencies (Python 3.15)'
-        condition: and(succeeded(), eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+          chmod +x eng/scripts/install-dependencies.sh
+          eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
+        displayName: 'Install Python dependencies (uv)'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+      - bash: |
+          chmod +x eng/scripts/test-setup.sh
+          eng/scripts/test-setup.sh
+        displayName: 'Build webhost and extensions (dotnet)'
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+      - bash: |
+          PY_VER="$(PYTHON_VERSION)"
+          echo "Python version: $PY_VER"
+
+          # Extract minor version
+          PY_MINOR="${PY_VER#*.}"
+          PY_MINOR="${PY_MINOR%%.*}"
+
+          if [ "$PY_MINOR" -ge 13 ]; then
+              echo "Running proxy_worker tests (Python >= 3.13)..."
+              python -m pytest -q -n auto --dist loadfile --reruns 4 --reruns-delay 5 --instafail \
+                    --cov=./proxy_worker --cov-report xml --cov-branch tests/unittest_proxy
+          else
+              echo "Running unittests (Python < 3.13)..."
+              python -m pytest -q -n auto --dist loadfile --reruns 4 --reruns-delay 5 --instafail \
+                    --cov=./azure_functions_worker --cov-report xml --cov-branch tests/unittests
+          fi
+        displayName: "Running $(PYTHON_VERSION) Unit Tests"
+        # Skip running tests for SDK and Extensions release branches. Public pipeline doesn't have permissions to download artifact.
+        condition: and(eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false), ne(variables['R2P2_WORKER'], 'true'))
+        env:
+          PYTHON_VERSION: $(PYTHON_VERSION)
+          AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
+
       - bash: |
           flake8 bridge
         displayName: 'Lint R2P2 Python bridge'
-        condition: and(succeeded(), eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+        condition: and(succeeded(), eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false), eq(variables['R2P2_WORKER'], 'true'))
         workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
+
       - bash: |
-          # Run from workers/tests (NOT workers) so the worker package dir is
-          # not on sys.path[0]. The R2P2 bridge suite is intentionally isolated
-          # from the classic proxy_worker; the latter's protos/__init__.py
-          # eagerly imports generated gRPC stubs that are absent on cp315
-          # (grpcio-tools has no cp315 wheel, so build-protos is skipped). With
-          # proxy_worker off sys.path it is never importable here, so an
-          # importlib.resources probe that walks importable top-level packages
-          # can never trigger that import. The suite needs only the bridge dir,
-          # which its conftest.py adds via a __file__-relative path. See D-038.
           python -m pytest -q --reruns 4 --reruns-delay 5 --instafail unittest_r2p2
-        displayName: 'Running Python 3.15 R2P2 bridge unit tests'
-        condition: and(succeeded(), eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+        displayName: 'Running $(PYTHON_VERSION) R2P2 bridge unit tests'
+        condition: and(succeeded(), eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false), eq(variables['R2P2_WORKER'], 'true'))
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/tests
+
+      - bash: |
+          echo "Cleaning up after tests..."
+          # Remove build artifacts and caches
+          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/build || true
+          rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.pytest_cache || true
+
+          # Clean Docker resources
+          docker system prune -f || true
+
+          # Clean pip cache
+          pip cache purge || true
+
+          echo "Disk space after cleanup:"
+          df -h
+        displayName: 'Cleanup after tests'
+        condition: always()
   

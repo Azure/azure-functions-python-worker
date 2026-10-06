@@ -338,3 +338,424 @@ pub fn shutdown() {
         Ok(())
     });
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pb::messages::typed_data;
+    use crate::pb::messages::{
+        parameter_binding, status_result::Status, streaming_message::Content,
+        FunctionEnvironmentReloadRequest, FunctionLoadRequest, FunctionsMetadataRequest,
+        RetryContext, RpcSharedMemory, RpcTraceContext, TypedData, WorkerInitRequest,
+        WorkerStatusRequest,
+    };
+    use pyo3::types::{PyDict, PyModule};
+    use std::ffi::CString;
+    use std::sync::Mutex;
+
+    static TEST_BRIDGE_LOCK: Mutex<()> = Mutex::new(());
+
+    fn install_test_bridge() {
+        const SOURCE: &str = r#"
+calls = []
+
+def configure(workers_dir, app_dir, host, request_id, sink, worker_id):
+    calls.append(("configure", workers_dir, app_dir, host, request_id, worker_id))
+    sink.emit(b"configured")
+
+def requires_control_path(function_id):
+    calls.append(("requires_control_path", function_id))
+    return function_id == "control"
+
+def handle_control(request_type, request):
+    calls.append(("handle_control", request_type))
+    if request_type == "worker_init_request":
+        assert request["host_version"] == "4.0.0"
+        return {"capabilities": {"TestCapability": "true"}, "result": {"status": 1}}
+    if request_type == "functions_metadata_request":
+        return None
+    if request_type == "function_load_request":
+        return {"function_id": request["function_id"], "result": {"status": 1}}
+    if request_type == "function_environment_reload_request":
+        return {"capabilities": {}, "result": {"status": 1}}
+    raise AssertionError(f"unexpected request type: {request_type}")
+
+def handle_invocation_control(request):
+    calls.append(("handle_invocation_control", request["invocation_id"]))
+    if request["invocation_id"] == "invocation-none":
+        return None
+    return {
+        "return_value": ("string", "control-result"),
+        "output_data": [],
+        "result": {"status": 1},
+    }
+
+def invoke_native(function_id, invocation_id, inputs, metadata,
+                  trace_parent, trace_state, retry_context):
+    calls.append(("invoke_native", function_id, invocation_id))
+    if function_id == "fail":
+        return (False, None, [], "native failure")
+    if function_id == "none":
+        assert trace_parent == ""
+        assert trace_state == ""
+        assert retry_context is None
+        return (True, None, [], None)
+    assert inputs == [("input", ("string", "value"))]
+    assert metadata == {"meta": ("int", 7)}
+    assert trace_parent == "trace-parent"
+    assert trace_state == "trace-state"
+    assert retry_context["retry_count"] == 2
+    assert retry_context["max_retry_count"] == 5
+    assert retry_context["exception"]["message"] == "retry"
+    return (True, ("string", "native-result"), [("output", ("int", 42))], None)
+
+def log_unhandled(value):
+    calls.append(("log_unhandled", value))
+
+def shutdown():
+    calls.append(("shutdown",))
+"#;
+
+        Python::attach(|py| {
+            let source = CString::new(SOURCE).unwrap();
+            let module = PyModule::from_code(py, &source, c"bridge_test.py", c"bridge").unwrap();
+            py.import("sys")
+                .unwrap()
+                .getattr("modules")
+                .unwrap()
+                .set_item("bridge", module)
+                .unwrap();
+        });
+    }
+
+    fn remove_test_bridge() {
+        Python::attach(|py| {
+            let sys = py.import("sys").unwrap();
+            sys.getattr("modules").unwrap().del_item("bridge").unwrap();
+            let path = sys.getattr("path").unwrap();
+            for entry in [
+                "test-bridge-dir",
+                "test-empty-workers-bridge-dir",
+                "test-workers-dir",
+            ] {
+                while path
+                    .call_method1("__contains__", (entry,))
+                    .unwrap()
+                    .extract::<bool>()
+                    .unwrap()
+                {
+                    path.call_method1("remove", (entry,)).unwrap();
+                }
+            }
+        });
+    }
+
+    #[test]
+    fn start_stream_returns_encoded_handshake() {
+        let encoded = start_stream("worker-123").unwrap();
+        let message = StreamingMessage::decode(encoded.as_slice()).unwrap();
+
+        assert_eq!(message.request_id, "");
+        match message.content {
+            Some(Content::StartStream(start)) => assert_eq!(start.worker_id, "worker-123"),
+            other => panic!("expected StartStream, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn log_sink_emit_copies_bytes_to_outbound_channel() {
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        let sink = LogSink {
+            tx,
+            request_id: "request-1".into(),
+        };
+        let mut data = vec![1, 2, 3];
+
+        sink.emit(&data);
+        data[0] = 9;
+
+        assert_eq!(rx.try_recv().unwrap(), Bytes::from_static(&[1, 2, 3]));
+    }
+
+    #[test]
+    fn log_sink_emit_ignores_closed_channel() {
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        drop(rx);
+        let sink = LogSink {
+            tx,
+            request_id: "request-1".into(),
+        };
+
+        sink.emit(&[1, 2, 3]);
+    }
+
+    #[test]
+    fn log_sink_emit_log_builds_streaming_message() {
+        Python::attach(|py| {
+            let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+            let sink = LogSink {
+                tx,
+                request_id: "request-1".into(),
+            };
+            let fields = PyDict::new(py);
+            fields.set_item("invocation_id", "invocation-1").unwrap();
+            fields.set_item("category", "Function.Test").unwrap();
+            fields.set_item("level", 2).unwrap();
+            fields.set_item("message", "hello").unwrap();
+
+            sink.emit_log(&fields.into_any());
+
+            let bytes = rx.try_recv().unwrap();
+            let message = StreamingMessage::decode(bytes).unwrap();
+            assert_eq!(message.request_id, "request-1");
+            match message.content {
+                Some(Content::RpcLog(log)) => {
+                    assert_eq!(log.invocation_id, "invocation-1");
+                    assert_eq!(log.category, "Function.Test");
+                    assert_eq!(log.level, 2);
+                    assert_eq!(log.message, "hello");
+                }
+                other => panic!("expected RpcLog, got {other:?}"),
+            }
+        });
+    }
+
+    #[test]
+    fn handle_worker_status_responds_without_python_bridge() {
+        let request = StreamingMessage {
+            request_id: "request-1".into(),
+            content: Some(Content::WorkerStatusRequest(WorkerStatusRequest {})),
+        };
+
+        let encoded = handle(&request.encode_to_vec()).unwrap().unwrap();
+        let response = StreamingMessage::decode(encoded.as_slice()).unwrap();
+
+        assert_eq!(response.request_id, "request-1");
+        assert!(matches!(
+            response.content,
+            Some(Content::WorkerStatusResponse(_))
+        ));
+    }
+
+    #[test]
+    fn handle_rejects_malformed_streaming_message() {
+        assert!(handle(&[0xff, 0xff]).is_err());
+    }
+
+    #[test]
+    fn python_bridge_contract_routes_control_and_native_messages() {
+        let _lock = TEST_BRIDGE_LOCK.lock().unwrap();
+        install_test_bridge();
+
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        configure(
+            "test-bridge-dir",
+            "test-workers-dir",
+            "test-app-dir",
+            "localhost",
+            "request-1",
+            "worker-1",
+            tx,
+        )
+        .unwrap();
+        assert_eq!(rx.try_recv().unwrap(), Bytes::from_static(b"configured"));
+
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        configure(
+            "test-empty-workers-bridge-dir",
+            "",
+            "test-app-dir",
+            "localhost",
+            "request-2",
+            "worker-2",
+            tx,
+        )
+        .unwrap();
+        assert_eq!(rx.try_recv().unwrap(), Bytes::from_static(b"configured"));
+
+        assert!(requires_control_path("control"));
+        assert!(!requires_control_path("native"));
+
+        let worker_init = StreamingMessage {
+            request_id: "request-init".into(),
+            content: Some(Content::WorkerInitRequest(WorkerInitRequest {
+                host_version: "4.0.0".into(),
+                ..Default::default()
+            })),
+        };
+        let encoded = handle(&worker_init.encode_to_vec()).unwrap().unwrap();
+        let response = StreamingMessage::decode(encoded.as_slice()).unwrap();
+        assert_eq!(response.request_id, "request-init");
+        match response.content {
+            Some(Content::WorkerInitResponse(response)) => {
+                assert_eq!(response.capabilities["TestCapability"], "true");
+                assert_eq!(response.result.unwrap().status, Status::Success as i32);
+            }
+            other => panic!("expected WorkerInitResponse, got {other:?}"),
+        }
+
+        let metadata = StreamingMessage {
+            request_id: "request-metadata".into(),
+            content: Some(Content::FunctionsMetadataRequest(
+                FunctionsMetadataRequest::default(),
+            )),
+        };
+        assert!(handle(&metadata.encode_to_vec()).unwrap().is_none());
+
+        let function_load = StreamingMessage {
+            request_id: "request-load".into(),
+            content: Some(Content::FunctionLoadRequest(FunctionLoadRequest {
+                function_id: "function-1".into(),
+                ..Default::default()
+            })),
+        };
+        let encoded = handle(&function_load.encode_to_vec()).unwrap().unwrap();
+        let response = StreamingMessage::decode(encoded.as_slice()).unwrap();
+        match response.content {
+            Some(Content::FunctionLoadResponse(response)) => {
+                assert_eq!(response.function_id, "function-1");
+            }
+            other => panic!("expected FunctionLoadResponse, got {other:?}"),
+        }
+
+        let environment_reload = StreamingMessage {
+            request_id: "request-reload".into(),
+            content: Some(Content::FunctionEnvironmentReloadRequest(
+                FunctionEnvironmentReloadRequest {
+                    function_app_directory: "test-app-dir".into(),
+                    environment_variables: Default::default(),
+                },
+            )),
+        };
+        let encoded = handle(&environment_reload.encode_to_vec())
+            .unwrap()
+            .unwrap();
+        let response = StreamingMessage::decode(encoded.as_slice()).unwrap();
+        assert!(matches!(
+            response.content,
+            Some(Content::FunctionEnvironmentReloadResponse(_))
+        ));
+
+        let invocation_control = StreamingMessage {
+            request_id: "request-control".into(),
+            content: Some(Content::InvocationRequest(InvocationRequest {
+                invocation_id: "invocation-control".into(),
+                function_id: "control".into(),
+                ..Default::default()
+            })),
+        };
+        let encoded = handle(&invocation_control.encode_to_vec())
+            .unwrap()
+            .unwrap();
+        let response = StreamingMessage::decode(encoded.as_slice()).unwrap();
+        match response.content {
+            Some(Content::InvocationResponse(response)) => {
+                assert_eq!(response.invocation_id, "invocation-control");
+                assert_eq!(
+                    response.return_value.unwrap().data,
+                    Some(typed_data::Data::String("control-result".into()))
+                );
+            }
+            other => panic!("expected InvocationResponse, got {other:?}"),
+        }
+
+        let invocation_none = StreamingMessage {
+            request_id: "request-none".into(),
+            content: Some(Content::InvocationRequest(InvocationRequest {
+                invocation_id: "invocation-none".into(),
+                function_id: "control".into(),
+                ..Default::default()
+            })),
+        };
+        assert!(handle(&invocation_none.encode_to_vec()).unwrap().is_none());
+
+        let unhandled = StreamingMessage {
+            request_id: "request-unhandled".into(),
+            content: None,
+        };
+        assert!(handle(&unhandled.encode_to_vec()).unwrap().is_none());
+
+        let mut trigger_metadata = std::collections::HashMap::new();
+        trigger_metadata.insert(
+            "meta".into(),
+            TypedData {
+                data: Some(typed_data::Data::Int(7)),
+            },
+        );
+        let request = InvocationRequest {
+            invocation_id: "invocation-native".into(),
+            function_id: "native".into(),
+            input_data: vec![
+                ParameterBinding {
+                    name: "input".into(),
+                    rpc_data: Some(parameter_binding::RpcData::Data(TypedData {
+                        data: Some(typed_data::Data::String("value".into())),
+                    })),
+                },
+                ParameterBinding {
+                    name: "shared".into(),
+                    rpc_data: Some(parameter_binding::RpcData::RpcSharedMemory(
+                        RpcSharedMemory::default(),
+                    )),
+                },
+            ],
+            trigger_metadata,
+            trace_context: Some(RpcTraceContext {
+                trace_parent: "trace-parent".into(),
+                trace_state: "trace-state".into(),
+                ..Default::default()
+            }),
+            retry_context: Some(RetryContext {
+                retry_count: 2,
+                max_retry_count: 5,
+                exception: Some(RpcException {
+                    message: "retry".into(),
+                    stack_trace: "stack".into(),
+                    source: "source".into(),
+                    r#type: "ValueError".into(),
+                    ..Default::default()
+                }),
+            }),
+        };
+        let response = invoke(&request).unwrap();
+        assert_eq!(response.invocation_id, "invocation-native");
+        assert_eq!(response.result.unwrap().status, Status::Success as i32);
+        assert_eq!(
+            response.return_value.unwrap().data,
+            Some(typed_data::Data::String("native-result".into()))
+        );
+        assert_eq!(response.output_data.len(), 1);
+        assert_eq!(response.output_data[0].name, "output");
+        assert_eq!(
+            response.output_data[0].rpc_data,
+            Some(parameter_binding::RpcData::Data(TypedData {
+                data: Some(typed_data::Data::Int(42)),
+            }))
+        );
+
+        let failure = invoke(&InvocationRequest {
+            invocation_id: "invocation-failure".into(),
+            function_id: "fail".into(),
+            ..Default::default()
+        })
+        .unwrap();
+        let result = failure.result.unwrap();
+        assert_eq!(result.status, Status::Failure as i32);
+        assert_eq!(result.exception.unwrap().message, "native failure");
+
+        let no_value = invoke(&InvocationRequest {
+            invocation_id: "invocation-none".into(),
+            function_id: "none".into(),
+            ..Default::default()
+        })
+        .unwrap();
+        assert!(no_value.return_value.is_none());
+        assert!(no_value.output_data.is_empty());
+        assert_eq!(no_value.result.unwrap().status, Status::Success as i32);
+
+        shutdown();
+        remove_test_bridge();
+        assert!(!requires_control_path("missing-module"));
+        shutdown();
+    }
+}

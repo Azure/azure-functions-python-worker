@@ -42,10 +42,14 @@ fn control_path_cache() -> &'static Mutex<HashMap<String, bool>> {
 /// Whether invocations for `function_id` must take the pure-Python control path
 /// (deferred bindings / http-v2 streaming). Memoized per function_id.
 fn needs_control_path(function_id: &str) -> bool {
+    needs_control_path_with(function_id, bridge::requires_control_path)
+}
+
+fn needs_control_path_with(function_id: &str, resolve: impl FnOnce(&str) -> bool) -> bool {
     if let Some(v) = control_path_cache().lock().unwrap().get(function_id) {
         return *v;
     }
-    let v = bridge::requires_control_path(function_id);
+    let v = resolve(function_id);
     control_path_cache()
         .lock()
         .unwrap()
@@ -85,9 +89,13 @@ fn grpc_max_message_length(map: &HashMap<String, String>) -> Result<Option<usize
 }
 
 fn parse_args() -> Result<Args> {
+    parse_args_from(std::env::args().skip(1))
+}
+
+fn parse_args_from(raw: impl IntoIterator<Item = String>) -> Result<Args> {
     // Accept both the Host-style (--functions-*) and short flags. Unknown flags
     // are ignored so the Host can pass extras we don't consume.
-    let raw: Vec<String> = std::env::args().skip(1).collect();
+    let raw: Vec<String> = raw.into_iter().collect();
     let mut map = std::collections::HashMap::new();
     let mut i = 0;
     while i < raw.len() {
@@ -312,6 +320,10 @@ async fn main() -> Result<()> {
 mod tests {
     use super::*;
 
+    fn args(values: &[&str]) -> Result<Args> {
+        parse_args_from(values.iter().map(|value| (*value).to_string()))
+    }
+
     #[test]
     fn parses_host_grpc_message_limit_aliases() {
         for key in ["functions-grpc-max-message-length", "grpcMaxMessageLength"] {
@@ -327,5 +339,182 @@ mod tests {
             "invalid".to_string(),
         )]);
         assert!(grpc_max_message_length(&map).is_err());
+    }
+
+    #[test]
+    fn empty_grpc_message_limit_is_not_configured() {
+        let map = HashMap::from([(
+            "functions-grpc-max-message-length".to_string(),
+            String::new(),
+        )]);
+
+        assert_eq!(grpc_max_message_length(&map).unwrap(), None);
+    }
+
+    #[test]
+    fn parses_host_style_arguments_and_equals_syntax() {
+        let parsed = args(&[
+            "ignored-positional",
+            "--functions-uri=localhost:5001",
+            "--functions-worker-id",
+            "worker-1",
+            "--functions-request-id=request-1",
+            "--functions-grpc-max-message-length",
+            "1024",
+            "--workers-dir",
+            "C:\\worker",
+            "--bridge-dir=C:\\worker\\bridge",
+            "--functions-app-directory",
+            "C:\\app",
+            "--host",
+            "host-name",
+            "--unknown-flag",
+        ])
+        .unwrap();
+
+        assert_eq!(parsed.uri, "http://localhost:5001");
+        assert_eq!(parsed.worker_id, "worker-1");
+        assert_eq!(parsed.request_id, "request-1");
+        assert_eq!(parsed.grpc_max_message_length, Some(1024));
+        assert_eq!(parsed.workers_dir, "C:\\worker");
+        assert_eq!(parsed.bridge_dir, "C:\\worker\\bridge");
+        assert_eq!(parsed.app_dir, "C:\\app");
+        assert_eq!(parsed.host, "host-name");
+    }
+
+    #[test]
+    fn parses_host_and_port_with_default_ids() {
+        let parsed = args(&[
+            "--host",
+            "localhost",
+            "--port",
+            "5002",
+            "--workers-dir",
+            "workers",
+            "--bridge-dir",
+            "bridge",
+        ])
+        .unwrap();
+
+        assert_eq!(parsed.uri, "http://localhost:5002");
+        assert_eq!(parsed.worker_id, "r2p2-0");
+        assert_eq!(parsed.request_id, "rust-request-0");
+        assert_eq!(parsed.grpc_max_message_length, None);
+        assert_eq!(parsed.app_dir, "");
+    }
+
+    #[test]
+    fn preserves_uri_scheme_and_accepts_short_aliases() {
+        let parsed = args(&[
+            "--uri",
+            "https://localhost:5003",
+            "--worker-id",
+            "worker-3",
+            "--requestId",
+            "request-3",
+            "--grpcMaxMessageLength",
+            "2048",
+            "--workers-dir",
+            "workers",
+            "--bridge-dir",
+            "bridge",
+            "--app-dir",
+            "app",
+        ])
+        .unwrap();
+
+        assert_eq!(parsed.uri, "https://localhost:5003");
+        assert_eq!(parsed.worker_id, "worker-3");
+        assert_eq!(parsed.request_id, "request-3");
+        assert_eq!(parsed.grpc_max_message_length, Some(2048));
+        assert_eq!(parsed.app_dir, "app");
+        assert_eq!(parsed.host, "127.0.0.1");
+    }
+
+    #[test]
+    fn rejects_arguments_without_uri_or_port() {
+        let error = args(&["--host", "localhost"]).err().unwrap();
+
+        assert!(error
+            .to_string()
+            .contains("missing --port / --functions-uri"));
+    }
+
+    #[test]
+    fn derives_worker_paths_from_current_executable() {
+        let parsed = args(&["--uri", "localhost:5004"]).unwrap();
+        let executable_directory = std::env::current_exe()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .to_path_buf();
+
+        assert_eq!(
+            parsed.workers_dir,
+            executable_directory.to_string_lossy().into_owned()
+        );
+        assert_eq!(
+            parsed.bridge_dir,
+            executable_directory
+                .join("bridge")
+                .to_string_lossy()
+                .into_owned()
+        );
+    }
+
+    #[test]
+    fn control_path_decision_is_cached_for_true_and_false_values() {
+        assert!(needs_control_path_with("test-cache-true", |function_id| {
+            assert_eq!(function_id, "test-cache-true");
+            true
+        }));
+        assert!(needs_control_path_with("test-cache-true", |_| {
+            panic!("cached true value should not be resolved twice")
+        }));
+
+        assert!(!needs_control_path_with(
+            "test-cache-false",
+            |function_id| {
+                assert_eq!(function_id, "test-cache-false");
+                false
+            }
+        ));
+        assert!(!needs_control_path_with("test-cache-false", |_| {
+            panic!("cached false value should not be resolved twice")
+        }));
+    }
+
+    #[tokio::test]
+    async fn process_message_routes_worker_status_request() {
+        let request = StreamingMessage {
+            request_id: "request-status".into(),
+            content: Some(streaming_message::Content::WorkerStatusRequest(
+                pb::messages::WorkerStatusRequest {},
+            )),
+        };
+
+        let encoded = process_message(Bytes::from(request.encode_to_vec()))
+            .await
+            .unwrap()
+            .unwrap();
+        let response = StreamingMessage::decode(encoded.as_slice()).unwrap();
+
+        assert_eq!(response.request_id, "request-status");
+        assert!(matches!(
+            response.content,
+            Some(streaming_message::Content::WorkerStatusResponse(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn process_message_propagates_malformed_wire_error() {
+        let error = process_message(Bytes::from_static(&[0xff, 0xff]))
+            .await
+            .err()
+            .unwrap();
+
+        assert!(error
+            .to_string()
+            .contains("failed to decode Protobuf message"));
     }
 }

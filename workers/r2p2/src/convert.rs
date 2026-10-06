@@ -334,6 +334,21 @@ mod tests {
     }
 
     #[test]
+    fn http_input_without_body_maps_body_to_none() {
+        Python::attach(|py| {
+            let http = RpcHttp {
+                method: "GET".into(),
+                url: "http://localhost/api/hello".into(),
+                body: None,
+                ..Default::default()
+            };
+
+            let tup = typed_data_to_tuple(py, &td(typed_data::Data::Http(Box::new(http)))).unwrap();
+            assert!(tup.get_item(1).unwrap().get_item("body").unwrap().is_none());
+        });
+    }
+
+    #[test]
     fn http_output_dict_builds_rpc_http() {
         Python::attach(|py| {
             let d = PyDict::new(py);
@@ -367,6 +382,118 @@ mod tests {
     }
 
     #[test]
+    fn http_output_maps_cookie_fields_and_absent_body() {
+        Python::attach(|py| {
+            let cookie = PyDict::new(py);
+            cookie.set_item("name", "session").unwrap();
+            cookie.set_item("value", "abc").unwrap();
+            cookie.set_item("domain", "example.com").unwrap();
+            cookie.set_item("path", "/api").unwrap();
+            cookie.set_item("secure", true).unwrap();
+            cookie.set_item("http_only", true).unwrap();
+            cookie.set_item("same_site", 2).unwrap();
+            cookie.set_item("expires", 1_700_000_000_i64).unwrap();
+            cookie.set_item("max_age", 3600.5).unwrap();
+
+            let d = PyDict::new(py);
+            d.set_item("status_code", "204").unwrap();
+            d.set_item("headers", PyDict::new(py)).unwrap();
+            d.set_item("body", py.None()).unwrap();
+            d.set_item("cookies", vec![cookie]).unwrap();
+
+            let tup = datum_tuple(py, "http", d.into_any());
+            let out = tuple_to_typed_data(py, &tup).unwrap();
+            let Some(typed_data::Data::Http(http)) = out.data else {
+                panic!("expected Http variant");
+            };
+
+            assert_eq!(http.status_code, "204");
+            assert!(http.body.is_none());
+            assert_eq!(http.cookies.len(), 1);
+            let cookie = &http.cookies[0];
+            assert_eq!(cookie.name, "session");
+            assert_eq!(cookie.value, "abc");
+            assert_eq!(cookie.same_site, 2);
+            assert_eq!(
+                cookie.domain.as_ref().unwrap().string,
+                Some(nullable_string::String::Value("example.com".into()))
+            );
+            assert_eq!(
+                cookie.path.as_ref().unwrap().string,
+                Some(nullable_string::String::Value("/api".into()))
+            );
+            assert_eq!(
+                cookie.secure.as_ref().unwrap().bool,
+                Some(nullable_bool::Bool::Value(true))
+            );
+            assert_eq!(
+                cookie.http_only.as_ref().unwrap().bool,
+                Some(nullable_bool::Bool::Value(true))
+            );
+            let timestamp = match cookie.expires.as_ref().unwrap().timestamp.as_ref() {
+                Some(nullable_timestamp::Timestamp::Value(value)) => value,
+                other => panic!("unexpected expires value: {other:?}"),
+            };
+            assert_eq!(timestamp.seconds, 1_700_000_000);
+            assert_eq!(timestamp.nanos, 0);
+            assert_eq!(
+                cookie.max_age.as_ref().unwrap().double,
+                Some(nullable_double::Double::Value(3600.5))
+            );
+        });
+    }
+
+    #[test]
+    fn http_output_cookie_optional_times_can_be_none() {
+        Python::attach(|py| {
+            let cookie = PyDict::new(py);
+            cookie.set_item("name", "session").unwrap();
+            cookie.set_item("value", "abc").unwrap();
+            cookie.set_item("domain", "").unwrap();
+            cookie.set_item("path", "").unwrap();
+            cookie.set_item("secure", false).unwrap();
+            cookie.set_item("http_only", false).unwrap();
+            cookie.set_item("same_site", 0).unwrap();
+            cookie.set_item("expires", py.None()).unwrap();
+            cookie.set_item("max_age", py.None()).unwrap();
+
+            let d = PyDict::new(py);
+            d.set_item("status_code", "200").unwrap();
+            d.set_item("headers", PyDict::new(py)).unwrap();
+            d.set_item("body", py.None()).unwrap();
+            d.set_item("cookies", vec![cookie]).unwrap();
+
+            let tup = datum_tuple(py, "http", d.into_any());
+            let out = tuple_to_typed_data(py, &tup).unwrap();
+            let Some(typed_data::Data::Http(http)) = out.data else {
+                panic!("expected Http variant");
+            };
+
+            assert!(http.cookies[0].expires.is_none());
+            assert!(http.cookies[0].max_age.is_none());
+        });
+    }
+
+    #[test]
+    fn http_output_cookie_list_can_be_none() {
+        Python::attach(|py| {
+            let d = PyDict::new(py);
+            d.set_item("status_code", "200").unwrap();
+            d.set_item("headers", PyDict::new(py)).unwrap();
+            d.set_item("body", py.None()).unwrap();
+            d.set_item("cookies", py.None()).unwrap();
+
+            let tup = datum_tuple(py, "http", d.into_any());
+            let out = tuple_to_typed_data(py, &tup).unwrap();
+            let Some(typed_data::Data::Http(http)) = out.data else {
+                panic!("expected Http variant");
+            };
+
+            assert!(http.cookies.is_empty());
+        });
+    }
+
+    #[test]
     fn collection_string_maps_to_list() {
         Python::attach(|py| {
             let coll = crate::pb::messages::CollectionString {
@@ -378,6 +505,105 @@ mod tests {
             assert_eq!(kind, "collection_string");
             let items: Vec<String> = tup.get_item(1).unwrap().extract().unwrap();
             assert_eq!(items, vec!["a", "b", "c"]);
+        });
+    }
+
+    #[test]
+    fn remaining_collection_variants_map_to_lists() {
+        Python::attach(|py| {
+            let bytes = crate::pb::messages::CollectionBytes {
+                bytes: vec![vec![1, 2], vec![3, 4]],
+            };
+            let tup =
+                typed_data_to_tuple(py, &td(typed_data::Data::CollectionBytes(bytes))).unwrap();
+            let kind: String = tup.get_item(0).unwrap().extract().unwrap();
+            let items: Vec<Vec<u8>> = tup.get_item(1).unwrap().extract().unwrap();
+            assert_eq!(kind, "collection_bytes");
+            assert_eq!(items, vec![vec![1, 2], vec![3, 4]]);
+
+            let integers = crate::pb::messages::CollectionSInt64 {
+                sint64: vec![-1, 0, 42],
+            };
+            let tup =
+                typed_data_to_tuple(py, &td(typed_data::Data::CollectionSint64(integers))).unwrap();
+            let kind: String = tup.get_item(0).unwrap().extract().unwrap();
+            let items: Vec<i64> = tup.get_item(1).unwrap().extract().unwrap();
+            assert_eq!(kind, "collection_sint64");
+            assert_eq!(items, vec![-1, 0, 42]);
+
+            let doubles = crate::pb::messages::CollectionDouble {
+                double: vec![-1.5, 0.0, 42.25],
+            };
+            let tup =
+                typed_data_to_tuple(py, &td(typed_data::Data::CollectionDouble(doubles))).unwrap();
+            let kind: String = tup.get_item(0).unwrap().extract().unwrap();
+            let items: Vec<f64> = tup.get_item(1).unwrap().extract().unwrap();
+            assert_eq!(kind, "collection_double");
+            assert_eq!(items, vec![-1.5, 0.0, 42.25]);
+        });
+    }
+
+    #[test]
+    fn model_binding_data_maps_to_primitive_dict() {
+        Python::attach(|py| {
+            let model = crate::pb::messages::ModelBindingData {
+                version: "1.0".into(),
+                source: "CosmosDB".into(),
+                content_type: "application/json".into(),
+                content: br#"{"id":"42"}"#.to_vec(),
+            };
+            let tup =
+                typed_data_to_tuple(py, &td(typed_data::Data::ModelBindingData(model))).unwrap();
+
+            let kind: String = tup.get_item(0).unwrap().extract().unwrap();
+            assert_eq!(kind, "model_binding_data");
+            let value = tup.get_item(1).unwrap();
+            assert_eq!(
+                value
+                    .get_item("version")
+                    .unwrap()
+                    .extract::<String>()
+                    .unwrap(),
+                "1.0"
+            );
+            assert_eq!(
+                value
+                    .get_item("source")
+                    .unwrap()
+                    .extract::<String>()
+                    .unwrap(),
+                "CosmosDB"
+            );
+            assert_eq!(
+                value
+                    .get_item("content_type")
+                    .unwrap()
+                    .extract::<String>()
+                    .unwrap(),
+                "application/json"
+            );
+            assert_eq!(
+                value
+                    .get_item("content")
+                    .unwrap()
+                    .extract::<Vec<u8>>()
+                    .unwrap(),
+                br#"{"id":"42"}"#
+            );
+        });
+    }
+
+    #[test]
+    fn unsupported_collection_model_binding_data_errors() {
+        Python::attach(|py| {
+            let collection = crate::pb::messages::CollectionModelBindingData {
+                model_binding_data: Vec::new(),
+            };
+            let value = td(typed_data::Data::CollectionModelBindingData(collection));
+            let error = typed_data_to_tuple(py, &value).unwrap_err();
+            assert!(error
+                .to_string()
+                .contains("unsupported inbound TypedData variant"));
         });
     }
 

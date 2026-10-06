@@ -410,7 +410,8 @@ mod tests {
     use super::*;
     use crate::pb::messages::{
         parameter_binding, streaming_message::Content, BindingInfo, FunctionLoadRequest,
-        InvocationRequest, ParameterBinding, RpcFunctionMetadata, TypedData, WorkerInitRequest,
+        InvocationRequest, ParameterBinding, RetryContext, RpcFunctionMetadata, RpcSharedMemory,
+        RpcTraceContext, TypedData, WorkerInitRequest,
     };
     use crate::pb::messages::{streaming_message, typed_data};
     use pyo3::types::{PyDict, PyList, PyString, PyTuple};
@@ -469,6 +470,42 @@ mod tests {
     }
 
     #[test]
+    fn environment_reload_request_decodes_to_dict() {
+        Python::attach(|py| {
+            let r = FunctionEnvironmentReloadRequest {
+                function_app_directory: "/home/site/wwwroot".into(),
+                environment_variables: std::collections::HashMap::from([
+                    ("SETTING_A".into(), "value-a".into()),
+                    ("SETTING_B".into(), "value-b".into()),
+                ]),
+            };
+            let d = env_reload_req_to_py(py, &r).unwrap();
+            let directory: String = d
+                .get_item("function_app_directory")
+                .unwrap()
+                .unwrap()
+                .extract()
+                .unwrap();
+            let variables: std::collections::HashMap<String, String> = d
+                .get_item("environment_variables")
+                .unwrap()
+                .unwrap()
+                .extract()
+                .unwrap();
+
+            assert_eq!(directory, "/home/site/wwwroot");
+            assert_eq!(
+                variables.get("SETTING_A").map(String::as_str),
+                Some("value-a")
+            );
+            assert_eq!(
+                variables.get("SETTING_B").map(String::as_str),
+                Some("value-b")
+            );
+        });
+    }
+
+    #[test]
     fn function_load_request_decodes_nested_bindings() {
         Python::attach(|py| {
             let mut bindings = std::collections::HashMap::new();
@@ -512,6 +549,20 @@ mod tests {
                 .extract()
                 .unwrap();
             assert_eq!(btype, "httpTrigger");
+        });
+    }
+
+    #[test]
+    fn function_load_request_without_metadata_omits_metadata() {
+        Python::attach(|py| {
+            let r = FunctionLoadRequest {
+                function_id: "fid-1".into(),
+                metadata: None,
+                ..Default::default()
+            };
+            let d = function_load_req_to_py(py, &r).unwrap();
+
+            assert!(!d.contains("metadata").unwrap());
         });
     }
 
@@ -560,6 +611,131 @@ mod tests {
         });
     }
 
+    #[test]
+    fn invocation_request_decodes_trace_retry_and_shared_memory_defaults() {
+        Python::attach(|py| {
+            let r = InvocationRequest {
+                invocation_id: "inv-2".into(),
+                function_id: "fid-2".into(),
+                input_data: vec![ParameterBinding {
+                    name: "shared".into(),
+                    rpc_data: Some(parameter_binding::RpcData::RpcSharedMemory(
+                        RpcSharedMemory {
+                            name: "map".into(),
+                            offset: 10,
+                            count: 20,
+                            r#type: 3,
+                        },
+                    )),
+                }],
+                trace_context: Some(RpcTraceContext {
+                    trace_parent: "00-trace-parent".into(),
+                    trace_state: "vendor=value".into(),
+                    attributes: std::collections::HashMap::from([("key".into(), "value".into())]),
+                }),
+                retry_context: Some(RetryContext {
+                    retry_count: 2,
+                    max_retry_count: 5,
+                    exception: Some(RpcException {
+                        message: "retry me".into(),
+                        stack_trace: "stack".into(),
+                        source: "source".into(),
+                        ..Default::default()
+                    }),
+                }),
+                ..Default::default()
+            };
+
+            let d = invocation_request_to_py(py, &r).unwrap();
+            let input = d
+                .get_item("input_data")
+                .unwrap()
+                .unwrap()
+                .get_item(0)
+                .unwrap();
+            assert!(input.get_item(1).unwrap().is_none());
+
+            let trace = d.get_item("trace_context").unwrap().unwrap();
+            assert_eq!(
+                trace
+                    .get_item("trace_parent")
+                    .unwrap()
+                    .extract::<String>()
+                    .unwrap(),
+                "00-trace-parent"
+            );
+            let attributes: std::collections::HashMap<String, String> =
+                trace.get_item("attributes").unwrap().extract().unwrap();
+            assert_eq!(attributes.get("key").map(String::as_str), Some("value"));
+
+            let retry = d.get_item("retry_context").unwrap().unwrap();
+            assert_eq!(
+                retry
+                    .get_item("retry_count")
+                    .unwrap()
+                    .extract::<i32>()
+                    .unwrap(),
+                2
+            );
+            assert_eq!(
+                retry
+                    .get_item("exception")
+                    .unwrap()
+                    .get_item("message")
+                    .unwrap()
+                    .extract::<String>()
+                    .unwrap(),
+                "retry me"
+            );
+        });
+    }
+
+    #[test]
+    fn invocation_request_without_trace_or_retry_uses_defaults() {
+        Python::attach(|py| {
+            let d = invocation_request_to_py(py, &InvocationRequest::default()).unwrap();
+            let trace = d.get_item("trace_context").unwrap().unwrap();
+            let retry = d.get_item("retry_context").unwrap().unwrap();
+
+            assert_eq!(
+                trace
+                    .get_item("trace_parent")
+                    .unwrap()
+                    .extract::<String>()
+                    .unwrap(),
+                ""
+            );
+            assert_eq!(
+                retry
+                    .get_item("retry_count")
+                    .unwrap()
+                    .extract::<i32>()
+                    .unwrap(),
+                0
+            );
+            assert!(retry.get_item("exception").unwrap().is_none());
+        });
+    }
+
+    #[test]
+    fn invocation_retry_without_exception_maps_exception_to_none() {
+        Python::attach(|py| {
+            let request = InvocationRequest {
+                retry_context: Some(RetryContext {
+                    retry_count: 1,
+                    max_retry_count: 3,
+                    exception: None,
+                }),
+                ..Default::default()
+            };
+
+            let d = invocation_request_to_py(py, &request).unwrap();
+            let retry = d.get_item("retry_context").unwrap().unwrap();
+
+            assert!(retry.get_item("exception").unwrap().is_none());
+        });
+    }
+
     // --- adapter response dict (dict -> prost) ---------------------------
     #[test]
     fn worker_init_response_maps_capabilities_and_status() {
@@ -597,6 +773,134 @@ mod tests {
     }
 
     #[test]
+    fn function_metadata_response_maps_bindings_retry_and_exception() {
+        Python::attach(|py| {
+            let function = PyDict::new(py);
+            function.set_item("name", "timer").unwrap();
+            function.set_item("function_id", "fid-timer").unwrap();
+            function.set_item("language", "python").unwrap();
+            function
+                .set_item("raw_bindings", vec!["{\"type\":\"timerTrigger\"}"])
+                .unwrap();
+            function
+                .set_item("managed_dependency_enabled", true)
+                .unwrap();
+
+            let binding = PyDict::new(py);
+            binding.set_item("type", "timerTrigger").unwrap();
+            binding.set_item("data_type", 1).unwrap();
+            binding.set_item("direction", 0).unwrap();
+            let bindings = PyDict::new(py);
+            bindings.set_item("timer", binding).unwrap();
+            function.set_item("bindings", bindings).unwrap();
+
+            let retry = PyDict::new(py);
+            retry.set_item("max_retry_count", 5).unwrap();
+            retry.set_item("retry_strategy", 1).unwrap();
+            retry.set_item("delay_interval_seconds", 10).unwrap();
+            retry
+                .set_item("minimum_interval_seconds", py.None())
+                .unwrap();
+            retry.set_item("maximum_interval_seconds", 60).unwrap();
+            function.set_item("retry_options", retry).unwrap();
+
+            let properties = PyDict::new(py);
+            properties.set_item("property", "value").unwrap();
+            function.set_item("properties", properties).unwrap();
+
+            let result = PyDict::new(py);
+            result.set_item("status", 2).unwrap();
+            let exception = PyDict::new(py);
+            exception.set_item("message", "indexing failed").unwrap();
+            exception.set_item("stack_trace", "stack").unwrap();
+            exception.set_item("source", "worker").unwrap();
+            exception.set_item("type", "ValueError").unwrap();
+            result.set_item("exception", exception).unwrap();
+
+            let d = PyDict::new(py);
+            let functions = PyList::new(py, [function]).unwrap();
+            d.set_item("function_metadata_results", functions).unwrap();
+            d.set_item("result", result).unwrap();
+            d.set_item("use_default_metadata_indexing", true).unwrap();
+
+            let response = py_to_function_metadata_response(&d.into_any()).unwrap();
+            assert!(response.use_default_metadata_indexing);
+            assert_eq!(response.function_metadata_results.len(), 1);
+            let metadata = &response.function_metadata_results[0];
+            assert_eq!(metadata.name, "timer");
+            assert_eq!(metadata.bindings["timer"].r#type, "timerTrigger");
+            assert_eq!(metadata.raw_bindings, vec!["{\"type\":\"timerTrigger\"}"]);
+            assert_eq!(metadata.properties["property"], "value");
+            let retry = metadata.retry_options.as_ref().unwrap();
+            assert_eq!(retry.max_retry_count, 5);
+            assert_eq!(retry.delay_interval.as_ref().unwrap().seconds, 10);
+            assert!(retry.minimum_interval.is_none());
+            assert_eq!(retry.maximum_interval.as_ref().unwrap().seconds, 60);
+            let exception = response.result.unwrap().exception.unwrap();
+            assert_eq!(exception.message, "indexing failed");
+            assert_eq!(exception.r#type, "ValueError");
+        });
+    }
+
+    #[test]
+    fn function_metadata_response_defaults_missing_collections() {
+        Python::attach(|py| {
+            let empty_response = PyDict::new(py);
+            let response = py_to_function_metadata_response(&empty_response.into_any()).unwrap();
+            assert!(response.function_metadata_results.is_empty());
+            assert!(response.result.is_none());
+            assert!(!response.use_default_metadata_indexing);
+
+            let function = PyDict::new(py);
+            function.set_item("name", "minimal").unwrap();
+            let response_dict = PyDict::new(py);
+            response_dict
+                .set_item(
+                    "function_metadata_results",
+                    PyList::new(py, [function]).unwrap(),
+                )
+                .unwrap();
+
+            let response = py_to_function_metadata_response(&response_dict.into_any()).unwrap();
+            assert_eq!(response.function_metadata_results.len(), 1);
+            let metadata = &response.function_metadata_results[0];
+            assert_eq!(metadata.name, "minimal");
+            assert!(metadata.bindings.is_empty());
+            assert!(metadata.raw_bindings.is_empty());
+            assert!(metadata.retry_options.is_none());
+            assert!(metadata.properties.is_empty());
+        });
+    }
+
+    #[test]
+    fn environment_reload_response_maps_worker_metadata() {
+        Python::attach(|py| {
+            let metadata = PyDict::new(py);
+            metadata.set_item("runtime_name", "python").unwrap();
+            metadata.set_item("runtime_version", "3.15.0").unwrap();
+            metadata.set_item("worker_version", "4.0.0").unwrap();
+            metadata.set_item("worker_bitness", "64").unwrap();
+            let custom = PyDict::new(py);
+            custom.set_item("feature", "enabled").unwrap();
+            metadata.set_item("custom_properties", custom).unwrap();
+
+            let capabilities = PyDict::new(py);
+            capabilities.set_item("WorkerStatus", "true").unwrap();
+            let d = PyDict::new(py);
+            d.set_item("worker_metadata", metadata).unwrap();
+            d.set_item("capabilities", capabilities).unwrap();
+
+            let response = py_to_env_reload_response(&d.into_any()).unwrap();
+            let metadata = response.worker_metadata.unwrap();
+            assert_eq!(metadata.runtime_name, "python");
+            assert_eq!(metadata.runtime_version, "3.15.0");
+            assert_eq!(metadata.custom_properties["feature"], "enabled");
+            assert_eq!(response.capabilities["WorkerStatus"], "true");
+            assert!(response.result.is_none());
+        });
+    }
+
+    #[test]
     fn invocation_response_maps_return_value_and_result() {
         Python::attach(|py| {
             let d = PyDict::new(py);
@@ -614,6 +918,39 @@ mod tests {
                 Some(typed_data::Data::String(s)) => assert_eq!(s, "ok"),
                 other => panic!("unexpected return_value: {other:?}"),
             }
+        });
+    }
+
+    #[test]
+    fn invocation_response_maps_output_data_and_missing_values() {
+        Python::attach(|py| {
+            let output_with_data = PyDict::new(py);
+            output_with_data.set_item("name", "output").unwrap();
+            output_with_data
+                .set_item("data", datum_tuple(py, "string", "value"))
+                .unwrap();
+            let output_without_data = PyDict::new(py);
+            output_without_data.set_item("name", "empty").unwrap();
+
+            let d = PyDict::new(py);
+            d.set_item(
+                "output_data",
+                PyList::new(py, [output_with_data, output_without_data]).unwrap(),
+            )
+            .unwrap();
+
+            let response = py_to_invocation_response(py, &d.into_any(), "inv-3").unwrap();
+            assert_eq!(response.invocation_id, "inv-3");
+            assert!(response.return_value.is_none());
+            assert!(response.result.is_none());
+            assert_eq!(response.output_data.len(), 2);
+            match &response.output_data[0].rpc_data {
+                Some(parameter_binding::RpcData::Data(TypedData {
+                    data: Some(typed_data::Data::String(value)),
+                })) => assert_eq!(value, "value"),
+                other => panic!("unexpected output data: {other:?}"),
+            }
+            assert!(response.output_data[1].rpc_data.is_none());
         });
     }
 

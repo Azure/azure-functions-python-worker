@@ -21,7 +21,8 @@ You can mark the following checkboxes as [x] to mark them during the PR creation
 - [ ] Does this PR impact the host-worker contract (e.g., gRPC messages, shared interfaces)?
    - If yes, have the changes been applied to:
       - [ ] azure_functions_worker (Python <= 3.12)
-      - [ ] proxy_worker (Python >= 3.13)
+      - [ ] proxy_worker (Python 3.13-3.14)
+      - [ ] r2p2 (Python >= 3.15)
    - If no, please explain why:   
 
 ### Worker Execution Logic
@@ -29,13 +30,15 @@ You can mark the following checkboxes as [x] to mark them during the PR creation
 If yes, please answer the following:
 
 **Python Version Coverage**
-   - [ ] Does this change apply to both Python <=3.12 and 3.13+?
+   - [ ] Does this change apply to all supported worker models?
    - If yes, have the changes been made to:
       - [ ] azure_functions_worker (Python <= 3.12)
+      - [ ] proxy_worker (Python 3.13-3.14)
+      - [ ] r2p2 (Python >= 3.15)
       - [ ] runtimes/v1 / runtimes/v2 (Python >= 3.13)
    - If no, please explain why:
 
-**Programming Model Compatibility (for Python 3.13+)**
+**Programming Model Compatibility (proxy_worker and r2p2)**
 - Does this change apply to both:
    - [ ] V1 programming model (runtimes/v1)?
    - [ ] V2 programming model (runtimes/v2)?

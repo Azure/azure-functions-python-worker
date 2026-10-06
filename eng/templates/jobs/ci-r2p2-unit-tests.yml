@@ -68,7 +68,7 @@ jobs:
       - pwsh: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          cargo --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' clippy --manifest-path '$(Build.SourcesDirectory)/workers/r2p2/Cargo.toml' --all-targets --locked -- -D warnings
+          cargo clippy --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' --manifest-path '$(Build.SourcesDirectory)/workers/r2p2/Cargo.toml' --all-targets --locked -- -D warnings
         displayName: 'Lint R2P2 Rust code'
         workingDirectory: $(Build.SourcesDirectory)
       - pwsh: |

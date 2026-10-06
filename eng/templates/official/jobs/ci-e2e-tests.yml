@@ -188,7 +188,7 @@ jobs:
         displayName: 'Cleanup after tests'
         condition: always()
 
- # Temporary - run Python 3.15 tests as a separate job. Dev deps do not have cp315 wheels yet.
+ # Temporary - run Python 3.15 R2P2 tests as a separate job.
   - job: "TestR2P2E2E"
     displayName: "Run Python 3.15 R2P2 E2E Tests"
 
@@ -221,6 +221,11 @@ jobs:
           echo "Disk space after cleanup:"
           df -h
         displayName: 'Free disk space'
+
+      - bash: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libglib2.0-0
+        displayName: 'Install system libraries for opencv (cv2)'
 
       - task: UsePythonVersion@0
         displayName: 'Use Python $(PYTHON_VERSION)'
@@ -268,36 +273,14 @@ jobs:
         displayName: 'Authenticate NuGet to CFS'
 
       - bash: |
-          set -euo pipefail
-          # Minimal cp315-safe install. NOT workers/[dev] (opencv/pandas/
-          # scikit-learn/aiohttp have no cp315 wheels). No grpcio: it has no
-          # cp315 wheel and is not needed -- the R2P2 worker is protobuf-free
-          # (Rust/prost owns the wire) and the pytest harness imports
-          # proxy_worker.protos lazily (absent on 3.15 -> protos=None). protobuf
-          # ships an abi3 wheel and backs the v2/v1 runtime's lazy
-          # google.protobuf Timestamp converter. invoke drives the Host
-          # webhost/extensions build. The R2P2's embedded interpreter imports
-          # the v2/v1 runtimes from these editable installs.
-          python -m pip install --upgrade pip
-          python -m pip install "setuptools>=62,<82.0"
-          python -m pip install \
-            "azure-functions==2.3.0b2" \
-            "protobuf>=5.29,<7" "requests==2.*" \
-            "pytest~=7.4.4" pytest-asyncio pytest-rerunfailures pytest-instafail \
-            invoke \
-            -e runtimes/v2 -e runtimes/v1
-        displayName: 'Install Python dependencies (cp315-safe)'
+          chmod +x eng/scripts/install-dependencies.sh
+          eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
+        displayName: 'Install Python dependencies (uv)'
 
       - bash: |
-          set -euo pipefail
-          # Build the Host webhost + extensions. SKIP build-protos: grpcio-tools
-          # has no cp315 wheel, and the R2P2 path needs no generated stubs --
-          # the worker is protobuf-free and the harness imports
-          # proxy_worker.protos lazily (tolerates their absence on 3.15).
-          cd workers/tests
-          python -m invoke -c test_setup webhost --branch-name=dev
-          python -m invoke -c test_setup extensions
-        displayName: 'Build webhost and extensions (skip build-protos)'
+          chmod +x eng/scripts/test-setup.sh
+          eng/scripts/test-setup.sh
+        displayName: 'Build webhost and extensions (dotnet)'
 
       - bash: |
           chmod +x eng/scripts/stage-r2p2.sh

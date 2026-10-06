@@ -419,6 +419,13 @@ class NullableDouble:
         return {"value": float(self.value)}
 
 
+class Timestamp:
+    __slots__ = ("seconds",)
+
+    def __init__(self, seconds=0):
+        self.seconds = seconds
+
+
 class NullableTimestamp:
     """Wraps a ``google.protobuf.Timestamp``-shaped object (``.seconds``). The
     runtime builds ``value=Timestamp(seconds=...)``; we only need the seconds."""

@@ -227,7 +227,7 @@ jobs:
         displayName: 'Cleanup after tests'
         condition: always()
 
-  # Temporary - run Python 3.15 tests as a separate job. Dev deps do not have cp315 wheels yet.
+  # Temporary - run Python 3.15 R2P2 tests as a separate job.
   - job: "TestR2P2Emulator"
     displayName: "Run Python 3.15 R2P2 Emulator Tests"
     # Secret variables (emulator connection strings) are unavailable to PRs
@@ -324,39 +324,14 @@ jobs:
         displayName: 'Authenticate NuGet to CFS'
 
       - bash: |
-          set -euo pipefail
-          # Minimal cp315-safe install. NOT workers/[dev] (opencv/pandas/
-          # scikit-learn/aiohttp have no cp315 wheels). No grpcio: it has no
-          # cp315 wheel and is not needed -- the R2P2 worker is protobuf-free
-          # and the harness imports proxy_worker.protos lazily. protobuf ships
-          # an abi3 wheel (backs the v1/v2 runtime's lazy google.protobuf
-          # Timestamp converter). The emulator deps (azure-cosmos/azure-eventhub/
-          # python-dateutil + the blob/cosmosdb deferred-binding extensions) all
-          # ship universal py3 wheels. invoke drives the Host webhost/extensions
-          # build; the editable v2/v1 runtimes back the R2P2 embedded interpreter.
-          python -m pip install --upgrade pip
-          python -m pip install "setuptools>=62,<82.0"
-          python -m pip install \
-            "azure-functions==2.3.0b2" \
-            "protobuf>=5.29,<7" "requests==2.*" \
-            "pytest~=7.4.4" pytest-asyncio pytest-rerunfailures pytest-instafail \
-            invoke \
-            azure-cosmos azure-eventhub python-dateutil \
-            azurefunctions-extensions-bindings-blob \
-            azurefunctions-extensions-bindings-cosmosdb \
-            -e runtimes/v2 -e runtimes/v1
-        displayName: 'Install Python dependencies (cp315-safe)'
+          chmod +x eng/scripts/install-dependencies.sh
+          eng/scripts/install-dependencies.sh $(PYTHON_VERSION) ${{ parameters.PROJECT_DIRECTORY }}
+        displayName: 'Install Python dependencies (uv)'
 
       - bash: |
-          set -euo pipefail
-          # Build the Host webhost + extensions. SKIP build-protos: grpcio-tools
-          # has no cp315 wheel, and the R2P2 path needs no generated stubs --
-          # the worker is protobuf-free and the harness imports
-          # proxy_worker.protos lazily (tolerates their absence on 3.15).
-          cd workers/tests
-          python -m invoke -c test_setup webhost --branch-name=dev
-          python -m invoke -c test_setup extensions
-        displayName: 'Build webhost and extensions (skip build-protos)'
+          chmod +x eng/scripts/test-setup.sh
+          eng/scripts/test-setup.sh
+        displayName: 'Build webhost and extensions (dotnet)'
 
       - bash: |
           chmod +x eng/scripts/stage-r2p2.sh
@@ -391,13 +366,11 @@ jobs:
         displayName: 'Install Azurite and Start EventHub Emulator'
 
       - bash: |
-          # Durable (azure-functions-durable -> aiohttp) and Service Bus (SDK
-          # binding -> uamqp) have no cp315 wheels, so their suites are ignored
-          # here. --continue-on-collection-errors is a safety net for any other
-          # app whose third-party wheels are missing on 3.15.
+          # Service Bus runs separately below after the Event Hubs emulator
+          # releases port 5672. Collection errors are a safety net for any other
+          # app missing third-party wheels on 3.15.
           python -m pytest -q --reruns 4 --continue-on-collection-errors --instafail \
             --ignore=tests/emulator_tests/test_servicebus_functions.py \
-            --ignore=tests/emulator_tests/test_durable_functions.py \
             tests/emulator_tests
         env:
           AzureWebJobsStorage: $(AzureWebJobsStorage)
@@ -411,6 +384,45 @@ jobs:
           PYAZURE_WEBHOST_DEBUG: true
         workingDirectory: $(Build.SourcesDirectory)/workers
         displayName: "Running Python 3.15 R2P2 Emulator Tests"
+
+      - bash: |
+          # Event Hubs and Service Bus both use port 5672.
+          docker stop eventhubs-emulator
+          docker container rm --force eventhubs-emulator
+          docker compose -f workers/tests/emulator_tests/utils/servicebus/docker-compose.yml pull
+          docker compose -f workers/tests/emulator_tests/utils/servicebus/docker-compose.yml up -d
+
+          echo "Waiting for the Service Bus emulator to be ready..."
+          for i in $(seq 1 90); do
+            if docker logs servicebus-emulator 2>&1 | grep -q "Emulator Service is Successfully Up"; then
+              echo "Service Bus emulator is ready."
+              break
+            fi
+            if [ "$i" -eq 90 ]; then
+              echo "Service Bus emulator did not become ready in time. Logs:"
+              docker logs servicebus-emulator || true
+              exit 1
+            fi
+            sleep 2
+          done
+        env:
+          AzureWebJobsSQLPassword: $(AzureWebJobsSQLPassword)
+        displayName: 'Install Azurite and Start ServiceBus Emulator'
+
+      - bash: |
+          # The SDK-binding class is skipped on Python 3.14+ because uamqp has
+          # no cp315 wheel; the remaining Service Bus tests exercise R2P2.
+          python -m pytest -q --reruns 4 --instafail \
+            tests/emulator_tests/test_servicebus_functions.py
+        env:
+          AzureWebJobsStorage: $(AzureWebJobsStorage)
+          AzureWebJobsServiceBusConnectionString: $(EmulatorServiceBusConnectionString)
+          AzureWebJobsServiceBusSDKConnectionString: $(AzureWebJobsServiceBusSDKConnectionString)
+          PYAZURE_WORKER_DIR: $(Build.SourcesDirectory)/workers/python/test_r2p2
+          PYTHONPATH: $(Build.SourcesDirectory)/workers
+          PYAZURE_WEBHOST_DEBUG: true
+        workingDirectory: $(Build.SourcesDirectory)/workers
+        displayName: "Running Python 3.15 R2P2 ServiceBus Emulator Tests"
 
       - bash: |
           echo "Cleaning up after tests..."

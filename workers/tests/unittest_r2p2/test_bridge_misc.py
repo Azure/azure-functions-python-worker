@@ -5,7 +5,10 @@
 # and the worker version fallback. These mirror proxy_worker/logging.py behavior
 # the R2P2 bridge reproduces.
 
+import builtins
+import importlib.util
 import logging
+from pathlib import Path
 from types import SimpleNamespace
 
 import bridge
@@ -82,3 +85,34 @@ def test_invoke_native_forwards_retry_context(monkeypatch):
     assert retry_exception.stack_trace == "stack"
     assert retry_exception.source == "host"
     assert retry_exception.type == "ExampleError"
+
+
+def test_nullable_timestamp_uses_r2p2_adapter_without_protobuf(monkeypatch):
+    real_import = builtins.__import__
+
+    def import_without_protobuf(name, *args, **kwargs):
+        if name.startswith("google.protobuf"):
+            raise AssertionError("R2P2 must not import protobuf")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", import_without_protobuf)
+
+    repo_root = Path(__file__).resolve().parents[3]
+    converter_paths = (
+        repo_root.joinpath("runtimes", "v1", "azure_functions_runtime_v1",
+                           "bindings", "nullable_converters.py"),
+        repo_root.joinpath("runtimes", "v2", "azure_functions_runtime",
+                           "bindings", "nullable_converters.py"),
+    )
+
+    for index, converter_path in enumerate(converter_paths):
+        spec = importlib.util.spec_from_file_location(
+            f"r2p2_nullable_converters_{index}", converter_path)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        converted = module.to_nullable_timestamp(
+            1234, "cookie.expires", bridge.protos)
+
+        assert converted.to_dict() == {"seconds": 1234}

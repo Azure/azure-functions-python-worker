@@ -17,6 +17,8 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
     "Operating System :: MacOS :: MacOS X",
@@ -48,6 +50,9 @@ Repository = "https://github.com/Azure/azure-functions-python-worker"
 
 [project.optional-dependencies]
 dev = [
+    "protobuf~=7.36.2; python_version == '3.15'",
+    "grpcio-tools~=1.84.0; python_version == '3.15'",
+    "grpcio~=1.84.0; python_version == '3.15'",
     "azure-cosmos", # Used for CosmosDB Emulator tests
     "azure-eventhub", # Used for EventHub E2E tests
     "azure-functions-durable", # Used for Durable E2E tests

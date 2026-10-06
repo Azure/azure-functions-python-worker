@@ -155,9 +155,6 @@ class TestHttpFunctionsSteinGeneric(TestHttpFunctionsStein):
                                             'generic'
 
 
-@unittest.skipIf(sys.version_info.minor >= 15,
-                 "opencv-python, pandas and scikit-learn have no Python 3.15 "
-                 "wheels yet (R2P2 worker).")
 class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
     """Test the common libs scenarios in the local webhost.
 

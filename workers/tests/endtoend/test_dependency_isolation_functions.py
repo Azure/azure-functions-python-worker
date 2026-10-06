@@ -19,12 +19,6 @@ from azure_functions_worker.utils.common import is_envvar_true
 REQUEST_TIMEOUT_SEC = 5
 
 
-@skipIf(sys.version_info.minor >= 15,
-        "Dependency isolation with a worker-vendored google.protobuf is a "
-        "classic worker feature. R2P2 (Python 3.15) is protobuf-free (Rust/prost "
-        "owns the wire, nothing is vendored), and this app pins grpc==1.35.0 / "
-        "protobuf==3.9.0 which have no 3.15 wheels, so the function app cannot "
-        "load and the vendored-protobuf assertions do not apply.")
 @skipIf(is_envvar_true(DEDICATED_DOCKER_TEST),
         'Docker tests do not work with dependency isolation ')
 class TestGRPCandProtobufDependencyIsolationOnDedicated(

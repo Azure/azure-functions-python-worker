@@ -148,9 +148,6 @@ class ThirdPartyHttpFunctionsTestBase:
             self.assertEqual(r.json(), {"detail": "Item not found"})
 
 
-@unittest.skipIf(sys.version_info.minor >= 15,
-                 "flask/fastapi/pydantic have no Python 3.15 wheels yet "
-                 "(R2P2 worker).")
 class TestAsgiHttpFunctions(
         ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
     @classmethod
@@ -159,9 +156,6 @@ class TestAsgiHttpFunctions(
             'asgi_function'
 
 
-@unittest.skipIf(sys.version_info.minor >= 15,
-                 "flask/fastapi/pydantic have no Python 3.15 wheels yet "
-                 "(R2P2 worker).")
 class TestWsgiHttpFunctions(
         ThirdPartyHttpFunctionsTestBase.TestThirdPartyHttpFunctions):
     @classmethod

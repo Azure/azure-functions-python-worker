@@ -164,12 +164,12 @@ jobs:
           if (Get-Command rustup -ErrorAction SilentlyContinue) {
             rustup update stable
             rustup default stable
-            rustup component add rustfmt clippy
           } else {
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --component rustfmt clippy
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
             $env:PATH = "$HOME/.cargo/bin`:$env:PATH"
             Write-Host "##vso[task.prependpath]$HOME/.cargo/bin"
           }
+          rustup component add rustfmt clippy
 
           rustc --version
           cargo --version

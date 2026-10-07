@@ -1,0 +1,5 @@
+[registries]
+PythonWorker_PublicPackages = { index = "sparse+https://azfunc.pkgs.visualstudio.com/public/_packaging/PythonWorker_PublicPackages/Cargo/index/" }
+
+[source.crates-io]
+replace-with = "PythonWorker_PublicPackages"

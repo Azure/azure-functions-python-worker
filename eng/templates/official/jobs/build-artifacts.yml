@@ -106,6 +106,264 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(normalizedPythonVersion)_LINUX_X64'
       grpcBuild: 'x86_64-linux-gnu.so'
+
+# Starting with Python 3.15, worker builds use R2P2.
+- job: Build_R2P2_LINUX_X64
+  timeoutInMinutes: 180
+  pool:
+    name: 1es-pool-azfunc
+    image: 1es-ubuntu-24.04-min
+    os: linux
+  strategy:
+    matrix:
+      Python315R2P2:
+        pythonVersion: '3.15.0-rc.1'
+        normalizedPythonVersion: '3.15'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_LINUX_X64"
+  steps:
+  - template: ../../../pack/templates/r2p2_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_LINUX_X64'
+      osName: 'LINUX'
+- job: Build_R2P2_WINDOWS_X64
+  timeoutInMinutes: 180
+  pool:
+    name: 1es-pool-azfunc
+    image: 1es-windows-2022
+    os: windows
+  strategy:
+    matrix:
+      Python315R2P2:
+        pythonVersion: '3.15.0-rc.1'
+        normalizedPythonVersion: '3.15'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_WINDOWS_X64"
+  steps:
+  - template: ../../../pack/templates/r2p2_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_WINDOWS_X64'
+      osName: 'WINDOWS'
+      architecture: 'x64'
+  - template: ci/sign-files.yml@eng
+    parameters:
+      displayName: 'Sign R2P2 executable'
+      folderPath: '$(Agent.BuildDirectory)'
+      pattern: '**/r2p2.exe'
+      minimatch: true
+      inlineOperation: |
+        [
+          {
+            "KeyCode": "CP-230012",
+            "OperationCode": "SigntoolSign",
+            "Parameters": {
+              "OpusName": "Microsoft",
+              "OpusInfo": "http://www.microsoft.com",
+              "FileDigest": "/fd \"SHA256\"",
+              "PageHash": "/NPH",
+              "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+            },
+            "ToolName": "sign",
+            "ToolVersion": "1.0"
+          },
+          {
+            "KeyCode": "CP-230012",
+            "OperationCode": "SigntoolVerify",
+            "Parameters": {},
+            "ToolName": "sign",
+            "ToolVersion": "1.0"
+          }
+        ]
+- job: Build_R2P2_WINDOWS_X86
+  timeoutInMinutes: 180
+  pool:
+    name: 1es-pool-azfunc
+    image: 1es-windows-2022
+    os: windows
+  strategy:
+    matrix:
+      Python315R2P2:
+        pythonVersion: '3.15.0-rc.1'
+        normalizedPythonVersion: '3.15'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_WINDOWS_X86"
+  steps:
+  - template: ../../../pack/templates/r2p2_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_WINDOWS_X86'
+      osName: 'WINDOWS'
+      architecture: 'x86'
+  - template: ci/sign-files.yml@eng
+    parameters:
+      displayName: 'Sign R2P2 executable'
+      folderPath: '$(Agent.BuildDirectory)'
+      pattern: '**/r2p2.exe'
+      minimatch: true
+      inlineOperation: |
+        [
+          {
+            "KeyCode": "CP-230012",
+            "OperationCode": "SigntoolSign",
+            "Parameters": {
+              "OpusName": "Microsoft",
+              "OpusInfo": "http://www.microsoft.com",
+              "FileDigest": "/fd \"SHA256\"",
+              "PageHash": "/NPH",
+              "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+            },
+            "ToolName": "sign",
+            "ToolVersion": "1.0"
+          },
+          {
+            "KeyCode": "CP-230012",
+            "OperationCode": "SigntoolVerify",
+            "Parameters": {},
+            "ToolName": "sign",
+            "ToolVersion": "1.0"
+          }
+        ]
+- job: Build_R2P2_WINDOWS_ARM64
+  timeoutInMinutes: 180
+  pool:
+    name: 1es-pool-azfunc
+    image: 1es-windows-2022
+    os: windows
+  strategy:
+    matrix:
+      Python315R2P2:
+        pythonVersion: '3.15.0-rc.1'
+        normalizedPythonVersion: '3.15'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_WINDOWS_ARM64"
+  steps:
+  - template: ../../../pack/templates/r2p2_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_WINDOWS_ARM64'
+      osName: 'WINDOWS'
+      architecture: 'arm64'
+      hostArchitecture: 'x64'
+  - template: ci/sign-files.yml@eng
+    parameters:
+      displayName: 'Sign R2P2 executable'
+      folderPath: '$(Agent.BuildDirectory)'
+      pattern: '**/r2p2.exe'
+      minimatch: true
+      inlineOperation: |
+        [
+          {
+            "KeyCode": "CP-230012",
+            "OperationCode": "SigntoolSign",
+            "Parameters": {
+              "OpusName": "Microsoft",
+              "OpusInfo": "http://www.microsoft.com",
+              "FileDigest": "/fd \"SHA256\"",
+              "PageHash": "/NPH",
+              "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+            },
+            "ToolName": "sign",
+            "ToolVersion": "1.0"
+          },
+          {
+            "KeyCode": "CP-230012",
+            "OperationCode": "SigntoolVerify",
+            "Parameters": {},
+            "ToolName": "sign",
+            "ToolVersion": "1.0"
+          }
+        ]
+- job: Build_R2P2_OSX_X64
+  timeoutInMinutes: 180
+  pool:
+    name: Azure Pipelines
+    image: macOS-latest
+    os: macOS
+  strategy:
+    matrix:
+      Python315R2P2:
+        pythonVersion: '3.15.0-rc.1'
+        normalizedPythonVersion: '3.15'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_OSX_X64"
+  steps:
+  - template: ../../../pack/templates/r2p2_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_OSX_X64'
+      osName: 'OSX'
+- job: Build_R2P2_OSX_ARM64
+  timeoutInMinutes: 180
+  pool:
+    name: Azure Pipelines
+    image: macOS-latest
+    os: macOS
+  strategy:
+    matrix:
+      Python315R2P2:
+        pythonVersion: '3.15.0-rc.1'
+        normalizedPythonVersion: '3.15'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_OSX_ARM64"
+  steps:
+  - template: ../../../pack/templates/r2p2_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_OSX_ARM64'
+      osName: 'OSX'
+      architecture: 'arm64'
+      hostArchitecture: 'x64'
+- job: Build_R2P2_LINUX_ARM64
+  timeoutInMinutes: 240
+  pool:
+    name: 1es-pool-azfunc
+    image: 1es-ubuntu-24.04-min
+    os: linux
+  strategy:
+    matrix:
+      Python315R2P2:
+        pythonVersion: '3.15.0-rc.1'
+        normalizedPythonVersion: '3.15'
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "$(normalizedPythonVersion)_LINUX_ARM64"
+  steps:
+  - template: ../../../pack/templates/r2p2_env_gen.yml
+    parameters:
+      pythonVersion: '$(pythonVersion)'
+      artifactName: '$(normalizedPythonVersion)_LINUX_ARM64'
+      osName: 'LINUX'
+      architecture: 'arm64'
+      hostArchitecture: 'x64'
 - job: Build_OSX_X64
   timeoutInMinutes: 180
   pool:
@@ -213,7 +471,7 @@ jobs:
       grpcBuild: 'aarch64-linux-gnu.so'
 
 - job: PackageWorkers
-  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
+  dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_R2P2_LINUX_X64', 'Build_R2P2_LINUX_ARM64', 'Build_R2P2_WINDOWS_X64', 'Build_R2P2_WINDOWS_X86', 'Build_R2P2_WINDOWS_ARM64', 'Build_R2P2_OSX_X64', 'Build_R2P2_OSX_ARM64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
   templateContext:
       outputParentDirectory: $(Build.ArtifactStagingDirectory)
       outputs:
@@ -239,10 +497,13 @@ jobs:
       else
         # this is only to test nuget related workflow because we are setting nuspec here
         echo "Generating Integration Test Package for $BUILD_SOURCEBRANCHNAME for testing purpose"
-        LATEST_TAG=$(curl https://api.github.com/repos/Azure/azure-functions-python-worker/tags -s | jq '.[0].name' | sed 's/\"//g' |  cut -d'.' -f-2)
+        # Pick the latest *worker* release tag (numeric semver like 4.35.1). The
+        # repo also carries runtimes/v2-* and runtimes/v1-* tags, which contain a
+        # '/' and are not valid NuGet versions, so they must be filtered out.
+        LATEST_TAG=$(curl -s https://api.github.com/repos/Azure/azure-functions-python-worker/tags | jq -r '[.[].name | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))][0]' | cut -d'.' -f-2)
         NUSPEC="eng\pack\Microsoft.Azure.Functions.V4.PythonWorker.nuspec"
-        # Only required for Integration Test. Version number contains date (e.g. 3.1.2.20211028-dev)
-        WKVERSION="3.$LATEST_TAG-$(BUILD_BUILDID)-TEST"
+        # Only required for Integration Test. Version number contains build id (e.g. 3.4.35-1234-TEST)
+        WKVERSION="3.$LATEST_TAG-$(Build.BuildId)-TEST"
         echo "No Matching Release Tag For $BUILD_SOURCEBRANCH"
       fi
 

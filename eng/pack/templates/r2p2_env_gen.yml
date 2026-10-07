@@ -1,0 +1,181 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+#
+# Packaging template for R2P2 (Python 3.15+).
+#
+# Earlier Python workers use separate OS-specific templates. This template
+# handles every R2P2 Windows, Linux, and macOS build, selecting the platform
+# build script and staging a consistent V4 NuGet artifact layout.
+#
+# Parameters:
+#   pythonVersion : interpreter to link against (e.g. 3.15.0-rc.1)
+#   artifactName  : pipeline artifact name (e.g. 3.15_WINDOWS_ARM64)
+#   osName        : WINDOWS | LINUX | OSX (selects the build script)
+#   architecture  : x64 | x86 | arm64; packaged R2P2 target architecture
+#   hostArchitecture: x64 | x86; build-time Python; defaults to architecture
+
+parameters:
+  pythonVersion: ''
+  artifactName: ''
+  osName: ''
+  architecture: 'x64'
+  hostArchitecture: ''
+
+steps:
+- task: PipAuthenticate@1
+  displayName: 'Authenticate pip to CFS'
+  inputs:
+    artifactFeeds: 'public/upstream-public'
+    onlyAddExtraIndex: false
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: ${{ parameters.pythonVersion }}
+    architecture: ${{ coalesce(parameters.hostArchitecture, parameters.architecture) }}
+    allowUnstable: true
+    addToPath: true
+- task: CargoAuthenticate@0
+  displayName: 'Authenticate Cargo to CFS'
+  inputs:
+    configFile: '$(Build.SourcesDirectory)/workers/r2p2/.cargo/config.toml'
+- ${{ if eq(parameters.osName, 'WINDOWS') }}:
+  - task: PowerShell@2
+    displayName: 'Build R2P2 + dependencies'
+    inputs:
+      filePath: 'eng/pack/scripts/r2p2_deps.ps1'
+      arguments: '-PythonVersion ${{ parameters.pythonVersion }} -Architecture ${{ parameters.architecture }}'
+      pwsh: true
+- ${{ else }}:
+  - task: ShellScript@2
+    displayName: 'Build R2P2 + dependencies'
+    inputs:
+      disableAutoCwd: true
+      scriptPath: 'eng/pack/scripts/r2p2_deps.sh'
+      args: '${{ parameters.pythonVersion }} ${{ parameters.architecture }}'
+- task: CopyFiles@2
+  displayName: 'Copy R2P2 files'
+  inputs:
+    sourceFolder: '$(Build.SourcesDirectory)/deps'
+    contents: |
+      **
+      !grpc/**
+      !grpc_tools/**/*
+      !grpcio*/**
+      !build/**
+      !docs/**
+      !eng/**
+      !python/**
+      !tests/**
+      !setuptools*/**
+      !_distutils_hack/**
+      !distutils-precedence.pth
+      !pkg_resources/**
+      !*.dist-info/**
+      !werkzeug/debug/shared/debugger.js
+      !azure_functions_worker/**
+      !proxy_worker/**
+      !uvloop/**
+      !six.py
+      !typing_extensions.py
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+- task: CopyFiles@2
+  displayName: 'Copy R2P2 launcher shim'
+  inputs:
+    sourceFolder: '$(Build.SourcesDirectory)/workers/python/r2p2'
+    contents: 'worker.py'
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+- powershell: |
+    $root = "$(Build.ArtifactStagingDirectory)"
+
+    # The binary is r2p2.exe on Windows, r2p2 elsewhere.
+    $binary = if ('${{ parameters.osName }}' -eq 'WINDOWS') { "r2p2.exe" } else { "r2p2" }
+    $expected = @(
+        $binary,
+        "worker.py",
+        "bridge/bridge.py",
+        "bridge/protos_adapter.py",
+        "azure_functions_runtime",
+        "azure_functions_runtime/native_invocation.py",
+        "azure_functions_runtime/utils/executor.py",
+        "azure_functions_runtime_v1",
+        "azure_functions_runtime_v1/native_invocation.py",
+        "azure_functions_runtime_v1/utils/executor.py",
+        "azure",
+        "azurefunctions"
+    )
+    $forbidden = @("azure_functions_worker", "grpc", "proxy_worker", "uvloop")
+
+    $missing = @()
+    foreach ($item in $expected) {
+        if (-not (Test-Path (Join-Path $root $item))) { $missing += $item }
+    }
+    $present = @()
+    foreach ($item in $forbidden) {
+        if (Test-Path (Join-Path $root $item)) { $present += $item }
+    }
+
+    if ($missing.Count -gt 0) {
+        Write-Error "Validation failed. Missing expected files/folders:`n$($missing -join "`n")"
+        exit 1
+    }
+    if ($present.Count -gt 0) {
+        Write-Error "Validation failed. Pruned packages unexpectedly present:`n$($present -join "`n")"
+        exit 1
+    }
+
+    $binaryPath = Join-Path $root $binary
+    $binaryBytes = [System.IO.File]::ReadAllBytes($binaryPath)
+    $osName = '${{ parameters.osName }}'
+    $architecture = '${{ parameters.architecture }}'
+    if ($osName -eq 'WINDOWS') {
+      if ($binaryBytes.Length -lt 64 -or $binaryBytes[0] -ne 0x4d -or $binaryBytes[1] -ne 0x5a) {
+        throw "Validation failed. $binary is not a PE executable."
+      }
+      $peOffset = [BitConverter]::ToInt32($binaryBytes, 0x3c)
+      if ($peOffset -lt 0 -or $peOffset + 6 -gt $binaryBytes.Length -or
+        $binaryBytes[$peOffset] -ne 0x50 -or $binaryBytes[$peOffset + 1] -ne 0x45 -or
+        $binaryBytes[$peOffset + 2] -ne 0 -or $binaryBytes[$peOffset + 3] -ne 0) {
+        throw "Validation failed. $binary has an invalid PE header."
+      }
+      $actualMachine = [BitConverter]::ToUInt16($binaryBytes, $peOffset + 4)
+      $expectedMachine = switch ($architecture) {
+        'x86' { 0x014c }
+        'x64' { 0x8664 }
+        'arm64' { 0xaa64 }
+        default { throw "Unsupported Windows architecture: $architecture" }
+      }
+      if ($actualMachine -ne $expectedMachine) {
+        throw "Validation failed. Expected $binary PE machine 0x$($expectedMachine.ToString('x4')) for $architecture; found 0x$($actualMachine.ToString('x4'))."
+      }
+    } elseif ($osName -eq 'LINUX') {
+      if ($binaryBytes.Length -lt 20 -or $binaryBytes[0] -ne 0x7f -or
+        $binaryBytes[1] -ne 0x45 -or $binaryBytes[2] -ne 0x4c -or $binaryBytes[3] -ne 0x46) {
+        throw "Validation failed. $binary is not an ELF executable."
+      }
+      if ($binaryBytes[5] -ne 1) {
+        throw "Validation failed. $binary is not a little-endian ELF executable."
+      }
+      $actualMachine = [BitConverter]::ToUInt16($binaryBytes, 18)
+      $expectedMachine = switch ($architecture) {
+        'x86' { 0x0003 }
+        'x64' { 0x003e }
+        'arm64' { 0x00b7 }
+        default { throw "Unsupported Linux architecture: $architecture" }
+      }
+      if ($actualMachine -ne $expectedMachine) {
+        throw "Validation failed. Expected $binary ELF machine 0x$($expectedMachine.ToString('x4')) for $architecture; found 0x$($actualMachine.ToString('x4'))."
+      }
+    } elseif ($osName -eq 'OSX') {
+      $expectedArchitecture = if ($architecture -eq 'arm64') { 'arm64' } else { 'x86_64' }
+      $lipoOutput = & lipo -archs $binaryPath
+      if ($LASTEXITCODE -ne 0) {
+        throw "Validation failed. lipo could not inspect $binary."
+      }
+      $architectures = $lipoOutput.Trim() -split '\s+'
+      if ($architectures -notcontains $expectedArchitecture) {
+        throw "Validation failed. Expected $binary to contain $expectedArchitecture; found $($architectures -join ', ')."
+      }
+    } else {
+      throw "Unsupported R2P2 artifact OS: $osName"
+    }
+    Write-Host "✅ Validation passed. R2P2 artifact contents and $architecture binary are correct."
+  displayName: "Validate R2P2 artifact contents"

@@ -1,0 +1,95 @@
+parameters:
+  PROJECT_DIRECTORY: 'workers'
+  PoolName: ''
+  CARGO_CONFIG_FILE: 'workers/r2p2/.cargo/config.toml'
+
+jobs:
+  - job: "TestR2P2Unit"
+    displayName: "Run R2P2 Unit Tests (Python 3.15)"
+
+    pool:
+      name: ${{ parameters.PoolName }}
+      image: 1es-ubuntu-24.04-min
+      os: linux
+
+    steps:
+      - task: PipAuthenticate@1
+        displayName: 'Authenticate pip to CFS'
+        inputs:
+          artifactFeeds: 'public/upstream-public'
+          onlyAddExtraIndex: false
+      - task: UsePythonVersion@0
+        displayName: 'Use Python 3.15'
+        inputs:
+          versionSpec: '3.15.0-rc.1'
+          allowUnstable: true
+      - pwsh: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+
+          $python = (Get-Command python).Source
+          $env:PYO3_PYTHON = $python
+          Write-Host "##vso[task.setvariable variable=PYO3_PYTHON]$python"
+          $libdir = python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR') or '')"
+          $env:LD_LIBRARY_PATH = "$libdir`:$env:LD_LIBRARY_PATH"
+          Write-Host "##vso[task.setvariable variable=LD_LIBRARY_PATH]$env:LD_LIBRARY_PATH"
+
+          if (Get-Command rustup -ErrorAction SilentlyContinue) {
+            rustup update stable
+            rustup default stable
+          } else {
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+            $env:PATH = "$HOME/.cargo/bin`:$env:PATH"
+            Write-Host "##vso[task.prependpath]$HOME/.cargo/bin"
+          }
+          rustup component add rustfmt clippy
+
+          rustc --version
+          cargo --version
+          cargo fmt --version
+          cargo clippy --version
+        displayName: 'Configure Rust toolchain'
+      - task: CargoAuthenticate@0
+        displayName: 'Authenticate Cargo to CFS'
+        inputs:
+          configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+      - bash: |
+          chmod +x '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh'
+          '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh' '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+        displayName: 'Validate Cargo authentication'
+      - pwsh: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          # Run from the repository root so Cargo does not auto-discover the
+          # R2P2-local internal feed config instead of CARGO_CONFIG_FILE.
+          cargo --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' fmt --manifest-path '$(Build.SourcesDirectory)/workers/r2p2/Cargo.toml' --all -- --check
+        displayName: 'Check R2P2 Rust formatting'
+        workingDirectory: $(Build.SourcesDirectory)
+      - pwsh: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          cargo clippy --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' --manifest-path '$(Build.SourcesDirectory)/workers/r2p2/Cargo.toml' --all-targets --locked -- -D warnings
+        displayName: 'Lint R2P2 Rust code'
+        workingDirectory: $(Build.SourcesDirectory)
+      - pwsh: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          cargo --config '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}' test --manifest-path '$(Build.SourcesDirectory)/workers/r2p2/Cargo.toml' --locked
+        displayName: 'Run R2P2 Rust unit tests'
+        workingDirectory: $(Build.SourcesDirectory)
+      - bash: |
+          python --version
+          python -m pip install --upgrade pip
+          python -m pip install -e "${{ parameters.PROJECT_DIRECTORY }}/[dev-r2p2]"
+        displayName: 'Install R2P2 test dependencies (Python 3.15)'
+        condition: and(succeeded(), eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+      - bash: |
+          flake8 bridge
+        displayName: 'Lint R2P2 Python bridge'
+        condition: and(succeeded(), eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+        workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
+      - bash: |
+          python -m pytest -q --reruns 4 --reruns-delay 5 --instafail unittest_r2p2
+        displayName: 'Running Python 3.15 R2P2 bridge unit tests'
+        condition: and(succeeded(), eq(variables.isSdkRelease, false), eq(variables.isExtensionsRelease, false), eq(variables['USETESTPYTHONSDK'], false), eq(variables['USETESTPYTHONEXTENSIONS'], false))
+        workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/tests

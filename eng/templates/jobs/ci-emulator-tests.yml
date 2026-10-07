@@ -1,5 +1,6 @@
 parameters:
   PROJECT_DIRECTORY: 'workers'
+  CARGO_CONFIG_FILE: 'workers/r2p2/.cargo/config.toml'
 
 jobs:
   - job: "TestPython"
@@ -24,6 +25,9 @@ jobs:
           PYTHON_VERSION: '3.13'
         Python314:
           PYTHON_VERSION: '3.14'
+        Python315:
+          PYTHON_VERSION: '3.15.0-rc.1'
+          R2P2_WORKER: 'true'
     steps:
       - task: PipAuthenticate@1
         displayName: 'Authenticate pip to CFS'
@@ -69,8 +73,41 @@ jobs:
         displayName: 'Free memory'
 
       - task: UsePythonVersion@0
+        displayName: 'Use Python $(PYTHON_VERSION)'
         inputs:
           versionSpec: $(PYTHON_VERSION)
+          allowUnstable: true
+      - bash: |
+          set -euo pipefail
+          PY="$(which python)"
+          echo "##vso[task.setvariable variable=PYO3_PYTHON]$PY"
+          LIBDIR="$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR") or "")')"
+          echo "##vso[task.setvariable variable=LD_LIBRARY_PATH]$LIBDIR:${LD_LIBRARY_PATH:-}"
+          echo "PYO3_PYTHON=$PY LIBDIR=$LIBDIR"
+          python --version
+        displayName: 'Configure Python for PyO3'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+      - bash: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "##vso[task.prependpath]$HOME/.cargo/bin"
+        displayName: 'Install Rust toolchain'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+      - task: CargoAuthenticate@0
+        displayName: 'Authenticate Cargo to CFS'
+        inputs:
+          configFile: '$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+      - bash: |
+          set -euo pipefail
+          rustc --version && cargo --version
+          cargo_config='$(Build.SourcesDirectory)/${{ parameters.CARGO_CONFIG_FILE }}'
+          chmod +x '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh'
+          '$(Build.SourcesDirectory)/eng/scripts/prepare-cargo-auth.sh' "$cargo_config"
+          cargo --config "$cargo_config" build --release --locked
+        displayName: 'Build R2P2 (cargo build --release)'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
+        workingDirectory: $(Build.SourcesDirectory)/workers/r2p2
       - task: UseDotNet@2
         displayName: 'Install .NET 10'
         inputs:
@@ -123,6 +160,11 @@ jobs:
           eng/scripts/test-setup.sh
         displayName: 'Install test python extension, dependencies and the worker'
         condition: or(eq(variables.isExtensionsRelease, true), eq(variables['USETESTPYTHONEXTENSIONS'], true))
+      - bash: |
+          chmod +x eng/scripts/stage-r2p2.sh
+          eng/scripts/stage-r2p2.sh
+        displayName: 'Stage R2P2 worker'
+        condition: and(succeeded(), eq(variables['R2P2_WORKER'], 'true'))
       - bash: |
           # The minimal image (1es-ubuntu-24.04-min) does not ship the Docker
           # Compose v2 CLI plugin, so `docker compose` fails with an
@@ -214,6 +256,8 @@ jobs:
           rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.pytest_cache || true
           rm -rf $(Pipeline.Workspace)/PythonSdkArtifact || true
           rm -rf $(Pipeline.Workspace)/PythonExtensionArtifact || true
+          rm -rf $(Build.SourcesDirectory)/workers/python/test_r2p2 || true
+          rm -rf $(Build.SourcesDirectory)/workers/r2p2/target || true
           
           # Clean Docker resources
           docker system prune -af --volumes || true

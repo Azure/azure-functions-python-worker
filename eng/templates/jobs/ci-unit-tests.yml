@@ -111,19 +111,19 @@ jobs:
           PYTHON_VERSION: $(PYTHON_VERSION)
           AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
-      
+
       - bash: |
           echo "Cleaning up after tests..."
           # Remove build artifacts and caches
           rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/build || true
           rm -rf $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}/.pytest_cache || true
-          
+
           # Clean Docker resources
           docker system prune -f || true
-          
+
           # Clean pip cache
           pip cache purge || true
-          
+
           echo "Disk space after cleanup:"
           df -h
         displayName: 'Cleanup after tests'

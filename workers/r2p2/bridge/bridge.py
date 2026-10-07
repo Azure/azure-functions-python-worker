@@ -780,7 +780,7 @@ def _flatten_cookies(cookies):
 
 def _datum_to_tuple(d):
     """runtime ``Datum`` -> datum tuple (for Rust to prost-encode)."""
-    if d is None:
+    if d is None or d.type is None:
         return None
     if d.type == 'http':
         v = d.value

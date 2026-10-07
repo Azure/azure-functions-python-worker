@@ -353,6 +353,7 @@ def test_datum_to_tuple_flattens_http_outputs(monkeypatch):
     assert result[1]["cookies"][0]["name"] == "session"
     assert result[1]["body"] == ("bytes", b"accepted")
     assert bridge._datum_to_tuple(None) is None
+    assert bridge._datum_to_tuple(_Datum(None, None)) is None
     assert bridge._datum_to_tuple(_Datum("value", "string")) == (
         "string", "value")
 

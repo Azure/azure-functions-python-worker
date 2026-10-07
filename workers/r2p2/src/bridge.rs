@@ -438,7 +438,7 @@ def invoke_native(function_id, invocation_id, inputs, metadata,
     assert retry_context["retry_count"] == 2
     assert retry_context["max_retry_count"] == 5
     assert retry_context["exception"]["message"] == "retry"
-        return (True, ("string", "native-result"),
+    return (True, ("string", "native-result"),
             [("output", ("int", 42))], None, None)
 
 def log_unhandled(value):

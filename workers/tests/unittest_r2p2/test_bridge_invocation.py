@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 import importlib
+import json
 from http.cookies import SimpleCookie
 from types import SimpleNamespace
 
@@ -358,6 +359,42 @@ def test_datum_to_tuple_flattens_http_outputs(monkeypatch):
         "string", "value")
 
 
+@pytest.mark.parametrize(
+    ("datum_type", "value"),
+    (("dict", {"value": [1, 2]}), ("list", [1, {"value": 2}])),
+)
+def test_invoke_native_serializes_generic_json_return_and_output(
+        monkeypatch, datum_type, value):
+    native = SimpleNamespace(run_invocation_sync=lambda *args: (
+        True, True, _Datum(value, datum_type),
+        [("output", _Datum(value, datum_type))], None, None))
+    monkeypatch.setattr(bridge, "_ensure_native", lambda: native)
+
+    result = bridge.invoke_native("fid", "inv", [], {})
+    expected = ("json", json.dumps(value))
+
+    assert result == (True, expected, [("output", expected)], None, None)
+
+
+def test_datum_to_tuple_converts_generic_bool_to_int():
+    assert bridge._datum_to_tuple(_Datum(True, "bool")) == ("int", 1)
+
+
+def test_invoke_native_returns_failure_when_output_is_not_json_serializable(
+        monkeypatch):
+    native = SimpleNamespace(run_invocation_sync=lambda *args: (
+        True, True, None,
+        [("output", _Datum({"nested": {1, 2}}, "dict"))], None, None))
+    monkeypatch.setattr(bridge, "_ensure_native", lambda: native)
+
+    result = bridge.invoke_native("fid", "inv", [], {})
+
+    assert result[:3] == (False, None, [])
+    assert "not JSON serializable" in result[3]
+    assert "_datum_to_tuple" in result[4]
+    assert "bridge.py" in result[4]
+
+
 def test_invoke_native_sync_success_converts_inputs_outputs_and_marks_once(
         monkeypatch):
     captured = {}
@@ -366,7 +403,7 @@ def test_invoke_native_sync_success_converts_inputs_outputs_and_marks_once(
         captured["args"] = args
         return (
             True, True, _Datum("return", "string"),
-            [("output", _Datum(42, "int"))], None)
+            [("output", _Datum(42, "int"))], None, None)
 
     native = SimpleNamespace(run_invocation_sync=run_invocation_sync)
     logs = []
@@ -382,7 +419,7 @@ def test_invoke_native_sync_success_converts_inputs_outputs_and_marks_once(
     bridge.invoke_native("fid", "inv-2", [], {})
 
     assert result == (
-        True, ("string", "return"), [("output", ("int", 42))], None)
+        True, ("string", "return"), [("output", ("int", 42))], None, None)
     args = captured["args"]
     assert args[:2] == ("inv-2", "fid")
     assert logs == [
@@ -392,11 +429,11 @@ def test_invoke_native_sync_success_converts_inputs_outputs_and_marks_once(
 
 def test_invoke_native_sync_failure_returns_exception(monkeypatch):
     native = SimpleNamespace(run_invocation_sync=lambda *args: (
-        True, False, None, [], "user failure"))
+        True, False, None, [], "user failure", "user stack"))
     monkeypatch.setattr(bridge, "_ensure_native", lambda: native)
 
     assert bridge.invoke_native("fid", "inv", [], {}) == (
-        False, None, [], "user failure")
+        False, None, [], "user failure", "user stack")
 
 
 def test_invoke_native_forwards_retry_exception_and_tolerates_log_error(
@@ -409,7 +446,7 @@ def test_invoke_native_forwards_retry_exception_and_tolerates_log_error(
 
     def run_invocation_sync(*args):
         captured["args"] = args
-        return (True, True, None, [], None)
+        return (True, True, None, [], None, None)
 
     monkeypatch.setattr(
         bridge, "_ensure_native",
@@ -427,7 +464,7 @@ def test_invoke_native_forwards_retry_exception_and_tolerates_log_error(
         },
     })
 
-    assert result == (True, None, [], None)
+    assert result == (True, None, [], None, None)
     assert captured["args"][6:8] == (2, 4)
     retry_exception = captured["args"][8]
     assert retry_exception.message == "retry message"
@@ -444,17 +481,19 @@ def test_invoke_native_falls_back_to_async_runtime(monkeypatch):
         return "async-token"
 
     native = SimpleNamespace(
-        run_invocation_sync=lambda *args: (False, False, None, [], None),
+        run_invocation_sync=lambda *args: (
+            False, False, None, [], None, None),
         invocation_request_native=invocation_request_native)
     monkeypatch.setattr(bridge, "_ensure_native", lambda: native)
     monkeypatch.setattr(bridge, "_Datum", _Datum)
     monkeypatch.setattr(
         bridge, "_run_coro",
-        lambda token: (True, _Datum("async", "string"), [], None))
+        lambda token: (
+            True, _Datum("async", "string"), [], None, None))
 
     result = bridge.invoke_native(
         "fid", "inv", [], {}, "trace-parent", "trace-state")
 
-    assert result == (True, ("string", "async"), [], None)
+    assert result == (True, ("string", "async"), [], None, None)
     assert captured["async_args"][:6] == (
         "inv", "fid", [], {}, "trace-parent", "trace-state")

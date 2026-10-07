@@ -128,7 +128,8 @@ pub fn handle(raw: &[u8]) -> Result<Option<Vec<u8>>> {
     // native fast path in `invoke`.
     if let Some(Content::InvocationRequest(r)) = &sm.content {
         let rid = sm.request_id.clone();
-        return Python::attach(|py| -> Result<Option<Vec<u8>>> {
+        let invocation_id = r.invocation_id.clone();
+        let result = Python::attach(|py| -> Result<Option<Vec<u8>>> {
             let bridge = py.import("bridge")?;
             let req = control::invocation_request_to_py(py, r)?;
             let resp = bridge.call_method1("handle_invocation_control", (req,))?;
@@ -137,11 +138,33 @@ pub fn handle(raw: &[u8]) -> Result<Option<Vec<u8>>> {
             }
             let ir = control::py_to_invocation_response(py, &resp, &r.invocation_id)?;
             let out = StreamingMessage {
-                request_id: rid,
+                request_id: rid.clone(),
                 content: Some(Content::InvocationResponse(ir)),
             };
             Ok(Some(out.encode_to_vec()))
         });
+        return match result {
+            Ok(response) => Ok(response),
+            Err(error) => {
+                let response = InvocationResponse {
+                    invocation_id,
+                    result: Some(StatusResult {
+                        status: status_result::Status::Failure as i32,
+                        exception: Some(RpcException {
+                            message: format!("{error:#}"),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                };
+                let out = StreamingMessage {
+                    request_id: rid,
+                    content: Some(Content::InvocationResponse(response)),
+                };
+                Ok(Some(out.encode_to_vec()))
+            }
+        };
     }
 
     Python::attach(|py| -> Result<Option<Vec<u8>>> {
@@ -284,12 +307,14 @@ pub fn invoke(req: &InvocationRequest) -> Result<InvocationResponse> {
         let ok: bool = result.get_item(0)?.extract()?;
         if !ok {
             let exc: Option<String> = result.get_item(3)?.extract()?;
+            let stack_trace: Option<String> = result.get_item(4)?.extract()?;
             return Ok(InvocationResponse {
                 invocation_id: req.invocation_id.clone(),
                 result: Some(StatusResult {
                     status: status_result::Status::Failure as i32,
                     exception: Some(RpcException {
                         message: exc.unwrap_or_default(),
+                        stack_trace: stack_trace.unwrap_or_default(),
                         ..Default::default()
                     }),
                     ..Default::default()
@@ -384,6 +409,12 @@ def handle_invocation_control(request):
     calls.append(("handle_invocation_control", request["invocation_id"]))
     if request["invocation_id"] == "invocation-none":
         return None
+    if request["invocation_id"] == "invocation-error":
+        return {
+            "return_value": ("unsupported", "value"),
+            "output_data": [],
+            "result": {"status": 1},
+        }
     return {
         "return_value": ("string", "control-result"),
         "output_data": [],
@@ -394,12 +425,12 @@ def invoke_native(function_id, invocation_id, inputs, metadata,
                   trace_parent, trace_state, retry_context):
     calls.append(("invoke_native", function_id, invocation_id))
     if function_id == "fail":
-        return (False, None, [], "native failure")
+        return (False, None, [], "native failure", "native stack")
     if function_id == "none":
         assert trace_parent == ""
         assert trace_state == ""
         assert retry_context is None
-        return (True, None, [], None)
+        return (True, None, [], None, None)
     assert inputs == [("input", ("string", "value"))]
     assert metadata == {"meta": ("int", 7)}
     assert trace_parent == "trace-parent"
@@ -407,7 +438,8 @@ def invoke_native(function_id, invocation_id, inputs, metadata,
     assert retry_context["retry_count"] == 2
     assert retry_context["max_retry_count"] == 5
     assert retry_context["exception"]["message"] == "retry"
-    return (True, ("string", "native-result"), [("output", ("int", 42))], None)
+        return (True, ("string", "native-result"),
+            [("output", ("int", 42))], None, None)
 
 def log_unhandled(value):
     calls.append(("log_unhandled", value))
@@ -659,6 +691,31 @@ def shutdown():
             other => panic!("expected InvocationResponse, got {other:?}"),
         }
 
+        let invocation_error = StreamingMessage {
+            request_id: "request-error".into(),
+            content: Some(Content::InvocationRequest(InvocationRequest {
+                invocation_id: "invocation-error".into(),
+                function_id: "control".into(),
+                ..Default::default()
+            })),
+        };
+        let encoded = handle(&invocation_error.encode_to_vec()).unwrap().unwrap();
+        let response = StreamingMessage::decode(encoded.as_slice()).unwrap();
+        assert_eq!(response.request_id, "request-error");
+        match response.content {
+            Some(Content::InvocationResponse(response)) => {
+                assert_eq!(response.invocation_id, "invocation-error");
+                let result = response.result.unwrap();
+                assert_eq!(result.status, Status::Failure as i32);
+                assert!(result
+                    .exception
+                    .unwrap()
+                    .message
+                    .contains("unsupported outbound datum type"));
+            }
+            other => panic!("expected InvocationResponse, got {other:?}"),
+        }
+
         let invocation_none = StreamingMessage {
             request_id: "request-none".into(),
             content: Some(Content::InvocationRequest(InvocationRequest {
@@ -741,7 +798,9 @@ def shutdown():
         .unwrap();
         let result = failure.result.unwrap();
         assert_eq!(result.status, Status::Failure as i32);
-        assert_eq!(result.exception.unwrap().message, "native failure");
+        let exception = result.exception.unwrap();
+        assert_eq!(exception.message, "native failure");
+        assert_eq!(exception.stack_trace, "native stack");
 
         let no_value = invoke(&InvocationRequest {
             invocation_id: "invocation-none".into(),

@@ -251,6 +251,30 @@ def test_typed_data_from_tuple_supports_http_model_scalars_and_empty():
         _ = scalar.not_a_typed_data_field
 
 
+def test_typed_data_from_tuple_builds_model_binding_collection():
+    data = protos.TypedData.from_tuple(("collection_model_binding_data", [
+        {
+            "version": "1.0",
+            "source": "AzureEventHubsEventData",
+            "content_type": "application/octet-stream",
+            "content": b"event-1",
+        },
+        {
+            "version": "1.0",
+            "source": "AzureEventHubsEventData",
+            "content_type": "application/octet-stream",
+            "content": b"event-2",
+        },
+    ]))
+
+    assert data.WhichOneof("data") == "collection_model_binding_data"
+    collection = data.collection_model_binding_data
+    assert len(collection.model_binding_data) == 2
+    assert all(isinstance(item, protos.ModelBindingData)
+               for item in collection.model_binding_data)
+    assert collection.model_binding_data[1].content == b"event-2"
+
+
 def test_parameter_binding_and_invocation_response_serialize_outputs():
     empty_binding = protos.ParameterBinding(name="empty")
     binding = protos.ParameterBinding(

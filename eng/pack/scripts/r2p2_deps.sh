@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 #
-# Build the R2P2 release artifact tree for packaging (Linux/X64 and Linux/Arm64).
+# Build the R2P2 release artifact tree for packaging (Linux and macOS).
 #
 # Unlike the Python workers (which are pure pip installs), the R2P2 is a
 # compiled binary that embeds CPython via PyO3. This script:
@@ -24,6 +24,7 @@ PYTHON_VERSION="${1:?usage: r2p2_deps.sh <python-version> [x64|arm64]}"
 ARCHITECTURE="${2:-x64}"
 DEPS="$BUILD_SOURCESDIRECTORY/deps"
 WORKER="$BUILD_SOURCESDIRECTORY/workers/r2p2"
+HOST_OS="$(uname -s)"
 
 if [[ "$ARCHITECTURE" != "x64" && "$ARCHITECTURE" != "arm64" ]]; then
    echo "Unsupported architecture: $ARCHITECTURE" >&2
@@ -47,7 +48,7 @@ cargo --version
 # --- Compile the release binary against the target interpreter ------------
 CARGO_ARGS=(build --release --locked)
 BINARY_PATH="$WORKER/target/release/r2p2"
-if [[ "$ARCHITECTURE" == "arm64" ]]; then
+if [[ "$HOST_OS" == "Linux" && "$ARCHITECTURE" == "arm64" ]]; then
    RUST_TARGET="aarch64-unknown-linux-gnu"
    rustup target add "$RUST_TARGET"
    sudo apt-get update
@@ -119,10 +120,28 @@ EOF
    export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
    CARGO_ARGS+=(--target "$RUST_TARGET")
    BINARY_PATH="$WORKER/target/$RUST_TARGET/release/r2p2"
+elif [[ "$HOST_OS" == "Darwin" && "$ARCHITECTURE" == "arm64" ]]; then
+   RUST_TARGET="aarch64-apple-darwin"
+   rustup target add "$RUST_TARGET"
+
+   export PYO3_PYTHON="$(command -v python)"
+   PYTHON_FRAMEWORK_BINARY="$(python -c 'import sysconfig; framework = sysconfig.get_config_var("PYTHONFRAMEWORK"); prefix = sysconfig.get_config_var("PYTHONFRAMEWORKPREFIX"); version = sysconfig.get_config_var("VERSION"); print(f"{prefix}/{framework}.framework/Versions/{version}/{framework}")')"
+   PYTHON_ARCHITECTURES="$(lipo -archs "$PYTHON_FRAMEWORK_BINARY")"
+   if [[ " $PYTHON_ARCHITECTURES " != *" arm64 "* ]]; then
+      echo "The selected Python framework cannot target macOS ARM64; found: $PYTHON_ARCHITECTURES" >&2
+      exit 1
+   fi
+
+   CARGO_ARGS+=(--target "$RUST_TARGET")
+   BINARY_PATH="$WORKER/target/$RUST_TARGET/release/r2p2"
 else
    export PYO3_PYTHON="$(command -v python)"
    PY_LIBDIR="$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')"
-   export LD_LIBRARY_PATH="${PY_LIBDIR}:${LD_LIBRARY_PATH:-}"
+   if [[ "$HOST_OS" == "Darwin" ]]; then
+      export DYLD_LIBRARY_PATH="${PY_LIBDIR}:${DYLD_LIBRARY_PATH:-}"
+   else
+      export LD_LIBRARY_PATH="${PY_LIBDIR}:${LD_LIBRARY_PATH:-}"
+   fi
 fi
 ( cd "$WORKER" && cargo "${CARGO_ARGS[@]}" )
 

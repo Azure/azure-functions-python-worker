@@ -20,8 +20,9 @@ Contract:
         function_id: str,
         inputs: list[tuple[str, Datum]],          # (param name, decoded Datum)
         trigger_metadata: dict[str, Datum],
-    ) -> tuple[bool, Optional[Datum], list[tuple[str, Datum]], Optional[str]]
-        # (ok, return_datum, output_data, exception_text)
+    ) -> tuple[bool, Optional[Datum], list[tuple[str, Datum]],
+               Optional[str], Optional[str]]
+        # (ok, return_datum, output_data, exception_text, exception_traceback)
 
 Scope: this native path supports the classic (non http-v2) binding path,
 sync and async functions, input/output bindings and $return. Deferred (SDK-type)
@@ -29,6 +30,7 @@ bindings and the http-v2 streaming path are intentionally out of scope here and
 fall back through the protobuf control path if ever needed.
 """
 import sys
+import traceback
 
 from .bindings.context import get_context
 from .bindings.meta import get_binding, get_datum, is_trigger_binding
@@ -151,7 +153,7 @@ async def invocation_request_native(invocation_id, function_id, inputs,
     threadpool = get_threadpool_executor()
     fi = _functions.get_function(function_id)
     if fi is None:
-        return (False, None, [], "function %s not loaded" % function_id)
+        return (False, None, [], "function %s not loaded" % function_id, "")
 
     try:
         args = _decode_inputs(fi, inputs, trigger_metadata)
@@ -188,11 +190,11 @@ async def invocation_request_native(invocation_id, function_id, inputs,
         return_datum = _encode_return(fi, call_result)
 
         sys.stdout.flush()
-        return (True, return_datum, output_data, None)
+        return (True, return_datum, output_data, None, None)
 
     except Exception as ex:  # noqa - surfaced to the Host as a failed invocation
         logger.exception("Native invocation failed")
-        return (False, None, [], repr(ex))
+        return (False, None, [], repr(ex), traceback.format_exc())
 
 
 def run_invocation_sync(invocation_id, function_id, inputs, trigger_metadata,
@@ -200,20 +202,22 @@ def run_invocation_sync(invocation_id, function_id, inputs, trigger_metadata,
                         max_retry_count=0, retry_exception=None):
     """Synchronous native invocation for *sync* customer functions.
 
-    Runs the handler directly on the calling thread (no asyncio loop, no
-    ``run_in_executor`` bounce). With the Rust transport dispatching each call
-    on its own thread, this avoids funneling sync handlers through a single
-    event loop, trimming per-invocation overhead on the hot path.
+    Queues the handler on the runtime's configured threadpool without
+    funneling the invocation through the asyncio loop. This preserves
+    ``PYTHON_THREADPOOL_THREAD_COUNT`` for the native path while keeping datum
+    conversion on the Rust-dispatched calling thread.
 
-    Returns ``(handled, ok, return_datum, output_data, exception_text)``.
+    Returns ``(handled, ok, return_datum, output_data, exception_text,
+    exception_traceback)``.
     ``handled=False`` means the function is ``async`` and the caller should use
     the coroutine path (:func:`invocation_request_native`) instead.
     """
     fi = _functions.get_function(function_id)
     if fi is None:
-        return (True, False, None, [], "function %s not loaded" % function_id)
+        return (True, False, None, [],
+                "function %s not loaded" % function_id, "")
     if fi.is_async:
-        return (False, None, None, [], None)
+        return (False, None, None, [], None, None)
 
     try:
         args = _decode_inputs(fi, inputs, trigger_metadata)
@@ -223,14 +227,18 @@ def run_invocation_sync(invocation_id, function_id, inputs, trigger_metadata,
 
         # run_sync_func calls configure_opentelemetry(fi_context) when otel is
         # available, so the trace context prepared above parents customer spans.
-        call_result = run_sync_func(invocation_id, fi_context, fi.func, args)
+        threadpool = get_threadpool_executor()
+        if threadpool is None:
+            raise RuntimeError("threadpool executor is not initialized")
+        call_result = threadpool.submit(
+            run_sync_func, invocation_id, fi_context, fi.func, args).result()
 
         _check_return(fi, call_result)
         output_data = _collect_output(fi, args)
         return_datum = _encode_return(fi, call_result)
 
-        return (True, True, return_datum, output_data, None)
+        return (True, True, return_datum, output_data, None, None)
 
     except Exception as ex:  # noqa - surfaced to the Host as a failed invocation
         logger.exception("Native sync invocation failed")
-        return (True, False, None, [], repr(ex))
+        return (True, False, None, [], repr(ex), traceback.format_exc())

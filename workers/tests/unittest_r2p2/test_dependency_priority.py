@@ -8,8 +8,10 @@
 # prioritize_customer_dependencies`` System log (matched by test_flex_consumption
 # and Kusto).
 
+import importlib
 import logging
 import sys
+from types import ModuleType
 
 import pytest
 
@@ -121,6 +123,77 @@ def test_prioritization_without_customer_deps(monkeypatch, tmp_path,
     assert cx == ""
     assert sys.path[0] == str(workers_dir)
     assert sys.path[-1] == str(app_dir)
+
+
+def test_prioritization_reloads_worker_modules_from_customer_deps(
+        monkeypatch, tmp_path, restore_sys_path):
+    workers_dir = tmp_path / "workers"
+    app_dir = tmp_path / "app"
+    site = app_dir / ".python_packages" / "lib" / "site-packages"
+    for root, version in ((workers_dir, "worker"), (site, "customer")):
+        package = root / "r2p2_regular_dep"
+        package.mkdir(parents=True)
+        package.joinpath("__init__.py").write_text(
+            f"VERSION = {version!r}\n", encoding="utf-8")
+        namespace = root / "r2p2_namespace_dep"
+        namespace.mkdir()
+        namespace.joinpath("child.py").write_text(
+            f"VERSION = {version!r}\n", encoding="utf-8")
+
+    module_names = (
+        "r2p2_regular_dep",
+        "r2p2_namespace_dep",
+        "r2p2_namespace_dep.child",
+    )
+    monkeypatch.setattr(bridge, "_workers_dir", str(workers_dir))
+    sys.path.insert(0, str(workers_dir))
+    try:
+        regular = importlib.import_module("r2p2_regular_dep")
+        namespace_child = importlib.import_module(
+            "r2p2_namespace_dep.child")
+        assert regular.VERSION == "worker"
+        assert namespace_child.VERSION == "worker"
+
+        bridge._prioritize_customer_dependencies(str(app_dir))
+
+        regular = importlib.import_module("r2p2_regular_dep")
+        namespace_child = importlib.import_module(
+            "r2p2_namespace_dep.child")
+        assert regular.VERSION == "customer"
+        assert namespace_child.VERSION == "customer"
+    finally:
+        for module_name in module_names:
+            sys.modules.pop(module_name, None)
+
+
+def test_clear_modules_from_path_preserves_worker_internals(
+        monkeypatch, tmp_path):
+    workers_dir = tmp_path / "workers"
+    package_dir = workers_dir / "package"
+    package_dir.mkdir(parents=True)
+    stale_module = ModuleType("r2p2_stale_dep")
+    stale_module.__file__ = str(package_dir / "stale.py")
+    monkeypatch.setitem(sys.modules, stale_module.__name__, stale_module)
+
+    protected_names = (
+        "bridge.internal_probe",
+        "protos_adapter.internal_probe",
+        "azure_functions_runtime.internal_probe",
+        "azure_functions_runtime_v1.internal_probe",
+    )
+    for module_name in protected_names:
+        module = ModuleType(module_name)
+        module.__file__ = str(package_dir / f"{module_name}.py")
+        monkeypatch.setitem(sys.modules, module_name, module)
+
+    monkeypatch.setitem(
+        sys.path_importer_cache, str(package_dir), object())
+
+    bridge._clear_modules_from_path(str(workers_dir))
+
+    assert stale_module.__name__ not in sys.modules
+    assert all(name in sys.modules for name in protected_names)
+    assert str(package_dir) not in sys.path_importer_cache
 
 
 def test_prioritization_emits_finished_log(monkeypatch, tmp_path,

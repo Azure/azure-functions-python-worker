@@ -66,7 +66,7 @@ def test_invoke_native_forwards_retry_context(monkeypatch):
 
     def run_invocation_sync(*args):
         captured["args"] = args
-        return (True, True, None, [], None)
+        return (True, True, None, [], None, None)
 
     native = SimpleNamespace(run_invocation_sync=run_invocation_sync)
     monkeypatch.setattr(bridge, "_ensure_native", lambda: native)
@@ -78,7 +78,7 @@ def test_invoke_native_forwards_retry_context(monkeypatch):
                        "stack_trace": "stack", "source": "host",
                        "type": "ExampleError"}})
 
-    assert result == (True, None, [], None)
+    assert result == (True, None, [], None, None)
     assert captured["args"][6:8] == (2, 3)
     retry_exception = captured["args"][8]
     assert retry_exception.message == "previous attempt failed"

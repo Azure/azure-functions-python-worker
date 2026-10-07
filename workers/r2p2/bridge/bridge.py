@@ -35,12 +35,13 @@ Contract exposed to Rust (Rust owns all prost encoding/decoding):
     shutdown() -> None
 """
 import asyncio
+import json
 import logging
 import os
 import sys
 import threading
 import traceback
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 
 # Protobuf-free ``protos`` stand-in (see protos_adapter.py). The runtime
 # handlers are transport-agnostic: they read request fields off
@@ -299,6 +300,54 @@ def _customer_deps_path(function_app_directory):
     return ""
 
 
+_PROTECTED_MODULE_PREFIXES = (
+    "bridge",
+    "protos_adapter",
+    "azure_functions_runtime",
+    "azure_functions_runtime_v1",
+)
+
+
+def _path_is_under(path, root):
+    try:
+        normalized_path = os.path.normcase(os.path.realpath(os.fspath(path)))
+        normalized_root = os.path.normcase(os.path.realpath(os.fspath(root)))
+        return os.path.commonpath((normalized_path, normalized_root)) == \
+            normalized_root
+    except (OSError, TypeError, ValueError):
+        return False
+
+
+def _clear_modules_from_path(path):
+    """Clear cached imports rooted under *path*, preserving worker internals."""
+    if not path:
+        return
+
+    for cache_path in list(sys.path_importer_cache):
+        if _path_is_under(cache_path, path):
+            sys.path_importer_cache.pop(cache_path, None)
+
+    for module_name, module in list(sys.modules.items()):
+        if any(module_name == prefix or module_name.startswith(prefix + ".")
+               for prefix in _PROTECTED_MODULE_PREFIXES):
+            continue
+        if not isinstance(module, ModuleType):
+            continue
+        try:
+            module_paths = []
+            module_file = getattr(module, "__file__", None)
+            if module_file:
+                module_paths.append(module_file)
+            module_path = getattr(module, "__path__", None)
+            if module_path:
+                module_paths.extend(module_path)
+            if any(_path_is_under(module_path, path)
+                   for module_path in module_paths):
+                sys.modules.pop(module_name, None)
+        except Exception:
+            continue
+
+
 def _prioritize_customer_dependencies(function_app_directory):
     """Order ``sys.path`` so the CUSTOMER's dependencies win over the worker's
     bundled deps -- mirroring proxy_worker
@@ -311,18 +360,22 @@ def _prioritize_customer_dependencies(function_app_directory):
 
     Called from ``configure()`` at startup AND from ``handle_control`` on
     ``function_environment_reload_request`` so placeholder specialization
-    (Linux Consumption / Flex) re-prioritizes the newly mounted customer deps
+    (Flex Consumption) re-prioritizes the newly mounted customer deps
     -- the v2 runtime's reload handler only ``sys.path.append``s the app dir and
     would otherwise leave customer packages at the back. Returns the resolved
-    customer deps path (``""`` if none).
+    customer deps path (``""`` if none). Before promoting customer deps, cached
+    modules loaded from the worker path are cleared while bridge and runtime
+    modules remain pinned.
 
     Emits the same ``Finished prioritize_customer_dependencies: ...`` System log
     as the classic proxy worker's ``DependencyManager`` so existing Kusto
     queries and tests (e.g. test_flex_consumption) keep matching unchanged.
     """
+    cx_deps = _customer_deps_path(function_app_directory)
+    if cx_deps and _workers_dir:
+        _clear_modules_from_path(_workers_dir)
     if _workers_dir:
         _reprioritize_path(_workers_dir, front=True)
-    cx_deps = _customer_deps_path(function_app_directory)
     if cx_deps:
         _reprioritize_path(cx_deps, front=True)
     if function_app_directory:
@@ -340,13 +393,56 @@ def _prioritize_customer_dependencies(function_app_directory):
     return cx_deps
 
 
+def _select_runtime(function_app_directory):
+    """Select the runtime for the app currently mounted at *directory*."""
+    global _rt, _rt_name, _rt_tls, _function_app_directory, \
+        _native, _Datum
+
+    script_file = os.environ.get(
+        "PYTHON_SCRIPT_FILE_NAME", "function_app.py")
+    v2_scriptfile = os.path.join(function_app_directory or "", script_file)
+    if os.path.exists(v2_scriptfile):
+        import azure_functions_runtime as rt  # noqa
+        runtime_name = "azure_functions_runtime"
+    else:
+        import azure_functions_runtime_v1 as rt  # noqa
+        runtime_name = "azure_functions_runtime_v1"
+
+    runtime_changed = _rt is not rt or _rt_name != runtime_name
+    app_changed = _function_app_directory != function_app_directory
+    if runtime_changed and _rt is not None:
+        try:
+            _rt.stop_threadpool_executor()
+        except AttributeError:
+            pass
+        except Exception as e:
+            _log(f"WARNING: could not stop previous runtime threadpool: {e}")
+    _rt = rt
+    _rt_name = runtime_name
+    _function_app_directory = function_app_directory
+
+    if runtime_changed:
+        _native = None
+        _Datum = None
+    if runtime_changed or app_changed:
+        _control_path_cache.clear()
+
+    if runtime_changed or _rt_tls is None:
+        try:
+            import importlib
+            _rt_tls = importlib.import_module(
+                f"{_rt_name}.bindings.context")._invocation_id_local
+        except Exception as e:
+            _rt_tls = None
+            _log(f"WARNING: could not cache runtime thread-local for log "
+                 f"correlation: {e}")
+
+
 def configure(workers_dir, function_app_directory, host, request_id="",
               log_sink=None, worker_id=""):
     """Wire up imports and the runtime. Called once from Rust before use."""
-    global _rt, _rt_name, _rt_tls, _host, _function_app_directory, \
-        _log_sink, _request_id, _workers_dir, _worker_id
+    global _host, _log_sink, _request_id, _workers_dir, _worker_id
     _host = host or ""
-    _function_app_directory = function_app_directory
     _log_sink = log_sink
     _request_id = request_id or ""
     _worker_id = worker_id or ""
@@ -363,28 +459,7 @@ def configure(workers_dir, function_app_directory, host, request_id="",
     # classic v1 (function.json) app and uses the v1 runtime. Both runtimes
     # expose the same public API + a ``native_invocation`` fast path, so the
     # rest of the bridge is runtime-agnostic.
-    script_file = os.environ.get(
-        "PYTHON_SCRIPT_FILE_NAME", "function_app.py")
-    v2_scriptfile = os.path.join(function_app_directory or "", script_file)
-    if os.path.exists(v2_scriptfile):
-        import azure_functions_runtime as rt  # noqa
-        _rt_name = "azure_functions_runtime"
-    else:
-        import azure_functions_runtime_v1 as rt  # noqa
-        _rt_name = "azure_functions_runtime_v1"
-
-    _rt = rt
-
-    # Cache the runtime's Context thread-local so _current_invocation_id can
-    # correlate logs emitted from user-spawned threads (see its docstring).
-    try:
-        import importlib
-        _rt_tls = importlib.import_module(
-            f"{_rt_name}.bindings.context")._invocation_id_local
-    except Exception as e:
-        _rt_tls = None
-        _log(f"WARNING: could not cache runtime thread-local for log "
-             f"correlation: {e}")
+    _select_runtime(function_app_directory)
 
     _start_loop()
     # Route worker/system + user logs to the Host as RpcLog now that the runtime
@@ -527,14 +602,16 @@ def handle_control(request_type, req):
         except AttributeError:
             pass
     elif request_type == "function_environment_reload_request":
-        # Placeholder specialization (Linux Consumption / Flex): the customer
+        # Flex Consumption placeholder specialization: the customer
         # app and its ``.python_packages`` are only mounted now, so re-run the
         # dependency prioritization -- the v2 runtime's reload handler merely
         # ``sys.path.append``s the app dir and would otherwise leave customer
         # packages at the back. Mirrors proxy_worker's
-        # DependencyManager.prioritize_customer_dependencies on env reload.
+        # DependencyManager.prioritize_customer_dependencies and
+        # reload_library_worker calls on env reload.
         app_dir = req.get("function_app_directory", "")
         _prioritize_customer_dependencies(app_dir)
+        _select_runtime(app_dir)
         _log_using_library()
 
     # worker_init / env_reload set the runtime's module-global ``protos`` from
@@ -548,6 +625,11 @@ def handle_control(request_type, req):
         _log(f"{request_type} handler error:\n" + traceback.format_exc(),
              level="ERROR")
         raise
+    if request_type == "function_environment_reload_request":
+        try:
+            _rt.start_threadpool_executor()
+        except AttributeError:
+            pass
     if resp is None:
         return None
     return resp.to_dict()
@@ -782,6 +864,10 @@ def _datum_to_tuple(d):
     """runtime ``Datum`` -> datum tuple (for Rust to prost-encode)."""
     if d is None or d.type is None:
         return None
+    if d.type in ('dict', 'list'):
+        return ('json', json.dumps(d.value))
+    if d.type == 'bool':
+        return ('int', int(d.value))
     if d.type == 'http':
         v = d.value
         return ('http', {
@@ -797,7 +883,8 @@ def invoke_native(function_id, invocation_id, inputs, trigger_metadata,
                   trace_parent="", trace_state="", retry_context=None):
     """Entry called by Rust for the native invocation hot path.
 
-    Returns ``(ok, return_datum_tuple, output_data_tuples, exception_text)``.
+    Returns ``(ok, return_datum_tuple, output_data_tuples, exception_text,
+    exception_traceback)``.
     ``trace_parent``/``trace_state`` are the W3C trace context from the Host,
     forwarded to the native runtime so customer OpenTelemetry spans are parented
     correctly (parity with the control path's ``configure_opentelemetry``).
@@ -834,21 +921,24 @@ def invoke_native(function_id, invocation_id, inputs, trigger_metadata,
     # Prefer the synchronous native path: it runs the handler directly on THIS
     # (Rust-dispatched) thread with no event-loop funnel. async handlers are
     # not "handled" here and fall through to the single-loop coroutine path.
-    handled, ok, ret, outputs, exc = ni.run_invocation_sync(
+    handled, ok, ret, outputs, exc, stack_trace = ni.run_invocation_sync(
         invocation_id, function_id, in_datums, meta,
         trace_parent, trace_state, retry_count, max_retry_count,
         retry_exception)
     if not handled:
-        ok, ret, outputs, exc = _run_coro(
+        ok, ret, outputs, exc, stack_trace = _run_coro(
             ni.invocation_request_native(
                 invocation_id, function_id, in_datums, meta,
                 trace_parent, trace_state, retry_count, max_retry_count,
                 retry_exception))
     if not ok:
-        return (False, None, [], exc)
-    ret_tuple = _datum_to_tuple(ret)
-    out_tuples = [(name, _datum_to_tuple(d)) for name, d in outputs]
-    return (True, ret_tuple, out_tuples, None)
+        return (False, None, [], exc, stack_trace)
+    try:
+        ret_tuple = _datum_to_tuple(ret)
+        out_tuples = [(name, _datum_to_tuple(d)) for name, d in outputs]
+    except Exception as ex:
+        return (False, None, [], repr(ex), traceback.format_exc())
+    return (True, ret_tuple, out_tuples, None, None)
 
 
 def shutdown():

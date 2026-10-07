@@ -396,6 +396,9 @@ def test_handle_control_reload_reprioritizes_and_none_response(monkeypatch):
         bridge, "_prioritize_customer_dependencies",
         lambda directory: calls.append(("priority", directory)))
     monkeypatch.setattr(
+        bridge, "_select_runtime",
+        lambda directory: calls.append(("runtime", directory)))
+    monkeypatch.setattr(
         bridge, "_log_using_library", lambda: calls.append("library"))
     monkeypatch.setattr(bridge, "_log_control_received", lambda *args: None)
     monkeypatch.setattr(bridge, "_run_coro", lambda token: None)
@@ -405,7 +408,80 @@ def test_handle_control_reload_reprioritizes_and_none_response(monkeypatch):
         {"function_app_directory": "/specialized"})
 
     assert result is None
-    assert calls == [("priority", "/specialized"), "library"]
+    assert calls == [
+        ("priority", "/specialized"),
+        ("runtime", "/specialized"),
+        "library",
+    ]
+
+
+def test_handle_control_reload_switches_placeholder_runtime(
+        monkeypatch, tmp_path, reset_bridge_state):
+    placeholder_dir = tmp_path / "placeholder"
+    placeholder_dir.mkdir()
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+    app_dir.joinpath("function_app.py").write_text("", encoding="utf-8")
+
+    calls = []
+    v1_runtime = _runtime_module("azure_functions_runtime_v1")
+    v1_runtime.stop_threadpool_executor = (
+        lambda: calls.append("v1-threadpool-stop"))
+    v1_runtime.function_environment_reload_request = (
+        lambda request: calls.append("v1-reload") or "v1-reload")
+    v1_runtime.functions_metadata_request = (
+        lambda request: "v1-metadata")
+    v2_runtime = _runtime_module("azure_functions_runtime")
+    v2_runtime.start_threadpool_executor = (
+        lambda: calls.append("v2-threadpool"))
+    v2_runtime.function_environment_reload_request = (
+        lambda request: calls.append("v2-reload") or "v2-reload")
+    v2_runtime.functions_metadata_request = (
+        lambda request: "v2-metadata")
+    monkeypatch.setitem(sys.modules, v1_runtime.__name__, v1_runtime)
+    monkeypatch.setitem(sys.modules, v2_runtime.__name__, v2_runtime)
+    contexts = {}
+    for runtime_name in (v1_runtime.__name__, v2_runtime.__name__):
+        context = ModuleType(f"{runtime_name}.bindings.context")
+        context._invocation_id_local = threading.local()
+        contexts[runtime_name] = context
+        monkeypatch.setitem(sys.modules, context.__name__, context)
+
+    monkeypatch.setattr(
+        bridge, "_prioritize_customer_dependencies", lambda directory: "")
+    monkeypatch.setattr(bridge, "_start_loop", lambda: None)
+    monkeypatch.setattr(bridge, "_install_rpc_logging", lambda: None)
+    monkeypatch.setattr(bridge, "_log_control_received", lambda *args: None)
+    monkeypatch.setattr(bridge, "_log_using_library", lambda: None)
+    monkeypatch.setattr(
+        bridge, "_run_coro", lambda token: _Response({"kind": token}))
+
+    bridge.configure("", str(placeholder_dir), None)
+    assert bridge._rt_name == "azure_functions_runtime_v1"
+    stale_native = object()
+    stale_datum = object()
+    monkeypatch.setattr(bridge, "_native", stale_native)
+    monkeypatch.setattr(bridge, "_Datum", stale_datum)
+    monkeypatch.setattr(bridge, "_control_path_cache", {"old-id": True})
+
+    reload_response = bridge.handle_control(
+        "function_environment_reload_request",
+        {"function_app_directory": str(app_dir)})
+    metadata_response = bridge.handle_control(
+        "functions_metadata_request", {})
+
+    assert reload_response == {"kind": "v2-reload"}
+    assert metadata_response == {"kind": "v2-metadata"}
+    assert calls == [
+        "v1-threadpool-stop", "v2-reload", "v2-threadpool"]
+    assert bridge._rt is v2_runtime
+    assert bridge._rt_name == "azure_functions_runtime"
+    assert bridge._rt_tls is contexts[
+        "azure_functions_runtime"]._invocation_id_local
+    assert bridge._function_app_directory == str(app_dir)
+    assert bridge._native is None
+    assert bridge._Datum is None
+    assert bridge._control_path_cache == {}
 
 
 def test_handle_control_unknown_and_handler_error(monkeypatch):

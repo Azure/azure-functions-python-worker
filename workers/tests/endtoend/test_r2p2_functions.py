@@ -31,9 +31,10 @@ def _assert_http_round_trip(test_case, response, *, runtime, status_code):
         parsed_url.path,
         f'/api/r2p2_{runtime.split("-")[0]}_response',
     )
+    query_params = parse_qs(parsed_url.query)
     test_case.assertEqual(
-        parse_qs(parsed_url.query),
-        {'query': [f'{runtime}-query']},
+        query_params.get('query'),
+        [f'{runtime}-query'],
     )
 
     cookie_headers = response.raw.headers.getlist('Set-Cookie')

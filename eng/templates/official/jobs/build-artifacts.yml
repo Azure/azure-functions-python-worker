@@ -337,6 +337,8 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(normalizedPythonVersion)_OSX_ARM64'
       osName: 'OSX'
+      architecture: 'arm64'
+      hostArchitecture: 'x64'
 - job: Build_R2P2_LINUX_ARM64
   timeoutInMinutes: 240
   pool:

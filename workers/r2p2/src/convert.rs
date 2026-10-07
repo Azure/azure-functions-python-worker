@@ -21,7 +21,9 @@ use anyhow::{anyhow, Result};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyString, PyTuple};
 
-use crate::pb::messages::{typed_data, ModelBindingData, RpcHttp, RpcHttpCookie, TypedData};
+use crate::pb::messages::{
+    typed_data, CollectionModelBindingData, ModelBindingData, RpcHttp, RpcHttpCookie, TypedData,
+};
 use crate::pb::{
     nullable_bool, nullable_double, nullable_string, nullable_timestamp, NullableBool,
     NullableDouble, NullableString, NullableTimestamp,
@@ -51,6 +53,10 @@ pub fn typed_data_to_tuple<'py>(py: Python<'py>, td: &TypedData) -> Result<Bound
             "model_binding_data",
             model_binding_data_to_dict(py, m)?.into_any(),
         ),
+        typed_data::Data::CollectionModelBindingData(c) => (
+            "collection_model_binding_data",
+            collection_model_binding_data_to_list(py, c)?.into_any(),
+        ),
         typed_data::Data::CollectionString(c) => (
             "collection_string",
             pyo3::types::PyList::new(py, &c.string)?.into_any(),
@@ -70,12 +76,6 @@ pub fn typed_data_to_tuple<'py>(py: Python<'py>, td: &TypedData) -> Result<Bound
             "collection_double",
             pyo3::types::PyList::new(py, &c.double)?.into_any(),
         ),
-        other => {
-            return Err(anyhow!(
-                "native path: unsupported inbound TypedData variant: {:?}",
-                std::mem::discriminant(other)
-            ))
-        }
     };
     let tup = PyTuple::new(py, vec![PyString::new(py, type_str).into_any(), value])?;
     Ok(tup.into_any())
@@ -108,6 +108,18 @@ fn model_binding_data_to_dict<'py>(
     d.set_item("content_type", &m.content_type)?;
     d.set_item("content", PyBytes::new(py, &m.content))?;
     Ok(d)
+}
+
+/// Build a collection_model_binding_data INPUT list of primitive dicts.
+fn collection_model_binding_data_to_list<'py>(
+    py: Python<'py>,
+    collection: &CollectionModelBindingData,
+) -> Result<Bound<'py, pyo3::types::PyList>> {
+    let values = pyo3::types::PyList::empty(py);
+    for model in &collection.model_binding_data {
+        values.append(model_binding_data_to_dict(py, model)?)?;
+    }
+    Ok(values)
 }
 
 /// Python datum tuple (or `None`) -> prost `TypedData`.
@@ -594,16 +606,41 @@ mod tests {
     }
 
     #[test]
-    fn unsupported_collection_model_binding_data_errors() {
+    fn collection_model_binding_data_maps_to_primitive_dicts() {
         Python::attach(|py| {
             let collection = crate::pb::messages::CollectionModelBindingData {
-                model_binding_data: Vec::new(),
+                model_binding_data: vec![
+                    crate::pb::messages::ModelBindingData {
+                        version: "1.0".into(),
+                        source: "AzureEventHubsEventData".into(),
+                        content_type: "application/octet-stream".into(),
+                        content: b"event-1".to_vec(),
+                    },
+                    crate::pb::messages::ModelBindingData {
+                        version: "1.0".into(),
+                        source: "AzureEventHubsEventData".into(),
+                        content_type: "application/octet-stream".into(),
+                        content: b"event-2".to_vec(),
+                    },
+                ],
             };
             let value = td(typed_data::Data::CollectionModelBindingData(collection));
-            let error = typed_data_to_tuple(py, &value).unwrap_err();
-            assert!(error
-                .to_string()
-                .contains("unsupported inbound TypedData variant"));
+            let tup = typed_data_to_tuple(py, &value).unwrap();
+
+            let kind: String = tup.get_item(0).unwrap().extract().unwrap();
+            assert_eq!(kind, "collection_model_binding_data");
+            let items = tup.get_item(1).unwrap();
+            assert_eq!(items.len().unwrap(), 2);
+            assert_eq!(
+                items
+                    .get_item(1)
+                    .unwrap()
+                    .get_item("content")
+                    .unwrap()
+                    .extract::<Vec<u8>>()
+                    .unwrap(),
+                b"event-2"
+            );
         });
     }
 

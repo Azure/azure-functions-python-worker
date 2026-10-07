@@ -360,6 +360,7 @@ class RpcLog:
 #   http in -> ("http", {method,url,headers,params,query,body:<tuple|None>})
 #   http out-> ("http", {status_code:str, headers:{..}, body:<tuple|None>, ...})
 #   mbd in  -> ("model_binding_data", {version,source,content_type,content})
+#   cmbd in -> ("collection_model_binding_data", [{mbd}, ...])
 #   coll in -> ("collection_string"|..., [values])
 #   empty   -> None
 # Rust builds the inbound tuples with prost; ``TypedData.from_tuple`` turns them
@@ -376,6 +377,14 @@ class ModelBindingData:
         self.source = source
         self.content_type = content_type
         self.content = content
+
+
+class CollectionModelBindingData:
+    """Deferred batch payload with the protobuf repeated-field shape."""
+    __slots__ = ("model_binding_data",)
+
+    def __init__(self, model_binding_data=None):
+        self.model_binding_data = list(model_binding_data or [])
 
 
 class _Collection:
@@ -568,6 +577,17 @@ class TypedData:
                 content_type=val.get("content_type", ""),
                 content=val.get("content", b""),
             ))
+        if kind == "collection_model_binding_data":
+            collection = CollectionModelBindingData([
+                ModelBindingData(
+                    version=item.get("version", ""),
+                    source=item.get("source", ""),
+                    content_type=item.get("content_type", ""),
+                    content=item.get("content", b""),
+                )
+                for item in val
+            ])
+            return cls(collection_model_binding_data=collection)
         if kind in ("collection_string", "collection_bytes",
                     "collection_sint64", "collection_double"):
             field = kind.split("_", 1)[1]

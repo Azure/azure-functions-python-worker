@@ -16,20 +16,14 @@ jobs:
           PYTHON_VERSION: '3.10'
           STORAGE_CONNECTION: $(LinuxStorageConnectionString310)
           SQL_CONNECTION: $(LinuxSqlConnectionString310)
-          EVENTGRID_URI: $(LinuxEventGridTopicUriString310)
-          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString310)
         Python311:
           PYTHON_VERSION: '3.11'
           STORAGE_CONNECTION: $(LinuxStorageConnectionString311)
           SQL_CONNECTION: $(LinuxSqlConnectionString311)
-          EVENTGRID_URI: $(LinuxEventGridTopicUriString311)
-          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString311)
         Python312:
           PYTHON_VERSION: '3.12'
           STORAGE_CONNECTION: $(LinuxStorageConnectionString312)
           SQL_CONNECTION: $(LinuxSqlConnectionString312)
-          EVENTGRID_URI: $(LinuxEventGridTopicUriString312)
-          EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString312)
 
     steps:
       - task: PipAuthenticate@1
@@ -54,7 +48,5 @@ jobs:
           AzureWebJobsStorage: $(STORAGE_CONNECTION)
           STORAGE_CONNECTION: $(STORAGE_CONNECTION)
           AzureWebJobsSqlConnectionString: $(SQL_CONNECTION)
-          AzureWebJobsEventGridTopicUri: $(EVENTGRID_URI)
-          AzureWebJobsEventGridConnectionKey: $(EVENTGRID_CONNECTION)
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         displayName: "Running $(PYTHON_VERSION) Docker Dedicated tests"

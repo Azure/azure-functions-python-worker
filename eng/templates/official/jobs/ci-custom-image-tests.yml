@@ -36,7 +36,5 @@ jobs:
           AzureWebJobsEventHubConnectionString: $(LinuxEventHubConnectionString311)
           AzureWebJobsServiceBusConnectionString: $(LinuxServiceBusConnectionString311)
           AzureWebJobsSqlConnectionString: $(LinuxSqlConnectionString311)
-          AzureWebJobsEventGridTopicUri: $(LinuxEventGridTopicUriString311)
-          AzureWebJobsEventGridConnectionKey: $(LinuxEventGridConnectionKeyString311)
         workingDirectory: $(Build.SourcesDirectory)/${{ parameters.PROJECT_DIRECTORY }}
         displayName: "Running Python DockerCustom tests"

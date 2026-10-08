@@ -1,5 +1,5 @@
 {
-  "scriptFile": "__init__.py",
+  "scriptFile": "main.py",
   "bindings": [
     {
       "type": "httpTrigger",
@@ -11,8 +11,8 @@
       "type": "blob",
       "direction": "in",
       "name": "file",
-      "connection": "STORAGE_CONNECTION",
-      "path": "python-worker-tests/test-eventgrid-output-binding.txt"
+      "connection": "AzureWebJobsStorage",
+      "path": "python-worker-tests/test-eventgrid-triggered.txt"
     },
     {
       "type": "http",

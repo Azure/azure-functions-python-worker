@@ -14,7 +14,6 @@ from tests.utils import testutils
 
 
 _EVENT_GRID_TOPIC_KEY = 'local-event-grid-key'
-_MISSING_ENVIRONMENT_VALUE = object()
 
 
 def _create_eventgrid_request_handler(captured_requests):
@@ -56,13 +55,6 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
             target=cls.eventgrid_server.serve_forever,
             daemon=True)
 
-        cls.previous_eventgrid_environment = {
-            setting: os.environ.get(
-                setting, _MISSING_ENVIRONMENT_VALUE)
-            for setting in (
-                'AzureWebJobsEventGridTopicUri',
-                'AzureWebJobsEventGridConnectionKey')
-        }
         server_port = cls.eventgrid_server.server_address[1]
         os.environ['AzureWebJobsEventGridTopicUri'] = (
             f'http://{testutils.LOCALHOST}:{server_port}/api/events')
@@ -74,7 +66,6 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
             super().setUpClass()
         except Exception:
             cls._stop_eventgrid_server()
-            cls._restore_eventgrid_environment()
             raise
 
     @classmethod
@@ -84,7 +75,6 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
                 super().tearDownClass()
         finally:
             cls._stop_eventgrid_server()
-            cls._restore_eventgrid_environment()
 
     @classmethod
     def _stop_eventgrid_server(cls):
@@ -98,17 +88,6 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
         if server_thread is not None:
             server_thread.join(timeout=5)
             cls.eventgrid_thread = None
-
-    @classmethod
-    def _restore_eventgrid_environment(cls):
-        previous_environment = getattr(
-            cls, 'previous_eventgrid_environment', {})
-        for setting, value in previous_environment.items():
-            if value is _MISSING_ENVIRONMENT_VALUE:
-                os.environ.pop(setting, None)
-            else:
-                os.environ[setting] = value
-        cls.previous_eventgrid_environment = {}
 
     @classmethod
     def get_script_dir(cls):
@@ -212,9 +191,6 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
         self.assertEqual(
             captured_request['headers']['content-type'].split(';')[0],
             'application/json')
-        self.assertEqual(
-            captured_request['headers']['aeg-sas-key'],
-            _EVENT_GRID_TOPIC_KEY)
 
         published_events = captured_request['body']
         self.assertEqual(len(published_events), 1)

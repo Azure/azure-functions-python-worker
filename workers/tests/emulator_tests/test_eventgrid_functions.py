@@ -17,6 +17,12 @@ _EVENT_GRID_TOPIC_KEY = 'local-event-grid-key'
 
 
 def _create_eventgrid_request_handler(captured_requests):
+    """Create the local receiver for Event Grid output binding requests.
+
+    The handler records each request's path, query, headers, and JSON body in
+    a queue for test assertions, then returns a successful response.
+    """
+
     class EventGridRequestHandler(BaseHTTPRequestHandler):
 
         def do_POST(self):
@@ -94,6 +100,12 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
         return testutils.EMULATOR_TESTS_FOLDER / 'eventgrid_functions'
 
     def eventgrid_webhook_request(self, meth, funcname, *args, **kwargs):
+        """Send an Event Grid notification to the local Functions host.
+
+        The request targets the Event Grid system webhook with the function
+        name, test master key, and notification headers required by the host.
+        """
+
         request_method = getattr(requests, meth.lower())
         url = f'{self.webhost._addr}/runtime/webhooks/eventgrid'
         params = dict(kwargs.pop('params', {}))
@@ -107,6 +119,13 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
                               **kwargs)
 
     def test_eventgrid_trigger(self):
+        """Verify the local host processes an Event Grid trigger.
+
+        The test posts an event to the Event Grid webhook, then polls an HTTP
+        function that reads the triggered function's blob output from Azurite.
+        It verifies the stored event matches the event that was posted.
+        """
+
         event = {
             "topic": "test-topic",
             "subject": "test-subject",
@@ -160,6 +179,13 @@ class TestEventGridFunctions(testutils.WebHostTestCase):
                 break
 
     def test_eventgrid_output_binding(self):
+        """Verify an Event Grid output binding publishes the expected event.
+
+        The test invokes an HTTP function that emits an Event Grid event, then
+        reads the resulting POST from the local receiver and validates its
+        endpoint, content type, and event payload.
+        """
+
         while not self.eventgrid_requests.empty():
             self.eventgrid_requests.get_nowait()
 

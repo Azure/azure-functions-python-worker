@@ -616,10 +616,14 @@ def handle_control(request_type, req):
         # The Host supplies the function app directory in the init message (not
         # via CLI). The v2 runtime imports ``function_app`` during indexing but
         # does NOT add that directory to sys.path, so do it before init runs.
+        # Runtime selection must also use this authoritative directory because
+        # the optional CLI app directory is normally empty at configure time.
         app_dir = req.get("function_app_directory", "")
-        if app_dir and app_dir not in sys.path:
-            sys.path.insert(0, app_dir)
-            _log(f"added function_app_directory to sys.path: {app_dir!r}")
+        if app_dir:
+            if app_dir not in sys.path:
+                sys.path.insert(0, app_dir)
+                _log(f"added function_app_directory to sys.path: {app_dir!r}")
+            _select_runtime(app_dir)
         _log_using_library()
         try:
             _rt.start_threadpool_executor()

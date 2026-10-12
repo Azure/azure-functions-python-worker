@@ -352,6 +352,9 @@ def test_handle_control_worker_init_shapes_request_and_response(
         worker_init_request=worker_init_request))
     monkeypatch.setattr(bridge, "_host", "localhost")
     monkeypatch.setattr(
+        bridge, "_select_runtime",
+        lambda directory: captured.setdefault("selected", directory))
+    monkeypatch.setattr(
         bridge, "_run_coro",
         lambda token: _Response({"kind": token}))
     monkeypatch.setattr(bridge, "_log_control_received", lambda *args: None)
@@ -369,11 +372,65 @@ def test_handle_control_worker_init_shapes_request_and_response(
 
     request = captured["request"]
     assert captured["started"]
+    assert captured["selected"] == app_dir
     assert request.name == "worker_init_request"
     assert request.request.worker_init_request.capabilities == {"A": "true"}
     assert request.properties == {
         "protos": bridge.protos, "host": "localhost"}
     assert result == {"kind": "worker-init-token"}
+
+
+def test_handle_control_worker_init_selects_runtime_from_request_directory(
+        monkeypatch, tmp_path, reset_bridge_state):
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+    app_dir.joinpath("function_app.py").write_text("", encoding="utf-8")
+
+    calls = []
+    v1_runtime = _runtime_module("azure_functions_runtime_v1")
+    v1_runtime.stop_threadpool_executor = (
+        lambda: calls.append("v1-threadpool-stop"))
+    v1_runtime.worker_init_request = (
+        lambda request: calls.append("v1-init") or "v1-init")
+    v1_runtime.functions_metadata_request = lambda request: "v1-metadata"
+    v2_runtime = _runtime_module("azure_functions_runtime")
+    v2_runtime.start_threadpool_executor = (
+        lambda: calls.append("v2-threadpool-start"))
+    v2_runtime.worker_init_request = (
+        lambda request: calls.append("v2-init") or "v2-init")
+    v2_runtime.functions_metadata_request = lambda request: "v2-metadata"
+    monkeypatch.setitem(sys.modules, v1_runtime.__name__, v1_runtime)
+    monkeypatch.setitem(sys.modules, v2_runtime.__name__, v2_runtime)
+    for runtime_name in (v1_runtime.__name__, v2_runtime.__name__):
+        context = ModuleType(f"{runtime_name}.bindings.context")
+        context._invocation_id_local = threading.local()
+        monkeypatch.setitem(sys.modules, context.__name__, context)
+
+    monkeypatch.setattr(
+        bridge, "_prioritize_customer_dependencies", lambda directory: "")
+    monkeypatch.setattr(bridge, "_start_loop", lambda: None)
+    monkeypatch.setattr(bridge, "_install_rpc_logging", lambda: None)
+    monkeypatch.setattr(bridge, "_log_control_received", lambda *args: None)
+    monkeypatch.setattr(bridge, "_log_using_library", lambda: None)
+    monkeypatch.setattr(
+        bridge, "_run_coro", lambda token: _Response({"kind": token}))
+
+    bridge.configure("", "", None)
+    assert bridge._rt_name == "azure_functions_runtime_v1"
+
+    init_response = bridge.handle_control(
+        "worker_init_request",
+        {"function_app_directory": str(app_dir)})
+    metadata_response = bridge.handle_control(
+        "functions_metadata_request", {})
+
+    assert init_response == {"kind": "v2-init"}
+    assert metadata_response == {"kind": "v2-metadata"}
+    assert calls == [
+        "v1-threadpool-stop", "v2-threadpool-start", "v2-init"]
+    assert bridge._rt is v2_runtime
+    assert bridge._rt_name == "azure_functions_runtime"
+    assert bridge._function_app_directory == str(app_dir)
 
 
 def test_handle_control_worker_init_allows_runtime_without_threadpool(

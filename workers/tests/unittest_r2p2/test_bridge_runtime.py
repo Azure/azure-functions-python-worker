@@ -53,12 +53,12 @@ def reset_bridge_state(monkeypatch):
 
 
 def test_console_log_selects_stream_and_format(capsys):
-    bridge._log("started")
-    bridge._log("failed", level="ERROR")
+    bridge._log("started: %s", "ready")
+    bridge._log("failed: %r", "boom", level="ERROR")
 
     captured = capsys.readouterr()
-    assert captured.out == "LanguageWorkerConsoleLog INFO: started\n"
-    assert captured.err == "LanguageWorkerConsoleLog ERROR: failed\n"
+    assert captured.out == "LanguageWorkerConsoleLog INFO: started: ready\n"
+    assert captured.err == "LanguageWorkerConsoleLog ERROR: failed: 'boom'\n"
 
 
 def test_current_invocation_id_prefers_contextvar_then_thread_local(
@@ -269,8 +269,8 @@ def test_configure_selects_runtime_and_sets_bridge_state(
     monkeypatch.setattr(
         bridge, "_install_rpc_logging", lambda: calls.append("logging"))
     monkeypatch.setattr(
-        bridge, "_log", lambda message, level="INFO":
-        calls.append(("log", level, message)))
+        bridge, "_log", lambda message, *args, level="INFO":
+        calls.append(("log", level, message % args if args else message)))
     sink = _Sink()
 
     bridge.configure(
@@ -312,8 +312,8 @@ def test_configure_uses_custom_script_name_and_tolerates_missing_tls(
     monkeypatch.setattr(importlib, "import_module", fail_context_import)
     messages = []
     monkeypatch.setattr(
-        bridge, "_log", lambda message, level="INFO":
-        messages.append((level, message)))
+        bridge, "_log", lambda message, *args, level="INFO":
+        messages.append((level, message % args if args else message)))
 
     bridge.configure("", str(app_dir), None)
 
@@ -553,8 +553,8 @@ def test_handle_control_reload_switches_placeholder_runtime(
 def test_handle_control_unknown_and_handler_error(monkeypatch):
     logs = []
     monkeypatch.setattr(
-        bridge, "_log", lambda message, level="INFO":
-        logs.append((level, message)))
+        bridge, "_log", lambda message, *args, level="INFO":
+        logs.append((level, message % args if args else message)))
 
     assert bridge.handle_control("unknown_request", {}) is None
     assert logs == [("WARNING", "unknown control request: 'unknown_request'")]
@@ -576,8 +576,8 @@ def test_handle_control_unknown_and_handler_error(monkeypatch):
 def test_log_unhandled_emits_warning(monkeypatch):
     calls = []
     monkeypatch.setattr(
-        bridge, "_log", lambda message, level="INFO":
-        calls.append((message, level)))
+        bridge, "_log", lambda message, *args, level="INFO":
+        calls.append((message % args if args else message, level)))
 
     bridge.log_unhandled("InvocationCancel")
 

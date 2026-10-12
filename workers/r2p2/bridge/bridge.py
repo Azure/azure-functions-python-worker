@@ -132,11 +132,13 @@ _SDK_LOG_PREFIX = "azure.functions"
 _syslog = logging.getLogger(_SYSTEM_LOG_PREFIX)
 
 
-def _log(msg, level="INFO"):
+def _log(msg, *args, level="INFO"):
     # Match the Python proxy worker's console format
     # (`LanguageWorkerConsoleLog <LEVEL>: <message>`) and stream split
     # (errors -> stderr, everything else -> stdout). See
     # proxy_worker/logging.py.
+    if args:
+        msg = msg % args
     stream = sys.stderr if level == "ERROR" else sys.stdout
     print(f"{_CONSOLE_LOG_PREFIX} {level}: {msg}", file=stream, flush=True)
 
@@ -440,7 +442,7 @@ def _select_runtime(function_app_directory, environment_variables=None):
         except AttributeError:
             pass
         except Exception as e:
-            _log(f"WARNING: could not stop previous runtime threadpool: {e}")
+            _log("WARNING: could not stop previous runtime threadpool: %s", e)
     _rt = rt
     _rt_name = runtime_name
     _function_app_directory = function_app_directory
@@ -458,8 +460,8 @@ def _select_runtime(function_app_directory, environment_variables=None):
                 f"{_rt_name}.bindings.context")._invocation_id_local
         except Exception as e:
             _rt_tls = None
-            _log(f"WARNING: could not cache runtime thread-local for log "
-                 f"correlation: {e}")
+            _log("WARNING: could not cache runtime thread-local for log "
+                  "correlation: %s", e)
 
 
 def configure(workers_dir, function_app_directory, host, request_id="",
@@ -489,10 +491,9 @@ def configure(workers_dir, function_app_directory, host, request_id="",
     # Route worker/system + user logs to the Host as RpcLog now that the runtime
     # (and its invocation_id contextvar) is importable and the sink is set.
     _install_rpc_logging()
-    _log(f"Bridge configured. runtime={_rt_name!r} host={_host!r} "
-         f"app_dir={function_app_directory!r} "
-         f"cx_deps={cx_deps!r} "
-         f"python={sys.version.split()[0]}")
+    _log("Bridge configured. runtime=%r host=%r app_dir=%r cx_deps=%r "
+         "python=%s", _rt_name, _host, function_app_directory, cx_deps,
+         sys.version.split()[0])
 
 
 class _WorkerRequest:
@@ -607,7 +608,7 @@ def handle_control(request_type, req):
     unknown request type."""
     msg = _build_control_message(request_type, req)
     if msg is None:
-        _log(f"unknown control request: {request_type!r}", level="WARNING")
+        _log("unknown control request: %r", request_type, level="WARNING")
         return None
 
     _log_control_received(request_type, req)
@@ -622,7 +623,7 @@ def handle_control(request_type, req):
         if app_dir:
             if app_dir not in sys.path:
                 sys.path.insert(0, app_dir)
-                _log(f"added function_app_directory to sys.path: {app_dir!r}")
+                _log("added function_app_directory to sys.path: %r", app_dir)
             _select_runtime(app_dir)
         _log_using_library()
         try:
@@ -650,7 +651,7 @@ def handle_control(request_type, req):
     try:
         resp = _run_coro(handler(req_obj))
     except Exception:  # pragma: no cover - surfaced to Rust as a log
-        _log(f"{request_type} handler error:\n" + traceback.format_exc(),
+        _log("%s handler error:\n%s", request_type, traceback.format_exc(),
              level="ERROR")
         raise
     if request_type == "function_environment_reload_request":
@@ -731,7 +732,7 @@ def handle_invocation_control(req):
 
 def log_unhandled(desc):
     """Rust routes an unrecognized StreamingMessage content type here."""
-    _log(f"unhandled content type: {desc}", level="WARNING")
+    _log("unhandled content type: %s", desc, level="WARNING")
 
 
 # --- Native invocation path (no Python protobuf on the hot path) -------------
@@ -784,7 +785,7 @@ def requires_control_path(function_id):
                 except ImportError:
                     pass
     except Exception as e:
-        _log(f"requires_control_path check failed for {function_id!r}: {e}",
+        _log("requires_control_path check failed for %r: %s", function_id, e,
              level="WARNING")
         result = False
     _control_path_cache[function_id] = result

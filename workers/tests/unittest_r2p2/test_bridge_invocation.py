@@ -129,8 +129,8 @@ def test_handle_invocation_control_logs_and_reraises_handler_error(monkeypatch):
         bridge, "_run_coro",
         lambda token: (_ for _ in ()).throw(RuntimeError("invoke failed")))
     monkeypatch.setattr(
-        bridge, "_log", lambda message, level="INFO":
-        logs.append((level, message)))
+        bridge, "_log", lambda message, *args, level="INFO":
+        logs.append((level, message % args if args else message)))
 
     with pytest.raises(RuntimeError, match="invoke failed"):
         bridge.handle_invocation_control({})
@@ -240,8 +240,8 @@ def test_requires_control_path_handles_missing_http_v2_and_lookup_errors(
         lambda name: (_ for _ in ()).throw(RuntimeError("registry failed")))
     monkeypatch.setattr(bridge, "_control_path_cache", {})
     monkeypatch.setattr(
-        bridge, "_log", lambda message, level="INFO":
-        logs.append((level, message)))
+        bridge, "_log", lambda message, *args, level="INFO":
+        logs.append((level, message % args if args else message)))
     assert not bridge.requires_control_path("broken")
     assert logs == [(
         "WARNING",
@@ -411,7 +411,8 @@ def test_invoke_native_sync_success_converts_inputs_outputs_and_marks_once(
     monkeypatch.setattr(bridge, "_Datum", _Datum)
     monkeypatch.delattr(bridge.invoke_native, "_marked", raising=False)
     monkeypatch.setattr(
-        bridge, "_log", lambda message, level="INFO": logs.append(message))
+        bridge, "_log", lambda message, *args, level="INFO":
+        logs.append(message % args if args else message))
 
     result = bridge.invoke_native(
         "fid", "inv", [("input", ("string", "value"))],

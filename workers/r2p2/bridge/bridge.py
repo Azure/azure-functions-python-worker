@@ -461,7 +461,7 @@ def _select_runtime(function_app_directory, environment_variables=None):
         except Exception as e:
             _rt_tls = None
             _log("WARNING: could not cache runtime thread-local for log "
-                  "correlation: %s", e)
+                 "correlation: %s", e)
 
 
 def configure(workers_dir, function_app_directory, host, request_id="",

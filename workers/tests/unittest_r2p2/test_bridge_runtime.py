@@ -397,7 +397,8 @@ def test_handle_control_reload_reprioritizes_and_none_response(monkeypatch):
         lambda directory: calls.append(("priority", directory)))
     monkeypatch.setattr(
         bridge, "_select_runtime",
-        lambda directory: calls.append(("runtime", directory)))
+        lambda directory, environment_variables: calls.append(
+            ("runtime", directory, environment_variables)))
     monkeypatch.setattr(
         bridge, "_log_using_library", lambda: calls.append("library"))
     monkeypatch.setattr(bridge, "_log_control_received", lambda *args: None)
@@ -405,12 +406,16 @@ def test_handle_control_reload_reprioritizes_and_none_response(monkeypatch):
 
     result = bridge.handle_control(
         "function_environment_reload_request",
-        {"function_app_directory": "/specialized"})
+        {
+            "function_app_directory": "/specialized",
+            "environment_variables": {"PYTHON_SCRIPT_FILE_NAME": "main.py"},
+        })
 
     assert result is None
     assert calls == [
         ("priority", "/specialized"),
-        ("runtime", "/specialized"),
+        ("runtime", "/specialized",
+         {"PYTHON_SCRIPT_FILE_NAME": "main.py"}),
         "library",
     ]
 
@@ -421,7 +426,8 @@ def test_handle_control_reload_switches_placeholder_runtime(
     placeholder_dir.mkdir()
     app_dir = tmp_path / "app"
     app_dir.mkdir()
-    app_dir.joinpath("function_app.py").write_text("", encoding="utf-8")
+    app_dir.joinpath("main.py").write_text("", encoding="utf-8")
+    monkeypatch.setenv("PYTHON_SCRIPT_FILE_NAME", "function_app.py")
 
     calls = []
     v1_runtime = _runtime_module("azure_functions_runtime_v1")
@@ -466,7 +472,10 @@ def test_handle_control_reload_switches_placeholder_runtime(
 
     reload_response = bridge.handle_control(
         "function_environment_reload_request",
-        {"function_app_directory": str(app_dir)})
+        {
+            "function_app_directory": str(app_dir),
+            "environment_variables": {"PYTHON_SCRIPT_FILE_NAME": "main.py"},
+        })
     metadata_response = bridge.handle_control(
         "functions_metadata_request", {})
 

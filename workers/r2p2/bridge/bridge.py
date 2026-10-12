@@ -393,12 +393,14 @@ def _prioritize_customer_dependencies(function_app_directory):
     return cx_deps
 
 
-def _select_runtime(function_app_directory):
+def _select_runtime(function_app_directory, environment_variables=None):
     """Select the runtime for the app currently mounted at *directory*."""
     global _rt, _rt_name, _rt_tls, _function_app_directory, \
         _native, _Datum
 
-    script_file = os.environ.get(
+    settings = (os.environ if environment_variables is None
+                else environment_variables)
+    script_file = settings.get(
         "PYTHON_SCRIPT_FILE_NAME", "function_app.py")
     v2_scriptfile = os.path.join(function_app_directory or "", script_file)
     if os.path.exists(v2_scriptfile):
@@ -611,7 +613,7 @@ def handle_control(request_type, req):
         # reload_library_worker calls on env reload.
         app_dir = req.get("function_app_directory", "")
         _prioritize_customer_dependencies(app_dir)
-        _select_runtime(app_dir)
+        _select_runtime(app_dir, req.get("environment_variables") or {})
         _log_using_library()
 
     # worker_init / env_reload set the runtime's module-global ``protos`` from

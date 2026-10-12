@@ -166,6 +166,176 @@ def test_prioritization_reloads_worker_modules_from_customer_deps(
             sys.modules.pop(module_name, None)
 
 
+def test_prioritization_preserves_namespace_and_cached_customer_child(
+        monkeypatch, tmp_path, restore_sys_path):
+    workers_dir = tmp_path / "workers"
+    app_dir = tmp_path / "app"
+    site = app_dir / ".python_packages" / "lib" / "site-packages"
+    package_name = "r2p2_namespace_customer_cache"
+    child_name = f"{package_name}.child"
+    worker_namespace = workers_dir / package_name
+    customer_namespace = site / package_name
+    worker_namespace.mkdir(parents=True)
+    customer_namespace.mkdir(parents=True)
+    customer_namespace.joinpath("child.py").write_text(
+        "VERSION = 'customer'\n", encoding="utf-8")
+    monkeypatch.setattr(bridge, "_workers_dir", str(workers_dir))
+    sys.path[:0] = [str(workers_dir), str(site)]
+
+    try:
+        child = importlib.import_module(child_name)
+        namespace = importlib.import_module(package_name)
+        assert namespace.__file__ is None
+        assert set(namespace.__path__) == {
+            str(worker_namespace), str(customer_namespace)}
+        assert namespace.child is child
+
+        bridge._prioritize_customer_dependencies(str(app_dir))
+
+        assert sys.modules[package_name] is namespace
+        assert sys.modules[child_name] is child
+        assert namespace.child.VERSION == "customer"
+        assert namespace.child is child
+        assert importlib.import_module(package_name) is namespace
+        assert importlib.import_module(child_name) is child
+        assert __import__(package_name, fromlist=["child"]).child is child
+    finally:
+        for module_name in (child_name, package_name):
+            sys.modules.pop(module_name, None)
+
+
+@pytest.mark.parametrize(
+    "reassign_child", [False, True],
+    ids=["evicted-module-attribute", "reassigned-sentinel"])
+def test_prioritization_detaches_only_evicted_namespace_child(
+        monkeypatch, tmp_path, restore_sys_path, reassign_child):
+    workers_dir = tmp_path / "workers"
+    app_dir = tmp_path / "app"
+    site = app_dir / ".python_packages" / "lib" / "site-packages"
+    package_name = "r2p2_namespace_from_import"
+    child_name = f"{package_name}.child"
+    for root, version in ((workers_dir, "worker"), (site, "customer")):
+        namespace_dir = root / package_name
+        namespace_dir.mkdir(parents=True)
+        namespace_dir.joinpath("child.py").write_text(
+            f"VERSION = {version!r}\n", encoding="utf-8")
+    monkeypatch.setattr(bridge, "_workers_dir", str(workers_dir))
+    sys.path[:0] = [str(workers_dir), str(site)]
+    sentinel = object()
+
+    try:
+        worker_child = importlib.import_module(child_name)
+        namespace = importlib.import_module(package_name)
+        assert worker_child.VERSION == "worker"
+        assert namespace.child is worker_child
+        if reassign_child:
+            namespace.child = sentinel
+
+        bridge._prioritize_customer_dependencies(str(app_dir))
+
+        assert sys.modules[package_name] is namespace
+        assert child_name not in sys.modules
+        imported = __import__(package_name, fromlist=["child"])
+        assert imported is namespace
+        if reassign_child:
+            assert imported.child is sentinel
+            assert child_name not in sys.modules
+        else:
+            assert imported.child.VERSION == "customer"
+            assert imported.child is not worker_child
+            assert sys.modules[child_name] is imported.child
+    finally:
+        for module_name in (child_name, package_name):
+            sys.modules.pop(module_name, None)
+
+
+def test_prioritization_evicts_regular_worker_package_and_customer_child(
+        monkeypatch, tmp_path, restore_sys_path):
+    workers_dir = tmp_path / "workers"
+    app_dir = tmp_path / "app"
+    site = app_dir / ".python_packages" / "lib" / "site-packages"
+    package_name = "r2p2_regular_extended_path"
+    child_name = f"{package_name}.child"
+    worker_package = workers_dir / package_name
+    customer_package = site / package_name
+    worker_package.mkdir(parents=True)
+    customer_package.mkdir(parents=True)
+    worker_package.joinpath("__init__.py").write_text(
+        "VERSION = 'worker'\n"
+        f"__path__.append({str(customer_package)!r})\n",
+        encoding="utf-8")
+    customer_package.joinpath("__init__.py").write_text(
+        "VERSION = 'customer'\n", encoding="utf-8")
+    customer_package.joinpath("child.py").write_text(
+        "VERSION = 'customer'\n", encoding="utf-8")
+    monkeypatch.setattr(bridge, "_workers_dir", str(workers_dir))
+    sys.path[:0] = [str(workers_dir), str(site)]
+
+    try:
+        old_child = importlib.import_module(child_name)
+        old_package = importlib.import_module(package_name)
+        assert old_package.VERSION == "worker"
+        assert old_package.__path__ == [
+            str(worker_package), str(customer_package)]
+        assert old_child.__file__ == str(customer_package / "child.py")
+        assert old_package.child is old_child
+
+        bridge._prioritize_customer_dependencies(str(app_dir))
+
+        assert package_name not in sys.modules
+        assert child_name not in sys.modules
+        new_package = importlib.import_module(package_name)
+        new_child = importlib.import_module(child_name)
+        assert new_package is not old_package
+        assert new_child is not old_child
+        assert new_package.VERSION == "customer"
+        assert new_child.VERSION == "customer"
+        assert new_package.child is new_child
+    finally:
+        for module_name in (child_name, package_name):
+            sys.modules.pop(module_name, None)
+
+
+def test_prioritization_refreshes_namespace_with_unchanged_sys_path(
+        monkeypatch, tmp_path, restore_sys_path):
+    workers_dir = tmp_path / "workers"
+    app_dir = tmp_path / "app"
+    site = app_dir / ".python_packages" / "lib" / "site-packages"
+    package_name = "r2p2_namespace_new_portion"
+    child_name = f"{package_name}.child"
+    worker_namespace = workers_dir / package_name
+    customer_namespace = site / package_name
+    worker_namespace.mkdir(parents=True)
+    site.mkdir(parents=True)
+    monkeypatch.setattr(bridge, "_workers_dir", str(workers_dir))
+    sys.path[:] = [str(site), str(workers_dir), *sys.path, str(app_dir)]
+    original_path = tuple(sys.path)
+
+    try:
+        namespace = importlib.import_module(package_name)
+        assert namespace.__file__ is None
+        assert list(namespace.__path__) == [str(worker_namespace)]
+        assert not customer_namespace.exists()
+
+        customer_namespace.mkdir()
+        customer_namespace.joinpath("child.py").write_text(
+            "VERSION = 'customer'\n", encoding="utf-8")
+
+        bridge._prioritize_customer_dependencies(str(app_dir))
+
+        assert tuple(sys.path) == original_path
+        assert sys.modules[package_name] is namespace
+        imported = __import__(package_name, fromlist=["child"])
+        assert imported is namespace
+        assert imported.child.VERSION == "customer"
+        assert imported.child.__file__ == str(customer_namespace / "child.py")
+        assert str(customer_namespace) in namespace.__path__
+        assert sys.modules[child_name] is imported.child
+    finally:
+        for module_name in (child_name, package_name):
+            sys.modules.pop(module_name, None)
+
+
 def test_clear_modules_from_path_preserves_worker_internals(
         monkeypatch, tmp_path):
     workers_dir = tmp_path / "workers"

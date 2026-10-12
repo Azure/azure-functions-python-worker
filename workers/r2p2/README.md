@@ -86,3 +86,15 @@ in `eng/ci/public-build.yml`.
   honored for `PYTHONPATH` entries).
 - Docker image assets and k6 perf scripts moved out of this folder to
   `_r2p2_extras/docker` and `_r2p2_extras/perf`.
+
+### Dependency priority
+
+At startup and specialization, dependency priority remains **customer
+dependencies > worker runtime dependencies > app directory**. Namespace packages
+without an initializer are retained so cached customer children stay attached.
+File-backed worker modules/packages are evicted with their cached descendants;
+matching stale child attributes are removed from retained parents so subsequent
+imports use customer dependencies. `bridge`, `protos_adapter`, and runtime module
+prefixes remain protected. Import caches are invalidated after path changes so
+namespaces discover newly mounted customer dependencies. This is
+startup/specialization import handling, not a per-invocation transport change.

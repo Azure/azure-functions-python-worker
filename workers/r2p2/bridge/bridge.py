@@ -35,6 +35,7 @@ Contract exposed to Rust (Rust owns all prost encoding/decoding):
     shutdown() -> None
 """
 import asyncio
+import importlib
 import json
 import logging
 import os
@@ -308,6 +309,11 @@ _PROTECTED_MODULE_PREFIXES = (
 )
 
 
+def _is_protected_module(module_name):
+    return any(module_name == prefix or module_name.startswith(prefix + ".")
+               for prefix in _PROTECTED_MODULE_PREFIXES)
+
+
 def _path_is_under(path, root):
     try:
         normalized_path = os.path.normcase(os.path.realpath(os.fspath(path)))
@@ -319,7 +325,7 @@ def _path_is_under(path, root):
 
 
 def _clear_modules_from_path(path):
-    """Clear cached imports rooted under *path*, preserving worker internals."""
+    """Clear imports under *path* without orphaning namespace children."""
     if not path:
         return
 
@@ -327,25 +333,40 @@ def _clear_modules_from_path(path):
         if _path_is_under(cache_path, path):
             sys.path_importer_cache.pop(cache_path, None)
 
-    for module_name, module in list(sys.modules.items()):
-        if any(module_name == prefix or module_name.startswith(prefix + ".")
-               for prefix in _PROTECTED_MODULE_PREFIXES):
+    cached_modules = {
+        name: module for name, module in sys.modules.copy().items()
+        if isinstance(module, ModuleType) and not _is_protected_module(name)
+    }
+    modules_to_clear = set()
+    for module_name, module in cached_modules.items():
+        # Namespace parents have no initializer to reload. Their search paths
+        # follow sys.path, so keep them attached to surviving customer children.
+        module_file = vars(module).get("__file__")
+        if module_file and _path_is_under(module_file, path):
+            modules_to_clear.add(module_name)
+
+    # A file-backed package must be removed with all its cached descendants.
+    for module_name in cached_modules:
+        parent_name = module_name
+        while "." in parent_name:
+            parent_name = parent_name.rpartition(".")[0]
+            if parent_name in modules_to_clear:
+                modules_to_clear.add(module_name)
+                break
+
+    for module_name in sorted(
+            modules_to_clear, key=lambda name: name.count("."), reverse=True):
+        module = cached_modules[module_name]
+        if sys.modules.get(module_name) is not module:
             continue
-        if not isinstance(module, ModuleType):
-            continue
-        try:
-            module_paths = []
-            module_file = getattr(module, "__file__", None)
-            if module_file:
-                module_paths.append(module_file)
-            module_path = getattr(module, "__path__", None)
-            if module_path:
-                module_paths.extend(module_path)
-            if any(_path_is_under(module_path, path)
-                   for module_path in module_paths):
-                sys.modules.pop(module_name, None)
-        except Exception:
-            continue
+        parent_name, _, child_name = module_name.rpartition(".")
+        parent = sys.modules.get(parent_name)
+        if parent_name not in modules_to_clear and isinstance(parent, ModuleType):
+            parent_dict = vars(parent)
+            # Otherwise "from parent import child" can reuse the old module.
+            if parent_dict.get(child_name) is module:
+                parent_dict.pop(child_name, None)
+        sys.modules.pop(module_name, None)
 
 
 def _prioritize_customer_dependencies(function_app_directory):
@@ -364,8 +385,8 @@ def _prioritize_customer_dependencies(function_app_directory):
     -- the v2 runtime's reload handler only ``sys.path.append``s the app dir and
     would otherwise leave customer packages at the back. Returns the resolved
     customer deps path (``""`` if none). Before promoting customer deps, cached
-    modules loaded from the worker path are cleared while bridge and runtime
-    modules remain pinned.
+    file-backed modules loaded from the worker path are cleared while namespace
+    parents, bridge and runtime modules remain pinned.
 
     Emits the same ``Finished prioritize_customer_dependencies: ...`` System log
     as the classic proxy worker's ``DependencyManager`` so existing Kusto
@@ -380,6 +401,7 @@ def _prioritize_customer_dependencies(function_app_directory):
         _reprioritize_path(cx_deps, front=True)
     if function_app_directory:
         _reprioritize_path(function_app_directory, front=False)
+    importlib.invalidate_caches()
     try:
         placeholder = os.getenv("WEBSITE_PLACEHOLDER_MODE", "") == "1"
         _syslog.info(

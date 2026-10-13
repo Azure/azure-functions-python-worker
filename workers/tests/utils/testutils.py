@@ -31,7 +31,6 @@ import typing
 import unittest
 import uuid
 
-import grpc
 import requests
 from tests.utils.constants import (
     ARCHIVE_WEBHOST_LOGS,
@@ -50,6 +49,8 @@ from tests.utils.testutils_docker import (
 )
 
 if sys.version_info.minor < 13:
+    import grpc
+
     from azure_functions_worker import dispatcher, protos
     from azure_functions_worker.bindings.shared_memory_data_transfer import (
         FileAccessorFactory,
@@ -63,8 +64,15 @@ if sys.version_info.minor < 13:
     )
     from azure_functions_worker.utils.common import get_app_setting, is_envvar_true
 else:
-    from proxy_worker import dispatcher, protos
     from proxy_worker.utils.common import get_app_setting, is_envvar_true
+
+    try:
+        from proxy_worker import dispatcher, protos
+    except ImportError:
+        # Python 3.15+ runs on the R2P2 Rust worker, which is protobuf-free and
+        # ships no generated proxy_worker.protos gRPC stubs.
+        dispatcher = None
+        protos = None
 
 TESTS_ROOT = PROJECT_ROOT / 'tests'
 E2E_TESTS_FOLDER = pathlib.Path('endtoend')
@@ -78,6 +86,8 @@ DEFAULT_WEBHOST_DLL_PATH = (PROJECT_ROOT / 'build' / 'webhost' / 'bin' / WEBHOST
 EXTENSIONS_PATH = PROJECT_ROOT / 'build' / 'extensions' / 'bin'
 FUNCS_PATH = TESTS_ROOT / UNIT_TESTS_FOLDER / 'http_functions'
 WORKER_PATH = PROJECT_ROOT / 'python' / 'test'
+R2P2_PATH = PROJECT_ROOT / 'python' / 'test_r2p2'
+R2P2_MIN_VERSION = (3, 15)
 ON_WINDOWS = platform.system() == 'Windows'
 LOCALHOST = "127.0.0.1"
 
@@ -230,6 +240,7 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
 
         cls.host_stdout = None if is_envvar_true(PYAZURE_WEBHOST_DEBUG) \
             else tempfile.NamedTemporaryFile('w+t')
+        cls.webhost = None
 
         try:
             if docker_tests_enabled:
@@ -256,14 +267,23 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     cls.host_stdout_logger.error(error_message)
                     raise RuntimeError(error_message)
         except Exception as ex:
+            if cls.host_stdout is not None:
+                cls.host_stdout.flush()
+                cls.host_stdout.seek(0)
+                cls.host_out = cls.host_stdout.read()
+                if cls.host_out:
+                    cls.host_stdout_logger.error(
+                        'Captured WebHost log during startup:\n%s',
+                        cls.host_out)
             cls.host_stdout_logger.error(f"WebHost is not started correctly. {ex}")
             cls.tearDownClass()
             raise
 
     @classmethod
     def tearDownClass(cls):
-        cls.webhost.close()
-        cls.webhost = None
+        if cls.webhost is not None:
+            cls.webhost.close()
+            cls.webhost = None
 
         if cls.host_stdout is not None:
             if is_envvar_true(ARCHIVE_WEBHOST_LOGS):
@@ -314,12 +334,12 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
                     if test_exception is not None:
                         raise test_exception
 
-    def wait_for_host_log(self, substring: str,
-                          timeout: float = 10.0,
-                          poll_interval: float = 0.5) -> bool:
-        """Wait until `substring` appears in the host stdout written so far.
+    def wait_for_host_logs(self, substrings: typing.Iterable[str],
+                           timeout: float = 10.0,
+                           poll_interval: float = 0.5) -> bool:
+        """Wait until all `substrings` appear in host stdout written so far.
 
-        The worker forwards exception logs to the host over gRPC, so a log
+        The worker forwards invocation logs to the host over gRPC, so a log
         line can land in the host's stdout slightly after the corresponding
         HTTP response is returned. The check_log_* assertions read a snapshot
         of host_out taken right after the test method returns; without waiting,
@@ -330,12 +350,14 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
         """
         if self.host_stdout is None:
             return True
+        expected = tuple(substrings)
         start = self.host_stdout.tell()
         deadline = time.time() + timeout
         try:
             while time.time() < deadline:
                 self.host_stdout.seek(start)
-                if substring in self.host_stdout.read():
+                output = self.host_stdout.read()
+                if all(substring in output for substring in expected):
                     return True
                 time.sleep(poll_interval)
             return False
@@ -343,6 +365,12 @@ class WebHostTestCase(unittest.TestCase, metaclass=WebHostTestCaseMeta):
             # Restore the read position so the framework captures host_out
             # from the same point regardless of our polling reads.
             self.host_stdout.seek(start)
+
+    def wait_for_host_log(self, substring: str,
+                          timeout: float = 10.0,
+                          poll_interval: float = 0.5) -> bool:
+        return self.wait_for_host_logs(
+            (substring,), timeout=timeout, poll_interval=poll_interval)
 
 
 # This is not supported in 3.13+
@@ -467,7 +495,12 @@ if sys.version_info.minor < 13:
                               f'{result.stdout} - {result.stderr}')
 
 
-class _MockWebHostServicer(protos.FunctionRpcServicer):
+_FunctionRpcServicer = (
+    protos.FunctionRpcServicer if protos is not None else object
+)
+
+
+class _MockWebHostServicer(_FunctionRpcServicer):
     _STOP = object()
 
     def __init__(self, host):
@@ -635,9 +668,9 @@ class _MockWebHost:
     async def invoke_function(
             self,
             name,
-            input_data: typing.List[protos.ParameterBinding],
-            metadata: typing.Optional[
-                typing.Mapping[str, protos.TypedData]] = None):
+            input_data: "typing.List[protos.ParameterBinding]",
+            metadata: "typing.Optional[typing.Mapping[str, protos.TypedData]]"
+            = None):
 
         if metadata is None:
             metadata = {}
@@ -680,7 +713,7 @@ class _MockWebHost:
             self,
             environment: typing.Dict[str, str],
             function_project_path: str = '/home/site/wwwroot'
-    ) -> protos.FunctionEnvironmentReloadResponse:
+    ) -> "protos.FunctionEnvironmentReloadResponse":
 
         request_content = protos.FunctionEnvironmentReloadRequest(
             function_app_directory=function_project_path,
@@ -823,6 +856,7 @@ class _WebHostProxy:
     def __init__(self, proc, addr):
         self._proc = proc
         self._addr = addr
+        self.readiness_failure = None
 
     def is_healthy(self):
         r = self.request('GET', '', no_prefix=True)
@@ -830,7 +864,7 @@ class _WebHostProxy:
 
     def wait_until_ready(self, timeout: float = 60.0,
                          poll_interval: float = 0.5) -> bool:
-        """Poll the host until it is running AND has registered functions.
+        """Poll until the host is running and function indexing settles.
 
         Readiness is confirmed in two phases:
 
@@ -851,6 +885,10 @@ class _WebHostProxy:
         would block until the full timeout on every webhost start. If the
         host does not expose ``/admin/functions`` (404), we fall back to
         treating ``Running`` as ready so older hosts are not regressed.
+
+        Some tests intentionally exercise indexing failures or apps with no
+        registered functions. If the Host is Running when the timeout expires,
+        setup may proceed and those tests assert the expected behavior.
         """
         deadline = time.time() + timeout
         status_url = self._addr + '/admin/host/status'
@@ -859,8 +897,13 @@ class _WebHostProxy:
         last_state = None
         running = False
         while time.time() < deadline:
-            if self._proc.poll() is not None:
+            exit_code = self._proc.poll()
+            if exit_code is not None:
                 # Host process exited.
+                self.readiness_failure = (
+                    f'host process exited with code {exit_code} before '
+                    'becoming ready'
+                )
                 return False
             try:
                 if not running:
@@ -889,6 +932,16 @@ class _WebHostProxy:
             except requests.RequestException:
                 pass
             time.sleep(poll_interval)
+        if running:
+            logging.getLogger('webhosttests').warning(
+                "Webhost is Running but registered no functions within %.0fs. "
+                "Continuing so tests can assert empty or failed indexing.",
+                timeout)
+            return True
+
+        self.readiness_failure = (
+            f'host did not report Running (last state: {last_state!r})'
+        )
         logging.getLogger('webhosttests').warning(
             "Webhost did not become ready within %.0fs "
             "(host running: %s, last state: %r, functions registered: no). "
@@ -914,6 +967,9 @@ class _WebHostProxy:
         if self._proc.stderr:
             self._proc.stderr.close()
 
+        if self._proc.poll() is not None:
+            return
+
         self._proc.terminate()
         try:
             self._proc.wait(20)
@@ -926,6 +982,15 @@ def _find_open_port():
         s.bind((LOCALHOST, 0))
         s.listen(1)
         return s.getsockname()[1]
+
+
+def _get_worker_path():
+    worker_path = os.environ.get(PYAZURE_WORKER_DIR)
+    if worker_path:
+        return pathlib.Path(worker_path)
+    if sys.version_info[:2] >= R2P2_MIN_VERSION:
+        return R2P2_PATH
+    return WORKER_PATH
 
 
 def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
@@ -994,8 +1059,7 @@ def popen_webhost(*, stdout, stderr, script_root=FUNCS_PATH, port=None):
             'stdout and stderr from function host.'
         ]))
 
-    worker_path = os.environ.get(PYAZURE_WORKER_DIR)
-    worker_path = WORKER_PATH if not worker_path else pathlib.Path(worker_path)
+    worker_path = _get_worker_path()
     if not worker_path.exists():
         raise RuntimeError(f'Worker path {worker_path} does not exist')
 
@@ -1078,7 +1142,16 @@ def start_webhost(*, script_dir=None, stdout=None):
     # rather than relying on a fixed sleep. The previous `time.sleep(10)`
     # was racy on slower agents (Python 3.9-3.11 cold starts in particular)
     # which caused intermittent test failures like flaky `test_unhandled_error`.
-    proxy.wait_until_ready(timeout=60.0)
+    if not proxy.wait_until_ready(timeout=60.0):
+        worker_path = _get_worker_path()
+        worker_config = worker_path / 'worker.config.json'
+        reason = proxy.readiness_failure or 'unknown readiness failure'
+        proxy.close()
+        raise RuntimeError(
+            f'WebHost failed to start: {reason}. '
+            f'Worker directory: {worker_path}. '
+            f'Worker config: {worker_config}'
+        )
     return proxy
 
 

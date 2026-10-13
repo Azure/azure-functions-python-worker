@@ -22,6 +22,7 @@ $UV_PIP "setuptools>=62,<82.0"
 # conditionally. They are only consumed by proxy_worker (Python >= 3.13).
 PY_VER="$1"
 PY_MINOR="${PY_VER#*.}"
+PY_MINOR="${PY_MINOR%%.*}"
 EXTRA_ARGS=()
 if [ "${PY_MINOR:-0}" -ge 13 ]; then
     EXTRA_ARGS+=(-e runtimes/v2 -e runtimes/v1)

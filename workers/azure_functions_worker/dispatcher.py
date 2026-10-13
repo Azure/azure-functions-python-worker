@@ -611,13 +611,6 @@ class Dispatcher(metaclass=DispatcherMeta):
                 function_id)
             assert fi is not None
 
-            # Initialize context and configure OpenTelemetry before emitting
-            # invocation-scoped logs so they include trace context (Operation Id)
-            fi_context = self._get_context(invoc_request, fi.name,
-                                           fi.directory)
-            if self._azure_monitor_available or self._otel_libs_available:
-                self.configure_opentelemetry(fi_context)
-
             function_invocation_logs: List[str] = [
                 'Received FunctionInvocationRequest',
                 f'request ID: {self.request_id}',
@@ -666,6 +659,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                 await sync_http_request(http_request, func_http_request)
                 args[trigger_arg_name] = http_request
 
+            fi_context = self._get_context(invoc_request, fi.name,
+                                           fi.directory)
+
             # Use local thread storage to store the invocation ID
             # for a customer's threads
             fi_context.thread_local_storage.invocation_id = invocation_id
@@ -680,6 +676,9 @@ class Dispatcher(metaclass=DispatcherMeta):
                     args[name] = bindings.Out()
 
             if fi.is_async:
+                if self._azure_monitor_available or self._otel_libs_available:
+                    self.configure_opentelemetry(fi_context)
+
                 call_result = \
                     await self._run_async_func(fi_context, fi.func, args)
             else:
@@ -723,6 +722,7 @@ class Dispatcher(metaclass=DispatcherMeta):
 
             # Actively flush customer print() function to console
             sys.stdout.flush()
+
             return protos.StreamingMessage(
                 request_id=self.request_id,
                 invocation_response=protos.InvocationResponse(
@@ -1014,6 +1014,8 @@ class Dispatcher(metaclass=DispatcherMeta):
         # invocation_id from ThreadPoolExecutor's threads.
         context.thread_local_storage.invocation_id = invocation_id
         try:
+            if self._azure_monitor_available or self._otel_libs_available:
+                self.configure_opentelemetry(context)
             return ExtensionManager.get_sync_invocation_wrapper(context,
                                                                 func)(params)
         finally:

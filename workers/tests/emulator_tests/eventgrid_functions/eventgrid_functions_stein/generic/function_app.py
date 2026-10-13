@@ -1,19 +1,18 @@
 import json
+import logging
 from datetime import datetime
 
 import azure.functions as func
 
-from azure_functions_worker import logging
-
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
-@app.function_name(name="eventGridTrigger")
+@app.function_name(name="eventgrid_trigger")
 @app.event_grid_trigger(arg_name="event", type="eventGridTrigger")
 @app.generic_output_binding(
     arg_name="$return",
     type="blob",
-    connection="STORAGE_CONNECTION",
+    connection="AzureWebJobsStorage",
     path="python-worker-tests/test-eventgrid-triggered.txt")
 def event_grid_trigger(event: func.EventGridEvent) -> str:
     logging.info("Event grid function is triggered!")
@@ -57,35 +56,6 @@ def eventgrid_output_binding(
     return func.HttpResponse(r_value)
 
 
-@app.function_name(name="eventgrid_output_binding_message_to_blobstore")
-@app.generic_trigger(arg_name="msg",
-                     type="queueTrigger",
-                     queue_name="test-event-grid-storage-queue",
-                     connection="STORAGE_CONNECTION")
-@app.generic_output_binding(
-    arg_name="$return",
-    type="blob",
-    connection="STORAGE_CONNECTION",
-    path="python-worker-tests/test-eventgrid-output-binding.txt")
-def eventgrid_output_binding_message_to_blobstore(
-        msg: func.QueueMessage) -> bytes:
-    return msg.get_body()
-
-
-@app.function_name(name="eventgrid_output_binding_success")
-@app.generic_trigger(arg_name="req", type="httpTrigger",
-                     route="eventgrid_output_binding_success")
-@app.generic_output_binding(arg_name="$return", type="http")
-@app.generic_input_binding(
-    arg_name="file",
-    type="blob",
-    path="python-worker-tests/test-eventgrid-output-binding.txt",
-    connection="STORAGE_CONNECTION")
-def eventgrid_output_binding_success(
-        req: func.HttpRequest, file: func.InputStream) -> str:
-    return file.read().decode('utf-8')
-
-
 @app.function_name(name="get_eventgrid_triggered")
 @app.generic_trigger(arg_name="req", type="httpTrigger",
                      route="get_eventgrid_triggered")
@@ -94,7 +64,7 @@ def eventgrid_output_binding_success(
     arg_name="file",
     type="blob",
     path="python-worker-tests/test-eventgrid-triggered.txt",
-    connection="STORAGE_CONNECTION")
+    connection="AzureWebJobsStorage")
 def get_eventgrid_triggered(
         req: func.HttpRequest, file: func.InputStream) -> str:
     return file.read().decode('utf-8')

@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import importlib.util
 import os
+import sys
 from unittest import skip
 from unittest.case import skipIf
 from unittest.mock import patch
@@ -119,6 +120,8 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
             ).lower()
         )
 
+    @skipIf(sys.version_info[:2] >= (3, 15),
+            'Vendored protobuf behavior applies only to the classic worker.')
     @skipIf(is_envvar_true('skipTest'),
             'Running tests using an editable azure-functions package.')
     def test_loading_libraries_from_customers_package(self):
@@ -161,6 +164,33 @@ class TestGRPCandProtobufDependencyIsolationOnDedicated(
         )
 
         # grpc is not vendored
+        self.assertEqual(
+            libraries['grpc.expected.version'], libraries['grpc.version']
+        )
+
+    @skipIf(sys.version_info[:2] < (3, 15),
+            'Customer protobuf behavior requires R2P2 on Python 3.15+.')
+    @skipIf(is_envvar_true('skipTest'),
+            'Running tests using an editable azure-functions package.')
+    def test_r2p2_loads_protobuf_from_customers_package(self):
+        r: Response = self.webhost.request('GET', 'report_dependencies')
+        libraries = r.json()['libraries']
+
+        self.assertEqual(
+            libraries['proto.expected.version'],
+            libraries['proto.version'],
+            msg="R2P2 should load the customer's pinned protobuf.",
+        )
+        self.assertIn(
+            self.package_name.lower(),
+            libraries['proto.file'].lower(),
+            msg=(
+                "google.protobuf did not resolve to the customer's package. "
+                f"proto.file={libraries['proto.file']!r}"
+            ),
+        )
+        self.assertNotIn('_vendored', libraries['proto.file'])
+
         self.assertEqual(
             libraries['grpc.expected.version'], libraries['grpc.version']
         )

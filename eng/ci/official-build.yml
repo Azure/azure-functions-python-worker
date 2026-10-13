@@ -69,6 +69,9 @@ extends:
           - template: /eng/templates/jobs/ci-unit-tests.yml@self
             parameters:
               PoolName: 1es-pool-azfunc
+          - template: /eng/templates/jobs/ci-r2p2-unit-tests.yml@self
+            parameters:
+              PoolName: 1es-pool-azfunc
       - stage: RunWorkerDockerDedicatedTests
         dependsOn: BuildPythonWorker
         jobs:

@@ -13,10 +13,11 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
     "Operating System :: MacOS :: MacOS X",
@@ -47,7 +48,17 @@ Documentation = "https://github.com/Azure/azure-functions-python-worker?tab=read
 Repository = "https://github.com/Azure/azure-functions-python-worker"
 
 [project.optional-dependencies]
+dev-r2p2 = [
+    "flake8",
+    "pytest~=7.4.4",
+    "pytest-asyncio",
+    "pytest-instafail",
+    "pytest-rerunfailures"
+]
 dev = [
+    "protobuf~=7.36.2; python_version == '3.15'",
+    "grpcio-tools~=1.84.0; python_version == '3.15'",
+    "grpcio~=1.84.0; python_version == '3.15'",
     "azure-cosmos", # Used for CosmosDB Emulator tests
     "azure-eventhub", # Used for EventHub E2E tests
     "azure-functions-durable", # Used for Durable E2E tests
@@ -55,7 +66,8 @@ dev = [
     "azure-storage-blob~=12.27.1", # Used for Blob Emulator tests
     "flask",
     "fastapi",
-    "pydantic",
+    "pydantic; python_version < '3.15'",
+    "pydantic>=2.14.0b1; python_version >= '3.15'",
     "flake8==6.*",
     "mypy",
     "pytest~=7.4.4",

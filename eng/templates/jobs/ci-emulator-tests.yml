@@ -201,9 +201,10 @@ jobs:
           # Clean up Docker resources to free disk space
           docker system prune -af --volumes
           df -h
-          
-          docker pull mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
-          docker run --detach --publish 8081:8081 --publish 1234:1234 mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+
+          COSMOS_EMULATOR_IMAGE='mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-EN20260907@sha256:2db1f9e74c506bcf6fc347aa937aea1c00fa756061296a5a9efba530ce86ec02'
+          docker pull "$COSMOS_EMULATOR_IMAGE"
+          docker run --detach --publish 8081:8081 --publish 1234:1234 "$COSMOS_EMULATOR_IMAGE"
           docker ps
         displayName: "Start CosmosDB Emulator"
       - bash: |

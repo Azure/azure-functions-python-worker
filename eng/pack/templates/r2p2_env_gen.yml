@@ -8,7 +8,7 @@
 # build script and staging a consistent V4 NuGet artifact layout.
 #
 # Parameters:
-#   pythonVersion : interpreter to link against (e.g. 3.15.0-rc.1)
+#   pythonVersion : interpreter to link against (e.g. 3.15)
 #   artifactName  : pipeline artifact name (e.g. 3.15_WINDOWS_ARM64)
 #   osName        : WINDOWS | LINUX | OSX (selects the build script)
 #   architecture  : x64 | x86 | arm64; packaged R2P2 target architecture
@@ -31,7 +31,6 @@ steps:
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
     architecture: ${{ coalesce(parameters.hostArchitecture, parameters.architecture) }}
-    allowUnstable: true
     addToPath: true
 - task: CargoAuthenticate@0
   displayName: 'Authenticate Cargo to CFS'

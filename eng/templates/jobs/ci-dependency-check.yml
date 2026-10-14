@@ -23,7 +23,7 @@ jobs:
         Python314:
           PYTHON_VERSION: '3.14'
         Python315:
-          PYTHON_VERSION: '3.15.0-rc.1'
+          PYTHON_VERSION: '3.15'
     steps:
       - task: PipAuthenticate@1
         displayName: 'Authenticate pip to CFS'
@@ -33,7 +33,6 @@ jobs:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
-          allowUnstable: true
       - powershell: |
           $PY_VER = "$(PYTHON_VERSION)"
           Write-Host "Python version: $PY_VER"

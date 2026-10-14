@@ -36,7 +36,7 @@ jobs:
           EVENTGRID_URI: $(LinuxEventGridTopicUriString38)
           EVENTGRID_CONNECTION: $(LinuxEventGridConnectionKeyString38)
         Python315:
-          PYTHON_VERSION: '3.15.0-rc.1'
+          PYTHON_VERSION: '3.15'
           R2P2_WORKER: 'true'
           STORAGE_CONNECTION: $(LinuxStorageConnectionString39)
           SQL_CONNECTION: $(LinuxSqlConnectionString39)
@@ -79,7 +79,6 @@ jobs:
         displayName: 'Use Python $(PYTHON_VERSION)'
         inputs:
           versionSpec: $(PYTHON_VERSION)
-          allowUnstable: true
       - bash: |
           set -euo pipefail
           PY="$(which python)"

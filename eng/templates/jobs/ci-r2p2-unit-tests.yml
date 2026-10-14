@@ -21,8 +21,7 @@ jobs:
       - task: UsePythonVersion@0
         displayName: 'Use Python 3.15'
         inputs:
-          versionSpec: '3.15.0-rc.1'
-          allowUnstable: true
+          versionSpec: '3.15'
       - pwsh: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true

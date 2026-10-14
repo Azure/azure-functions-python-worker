@@ -12,7 +12,7 @@ What are the supported Python versions?
 
 | Azure Functions Runtime          | Python 3.11 | Python 3.12 | Python 3.13 | Python 3.14 | Python 3.15 |
 |----------------------------------|-------------|-------------|-------------|-------------|-------------|
-| Azure Functions 4.0              | ✔           | ✔           | ✔           | ✔           || ✔           |
+| Azure Functions 4.0              | ✔           | ✔           | ✔           | ✔           | ✔           |
 
 For information about Azure Functions Runtime, please refer to [Azure Functions runtime versions overview](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions) page.
 

@@ -186,21 +186,11 @@ jobs:
 
     pool:
       name: 1es-pool-azfunc
-      image: 1es-ubuntu-24.04-min
+      image: 1es-ubuntu-22.04
       os: linux
 
     steps:
       - checkout: none
-
-      - bash: |
-          set -euo pipefail
-          azcopyDirectory="$(Agent.ToolsDirectory)/azcopy"
-          mkdir -p "$azcopyDirectory"
-          curl --fail --silent --show-error --location https://aka.ms/downloadazcopy-v10-linux |
-            tar -xz -C "$azcopyDirectory" --strip-components=1 --wildcards '*/azcopy'
-          "$azcopyDirectory/azcopy" --version
-          echo "##vso[task.prependpath]$azcopyDirectory"
-        displayName: 'Install AzCopy'
 
       - download: current
         artifact: ${{ parameters.artifactName }}
@@ -246,20 +236,11 @@ jobs:
 
     pool:
       name: 1es-pool-azfunc
-      image: 1es-ubuntu-24.04-min
+      image: 1es-ubuntu-22.04
       os: linux
 
     steps:
       - checkout: none
-
-      - bash: |
-          set -euo pipefail
-          curl --fail --silent --show-error --location https://aka.ms/InstallAzureCLIDeb | sudo bash
-          az extension add --name azure-devops
-          az extension show --name azure-devops --output table
-        displayName: 'Install Azure CLI and Azure DevOps extension'
-        env:
-          AZURE_EXTENSION_DIR: $(Agent.ToolsDirectory)/azure-cli-extensions
 
       - pwsh: |
           Write-Host "Target folder: ${{ parameters.blobPath }}/${{ parameters.libraryVersion }}"
@@ -295,5 +276,3 @@ jobs:
             Write-Host "Build ID: $($result.id)"
             Write-Host "Partner pipeline may require manual approval to proceed."
             Write-Host "Please check the pipeline at: https://dev.azure.com/azure-sdk/internal/_build/results?buildId=$($result.id)"
-        env:
-          AZURE_EXTENSION_DIR: $(Agent.ToolsDirectory)/azure-cli-extensions

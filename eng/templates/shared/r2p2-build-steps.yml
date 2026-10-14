@@ -14,6 +14,7 @@ steps:
     displayName: 'Use Python ${{ parameters.PYTHON_VERSION }}'
     inputs:
       versionSpec: ${{ parameters.PYTHON_VERSION }}
+      allowUnstable: true
 
   - pwsh: |
       $ErrorActionPreference = 'Stop'

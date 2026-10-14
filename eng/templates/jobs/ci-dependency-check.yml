@@ -33,6 +33,7 @@ jobs:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: $(PYTHON_VERSION)
+          allowUnstable: true
       - powershell: |
           $PY_VER = "$(PYTHON_VERSION)"
           Write-Host "Python version: $PY_VER"

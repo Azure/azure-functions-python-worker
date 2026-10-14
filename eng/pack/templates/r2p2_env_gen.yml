@@ -31,6 +31,7 @@ steps:
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
     architecture: ${{ coalesce(parameters.hostArchitecture, parameters.architecture) }}
+    allowUnstable: true
     addToPath: true
 - task: CargoAuthenticate@0
   displayName: 'Authenticate Cargo to CFS'

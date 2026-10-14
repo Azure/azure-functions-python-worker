@@ -80,13 +80,13 @@ jobs:
     # if you are making changes. Make sure they are the same.
     steps:         
       - name: Install node and npm
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2.5.2
         with:
           node-version: '16'
           check-latest: true
 
       - name: Azure Login
-        uses: azure/login@v1
+        uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1.6.1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -103,7 +103,7 @@ jobs:
           ./k6 version
 
       - name: Setup Azure RG and Storage Account For Functions App
-        uses: Azure/cli@1.0.4
+        uses: Azure/cli@4b58c946a0f48d82cc2b6e31c0d15a6604859554 # 1.0.4
         with:
           azcliversion: 2.16.0
           inlineScript: |
@@ -128,7 +128,7 @@ jobs:
             sleep 3 # Adding some breathing space for Storage Account creation.
       - name: Create new Consumption Azure Function App
         if: ${{ matrix.sku == 'cons' }}
-        uses: Azure/cli@1.0.4
+        uses: Azure/cli@4b58c946a0f48d82cc2b6e31c0d15a6604859554 # 1.0.4
         with:
           azcliversion: 2.16.0
           inlineScript: |
@@ -391,7 +391,7 @@ jobs:
           ls -la $GITHUB_WORKSPACE
           
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v2.2.1
+        uses: actions/upload-artifact@726a6dcd0199f578459862705eed35cda05af50b # v2.2.1
         with:
           # Artifact name
           name: RawTestRunArchive
@@ -421,7 +421,7 @@ jobs:
     needs: test
     steps:
       - name: Azure Login
-        uses: azure/login@v1
+        uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1.6.1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Cleaning up the resource group

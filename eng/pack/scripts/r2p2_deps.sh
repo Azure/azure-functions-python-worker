@@ -55,7 +55,15 @@ if [[ "$HOST_OS" == "Linux" && "$ARCHITECTURE" == "arm64" ]]; then
    sudo apt-get -o DPkg::Lock::Timeout=300 install -y \
       gcc-aarch64-linux-gnu g++-aarch64-linux-gnu make pkg-config
 
-   if [[ "$PYTHON_VERSION" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-(a|b|rc)\.?([0-9]+)$ ]]; then
+   if [[ "$PYTHON_VERSION" =~ ^([0-9]+\.[0-9]+)$ ]]; then
+      REQUESTED_MAJOR_MINOR="${BASH_REMATCH[1]}"
+      SELECTED_PYTHON_VERSIONS="$(python -c 'import sys; v = sys.version_info; suffix = "" if v.releaselevel == "final" else {"alpha": "a", "beta": "b", "candidate": "rc"}[v.releaselevel] + str(v.serial); print(f"{v.major}.{v.minor}.{v.micro}|{v.major}.{v.minor}.{v.micro}{suffix}")')"
+      IFS='|' read -r PYTHON_BASE_VERSION PYTHON_ARTIFACT_VERSION <<< "$SELECTED_PYTHON_VERSIONS"
+      if [[ "${PYTHON_BASE_VERSION%.*}" != "$REQUESTED_MAJOR_MINOR" ]]; then
+         echo "Python $PYTHON_VERSION was requested, but the selected interpreter is $PYTHON_BASE_VERSION." >&2
+         exit 1
+      fi
+   elif [[ "$PYTHON_VERSION" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-(a|b|rc)\.?([0-9]+)$ ]]; then
       PYTHON_BASE_VERSION="${BASH_REMATCH[1]}"
       PYTHON_ARTIFACT_VERSION="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}"
    elif [[ "$PYTHON_VERSION" =~ ^([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
@@ -72,15 +80,26 @@ if [[ "$HOST_OS" == "Linux" && "$ARCHITECTURE" == "arm64" ]]; then
       exit 1
    fi
 
+   if [[ -z "${CPYTHON_ARM64_ARCHIVE:-}" ]]; then
+      echo "CPYTHON_ARM64_ARCHIVE must point to a pipeline-staged CPython $PYTHON_ARTIFACT_VERSION source archive." >&2
+      exit 1
+   fi
+   if [[ ! -f "$CPYTHON_ARM64_ARCHIVE" ]]; then
+      echo "The pipeline-staged CPython archive does not exist: $CPYTHON_ARM64_ARCHIVE" >&2
+      exit 1
+   fi
+
    PYTHON_CROSS_ROOT="$AGENT_TEMPDIRECTORY/cpython-$PYTHON_ARTIFACT_VERSION-arm64"
    PYTHON_SOURCE="$PYTHON_CROSS_ROOT/source"
    PYTHON_BUILD="$PYTHON_CROSS_ROOT/build"
    PYTHON_SDK="$PYTHON_CROSS_ROOT/sdk"
-   PYTHON_ARCHIVE="$AGENT_TEMPDIRECTORY/Python-$PYTHON_ARTIFACT_VERSION.tgz"
-   curl -fsSL "https://www.python.org/ftp/python/$PYTHON_BASE_VERSION/Python-$PYTHON_ARTIFACT_VERSION.tgz" \
-      -o "$PYTHON_ARCHIVE"
    mkdir -p "$PYTHON_SOURCE" "$PYTHON_BUILD" "$PYTHON_SDK/include/python$PYTHON_MAJOR_MINOR" "$PYTHON_SDK/lib"
-   tar -xzf "$PYTHON_ARCHIVE" -C "$PYTHON_SOURCE" --strip-components=1
+   tar -xzf "$CPYTHON_ARM64_ARCHIVE" -C "$PYTHON_SOURCE" --strip-components=1
+   SOURCE_PYTHON_VERSION="$(sed -n 's/^#define PY_VERSION[[:space:]][[:space:]]*"\([^"]*\)"/\1/p' "$PYTHON_SOURCE/Include/patchlevel.h")"
+   if [[ "$SOURCE_PYTHON_VERSION" != "$PYTHON_ARTIFACT_VERSION" ]]; then
+      echo "Expected CPython $PYTHON_ARTIFACT_VERSION source; archive contains ${SOURCE_PYTHON_VERSION:-an unknown version}." >&2
+      exit 1
+   fi
 
    cat > "$PYTHON_BUILD/config.site" <<'EOF'
 ac_cv_file__dev_ptmx=yes
@@ -146,7 +165,10 @@ fi
 ( cd "$WORKER" && cargo "${CARGO_ARGS[@]}" )
 
 # --- v2 + v1 runtimes + app SDK into the deps tree ------------------------
-python -m pip install ./runtimes/v2 ./runtimes/v1 azure-functions \
+python -m pip install \
+   azure-functions-runtime==1.2.1 \
+   azure-functions-runtime-v1==1.1.0 \
+   azure-functions \
     --no-compile --target "$DEPS"
 
 # --- Stage the runtime worker-directory layout ----------------------------

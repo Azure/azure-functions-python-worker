@@ -47,6 +47,8 @@ extends:
       codeSignValidation:
         enabled: true
         break: true
+    settings:
+      networkIsolationPolicy: DefaultDeny,CFSClean,CFSClean2
 
     stages:
        # Python Worker Build and Test Stages

@@ -69,15 +69,30 @@ rustup run $rustToolchain cargo --version
 $cargoArguments = @('build', '--release', '--locked')
 $binaryPath = Join-Path $WORKER 'target\release\r2p2.exe'
 if ($rustTarget) {
-    if ($PythonVersion -notmatch '^(?<base>\d+\.\d+\.\d+)-(?<level>a|b|rc)\.?(?<serial>\d+)$' -and
-        $PythonVersion -notmatch '^(?<base>\d+\.\d+\.\d+)$') {
-        throw "Unsupported Python version format for the CPython download: $PythonVersion"
-    }
-    $baseVersion = $Matches.base
-    $artifactVersion = if ($Matches.level) {
-        "$baseVersion$($Matches.level)$($Matches.serial)"
+    if ($PythonVersion -match '^(?<major>\d+)\.(?<minor>\d+)$') {
+        $requestedMajorMinor = "$($Matches.major).$($Matches.minor)"
+        $selectedPythonVersions = python -c 'import sys; v = sys.version_info; suffix = "" if v.releaselevel == "final" else {"alpha": "a", "beta": "b", "candidate": "rc"}[v.releaselevel] + str(v.serial); print(f"{v.major}.{v.minor}.{v.micro}|{v.major}.{v.minor}.{v.micro}{suffix}")'
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to determine the selected Python interpreter version.'
+        }
+        $resolvedVersions = $selectedPythonVersions.Trim() -split '\|', 2
+        if ($resolvedVersions.Count -ne 2) {
+            throw "Unexpected selected Python version: $selectedPythonVersions"
+        }
+        $baseVersion = $resolvedVersions[0]
+        $artifactVersion = $resolvedVersions[1]
+        if ($baseVersion -notmatch '^(?<major>\d+)\.(?<minor>\d+)\.\d+$' -or
+            "$($Matches.major).$($Matches.minor)" -ne $requestedMajorMinor) {
+            throw "Python $PythonVersion was requested, but the selected interpreter is $baseVersion."
+        }
+    } elseif ($PythonVersion -match '^(?<base>\d+\.\d+\.\d+)-(?<level>a|b|rc)\.?(?<serial>\d+)$') {
+        $baseVersion = $Matches.base
+        $artifactVersion = "$baseVersion$($Matches.level)$($Matches.serial)"
+    } elseif ($PythonVersion -match '^(?<base>\d+\.\d+\.\d+)$') {
+        $baseVersion = $Matches.base
+        $artifactVersion = $baseVersion
     } else {
-        $baseVersion
+        throw "Unsupported Python version format for the CPython download: $PythonVersion"
     }
     if ($baseVersion -notmatch '^(?<major>\d+)\.(?<minor>\d+)') {
         throw "Unable to determine the Python major/minor version from $PythonVersion"
@@ -85,15 +100,25 @@ if ($rustTarget) {
     $pythonMajorMinor = "$($Matches.major).$($Matches.minor)"
     $pythonLibrary = "python$($Matches.major)$($Matches.minor).lib"
     $pythonSdk = Join-Path $env:AGENT_TEMPDIRECTORY "cpython-$artifactVersion-arm64"
-    $pythonArchive = Join-Path $env:AGENT_TEMPDIRECTORY "python-$artifactVersion-arm64.zip"
-    $pythonUrl = "https://www.python.org/ftp/python/$baseVersion/python-$artifactVersion-arm64.zip"
+    $pythonArchive = $env:CPYTHON_ARM64_ARCHIVE
+    if (-not $pythonArchive) {
+        throw "CPYTHON_ARM64_ARCHIVE must point to a pipeline-staged CPython $artifactVersion ARM64 SDK archive."
+    }
+    if (-not (Test-Path $pythonArchive -PathType Leaf)) {
+        throw "The pipeline-staged CPython archive does not exist: $pythonArchive"
+    }
 
-    Invoke-WebRequest $pythonUrl -OutFile $pythonArchive
     Expand-Archive $pythonArchive -DestinationPath $pythonSdk -Force
     $pythonHeader = Join-Path $pythonSdk 'include\Python.h'
     $pythonImportLibrary = Join-Path $pythonSdk "libs\$pythonLibrary"
     if (-not (Test-Path $pythonHeader) -or -not (Test-Path $pythonImportLibrary)) {
         throw "The ARM64 CPython SDK is missing $pythonHeader or $pythonImportLibrary."
+    }
+    $patchLevelHeader = Join-Path $pythonSdk 'include\patchlevel.h'
+    $versionMatch = Select-String -Path $patchLevelHeader -Pattern '^#define PY_VERSION\s+"([^"]+)"$'
+    $sourcePythonVersion = $versionMatch.Matches.Groups[1].Value
+    if ($sourcePythonVersion -ne $artifactVersion) {
+        throw "Expected CPython $artifactVersion SDK; archive contains $(if ($sourcePythonVersion) { $sourcePythonVersion } else { 'an unknown version' })."
     }
 
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
@@ -127,7 +152,10 @@ rustup run $rustToolchain cargo @cargoArguments
 Pop-Location
 
 # --- v2 + v1 runtimes + app SDK into the deps tree ------------------------
-python -m pip install ./runtimes/v2 ./runtimes/v1 azure-functions `
+python -m pip install `
+    azure-functions-runtime==1.2.1 `
+    azure-functions-runtime-v1==1.1.0 `
+    azure-functions `
     --no-compile --target $DEPS
 
 # --- Stage the runtime worker-directory layout ----------------------------

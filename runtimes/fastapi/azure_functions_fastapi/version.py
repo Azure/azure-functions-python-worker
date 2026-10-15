@@ -1,4 +1,4 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-VERSION = "0.7.0"
+VERSION = "0.8.0"

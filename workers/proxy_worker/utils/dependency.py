@@ -316,10 +316,11 @@ class DependencyManager:
 
         not_builtin = set(sys.modules.keys()) - set(sys.builtin_module_names)
 
-        # Don't reload proxy_worker
+        # Don't reload proxy_worker or __main__
         to_be_cleared_from_cache = set([
             module_name for module_name in not_builtin
             if not module_name.startswith('proxy_worker')
+            and module_name != '__main__'
         ])
 
         for module_name in to_be_cleared_from_cache:

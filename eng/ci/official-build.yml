@@ -47,6 +47,8 @@ extends:
       codeSignValidation:
         enabled: true
         break: true
+    settings:
+      networkIsolationPolicy: DefaultDeny,CFSClean,CFSClean2
 
     stages:
        # Python Worker Build and Test Stages
@@ -67,6 +69,9 @@ extends:
         dependsOn: BuildPythonWorker
         jobs:
           - template: /eng/templates/jobs/ci-unit-tests.yml@self
+            parameters:
+              PoolName: 1es-pool-azfunc
+          - template: /eng/templates/jobs/ci-r2p2-unit-tests.yml@self
             parameters:
               PoolName: 1es-pool-azfunc
       - stage: RunWorkerDockerDedicatedTests

@@ -2,12 +2,14 @@
 # Licensed under the MIT License.
 import asyncio
 import collections as col
+import concurrent.futures
 import contextvars
 import os
 import sys
+import threading
 import unittest
 from typing import Optional, Tuple
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from tests.utils import testutils
 from tests.utils.testutils import UNIT_TESTS_ROOT
@@ -629,6 +631,55 @@ class TestDispatcherStein(testutils.AsyncTestCase):
             self.assertEqual(r.response.result.status,
                              protos.StatusResult.Success)
         del sys.modules['function_app']
+
+
+class TestSyncInvocationContext(unittest.TestCase):
+
+    def setUp(self):
+        self.dispatcher = Dispatcher.__new__(Dispatcher)
+        self.context = MagicMock()
+        self.context.thread_local_storage = threading.local()
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
+    def tearDown(self):
+        self.executor.shutdown()
+
+    @patch('azure_functions_worker.dispatcher.ExtensionManager'
+           '.get_sync_invocation_wrapper')
+    def test_invocation_id_cleared_after_success(self, mock_get_wrapper):
+        observed_invocation_ids = []
+        mock_get_wrapper.return_value = lambda params: (
+            observed_invocation_ids.append(
+                self.context.thread_local_storage.invocation_id))
+
+        self.executor.submit(
+            self.dispatcher._run_sync_func,
+            'test-invocation', self.context, MagicMock(), {}).result()
+
+        remaining_invocation_id = self.executor.submit(
+            lambda: self.context.thread_local_storage.invocation_id).result()
+        self.assertEqual(observed_invocation_ids, ['test-invocation'])
+        self.assertIsNone(remaining_invocation_id)
+
+    @patch('azure_functions_worker.dispatcher.ExtensionManager'
+           '.get_sync_invocation_wrapper')
+    def test_invocation_id_cleared_after_exception(self, mock_get_wrapper):
+        def invoke(params):
+            self.assertEqual(
+                self.context.thread_local_storage.invocation_id,
+                'test-invocation')
+            raise RuntimeError('test error')
+
+        mock_get_wrapper.return_value = invoke
+
+        with self.assertRaisesRegex(RuntimeError, 'test error'):
+            self.executor.submit(
+                self.dispatcher._run_sync_func,
+                'test-invocation', self.context, MagicMock(), {}).result()
+
+        remaining_invocation_id = self.executor.submit(
+            lambda: self.context.thread_local_storage.invocation_id).result()
+        self.assertIsNone(remaining_invocation_id)
 
 
 class TestDispatcherSteinLegacyFallback(testutils.AsyncTestCase):

@@ -105,18 +105,21 @@ def to_nullable_timestamp(date_time: Optional[Union[datetime, int]],
                                                       int) else \
                 date_time.timestamp()
 
-            try:
-                from google.protobuf.timestamp_pb2 import Timestamp
-            except ImportError:
-                raise ImportError(
-                    "protobuf not found when trying to "
-                    "import Timestamp."
-                    "Sys Path: %s. "
-                    "Sys Modules: %s. ",
-                    sys.path, sys.modules)
+            timestamp_type = getattr(protos, "Timestamp", None)
+            if timestamp_type is None:
+                try:
+                    from google.protobuf.timestamp_pb2 import Timestamp
+                    timestamp_type = Timestamp
+                except ImportError:
+                    raise ImportError(
+                        "protobuf not found when trying to "
+                        "import Timestamp."
+                        "Sys Path: %s. "
+                        "Sys Modules: %s. ",
+                        sys.path, sys.modules)
 
             return protos.NullableTimestamp(
-                value=Timestamp(seconds=int(time_in_seconds)))
+                value=timestamp_type(seconds=int(time_in_seconds)))
         except Exception:
             raise TypeError(
                 "A 'datetime' or 'int'"

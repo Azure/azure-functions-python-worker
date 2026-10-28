@@ -147,6 +147,14 @@ if ($rustTarget) {
     $env:PYO3_PYTHON = (Get-Command python).Source
 }
 
+# Instrument Rust code for Control Flow Guard and have rustc pass /guard:cf to
+# the MSVC linker. Keep /DYNAMICBASE explicit because CFG requires ASLR.
+$env:RUSTFLAGS = (@(
+    $env:RUSTFLAGS
+    '-Ccontrol-flow-guard=yes'
+    '-Clink-arg=/DYNAMICBASE'
+) | Where-Object { $_ }) -join ' '
+
 Push-Location $WORKER
 rustup run $rustToolchain cargo @cargoArguments
 Pop-Location

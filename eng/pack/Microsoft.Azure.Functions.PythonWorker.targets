@@ -42,4 +42,18 @@
     <Error Condition="'$(_PythonWorkersRuntimeFolder)' == ''" Text="Runtime '$(RuntimeIdentifier)' is not supported by the Python worker. Supported runtimes are @(_PythonSupportedRuntime)." />
   </Target>
 
+  <!-- NuGet restore does not retain POSIX modes. Restore the R2P2 execute bit
+       after the worker files have been copied to their final build outputs. -->
+  <Target Name="_SetFunctionsPythonWorkerOutputPermissions"
+          AfterTargets="CopyFilesToOutputDirectory"
+          Condition="'$(OS)' != 'Windows_NT' and Exists('$(OutDir)workers/python')">
+    <Exec Command="find &quot;$(OutDir)workers/python&quot; -type f -name r2p2 -exec chmod a+x {} +" />
+  </Target>
+
+  <Target Name="_SetFunctionsPythonWorkerPublishPermissions"
+          AfterTargets="CopyFilesToPublishDirectory"
+          Condition="'$(OS)' != 'Windows_NT' and Exists('$(PublishDir)workers/python')">
+    <Exec Command="find &quot;$(PublishDir)workers/python&quot; -type f -name r2p2 -exec chmod a+x {} +" />
+  </Target>
+
 </Project>

@@ -434,6 +434,7 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(normalizedPythonVersion)_OSX_ARM64'
       grpcBuild: 'darwin.so'
+      architecture: 'arm64'
 - job: Build_LINUX_ARM64
   timeoutInMinutes: 240
   pool:

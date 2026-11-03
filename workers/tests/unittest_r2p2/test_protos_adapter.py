@@ -9,6 +9,8 @@ import protos_adapter as protos
 
 
 def test_enum_wrappers_match_protobuf_lookup_behavior():
+    assert protos.HostConfiguration.Status.Value("Available") == 1
+    assert protos.HostConfiguration.Status.Name(4) == "TooLarge"
     assert protos.StatusResult.Status.Value("Success") == 1
     assert protos.StatusResult.Status.Name(2) == "Cancelled"
     assert protos.BindingInfo.Direction.Value("in") == protos.BindingInfo.in_
@@ -140,6 +142,25 @@ def test_control_responses_serialize_nested_messages_and_defaults():
     assert protos.FunctionEnvironmentReloadResponse().to_dict() == {
         "capabilities": {}, "worker_metadata": None, "result": None}
     assert protos.WorkerStatusResponse().to_dict() == {}
+
+
+@pytest.mark.parametrize("status,content", [
+    (protos.HostConfiguration.Available, b"\x00\x80\xff"),
+    (protos.HostConfiguration.Available, b""),
+    (protos.HostConfiguration.Missing, b""),
+    (protos.HostConfiguration.Error, b""),
+    (protos.HostConfiguration.TooLarge, b""),
+])
+def test_host_configuration_preserves_bytes_status_and_presence(
+        status, content):
+    result = protos.WorkerInitResponse(
+        host_configuration=protos.HostConfiguration(
+            status=status, content=content),
+        result=protos.StatusResult(status=protos.StatusResult.Success))
+    assert result.to_dict()["host_configuration"] == {
+        "status": status, "content": content}
+    assert result.to_dict()["result"]["status"] == protos.StatusResult.Success
+    assert "host_configuration" not in protos.WorkerInitResponse().to_dict()
 
 
 def test_rpc_log_and_model_binding_data_hold_runtime_fields():

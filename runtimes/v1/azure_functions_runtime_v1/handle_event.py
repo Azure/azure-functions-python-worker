@@ -9,6 +9,8 @@ import time
 import typing
 
 from .functions import FunctionInfo, Registry
+from .host_configuration import (get_host_configuration,
+                                 reset_host_configuration)
 from .loader import load_function, install
 from .logging import logger
 from .otel import (configure_opentelemetry,
@@ -56,6 +58,7 @@ async def worker_init_request(request):
     host_capabilities = init_request.capabilities
     _host = request.properties.get("host")
     protos = request.properties.get("protos")
+    host_configuration = get_host_configuration(host_capabilities, protos)
     if FUNCTION_DATA_CACHE in host_capabilities:
         val = host_capabilities[FUNCTION_DATA_CACHE]
         _function_data_cache_enabled = val == TRUE
@@ -86,6 +89,7 @@ async def worker_init_request(request):
 
     logger.debug("Successfully completed WorkerInitRequest")
     return protos.WorkerInitResponse(
+        **host_configuration,
         capabilities=capabilities,
         worker_metadata=get_worker_metadata(protos),
         result=protos.StatusResult(status=protos.StatusResult.Success)
@@ -277,10 +281,11 @@ async def function_environment_reload_request(request):
         sys.path_importer_cache.clear()
 
         # Reload environment variables
-        os.environ.clear()
-        env_vars = func_env_reload_request.environment_variables
-        for var in env_vars:
-            os.environ[var] = env_vars[var]
+        with reset_host_configuration():
+            os.environ.clear()
+            env_vars = func_env_reload_request.environment_variables
+            for var in env_vars:
+                os.environ[var] = env_vars[var]
 
         # Refresh timezone information after environment reload
         time.tzset()

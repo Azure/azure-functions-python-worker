@@ -20,10 +20,21 @@ import bridge
     ("v2", "azure_functions_runtime"),
 ])
 @pytest.mark.parametrize("source,status,content", [
+    (b"{}", 1, b"{}"),
     (b"\xff\xfe" + '/*c*/ { "a": [1,], }'.encode("utf-16-le"),
      1, b'{"a":[1]}'),
+    (b"", 3, b""),
+    (b"\xff\xfe", 3, b""),
+    (b"[]", 3, b""),
+    (b'"string"', 3, b""),
+    (b"1E+2", 3, b""),
+    (b"null", 3, b""),
+    (b"true", 3, b""),
+    (b"false", 3, b""),
+    (b"/* leading */ []", 3, b""),
     (b"{invalid-json", 3, b""),
-], ids=("utf16-jsonc", "invalid-json"))
+], ids=("empty-object", "utf16-jsonc", "empty", "bom-only", "array", "string",
+        "number", "null", "true", "false", "comment-array", "invalid-json"))
 def test_host_configuration_through_runtime_and_bridge(
         version, package, source, status, content, monkeypatch, tmp_path,
         reset_bridge_state):

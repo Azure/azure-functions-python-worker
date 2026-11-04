@@ -44,13 +44,22 @@ def request(capabilities=None):
 @pytest.mark.parametrize("source,status,expected", [
     (b'{"version":"2.0"}', protos.HostConfiguration.Available, b'{"version":"2.0"}'),
     (b'/*c*/ { "a": [1,], }', protos.HostConfiguration.Available, b'{"a":[1]}'),
-    (b"", protos.HostConfiguration.Available, b""),
+    (b"", protos.HostConfiguration.Error, b""),
+    (b"\xff\xfe", protos.HostConfiguration.Error, b""),
+    (b"[]", protos.HostConfiguration.Error, b""),
+    (b'"string"', protos.HostConfiguration.Error, b""),
+    (b"1E+2", protos.HostConfiguration.Error, b""),
+    (b"null", protos.HostConfiguration.Error, b""),
+    (b"true", protos.HostConfiguration.Error, b""),
+    (b"false", protos.HostConfiguration.Error, b""),
+    (b"/* leading */ []", protos.HostConfiguration.Error, b""),
     (b"{invalid-json", protos.HostConfiguration.Error, b""),
     (None, protos.HostConfiguration.Missing, b""),
     (b"\xff", protos.HostConfiguration.Error, b""),
     (b"x" * 65537, protos.HostConfiguration.TooLarge, b""),
-], ids=("available", "jsonc", "empty", "malformed-json", "missing", "error",
-        "too-large"))
+], ids=("available", "jsonc", "empty", "bom-only", "array", "string", "number",
+        "null", "true", "false", "comment-array", "malformed-json", "missing",
+        "error", "too-large"))
 async def test_delivery_preserves_init_and_wire_presence(
         tmp_path, source, status, expected):
     if source is not None:
@@ -98,11 +107,11 @@ async def test_genuine_initialization_failures_keep_delivery(
 
 @pytest.mark.asyncio
 async def test_specialization_starts_new_snapshot_generation(tmp_path):
-    (tmp_path / "host.json").write_bytes(b'"old"')
+    (tmp_path / "host.json").write_bytes(b'{"value":"old"}')
     await handle_event.worker_init_request(request({"HostConfiguration": "1"}))
     next_app = tmp_path / "next"
     next_app.mkdir()
-    (next_app / "host.json").write_bytes(b'"new"')
+    (next_app / "host.json").write_bytes(b'{"value":"new"}')
     reload_request = SimpleNamespace(
         request=protos.StreamingMessage(
             function_environment_reload_request=(
@@ -117,4 +126,4 @@ async def test_specialization_starts_new_snapshot_generation(tmp_path):
         assert host_configuration._snapshot is None
         response = await handle_event.worker_init_request(
             request({"HostConfiguration": "1"}))
-        assert response.host_configuration.content == b'"new"'
+        assert response.host_configuration.content == b'{"value":"new"}'

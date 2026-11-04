@@ -43,13 +43,22 @@ def request(capabilities=None):
 @pytest.mark.parametrize("source,status,expected", [
     (b"{}", protos.HostConfiguration.Available, b"{}"),
     (b'/*c*/ { "a": [1,], }', protos.HostConfiguration.Available, b'{"a":[1]}'),
-    (b"", protos.HostConfiguration.Available, b""),
+    (b"", protos.HostConfiguration.Error, b""),
+    (b"\xff\xfe", protos.HostConfiguration.Error, b""),
+    (b"[]", protos.HostConfiguration.Error, b""),
+    (b'"string"', protos.HostConfiguration.Error, b""),
+    (b"1E+2", protos.HostConfiguration.Error, b""),
+    (b"null", protos.HostConfiguration.Error, b""),
+    (b"true", protos.HostConfiguration.Error, b""),
+    (b"false", protos.HostConfiguration.Error, b""),
+    (b"/* leading */ []", protos.HostConfiguration.Error, b""),
     (b"{invalid-json", protos.HostConfiguration.Error, b""),
     (None, protos.HostConfiguration.Missing, b""),
     (b"\xff", protos.HostConfiguration.Error, b""),
     (b"x" * 65537, protos.HostConfiguration.TooLarge, b""),
-], ids=("available", "jsonc", "empty", "malformed-json", "missing", "error",
-        "too-large"))
+], ids=("available", "jsonc", "empty", "bom-only", "array", "string", "number",
+        "null", "true", "false", "comment-array", "malformed-json", "missing",
+        "error", "too-large"))
 async def test_classic_init_preserves_status_capabilities_and_snapshot(
         worker, tmp_path, source, status, expected):
     if source is not None:
@@ -119,7 +128,7 @@ async def test_classic_specialization_invalidates_cached_failure(
         protos.HostConfiguration.Error)
     next_app = tmp_path / "next"
     next_app.mkdir()
-    (next_app / "host.json").write_bytes(b'"new"')
+    (next_app / "host.json").write_bytes(b'{"value":"new"}')
     reload_request = protos.StreamingMessage(
         function_environment_reload_request=(
             protos.FunctionEnvironmentReloadRequest(environment_variables={
@@ -137,4 +146,5 @@ async def test_classic_specialization_invalidates_cached_failure(
         assert host_configuration._snapshot is None
         response = await worker._handle__worker_init_request(
             request({"HostConfiguration": "1"}))
-        assert response.worker_init_response.host_configuration.content == b'"new"'
+        assert response.worker_init_response.host_configuration.content == (
+            b'{"value":"new"}')

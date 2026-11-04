@@ -70,13 +70,14 @@ identical package-local helpers (checked by a shared contract test), so library
 runtimes and the protobuf-free R2P2 do not import the classic worker.
 
 The payload is strictly decoded as UTF-8 by default, or UTF-8/UTF-16/UTF-32 with a
-BOM, and incrementally converted to BOM-free UTF-8. Non-empty content is
-normalized to strict compact JSON: `//` and `/* */` comments and trailing commas
+BOM, and incrementally converted to BOM-free UTF-8. Content is normalized to a
+strict compact JSON object: `//` and `/* */` comments and trailing commas
 are accepted and removed. String/property escapes, number spellings, duplicate
-keys and key order are preserved without reserialization. Any single JSON root
-is allowed, with at most 64 nested containers. Non-empty whitespace/comment-only
-or malformed input produces `Error`; decoded empty files (including BOM-only
-files) stay `Available` with empty content for the Host to reject.
+keys and key order are preserved without reserialization. Exactly one object
+root is required, with at most 64 nested containers. `{}` and nested arrays or
+scalars inside an object are valid. Empty files (including BOM-only files),
+non-object roots, whitespace/comment-only or malformed input produce
+content-free `Error` with reason `InvalidJson`.
 
 The inclusive 65,536-byte cap applies both to converted bytes before parsing
 and to normalized output, so oversized comments or malformed input cannot
@@ -91,7 +92,7 @@ the Host still owns configuration interpretation.
 
 Normalization follows
 [Azure/azure-functions-dotnet-worker#3522](https://github.com/Azure/azure-functions-dotnet-worker/pull/3522)
-at commit `4c440d8d38526a16eb549ac6fba1082fe5ad4450`. Python uses strict decoders,
+through commit `e7765e7201008340e4cc407486bbd31649abf162`. Python uses strict decoders,
 so legitimately encoded U+FFFD remains valid with or without a BOM; it does not
 copy the reference's `StreamReader` replacement-character workaround.
 Line comments end at CR, LF or EOF and reject U+2028/U+2029; those characters

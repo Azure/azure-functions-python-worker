@@ -119,21 +119,50 @@ def test_non_directory_root_and_directory_file(helper, tmp_path, monkeypatch):
 
 def test_relative_root_keeps_native_resolution(helper, tmp_path, monkeypatch):
     (tmp_path / "app").mkdir()
-    (tmp_path / "app" / "host.json").write_bytes(b'"relative"')
+    (tmp_path / "app" / "host.json").write_bytes(b'{"path":"relative"}')
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", "app")
     assert_snapshot(snapshot(helper), protos.HostConfiguration.Available,
-                    b'"relative"')
+                    b'{"path":"relative"}')
 
 
-@pytest.mark.parametrize("text", ["", "{}", '{"secret":"\u20ac\U0001f600"}'])
+@pytest.mark.parametrize("text", ["{}", '{"secret":"\u20ac\U0001f600"}'])
 @pytest.mark.parametrize("encoding,bom", ENCODINGS)
-def test_encodings_and_empty_content(helper, tmp_path, encoding, bom, text):
+def test_encodings(helper, tmp_path, encoding, bom, text):
     (tmp_path / "host.json").write_bytes(bom + text.encode(encoding))
     with patch.object(helper.os, "stat") as stat:
         assert_snapshot(snapshot(helper), protos.HostConfiguration.Available,
                         text.encode("utf-8"))
     stat.assert_not_called()
+
+
+@pytest.mark.parametrize("text", [
+    "", "[]", '"string"', "1E+2", "null", "true", "false",
+    "/* leading */ []", "// leading\n[]", '/* leading */ "string"',
+    "/* leading */ 1E+2", "/* leading */ null", "/* leading */ true",
+    "/* leading */ false",
+], ids=("empty", "array", "string", "number", "null", "true", "false",
+        "comment-array", "line-comment-array", "comment-string",
+        "comment-number", "comment-null", "comment-true", "comment-false"))
+@pytest.mark.parametrize("encoding,bom", ENCODINGS)
+def test_empty_and_non_object_roots_are_cached_invalid_json(
+        helper, tmp_path, encoding, bom, text, caplog):
+    path = tmp_path / "host.json"
+    path.write_bytes(bom + text.encode(encoding))
+    first = snapshot(helper)
+    assert_snapshot(first, protos.HostConfiguration.Error)
+    path.write_bytes(b"{}")
+    with patch.object(helper.os.environ, "get") as root, \
+            patch.object(helper, "open", create=True) as read:
+        repeated = snapshot(helper)
+    root.assert_not_called()
+    read.assert_not_called()
+    assert repeated is not first
+    assert_snapshot(repeated, protos.HostConfiguration.Error)
+    assert caplog.messages == [
+        "Host configuration could not be delivered to the host. "
+        "Reason: InvalidJson. The failure is retained until the worker "
+        "process restarts."]
 
 
 @pytest.mark.parametrize("encoding,bom", ENCODINGS)
@@ -142,8 +171,11 @@ def test_encodings_and_empty_content(helper, tmp_path, encoding, bom, text):
 def test_final_byte_limit_not_source_length(
         helper, tmp_path, encoding, bom, size, character):
     width = len(character.encode("utf-8"))
-    text = ('"' + character * ((size - 2) // width)
-            + "a" * ((size - 2) % width) + '"')
+    prefix, suffix = '{"value":"', '"}'
+    payload_size = size - len(prefix) - len(suffix)
+    text = (prefix + character * (payload_size // width)
+            + "a" * (payload_size % width) + suffix)
+    assert len(text.encode("utf-8")) == size
     source = bom + text.encode(encoding)
     (tmp_path / "host.json").write_bytes(source)
     expected = (protos.HostConfiguration.Available if size == 65536
@@ -186,7 +218,7 @@ def test_caches_all_outcomes_and_returns_fresh_envelopes(
     original_content = first.content
     first.content = b"mutated response"
     first.status = protos.HostConfiguration.Unspecified
-    path.write_bytes(b'"replacement"')
+    path.write_bytes(b'{"value":"replacement"}')
     with patch.object(helper.os.environ, "get") as root, \
             patch.object(helper, "open", create=True) as read:
         second = snapshot(helper)
@@ -198,12 +230,14 @@ def test_caches_all_outcomes_and_returns_fresh_envelopes(
     with helper.reset_host_configuration():
         pass
     assert_snapshot(snapshot(helper), protos.HostConfiguration.Available,
-                    b'"replacement"')
+                    b'{"value":"replacement"}')
 
 
 @pytest.mark.parametrize("source,status", [
     (b"{}", protos.HostConfiguration.Available),
     (b"\xff", protos.HostConfiguration.Error),
+    (b"", protos.HostConfiguration.Error),
+    (b"[]", protos.HostConfiguration.Error),
 ])
 def test_concurrent_first_requests_capture_once(
         helper, tmp_path, source, status, caplog):
@@ -272,11 +306,12 @@ class BoundedStream(io.BytesIO):
 
 def test_specialization_excludes_concurrent_capture(
         helper, tmp_path, monkeypatch):
-    (tmp_path / "host.json").write_bytes(b'"old"')
-    assert_snapshot(snapshot(helper), protos.HostConfiguration.Available, b'"old"')
+    (tmp_path / "host.json").write_bytes(b'{"value":"old"}')
+    assert_snapshot(snapshot(helper), protos.HostConfiguration.Available,
+                    b'{"value":"old"}')
     next_app = tmp_path / "next"
     next_app.mkdir()
-    (next_app / "host.json").write_bytes(b'"new"')
+    (next_app / "host.json").write_bytes(b'{"value":"new"}')
     started = threading.Event()
 
     def request():
@@ -290,7 +325,7 @@ def test_specialization_excludes_concurrent_capture(
             assert not pending.done()
             monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", str(next_app))
         assert_snapshot(pending.result(timeout=5),
-                        protos.HostConfiguration.Available, b'"new"')
+                        protos.HostConfiguration.Available, b'{"value":"new"}')
 
 
 def test_oversized_stream_stops_with_bounded_acquisition(helper):
@@ -303,7 +338,7 @@ def test_oversized_stream_stops_with_bounded_acquisition(helper):
 
 @pytest.mark.parametrize("encoding,bom", ENCODINGS)
 def test_short_reads_and_split_multibyte_sequences(helper, encoding, bom):
-    text = '"' + "\u20ac\U0001f600" * 100 + '"'
+    text = '{"value":"' + "\u20ac\U0001f600" * 100 + '"}'
     stream = BoundedStream(bom + text.encode(encoding), short_reads=True)
     with patch.object(helper, "open", create=True, return_value=stream):
         assert_snapshot(snapshot(helper), protos.HostConfiguration.Available,
@@ -311,27 +346,29 @@ def test_short_reads_and_split_multibyte_sequences(helper, encoding, bom):
 
 
 @pytest.mark.parametrize("source,expected", [
+    (b"{}", b"{}"),
+    (b"/* before */ {} // after", b"{}"),
     (b'// header\n{ "version": "2.0", /* inline */ "a": [1, 2,], }',
      b'{"version":"2.0","a":[1,2]}'),
     (b'{"a":1,"a":2,"\\u0061":3}', b'{"a":1,"a":2,"\\u0061":3}'),
     (b'{"s":"x\\u0041\\n\\/\\ud800","n":[-0,1E+2,1e999,-0.50]}',
      b'{"s":"x\\u0041\\n\\/\\ud800","n":[-0,1E+2,1e999,-0.50]}'),
-    (b'[{},[],true,false,null,"// /* text */",]',
-     b'[{},[],true,false,null,"// /* text */"]'),
-    (b'/* before */ 1 /* after */', b'1'),
-    (b' true // end', b'true'),
-    (b'false\r\n', b'false'),
-    (b'null', b'null'),
-    (b'"string root"', b'"string root"'),
-    (b'["\\udfff","\\ud800\\udc00","\\uD800X"]',
-     b'["\\udfff","\\ud800\\udc00","\\uD800X"]'),
+    (b'{"v":[{},[],true,false,null,"// /* text */",]}',
+     b'{"v":[{},[],true,false,null,"// /* text */"]}'),
+    (b'{"v":/* before */ 1 /* after */}', b'{"v":1}'),
+    (b'{"v": true} // end', b'{"v":true}'),
+    (b'{"v":false}\r\n', b'{"v":false}'),
+    (b'{"v":null}', b'{"v":null}'),
+    (b'{"v":"string"}', b'{"v":"string"}'),
+    (b'{"v":["\\udfff","\\ud800\\udc00","\\uD800X"]}',
+     b'{"v":["\\udfff","\\ud800\\udc00","\\uD800X"]}'),
     (b'{"\\udc00\\ud800":"\\udc00\\ud800"}',
      b'{"\\udc00\\ud800":"\\udc00\\ud800"}'),
-    (b'123456789012345678901234567890.123456789012345678901',
-     b'123456789012345678901234567890.123456789012345678901'),
-], ids=("jsonc", "duplicate-keys", "raw-tokens", "containers", "number-root",
-        "true-root", "false-root", "null-root", "string-root", "surrogates",
-        "reversed-surrogates", "precision"))
+    (b'{"v":123456789012345678901234567890.123456789012345678901}',
+     b'{"v":123456789012345678901234567890.123456789012345678901}'),
+], ids=("empty-object", "commented-empty-object", "jsonc", "duplicate-keys",
+        "raw-tokens", "containers", "number", "true", "false", "null",
+        "string", "surrogates", "reversed-surrogates", "precision"))
 def test_compact_normalization_preserves_tokens(
         helper, tmp_path, source, expected):
     (tmp_path / "host.json").write_bytes(source)
@@ -341,11 +378,12 @@ def test_compact_normalization_preserves_tokens(
 
 @pytest.mark.parametrize("source", [
     b" ", b"\r\n\t", b"// only", b"/* only */", b"not json", b"{",
-    b"{} {}", b"1 2", b"1/* gap */2", b"tr/* gap */ue", b"true false",
-    b"[,]", b"{,}", b"[1,,]", b'{"a":,}', b'{"a":1,,}',
-    b'{"a" 1}', b'{"a":1 "b":2}', b'[1 2]', b"[}", b'"unterminated',
-    b'{"a":"\\q"}', b'"\\u123z"', b'"unescaped\n"', b"01", b"1.", b"1e",
-    b"+1", b"NaN", b"Infinity", b"-Infinity",
+    b"{} {}", b'{"a":1 2}', b'{"a":1/* gap */2}', b'{"a":tr/* gap */ue}',
+    b'{"a":true false}', b'{"a":[,]}', b"{,}", b'{"a":[1,,]}',
+    b'{"a":,}', b'{"a":1,,}', b'{"a" 1}', b'{"a":1 "b":2}', b'{"a":[1 2]}',
+    b'{"a":[}', b'{"a":"unterminated', b'{"a":"\\q"}', b'{"a":"\\u123z"}',
+    b'{"a":"unescaped\n"}', b'{"a":01}', b'{"a":1.}', b'{"a":1e}',
+    b'{"a":+1}', b'{"a":NaN}', b'{"a":Infinity}', b'{"a":-Infinity}',
     b"/* unterminated", b"{} trailing", b"{} /* unterminated",
     b"\xc2\xa0{}", b"\x0b{}", b"\x0c{}", b"\xef\xbb\xbf\xef\xbb\xbf{}",
 ])
@@ -366,7 +404,7 @@ def test_invalid_json_is_cached_content_free_error(
 ])
 @pytest.mark.parametrize("opening,closing", [(b"[", b"]"), (b'{"x":', b"}")])
 def test_json_depth_limit(helper, tmp_path, depth, status, opening, closing):
-    source = opening * depth + b"0" + closing * depth
+    source = b'{"x":' + opening * (depth - 1) + b"0" + closing * (depth - 1) + b"}"
     (tmp_path / "host.json").write_bytes(source)
     assert_snapshot(snapshot(helper), status,
                     source if status == protos.HostConfiguration.Available
@@ -374,7 +412,7 @@ def test_json_depth_limit(helper, tmp_path, depth, status, opening, closing):
 
 
 def test_large_integer_does_not_use_python_digit_limit(helper, tmp_path):
-    source = b"9" * 6000
+    source = b'{"value":' + b"9" * 6000 + b"}"
     (tmp_path / "host.json").write_bytes(source)
     assert_snapshot(snapshot(helper), protos.HostConfiguration.Available, source)
 
@@ -414,8 +452,8 @@ def test_line_comment_terminators(helper, tmp_path, terminator):
                     b'{"a":1}')
 
 
-@pytest.mark.parametrize("source", [None, b"", b"{}", codecs.BOM_UTF16_LE])
-def test_available_empty_and_missing_do_not_warn(
+@pytest.mark.parametrize("source", [None, b"{}", codecs.BOM_UTF16_LE + b"{\0}\0"])
+def test_available_and_missing_do_not_warn(
         helper, tmp_path, source, caplog):
     if source is not None:
         (tmp_path / "host.json").write_bytes(source)
@@ -427,10 +465,12 @@ def test_available_empty_and_missing_do_not_warn(
 
 
 @pytest.mark.parametrize("source,status,reason", [
+    (b"", protos.HostConfiguration.Error, "InvalidJson"),
+    (b"[]", protos.HostConfiguration.Error, "InvalidJson"),
     (b"{secret", protos.HostConfiguration.Error, "InvalidJson"),
     (b"\xffsecret", protos.HostConfiguration.Error, "InvalidEncoding"),
     (b"x" * 65537, protos.HostConfiguration.TooLarge, "Oversized"),
-], ids=("json", "encoding", "oversized"))
+], ids=("empty", "array", "json", "encoding", "oversized"))
 def test_failure_reason_is_logged_once_per_generation(
         helper, tmp_path, source, status, reason, caplog):
     (tmp_path / "host.json").write_bytes(source)

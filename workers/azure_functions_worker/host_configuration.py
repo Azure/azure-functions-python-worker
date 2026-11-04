@@ -89,7 +89,7 @@ def _capture(statuses):
     try:
         with stream:
             content = _read_content(stream)
-            if content:
+            if content is not None:
                 content = _normalize(content)
         if content is None or len(content) > _MAX_BYTES:
             return statuses.TooLarge, b"", "Oversized"
@@ -138,7 +138,7 @@ def _read_content(stream):
 
 
 def _normalize(content):
-    """Validate JSONC without reserializing strings, numbers or duplicate keys."""
+    """Validate a JSONC object without reserializing its tokens."""
     tokens = []
     validation = bytearray()
     offset = depth = last_token_offset = 0
@@ -171,7 +171,10 @@ def _normalize(content):
         validation.extend(token)
         tokens.append(token)
 
-    # Validate exactly one root without float rounding or Python's integer
+    if not tokens or tokens[0] != b"{":
+        raise _InvalidJson
+
+    # Validate exactly one object without float rounding or Python's integer
     # digit limit. Output uses the original tokens, not the parsed object.
     json.loads(validation, parse_int=str, parse_float=str)
     return b"".join(tokens)

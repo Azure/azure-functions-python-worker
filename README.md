@@ -70,14 +70,32 @@ identical package-local helpers (checked by a shared contract test), so library
 runtimes and the protobuf-free R2P2 do not import the classic worker.
 
 The payload is strictly decoded as UTF-8 by default, or UTF-8/UTF-16/UTF-32 with a
-BOM, and incrementally converted to BOM-free UTF-8. Its final limit is 65,536
-bytes inclusive. A missing file in an accessible application directory produces
-`Missing`; an invalid/unavailable root, read error, or encoding error produces
-`Error`; exceeding the limit produces `TooLarge`. Only `Available` carries
-content. Empty files and malformed JSON are transported unchanged for the Host
-to reject. The worker does not merge app settings, validate JSON, change
-initialization success/failure, or log configuration content or path-bearing
-exceptions.
+BOM, and incrementally converted to BOM-free UTF-8. Non-empty content is
+normalized to strict compact JSON: `//` and `/* */` comments and trailing commas
+are accepted and removed. String/property escapes, number spellings, duplicate
+keys and key order are preserved without reserialization. Any single JSON root
+is allowed, with at most 64 nested containers. Non-empty whitespace/comment-only
+or malformed input produces `Error`; decoded empty files (including BOM-only
+files) stay `Available` with empty content for the Host to reject.
+
+The inclusive 65,536-byte cap applies both to converted bytes before parsing
+and to normalized output, so oversized comments or malformed input cannot
+evade the limit. A missing file at open in an accessible application directory
+produces `Missing`; an invalid/unavailable root, read/close failure, encoding
+error or invalid JSON produces `Error`; exceeding either limit produces
+`TooLarge`. Only `Available` carries content. Each cached failure emits one
+warning containing a fixed reason code, never paths, content or exception
+details. Success, `Missing`, disabled calls and cache replays emit no delivery
+warning. Initialization success/failure and app-setting precedence are unchanged;
+the Host still owns configuration interpretation.
+
+Normalization follows
+[Azure/azure-functions-dotnet-worker#3522](https://github.com/Azure/azure-functions-dotnet-worker/pull/3522)
+at commit `4c440d8d38526a16eb549ac6fba1082fe5ad4450`. Python uses strict decoders,
+so legitimately encoded U+FFFD remains valid with or without a BOM; it does not
+copy the reference's `StreamReader` replacement-character workaround.
+Line comments end at CR, LF or EOF and reject U+2028/U+2029; those characters
+remain valid in block comments and JSON strings, but not as JSON whitespace.
 
 The field-6 `HostConfiguration` addition and comments are vendored from
 [Azure/azure-functions-language-worker-protobuf#103](https://github.com/Azure/azure-functions-language-worker-protobuf/pull/103),

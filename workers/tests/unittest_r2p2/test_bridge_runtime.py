@@ -19,8 +19,14 @@ import bridge
     ("v1", "azure_functions_runtime_v1"),
     ("v2", "azure_functions_runtime"),
 ])
+@pytest.mark.parametrize("source,status,content", [
+    (b"\xff\xfe" + '/*c*/ { "a": [1,], }'.encode("utf-16-le"),
+     1, b'{"a":[1]}'),
+    (b"{invalid-json", 3, b""),
+], ids=("utf16-jsonc", "invalid-json"))
 def test_host_configuration_through_runtime_and_bridge(
-        version, package, monkeypatch, tmp_path, reset_bridge_state):
+        version, package, source, status, content, monkeypatch, tmp_path,
+        reset_bridge_state):
     root = Path(__file__).resolve().parents[3]
     monkeypatch.syspath_prepend(str(root / "runtimes" / version))
     runtime = pytest.importorskip(package)
@@ -51,11 +57,12 @@ def test_host_configuration_through_runtime_and_bridge(
             "capabilities": {}, "function_app_directory": ""})
         assert "host_configuration" not in unrequested
         assert snapshot._snapshot is None
-        (tmp_path / "host.json").write_bytes(b"\xff\xfe{\x00}\x00")
+        (tmp_path / "host.json").write_bytes(source)
         requested = {"capabilities": {"HostConfiguration": "1"},
                      "function_app_directory": ""}
         first = bridge.handle_control("worker_init_request", requested)
-        assert first["host_configuration"] == {"status": 1, "content": b"{}"}
+        assert first["host_configuration"] == {
+            "status": status, "content": content}
         assert first["capabilities"] == unrequested["capabilities"]
         (tmp_path / "host.json").write_bytes(b"changed")
         second = bridge.handle_control("worker_init_request", requested)

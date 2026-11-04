@@ -38,16 +38,18 @@ def request(capabilities=None):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("source,status", [
-    (b'{"version":"2.0"}', protos.HostConfiguration.Available),
-    (b"", protos.HostConfiguration.Available),
-    (b"{invalid-json", protos.HostConfiguration.Available),
-    (None, protos.HostConfiguration.Missing),
-    (b"\xff", protos.HostConfiguration.Error),
-    (b"x" * 65537, protos.HostConfiguration.TooLarge),
-], ids=("available", "empty", "malformed-json", "missing", "error", "too-large"))
+@pytest.mark.parametrize("source,status,expected", [
+    (b'{"version":"2.0"}', protos.HostConfiguration.Available, b'{"version":"2.0"}'),
+    (b'/*c*/ { "a": [1,], }', protos.HostConfiguration.Available, b'{"a":[1]}'),
+    (b"", protos.HostConfiguration.Available, b""),
+    (b"{invalid-json", protos.HostConfiguration.Error, b""),
+    (None, protos.HostConfiguration.Missing, b""),
+    (b"\xff", protos.HostConfiguration.Error, b""),
+    (b"x" * 65537, protos.HostConfiguration.TooLarge, b""),
+], ids=("available", "jsonc", "empty", "malformed-json", "missing", "error",
+        "too-large"))
 async def test_delivery_preserves_init_and_wire_presence(
-        tmp_path, source, status):
+        tmp_path, source, status, expected):
     if source is not None:
         (tmp_path / "host.json").write_bytes(source)
     baseline = await handle_event.worker_init_request(request())
@@ -62,7 +64,6 @@ async def test_delivery_preserves_init_and_wire_presence(
     decoded = protos.WorkerInitResponse.FromString(result.SerializeToString())
     assert decoded.HasField("host_configuration")
     assert decoded.host_configuration.status == status
-    expected = source if status == protos.HostConfiguration.Available else b""
     assert decoded.host_configuration.content == expected
     (tmp_path / "host.json").write_bytes(b"changed")
     result.host_configuration.content = b"response mutation"
@@ -82,11 +83,11 @@ async def test_genuine_initialization_error_is_not_swallowed(tmp_path):
 
 @pytest.mark.asyncio
 async def test_specialization_starts_new_snapshot_generation(tmp_path):
-    (tmp_path / "host.json").write_bytes(b"old")
+    (tmp_path / "host.json").write_bytes(b'"old"')
     await handle_event.worker_init_request(request({"HostConfiguration": "1"}))
     next_app = tmp_path / "next"
     next_app.mkdir()
-    (next_app / "host.json").write_bytes(b"new")
+    (next_app / "host.json").write_bytes(b'"new"')
     reload_request = SimpleNamespace(
         request=protos.StreamingMessage(
             function_environment_reload_request=(
@@ -101,4 +102,4 @@ async def test_specialization_starts_new_snapshot_generation(tmp_path):
         assert host_configuration._snapshot is None
         response = await handle_event.worker_init_request(
             request({"HostConfiguration": "1"}))
-        assert response.host_configuration.content == b"new"
+        assert response.host_configuration.content == b'"new"'

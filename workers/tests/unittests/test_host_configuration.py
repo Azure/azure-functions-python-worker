@@ -40,16 +40,18 @@ def request(capabilities=None):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("source,status", [
-    (b"{}", protos.HostConfiguration.Available),
-    (b"", protos.HostConfiguration.Available),
-    (b"{invalid-json", protos.HostConfiguration.Available),
-    (None, protos.HostConfiguration.Missing),
-    (b"\xff", protos.HostConfiguration.Error),
-    (b"x" * 65537, protos.HostConfiguration.TooLarge),
-], ids=("available", "empty", "malformed-json", "missing", "error", "too-large"))
+@pytest.mark.parametrize("source,status,expected", [
+    (b"{}", protos.HostConfiguration.Available, b"{}"),
+    (b'/*c*/ { "a": [1,], }', protos.HostConfiguration.Available, b'{"a":[1]}'),
+    (b"", protos.HostConfiguration.Available, b""),
+    (b"{invalid-json", protos.HostConfiguration.Error, b""),
+    (None, protos.HostConfiguration.Missing, b""),
+    (b"\xff", protos.HostConfiguration.Error, b""),
+    (b"x" * 65537, protos.HostConfiguration.TooLarge, b""),
+], ids=("available", "jsonc", "empty", "malformed-json", "missing", "error",
+        "too-large"))
 async def test_classic_init_preserves_status_capabilities_and_snapshot(
-        worker, tmp_path, source, status):
+        worker, tmp_path, source, status, expected):
     if source is not None:
         (tmp_path / "host.json").write_bytes(source)
     baseline = (await worker._handle__worker_init_request(
@@ -64,7 +66,6 @@ async def test_classic_init_preserves_status_capabilities_and_snapshot(
     assert response.capabilities == baseline.capabilities
     assert response.worker_metadata == baseline.worker_metadata
     assert response.host_configuration.status == status
-    expected = source if status == protos.HostConfiguration.Available else b""
     assert response.host_configuration.content == expected
     (tmp_path / "host.json").write_bytes(b"replacement")
     message.worker_init_response.host_configuration.content = b"mutated"
@@ -118,7 +119,7 @@ async def test_classic_specialization_invalidates_cached_failure(
         protos.HostConfiguration.Error)
     next_app = tmp_path / "next"
     next_app.mkdir()
-    (next_app / "host.json").write_bytes(b"new")
+    (next_app / "host.json").write_bytes(b'"new"')
     reload_request = protos.StreamingMessage(
         function_environment_reload_request=(
             protos.FunctionEnvironmentReloadRequest(environment_variables={
@@ -136,4 +137,4 @@ async def test_classic_specialization_invalidates_cached_failure(
         assert host_configuration._snapshot is None
         response = await worker._handle__worker_init_request(
             request({"HostConfiguration": "1"}))
-        assert response.worker_init_response.host_configuration.content == b"new"
+        assert response.worker_init_response.host_configuration.content == b'"new"'

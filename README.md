@@ -53,7 +53,10 @@ Issues and feature requests are tracked in a variety of places. To report this f
 
 ## Host configuration delivery
 
-Classic, v1/v2 library, and R2P2 workers deliver `host.json` only when
+Host configuration delivery is supported only by the Python 3.13+ proxy and
+R2P2 workers through their v1/v2 library runtimes. The classic worker
+(Python <=3.12) is unchanged and does not implement this feature.
+The supported workers deliver `host.json` only when
 `WorkerInitRequest.capabilities["HostConfiguration"]` is exactly `"1"`.
 Other values omit the response field without reading the application root or
 initializing a snapshot. The launcher must set `FUNCTIONS_APPLICATION_DIRECTORY`
@@ -66,8 +69,15 @@ snapshot, including failures. Requested retries receive fresh envelopes with
 the same snapshot; file changes are not reread. Existing placeholder
 specialization invalidates the snapshot for the new application generation,
 without introducing a reload response field. The independent distributions carry
-identical package-local helpers (checked by a shared contract test), so library
-runtimes and the protobuf-free R2P2 do not import the classic worker.
+identical package-local helpers (checked by a shared contract test), so the
+proxy and protobuf-free R2P2 use their selected runtime without cross-runtime
+imports.
+
+`FUNCTIONS_APPLICATION_DIRECTORY` is an ordinary process environment variable,
+not protected from customer Python code. Changing it after capture does not
+change the cached snapshot. Environment reload replaces the process environment
+and clears the snapshot, but does not read or deliver configuration; only a
+subsequent capability-enabled initialization could capture the replacement root.
 
 The payload is strictly decoded as UTF-8 by default, or UTF-8/UTF-16/UTF-32 with a
 BOM, and incrementally converted to BOM-free UTF-8. Content is normalized to a
@@ -102,9 +112,10 @@ The field-6 `HostConfiguration` addition and comments are vendored from
 [Azure/azure-functions-language-worker-protobuf#103](https://github.com/Azure/azure-functions-language-worker-protobuf/pull/103),
 commit `313666583af4e97f0b534f1cbf61a3812f277c12`, without importing unrelated
 upstream schema changes. The protocol is not yet a published release.
-Regenerate classic/proxy bindings with `python -m invoke -c test_setup build-protos`
-from `workers\tests` using the relevant interpreter (below 3.13 for classic,
-3.13+ for proxy). That command recreates `workers\build`; preserve any existing
+The addition applies only to the proxy and R2P2 schemas; the classic schema is
+unchanged. Regenerate proxy bindings with
+`python -m invoke -c test_setup build-protos` from `workers\tests` using Python
+3.13+. That command recreates `workers\build`; preserve any existing
 Host build before invoking it. R2P2's existing Cargo build generates prost
 bindings from its vendored schema. Runtime test `FunctionRpc_pb2.py` fixtures
 are generated with `grpc_tools.protoc --python_out` and the existing

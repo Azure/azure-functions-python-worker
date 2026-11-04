@@ -45,8 +45,6 @@ from .constants import (
     REQUIRES_ROUTE_PARAMETERS
 )
 from .extension import ExtensionManager
-from .host_configuration import (get_host_configuration,
-                                 reset_host_configuration)
 from .http_v2 import (
     HttpServerInitError,
     HttpV2Registry,
@@ -379,7 +377,6 @@ class Dispatcher(metaclass=DispatcherMeta):
 
         worker_init_request = request.worker_init_request
         host_capabilities = worker_init_request.capabilities
-        host_configuration = get_host_configuration(host_capabilities, protos)
         if constants.FUNCTION_DATA_CACHE in host_capabilities:
             val = host_capabilities[constants.FUNCTION_DATA_CACHE]
             self._function_data_cache_enabled = val == _TRUE
@@ -431,7 +428,6 @@ class Dispatcher(metaclass=DispatcherMeta):
         return protos.StreamingMessage(
             request_id=self.request_id,
             worker_init_response=protos.WorkerInitResponse(
-                **host_configuration,
                 capabilities=capabilities,
                 worker_metadata=self.get_worker_metadata(),
                 result=protos.StatusResult(
@@ -775,11 +771,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             sys.path_importer_cache.clear()
 
             # Reload environment variables
-            with reset_host_configuration():
-                os.environ.clear()
-                env_vars = func_env_reload_request.environment_variables
-                for var in env_vars:
-                    os.environ[var] = env_vars[var]
+            os.environ.clear()
+            env_vars = func_env_reload_request.environment_variables
+            for var in env_vars:
+                os.environ[var] = env_vars[var]
 
             # Refresh timezone information after environment reload
             time.tzset()

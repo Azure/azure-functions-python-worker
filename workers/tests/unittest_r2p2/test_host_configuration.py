@@ -18,7 +18,6 @@ import protos_adapter as protos
 
 ROOT = Path(__file__).resolve().parents[3]
 HELPERS = (
-    ROOT / "workers" / "azure_functions_worker" / "host_configuration.py",
     ROOT / "runtimes" / "v1" / "azure_functions_runtime_v1"
     / "host_configuration.py",
     ROOT / "runtimes" / "v2" / "azure_functions_runtime"
@@ -34,7 +33,7 @@ ENCODINGS = (
 )
 
 
-@pytest.fixture(params=HELPERS, ids=("classic", "v1", "v2"))
+@pytest.fixture(params=HELPERS, ids=("v1", "v2"))
 def helper(request, monkeypatch, tmp_path):
     # Load the independently packaged implementation without importing an SDK
     # or transport. The same contract suite also runs in protobuf-free R2P2 CI.

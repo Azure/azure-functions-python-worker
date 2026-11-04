@@ -8,7 +8,6 @@ from .FunctionRpc_pb2 import (  # NoQA
     StartStream,
     WorkerInitRequest,
     WorkerInitResponse,
-    HostConfiguration,
     RpcFunctionMetadata,
     FunctionLoadRequest,
     FunctionLoadResponse,

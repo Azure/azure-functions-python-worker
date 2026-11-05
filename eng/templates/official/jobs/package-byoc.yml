@@ -1,3 +1,7 @@
+parameters:
+  - name: byocPythonVersions
+    type: string
+
 jobs:
 - job: PackageBYOC
   dependsOn: ['Build_LINUX_X64', 'Build_R2P2_LINUX_X64']
@@ -12,7 +16,7 @@ jobs:
         targetPath: $(Build.ArtifactStagingDirectory)
         artifactName: "PythonWorkerBYOC"
   steps:
-  - ${{ each pythonVersion in split(variables.BYOCPythonVersions, ' ') }}:
+  - ${{ each pythonVersion in split(parameters.byocPythonVersions, ' ') }}:
     - task: DownloadPipelineArtifact@2
       inputs:
         buildType: current
@@ -29,4 +33,4 @@ jobs:
       done
     displayName: 'Package Python BYOC workers'
     env:
-      BYOC_PYTHON_VERSIONS: $(BYOCPythonVersions)
+      BYOC_PYTHON_VERSIONS: ${{ parameters.byocPythonVersions }}

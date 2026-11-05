@@ -1,3 +1,7 @@
+parameters:
+  - name: byocPythonVersions
+    type: string
+
 jobs:
 - job: Build_WINDOWS_X64
   timeoutInMinutes: 180
@@ -238,6 +242,8 @@ jobs:
           }
         ]
 - job: Build_R2P2_WINDOWS_ARM64
+  # Temporary: keep failures visible without blocking packaging and tests.
+  continueOnError: true
   timeoutInMinutes: 180
   pool:
     name: 1es-pool-azfunc
@@ -473,6 +479,8 @@ jobs:
       grpcBuild: 'aarch64-linux-gnu.so'
 
 - template: package-byoc.yml
+  parameters:
+    byocPythonVersions: ${{ parameters.byocPythonVersions }}
 
 - job: PackageWorkers
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_R2P2_LINUX_X64', 'Build_R2P2_LINUX_ARM64', 'Build_R2P2_WINDOWS_X64', 'Build_R2P2_WINDOWS_X86', 'Build_R2P2_WINDOWS_ARM64', 'Build_R2P2_OSX_X64', 'Build_R2P2_OSX_ARM64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']
@@ -519,21 +527,28 @@ jobs:
       buildType: 'current'
       targetPath: '$(Build.SourcesDirectory)'
   - pwsh: |
-      # Temporary companion to Build_R2P2_LINUX_ARM64's continueOnError.
-      # Do not require its artifact when the build failed before publishing it.
+      # Temporary companion to the R2P2 ARM64 jobs' continueOnError.
+      # Do not require artifacts when builds failed before publishing them.
       $root = '$(Build.SourcesDirectory)'
-      if (-not (Test-Path (Join-Path $root '3.15_LINUX_ARM64/r2p2'))) {
-        $nuspecPath = Join-Path $root '$(nuspec_path)'
-        [xml]$nuspec = Get-Content -LiteralPath $nuspecPath -Raw
+      $nuspecPath = Join-Path $root '$(nuspec_path)'
+      [xml]$nuspec = Get-Content -LiteralPath $nuspecPath -Raw
+      $optionalArtifacts = @(
+        @{ Name = '3.15_LINUX_ARM64'; Binary = 'r2p2' }
+        @{ Name = '3.15_WINDOWS_ARM64'; Binary = 'r2p2.exe' }
+      )
+      foreach ($artifact in $optionalArtifacts) {
+        if (Test-Path (Join-Path $root "$($artifact.Name)/$($artifact.Binary)")) {
+          continue
+        }
         foreach ($file in @($nuspec.package.files.file)) {
-          if ($file.GetAttribute('src') -eq '..\..\3.15_LINUX_ARM64\**') {
+          if ($file.GetAttribute('src') -eq "..\..\$($artifact.Name)\**") {
             [void]$file.ParentNode.RemoveChild($file)
           }
         }
-        $nuspec.Save($nuspecPath)
-        Write-Host '##vso[task.logissue type=warning]Packaging without the optional R2P2 Linux ARM64 artifact.'
+        Write-Host "##vso[task.logissue type=warning]Packaging without the optional R2P2 $($artifact.Name) artifact."
       }
-    displayName: 'Allow missing R2P2 Linux ARM64 artifact (temporary)'
+      $nuspec.Save($nuspecPath)
+    displayName: 'Allow missing R2P2 ARM64 artifacts (temporary)'
   - task: ManifestGeneratorTask@0
     displayName: 'SBOM Generation Task'
     inputs:

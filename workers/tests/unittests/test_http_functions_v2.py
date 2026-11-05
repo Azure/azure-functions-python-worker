@@ -314,6 +314,8 @@ class TestHttpFunctionsV2FastApi(testutils.WebHostTestCase):
         r = self.webhost.request('GET', 'user_event_loop/')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, '"OK-user-event-loop"')
+        # The HTTP response can arrive before the gRPC log reaches the host.
+        self.wait_for_host_log('try_log')
 
     def check_log_user_event_loop_error(self, host_out: typing.List[str]):
         self.assertIn('try_log', host_out)

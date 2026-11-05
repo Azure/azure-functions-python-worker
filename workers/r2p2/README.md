@@ -79,6 +79,11 @@ in `eng/ci/public-build.yml`.
 
 ## Notes
 
+- Startup message limits: `--functions-grpc-max-message-length` and
+  `--grpcMaxMessageLength` configure both gRPC send and receive limits, matching
+  the Python proxy worker. An omitted or empty value, or `-1`, uses `usize::MAX`
+  (effectively unlimited). Explicit nonnegative numeric limits are applied;
+  other negative or nonnumeric values are rejected.
 - Build-time: `PYO3_PYTHON` must point at the target interpreter.
 - Runtime: the embedded interpreter needs `python3xx.dll` on `PATH` and the
   runtime/SDK packages on `PYTHONPATH` (the stub host wires both up). Editable

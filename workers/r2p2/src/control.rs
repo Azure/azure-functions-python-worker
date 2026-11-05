@@ -498,10 +498,12 @@ mod tests {
                 .call_method0("to_dict")
                 .unwrap();
             let message = py_to_worker_init_response(&response).unwrap();
-            assert!(WorkerInitResponse::decode(message.encode_to_vec().as_slice())
-                .unwrap()
-                .host_configuration
-                .is_none());
+            assert!(
+                WorkerInitResponse::decode(message.encode_to_vec().as_slice())
+                    .unwrap()
+                    .host_configuration
+                    .is_none()
+            );
         });
     }
 

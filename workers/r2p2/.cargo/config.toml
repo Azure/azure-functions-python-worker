@@ -3,3 +3,7 @@ upstream = { index = "sparse+https://pkgs.dev.azure.com/azfunc/internal/_packagi
 
 [source.crates-io]
 replace-with = "upstream"
+
+# Enable Control Flow Guard and ASLR for all Windows MSVC architectures.
+[target.'cfg(all(target_os = "windows", target_env = "msvc"))']
+rustflags = ["-Ccontrol-flow-guard=yes", "-Clink-arg=/DYNAMICBASE"]

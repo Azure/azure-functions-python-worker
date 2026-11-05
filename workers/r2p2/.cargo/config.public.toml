@@ -3,3 +3,7 @@ PythonWorker_PublicPackages = { index = "sparse+https://azfunc.pkgs.visualstudio
 
 [source.crates-io]
 replace-with = "PythonWorker_PublicPackages"
+
+# Enable Control Flow Guard and ASLR for all Windows MSVC architectures.
+[target.'cfg(all(target_os = "windows", target_env = "msvc"))']
+rustflags = ["-Ccontrol-flow-guard=yes", "-Clink-arg=/DYNAMICBASE"]

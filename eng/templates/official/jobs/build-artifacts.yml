@@ -470,46 +470,7 @@ jobs:
       artifactName: '$(normalizedPythonVersion)_LINUX_ARM64'
       grpcBuild: 'aarch64-linux-gnu.so'
 
-- job: PackageBYOCPrototype
-  dependsOn: ['Build_LINUX_X64', 'Build_R2P2_LINUX_X64']
-  pool:
-    name: 1es-pool-azfunc
-    image: 1es-ubuntu-24.04-min
-    os: linux
-  templateContext:
-    outputParentDirectory: $(Build.ArtifactStagingDirectory)
-    outputs:
-      - output: pipelineArtifact
-        targetPath: $(Build.ArtifactStagingDirectory)
-        artifactName: "PythonWorkerBYOCPrototype"
-  steps:
-  - task: DownloadPipelineArtifact@2
-    inputs:
-      buildType: current
-      artifactName: '3.13_LINUX_X64'
-      targetPath: '$(Pipeline.Workspace)/byoc-worker/3.13'
-    displayName: 'Download staged Python 3.13 Linux x64 worker'
-  - task: DownloadPipelineArtifact@2
-    inputs:
-      buildType: current
-      artifactName: '3.14_LINUX_X64'
-      targetPath: '$(Pipeline.Workspace)/byoc-worker/3.14'
-    displayName: 'Download staged Python 3.14 Linux x64 worker'
-  - task: DownloadPipelineArtifact@2
-    inputs:
-      buildType: current
-      artifactName: '3.15_LINUX_X64'
-      targetPath: '$(Pipeline.Workspace)/byoc-worker/3.15'
-    displayName: 'Download staged Python 3.15 Linux x64 R2P2 worker'
-  - bash: |
-      set -euo pipefail
-      for python_version in 3.13 3.14 3.15; do
-        python3 eng/pack/scripts/package_byoc.py \
-          --python-version "$python_version" \
-          --source "$(Pipeline.Workspace)/byoc-worker/$python_version" \
-          --output "$(Build.ArtifactStagingDirectory)"
-      done
-    displayName: 'Package Python 3.13, 3.14 and 3.15 BYOC workers'
+- template: package-byoc.yml
 
 - job: PackageWorkers
   dependsOn: ['Build_WINDOWS_X64', 'Build_WINDOWS_X86', 'Build_LINUX_X64', 'Build_R2P2_LINUX_X64', 'Build_R2P2_LINUX_ARM64', 'Build_R2P2_WINDOWS_X64', 'Build_R2P2_WINDOWS_X86', 'Build_R2P2_WINDOWS_ARM64', 'Build_R2P2_OSX_X64', 'Build_R2P2_OSX_ARM64', 'Build_OSX_X64', 'Build_OSX_ARM64', 'Build_LINUX_ARM64']

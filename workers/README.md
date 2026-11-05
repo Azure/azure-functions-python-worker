@@ -37,47 +37,6 @@ For information about Azure Functions Runtime, please refer to [Azure Functions 
 - [Develop using VS Code](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-function-vs-code)
 - [Create a Python Function on Linux using a custom docker image](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-linux-custom-image)
 
-### Proxy worker startup contract
-
-This contract applies only to `proxy_worker`, not to every Python worker generation.
-The host can supply these startup arguments:
-
-```text
---functions-uri http://127.0.0.1:5001
---functions-worker-id worker-id
---functions-request-id request-id
---functions-grpc-max-message-length 4194304
-```
-
-Each provided `--functions-*` field takes precedence over its legacy equivalent.
-An invalid explicitly provided `--functions-uri` is rejected, not replaced by
-legacy host and port values. Omitted fields fall back independently:
-
-| Argument | Legacy fallback |
-|----------|-----------------|
-| `--functions-uri` | `--host` and `--port` |
-| `--functions-worker-id` | `--workerId` |
-| `--functions-request-id` | `--requestId` |
-| `--functions-grpc-max-message-length` | `--grpcMaxMessageLength` |
-
-The URI is normalized to a host and port for the gRPC connection. It must use
-`http` with a nonempty hostname and an explicit port.
-Bracketed IPv6 addresses such as `http://[::1]:5001` are supported. An optional
-root slash is allowed, but credentials, other paths, queries, and fragments are
-not. The connection uses insecure gRPC; `https` and TLS are not supported by this
-contract. Legacy-only startup remains supported.
-
-The maximum message length is in bytes; `-1` means unlimited.
-If neither argument supplies it, the default is `-1`. The limit applies to both
-gRPC send and receive messages.
-
-### Experimental BYOC packaging
-
-See the [BYOC packaging guide](../eng/pack/README.md) for separate Python
-3.13/3.14 proxy-worker and Python 3.15 native R2P2 Linux x64 archives. All targets
-use `worker.py` as the entrypoint. Packaging uses the existing worker version
-without a version bump.
-
 # Give Feedback
 
 Issues and feature requests are tracked in a variety of places. To report this feedback, please file an issue to the relevant repository below:

@@ -55,7 +55,7 @@ jobs:
     displayName: 'Wait For Python Worker Build'
     inputs:
       notifyUsers: ''
-      instructions: 'Ensure the build of release/4.x.y.z finishes in https://dev.azure.com/azfunc/internal/_build?definitionId=652 and verify that PackageWorkers and PackageBYOCPrototype completed successfully.'
+      instructions: 'Ensure the build of release/4.x.y.z finishes in https://dev.azure.com/azfunc/internal/_build?definitionId=652 and verify that PackageWorkers and PackageBYOC completed successfully.'
 
 - job: "PublishNuget" 
   dependsOn: ['WaitForPythonWorkerBuild']
@@ -102,13 +102,14 @@ jobs:
       definition: 652
       buildVersionToDownload: specific
       pipelineId: '$(WorkerBuildId)'
-      artifactName: 'PythonWorkerBYOCPrototype'
+      artifactName: 'PythonWorkerBYOC'
       targetPath: '$(Pipeline.Workspace)/byoc-worker'
   - pwsh: |
       $ErrorActionPreference = 'Stop'
       $version = $env:WORKER_VERSION
       $assets = @(
-          foreach ($abi in '313', '314', '315') {
+          foreach ($pythonVersion in $env:BYOC_PYTHON_VERSIONS.Split(' ')) {
+              $abi = $pythonVersion.Replace('.', '')
               $archive = Join-Path '$(Pipeline.Workspace)/byoc-worker' "azure-functions-python-worker-$version-py$abi-linux-x64.tar.gz"
               Get-Item -LiteralPath $archive
               Get-Item -LiteralPath "$archive.sha256"
@@ -134,10 +135,11 @@ jobs:
           Invoke-RestMethod -Headers $headers -Method Post -Uri $assetUrl `
               -ContentType 'application/octet-stream' -InFile $asset.FullName | Out-Null
       }
-    displayName: 'Attach Python 3.13, 3.14 and 3.15 archives and checksums'
+    displayName: 'Attach Python archives and checksums'
     env:
       GITHUB_TOKEN: $(GithubPat)
       WORKER_VERSION: $(NewWorkerVersion)
+      BYOC_PYTHON_VERSIONS: $(BYOCPythonVersions)
 
 - job: "CheckNugetPackageContent"
   dependsOn: ['PublishNuget']

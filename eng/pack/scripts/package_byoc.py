@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-"""Package an existing Python 3.13, 3.14 or 3.15 Linux x64 worker stage."""
+"""Package an existing Python Linux x64 worker stage."""
 
 import argparse
 import ast
@@ -18,7 +18,6 @@ ROOT = Path(__file__).resolve().parents[3]
 VERSION_FILE = ROOT / "workers" / "proxy_worker" / "version.py"
 PACKAGE_NAME = "azure-functions-python-worker"
 MANIFEST_NAME = "worker-manifest.json"
-PYTHON_VERSIONS = ("3.13", "3.14", "3.15")
 REQUIRED_FILES = (
     "worker.py",
     "proxy_worker/version.py",
@@ -79,9 +78,9 @@ def read_version(version_file: Path) -> str:
 
 def validate_payload(source: Path, version: str,
                      python_version: str = "3.14") -> list[Path]:
-    if python_version not in PYTHON_VERSIONS:
-        raise ValueError(f"Unsupported Python version: {python_version}")
-    is_r2p2 = python_version == "3.15"
+    if not re.fullmatch(r"[1-9][0-9]*\.[0-9]+", python_version):
+        raise ValueError(f"Expected a Python major.minor version: {python_version}")
+    is_r2p2 = tuple(map(int, python_version.split("."))) >= (3, 15)
     required_files = R2P2_REQUIRED_FILES if is_r2p2 else REQUIRED_FILES
     required_directories = (R2P2_REQUIRED_DIRECTORIES if is_r2p2
                             else REQUIRED_DIRECTORIES)
@@ -227,8 +226,8 @@ def main() -> None:
                         help="Existing flat Linux x64 staging directory")
     parser.add_argument("--output", type=Path, required=True,
                         help="Directory for the archive and SHA-256 file")
-    parser.add_argument("--python-version", choices=PYTHON_VERSIONS,
-                        default="3.14", help="Target Python version (3.14)")
+    parser.add_argument("--python-version", default="3.14",
+                        help="Target Python major.minor version (default: 3.14)")
     args = parser.parse_args()
     try:
         archive, checksum = build_package(

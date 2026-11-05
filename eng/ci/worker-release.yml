@@ -30,6 +30,7 @@ resources:
       ref: refs/tags/release
 
 variables:
+  - template: /eng/templates/utils/byoc-variables.yml@self
   - name: codeql.excludePathPatterns
     value: deps/,build/
   # Maps the single ReleaseVersion parameter to the worker release, which

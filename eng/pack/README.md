@@ -1,9 +1,16 @@
-# Python BYOC packaging prototype
+# Python BYOC packaging
 
 Package existing **Python 3.13, 3.14, or 3.15 Linux x64** worker staging trees
 into separate archives. The standard-library helper runs cross-platform; the
-payload must still be built for the selected Linux x64 target. Python 3.11 and
-3.12 are not implemented by this prototype.
+payload must still be built for the selected Linux x64 target. All targets use
+`worker.py` as the entrypoint and the existing worker version without a version
+bump.
+
+The shared space-separated `BYOCPythonVersions` variable in
+`eng\templates\utils\byoc-variables.yml`, imported by
+`eng\ci\official-build.yml` and `eng\ci\worker-release.yml`, defines the pipeline
+targets. Its current value is `3.13 3.14 3.15`; it controls staged artifact
+downloads, packaging, and expected release assets.
 
 ## Obtain the matching staged worker
 
@@ -19,6 +26,15 @@ Do not substitute a different Python version's stage.
 The proxy staging process uses `eng\pack\templates\nix_env_gen.yml`. The 3.15
 source must be the native R2P2 artifact, not a proxy-worker stage or a hand-made
 launcher. It contains neither `proxy_worker`, `grpc`, nor `uvloop`.
+
+The helper accepts numeric `major.minor` versions without a fixed allowlist.
+It selects the native R2P2 layout for version tuples greater than or equal to
+`(3, 15)`, and the proxy layout otherwise, while still requiring matching
+staged files, extension ABI names, and Linux x64 ELF headers. Accepting a
+version is not evidence that its worker can be built or run. In particular,
+this does not establish support for real Python 3.11/3.12 classic-worker
+artifacts or verify future runtime builds; other versions require a matching
+staged layout and separate runtime validation.
 
 ## Package locally
 
@@ -37,7 +53,7 @@ of actual builds. Replace them with downloaded staging and output directories.
 Output must be outside the source tree. All three invocations can share an
 output directory because their filenames differ.
 
-The version comes from `workers\proxy_worker\version.py` for **all three**
+The version comes from `workers\proxy_worker\version.py` for **all**
 targets, not from a separate BYOC version; packaging does not bump it. A proxy
 stage's version must match that source file. The native R2P2 payload has no proxy
 version file; its source and build provenance must be checked separately.
@@ -80,7 +96,8 @@ The generated manifest has exactly these five fields:
 }
 ```
 
-`python_version` is `3.13`, `3.14`, or `3.15` according to the selected target.
+`python_version` records the selected target, currently `3.13`, `3.14`, or `3.15`
+in the pipelines.
 The native 3.15 binary embeds matching CPython; the matching runtime Python
 shared library must also be available in the execution environment. Launching
 the shim still requires a Python interpreter. Header checks do not establish
@@ -93,29 +110,66 @@ proxy components. It rejects symlinks and output inside the source, excludes
 `.artifactignore` and bytecode, and normalizes archive metadata and gzip time
 for reproducible output.
 
+## Proxy worker startup contract
+
+This contract applies only to `proxy_worker`, not to every Python worker generation.
+The host can supply these startup arguments:
+
+```text
+--functions-uri http://127.0.0.1:5001
+--functions-worker-id worker-id
+--functions-request-id request-id
+--functions-grpc-max-message-length 4194304
+```
+
+Each provided `--functions-*` field takes precedence over its legacy equivalent.
+An invalid explicitly provided `--functions-uri` is rejected, not replaced by
+legacy host and port values. Omitted fields fall back independently:
+
+| Argument | Legacy fallback |
+|----------|-----------------|
+| `--functions-uri` | `--host` and `--port` |
+| `--functions-worker-id` | `--workerId` |
+| `--functions-request-id` | `--requestId` |
+| `--functions-grpc-max-message-length` | `--grpcMaxMessageLength` |
+
+The URI is normalized to a host and port for the gRPC connection. It must use
+`http` with a nonempty hostname and an explicit port.
+Bracketed IPv6 addresses such as `http://[::1]:5001` are supported. An optional
+root slash is allowed, but credentials, other paths, queries, and fragments are
+not. The connection uses insecure gRPC; `https` and TLS are not supported by this
+contract. Legacy-only startup remains supported.
+
+The maximum message length is in bytes; `-1` means unlimited.
+If neither argument supplies it, the default is `-1`. The limit applies to both
+gRPC send and receive messages.
+
 ## Official CI packaging
 
-The official `PackageBYOCPrototype` job depends on `Build_LINUX_X64` and
-`Build_R2P2_LINUX_X64`. It downloads `3.13_LINUX_X64`, `3.14_LINUX_X64`, and
+The official `PackageBYOC` job, defined in
+`eng\templates\official\jobs\package-byoc.yml`, depends on `Build_LINUX_X64` and
+`Build_R2P2_LINUX_X64`. For each target in `BYOCPythonVersions`, it downloads the
+matching staged artifact, currently `3.13_LINUX_X64`, `3.14_LINUX_X64`, and
 `3.15_LINUX_X64` into separate `byoc-worker/<version>` staging directories,
-then invokes the helper for each target with a shared output directory.
-The single `PythonWorkerBYOCPrototype` artifact contains all three
+then invokes the helper in **Package Python BYOC workers** with a shared output
+directory. The single `PythonWorkerBYOC` artifact contains all configured
 version-qualified archives and their SHA-256 sidecars. Existing NuGet outputs
 are unchanged. This packaging job adds no unit-test CI step.
 
 ## Worker release assets
 
 For each worker NuGet release (`WorkerRelease=true`), `PublishBYOCAssets` runs
-after `PublishNuget` succeeds. It downloads `PythonWorkerBYOCPrototype` from the
+after `PublishNuget` succeeds. It downloads `PythonWorkerBYOC` from the
 exact same official source build used for the NuGet packages, without rebuilding
 or independently selecting a latest build. Before continuing the release,
-verify that both `PackageWorkers` and `PackageBYOCPrototype` have completed.
+verify that both `PackageWorkers` and `PackageBYOC` have completed.
 
-The job validates all six expected files: the Python 3.13, 3.14, and 3.15 Linux
-x64 archives and their SHA-256 sidecars, all named with the worker release
-version. It uploads them to the existing GitHub release for `NewWorkerVersion`,
-reusing `GithubPat`, which needs repository contents write permission. It does
-not create a tag or release, change draft status, or bypass manual release-note
+The **Attach Python archives and checksums** step validates the expected files
+for every target in `BYOCPythonVersions`: currently six files, the Python 3.13,
+3.14, and 3.15 Linux x64 archives and their SHA-256 sidecars, all named with the
+worker release version. It uploads them to the existing GitHub release for
+`NewWorkerVersion`, reusing `GithubPat`, which needs repository contents write
+permission. It does not create a tag or release, change draft status, or bypass manual release-note
 approval and GitHub publishing. Existing NuGet and Host PR steps are unchanged.
 BYOC packaging still runs on other official builds, but GitHub asset upload is
 limited to worker NuGet releases, not runtime v1/v2 PyPI releases.

@@ -320,7 +320,7 @@ def unhandled_error(req: Request):
 
 @app.route(route="unhandled_urllib_error")
 def unhandled_urllib_error(req: Request) -> str:
-    image_url = req.params.get('img')
+    image_url = req.query_params.get('img')
     urlopen(image_url).read()
 
 

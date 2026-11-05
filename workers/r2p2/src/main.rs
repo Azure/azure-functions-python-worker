@@ -61,7 +61,7 @@ struct Args {
     uri: String,
     worker_id: String,
     request_id: String,
-    grpc_max_message_length: Option<usize>,
+    grpc_max_message_length: usize,
     workers_dir: String,
     app_dir: String,
     bridge_dir: String,
@@ -77,15 +77,17 @@ fn get<'a>(map: &'a std::collections::HashMap<String, String>, keys: &[&str]) ->
     None
 }
 
-fn grpc_max_message_length(map: &HashMap<String, String>) -> Result<Option<usize>> {
-    get(
+fn grpc_max_message_length(map: &HashMap<String, String>) -> Result<usize> {
+    let value = get(
         map,
         &["functions-grpc-max-message-length", "grpcMaxMessageLength"],
     )
     .filter(|value| !value.is_empty())
-    .map(str::parse)
-    .transpose()
-    .context("invalid gRPC max message length")
+    .unwrap_or("-1");
+    match value {
+        "-1" => Ok(usize::MAX),
+        value => value.parse().context("invalid gRPC max message length"),
+    }
 }
 
 fn parse_args() -> Result<Args> {
@@ -254,12 +256,9 @@ async fn main() -> Result<()> {
         .connect()
         .await
         .context("connect to Functions Host")?;
-    let mut grpc = tonic::client::Grpc::new(channel);
-    if let Some(limit) = args.grpc_max_message_length {
-        grpc = grpc
-            .max_decoding_message_size(limit)
-            .max_encoding_message_size(limit);
-    }
+    let mut grpc = tonic::client::Grpc::new(channel)
+        .max_decoding_message_size(args.grpc_max_message_length)
+        .max_encoding_message_size(args.grpc_max_message_length);
     grpc.ready()
         .await
         .map_err(|e| anyhow!("gRPC channel not ready: {e}"))?;
@@ -328,27 +327,40 @@ mod tests {
     fn parses_host_grpc_message_limit_aliases() {
         for key in ["functions-grpc-max-message-length", "grpcMaxMessageLength"] {
             let map = HashMap::from([(key.to_string(), "28312683".to_string())]);
-            assert_eq!(grpc_max_message_length(&map).unwrap(), Some(28_312_683));
+            assert_eq!(grpc_max_message_length(&map).unwrap(), 28_312_683);
+        }
+    }
+
+    #[test]
+    fn parses_unlimited_grpc_message_limit_aliases() {
+        for flag in [
+            "--functions-grpc-max-message-length",
+            "--grpcMaxMessageLength",
+        ] {
+            let parsed = args(&["--functions-uri", "http://localhost:5001", flag, "-1"]).unwrap();
+            assert_eq!(parsed.grpc_max_message_length, usize::MAX);
         }
     }
 
     #[test]
     fn rejects_invalid_grpc_message_limit() {
-        let map = HashMap::from([(
-            "functions-grpc-max-message-length".to_string(),
-            "invalid".to_string(),
-        )]);
-        assert!(grpc_max_message_length(&map).is_err());
+        for value in ["invalid", "-2"] {
+            let map = HashMap::from([(
+                "functions-grpc-max-message-length".to_string(),
+                value.to_string(),
+            )]);
+            assert!(grpc_max_message_length(&map).is_err());
+        }
     }
 
     #[test]
-    fn empty_grpc_message_limit_is_not_configured() {
+    fn empty_grpc_message_limit_is_unlimited() {
         let map = HashMap::from([(
             "functions-grpc-max-message-length".to_string(),
             String::new(),
         )]);
 
-        assert_eq!(grpc_max_message_length(&map).unwrap(), None);
+        assert_eq!(grpc_max_message_length(&map).unwrap(), usize::MAX);
     }
 
     #[test]
@@ -375,7 +387,7 @@ mod tests {
         assert_eq!(parsed.uri, "http://localhost:5001");
         assert_eq!(parsed.worker_id, "worker-1");
         assert_eq!(parsed.request_id, "request-1");
-        assert_eq!(parsed.grpc_max_message_length, Some(1024));
+        assert_eq!(parsed.grpc_max_message_length, 1024);
         assert_eq!(parsed.workers_dir, "C:\\worker");
         assert_eq!(parsed.bridge_dir, "C:\\worker\\bridge");
         assert_eq!(parsed.app_dir, "C:\\app");
@@ -399,7 +411,7 @@ mod tests {
         assert_eq!(parsed.uri, "http://localhost:5002");
         assert_eq!(parsed.worker_id, "r2p2-0");
         assert_eq!(parsed.request_id, "rust-request-0");
-        assert_eq!(parsed.grpc_max_message_length, None);
+        assert_eq!(parsed.grpc_max_message_length, usize::MAX);
         assert_eq!(parsed.app_dir, "");
     }
 
@@ -426,7 +438,7 @@ mod tests {
         assert_eq!(parsed.uri, "https://localhost:5003");
         assert_eq!(parsed.worker_id, "worker-3");
         assert_eq!(parsed.request_id, "request-3");
-        assert_eq!(parsed.grpc_max_message_length, Some(2048));
+        assert_eq!(parsed.grpc_max_message_length, 2048);
         assert_eq!(parsed.app_dir, "app");
         assert_eq!(parsed.host, "127.0.0.1");
     }

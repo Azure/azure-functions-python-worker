@@ -55,7 +55,7 @@ jobs:
     displayName: 'Wait For Python Worker Build'
     inputs:
       notifyUsers: ''
-      instructions: 'Ensure the build of release/4.x.y.z finishes in https://dev.azure.com/azfunc/internal/_build?definitionId=652 and verify if PackageWorkers task is completed.'
+      instructions: 'Ensure the build of release/4.x.y.z finishes in https://dev.azure.com/azfunc/internal/_build?definitionId=652 and verify that PackageWorkers and PackageBYOCPrototype completed successfully.'
 
 - job: "PublishNuget" 
   dependsOn: ['WaitForPythonWorkerBuild']
@@ -69,6 +69,7 @@ jobs:
         packageParentPath: '$(Pipeline.Workspace)'
   steps:
   - task: DownloadPipelineArtifact@2
+    name: DownloadWorkerArtifacts
     displayName: 'Download Python Worker release/4.x.y.z Artifact'
     inputs:
       buildType: specific
@@ -80,6 +81,63 @@ jobs:
       allowPartiallySucceededBuilds: true
       allowFailedBuilds: true
       targetPath: '$(Pipeline.Workspace)/PythonWorkerArtifact'
+
+- job: "PublishBYOCAssets"
+  dependsOn: ['PublishNuget']
+  displayName: 'Upload BYOC assets to GitHub release'
+  pool:
+    name: 1es-pool-azfunc
+    image: 1es-ubuntu-24.04-min
+    os: linux
+  variables:
+    # DownloadPipelineArtifact exposes the source build ID as BuildNumber.
+    WorkerBuildId: $[ dependencies.PublishNuget.outputs['DownloadWorkerArtifacts.BuildNumber'] ]
+  steps:
+  - checkout: none
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download BYOC assets from the NuGet source build'
+    inputs:
+      buildType: specific
+      project: '3f99e810-c336-441f-8892-84983093ad7f'
+      definition: 652
+      buildVersionToDownload: specific
+      pipelineId: '$(WorkerBuildId)'
+      artifactName: 'PythonWorkerBYOCPrototype'
+      targetPath: '$(Pipeline.Workspace)/byoc-worker'
+  - pwsh: |
+      $ErrorActionPreference = 'Stop'
+      $version = $env:WORKER_VERSION
+      $assets = @(
+          foreach ($abi in '313', '314', '315') {
+              $archive = Join-Path '$(Pipeline.Workspace)/byoc-worker' "azure-functions-python-worker-$version-py$abi-linux-x64.tar.gz"
+              Get-Item -LiteralPath $archive
+              Get-Item -LiteralPath "$archive.sha256"
+          }
+      )
+      $headers = @{
+          "Accept" = "application/vnd.github+json"
+          "Authorization" = "Bearer $env:GITHUB_TOKEN"
+          "X-GitHub-Api-Version" = "2022-11-28"
+      }
+      $tag = [System.Uri]::EscapeDataString($version)
+      $release = Invoke-RestMethod -Headers $headers `
+          -Uri "https://api.github.com/repos/Azure/azure-functions-python-worker/releases/tags/$tag"
+      foreach ($asset in $assets) {
+          if ($release.assets.name -contains $asset.Name) {
+              throw "BYOC asset '$($asset.Name)' already exists on release $version. Existing assets are not overwritten; remove conflicting BYOC assets before retrying."
+          }
+      }
+      $uploadUrl = $release.upload_url -replace '\{\?name,label\}$', ''
+      foreach ($asset in $assets) {
+          $assetUrl = '{0}?name={1}' -f $uploadUrl, [System.Uri]::EscapeDataString($asset.Name)
+          Write-Host "Uploading $($asset.Name)"
+          Invoke-RestMethod -Headers $headers -Method Post -Uri $assetUrl `
+              -ContentType 'application/octet-stream' -InFile $asset.FullName | Out-Null
+      }
+    displayName: 'Attach Python 3.13, 3.14 and 3.15 archives and checksums'
+    env:
+      GITHUB_TOKEN: $(GithubPat)
+      WORKER_VERSION: $(NewWorkerVersion)
 
 - job: "CheckNugetPackageContent"
   dependsOn: ['PublishNuget']

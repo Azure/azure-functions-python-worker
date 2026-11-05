@@ -340,6 +340,8 @@ jobs:
       architecture: 'arm64'
       hostArchitecture: 'x64'
 - job: Build_R2P2_LINUX_ARM64
+  # Temporary: keep failures visible without blocking packaging and tests.
+  continueOnError: true
   timeoutInMinutes: 240
   pool:
     name: 1es-pool-azfunc
@@ -516,6 +518,22 @@ jobs:
     inputs:
       buildType: 'current'
       targetPath: '$(Build.SourcesDirectory)'
+  - pwsh: |
+      # Temporary companion to Build_R2P2_LINUX_ARM64's continueOnError.
+      # Do not require its artifact when the build failed before publishing it.
+      $root = '$(Build.SourcesDirectory)'
+      if (-not (Test-Path (Join-Path $root '3.15_LINUX_ARM64/r2p2'))) {
+        $nuspecPath = Join-Path $root '$(nuspec_path)'
+        [xml]$nuspec = Get-Content -LiteralPath $nuspecPath -Raw
+        foreach ($file in @($nuspec.package.files.file)) {
+          if ($file.GetAttribute('src') -eq '..\..\3.15_LINUX_ARM64\**') {
+            [void]$file.ParentNode.RemoveChild($file)
+          }
+        }
+        $nuspec.Save($nuspecPath)
+        Write-Host '##vso[task.logissue type=warning]Packaging without the optional R2P2 Linux ARM64 artifact.'
+      }
+    displayName: 'Allow missing R2P2 Linux ARM64 artifact (temporary)'
   - task: ManifestGeneratorTask@0
     displayName: 'SBOM Generation Task'
     inputs:

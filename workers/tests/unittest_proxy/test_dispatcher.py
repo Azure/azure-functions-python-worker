@@ -27,6 +27,44 @@ import proxy_worker.dispatcher as dispatcher_module
 _real_import = builtins.__import__
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", [None, 1, 2, 3, 4])
+async def test_host_configuration_survives_proxy_envelope(status):
+    protos = dispatcher_module.protos
+    fields = {}
+    if status is not None:
+        fields["host_configuration"] = protos.HostConfiguration(
+            status=status, content=b"{}" if status == 1 else b"")
+    response = protos.WorkerInitResponse(
+        **fields,
+        capabilities={"WorkerStatus": "true"},
+        result=protos.StatusResult(status=protos.StatusResult.Success))
+    runtime = types.SimpleNamespace(
+        worker_init_request=AsyncMock(return_value=response),
+        start_threadpool_executor=Mock(),
+        version=types.SimpleNamespace(VERSION="test"))
+    worker = Dispatcher(asyncio.get_running_loop(), "localhost", 7071,
+                        "worker", "request", 5.0)
+    request = protos.StreamingMessage(
+        worker_init_request=protos.WorkerInitRequest(
+            capabilities={"HostConfiguration": "1"}))
+    with patch.object(worker, "reload_library_worker"), \
+            patch.object(dispatcher_module, "_library_worker", runtime), \
+            patch.object(dispatcher_module, "check_python_eol"), \
+            patch.object(dispatcher_module.DependencyManager,
+                         "is_in_linux_consumption", return_value=False), \
+            patch.object(dispatcher_module.DependencyManager,
+                         "should_load_cx_dependencies", return_value=False):
+        result = await worker._handle__worker_init_request(request)
+    decoded = protos.StreamingMessage.FromString(result.SerializeToString())
+    assert decoded.worker_init_response == response
+    assert decoded.worker_init_response.HasField("host_configuration") == (
+        status is not None)
+    forwarded = runtime.worker_init_request.call_args.args[0]
+    assert forwarded.request.worker_init_request.capabilities == {
+        "HostConfiguration": "1"}
+
+
 class TestDispatcherConnection(unittest.IsolatedAsyncioTestCase):
     async def test_connect_propagates_message_length(self):
         for max_size in (None, 4096):

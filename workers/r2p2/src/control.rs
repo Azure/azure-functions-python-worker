@@ -17,8 +17,8 @@ use pyo3::types::PyDict;
 
 use crate::pb::messages::{
     BindingInfo, FunctionEnvironmentReloadRequest, FunctionEnvironmentReloadResponse,
-    FunctionLoadRequest, FunctionLoadResponse, FunctionMetadataResponse, RpcException,
-    RpcFunctionMetadata, RpcLog, RpcRetryOptions, StatusResult, StreamingMessage,
+    FunctionLoadRequest, FunctionLoadResponse, FunctionMetadataResponse, HostConfiguration,
+    RpcException, RpcFunctionMetadata, RpcLog, RpcRetryOptions, StatusResult, StreamingMessage,
     WorkerInitRequest, WorkerInitResponse, WorkerMetadata,
 };
 
@@ -211,10 +211,18 @@ fn py_to_rpc_function_metadata(d: &Bound<'_, PyAny>) -> Result<RpcFunctionMetada
 
 /// Map the adapter's flattened `WorkerInitResponse` dict back to prost.
 pub fn py_to_worker_init_response(d: &Bound<'_, PyAny>) -> Result<WorkerInitResponse> {
+    let host_configuration = match get_child(d, "host_configuration") {
+        Some(configuration) => Some(HostConfiguration {
+            status: configuration.get_item("status")?.extract()?,
+            content: configuration.get_item("content")?.extract()?,
+        }),
+        None => None,
+    };
     Ok(WorkerInitResponse {
         capabilities: get_str_map(d, "capabilities"),
         worker_metadata: py_to_worker_metadata(get_child(d, "worker_metadata")),
         result: py_to_status_result(get_child(d, "result")),
+        host_configuration,
         ..Default::default()
     })
 }
@@ -440,6 +448,65 @@ mod tests {
     }
 
     // --- inbound request (prost -> dict) ---------------------------------
+    #[test]
+    fn host_configuration_adapter_round_trips_through_prost() {
+        use prost::Message;
+
+        Python::attach(|py| {
+            let source =
+                std::ffi::CString::new(include_str!("../bridge/protos_adapter.py")).unwrap();
+            let adapter = pyo3::types::PyModule::from_code(
+                py,
+                &source,
+                c"protos_adapter.py",
+                c"host_configuration_adapter_test",
+            )
+            .unwrap();
+            for (status, content) in [
+                (1, b"\x00\x80\xff".as_slice()),
+                (1, b"".as_slice()),
+                (2, b"".as_slice()),
+                (3, b"".as_slice()),
+                (4, b"".as_slice()),
+            ] {
+                let config = adapter
+                    .getattr("HostConfiguration")
+                    .unwrap()
+                    .call1((status, pyo3::types::PyBytes::new(py, content)))
+                    .unwrap();
+                let kwargs = PyDict::new(py);
+                kwargs.set_item("host_configuration", config).unwrap();
+                let response = adapter
+                    .getattr("WorkerInitResponse")
+                    .unwrap()
+                    .call((), Some(&kwargs))
+                    .unwrap()
+                    .call_method0("to_dict")
+                    .unwrap();
+                let message = py_to_worker_init_response(&response).unwrap();
+                let decoded =
+                    WorkerInitResponse::decode(message.encode_to_vec().as_slice()).unwrap();
+                let configuration = decoded.host_configuration.unwrap();
+                assert_eq!(configuration.status, status);
+                assert_eq!(configuration.content, content);
+            }
+            let response = adapter
+                .getattr("WorkerInitResponse")
+                .unwrap()
+                .call0()
+                .unwrap()
+                .call_method0("to_dict")
+                .unwrap();
+            let message = py_to_worker_init_response(&response).unwrap();
+            assert!(
+                WorkerInitResponse::decode(message.encode_to_vec().as_slice())
+                    .unwrap()
+                    .host_configuration
+                    .is_none()
+            );
+        });
+    }
+
     #[test]
     fn worker_init_request_decodes_to_dict() {
         Python::attach(|py| {

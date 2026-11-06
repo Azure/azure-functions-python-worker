@@ -263,9 +263,11 @@ class Dispatcher(metaclass=DispatcherMeta):
 
     @classmethod
     async def connect(cls, host: str, port: int, worker_id: str,
-                      request_id: str, connect_timeout: float):
+                      request_id: str, connect_timeout: float,
+                      grpc_max_msg_len: int = -1):
         loop = asyncio.events.get_event_loop()
-        disp = cls(loop, host, port, worker_id, request_id, connect_timeout)
+        disp = cls(loop, host, port, worker_id, request_id, connect_timeout,
+                   grpc_max_msg_len)
         # Safety check for mypy
         if disp._grpc_thread is not None:
             disp._grpc_thread.start()
@@ -281,8 +283,10 @@ class Dispatcher(metaclass=DispatcherMeta):
             options.append(('grpc.max_send_message_length',
                             self._grpc_max_msg_len))
 
-        channel = grpc.insecure_channel(
-            f'{self._host}:{self._port}', options)
+        host = self._host
+        if ':' in host and not host.startswith('['):
+            host = f'[{host}]'
+        channel = grpc.insecure_channel(f'{host}:{self._port}', options)
 
         try:
             grpc.channel_ready_future(channel).result(

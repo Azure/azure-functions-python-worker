@@ -27,6 +27,67 @@ import proxy_worker.dispatcher as dispatcher_module
 _real_import = builtins.__import__
 
 
+class TestDispatcherConnection(unittest.IsolatedAsyncioTestCase):
+    async def test_connect_propagates_message_length(self):
+        for max_size in (None, 4096):
+            with self.subTest(max_size=max_size), \
+                    patch('proxy_worker.dispatcher.threading.'
+                          'Thread') as thread:
+                loop = asyncio.get_running_loop()
+                connected = loop.create_future()
+                thread.return_value.start.side_effect = (
+                    lambda: connected.set_result(True)
+                )
+                kwargs = {} if max_size is None else {
+                    'grpc_max_msg_len': max_size,
+                }
+                with patch.object(loop, 'create_future',
+                                  return_value=connected):
+                    dispatcher = await Dispatcher.connect(
+                        'localhost', 5002, 'worker', 'request', 5.0, **kwargs,
+                    )
+                self.assertEqual(
+                    dispatcher._grpc_max_msg_len,
+                    -1 if max_size is None else max_size,
+                )
+                thread.return_value.start.assert_called_once_with()
+
+
+class TestDispatcherGrpcChannel(unittest.TestCase):
+    def test_channel_target_and_message_limits(self):
+        for host, target in (
+            ('localhost', 'localhost:5002'),
+            ('::1', '[::1]:5002'),
+            ('[::1]', '[::1]:5002'),
+        ):
+            for max_size in (-1, 4096):
+                with self.subTest(host=host, max_size=max_size), \
+                        patch('proxy_worker.dispatcher.grpc.'
+                              'insecure_channel') as channel, \
+                        patch('proxy_worker.dispatcher.grpc.'
+                              'channel_ready_future') as ready, \
+                        patch('proxy_worker.dispatcher.protos.'
+                              'FunctionRpcStub') as stub:
+                    loop = Mock()
+                    stub.return_value.EventStream.return_value = iter(())
+                    dispatcher = Dispatcher(
+                        loop, host, 5002, 'worker', 'request', 5.0, max_size,
+                    )
+                    dispatcher._Dispatcher__poll_grpc()
+                    channel.assert_called_once_with(target, [
+                        ('grpc.max_receive_message_length', max_size),
+                        ('grpc.max_send_message_length', max_size),
+                    ])
+                    ready.assert_called_once_with(channel.return_value)
+                    ready.return_value.result.assert_called_once_with(
+                        timeout=5.0,
+                    )
+                    stub.assert_called_once_with(channel.return_value)
+                    loop.call_soon_threadsafe.assert_called_once_with(
+                        dispatcher._grpc_connected_fut.set_result, True,
+                    )
+
+
 class TestDispatcher(unittest.TestCase):
 
     @patch("proxy_worker.dispatcher.queue.Queue")

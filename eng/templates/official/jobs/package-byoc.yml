@@ -1,0 +1,36 @@
+parameters:
+  - name: byocPythonVersions
+    type: string
+
+jobs:
+- job: PackageBYOC
+  dependsOn: ['Build_LINUX_X64', 'Build_R2P2_LINUX_X64']
+  pool:
+    name: 1es-pool-azfunc
+    image: 1es-ubuntu-24.04-min
+    os: linux
+  templateContext:
+    outputParentDirectory: $(Build.ArtifactStagingDirectory)
+    outputs:
+      - output: pipelineArtifact
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: "PythonWorkerBYOC"
+  steps:
+  - ${{ each pythonVersion in split(parameters.byocPythonVersions, ' ') }}:
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: current
+        artifactName: '${{ pythonVersion }}_LINUX_X64'
+        targetPath: '$(Pipeline.Workspace)/byoc-worker/${{ pythonVersion }}'
+      displayName: 'Download staged Python ${{ pythonVersion }} Linux x64 worker'
+  - bash: |
+      set -euo pipefail
+      for python_version in $BYOC_PYTHON_VERSIONS; do
+        python3 eng/pack/scripts/package_byoc.py \
+          --python-version "$python_version" \
+          --source "$(Pipeline.Workspace)/byoc-worker/$python_version" \
+          --output "$(Build.ArtifactStagingDirectory)"
+      done
+    displayName: 'Package Python BYOC workers'
+    env:
+      BYOC_PYTHON_VERSIONS: ${{ parameters.byocPythonVersions }}

@@ -4,6 +4,7 @@ import importlib.util
 import os
 import sys
 import unittest
+from types import ModuleType
 from unittest.mock import patch
 
 from tests.utils import testutils
@@ -642,6 +643,22 @@ class TestDependencyManager(unittest.TestCase):
         # Ensure namespace remains after module cache is removed
         DependencyManager._remove_module_cache(self._customer_deps_path)
         self.assertIsNotNone(common_module)
+
+    def test_remove_module_cache_preserves_main(self):
+        main_mod = sys.modules.get('__main__')
+        try:
+            dummy_main = ModuleType('__main__')
+            dummy_main.__file__ = os.path.join(self._customer_deps_path, "worker.py")
+            sys.modules['__main__'] = dummy_main
+
+            DependencyManager._remove_module_cache(self._customer_deps_path)
+            self.assertIn('__main__', sys.modules)
+            self.assertIs(sys.modules['__main__'], dummy_main)
+        finally:
+            if main_mod is not None:
+                sys.modules['__main__'] = main_mod
+            else:
+                sys.modules.pop('__main__', None)
 
     @unittest.skipIf(sys.version_info.minor >= 13,
                      "The worker brings different protobuf versions"

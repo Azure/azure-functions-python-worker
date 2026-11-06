@@ -1,5 +1,6 @@
 import sys
 import os
+from types import ModuleType
 from unittest.mock import patch
 
 from proxy_worker.utils.dependency import DependencyManager
@@ -277,3 +278,56 @@ def test_add_cx_deps_to_sys_path_none_path_no_action(
     assert sys.path == original_sys_path
     mock_clear.assert_not_called()
     mock_is_azure.assert_called_once()
+
+
+def test_remove_module_cache_removes_matching_module():
+    """Test _remove_module_cache removes matching modules from sys.modules."""
+    target_path = "/mock/customer/deps"
+    dummy_name = "test_custom_customer_module"
+    dummy_module = ModuleType(dummy_name)
+    dummy_module.__file__ = os.path.join(target_path, "dummy.py")
+    sys.modules[dummy_name] = dummy_module
+
+    try:
+        assert dummy_name in sys.modules
+        DependencyManager._remove_module_cache(target_path)
+        assert dummy_name not in sys.modules
+    finally:
+        sys.modules.pop(dummy_name, None)
+
+
+def test_remove_module_cache_preserves_main():
+    """Test _remove_module_cache preserves __main__ even when its file path
+    is within the cleared path (#1903)."""
+    target_path = "/mock/worker/path"
+    original_main = sys.modules.get('__main__')
+
+    try:
+        dummy_main = ModuleType('__main__')
+        dummy_main.__file__ = os.path.join(target_path, "worker.py")
+        sys.modules['__main__'] = dummy_main
+
+        DependencyManager._remove_module_cache(target_path)
+        assert '__main__' in sys.modules
+        assert sys.modules['__main__'] is dummy_main
+    finally:
+        if original_main is not None:
+            sys.modules['__main__'] = original_main
+        else:
+            sys.modules.pop('__main__', None)
+
+
+def test_remove_module_cache_preserves_proxy_worker():
+    """Test _remove_module_cache does not remove modules starting with proxy_worker."""
+    target_path = "/mock/worker/path"
+    dummy_name = "proxy_worker.test_submodule"
+    dummy_module = ModuleType(dummy_name)
+    dummy_module.__file__ = os.path.join(target_path, "test_submodule.py")
+    sys.modules[dummy_name] = dummy_module
+
+    try:
+        DependencyManager._remove_module_cache(target_path)
+        assert dummy_name in sys.modules
+    finally:
+        sys.modules.pop(dummy_name, None)
+

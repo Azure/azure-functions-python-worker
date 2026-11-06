@@ -13,6 +13,7 @@
 #   osName        : WINDOWS | LINUX | OSX (selects the build script)
 #   architecture  : x64 | x86 | arm64; packaged R2P2 target architecture
 #   hostArchitecture: x64 | x86; build-time Python; defaults to architecture
+#   cpythonSourceSha256: reviewed source digest; required for Linux ARM64
 
 parameters:
   pythonVersion: ''
@@ -20,8 +21,30 @@ parameters:
   osName: ''
   architecture: 'x64'
   hostArchitecture: ''
+  cpythonSourceSha256: ''
+  cpythonWindowsSdkSha256: ''
 
 steps:
+- ${{ if and(eq(parameters.osName, 'WINDOWS'), eq(parameters.architecture, 'arm64')) }}:
+  - task: UniversalPackages@0
+    displayName: 'Download pinned CPython Windows ARM64 SDK from internal feed'
+    inputs:
+      command: 'download'
+      feedsToUse: 'internal'
+      vstsFeed: 'internal/PythonWorker_Internal_PublicPackages'
+      vstsFeedPackage: 'cpython-windows-arm64-sdk'
+      vstsPackageVersion: '${{ parameters.pythonVersion }}'
+      downloadDirectory: '$(Agent.TempDirectory)/cpython-windows-arm64-sdk/${{ parameters.pythonVersion }}'
+- ${{ if and(eq(parameters.osName, 'LINUX'), eq(parameters.architecture, 'arm64')) }}:
+  - task: UniversalPackages@0
+    displayName: 'Download pinned CPython source from internal feed'
+    inputs:
+      command: 'download'
+      feedsToUse: 'internal'
+      vstsFeed: 'internal/PythonWorker_Internal_PublicPackages'
+      vstsFeedPackage: 'cpython-source'
+      vstsPackageVersion: '${{ parameters.pythonVersion }}'
+      downloadDirectory: '$(Agent.TempDirectory)/cpython-source/${{ parameters.pythonVersion }}'
 - task: PipAuthenticate@1
   displayName: 'Authenticate pip to CFS'
   inputs:
@@ -33,6 +56,10 @@ steps:
     architecture: ${{ coalesce(parameters.hostArchitecture, parameters.architecture) }}
     allowUnstable: true
     addToPath: true
+    ${{ if and(eq(parameters.osName, 'LINUX'), eq(parameters.architecture, 'arm64')) }}:
+      # Acquire the pinned x64 build interpreter on a cache miss, as for Linux x64.
+      # The internally staged archive supplies target source, not a host interpreter.
+      disableDownloadFromRegistry: false
 - task: CargoAuthenticate@0
   displayName: 'Authenticate Cargo to CFS'
   inputs:
@@ -44,6 +71,10 @@ steps:
       filePath: 'eng/pack/scripts/r2p2_deps.ps1'
       arguments: '-PythonVersion ${{ parameters.pythonVersion }} -Architecture ${{ parameters.architecture }}'
       pwsh: true
+    ${{ if eq(parameters.architecture, 'arm64') }}:
+      env:
+        CPYTHON_ARM64_ARCHIVE: '$(Agent.TempDirectory)/cpython-windows-arm64-sdk/${{ parameters.pythonVersion }}/pythonarm64.${{ parameters.pythonVersion }}.nupkg'
+        CPYTHON_ARM64_SHA256: '${{ parameters.cpythonWindowsSdkSha256 }}'
 - ${{ else }}:
   - task: ShellScript@2
     displayName: 'Build R2P2 + dependencies'
@@ -51,6 +82,10 @@ steps:
       disableAutoCwd: true
       scriptPath: 'eng/pack/scripts/r2p2_deps.sh'
       args: '${{ parameters.pythonVersion }} ${{ parameters.architecture }}'
+    ${{ if and(eq(parameters.osName, 'LINUX'), eq(parameters.architecture, 'arm64')) }}:
+      env:
+        CPYTHON_ARM64_ARCHIVE: '$(Agent.TempDirectory)/cpython-source/${{ parameters.pythonVersion }}/Python-${{ parameters.pythonVersion }}.tgz'
+        CPYTHON_ARM64_SHA256: '${{ parameters.cpythonSourceSha256 }}'
 - task: CopyFiles@2
   displayName: 'Copy R2P2 files'
   inputs:
@@ -83,99 +118,9 @@ steps:
     sourceFolder: '$(Build.SourcesDirectory)/workers/python/r2p2'
     contents: 'worker.py'
     targetFolder: '$(Build.ArtifactStagingDirectory)'
-- powershell: |
-    $root = "$(Build.ArtifactStagingDirectory)"
-
-    # The binary is r2p2.exe on Windows, r2p2 elsewhere.
-    $binary = if ('${{ parameters.osName }}' -eq 'WINDOWS') { "r2p2.exe" } else { "r2p2" }
-    $expected = @(
-        $binary,
-        "worker.py",
-        "bridge/bridge.py",
-        "bridge/protos_adapter.py",
-        "azure_functions_runtime",
-        "azure_functions_runtime/native_invocation.py",
-        "azure_functions_runtime/utils/executor.py",
-        "azure_functions_runtime_v1",
-        "azure_functions_runtime_v1/native_invocation.py",
-        "azure_functions_runtime_v1/utils/executor.py",
-        "azure",
-        "azurefunctions"
-    )
-    $forbidden = @("azure_functions_worker", "grpc", "proxy_worker", "uvloop")
-
-    $missing = @()
-    foreach ($item in $expected) {
-        if (-not (Test-Path (Join-Path $root $item))) { $missing += $item }
-    }
-    $present = @()
-    foreach ($item in $forbidden) {
-        if (Test-Path (Join-Path $root $item)) { $present += $item }
-    }
-
-    if ($missing.Count -gt 0) {
-        Write-Error "Validation failed. Missing expected files/folders:`n$($missing -join "`n")"
-        exit 1
-    }
-    if ($present.Count -gt 0) {
-        Write-Error "Validation failed. Pruned packages unexpectedly present:`n$($present -join "`n")"
-        exit 1
-    }
-
-    $binaryPath = Join-Path $root $binary
-    $binaryBytes = [System.IO.File]::ReadAllBytes($binaryPath)
-    $osName = '${{ parameters.osName }}'
-    $architecture = '${{ parameters.architecture }}'
-    if ($osName -eq 'WINDOWS') {
-      if ($binaryBytes.Length -lt 64 -or $binaryBytes[0] -ne 0x4d -or $binaryBytes[1] -ne 0x5a) {
-        throw "Validation failed. $binary is not a PE executable."
-      }
-      $peOffset = [BitConverter]::ToInt32($binaryBytes, 0x3c)
-      if ($peOffset -lt 0 -or $peOffset + 6 -gt $binaryBytes.Length -or
-        $binaryBytes[$peOffset] -ne 0x50 -or $binaryBytes[$peOffset + 1] -ne 0x45 -or
-        $binaryBytes[$peOffset + 2] -ne 0 -or $binaryBytes[$peOffset + 3] -ne 0) {
-        throw "Validation failed. $binary has an invalid PE header."
-      }
-      $actualMachine = [BitConverter]::ToUInt16($binaryBytes, $peOffset + 4)
-      $expectedMachine = switch ($architecture) {
-        'x86' { 0x014c }
-        'x64' { 0x8664 }
-        'arm64' { 0xaa64 }
-        default { throw "Unsupported Windows architecture: $architecture" }
-      }
-      if ($actualMachine -ne $expectedMachine) {
-        throw "Validation failed. Expected $binary PE machine 0x$($expectedMachine.ToString('x4')) for $architecture; found 0x$($actualMachine.ToString('x4'))."
-      }
-    } elseif ($osName -eq 'LINUX') {
-      if ($binaryBytes.Length -lt 20 -or $binaryBytes[0] -ne 0x7f -or
-        $binaryBytes[1] -ne 0x45 -or $binaryBytes[2] -ne 0x4c -or $binaryBytes[3] -ne 0x46) {
-        throw "Validation failed. $binary is not an ELF executable."
-      }
-      if ($binaryBytes[5] -ne 1) {
-        throw "Validation failed. $binary is not a little-endian ELF executable."
-      }
-      $actualMachine = [BitConverter]::ToUInt16($binaryBytes, 18)
-      $expectedMachine = switch ($architecture) {
-        'x86' { 0x0003 }
-        'x64' { 0x003e }
-        'arm64' { 0x00b7 }
-        default { throw "Unsupported Linux architecture: $architecture" }
-      }
-      if ($actualMachine -ne $expectedMachine) {
-        throw "Validation failed. Expected $binary ELF machine 0x$($expectedMachine.ToString('x4')) for $architecture; found 0x$($actualMachine.ToString('x4'))."
-      }
-    } elseif ($osName -eq 'OSX') {
-      $expectedArchitecture = if ($architecture -eq 'arm64') { 'arm64' } else { 'x86_64' }
-      $lipoOutput = & lipo -archs $binaryPath
-      if ($LASTEXITCODE -ne 0) {
-        throw "Validation failed. lipo could not inspect $binary."
-      }
-      $architectures = $lipoOutput.Trim() -split '\s+'
-      if ($architectures -notcontains $expectedArchitecture) {
-        throw "Validation failed. Expected $binary to contain $expectedArchitecture; found $($architectures -join ', ')."
-      }
-    } else {
-      throw "Unsupported R2P2 artifact OS: $osName"
-    }
-    Write-Host "✅ Validation passed. R2P2 artifact contents and $architecture binary are correct."
-  displayName: "Validate R2P2 artifact contents"
+- powershell: >-
+    python -I -S "$(Build.SourcesDirectory)/eng/pack/scripts/validate_worker_payload.py"
+    "$(Build.ArtifactStagingDirectory)"
+    --python-version '${{ parameters.pythonVersion }}'
+    --os ${{ parameters.osName }} --architecture ${{ parameters.architecture }}
+  displayName: 'Validate R2P2 artifact contents and binary'

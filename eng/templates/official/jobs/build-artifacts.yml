@@ -242,8 +242,6 @@ jobs:
           }
         ]
 - job: Build_R2P2_WINDOWS_ARM64
-  # Temporary: keep failures visible without blocking packaging and tests.
-  continueOnError: true
   timeoutInMinutes: 180
   pool:
     name: 1es-pool-azfunc
@@ -252,8 +250,10 @@ jobs:
   strategy:
     matrix:
       Python315R2P2:
-        pythonVersion: '3.15'
+        # Keep the host version, SDK package version, and reviewed digest in sync.
+        pythonVersion: '3.15.2'
         normalizedPythonVersion: '3.15'
+        cpythonWindowsSdkSha256: 'aeb58f2bb6ba9a4cefacae6c23f720133f82bbdc91c8c9dc9a467d483a1a3534'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -268,6 +268,7 @@ jobs:
       osName: 'WINDOWS'
       architecture: 'arm64'
       hostArchitecture: 'x64'
+      cpythonWindowsSdkSha256: '$(cpythonWindowsSdkSha256)'
   - template: ci/sign-files.yml@eng
     parameters:
       displayName: 'Sign R2P2 executable'
@@ -346,8 +347,6 @@ jobs:
       architecture: 'arm64'
       hostArchitecture: 'x64'
 - job: Build_R2P2_LINUX_ARM64
-  # Temporary: keep failures visible without blocking packaging and tests.
-  continueOnError: true
   timeoutInMinutes: 240
   pool:
     name: 1es-pool-azfunc
@@ -356,8 +355,11 @@ jobs:
   strategy:
     matrix:
       Python315R2P2:
-        pythonVersion: '3.15'
+        # Keep interpreter, Universal Package version, and reviewed digest in sync.
+        # See eng/pack/cpython-source.md for upstream verification and servicing.
+        pythonVersion: '3.15.2'
         normalizedPythonVersion: '3.15'
+        cpythonSourceSha256: 'f74e1db0eabd651cd01e4e2a00201bd41866abe74869ab716f9bf33cbbaa0943'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -372,6 +374,7 @@ jobs:
       osName: 'LINUX'
       architecture: 'arm64'
       hostArchitecture: 'x64'
+      cpythonSourceSha256: '$(cpythonSourceSha256)'
 - job: Build_OSX_X64
   timeoutInMinutes: 180
   pool:
@@ -442,6 +445,7 @@ jobs:
       pythonVersion: '$(pythonVersion)'
       artifactName: '$(normalizedPythonVersion)_OSX_ARM64'
       grpcBuild: 'darwin.so'
+      architecture: 'arm64'
 - job: Build_LINUX_ARM64
   timeoutInMinutes: 240
   pool:
@@ -526,29 +530,24 @@ jobs:
     inputs:
       buildType: 'current'
       targetPath: '$(Build.SourcesDirectory)'
-  - pwsh: |
-      # Temporary companion to the R2P2 ARM64 jobs' continueOnError.
-      # Do not require artifacts when builds failed before publishing them.
-      $root = '$(Build.SourcesDirectory)'
-      $nuspecPath = Join-Path $root '$(nuspec_path)'
-      [xml]$nuspec = Get-Content -LiteralPath $nuspecPath -Raw
-      $optionalArtifacts = @(
-        @{ Name = '3.15_LINUX_ARM64'; Binary = 'r2p2' }
-        @{ Name = '3.15_WINDOWS_ARM64'; Binary = 'r2p2.exe' }
-      )
-      foreach ($artifact in $optionalArtifacts) {
-        if (Test-Path (Join-Path $root "$($artifact.Name)/$($artifact.Binary)")) {
-          continue
-        }
-        foreach ($file in @($nuspec.package.files.file)) {
-          if ($file.GetAttribute('src') -eq "..\..\$($artifact.Name)\**") {
-            [void]$file.ParentNode.RemoveChild($file)
-          }
-        }
-        Write-Host "##vso[task.logissue type=warning]Packaging without the optional R2P2 $($artifact.Name) artifact."
-      }
-      $nuspec.Save($nuspecPath)
-    displayName: 'Allow missing R2P2 ARM64 artifacts (temporary)'
+  # This job depends on all artifact producers. Never discover packaging checks
+  # through workers/tests: validate the downloaded outputs before NuGet packing.
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.14'
+      architecture: 'x64'
+  - task: PipAuthenticate@1
+    inputs:
+      artifactFeeds: 'public/upstream-public'
+      onlyAddExtraIndex: false
+  - bash: python -m pip install 'setuptools>=62,<82.0' wheel
+    displayName: 'Install offline wheel regression prerequisites'
+  - bash: python -m unittest discover -s eng/pack/tests -p 'test_*.py' -v
+    displayName: 'Run packaging validation regression tests after artifact generation'
+  - bash: >-
+      python -I -S eng/pack/scripts/validate_published_worker_payloads.py
+      "$(Build.SourcesDirectory)" --nuspec "$(nuspec_path)"
+    displayName: 'Validate published worker payloads'
   - task: ManifestGeneratorTask@0
     displayName: 'SBOM Generation Task'
     inputs:

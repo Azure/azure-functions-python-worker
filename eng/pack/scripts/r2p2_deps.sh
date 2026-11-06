@@ -31,6 +31,12 @@ if [[ "$ARCHITECTURE" != "x64" && "$ARCHITECTURE" != "arm64" ]]; then
    exit 1
 fi
 
+# Fail closed before installing dependencies or extracting executable source.
+if [[ "$HOST_OS" == "Linux" && "$ARCHITECTURE" == "arm64" ]]; then
+   bash "$BUILD_SOURCESDIRECTORY/eng/pack/scripts/verify_cpython_source.sh" \
+      "${CPYTHON_ARM64_ARCHIVE:-}" "${CPYTHON_ARM64_SHA256:-}"
+fi
+
 python -m venv .env
 source .env/bin/activate
 python -m pip install --upgrade pip
@@ -80,12 +86,9 @@ if [[ "$HOST_OS" == "Linux" && "$ARCHITECTURE" == "arm64" ]]; then
       exit 1
    fi
 
-   if [[ -z "${CPYTHON_ARM64_ARCHIVE:-}" ]]; then
-      echo "CPYTHON_ARM64_ARCHIVE must point to a pipeline-staged CPython $PYTHON_ARTIFACT_VERSION source archive." >&2
-      exit 1
-   fi
-   if [[ ! -f "$CPYTHON_ARM64_ARCHIVE" ]]; then
-      echo "The pipeline-staged CPython archive does not exist: $CPYTHON_ARM64_ARCHIVE" >&2
+   SELECTED_PYTHON_VERSION="$(python -c 'import platform; print(platform.python_version())')"
+   if [[ "$SELECTED_PYTHON_VERSION" != "$PYTHON_ARTIFACT_VERSION" ]]; then
+      echo "Expected build-time Python $PYTHON_ARTIFACT_VERSION; selected interpreter is $SELECTED_PYTHON_VERSION." >&2
       exit 1
    fi
 

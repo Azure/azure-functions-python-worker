@@ -1,16 +1,88 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+import asyncio
 import contextvars
 import importlib
 import logging
 import sys
 import threading
+from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
 import pytest
 
 import bridge
+
+
+@pytest.mark.parametrize("version,package", [
+    ("v1", "azure_functions_runtime_v1"),
+    ("v2", "azure_functions_runtime"),
+])
+@pytest.mark.parametrize("source,status,content", [
+    (b"{}", 1, b"{}"),
+    (b"\xff\xfe" + '/*c*/ { "a": [1,], }'.encode("utf-16-le"),
+     1, b'{"a":[1]}'),
+    (b"", 3, b""),
+    (b"\xff\xfe", 3, b""),
+    (b"[]", 3, b""),
+    (b'"string"', 3, b""),
+    (b"1E+2", 3, b""),
+    (b"null", 3, b""),
+    (b"true", 3, b""),
+    (b"false", 3, b""),
+    (b"/* leading */ []", 3, b""),
+    (b"{invalid-json", 3, b""),
+], ids=("empty-object", "utf16-jsonc", "empty", "bom-only", "array", "string",
+        "number", "null", "true", "false", "comment-array", "invalid-json"))
+def test_host_configuration_through_runtime_and_bridge(
+        version, package, source, status, content, monkeypatch, tmp_path,
+        reset_bridge_state):
+    root = Path(__file__).resolve().parents[3]
+    monkeypatch.syspath_prepend(str(root / "runtimes" / version))
+    runtime = pytest.importorskip(package)
+    handler = importlib.import_module(package + ".handle_event")
+    snapshot = importlib.import_module(package + ".host_configuration")
+    with snapshot.reset_host_configuration():
+        pass
+    monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", str(tmp_path))
+    monkeypatch.setattr(bridge, "_rt", runtime)
+    monkeypatch.setattr(bridge, "_select_runtime", lambda *args: None)
+    monkeypatch.setattr(bridge, "_run_coro", asyncio.run)
+    monkeypatch.setattr(runtime, "start_threadpool_executor", lambda: None)
+    monkeypatch.setattr(handler, "is_envvar_true", lambda _: False)
+    monkeypatch.setattr(handler, "load_binding_registry", lambda: None)
+    if version == "v1":
+        monkeypatch.setattr(handler, "install", lambda: None)
+    else:
+        monkeypatch.setattr(handler, "load_function_metadata",
+                            lambda *args, **kwargs: None)
+        monkeypatch.setattr(handler.HttpV2Registry, "http_v2_enabled",
+                            lambda: False)
+    monkeypatch.setattr(handler.otel_manager, "get_azure_monitor_available",
+                        lambda: False)
+    monkeypatch.setattr(handler.otel_manager, "get_otel_libs_available",
+                        lambda: False)
+    try:
+        unrequested = bridge.handle_control("worker_init_request", {
+            "capabilities": {}, "function_app_directory": ""})
+        assert "host_configuration" not in unrequested
+        assert snapshot._snapshot is None
+        (tmp_path / "host.json").write_bytes(source)
+        requested = {"capabilities": {"HostConfiguration": "1"},
+                     "function_app_directory": ""}
+        first = bridge.handle_control("worker_init_request", requested)
+        assert first["host_configuration"] == {
+            "status": status, "content": content}
+        assert first["capabilities"] == unrequested["capabilities"]
+        (tmp_path / "host.json").write_bytes(b"changed")
+        second = bridge.handle_control("worker_init_request", requested)
+        assert second["host_configuration"] == first["host_configuration"]
+        assert first["host_configuration"] is not second["host_configuration"]
+        assert second["result"]["status"] == bridge.protos.StatusResult.Success
+    finally:
+        with snapshot.reset_host_configuration():
+            pass
 
 
 class _Sink:

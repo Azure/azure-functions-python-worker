@@ -235,21 +235,49 @@ class RpcFunctionMetadata:
         }
 
 
-class WorkerInitResponse:
-    __slots__ = ("capabilities", "worker_metadata", "result")
+class HostConfiguration:
+    Unspecified = 0
+    Available = 1
+    Missing = 2
+    Error = 3
+    TooLarge = 4
 
-    def __init__(self, capabilities=None, worker_metadata=None, result=None):
+    Status = _EnumWrapper([
+        ("Unspecified", 0), ("Available", 1), ("Missing", 2),
+        ("Error", 3), ("TooLarge", 4),
+    ])
+
+    __slots__ = ("status", "content")
+
+    def __init__(self, status=0, content=b""):
+        self.status = status
+        self.content = content
+
+    def to_dict(self):
+        return {"status": self.status, "content": self.content}
+
+
+class WorkerInitResponse:
+    __slots__ = ("capabilities", "worker_metadata", "result",
+                 "host_configuration")
+
+    def __init__(self, capabilities=None, worker_metadata=None, result=None,
+                 host_configuration=None):
         self.capabilities = capabilities or {}
         self.worker_metadata = worker_metadata
         self.result = result
+        self.host_configuration = host_configuration
 
     def to_dict(self):
-        return {
+        response = {
             "capabilities": dict(self.capabilities or {}),
             "worker_metadata": (self.worker_metadata.to_dict()
                                 if self.worker_metadata else None),
             "result": self.result.to_dict() if self.result else None,
         }
+        if self.host_configuration is not None:
+            response["host_configuration"] = self.host_configuration.to_dict()
+        return response
 
 
 class FunctionMetadataResponse:

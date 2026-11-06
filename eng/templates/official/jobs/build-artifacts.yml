@@ -522,6 +522,24 @@ jobs:
     inputs:
       buildType: 'current'
       targetPath: '$(Build.SourcesDirectory)'
+  # This job depends on all artifact producers. Never discover packaging checks
+  # through workers/tests: validate the downloaded outputs before NuGet packing.
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.14'
+      architecture: 'x64'
+  - task: PipAuthenticate@1
+    inputs:
+      artifactFeeds: 'public/upstream-public'
+      onlyAddExtraIndex: false
+  - bash: python -m pip install 'setuptools>=62,<82.0' wheel
+    displayName: 'Install offline wheel regression prerequisites'
+  - bash: python -m unittest discover -s eng/pack/tests -p 'test_*.py' -v
+    displayName: 'Run packaging validation regression tests after artifact generation'
+  - bash: >-
+      python -I -S eng/pack/scripts/validate_published_worker_payloads.py
+      "$(Build.SourcesDirectory)" --nuspec "$(nuspec_path)"
+    displayName: 'Validate published worker payloads'
   - task: ManifestGeneratorTask@0
     displayName: 'SBOM Generation Task'
     inputs:

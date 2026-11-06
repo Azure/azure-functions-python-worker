@@ -1,6 +1,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-"""Packaging regressions, runnable without ARM64 wheels or a Functions host."""
+"""Official-build packaging regressions outside worker test discovery.
+
+Runnable without ARM64 wheels or a Functions host.
+"""
 
 import importlib.util
 import os

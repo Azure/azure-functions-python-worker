@@ -1,7 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-"""Portable, standard-library-only tests of staged worker validation.
+"""Official-build packaging regressions outside worker test discovery.
 
+Portable, standard-library-only tests of staged worker validation.
 Fixtures describe the artifact contract independently of expected_contents().
 Native headers are data, never executed, so every target runs on any host.
 """
@@ -754,6 +755,37 @@ class TestPackagingTemplateWiring(unittest.TestCase):
         self.assertIn("--architecture ${{ parameters.architecture }}", scripts[0])
         self.assertNotIn("--check-imports", scripts[0])
         self.assertNotIn("--grpc-build", scripts[0])
+
+
+class TestOfficialPipelineOrdering(unittest.TestCase):
+    def test_published_payload_validation_runs_after_download_before_nuget(self):
+        pipeline = (
+            REPO_ROOT / "eng/templates/official/jobs/build-artifacts.yml"
+        ).read_text(encoding="utf-8")
+        # Compare whole steps: displayName can follow the validation script.
+        steps = re.findall(r"(?ms)^  - .*?(?=^  - |\Z)", pipeline)
+        download = next(i for i, step in enumerate(steps)
+                        if "task: DownloadPipelineArtifact@2" in step)
+        validation = next(i for i, step in enumerate(steps)
+                          if "Validate published worker payloads" in step)
+        nuget = next(i for i, step in enumerate(steps)
+                     if "task: NuGetCommand@2" in step)
+        self.assertLess(download, validation)
+        self.assertLess(validation, nuget)
+
+    def test_packaging_tests_are_discovered_outside_worker_tests(self):
+        pipeline = (
+            REPO_ROOT / "eng/templates/official/jobs/build-artifacts.yml"
+        ).read_text(encoding="utf-8")
+        self.assertRegex(
+            pipeline,
+            r"unittest\s+discover\b[^\n]*\s-s\s+['\"]?eng/pack/tests['\"]?"
+            r"\s+-p\s+['\"]?test_\*\.py['\"]?(?:\s|$)",
+        )
+        for name in ("test_arm64_packaging.py", "test_worker_payload_validation.py"):
+            with self.subTest(module=name):
+                original = REPO_ROOT / "workers/tests/unittests" / name
+                self.assertFalse(original.exists(), str(original))
 
 
 if __name__ == "__main__":

@@ -246,8 +246,10 @@ jobs:
   strategy:
     matrix:
       Python315R2P2:
-        pythonVersion: '3.15'
+        # Keep the host version, SDK package version, and reviewed digest in sync.
+        pythonVersion: '3.15.2'
         normalizedPythonVersion: '3.15'
+        cpythonWindowsSdkSha256: 'aeb58f2bb6ba9a4cefacae6c23f720133f82bbdc91c8c9dc9a467d483a1a3534'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -262,6 +264,7 @@ jobs:
       osName: 'WINDOWS'
       architecture: 'arm64'
       hostArchitecture: 'x64'
+      cpythonWindowsSdkSha256: '$(cpythonWindowsSdkSha256)'
   - template: ci/sign-files.yml@eng
     parameters:
       displayName: 'Sign R2P2 executable'
@@ -348,8 +351,11 @@ jobs:
   strategy:
     matrix:
       Python315R2P2:
-        pythonVersion: '3.15'
+        # Keep interpreter, Universal Package version, and reviewed digest in sync.
+        # See eng/pack/cpython-source.md for upstream verification and servicing.
+        pythonVersion: '3.15.2'
         normalizedPythonVersion: '3.15'
+        cpythonSourceSha256: 'f74e1db0eabd651cd01e4e2a00201bd41866abe74869ab716f9bf33cbbaa0943'
   templateContext:
     outputParentDirectory: $(Build.ArtifactStagingDirectory)
     outputs:
@@ -364,6 +370,7 @@ jobs:
       osName: 'LINUX'
       architecture: 'arm64'
       hostArchitecture: 'x64'
+      cpythonSourceSha256: '$(cpythonSourceSha256)'
 - job: Build_OSX_X64
   timeoutInMinutes: 180
   pool:

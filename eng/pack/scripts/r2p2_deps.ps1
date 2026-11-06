@@ -32,6 +32,14 @@ Set-Location $env:BUILD_SOURCESDIRECTORY
 $DEPS = Join-Path $env:BUILD_SOURCESDIRECTORY 'deps'
 $WORKER = Join-Path $env:BUILD_SOURCESDIRECTORY 'workers\r2p2'
 
+# Reject untrusted SDK bytes before venv, pip, Rust, or compiler setup.
+if ($Architecture -eq 'arm64') {
+    $pythonSdk = & "$PSScriptRoot/verify_cpython_windows_sdk.ps1" `
+        -Archive "$env:CPYTHON_ARM64_ARCHIVE" -Sha256 "$env:CPYTHON_ARM64_SHA256" `
+        -PythonVersion $PythonVersion `
+        -Destination (Join-Path $env:AGENT_TEMPDIRECTORY "cpython-arm64-$([guid]::NewGuid().ToString('N'))")
+}
+
 python -m venv .env
 & .\.env\Scripts\Activate.ps1
 python -m pip install --upgrade pip
@@ -99,26 +107,9 @@ if ($rustTarget) {
     }
     $pythonMajorMinor = "$($Matches.major).$($Matches.minor)"
     $pythonLibrary = "python$($Matches.major)$($Matches.minor).lib"
-    $pythonSdk = Join-Path $env:AGENT_TEMPDIRECTORY "cpython-$artifactVersion-arm64"
-    $pythonArchive = $env:CPYTHON_ARM64_ARCHIVE
-    if (-not $pythonArchive) {
-        throw "CPYTHON_ARM64_ARCHIVE must point to a pipeline-staged CPython $artifactVersion ARM64 SDK archive."
-    }
-    if (-not (Test-Path $pythonArchive -PathType Leaf)) {
-        throw "The pipeline-staged CPython archive does not exist: $pythonArchive"
-    }
-
-    Expand-Archive $pythonArchive -DestinationPath $pythonSdk -Force
-    $pythonHeader = Join-Path $pythonSdk 'include\Python.h'
-    $pythonImportLibrary = Join-Path $pythonSdk "libs\$pythonLibrary"
-    if (-not (Test-Path $pythonHeader) -or -not (Test-Path $pythonImportLibrary)) {
-        throw "The ARM64 CPython SDK is missing $pythonHeader or $pythonImportLibrary."
-    }
-    $patchLevelHeader = Join-Path $pythonSdk 'include\patchlevel.h'
-    $versionMatch = Select-String -Path $patchLevelHeader -Pattern '^#define PY_VERSION\s+"([^"]+)"$'
-    $sourcePythonVersion = $versionMatch.Matches.Groups[1].Value
-    if ($sourcePythonVersion -ne $artifactVersion) {
-        throw "Expected CPython $artifactVersion SDK; archive contains $(if ($sourcePythonVersion) { $sourcePythonVersion } else { 'an unknown version' })."
+    $selectedPythonVersion = python -c 'import platform; print(platform.python_version())'
+    if ($LASTEXITCODE -ne 0 -or $selectedPythonVersion.Trim() -ne $artifactVersion) {
+        throw "Expected build-time Python $artifactVersion; selected interpreter is $selectedPythonVersion."
     }
 
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'

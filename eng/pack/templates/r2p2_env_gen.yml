@@ -13,6 +13,7 @@
 #   osName        : WINDOWS | LINUX | OSX (selects the build script)
 #   architecture  : x64 | x86 | arm64; packaged R2P2 target architecture
 #   hostArchitecture: x64 | x86; build-time Python; defaults to architecture
+#   cpythonSourceSha256: reviewed source digest; required for Linux ARM64
 
 parameters:
   pythonVersion: ''
@@ -20,8 +21,30 @@ parameters:
   osName: ''
   architecture: 'x64'
   hostArchitecture: ''
+  cpythonSourceSha256: ''
+  cpythonWindowsSdkSha256: ''
 
 steps:
+- ${{ if and(eq(parameters.osName, 'WINDOWS'), eq(parameters.architecture, 'arm64')) }}:
+  - task: UniversalPackages@0
+    displayName: 'Download pinned CPython Windows ARM64 SDK from internal feed'
+    inputs:
+      command: 'download'
+      feedsToUse: 'internal'
+      vstsFeed: 'internal/PythonWorker_Internal_PublicPackages'
+      vstsFeedPackage: 'cpython-windows-arm64-sdk'
+      vstsPackageVersion: '${{ parameters.pythonVersion }}'
+      downloadDirectory: '$(Agent.TempDirectory)/cpython-windows-arm64-sdk/${{ parameters.pythonVersion }}'
+- ${{ if and(eq(parameters.osName, 'LINUX'), eq(parameters.architecture, 'arm64')) }}:
+  - task: UniversalPackages@0
+    displayName: 'Download pinned CPython source from internal feed'
+    inputs:
+      command: 'download'
+      feedsToUse: 'internal'
+      vstsFeed: 'internal/PythonWorker_Internal_PublicPackages'
+      vstsFeedPackage: 'cpython-source'
+      vstsPackageVersion: '${{ parameters.pythonVersion }}'
+      downloadDirectory: '$(Agent.TempDirectory)/cpython-source/${{ parameters.pythonVersion }}'
 - task: PipAuthenticate@1
   displayName: 'Authenticate pip to CFS'
   inputs:
@@ -33,6 +56,10 @@ steps:
     architecture: ${{ coalesce(parameters.hostArchitecture, parameters.architecture) }}
     allowUnstable: true
     addToPath: true
+    ${{ if and(eq(parameters.osName, 'LINUX'), eq(parameters.architecture, 'arm64')) }}:
+      # Acquire the pinned x64 build interpreter on a cache miss, as for Linux x64.
+      # The internally staged archive supplies target source, not a host interpreter.
+      disableDownloadFromRegistry: false
 - task: CargoAuthenticate@0
   displayName: 'Authenticate Cargo to CFS'
   inputs:
@@ -44,6 +71,10 @@ steps:
       filePath: 'eng/pack/scripts/r2p2_deps.ps1'
       arguments: '-PythonVersion ${{ parameters.pythonVersion }} -Architecture ${{ parameters.architecture }}'
       pwsh: true
+    ${{ if eq(parameters.architecture, 'arm64') }}:
+      env:
+        CPYTHON_ARM64_ARCHIVE: '$(Agent.TempDirectory)/cpython-windows-arm64-sdk/${{ parameters.pythonVersion }}/pythonarm64.${{ parameters.pythonVersion }}.nupkg'
+        CPYTHON_ARM64_SHA256: '${{ parameters.cpythonWindowsSdkSha256 }}'
 - ${{ else }}:
   - task: ShellScript@2
     displayName: 'Build R2P2 + dependencies'
@@ -51,6 +82,10 @@ steps:
       disableAutoCwd: true
       scriptPath: 'eng/pack/scripts/r2p2_deps.sh'
       args: '${{ parameters.pythonVersion }} ${{ parameters.architecture }}'
+    ${{ if and(eq(parameters.osName, 'LINUX'), eq(parameters.architecture, 'arm64')) }}:
+      env:
+        CPYTHON_ARM64_ARCHIVE: '$(Agent.TempDirectory)/cpython-source/${{ parameters.pythonVersion }}/Python-${{ parameters.pythonVersion }}.tgz'
+        CPYTHON_ARM64_SHA256: '${{ parameters.cpythonSourceSha256 }}'
 - task: CopyFiles@2
   displayName: 'Copy R2P2 files'
   inputs:

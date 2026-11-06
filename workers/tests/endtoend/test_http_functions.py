@@ -179,6 +179,7 @@ class TestCommonLibsHttpFunctions(testutils.WebHostTestCase):
         self.assertIn("numpy version", r.content.decode("UTF-8"))
 
     def test_requests(self):
+        """Exercise Requests in the worker with its network transport mocked."""
         r = self.webhost.request('GET', 'requests_func',
                                  timeout=10)
 

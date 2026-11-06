@@ -33,6 +33,7 @@ variables:
   - template: /eng/templates/utils/variables.yml@self
   - template: /eng/templates/utils/official-variables.yml@self
   - template: /eng/templates/utils/emulator-variables.yml@self
+  - template: /eng/templates/utils/byoc-variables.yml@self
   - name: codeql.excludePathPatterns
     value: deps/,build/
 
@@ -55,6 +56,8 @@ extends:
       - stage: BuildPythonWorker
         jobs:
           - template: /eng/templates/official/jobs/build-artifacts.yml@self
+            parameters:
+              byocPythonVersions: ${{ variables.BYOCPythonVersions }}
       - stage: RunWorkerE2ETests
         dependsOn: BuildPythonWorker
         jobs:

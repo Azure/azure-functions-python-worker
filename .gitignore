@@ -137,3 +137,5 @@ tests/**/extensions.csproj
 __blobstorage__/*
 __queuestorage__/*
 __azurite*
+
+.github/agents

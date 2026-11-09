@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-"""Package an existing Python Linux x64 worker stage."""
+"""Package a Python Linux x64 worker stage with checked-out runtime sources."""
 
 import argparse
 import ast
@@ -10,6 +10,7 @@ import io
 import json
 from pathlib import Path
 import re
+import shutil
 import tarfile
 import tempfile
 
@@ -166,6 +167,24 @@ def build_package(source: Path, output: Path,
         raise ValueError(
             "Output directory must be outside the staging directory")
 
+    with tempfile.TemporaryDirectory() as temporary:
+        staged = Path(temporary) / "worker"
+        shutil.copytree(source, staged, symlinks=True)
+        for directory, package in (
+            ("v1", "azure_functions_runtime_v1"),
+            ("v2", "azure_functions_runtime"),
+        ):
+            target = staged / package
+            if target.exists():
+                shutil.rmtree(target)
+            shutil.copytree(ROOT / "runtimes" / directory / package, target,
+                            symlinks=True)
+        return _build_staged_package(
+            staged, output, version_file, python_version)
+
+
+def _build_staged_package(source: Path, output: Path, version_file: Path,
+                          python_version: str) -> tuple[Path, Path]:
     version = read_version(version_file)
     members = validate_payload(source, version, python_version)
     manifest = {

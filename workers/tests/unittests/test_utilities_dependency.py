@@ -659,14 +659,16 @@ class TestDependencyManager(unittest.TestCase):
         DependencyManager.cx_deps_path = self._customer_deps_path
         DependencyManager.cx_working_dir = self._customer_func_path
 
+        # NewRelic observes the already-imported protobuf. Its version must
+        # remain stable when dependency paths change, regardless of our pin.
+        import google.protobuf as original_protobuf
+        original_version = original_protobuf.__version__
+
         DependencyManager.prioritize_customer_dependencies()
 
-        # protobuf v5 is found
-        from google.protobuf import __version__
-
-        protobuf_version = tuple(int(v) for v in __version__.split("."))
-        self.assertIsNotNone(protobuf_version)
-        self.assertEqual(protobuf_version[0], 5)
+        import google.protobuf as protobuf
+        self.assertIs(protobuf, original_protobuf)
+        self.assertEqual(protobuf.__version__, original_version)
 
     @unittest.skipIf(sys.version_info.minor <= 7,
                      "The worker brings different protobuf versions"
@@ -684,19 +686,16 @@ class TestDependencyManager(unittest.TestCase):
         DependencyManager.cx_deps_path = self._customer_deps_path
         DependencyManager.cx_working_dir = self._customer_func_path
 
+        # Changing path priority must not replace protobuf already visible
+        # to instrumentation such as NewRelic with another runtime version.
+        import google.protobuf as original_protobuf
+        original_version = original_protobuf.__version__
+
         DependencyManager.prioritize_customer_dependencies()
 
-        # protobuf is found from worker deps, but newrelic won't find it
-        from google.protobuf import __version__
-
-        protobuf_version = tuple(int(v) for v in __version__.split("."))
-        self.assertIsNotNone(protobuf_version)
-
-        # newrelic tries to import protobuf v5
-        self.assertEqual(protobuf_version[0], 5)
-
-        # newrelic tries to import protobuf v3
-        self.assertNotEqual(protobuf_version[0], 3)
+        import google.protobuf as protobuf
+        self.assertIs(protobuf, original_protobuf)
+        self.assertEqual(protobuf.__version__, original_version)
 
     def _initialize_scenario(self):
         # Setup app settings

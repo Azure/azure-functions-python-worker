@@ -9,10 +9,12 @@ from http.cookies import SimpleCookie
 
 from azure_functions_runtime_v1.bindings.datumdef import (
     Datum,
+    datum_as_proto,
     parse_cookie_attr_expires,
     parse_cookie_attr_same_site,
     parse_to_rpc_http_cookie_list,
 )
+from azure_functions_runtime_v1.bindings.generic import GenericBinding
 from azure_functions_runtime_v1.bindings.nullable_converters import (
     to_nullable_bool,
     to_nullable_double,
@@ -22,6 +24,25 @@ from azure_functions_runtime_v1.bindings.nullable_converters import (
 
 
 class TestDatumDef(unittest.TestCase):
+    def test_generic_boolean_serialization(self):
+        for value in (True, False):
+            with self.subTest(value=value):
+                datum = GenericBinding.encode(value, expected_type=None)
+                self.assertEqual(datum.type, 'bool')
+                self.assertIs(datum.value, value)
+                result = datum_as_proto(datum, protos)
+                self.assertEqual(result.WhichOneof('data'), 'int')
+                self.assertEqual(result.int, int(value))
+
+    def test_generic_integer_serialization(self):
+        for value in (0, 1, -42, 42):
+            with self.subTest(value=value):
+                datum = GenericBinding.encode(value, expected_type=None)
+                self.assertEqual(datum.type, 'int')
+                result = datum_as_proto(datum, protos)
+                self.assertEqual(result.WhichOneof('data'), 'int')
+                self.assertEqual(result.int, value)
+
     def test_parse_cookie_attr_expires_none(self):
         self.assertEqual(parse_cookie_attr_expires({"expires": None}), None)
 

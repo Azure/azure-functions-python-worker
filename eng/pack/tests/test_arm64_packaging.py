@@ -242,14 +242,16 @@ class TestArm64PackagingWorkflow(unittest.TestCase):
         self.assertLess(script.index("build-protos"), script.index("pip wheel"))
         self.assertLess(script.index("pip wheel"), script.index("pip download \\\n"))
 
-    def test_final_artifact_is_validated_with_isolated_arm64_python(self):
+    def test_final_artifact_is_validated_locally_without_emulation(self):
         template = (REPO_ROOT / "eng/pack/templates/nix_arm64_env_gen.yml").read_text(
             encoding="utf-8")
-        self.assertIn("--platform linux/arm64", template)
-        self.assertIn("python -I -S /validation/validate_worker_payload.py", template)
+        self.assertIn("python -I -S", template)
         self.assertIn(
-            "source=$(Build.ArtifactStagingDirectory),target=/payload,readonly",
+            '"$(Build.SourcesDirectory)/eng/pack/scripts/validate_worker_payload.py"',
             template,
         )
+        self.assertIn('"$(Build.ArtifactStagingDirectory)"', template)
         self.assertIn("--os LINUX --architecture arm64", template)
-        self.assertIn("--check-imports", template)
+        self.assertNotIn("--check-imports", template)
+        self.assertNotIn("docker run", template)
+        self.assertNotIn("tonistiigi/binfmt", template)

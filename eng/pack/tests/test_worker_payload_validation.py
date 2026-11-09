@@ -626,6 +626,18 @@ class TestImportValidation(PayloadTestCase):
 
 
 class TestValidatorCli(PayloadTestCase):
+    def test_linux_arm64_layout_validation_runs_on_host_without_imports(self):
+        for minor in (10, 11, 12, 13, 14):
+            with self.subTest(minor=minor):
+                package = LEGACY if minor < 13 else PROXY
+                root = self.payload(package, "LINUX", "arm64",
+                                    f"cygrpc.cpython-3{minor}-test.so")
+                result = self.cli(root, f"3.{minor}", "LINUX", "arm64")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f"Validated {package} contents for LINUX arm64",
+                              result.stdout)
+                self.assertNotIn("Imported ", result.stdout)
+
     def test_structure_only_cli_accepts_all_worker_generations(self):
         for value, package, filename in (
                 ("3.10.14", LEGACY, "cygrpc.cp310-test.so"),
@@ -716,8 +728,7 @@ class TestPackagingTemplateWiring(unittest.TestCase):
 
     def test_native_templates_validate_imports_in_isolated_python(self):
         for name, os_name in (("win_env_gen.yml", "WINDOWS"),
-                              ("nix_env_gen.yml", "LINUX"),
-                              ("macos_64_env_gen.yml", "OSX")):
+                              ("nix_env_gen.yml", "LINUX")):
             with self.subTest(template=name):
                 scripts = [script for script in self.scripts(name)
                            if "validate_worker_payload.py" in script]
@@ -728,23 +739,34 @@ class TestPackagingTemplateWiring(unittest.TestCase):
                 self.assertIn(f"--os {os_name}", script)
                 self.assertIn("--grpc-build '${{ parameters.grpcBuild }}'", script)
 
-    def test_arm64_imports_run_in_target_docker_not_cross_build_host(self):
+    def test_macos_cross_target_validation_does_not_import_on_host(self):
+        template = (TEMPLATES / "macos_64_env_gen.yml").read_text(encoding="utf-8")
+        structural, native = template.split(
+            "- ${{ if eq(parameters.architecture, 'x64') }}:", 1)
+        self.assertIn("--os OSX --architecture ${{ parameters.architecture }}",
+                      structural)
+        self.assertNotIn("--check-imports", structural)
+        self.assertIn("python -I -S", native)
+        self.assertIn("--os OSX --architecture x64", native)
+        self.assertIn("--check-imports", native)
+
+    def test_arm64_validation_is_local_and_structure_only(self):
         scripts = [script for script in self.scripts("nix_arm64_env_gen.yml")
                    if "validate_worker_payload.py" in script]
-        self.assertEqual(len(scripts), 2)
-        structural, docker = scripts
-        self.assertNotIn("--check-imports", structural)
-        self.assertIn("--os LINUX --architecture arm64", structural)
+        self.assertEqual(len(scripts), 1)
+        script = scripts[0]
         for fragment in (
-                "docker run --rm --platform linux/arm64 --network none",
-                "target=/payload,readonly", "target=/validation,readonly",
-                "python:${{ parameters.pythonVersion }}-slim",
-                "python -I -S /validation/validate_worker_payload.py /payload",
-                "--os LINUX --architecture arm64", "--check-imports",
-                "--grpc-build '${{ parameters.grpcBuild }}'",
-                "tonistiigi/binfmt --install arm64"):
+                "python -I -S", '"$(Build.ArtifactStagingDirectory)"',
+                "--python-version '${{ parameters.pythonVersion }}'",
+                "--os LINUX --architecture arm64",
+                "--grpc-build '${{ parameters.grpcBuild }}'"):
             with self.subTest(fragment=fragment):
-                self.assertIn(fragment, docker)
+                self.assertIn(fragment, script)
+        template = (TEMPLATES / "nix_arm64_env_gen.yml").read_text(encoding="utf-8")
+        for forbidden in ("--check-imports", "docker run", "tonistiigi/binfmt",
+                          "python:${{ parameters.pythonVersion }}-slim"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, template)
 
     def test_r2p2_cross_build_validation_is_structure_only(self):
         scripts = [script for script in self.scripts("r2p2_env_gen.yml")

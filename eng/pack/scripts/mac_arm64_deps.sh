@@ -45,5 +45,6 @@ fi
 # A darwin.so filename does not identify its CPU architecture. Check every
 # staged extension/library, including universal2 binaries, without loading it.
 while IFS= read -r -d '' binary; do
-    lipo -verify_arch "$native_arch" "$binary"
+    # -verify_arch consumes all following arguments as architecture names.
+    lipo "$binary" -verify_arch "$native_arch"
 done < <(find "$BUILD_SOURCESDIRECTORY/deps" -type f \( -name '*.so' -o -name '*.dylib' \) -print0)

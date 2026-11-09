@@ -45,6 +45,7 @@ def helper(request, monkeypatch, tmp_path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", str(tmp_path))
+    monkeypatch.delenv("AzureWebJobsScriptRoot", raising=False)
     return module
 
 
@@ -82,7 +83,8 @@ def test_disabled_does_not_obtain_root_initialize_or_read(helper, capabilities):
 
 
 @pytest.mark.parametrize("root", [None, "", " ", "\t\r\n", "\0"])
-def test_invalid_root_is_content_free_error(helper, monkeypatch, root):
+def test_unset_non_linux_or_invalid_root_is_error(helper, monkeypatch, root):
+    monkeypatch.setattr(helper, "sys", SimpleNamespace(platform="win32"))
     if root is None:
         monkeypatch.delenv("FUNCTIONS_APPLICATION_DIRECTORY")
     elif root == "\0":
@@ -92,6 +94,64 @@ def test_invalid_root_is_content_free_error(helper, monkeypatch, root):
     else:
         monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", root)
     assert_snapshot(snapshot(helper), protos.HostConfiguration.Error)
+
+
+def test_explicit_directory_takes_precedence(helper, tmp_path, monkeypatch):
+    explicit = tmp_path / " explicit"
+    explicit.mkdir()
+    (explicit / "host.json").write_bytes(b'{"root":"explicit"}')
+    (tmp_path / "host.json").write_bytes(b'{"root":"script"}')
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", explicit.name)
+    monkeypatch.setenv("AzureWebJobsScriptRoot", str(tmp_path))
+    assert_snapshot(snapshot(helper), protos.HostConfiguration.Available,
+                    b'{"root":"explicit"}')
+
+
+@pytest.mark.parametrize("root", [None, "", " \t"])
+def test_script_root_fallback(helper, tmp_path, monkeypatch, root):
+    if root is None:
+        monkeypatch.delenv("FUNCTIONS_APPLICATION_DIRECTORY")
+    else:
+        monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", root)
+    monkeypatch.setenv("AzureWebJobsScriptRoot", str(tmp_path))
+    (tmp_path / "host.json").write_bytes(b'{"root":"script"}')
+    assert_snapshot(snapshot(helper), protos.HostConfiguration.Available,
+                    b'{"root":"script"}')
+
+
+@pytest.mark.parametrize("root", [None, "", " \t"])
+def test_linux_default_directory(helper, monkeypatch, root):
+    for setting in ("FUNCTIONS_APPLICATION_DIRECTORY", "AzureWebJobsScriptRoot"):
+        if root is None:
+            monkeypatch.delenv(setting, raising=False)
+        else:
+            monkeypatch.setenv(setting, root)
+    monkeypatch.setattr(helper, "sys", SimpleNamespace(platform="linux"))
+    with patch.object(helper, "open", create=True,
+                      return_value=io.BytesIO(b'{"root":"default"}')) as read:
+        assert_snapshot(snapshot(helper), protos.HostConfiguration.Available,
+                        b'{"root":"default"}')
+    read.assert_called_once_with(
+        helper.os.path.join("/home/site/wwwroot", "host.json"), "rb")
+
+
+@pytest.mark.parametrize("setting", [
+    "FUNCTIONS_APPLICATION_DIRECTORY", "AzureWebJobsScriptRoot",
+])
+def test_selected_directory_error_does_not_fall_back(
+        helper, tmp_path, monkeypatch, setting):
+    missing = tmp_path / "absent"
+    (tmp_path / "host.json").write_bytes(b'{"root":"fallback"}')
+    monkeypatch.setenv("AzureWebJobsScriptRoot", str(tmp_path))
+    if setting == "AzureWebJobsScriptRoot":
+        monkeypatch.delenv("FUNCTIONS_APPLICATION_DIRECTORY")
+    monkeypatch.setenv(setting, str(missing))
+    monkeypatch.setattr(helper, "sys", SimpleNamespace(platform="linux"))
+    with patch.object(helper, "open", create=True, wraps=open) as read:
+        assert_snapshot(snapshot(helper), protos.HostConfiguration.Error)
+    read.assert_called_once_with(
+        helper.os.path.join(str(missing), "host.json"), "rb")
 
 
 def test_missing_file_differs_from_missing_directory(
@@ -503,7 +563,8 @@ def test_open_failure_reasons(helper, error, reason, caplog):
     (object(), "AppDirectoryInvalid"),
 ])
 def test_root_failure_reasons(helper, root, reason, caplog):
-    with patch.object(helper.os.environ, "get", return_value=root):
+    with patch.object(helper, "sys", SimpleNamespace(platform="win32")), \
+            patch.object(helper.os.environ, "get", return_value=root):
         assert_snapshot(snapshot(helper), protos.HostConfiguration.Error)
     assert f"Reason: {reason}." in caplog.messages[0]
 

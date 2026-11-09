@@ -60,21 +60,15 @@ def reset_host_configuration():
 
 
 def _capture(statuses):
-    for setting in ("FUNCTIONS_APPLICATION_DIRECTORY", "AzureWebJobsScriptRoot"):
-        try:
-            root = os.environ.get(setting)
-        except Exception:
-            return statuses.Error, b"", "AppDirectoryUnavailable"
-        try:
-            if root and root.strip():
-                break
-        except Exception:
-            return statuses.Error, b"", "AppDirectoryInvalid"
-    else:
-        root = "/home/site/wwwroot" if sys.platform == "linux" else None
+    try:
+        root = os.environ.get("AzureWebJobsScriptRoot")
+    except Exception:
+        return statuses.Error, b"", "AppDirectoryUnavailable"
 
     try:
         if not root or not root.strip():
+            root = "/home/site/wwwroot" if sys.platform == "linux" else None
+        if not root:
             return statuses.Error, b"", "AppDirectoryNotSet"
         path = os.path.join(root, "host.json")
     except Exception:

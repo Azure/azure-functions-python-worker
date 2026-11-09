@@ -41,11 +41,10 @@ For information about Azure Functions Runtime, please refer to [Azure Functions 
 
 The Python runtime v1/v2 source supports delivering a `host.json` snapshot when the host advertises `HostConfiguration` with the exact value `"1"`. It selects the directory containing `host.json` in this order:
 
-1. `FUNCTIONS_APPLICATION_DIRECTORY`: optional internal explicit override; customers do not need to set it.
-2. `AzureWebJobsScriptRoot`: customer override, needed only for a custom root.
-3. `/home/site/wwwroot`: Linux default only. On other platforms, missing both settings retains the existing error.
+1. `AzureWebJobsScriptRoot`: customer override, needed only for a custom root.
+2. `/home/site/wwwroot`: Linux default only when `AzureWebJobsScriptRoot` is missing or whitespace-only. On other platforms, a missing or whitespace-only setting retains the existing error.
 
-Missing or whitespace-only settings fall through; valid paths are used without trimming. Once a root is selected, open/read failures retain the existing failure statuses and do not trigger another root lookup. Neither the host request's `function_app_directory` nor the current working directory is used as a fallback. Function indexing still uses the host-provided application directory.
+Valid paths are used without trimming. Once a root is selected, open/read failures retain the existing failure statuses and do not trigger another root lookup. Neither the host request's `function_app_directory` nor the current working directory is used as a fallback. Function indexing still uses the host-provided application directory.
 
 The snapshot is captured lazily, including failures, and cached until restart or the existing specialization reset. GitHub BYOC archive packaging includes both runtime v1 and v2 sources from the worker's same checked-out release commit, independently of separate PyPI runtime releases. Ordinary worker/NuGet packaging retains its existing pinned dependencies.
 

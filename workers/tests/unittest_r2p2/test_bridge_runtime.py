@@ -45,7 +45,7 @@ def test_host_configuration_through_runtime_and_bridge(
     snapshot = importlib.import_module(package + ".host_configuration")
     with snapshot.reset_host_configuration():
         pass
-    monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", str(tmp_path))
+    monkeypatch.setenv("AzureWebJobsScriptRoot", str(tmp_path))
     monkeypatch.setattr(bridge, "_rt", runtime)
     monkeypatch.setattr(bridge, "_select_runtime", lambda *args: None)
     monkeypatch.setattr(bridge, "_run_coro", asyncio.run)

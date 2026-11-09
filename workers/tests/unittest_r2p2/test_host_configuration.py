@@ -44,8 +44,7 @@ def helper(request, monkeypatch, tmp_path):
         name + ".host_configuration", request.param)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", str(tmp_path))
-    monkeypatch.delenv("AzureWebJobsScriptRoot", raising=False)
+    monkeypatch.setenv("AzureWebJobsScriptRoot", str(tmp_path))
     return module
 
 
@@ -86,35 +85,32 @@ def test_disabled_does_not_obtain_root_initialize_or_read(helper, capabilities):
 def test_unset_non_linux_or_invalid_root_is_error(helper, monkeypatch, root):
     monkeypatch.setattr(helper, "sys", SimpleNamespace(platform="win32"))
     if root is None:
-        monkeypatch.delenv("FUNCTIONS_APPLICATION_DIRECTORY")
+        monkeypatch.delenv("AzureWebJobsScriptRoot")
     elif root == "\0":
         with patch.object(helper.os.environ, "get", return_value=root):
             assert_snapshot(snapshot(helper), protos.HostConfiguration.Error)
         return
     else:
-        monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", root)
+        monkeypatch.setenv("AzureWebJobsScriptRoot", root)
     assert_snapshot(snapshot(helper), protos.HostConfiguration.Error)
 
 
-def test_explicit_directory_takes_precedence(helper, tmp_path, monkeypatch):
+def test_script_root_preserves_valid_path(helper, tmp_path, monkeypatch):
     explicit = tmp_path / " explicit"
     explicit.mkdir()
     (explicit / "host.json").write_bytes(b'{"root":"explicit"}')
     (tmp_path / "host.json").write_bytes(b'{"root":"script"}')
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", explicit.name)
-    monkeypatch.setenv("AzureWebJobsScriptRoot", str(tmp_path))
+    monkeypatch.setenv("AzureWebJobsScriptRoot", explicit.name)
     assert_snapshot(snapshot(helper), protos.HostConfiguration.Available,
                     b'{"root":"explicit"}')
 
 
-@pytest.mark.parametrize("root", [None, "", " \t"])
-def test_script_root_fallback(helper, tmp_path, monkeypatch, root):
-    if root is None:
-        monkeypatch.delenv("FUNCTIONS_APPLICATION_DIRECTORY")
-    else:
-        monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", root)
-    monkeypatch.setenv("AzureWebJobsScriptRoot", str(tmp_path))
+def test_script_root_ignores_internal_directory(helper, tmp_path, monkeypatch):
+    internal = tmp_path / "internal"
+    internal.mkdir()
+    (internal / "host.json").write_bytes(b'{"root":"internal"}')
+    monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", str(internal))
     (tmp_path / "host.json").write_bytes(b'{"root":"script"}')
     assert_snapshot(snapshot(helper), protos.HostConfiguration.Available,
                     b'{"root":"script"}')
@@ -122,11 +118,10 @@ def test_script_root_fallback(helper, tmp_path, monkeypatch, root):
 
 @pytest.mark.parametrize("root", [None, "", " \t"])
 def test_linux_default_directory(helper, monkeypatch, root):
-    for setting in ("FUNCTIONS_APPLICATION_DIRECTORY", "AzureWebJobsScriptRoot"):
-        if root is None:
-            monkeypatch.delenv(setting, raising=False)
-        else:
-            monkeypatch.setenv(setting, root)
+    if root is None:
+        monkeypatch.delenv("AzureWebJobsScriptRoot")
+    else:
+        monkeypatch.setenv("AzureWebJobsScriptRoot", root)
     monkeypatch.setattr(helper, "sys", SimpleNamespace(platform="linux"))
     with patch.object(helper, "open", create=True,
                       return_value=io.BytesIO(b'{"root":"default"}')) as read:
@@ -136,17 +131,10 @@ def test_linux_default_directory(helper, monkeypatch, root):
         helper.os.path.join("/home/site/wwwroot", "host.json"), "rb")
 
 
-@pytest.mark.parametrize("setting", [
-    "FUNCTIONS_APPLICATION_DIRECTORY", "AzureWebJobsScriptRoot",
-])
 def test_selected_directory_error_does_not_fall_back(
-        helper, tmp_path, monkeypatch, setting):
+        helper, tmp_path, monkeypatch):
     missing = tmp_path / "absent"
-    (tmp_path / "host.json").write_bytes(b'{"root":"fallback"}')
-    monkeypatch.setenv("AzureWebJobsScriptRoot", str(tmp_path))
-    if setting == "AzureWebJobsScriptRoot":
-        monkeypatch.delenv("FUNCTIONS_APPLICATION_DIRECTORY")
-    monkeypatch.setenv(setting, str(missing))
+    monkeypatch.setenv("AzureWebJobsScriptRoot", str(missing))
     monkeypatch.setattr(helper, "sys", SimpleNamespace(platform="linux"))
     with patch.object(helper, "open", create=True, wraps=open) as read:
         assert_snapshot(snapshot(helper), protos.HostConfiguration.Error)
@@ -159,19 +147,19 @@ def test_missing_file_differs_from_missing_directory(
     assert_snapshot(snapshot(helper), protos.HostConfiguration.Missing)
     with helper.reset_host_configuration():
         pass
-    monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY",
+    monkeypatch.setenv("AzureWebJobsScriptRoot",
                        str(tmp_path / "absent"))
     assert_snapshot(snapshot(helper), protos.HostConfiguration.Error)
 
 
 def test_non_directory_root_and_directory_file(helper, tmp_path, monkeypatch):
     (tmp_path / "not-a-directory").write_bytes(b"")
-    monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY",
+    monkeypatch.setenv("AzureWebJobsScriptRoot",
                        str(tmp_path / "not-a-directory"))
     assert_snapshot(snapshot(helper), protos.HostConfiguration.Error)
     with helper.reset_host_configuration():
         pass
-    monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", str(tmp_path))
+    monkeypatch.setenv("AzureWebJobsScriptRoot", str(tmp_path))
     (tmp_path / "host.json").mkdir()
     assert_snapshot(snapshot(helper), protos.HostConfiguration.Error)
 
@@ -180,7 +168,7 @@ def test_relative_root_keeps_native_resolution(helper, tmp_path, monkeypatch):
     (tmp_path / "app").mkdir()
     (tmp_path / "app" / "host.json").write_bytes(b'{"path":"relative"}')
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", "app")
+    monkeypatch.setenv("AzureWebJobsScriptRoot", "app")
     assert_snapshot(snapshot(helper), protos.HostConfiguration.Available,
                     b'{"path":"relative"}')
 
@@ -327,7 +315,7 @@ def test_root_accessor_errors_are_cached_and_safe(helper, failure, caplog):
             environ=SimpleNamespace(get=root))):
         assert_snapshot(snapshot(helper), protos.HostConfiguration.Error)
         assert_snapshot(snapshot(helper), protos.HostConfiguration.Error)
-    root.assert_called_once_with("FUNCTIONS_APPLICATION_DIRECTORY")
+    root.assert_called_once_with("AzureWebJobsScriptRoot")
     assert "secret" not in caplog.text
     assert len(caplog.messages) == 1
     assert "Reason: AppDirectoryUnavailable." in caplog.messages[0]
@@ -382,7 +370,7 @@ def test_specialization_excludes_concurrent_capture(
             pending = pool.submit(request)
             assert started.wait(timeout=5)
             assert not pending.done()
-            monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", str(next_app))
+            monkeypatch.setenv("AzureWebJobsScriptRoot", str(next_app))
         assert_snapshot(pending.result(timeout=5),
                         protos.HostConfiguration.Available, b'{"value":"new"}')
 

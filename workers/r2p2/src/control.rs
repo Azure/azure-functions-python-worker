@@ -452,6 +452,7 @@ mod tests {
     fn host_configuration_adapter_round_trips_through_prost() {
         use prost::Message;
 
+        let _lock = crate::TEST_PYTHON_IMPORT_LOCK.lock().unwrap();
         Python::attach(|py| {
             let source =
                 std::ffi::CString::new(include_str!("../bridge/protos_adapter.py")).unwrap();

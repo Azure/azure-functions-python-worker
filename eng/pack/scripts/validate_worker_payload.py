@@ -64,7 +64,8 @@ def expected_contents(version, os_name):
                           f"{runtime}/utils/executor.py"])
         return files, directories
 
-    files.extend([".artifactignore", "six.py"])
+    # grpcio requires typing-extensions at runtime, including on Python 3.13+.
+    files.extend([".artifactignore", "six.py", "typing_extensions.py"])
     directories.extend(["google", "grpc", "markupsafe", "werkzeug", package,
                         f"{package}/protos/_src"])
     entry = "main" if package == "azure_functions_worker" else "start_worker"
@@ -124,6 +125,15 @@ def validate_binary(path, os_name, architecture):
 
 def validate_contents(root, version, os_name, architecture, grpc_build=None):
     root = Path(root).resolve()
+    # pip's compiler console launcher is separate from grpc_tools/. It is a
+    # build tool, not a worker dependency, and must not reach signing/publishing.
+    if os_name == "WINDOWS":
+        launchers = [path for path in root.rglob("*") if path.is_file()
+                     and path.name.lower() == "python-grpc-tools-protoc.exe"]
+        if launchers:
+            raise RuntimeError("Build-only compiler launcher in worker payload: "
+                               + ", ".join(str(path.relative_to(root))
+                                           for path in launchers))
     files, directories = expected_contents(version, os_name)
     missing = [name for name in files if not (root / name).is_file()]
     missing.extend(name + "/" for name in directories if not (root / name).is_dir())

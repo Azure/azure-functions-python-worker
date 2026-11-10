@@ -51,6 +51,16 @@ class TestPublishedWorkerPayloads(PayloadTestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Missing published worker artifact", result.stderr)
 
+    def test_published_build_only_protoc_launcher_blocks_packaging(self):
+        self.stage_all()
+        launcher = self.workspace / "3.12_WINDOWS_X64/bin/python-grpc-tools-protoc.exe"
+        launcher.parent.mkdir()
+        launcher.write_bytes(b"unsigned build tool")
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Build-only compiler launcher", result.stderr)
+        self.assertIn("python-grpc-tools-protoc.exe", result.stderr)
+
     def test_missing_arm64_artifact_blocks_packaging(self):
         self.stage_all()
         shutil.rmtree(self.workspace / "3.15_WINDOWS_ARM64")

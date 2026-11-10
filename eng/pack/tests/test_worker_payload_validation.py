@@ -59,7 +59,7 @@ def manifest(package, os_name):
         ]
         directories += list(RUNTIMES)
     else:
-        files += [".artifactignore", "six.py"]
+        files += [".artifactignore", "six.py", "typing_extensions.py"]
         directories += [
             "google", "grpc", "markupsafe", "werkzeug", package,
             f"{package}/protos/_src",
@@ -201,6 +201,31 @@ class TestVersionSelection(unittest.TestCase):
 
 
 class TestPayloadManifests(PayloadTestCase):
+    def test_proxy_payload_requires_grpc_typing_dependency(self):
+        for minor in (13, 14):
+            for architecture in ("x86", "x64"):
+                with self.subTest(minor=minor, architecture=architecture):
+                    root = self.payload(PROXY, "WINDOWS", architecture,
+                                        f"cygrpc.cp3{minor}-test.so")
+                    (root / "typing_extensions.py").unlink()
+                    with self.assertRaisesRegex(RuntimeError,
+                                                "typing_extensions.py"):
+                        self.contents(root, (3, minor), "WINDOWS", architecture)
+
+    def test_windows_payloads_reject_build_only_protoc_launcher(self):
+        for minor, package in ((12, LEGACY), (14, PROXY), (15, "r2p2")):
+            for name in ("bin/python-grpc-tools-protoc.exe",
+                         "Scripts/PYTHON-GRPC-TOOLS-PROTOC.EXE"):
+                with self.subTest(minor=minor, launcher=name):
+                    root = self.payload(package, "WINDOWS", "x64",
+                                        f"cygrpc.cp3{minor}-test.so")
+                    launcher = root / name
+                    launcher.parent.mkdir(parents=True, exist_ok=True)
+                    launcher.write_bytes(b"unsigned build tool")
+                    with self.assertRaisesRegex(RuntimeError,
+                                                "Build-only compiler launcher"):
+                        self.contents(root, (3, minor), "WINDOWS", "x64")
+
     def test_manifests_equal_independent_staging_contract(self):
         for minor, package in ((10, LEGACY), (11, LEGACY), (12, LEGACY),
                                (13, PROXY), (14, PROXY), (15, "r2p2"),
@@ -706,6 +731,22 @@ class TestValidatorCli(PayloadTestCase):
 
 
 class TestPackagingTemplateWiring(unittest.TestCase):
+    def test_grpc_payload_templates_retain_typing_extensions(self):
+        for name in ("win_env_gen.yml", "macos_64_env_gen.yml",
+                     "nix_env_gen.yml", "nix_arm64_env_gen.yml"):
+            with self.subTest(template=name):
+                template = (TEMPLATES / name).read_text(encoding="utf-8")
+                self.assertNotIn("!typing_extensions.py", template)
+
+    def test_windows_dependency_copy_steps_exclude_build_tool_launchers(self):
+        template = (TEMPLATES / "win_env_gen.yml").read_text(encoding="utf-8")
+        copies = [step for step in template.split("- task: CopyFiles@2")
+                  if "sourceFolder: '$(Build.SourcesDirectory)\\deps'" in step]
+        self.assertEqual(len(copies), 2)
+        for step in copies:
+            self.assertIn("!grpc_tools\\**\\*", step)
+            self.assertIn("!bin\\**", step)
+
     def scripts(self, name):
         text = (TEMPLATES / name).read_text(encoding="utf-8")
         return re.findall(

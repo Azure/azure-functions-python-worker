@@ -126,7 +126,6 @@ steps:
       !cython.py
       !pip/**
       !pyximport/**
-      !typing_extensions.py
       !wheel/**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: eq(variables['proxyWorker'], true)

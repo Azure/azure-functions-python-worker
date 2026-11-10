@@ -176,8 +176,10 @@ pub fn handle(raw: &[u8]) -> Result<Option<Vec<u8>>> {
                 "worker_init_request",
                 control::worker_init_req_to_py(py, r)?.into_any(),
             ),
-            Some(Content::FunctionsMetadataRequest(_)) => {
-                ("functions_metadata_request", PyDict::new(py).into_any())
+            Some(Content::FunctionsMetadataRequest(r)) => {
+                let req = PyDict::new(py);
+                req.set_item("function_app_directory", &r.function_app_directory)?;
+                ("functions_metadata_request", req.into_any())
             }
             Some(Content::FunctionLoadRequest(r)) => (
                 "function_load_request",
@@ -398,6 +400,7 @@ def handle_control(request_type, request):
         assert request["host_version"] == "4.0.0"
         return {"capabilities": {"TestCapability": "true"}, "result": {"status": 1}}
     if request_type == "functions_metadata_request":
+        assert request["function_app_directory"] == "test-app-dir"
         return None
     if request_type == "function_load_request":
         return {"function_id": request["function_id"], "result": {"status": 1}}
@@ -629,7 +632,9 @@ def shutdown():
         let metadata = StreamingMessage {
             request_id: "request-metadata".into(),
             content: Some(Content::FunctionsMetadataRequest(
-                FunctionsMetadataRequest::default(),
+                FunctionsMetadataRequest {
+                    function_app_directory: "test-app-dir".into(),
+                },
             )),
         };
         assert!(handle(&metadata.encode_to_vec()).unwrap().is_none());

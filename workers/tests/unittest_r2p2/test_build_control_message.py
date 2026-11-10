@@ -34,11 +34,16 @@ def test_worker_init_request_defaults_are_empty():
     assert msg.host_version == ""
 
 
-def test_functions_metadata_request_is_empty_namespace():
+def test_functions_metadata_request_preserves_app_directory():
+    outer = bridge._build_control_message("functions_metadata_request", {
+        "function_app_directory": "/home/site/wwwroot"})
+    assert outer.functions_metadata_request.function_app_directory == \
+        "/home/site/wwwroot"
+
+
+def test_functions_metadata_request_defaults_to_empty_directory():
     outer = bridge._build_control_message("functions_metadata_request", {})
-    assert outer is not None
-    # No fields -- the runtime metadata handler reads nothing off the request.
-    assert not vars(outer.functions_metadata_request)
+    assert outer.functions_metadata_request.function_app_directory == ""
 
 
 def test_function_load_request_shape_with_bindings():

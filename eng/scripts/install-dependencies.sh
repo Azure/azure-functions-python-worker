@@ -37,13 +37,13 @@ $UV_PIP -U --prerelease=if-necessary-or-explicit \
     -e "$2/[test-deferred-bindings]" \
     "${EXTRA_ARGS[@]}"
 
-# The servicebus binding extension depends on uamqp, which is deprecated and
-# ships no wheels for Python 3.14 (source builds fail). Install it only on
-# Python < 3.14, mirroring the eventhub binding gate in pyproject.toml.
-if [ "${PY_MINOR:-0}" -lt 14 ]; then
+# The Service Bus extension requires protobuf <7, which conflicts with the
+# Python 3.13+ worker stubs. Its uamqp dependency also lacks Python 3.14+ wheels.
+# Keep this gate aligned with the early skip in test_servicebus_functions.py.
+if [ "${PY_MINOR:-0}" -lt 13 ]; then
     SERVICEBUS_DIR="./servicebus_dir"
     python -m uv pip install --prerelease=allow -U --target "$SERVICEBUS_DIR" azurefunctions-extensions-bindings-servicebus==1.0.0b2
     python -c "import sys; sys.path.insert(0, '$SERVICEBUS_DIR'); import azurefunctions.extensions.bindings.servicebus as sb; print('servicebus version:', sb.__version__)"
 else
-    echo "Skipping servicebus binding extension on Python $PY_VER (uamqp has no 3.14 wheels)."
+    echo "Skipping servicebus binding extension on Python $PY_VER (requires Python <3.13)."
 fi

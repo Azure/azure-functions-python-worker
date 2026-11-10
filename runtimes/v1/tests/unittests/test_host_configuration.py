@@ -15,7 +15,7 @@ from tests import protos
 def init_state(monkeypatch, tmp_path):
     with host_configuration.reset_host_configuration():
         pass
-    monkeypatch.setenv("FUNCTIONS_APPLICATION_DIRECTORY", str(tmp_path))
+    monkeypatch.setenv("AzureWebJobsScriptRoot", str(tmp_path))
     monkeypatch.setattr(handle_event, "is_envvar_true", lambda _: False)
     monkeypatch.setattr(handle_event, "load_binding_registry", lambda: None)
     monkeypatch.setattr(handle_event, "install", lambda: None)
@@ -101,7 +101,7 @@ async def test_specialization_starts_new_snapshot_generation(tmp_path):
         request=protos.StreamingMessage(
             function_environment_reload_request=(
                 protos.FunctionEnvironmentReloadRequest(environment_variables={
-                    "FUNCTIONS_APPLICATION_DIRECTORY": str(next_app)}))),
+                    "AzureWebJobsScriptRoot": str(next_app)}))),
         properties={"protos": protos, "host": "127.0.0.1"})
     with patch.dict(os.environ), \
             patch.object(handle_event.time, "tzset", create=True):

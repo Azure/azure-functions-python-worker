@@ -7,6 +7,7 @@ import json
 import os
 import re
 import stat
+import sys
 import threading
 from contextlib import contextmanager
 
@@ -60,12 +61,14 @@ def reset_host_configuration():
 
 def _capture(statuses):
     try:
-        root = os.environ.get("FUNCTIONS_APPLICATION_DIRECTORY")
+        root = os.environ.get("AzureWebJobsScriptRoot")
     except Exception:
         return statuses.Error, b"", "AppDirectoryUnavailable"
 
     try:
         if not root or not root.strip():
+            root = "/home/site/wwwroot" if sys.platform == "linux" else None
+        if not root:
             return statuses.Error, b"", "AppDirectoryNotSet"
         path = os.path.join(root, "host.json")
     except Exception:

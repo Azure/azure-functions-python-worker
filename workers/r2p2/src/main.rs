@@ -17,6 +17,12 @@ mod pb;
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
+// Serialize tests that mutate Python's process-global import state with tests
+// that load Python modules. Acquire before Python::attach to avoid waiting for
+// this lock while holding the GIL.
+#[cfg(test)]
+pub(crate) static TEST_PYTHON_IMPORT_LOCK: Mutex<()> = Mutex::new(());
+
 use anyhow::{anyhow, Context, Result};
 use bytes::Bytes;
 use codec::BytesCodec;

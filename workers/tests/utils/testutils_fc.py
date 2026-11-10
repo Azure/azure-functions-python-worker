@@ -305,14 +305,17 @@ class FlexConsumptionWebHostController:
             '/azurefunctions/extensions/base'
         )
 
-        # Get paths to google.protobuf and grpcio packages to mount them
+        # Get paths to google.protobuf, grpcio and its typing_extensions
+        # runtime dependency so the mounted grpc can import in the container.
         # This ensures the container uses the same protobuf/grpc versions
         # as the host, which is critical when protobuf files are generated
         # with v5.x but the container has v4.x.
         protobuf_path = None
         grpc_path = None
+        typing_extensions_path = None
         container_protobuf_path = None
         container_grpc_path = None
+        container_typing_extensions_path = None
         # Only mount the host's grpc/protobuf into the Linux mesh container
         # when the host itself is Linux. Windows/macOS hosts ship the
         # compiled extensions for their own platform (e.g. cygrpc.*.pyd on
@@ -324,8 +327,10 @@ class FlexConsumptionWebHostController:
             try:
                 import google.protobuf
                 import grpc
+                import typing_extensions
                 protobuf_path = os.path.dirname(google.protobuf.__file__)
                 grpc_path = os.path.dirname(grpc.__file__)
+                typing_extensions_path = typing_extensions.__file__
 
                 # Container paths for protobuf and grpcio
                 container_protobuf_path = (
@@ -336,9 +341,14 @@ class FlexConsumptionWebHostController:
                     f"/azure-functions-host/workers/python/{self._py_version}/"
                     "LINUX/X64/grpc"
                 )
+                container_typing_extensions_path = (
+                    f"/azure-functions-host/workers/python/{self._py_version}/"
+                    "LINUX/X64/typing_extensions.py"
+                )
             except ImportError:
                 protobuf_path = None
                 grpc_path = None
+                typing_extensions_path = None
 
         run_cmd = []
         run_cmd.extend([self._docker_cmd, "run", "-p", "0:80", "-d"])
@@ -373,6 +383,11 @@ class FlexConsumptionWebHostController:
             run_cmd.extend(["-v", f'{protobuf_path}:{container_protobuf_path}'])
         if grpc_path:
             run_cmd.extend(["-v", f'{grpc_path}:{container_grpc_path}'])
+        if typing_extensions_path:
+            run_cmd.extend([
+                "-v",
+                f'{typing_extensions_path}:{container_typing_extensions_path}'
+            ])
 
         for key, value in env.items():
             run_cmd.extend(["-e", f"{key}={value}"])

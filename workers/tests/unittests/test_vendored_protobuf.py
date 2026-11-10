@@ -469,14 +469,21 @@ class TestVendoredProtobufActivation(unittest.TestCase):
         "workers/azure_functions_worker/_vendored` first.",
     )
     def test_newer_app_protobuf_does_not_activate_vendored(self):
-        """A function app protobuf newer than the vendored copy (e.g.
-        protobuf 6.x from an extension) must NOT activate the vendored
-        fallback. The worker's stubs run on the newer runtime, and forcing
+        """A function app protobuf newer than the vendored copy must NOT
+        activate the vendored fallback. The worker's stubs run on the newer
+        runtime, and forcing
         the newer copy onto the older vendored one would raise a
         ``VersionError``.
         """
+        from azure_functions_worker import _read_protobuf_version
+
+        vendored_version = _read_protobuf_version(str(VENDORED_PROTOBUF.parent))
+        self.assertIsNotNone(vendored_version)
+        # Always exercise a genuinely newer version, even after major bumps
+        # regenerate the vendored protobuf tree in CI.
+        newer_version = f"{vendored_version[0] + 1}.0.0"
         newer_root = self._write_app_protobuf(
-            Path(self.tmp_dir), "6.99.0")
+            Path(self.tmp_dir), newer_version)
         newer_site = (
             newer_root / ".python_packages" / "lib" / "site-packages"
         )

@@ -376,9 +376,6 @@ mod tests {
     };
     use pyo3::types::{PyDict, PyModule};
     use std::ffi::CString;
-    use std::sync::Mutex;
-
-    static TEST_BRIDGE_LOCK: Mutex<()> = Mutex::new(());
 
     fn install_test_bridge() {
         const SOURCE: &str = r#"
@@ -576,7 +573,7 @@ def shutdown():
 
     #[test]
     fn python_bridge_contract_routes_control_and_native_messages() {
-        let _lock = TEST_BRIDGE_LOCK.lock().unwrap();
+        let _lock = crate::TEST_PYTHON_IMPORT_LOCK.lock().unwrap();
         install_test_bridge();
 
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();

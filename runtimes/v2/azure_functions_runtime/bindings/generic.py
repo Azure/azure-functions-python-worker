@@ -35,12 +35,13 @@ class GenericBinding:
             return Datum(type='dict', value=obj)
         elif isinstance(obj, list):
             return Datum(type='list', value=obj)
+        # bool subclasses int, so classify it before the integer check.
+        elif isinstance(obj, bool):
+            return Datum(type='bool', value=obj)
         elif isinstance(obj, int):
             return Datum(type='int', value=obj)
         elif isinstance(obj, float):
             return Datum(type='double', value=obj)
-        elif isinstance(obj, bool):
-            return Datum(type='bool', value=obj)
         else:
             raise NotImplementedError
 

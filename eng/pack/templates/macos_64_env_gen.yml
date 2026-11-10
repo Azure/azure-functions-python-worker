@@ -13,6 +13,8 @@ steps:
 - task: UsePythonVersion@0
   inputs:
     versionSpec: ${{ parameters.pythonVersion }}
+    # Build/proto-generation tools run on the Intel hosted agent.
+    architecture: 'x64'
     allowUnstable: true
     addToPath: true
 - powershell: |
@@ -61,7 +63,7 @@ steps:
   inputs:
     disableAutoCwd: true
     scriptPath: 'eng/pack/scripts/mac_arm64_deps.sh'
-    args: '${{ parameters.pythonVersion }}'
+    args: '${{ parameters.pythonVersion }} ${{ parameters.architecture }}'
   displayName: 'Install dependencies'
 #   condition: eq(variables['isRC'], 'false')
 # - task: ShellScript@2
@@ -124,7 +126,6 @@ steps:
       !cython.py
       !pip/**
       !pyximport/**
-      !typing_extensions.py
       !wheel/**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: eq(variables['proxyWorker'], true)
@@ -134,5 +135,15 @@ steps:
     "$(Build.ArtifactStagingDirectory)"
     --python-version '${{ parameters.pythonVersion }}'
     --os OSX --architecture ${{ parameters.architecture }}
-    --grpc-build '${{ parameters.grpcBuild }}' --check-imports
-  displayName: 'Validate worker artifact contents and imports'
+    --grpc-build '${{ parameters.grpcBuild }}'
+  displayName: 'Validate worker artifact contents'
+# ARM64 wheels are cross-staged and checked with lipo by mac_arm64_deps.sh.
+# Executing their imports requires an Apple Silicon runner, not host x64 Python.
+- ${{ if eq(parameters.architecture, 'x64') }}:
+  - powershell: >-
+      python -I -S "$(Build.SourcesDirectory)/eng/pack/scripts/validate_worker_payload.py"
+      "$(Build.ArtifactStagingDirectory)"
+      --python-version '${{ parameters.pythonVersion }}'
+      --os OSX --architecture x64
+      --grpc-build '${{ parameters.grpcBuild }}' --check-imports
+    displayName: 'Validate worker artifact imports using x64 Python'

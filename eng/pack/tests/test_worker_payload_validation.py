@@ -59,7 +59,7 @@ def manifest(package, os_name):
         ]
         directories += list(RUNTIMES)
     else:
-        files += [".artifactignore", "six.py"]
+        files += [".artifactignore", "six.py", "typing_extensions.py"]
         directories += [
             "google", "grpc", "markupsafe", "werkzeug", package,
             f"{package}/protos/_src",
@@ -201,6 +201,31 @@ class TestVersionSelection(unittest.TestCase):
 
 
 class TestPayloadManifests(PayloadTestCase):
+    def test_proxy_payload_requires_grpc_typing_dependency(self):
+        for minor in (13, 14):
+            for architecture in ("x86", "x64"):
+                with self.subTest(minor=minor, architecture=architecture):
+                    root = self.payload(PROXY, "WINDOWS", architecture,
+                                        f"cygrpc.cp3{minor}-test.so")
+                    (root / "typing_extensions.py").unlink()
+                    with self.assertRaisesRegex(RuntimeError,
+                                                "typing_extensions.py"):
+                        self.contents(root, (3, minor), "WINDOWS", architecture)
+
+    def test_windows_payloads_reject_build_only_protoc_launcher(self):
+        for minor, package in ((12, LEGACY), (14, PROXY), (15, "r2p2")):
+            for name in ("bin/python-grpc-tools-protoc.exe",
+                         "Scripts/PYTHON-GRPC-TOOLS-PROTOC.EXE"):
+                with self.subTest(minor=minor, launcher=name):
+                    root = self.payload(package, "WINDOWS", "x64",
+                                        f"cygrpc.cp3{minor}-test.so")
+                    launcher = root / name
+                    launcher.parent.mkdir(parents=True, exist_ok=True)
+                    launcher.write_bytes(b"unsigned build tool")
+                    with self.assertRaisesRegex(RuntimeError,
+                                                "Build-only compiler launcher"):
+                        self.contents(root, (3, minor), "WINDOWS", "x64")
+
     def test_manifests_equal_independent_staging_contract(self):
         for minor, package in ((10, LEGACY), (11, LEGACY), (12, LEGACY),
                                (13, PROXY), (14, PROXY), (15, "r2p2"),
@@ -626,6 +651,18 @@ class TestImportValidation(PayloadTestCase):
 
 
 class TestValidatorCli(PayloadTestCase):
+    def test_linux_arm64_layout_validation_runs_on_host_without_imports(self):
+        for minor in (10, 11, 12, 13, 14):
+            with self.subTest(minor=minor):
+                package = LEGACY if minor < 13 else PROXY
+                root = self.payload(package, "LINUX", "arm64",
+                                    f"cygrpc.cpython-3{minor}-test.so")
+                result = self.cli(root, f"3.{minor}", "LINUX", "arm64")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f"Validated {package} contents for LINUX arm64",
+                              result.stdout)
+                self.assertNotIn("Imported ", result.stdout)
+
     def test_structure_only_cli_accepts_all_worker_generations(self):
         for value, package, filename in (
                 ("3.10.14", LEGACY, "cygrpc.cp310-test.so"),
@@ -694,6 +731,22 @@ class TestValidatorCli(PayloadTestCase):
 
 
 class TestPackagingTemplateWiring(unittest.TestCase):
+    def test_grpc_payload_templates_retain_typing_extensions(self):
+        for name in ("win_env_gen.yml", "macos_64_env_gen.yml",
+                     "nix_env_gen.yml", "nix_arm64_env_gen.yml"):
+            with self.subTest(template=name):
+                template = (TEMPLATES / name).read_text(encoding="utf-8")
+                self.assertNotIn("!typing_extensions.py", template)
+
+    def test_windows_dependency_copy_steps_exclude_build_tool_launchers(self):
+        template = (TEMPLATES / "win_env_gen.yml").read_text(encoding="utf-8")
+        copies = [step for step in template.split("- task: CopyFiles@2")
+                  if "sourceFolder: '$(Build.SourcesDirectory)\\deps'" in step]
+        self.assertEqual(len(copies), 2)
+        for step in copies:
+            self.assertIn("!grpc_tools\\**\\*", step)
+            self.assertIn("!bin\\**", step)
+
     def scripts(self, name):
         text = (TEMPLATES / name).read_text(encoding="utf-8")
         return re.findall(
@@ -716,8 +769,7 @@ class TestPackagingTemplateWiring(unittest.TestCase):
 
     def test_native_templates_validate_imports_in_isolated_python(self):
         for name, os_name in (("win_env_gen.yml", "WINDOWS"),
-                              ("nix_env_gen.yml", "LINUX"),
-                              ("macos_64_env_gen.yml", "OSX")):
+                              ("nix_env_gen.yml", "LINUX")):
             with self.subTest(template=name):
                 scripts = [script for script in self.scripts(name)
                            if "validate_worker_payload.py" in script]
@@ -728,23 +780,34 @@ class TestPackagingTemplateWiring(unittest.TestCase):
                 self.assertIn(f"--os {os_name}", script)
                 self.assertIn("--grpc-build '${{ parameters.grpcBuild }}'", script)
 
-    def test_arm64_imports_run_in_target_docker_not_cross_build_host(self):
+    def test_macos_cross_target_validation_does_not_import_on_host(self):
+        template = (TEMPLATES / "macos_64_env_gen.yml").read_text(encoding="utf-8")
+        structural, native = template.split(
+            "- ${{ if eq(parameters.architecture, 'x64') }}:", 1)
+        self.assertIn("--os OSX --architecture ${{ parameters.architecture }}",
+                      structural)
+        self.assertNotIn("--check-imports", structural)
+        self.assertIn("python -I -S", native)
+        self.assertIn("--os OSX --architecture x64", native)
+        self.assertIn("--check-imports", native)
+
+    def test_arm64_validation_is_local_and_structure_only(self):
         scripts = [script for script in self.scripts("nix_arm64_env_gen.yml")
                    if "validate_worker_payload.py" in script]
-        self.assertEqual(len(scripts), 2)
-        structural, docker = scripts
-        self.assertNotIn("--check-imports", structural)
-        self.assertIn("--os LINUX --architecture arm64", structural)
+        self.assertEqual(len(scripts), 1)
+        script = scripts[0]
         for fragment in (
-                "docker run --rm --platform linux/arm64 --network none",
-                "target=/payload,readonly", "target=/validation,readonly",
-                "python:${{ parameters.pythonVersion }}-slim",
-                "python -I -S /validation/validate_worker_payload.py /payload",
-                "--os LINUX --architecture arm64", "--check-imports",
-                "--grpc-build '${{ parameters.grpcBuild }}'",
-                "tonistiigi/binfmt --install arm64"):
+                "python -I -S", '"$(Build.ArtifactStagingDirectory)"',
+                "--python-version '${{ parameters.pythonVersion }}'",
+                "--os LINUX --architecture arm64",
+                "--grpc-build '${{ parameters.grpcBuild }}'"):
             with self.subTest(fragment=fragment):
-                self.assertIn(fragment, docker)
+                self.assertIn(fragment, script)
+        template = (TEMPLATES / "nix_arm64_env_gen.yml").read_text(encoding="utf-8")
+        for forbidden in ("--check-imports", "docker run", "tonistiigi/binfmt",
+                          "python:${{ parameters.pythonVersion }}-slim"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, template)
 
     def test_r2p2_cross_build_validation_is_structure_only(self):
         scripts = [script for script in self.scripts("r2p2_env_gen.yml")

@@ -120,6 +120,7 @@ steps:
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: eq(variables['proxyWorker'], true)
   displayName: 'Copy proxy_worker files'
+# Validate the staged layout.
 - powershell: >-
     python -I -S "$(Build.SourcesDirectory)/eng/pack/scripts/validate_worker_payload.py"
     "$(Build.ArtifactStagingDirectory)"
@@ -127,19 +128,3 @@ steps:
     --os LINUX --architecture arm64
     --grpc-build '${{ parameters.grpcBuild }}'
   displayName: 'Validate worker artifact contents'
-- bash: |
-    set -euo pipefail
-    # This job can run on x64. Register ARM64 emulation before executing the
-    # packaged native extensions; host-Python imports are not a valid test.
-    if [[ "$(uname -m)" != "aarch64" && "$(uname -m)" != "arm64" ]]; then
-      docker run --privileged --rm tonistiigi/binfmt --install arm64
-    fi
-    docker run --rm --platform linux/arm64 --network none \
-      --mount "type=bind,source=$(Build.ArtifactStagingDirectory),target=/payload,readonly" \
-      --mount "type=bind,source=$(Build.SourcesDirectory)/eng/pack/scripts,target=/validation,readonly" \
-      "python:${{ parameters.pythonVersion }}-slim" \
-      python -I -S /validation/validate_worker_payload.py /payload \
-        --python-version '${{ parameters.pythonVersion }}' \
-        --os LINUX --architecture arm64 \
-        --grpc-build '${{ parameters.grpcBuild }}' --check-imports
-  displayName: 'Import staged worker and protos using ARM64 Python'

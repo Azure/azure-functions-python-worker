@@ -94,6 +94,7 @@ steps:
       !*.dist-info\**
       !werkzeug\debug\shared\debugger.js
       !proxy_worker\**
+      !bin\**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: eq(variables['proxyWorker'], false)
   displayName: 'Copy azure_functions_worker files'
@@ -123,7 +124,6 @@ steps:
       !cython.py
       !pip\**
       !pyximport\**
-      !typing_extensions.py
       !wheel\**
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: eq(variables['proxyWorker'], true)

@@ -154,7 +154,27 @@ def get_current_invocation_id() -> Optional[Any]:
     if thread_invocation_id is not None:
         return thread_invocation_id
 
+    # Customer threads follow the documented pattern of assigning
+    # ``context.thread_local_storage.invocation_id``. That object is the
+    # runtime's own threading.local, so consult it as well.
+    runtime_local = _get_runtime_invocation_id_local()
+    if runtime_local is not None:
+        runtime_invocation_id = getattr(runtime_local, 'invocation_id', None)
+        if runtime_invocation_id is not None:
+            return runtime_invocation_id
+
     return getattr(_invocation_id_local, 'invocation_id', None)
+
+
+def _get_runtime_invocation_id_local() -> Optional[threading.local]:
+    if not _library_worker:
+        return None
+    try:
+        context_module = sys.modules.get(
+            f"{_library_worker.__name__}.bindings.context")
+        return getattr(context_module, '_invocation_id_local', None)
+    except AttributeError:
+        return None
 
 
 class AsyncLoggingHandler(logging.Handler):

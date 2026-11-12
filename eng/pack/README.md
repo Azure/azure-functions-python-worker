@@ -51,23 +51,30 @@ python eng\pack\scripts\package_byoc.py --python-version 3.15 --source "C:\stagi
 These are placeholder paths and illustrative packaging commands, not evidence
 of actual builds. Replace them with downloaded staging and output directories.
 Output must be outside the source tree. All three invocations can share an
-output directory because their filenames differ.
+output directory because their Python-qualified filenames differ. Use separate
+output directories for different worker release versions: packaging the same
+Python target into the same directory produces colliding filenames.
 
 The version comes from `workers\proxy_worker\version.py` for **all**
 targets, not from a separate BYOC version; packaging does not bump it. A proxy
 stage's version must match that source file. The native R2P2 payload has no proxy
 version file; its source and build provenance must be checked separately.
 
-For version `<VERSION>`, outputs are:
+Outputs retain the Python ABI and platform qualifiers, but not the worker
+release version:
 
 ```text
-azure-functions-python-worker-<VERSION>-py313-linux-x64.tar.gz
-azure-functions-python-worker-<VERSION>-py314-linux-x64.tar.gz
-azure-functions-python-worker-<VERSION>-py315-linux-x64.tar.gz
+azure-functions-python-worker-py313-linux-x64.tar.gz
+azure-functions-python-worker-py314-linux-x64.tar.gz
+azure-functions-python-worker-py315-linux-x64.tar.gz
 ```
 
-Each archive has a same-name `.sha256` sidecar. Verify it before extraction;
-extract different targets to separate directories.
+Each archive has a same-name `.sha256` sidecar. Verify it before extraction,
+running checksum verification from the directory containing the archives and
+sidecars so the filenames recorded in the sidecars resolve directly. SHA-256
+checksums validate integrity, not publisher authenticity. Extract different
+targets to separate directories. The worker release version remains in
+`worker-manifest.json` and the GitHub release tag.
 
 ## Archive and launch contract
 
@@ -153,7 +160,7 @@ matching staged artifact, currently `3.13_LINUX_X64`, `3.14_LINUX_X64`, and
 `3.15_LINUX_X64` into separate `byoc-worker/<version>` staging directories,
 then invokes the helper in **Package Python BYOC workers** with a shared output
 directory. The single `PythonWorkerBYOC` artifact contains all configured
-version-qualified archives and their SHA-256 sidecars. Existing NuGet outputs
+Python-qualified archives and their SHA-256 sidecars. Existing NuGet outputs
 are unchanged. This packaging job adds no unit-test CI step.
 
 ## Worker release assets
@@ -165,9 +172,19 @@ or independently selecting a latest build. Before continuing the release,
 verify that both `PackageWorkers` and `PackageBYOC` have completed.
 
 The **Attach Python archives and checksums** step validates the expected files
-for every target in `BYOCPythonVersions`: currently six files, the Python 3.13,
-3.14, and 3.15 Linux x64 archives and their SHA-256 sidecars, all named with the
-worker release version. It uploads them to the existing GitHub release for
+for every target in `BYOCPythonVersions`: currently these six Python-qualified
+files, without the worker release version in their names:
+
+```text
+azure-functions-python-worker-py313-linux-x64.tar.gz
+azure-functions-python-worker-py313-linux-x64.tar.gz.sha256
+azure-functions-python-worker-py314-linux-x64.tar.gz
+azure-functions-python-worker-py314-linux-x64.tar.gz.sha256
+azure-functions-python-worker-py315-linux-x64.tar.gz
+azure-functions-python-worker-py315-linux-x64.tar.gz.sha256
+```
+
+It uploads them to the existing GitHub release for
 `NewWorkerVersion`, reusing `GithubPat`, which needs repository contents write
 permission. It does not create a tag or release, change draft status, or bypass manual release-note
 approval and GitHub publishing. Existing NuGet and Host PR steps are unchanged.
@@ -177,7 +194,9 @@ limited to worker NuGet releases, not runtime v1/v2 PyPI releases.
 Missing artifacts, a missing GitHub release, or upload failures fail the job.
 Existing assets are not overwritten. After a partial upload, retrying may
 require manually removing only conflicting BYOC assets; do not delete the
-release or unrelated assets. This describes the release workflow, not evidence
+release or unrelated assets. This naming change applies to future packaging;
+historical release assets and their existing download links are unchanged.
+This describes the release workflow, not evidence
 of a completed live CI run or publication.
 
 ## Validation limits

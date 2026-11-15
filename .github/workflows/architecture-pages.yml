@@ -1,0 +1,107 @@
+name: Architecture GitHub Pages
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - "workers/**"
+      - "runtimes/**"
+      - "eng/docs/**"
+      - "docs/site/**"
+      - ".github/workflows/architecture-pages.yml"
+  pull_request:
+    branches: [dev]
+    paths:
+      - "workers/**"
+      - "runtimes/**"
+      - "eng/docs/**"
+      - "docs/site/**"
+      - ".github/workflows/architecture-pages.yml"
+  repository_dispatch:
+    types: [sibling-repo-updated]
+  schedule:
+    # Daily cross-repo sync with python-library, python-extensions, and language-worker-protobuf
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "pages-architecture-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Validate Architecture Site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout python-worker
+        uses: actions/checkout@v4
+
+      - name: Checkout azure-functions-python-library
+        uses: actions/checkout@v4
+        with:
+          repository: Azure/azure-functions-python-library
+          path: _sibling_repos/python-library
+          depth: 1
+
+      - name: Checkout azure-functions-python-extensions
+        uses: actions/checkout@v4
+        with:
+          repository: Azure/azure-functions-python-extensions
+          path: _sibling_repos/python-extensions
+          depth: 1
+
+      - name: Checkout azure-functions-language-worker-protobuf
+        uses: actions/checkout@v4
+        with:
+          repository: Azure/azure-functions-language-worker-protobuf
+          path: _sibling_repos/language-worker-protobuf
+          depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Run architecture extractor unit tests
+        run: python3 -m unittest discover -s eng/docs/tests -v
+
+      - name: Extract multi-repo architecture graph
+        run: python3 eng/docs/extract_arch.py --sibling-root _sibling_repos
+
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-site
+          path: ./docs/site
+          include-hidden-files: true
+
+      - name: Upload GitHub Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs/site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+        continue-on-error: true
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

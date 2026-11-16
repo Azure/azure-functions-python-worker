@@ -56,7 +56,7 @@
     const hasPhases = Boolean(era.phases && era.phases.length);
     const defaultPhase = hostEl.getAttribute("data-phase") || (hasPhases ? "init" : "all");
 
-    const initialOrientation = (hostEl.clientWidth || window.innerWidth) < 680 ? "TB" : "LR";
+    const initialOrientation = (hostEl.clientWidth || window.innerWidth) < 520 ? "TB" : "LR";
 
     const st = {
       mode: "topology", // topology | sequence | compare_phase
@@ -269,8 +269,8 @@
             <defs>${markers}</defs>
             <g class="aa-viewport-g" transform="translate(${st.panX}, ${st.panY}) scale(${st.zoom})">
               ${containersSvg}
-              ${edgesSvg}
               ${nodesSvg}
+              ${edgesSvg}
             </g>
           </svg>
           <div class="aa-zoom-hud">

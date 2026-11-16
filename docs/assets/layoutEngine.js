@@ -330,13 +330,17 @@
       const dy = tcy - scy;
 
       let sFace, tFace, mode;
-      if (Math.abs(dx) < NODE_W * 0.68) {
+      const useVertical = isLR
+        ? Math.abs(dx) < NODE_W * 0.68
+        : Math.abs(dy) >= NODE_H * 0.68;
+
+      if (useVertical) {
         mode = "V";
         sFace = dy >= 0 ? "bottom" : "top";
         tFace = dy >= 0 ? "top" : "bottom";
         addPort(e.source, sFace, e.id, tcx);
         addPort(e.target, tFace, e.id, scx);
-      } else if (dx > 0) {
+      } else if (dx >= 0) {
         mode = "H_FWD";
         sFace = "right";
         tFace = "left";
@@ -392,9 +396,10 @@
         const dx = Math.max(42, Math.abs(x2 - x1) * 0.44);
         const bow = hasReverse ? -20 : 0;
         path = `M ${x1} ${y1} C ${x1 + dx} ${y1 + bow}, ${x2 - dx} ${y2 + bow}, ${x2} ${y2}`;
-        const tParam = 0.48 + ((idx % 3) - 1) * 0.08;
+        const shortGap = Math.abs(x2 - x1) < 90;
+        const tParam = shortGap ? 0.5 : 0.48 + ((idx % 3) - 1) * 0.08;
         labelX = x1 + (x2 - x1) * tParam;
-        labelY = y1 + (y2 - y1) * tParam + bow * 0.7;
+        labelY = shortGap ? Math.min(y1, y2) - 22 : y1 + (y2 - y1) * tParam + bow * 0.7;
       } else {
         x1 = s.x;
         x2 = t.x + t.w;

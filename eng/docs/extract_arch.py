@@ -190,6 +190,67 @@ def extract_python_file(rel_path: str, base_dir: Path = REPO_ROOT) -> dict[str, 
     }
 
 
+def _extract_rust_param_names(src: str, pos: int) -> list[str]:
+    """Skip optional `<...>` generics/lifetimes at *pos*, then parse balanced `(...)` params."""
+    n = len(src)
+    while pos < n and src[pos].isspace():
+        pos += 1
+    if pos < n and src[pos] == "<":
+        depth = 0
+        while pos < n:
+            if src[pos] == "<":
+                depth += 1
+            elif src[pos] == ">":
+                depth -= 1
+                if depth == 0:
+                    pos += 1
+                    break
+            pos += 1
+    while pos < n and src[pos].isspace():
+        pos += 1
+    if pos >= n or src[pos] != "(":
+        return []
+
+    pos += 1
+    paren_depth = 1
+    angle_depth = 0
+    cur: list[str] = []
+    raw_params: list[str] = []
+    while pos < n and paren_depth > 0:
+        ch = src[pos]
+        if ch == "(":
+            paren_depth += 1
+            cur.append(ch)
+        elif ch == ")":
+            paren_depth -= 1
+            if paren_depth == 0:
+                raw_params.append("".join(cur))
+                break
+            cur.append(ch)
+        elif ch == "<":
+            angle_depth += 1
+            cur.append(ch)
+        elif ch == ">" and angle_depth > 0:
+            angle_depth -= 1
+            cur.append(ch)
+        elif ch == "," and paren_depth == 1 and angle_depth == 0:
+            raw_params.append("".join(cur))
+            cur = []
+        else:
+            cur.append(ch)
+        pos += 1
+
+    names: list[str] = []
+    for raw in raw_params:
+        cleaned = raw.strip()
+        if not cleaned:
+            continue
+        pname = cleaned.split(":", 1)[0].strip().lstrip("mut ").strip()
+        if pname:
+            names.append(pname)
+    return names
+
+
 def extract_rust_file(rel_path: str) -> dict[str, Any]:
     full = REPO_ROOT / rel_path
     if not full.exists():
@@ -208,33 +269,31 @@ def extract_rust_file(rel_path: str) -> dict[str, Any]:
     symbol_lines: dict[str, int] = {}
     pyo3_calls: list[str] = []
 
-    fn_re = re.compile(r"^\s*(pub(?:\(crate\))?\s+)?(async\s+)?fn\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)")
-    struct_re = re.compile(r"^\s*(pub\s+)?(struct|enum)\s+([A-Za-z0-9_]+)")
+    item_re = re.compile(
+        r"^[ \t]*(?:(pub(?:\([^)]*\))?\s+)?(async\s+)?fn\s+([A-Za-z0-9_]+)|(pub(?:\([^)]*\))?\s+)?(struct|enum)\s+([A-Za-z0-9_]+))",
+        flags=re.M,
+    )
     call_method_re = re.compile(r'call_method1\(\s*"([A-Za-z0-9_]+)"')
 
-    for idx, line in enumerate(src_lines, start=1):
-        m_fn = fn_re.match(line)
-        if m_fn:
-            is_pub, is_async, name, params = m_fn.groups()
-            if name.startswith("test_"):
+    for m in item_re.finditer(src):
+        line_no = src.count("\n", 0, m.start()) + 1
+        fn_pub, fn_async, fn_name, st_pub, st_kw, st_name = m.groups()
+        if fn_name:
+            if fn_name.startswith("test_"):
                 continue
-            symbol_lines.setdefault(name, idx)
-            kind = f"{'pub ' if is_pub else ''}{'async ' if is_async else ''}fn".strip()
-            short_params = ", ".join(
-                p.strip().split(":")[0].strip() for p in params.split(",") if p.strip()
-            )
+            symbol_lines.setdefault(fn_name, line_no)
+            kind = f"{'pub ' if fn_pub else ''}{'async ' if fn_async else ''}fn".strip()
+            pnames = _extract_rust_param_names(src, m.end())
+            short_params = ", ".join(pnames[:4]) + (", ..." if len(pnames) > 4 else "")
             symbols.append({
-                "name": name,
+                "name": fn_name,
                 "kind": kind,
-                "line": idx,
-                "signature": f"{name}({short_params})",
+                "line": line_no,
+                "signature": f"{fn_name}({short_params})",
             })
-            continue
-        m_st = struct_re.match(line)
-        if m_st:
-            _, kw, name = m_st.groups()
-            symbol_lines.setdefault(name, idx)
-            symbols.append({"name": name, "kind": kw, "line": idx, "signature": name})
+        elif st_name:
+            symbol_lines.setdefault(st_name, line_no)
+            symbols.append({"name": st_name, "kind": st_kw, "line": line_no, "signature": st_name})
 
     for m in call_method_re.finditer(src):
         pyo3_calls.append(m.group(1))

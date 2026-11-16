@@ -667,9 +667,9 @@
     const hasPhases = Boolean(era.phases && era.phases.length);
     const activePhase = currentPhase(era);
     const seqSource = activePhase || era.flows[0];
-    const stepList = activePhase ? activePhase.steps : [];
+    const stepList = seqSource ? seqSource.steps : [];
     const activeStep =
-      activePhase && state.stepIdx >= 0 && state.stepIdx < stepList.length
+      seqSource && state.stepIdx >= 0 && state.stepIdx < stepList.length
         ? stepList[state.stepIdx]
         : null;
 
@@ -773,6 +773,39 @@
           `
               : ""
           }
+        `
+            : seqSource && stepList.length
+            ? `
+          <div class="diagram-toolbar" style="padding:6px 18px">
+            <div class="flow-controls">
+              <span class="toolbar-label">Trace Sequence:</span>
+              <span style="font-size:12px;font-weight:650;color:#e2e8f0">${esc(seqSource.title)}</span>
+              ${
+                state.stepIdx >= 0
+                  ? `
+                <button class="ctrl-btn" id="step-prev" ${state.stepIdx <= 0 ? "disabled" : ""}>◀ Prev</button>
+                <span class="meta-chip">Hop ${state.stepIdx + 1} / ${stepList.length}</span>
+                <button class="ctrl-btn primary" id="step-next" ${
+                  state.stepIdx >= stepList.length - 1 ? "disabled" : ""
+                }>Next ▶</button>
+                <button class="ctrl-btn" id="step-reset">Full View</button>
+              `
+                  : `
+                <button class="ctrl-btn primary" id="btn-start-trace">▶ Step Hop-by-Hop (${stepList.length})</button>
+              `
+              }
+            </div>
+            ${
+              activeStep
+                ? `
+              <div class="active-step-banner">
+                <strong>Hop ${state.stepIdx + 1}: ${esc(activeStep.message)}</strong>
+                <span class="active-step-payload">[${esc(activeStep.payload)}]</span>
+              </div>
+            `
+                : ""
+            }
+          </div>
         `
             : ""
         }
@@ -1235,33 +1268,57 @@
       });
     }
 
-    // Drag-to-pan + wheel-to-zoom on topology stage (cleaned up via AbortController on rerender)
+    // Pointer-events drag-to-pan (mouse, touch, pen) + wheel-to-zoom, cleaned up via AbortController
     const stage = document.getElementById("diagram-stage");
     const vp = document.getElementById("viewport-g");
     if (stage && vp) {
       stageListenersAbort = new AbortController();
       const { signal } = stageListenersAbort;
-      let dragging = false;
+      let activePointerId = null;
       let sx = 0, sy = 0, ox = state.panX, oy = state.panY;
-      stage.addEventListener("mousedown", (ev) => {
+
+      const endPan = (ev) => {
+        if (activePointerId === null || (ev && ev.pointerId !== activePointerId)) return;
+        if (stage.hasPointerCapture && stage.hasPointerCapture(activePointerId)) {
+          try {
+            stage.releasePointerCapture(activePointerId);
+          } catch (_) {
+            /* ignore detached capture */
+          }
+        }
+        activePointerId = null;
+      };
+
+      stage.addEventListener("pointerdown", (ev) => {
+        if (ev.pointerType === "mouse" && ev.button !== 0) return;
         if (ev.target.closest("button") || ev.target.closest(".svg-node") || ev.target.closest(".svg-edge")) return;
-        dragging = true;
+        activePointerId = ev.pointerId;
         sx = ev.clientX;
         sy = ev.clientY;
         ox = state.panX;
         oy = state.panY;
+        if (stage.setPointerCapture) {
+          try {
+            stage.setPointerCapture(ev.pointerId);
+          } catch (_) {
+            /* ignore synthetic events */
+          }
+        }
       });
+
       window.addEventListener(
-        "mousemove",
+        "pointermove",
         (ev) => {
-          if (!dragging) return;
+          if (activePointerId === null || ev.pointerId !== activePointerId) return;
           state.panX = ox + (ev.clientX - sx);
           state.panY = oy + (ev.clientY - sy);
           vp.setAttribute("transform", `translate(${state.panX}, ${state.panY}) scale(${state.zoom})`);
         },
         { signal }
       );
-      window.addEventListener("mouseup", () => { dragging = false; }, { signal });
+      window.addEventListener("pointerup", endPan, { signal });
+      window.addEventListener("pointercancel", endPan, { signal });
+      stage.addEventListener("lostpointercapture", endPan);
       stage.addEventListener(
         "wheel",
         (ev) => {

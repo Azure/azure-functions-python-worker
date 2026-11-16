@@ -62,6 +62,16 @@ class TestExtractArch(unittest.TestCase):
         router_syms = {s["name"] for s in r2p2_nodes["n315-router"]["extractedSymbols"]}
         self.assertIn("process_message", router_syms)
 
+        # Regression: multiline Rust signatures (bridge.rs::configure) and
+        # generic/lifetime parameters (convert.rs::typed_data_to_tuple<'py>,
+        # control.rs::worker_init_req_to_py<'py>) must be indexed.
+        bridge_rs = extract_arch.extract_rust_file("workers/r2p2/src/bridge.rs")
+        convert_rs = extract_arch.extract_rust_file("workers/r2p2/src/convert.rs")
+        control_rs = extract_arch.extract_rust_file("workers/r2p2/src/control.rs")
+        self.assertIn("configure", bridge_rs["symbolLines"])
+        self.assertIn("typed_data_to_tuple", convert_rs["symbolLines"])
+        self.assertIn("worker_init_req_to_py", control_rs["symbolLines"])
+
     def test_structural_fingerprint_is_deterministic(self) -> None:
         second = extract_arch.build_graph()
         self.assertEqual(

@@ -405,6 +405,7 @@ body {
   background-image: radial-gradient(rgba(148, 163, 184, 0.14) 1px, transparent 1px);
   background-size: 22px 22px;
   cursor: grab;
+  touch-action: none;
 }
 
 .diagram-stage:active {

@@ -1,0 +1,124 @@
+name: Architecture GitHub Pages
+
+on:
+  push:
+    branches: [dev, vrdmr-docs-architecture-pages]
+    paths:
+      - "workers/**"
+      - "runtimes/**"
+      - "eng/docs/**"
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/architecture-pages.yml"
+  pull_request:
+    branches: [dev]
+    paths:
+      - "workers/**"
+      - "runtimes/**"
+      - "eng/docs/**"
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/architecture-pages.yml"
+  repository_dispatch:
+    types: [sibling-repo-updated]
+  schedule:
+    # Daily cross-repo sync with python-library, python-extensions, and language-worker-protobuf
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "pages-architecture-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Validate Architecture Site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout python-worker
+        uses: actions/checkout@v4
+
+      - name: Checkout azure-functions-host (gRPC channel metadata)
+        uses: actions/checkout@v4
+        with:
+          repository: Azure/azure-functions-host
+          path: _sibling_repos/functions-host
+          fetch-depth: 1
+          sparse-checkout: src/WebJobs.Script.Grpc
+
+      - name: Checkout azure-functions-python-library
+        uses: actions/checkout@v4
+        with:
+          repository: Azure/azure-functions-python-library
+          path: _sibling_repos/python-library
+          fetch-depth: 1
+
+      - name: Checkout azure-functions-python-extensions
+        uses: actions/checkout@v4
+        with:
+          repository: Azure/azure-functions-python-extensions
+          path: _sibling_repos/python-extensions
+          fetch-depth: 1
+
+      - name: Checkout azure-functions-language-worker-protobuf
+        uses: actions/checkout@v4
+        with:
+          repository: Azure/azure-functions-language-worker-protobuf
+          path: _sibling_repos/language-worker-protobuf
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: eng/docs/requirements.txt
+
+      - name: Install MkDocs Material
+        run: python3 -m pip install -r eng/docs/requirements.txt
+
+      - name: Run architecture extractor & Markdown sync unit tests
+        run: python3 -m unittest discover -s eng/docs/tests -v
+
+      - name: Extract multi-repo architecture graph & check Markdown blocks
+        run: python3 eng/docs/extract_arch.py --sibling-root _sibling_repos --check-markdown
+
+      - name: Build MkDocs Material documentation
+        run: mkdocs build --strict
+
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-site
+          path: ./site
+
+      - name: Upload GitHub Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+        continue-on-error: true
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -81,6 +81,19 @@ class TestExtractArch(unittest.TestCase):
             sym_names = [s["name"] for s in datum_node["extractedSymbols"]]
             self.assertIn("Datum", sym_names)
 
+    def test_class_method_line_lookup_avoids_fallback(self) -> None:
+        proxy_meta = extract_arch.extract_python_file(
+            "workers/proxy_worker/dispatcher.py"
+        )
+        mono_meta = extract_arch.extract_python_file(
+            "workers/azure_functions_worker/dispatcher.py"
+        )
+        self.assertGreater(extract_arch.sym_line(proxy_meta, "__poll_grpc", -1), 1)
+        self.assertGreater(
+            extract_arch.sym_line(proxy_meta, "_dispatch_grpc_request", -1), 1
+        )
+        self.assertGreater(extract_arch.sym_line(mono_meta, "connect", -1), 1)
+
     def test_validate_graph_rejects_dangling_phase_edge(self) -> None:
         broken = copy.deepcopy(self.graph)
         py315 = next(e for e in broken["eras"] if e["id"] == "py315_r2p2")

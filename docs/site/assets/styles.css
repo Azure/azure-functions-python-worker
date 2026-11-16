@@ -41,7 +41,7 @@ body {
 }
 
 .app-shell.sidebar-collapsed {
-  grid-template-columns: 0px 1fr;
+  grid-template-columns: 1fr;
 }
 
 .app-shell.sidebar-collapsed .sidebar {
@@ -525,6 +525,9 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 6px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
   padding: 5px 8px;
   border-radius: 6px;
   background: rgba(7, 11, 20, 0.65);
@@ -537,6 +540,16 @@ body {
 
 .sym-item:hover {
   border-color: var(--accent);
+}
+
+.svg-node:focus-visible,
+.svg-edge:focus-visible,
+[data-seq-step]:focus-visible,
+button:focus-visible,
+a:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .sym-line {

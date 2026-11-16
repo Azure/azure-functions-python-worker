@@ -114,11 +114,19 @@ def git_info(repo_dir: Path = REPO_ROOT) -> dict[str, str]:
 def extract_python_file(rel_path: str, base_dir: Path = REPO_ROOT) -> dict[str, Any]:
     full = base_dir / rel_path
     if not full.exists():
-        return {"path": rel_path, "exists": False, "lines": 0, "symbols": [], "routerCases": []}
+        return {
+            "path": rel_path,
+            "exists": False,
+            "lines": 0,
+            "symbols": [],
+            "symbolLines": {},
+            "routerCases": [],
+        }
 
     src = full.read_text(encoding="utf-8", errors="replace")
     lines = src.count("\n") + 1
     symbols: list[dict[str, Any]] = []
+    symbol_lines: dict[str, int] = {}
     match_cases: list[str] = []
 
     try:
@@ -126,6 +134,7 @@ def extract_python_file(rel_path: str, base_dir: Path = REPO_ROOT) -> dict[str, 
         doc = ast.get_docstring(tree) or ""
         for node in tree.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                symbol_lines.setdefault(node.name, node.lineno)
                 args = [a.arg for a in node.args.args if a.arg != "self"]
                 symbols.append({
                     "name": node.name,
@@ -134,10 +143,14 @@ def extract_python_file(rel_path: str, base_dir: Path = REPO_ROOT) -> dict[str, 
                     "signature": f"{node.name}({', '.join(args[:4])}{', ...' if len(args) > 4 else ''})",
                 })
             elif isinstance(node, ast.ClassDef):
-                methods = [
-                    n.name for n in node.body
-                    if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and not n.name.startswith("__")
-                ]
+                symbol_lines.setdefault(node.name, node.lineno)
+                methods: list[str] = []
+                for n in node.body:
+                    if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        symbol_lines[f"{node.name}.{n.name}"] = n.lineno
+                        symbol_lines.setdefault(n.name, n.lineno)
+                        if not n.name.startswith("__"):
+                            methods.append(n.name)
                 symbols.append({
                     "name": node.name,
                     "kind": "class",
@@ -160,7 +173,8 @@ def extract_python_file(rel_path: str, base_dir: Path = REPO_ROOT) -> dict[str, 
         "exists": True,
         "lines": lines,
         "docSummary": doc.strip().splitlines()[0] if doc.strip() else "",
-        "symbols": symbols[:14],
+        "symbols": symbols,
+        "symbolLines": symbol_lines,
         "routerCases": sorted(set(match_cases)),
     }
 
@@ -168,11 +182,19 @@ def extract_python_file(rel_path: str, base_dir: Path = REPO_ROOT) -> dict[str, 
 def extract_rust_file(rel_path: str) -> dict[str, Any]:
     full = REPO_ROOT / rel_path
     if not full.exists():
-        return {"path": rel_path, "exists": False, "lines": 0, "symbols": [], "pyo3Calls": []}
+        return {
+            "path": rel_path,
+            "exists": False,
+            "lines": 0,
+            "symbols": [],
+            "symbolLines": {},
+            "pyo3Calls": [],
+        }
 
     src = full.read_text(encoding="utf-8", errors="replace")
     src_lines = src.splitlines()
     symbols: list[dict[str, Any]] = []
+    symbol_lines: dict[str, int] = {}
     pyo3_calls: list[str] = []
 
     fn_re = re.compile(r"^\s*(pub(?:\(crate\))?\s+)?(async\s+)?fn\s+([A-Za-z0-9_]+)\s*\(([^)]*)\)")
@@ -185,6 +207,7 @@ def extract_rust_file(rel_path: str) -> dict[str, Any]:
             is_pub, is_async, name, params = m_fn.groups()
             if name.startswith("test_"):
                 continue
+            symbol_lines.setdefault(name, idx)
             kind = f"{'pub ' if is_pub else ''}{'async ' if is_async else ''}fn".strip()
             short_params = ", ".join(
                 p.strip().split(":")[0].strip() for p in params.split(",") if p.strip()
@@ -199,6 +222,7 @@ def extract_rust_file(rel_path: str) -> dict[str, Any]:
         m_st = struct_re.match(line)
         if m_st:
             _, kw, name = m_st.groups()
+            symbol_lines.setdefault(name, idx)
             symbols.append({"name": name, "kind": kw, "line": idx, "signature": name})
 
     for m in call_method_re.finditer(src):
@@ -208,7 +232,8 @@ def extract_rust_file(rel_path: str) -> dict[str, Any]:
         "path": rel_path,
         "exists": True,
         "lines": len(src_lines),
-        "symbols": symbols[:16],
+        "symbols": symbols,
+        "symbolLines": symbol_lines,
         "pyo3Calls": sorted(set(pyo3_calls)),
     }
 
@@ -248,6 +273,9 @@ def scan_package_files(rel_dir: str, suffixes: tuple[str, ...]) -> list[dict[str
 
 
 def sym_line(meta: dict[str, Any], name: str, fallback: int = 1) -> int:
+    sym_map = meta.get("symbolLines", {})
+    if name in sym_map:
+        return sym_map[name]
     for s in meta.get("symbols", []):
         if s["name"] == name:
             return s["line"]

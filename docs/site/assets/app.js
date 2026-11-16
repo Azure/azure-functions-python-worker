@@ -35,6 +35,11 @@
     ext: { stroke: "#c084fc", fill: "rgba(88, 28, 135, 0.16)", head: "rgba(107, 33, 168, 0.34)", text: "#e9d5ff" },
   };
 
+  const ZOOM_MIN = 0.12;
+  const ZOOM_MAX = 1.8;
+  const ZOOM_STEP = 0.12;
+  let stageListenersAbort = null;
+
   const state = {
     page: "py315_r2p2", // overview | ecosystem | py312 | py313_314 | py315_r2p2 | dep_iso | pipeline
     diagramMode: "topology", // topology | sequence | compare_phase | mermaid
@@ -121,7 +126,7 @@
     const availW = Math.max(480, (stageEl ? stageEl.clientWidth : window.innerWidth - 650) - 36);
     const availH = Math.max(320, (stageEl ? stageEl.clientHeight : window.innerHeight - 260) - 64);
     const scale = Math.min(1.0, availW / layout.width, availH / layout.height);
-    state.zoom = Math.max(0.14, Number(scale.toFixed(3)));
+    state.zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, Number(scale.toFixed(3))));
     state.panX = Math.round(((stageEl ? stageEl.clientWidth : availW) - layout.width * state.zoom) / 2);
     state.panY = Math.max(14, Math.round(((stageEl ? stageEl.clientHeight : availH) - layout.height * state.zoom) / 2 - 8));
     const vp = document.getElementById("viewport-g");
@@ -280,7 +285,10 @@
         const labelW = Math.max(78, e.label.length * 6.3 + 16);
 
         return `
-          <g class="svg-edge" data-edge="${e.id}" style="cursor:pointer" opacity="${opacity}">
+          <g class="svg-edge" data-edge="${e.id}" role="button" tabindex="0"
+             aria-pressed="${isSelected ? "true" : "false"}"
+             aria-label="Inspect protocol edge ${esc(e.label)}"
+             style="cursor:pointer" opacity="${opacity}">
             <path d="${e.path}" fill="none" stroke="transparent" stroke-width="14" />
             <path id="epath-${e.id}" d="${e.path}" fill="none" stroke="${pal.color}"
               stroke-width="${strokeW}"
@@ -324,7 +332,10 @@
         const lineTag = n.line > 1 ? `:${n.line}` : "";
 
         return `
-          <g class="svg-node" data-node="${n.id}" transform="translate(${p.x}, ${p.y})"
+          <g class="svg-node" data-node="${n.id}" role="button" tabindex="0"
+             aria-pressed="${isSel ? "true" : "false"}"
+             aria-label="Inspect component ${esc(n.label)} (${esc(repo.shortName)})"
+             transform="translate(${p.x}, ${p.y})"
              style="cursor:pointer" opacity="${isBypassedInPhase ? 0.23 : isDim ? 0.32 : 1}">
             <rect width="${p.w}" height="${p.h}" rx="10"
               fill="${isSel ? "#15233c" : "#0e1729"}"
@@ -450,7 +461,10 @@
                 const mk = isAct ? "url(#sq-act)" : st.isReturn ? "url(#sq-ret)" : "url(#sq-req)";
                 const mid = x1 === x2 ? x1 + 60 : (x1 + x2) / 2;
                 return `
-                  <g data-seq-step="${idx}" data-seq-flow="${flow.id}" style="cursor:pointer">
+                  <g data-seq-step="${idx}" data-seq-flow="${flow.id}" role="button" tabindex="0"
+                     aria-pressed="${isAct ? "true" : "false"}"
+                     aria-label="Step ${idx + 1}: ${esc(st.message)}"
+                     style="cursor:pointer">
                     <rect x="16" y="${y - 26}" width="${width - 32}" height="54" rx="8"
                       fill="${isAct ? "rgba(251,146,60,0.12)" : "transparent"}"
                       stroke="${isAct ? "rgba(251,146,60,0.45)" : "transparent"}"/>
@@ -630,17 +644,17 @@
             ${inbound
               .map((e) => {
                 const sn = era.nodes.find((x) => x.id === e.source);
-                return `<div class="sym-item" data-node="${esc(e.source)}" style="cursor:pointer">
+                return `<button type="button" class="sym-item" data-boundary-node="${esc(e.source)}" data-boundary-dir="in-${esc(e.id)}">
                   <span>← ${esc(sn?.label)}</span><span class="sym-line">${esc(e.label)}</span>
-                </div>`;
+                </button>`;
               })
               .join("")}
             ${outbound
               .map((e) => {
                 const tn = era.nodes.find((x) => x.id === e.target);
-                return `<div class="sym-item" data-node="${esc(e.target)}" style="cursor:pointer">
+                return `<button type="button" class="sym-item" data-boundary-node="${esc(e.target)}" data-boundary-dir="out-${esc(e.id)}">
                   <span>→ ${esc(tn?.label)}</span><span class="sym-line">${esc(e.label)}</span>
-                </div>`;
+                </button>`;
               })
               .join("")}
           </div>
@@ -988,7 +1002,38 @@
     `;
   }
 
+  function captureFocusDescriptor() {
+    const a = document.activeElement;
+    if (!a || a === document.body) return null;
+    if (a.id) return { kind: "id", val: a.id };
+    for (const attr of ["data-node", "data-edge", "data-seq-step", "data-phase", "data-mode", "data-nav"]) {
+      if (a.hasAttribute && a.hasAttribute(attr)) {
+        return { kind: "attr", attr, val: a.getAttribute(attr) };
+      }
+    }
+    if (a.hasAttribute && a.hasAttribute("data-boundary-node")) {
+      return { kind: "attr", attr: "data-node", val: a.getAttribute("data-boundary-node") };
+    }
+    return null;
+  }
+
+  function restoreFocusDescriptor(desc) {
+    if (!desc) return;
+    const target =
+      desc.kind === "id"
+        ? document.getElementById(desc.val)
+        : document.querySelector(`[${desc.attr}="${CSS.escape(desc.val)}"]`);
+    if (target && typeof target.focus === "function") {
+      target.focus({ preventScroll: true });
+    }
+  }
+
   function render() {
+    if (stageListenersAbort) {
+      stageListenersAbort.abort();
+      stageListenersAbort = null;
+    }
+    const focusDesc = captureFocusDescriptor();
     const root = document.getElementById("root");
     const era = currentEra();
     let mainHtml = "";
@@ -1017,6 +1062,7 @@
       fitDiagramToStage(era);
     }
     bindEvents();
+    restoreFocusDescriptor(focusDesc);
   }
 
   function bindEvents() {
@@ -1100,34 +1146,69 @@
     const reset = document.getElementById("step-reset");
     if (reset) reset.addEventListener("click", () => { state.stepIdx = -1; render(); });
 
+    function onKeyActivate(el, fn) {
+      el.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          ev.stopPropagation();
+          fn(ev);
+        }
+      });
+    }
+
     document.querySelectorAll("[data-node]").forEach((el) => {
-      el.addEventListener("click", (ev) => {
+      const selectNode = (ev) => {
         ev.stopPropagation();
         state.selectedNodeId = el.getAttribute("data-node");
+        state.selectedEdgeId = null;
+        render();
+      };
+      el.addEventListener("click", selectNode);
+      onKeyActivate(el, selectNode);
+    });
+
+    document.querySelectorAll("[data-boundary-node]").forEach((el) => {
+      el.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        state.selectedNodeId = el.getAttribute("data-boundary-node");
         state.selectedEdgeId = null;
         render();
       });
     });
 
     document.querySelectorAll("[data-edge]").forEach((el) => {
-      el.addEventListener("click", (ev) => {
+      const selectEdge = (ev) => {
         ev.stopPropagation();
         state.selectedEdgeId = el.getAttribute("data-edge");
         render();
-      });
+      };
+      el.addEventListener("click", selectEdge);
+      onKeyActivate(el, selectEdge);
     });
 
     document.querySelectorAll("[data-seq-step]").forEach((el) => {
-      el.addEventListener("click", () => {
+      const selectSeq = () => {
         state.stepIdx = Number(el.getAttribute("data-seq-step"));
         render();
-      });
+      };
+      el.addEventListener("click", selectSeq);
+      onKeyActivate(el, selectSeq);
     });
 
     const zin = document.getElementById("btn-zoom-in");
-    if (zin) zin.addEventListener("click", () => { state.zoom = Math.min(1.6, +(state.zoom + 0.12).toFixed(2)); render(); });
+    if (zin) {
+      zin.addEventListener("click", () => {
+        state.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(state.zoom + ZOOM_STEP).toFixed(2)));
+        render();
+      });
+    }
     const zout = document.getElementById("btn-zoom-out");
-    if (zout) zout.addEventListener("click", () => { state.zoom = Math.max(0.35, +(state.zoom - 0.12).toFixed(2)); render(); });
+    if (zout) {
+      zout.addEventListener("click", () => {
+        state.zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, +(state.zoom - ZOOM_STEP).toFixed(2)));
+        render();
+      });
+    }
     const zfit = document.getElementById("btn-zoom-fit");
     if (zfit) zfit.addEventListener("click", () => { fitDiagramToStage(currentEra()); render(); });
     const bOrient = document.getElementById("btn-orient");
@@ -1154,10 +1235,12 @@
       });
     }
 
-    // Drag-to-pan + wheel-to-zoom on topology stage
+    // Drag-to-pan + wheel-to-zoom on topology stage (cleaned up via AbortController on rerender)
     const stage = document.getElementById("diagram-stage");
     const vp = document.getElementById("viewport-g");
     if (stage && vp) {
+      stageListenersAbort = new AbortController();
+      const { signal } = stageListenersAbort;
       let dragging = false;
       let sx = 0, sy = 0, ox = state.panX, oy = state.panY;
       stage.addEventListener("mousedown", (ev) => {
@@ -1168,19 +1251,23 @@
         ox = state.panX;
         oy = state.panY;
       });
-      window.addEventListener("mousemove", (ev) => {
-        if (!dragging) return;
-        state.panX = ox + (ev.clientX - sx);
-        state.panY = oy + (ev.clientY - sy);
-        vp.setAttribute("transform", `translate(${state.panX}, ${state.panY}) scale(${state.zoom})`);
-      });
-      window.addEventListener("mouseup", () => { dragging = false; });
+      window.addEventListener(
+        "mousemove",
+        (ev) => {
+          if (!dragging) return;
+          state.panX = ox + (ev.clientX - sx);
+          state.panY = oy + (ev.clientY - sy);
+          vp.setAttribute("transform", `translate(${state.panX}, ${state.panY}) scale(${state.zoom})`);
+        },
+        { signal }
+      );
+      window.addEventListener("mouseup", () => { dragging = false; }, { signal });
       stage.addEventListener(
         "wheel",
         (ev) => {
           ev.preventDefault();
           const factor = ev.deltaY < 0 ? 1.07 : 0.93;
-          state.zoom = Math.max(0.32, Math.min(1.8, +(state.zoom * factor).toFixed(3)));
+          state.zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, +(state.zoom * factor).toFixed(3)));
           vp.setAttribute("transform", `translate(${state.panX}, ${state.panY}) scale(${state.zoom})`);
         },
         { passive: false }

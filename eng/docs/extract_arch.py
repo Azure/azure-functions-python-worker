@@ -13,8 +13,9 @@ and cross-links the 5-repository Python Functions runtime ecosystem:
   5. Azure/azure-functions-python-extensions        (HTTP v2, SdkType deferred bindings, Agent runtimes)
 
 Outputs:
-  - docs/site/assets/architecture-graph.json (machine-readable graph + drift fingerprint)
-  - docs/site/assets/architecture-data.js    (zero-fetch bundle for local preview & GitHub Pages)
+  - docs/assets/architecture-graph.json (machine-readable graph + drift fingerprint)
+  - docs/assets/architecture-data.js    (zero-fetch bundle for MkDocs Material & GitHub Pages)
+  - Bounded `<!-- BEGIN AUTO-GENERATED: ... -->` sections in `docs/architecture/*.md`
 """
 
 from __future__ import annotations
@@ -41,8 +42,9 @@ from phases_spec import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-JSON_OUT = REPO_ROOT / "docs" / "site" / "assets" / "architecture-graph.json"
-JS_OUT = REPO_ROOT / "docs" / "site" / "assets" / "architecture-data.js"
+DOCS_DIR = REPO_ROOT / "docs"
+JSON_OUT = DOCS_DIR / "assets" / "architecture-graph.json"
+JS_OUT = DOCS_DIR / "assets" / "architecture-data.js"
 
 REPOS: dict[str, dict[str, Any]] = {
     "functions-host": {
@@ -1485,13 +1487,135 @@ def validate_graph(graph: dict[str, Any]) -> None:
                             raise ValueError(f"Step activeEdge {eid} missing in {era['id']}.{ph['id']}")
 
 
+def _stable_repo_url(node: dict[str, Any]) -> str:
+    repo = REPOS[node["repo"]]
+    line_sfx = f"#L{node['line']}" if node.get("line", 0) > 1 else ""
+    return f"{repo['url']}/blob/{repo['defaultBranch']}/{node['file']}{line_sfx}"
+
+
+def _render_era_components_md(era: dict[str, Any]) -> str:
+    lines = [
+        "| Component | Repository | Source Anchor | Responsibility |",
+        "| --- | --- | --- | --- |",
+    ]
+    for n in era["nodes"]:
+        repo = REPOS[n["repo"]]
+        anchor_lbl = f"`{n['file']}" + (f":L{n['line']}`" if n.get("line", 0) > 1 else "`")
+        url = _stable_repo_url(n)
+        role = n["role"].replace("|", "\\|")
+        lines.append(f"| **{n['label']}** | `{repo['shortName']}` | [{anchor_lbl}]({url}) | {role} |")
+    return "\n".join(lines)
+
+
+def _render_era_phases_md(era: dict[str, Any]) -> str:
+    blocks: list[str] = []
+    for ph in era.get("phases", []):
+        blocks.append(f"### {ph['title']}\n")
+        blocks.append(f"- **Wire Protocol:** `{ph['proto']}`")
+        blocks.append(f"- **Execution Scope:** {ph['scope']}\n")
+        blocks.append(f"{ph['summary']}\n")
+        blocks.append(f"> **Bypassed / Idle Note:** {ph['bypassedNote']}\n")
+        blocks.append("#### Sequence Diagram\n")
+        blocks.append(f"```mermaid\n{ph['sequenceMermaid']}\n```\n")
+        blocks.append("#### Phase Compound Topology\n")
+        blocks.append(f"```mermaid\n{ph['topologyMermaid']}\n```")
+    return "\n\n---\n\n".join(blocks)
+
+
+def render_markdown_blocks(graph: dict[str, Any]) -> dict[str, str]:
+    eras_by_id = {e["id"]: e for e in graph["eras"]}
+    eco = eras_by_id["ecosystem"]
+
+    repo_rows = [
+        "| Repository | PyPI Packages | Architectural Role |",
+        "| --- | --- | --- |",
+    ]
+    for r in graph["repos"].values():
+        pypi = ", ".join(f"`{p}`" for p in r["pypi"]) if r["pypi"] else "—"
+        repo_rows.append(f"| [`{r['fullName']}`]({r['url']}) | {pypi} | {r['role']} |")
+
+    eco_flow = eco["flows"][0]
+    eco_md = "\n\n".join([
+        "\n".join(repo_rows),
+        "### Full 5-Repository Topology\n\n```mermaid\n" + eco["topologyMermaid"] + "\n```",
+        f"### {eco_flow['title']}\n\n```mermaid\n{eco_flow['sequenceMermaid']}\n```",
+        "### Key Cross-Repository Components\n\n" + _render_era_components_md(eco),
+    ])
+
+    inv_rows = [
+        "| Subsystem | Tracked Source Files | Total Lines (LOC) | Representative Entry |",
+        "| --- | --- | --- | --- |",
+    ]
+    for pkg, files in graph["packageInventories"].items():
+        loc = sum(f["lines"] for f in files)
+        sample = f"`{files[0]['path']}`" if files else "—"
+        inv_rows.append(f"| `{pkg}` | {len(files)} | {loc:,} | {sample} |")
+
+    out: dict[str, str] = {
+        "ecosystem-reference": eco_md,
+        "package-inventory": "\n".join(inv_rows),
+    }
+    for eid in ("py312", "py313_314", "py315_r2p2"):
+        era = eras_by_id[eid]
+        out[f"{eid}-components"] = (
+            "### Full Static Topology (Mermaid)\n\n"
+            f"```mermaid\n{era['topologyMermaid']}\n```\n\n"
+            "### Component & Source Reference\n\n"
+            + _render_era_components_md(era)
+        )
+        out[f"{eid}-phases"] = _render_era_phases_md(era)
+    return out
+
+
+def sync_markdown_docs(
+    graph: dict[str, Any], docs_dir: Path = DOCS_DIR, check_only: bool = False
+) -> list[str]:
+    """Update or verify `<!-- BEGIN AUTO-GENERATED: <id> -->` blocks in `docs/**/*.md`."""
+    blocks = render_markdown_blocks(graph)
+    marker_re = re.compile(
+        r"(<!-- BEGIN AUTO-GENERATED: ([a-z0-9_-]+) -->\n)(.*?)(<!-- END AUTO-GENERATED: \2 -->)",
+        flags=re.S,
+    )
+    stale_or_updated: list[str] = []
+
+    for md_path in sorted(docs_dir.rglob("*.md")):
+        original = md_path.read_text(encoding="utf-8")
+        if "<!-- BEGIN AUTO-GENERATED:" not in original:
+            continue
+
+        def _repl(m: re.Match[str]) -> str:
+            open_tag, block_id, _, close_tag = m.groups()
+            if block_id not in blocks:
+                raise ValueError(f"Unknown AUTO-GENERATED block '{block_id}' in {md_path}")
+            return f"{open_tag}{blocks[block_id]}\n{close_tag}"
+
+        updated = marker_re.sub(_repl, original)
+        if updated != original:
+            rel = md_path.relative_to(REPO_ROOT).as_posix() if md_path.is_relative_to(REPO_ROOT) else str(md_path)
+            stale_or_updated.append(rel)
+            if not check_only:
+                md_path.write_text(updated, encoding="utf-8")
+
+    return stale_or_updated
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Extract multi-repo architecture graph.")
     parser.add_argument(
         "--sibling-root",
         type=Path,
         default=None,
-        help="Optional directory containing python-library, python-extensions, language-worker-protobuf checkouts.",
+        help="Optional directory containing functions-host, python-library, python-extensions, language-worker-protobuf checkouts.",
+    )
+    parser.add_argument(
+        "--sync-markdown",
+        action="store_true",
+        help="Refresh bounded AUTO-GENERATED Mermaid & component reference blocks in docs/**/*.md.",
+    )
+    parser.add_argument(
+        "--check-markdown",
+        action="store_true",
+        help="Fail with exit code 1 if any AUTO-GENERATED block in docs/**/*.md is out of date.",
     )
     args = parser.parse_args()
 
@@ -1500,6 +1624,20 @@ def main() -> None:
     raw_json = json.dumps(graph, indent=2)
     JSON_OUT.write_text(raw_json + "\n", encoding="utf-8")
     JS_OUT.write_text(f"window.__ARCH_GRAPH__ = {raw_json};\n", encoding="utf-8")
+
+    if args.sync_markdown:
+        changed = sync_markdown_docs(graph, DOCS_DIR, check_only=False)
+        print(f"[extract_arch] Synced {len(changed)} markdown file(s): {changed}")
+    elif args.check_markdown:
+        stale = sync_markdown_docs(graph, DOCS_DIR, check_only=True)
+        if stale:
+            print(
+                f"[extract_arch] ERROR: Stale AUTO-GENERATED blocks in {stale}. "
+                "Run `python3 eng/docs/extract_arch.py --sync-markdown`.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
     print(
         f"[extract_arch] Generated {JSON_OUT.relative_to(REPO_ROOT)} & {JS_OUT.relative_to(REPO_ROOT)} "
         f"(repos={len(graph['repos'])}, eras={len(graph['eras'])}, fingerprint={graph['structuralFingerprint']})"

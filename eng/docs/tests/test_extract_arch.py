@@ -105,6 +105,21 @@ class TestExtractArch(unittest.TestCase):
         )
         self.assertGreater(extract_arch.sym_line(mono_meta, "connect", -1), 1)
 
+    def test_committed_markdown_auto_generated_blocks_in_sync(self) -> None:
+        stale = extract_arch.sync_markdown_docs(
+            self.graph, extract_arch.DOCS_DIR, check_only=True
+        )
+        self.assertEqual(
+            stale,
+            [],
+            f"Stale AUTO-GENERATED blocks in {stale}; run `python3 eng/docs/extract_arch.py --sync-markdown`.",
+        )
+        r2p2_md = (
+            extract_arch.DOCS_DIR / "architecture" / "python-315-r2p2.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("```mermaid", r2p2_md)
+        self.assertIn("### 7. Worker Logs Flow", r2p2_md)
+
     def test_validate_graph_rejects_dangling_phase_edge(self) -> None:
         broken = copy.deepcopy(self.graph)
         py315 = next(e for e in broken["eras"] if e["id"] == "py315_r2p2")

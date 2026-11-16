@@ -10,6 +10,7 @@ trigger:
     exclude:
       - docs/*
       - eng/docs/*
+      - mkdocs.yml
       - .github/workflows/architecture-pages.yml
 
 # CI only, does not trigger on PRs.

@@ -7,7 +7,8 @@ on:
       - "workers/**"
       - "runtimes/**"
       - "eng/docs/**"
-      - "docs/site/**"
+      - "docs/**"
+      - "mkdocs.yml"
       - ".github/workflows/architecture-pages.yml"
   pull_request:
     branches: [dev]
@@ -15,7 +16,8 @@ on:
       - "workers/**"
       - "runtimes/**"
       - "eng/docs/**"
-      - "docs/site/**"
+      - "docs/**"
+      - "mkdocs.yml"
       - ".github/workflows/architecture-pages.yml"
   repository_dispatch:
     types: [sibling-repo-updated]
@@ -72,25 +74,32 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: eng/docs/requirements.txt
 
-      - name: Run architecture extractor unit tests
+      - name: Install MkDocs Material
+        run: python3 -m pip install -r eng/docs/requirements.txt
+
+      - name: Run architecture extractor & Markdown sync unit tests
         run: python3 -m unittest discover -s eng/docs/tests -v
 
-      - name: Extract multi-repo architecture graph
-        run: python3 eng/docs/extract_arch.py --sibling-root _sibling_repos
+      - name: Extract multi-repo architecture graph & check Markdown blocks
+        run: python3 eng/docs/extract_arch.py --sibling-root _sibling_repos --check-markdown
+
+      - name: Build MkDocs Material documentation
+        run: mkdocs build --strict
 
       - name: Upload preview artifact
         uses: actions/upload-artifact@v4
         with:
           name: architecture-site
-          path: ./docs/site
-          include-hidden-files: true
+          path: ./site
 
       - name: Upload GitHub Pages artifact
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs/site
+          path: ./site
 
   deploy:
     name: Deploy to GitHub Pages

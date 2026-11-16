@@ -6,6 +6,11 @@ trigger:
       - release/* # proxy worker releases
       - release-v1/* # V1 worker releases
       - release-v2/* # V2 worker releases
+  paths:
+    exclude:
+      - docs/*
+      - eng/docs/*
+      - .github/workflows/architecture-pages.yml
 
 # CI only, does not trigger on PRs.
 pr: none

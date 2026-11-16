@@ -5,11 +5,21 @@ trigger:
     - dev
     - sdk/*
     - extensions/*
+  paths:
+    exclude:
+    - docs/*
+    - eng/docs/*
+    - .github/workflows/architecture-pages.yml
 
 pr:
   branches:
     include:
     - dev
+  paths:
+    exclude:
+    - docs/*
+    - eng/docs/*
+    - .github/workflows/architecture-pages.yml
 
 schedules:
 - cron: '0 0 * * MON'

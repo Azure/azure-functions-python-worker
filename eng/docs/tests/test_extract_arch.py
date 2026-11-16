@@ -22,10 +22,11 @@ class TestExtractArch(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.graph = extract_arch.build_graph()
 
-    def test_four_linked_repositories_present(self) -> None:
+    def test_five_linked_repositories_present(self) -> None:
         self.assertEqual(
             set(self.graph["repos"].keys()),
             {
+                "functions-host",
                 "python-worker",
                 "python-library",
                 "python-extensions",

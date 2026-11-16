@@ -147,7 +147,7 @@
         <div class="topbar-meta">
           <select class="flow-select" id="quick-era-select" title="Switch Architecture View">
             <option value="overview" ${state.page === "overview" ? "selected" : ""}>Evolution Matrix</option>
-            <option value="ecosystem" ${state.page === "ecosystem" ? "selected" : ""}>4-Repo Ecosystem</option>
+            <option value="ecosystem" ${state.page === "ecosystem" ? "selected" : ""}>5-Repo Ecosystem</option>
             <option value="py312" ${state.page === "py312" ? "selected" : ""}>Python ≤ 3.12 (Monolith)</option>
             <option value="py313_314" ${state.page === "py313_314" ? "selected" : ""}>Python 3.13–3.14 (Split)</option>
             <option value="py315_r2p2" ${state.page === "py315_r2p2" ? "selected" : ""}>Python 3.15+ (R2P2 Rust)</option>
@@ -166,7 +166,7 @@
   function renderSidebar() {
     const navEraItems = [
       { id: "overview", title: "Evolution Matrix", sub: "≤3.12 vs 3.13-14 vs 3.15+", tag: "Compare" },
-      { id: "ecosystem", title: "4-Repo Ecosystem", sub: "Proto · Worker · SDK · Ext", tag: "All" },
+      { id: "ecosystem", title: "5-Repo Ecosystem", sub: "Host · Proto · Worker · SDK · Ext", tag: "All" },
       { id: "py312", title: "Python ≤ 3.12", sub: "workers/azure_functions_worker", tag: "Monolith" },
       { id: "py313_314", title: "Python 3.13 – 3.14", sub: "proxy_worker + runtimes/", tag: "Split" },
       { id: "py315_r2p2", title: "Python 3.15+ (R2P2)", sub: "workers/r2p2 + PyO3 + runtimes/", tag: "Rust" },
@@ -213,7 +213,7 @@
         </div>
 
         <div>
-          <div class="nav-group-title">Linked GitHub Repositories (4)</div>
+          <div class="nav-group-title">Linked GitHub Repositories (5)</div>
           <div class="repo-legend-list">
             ${Object.values(graph.repos)
               .map(

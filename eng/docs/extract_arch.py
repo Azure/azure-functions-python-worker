@@ -5,15 +5,16 @@
 Multi-Repository Code-to-Architecture Graph Extractor for Azure Functions Python.
 
 Synthesizes live AST/Rust/Proto facts from `Azure/azure-functions-python-worker`
-and cross-links the 4-repository Python Functions runtime ecosystem:
-  1. Azure/azure-functions-python-worker           (workers + runtimes v1/v2)
-  2. Azure/azure-functions-python-library          (azure-functions PyPI SDK)
-  3. Azure/azure-functions-python-extensions       (HTTP v2, SdkType deferred bindings, Agent runtimes)
-  4. Azure/azure-functions-language-worker-protobuf (FunctionRpc.proto + settlement.proto)
+and cross-links the 5-repository Python Functions runtime ecosystem:
+  1. Azure/azure-functions-host                     (.NET Script Host runtime & WorkerChannel)
+  2. Azure/azure-functions-language-worker-protobuf (FunctionRpc.proto + settlement.proto wire contract)
+  3. Azure/azure-functions-python-worker            (workers + runtimes v1/v2)
+  4. Azure/azure-functions-python-library           (azure-functions PyPI SDK)
+  5. Azure/azure-functions-python-extensions        (HTTP v2, SdkType deferred bindings, Agent runtimes)
 
 Outputs:
-  - site/assets/architecture-graph.json (machine-readable graph + drift fingerprint)
-  - site/assets/architecture-data.js    (zero-fetch bundle for local preview & GitHub Pages)
+  - docs/site/assets/architecture-graph.json (machine-readable graph + drift fingerprint)
+  - docs/site/assets/architecture-data.js    (zero-fetch bundle for local preview & GitHub Pages)
 """
 
 from __future__ import annotations
@@ -44,6 +45,26 @@ JSON_OUT = REPO_ROOT / "docs" / "site" / "assets" / "architecture-graph.json"
 JS_OUT = REPO_ROOT / "docs" / "site" / "assets" / "architecture-data.js"
 
 REPOS: dict[str, dict[str, Any]] = {
+    "functions-host": {
+        "id": "functions-host",
+        "fullName": "Azure/azure-functions-host",
+        "shortName": "functions-host",
+        "url": "https://github.com/Azure/azure-functions-host",
+        "defaultBranch": "dev",
+        "color": "#f87171",
+        "pypi": [],
+        "role": ".NET Functions Script Host runtime: event/trigger listeners, WorkerChannel gRPC server, Consumption specialization, scale probes, HTTP v2 proxy, and AppInsights/Kusto telemetry.",
+    },
+    "language-worker-protobuf": {
+        "id": "language-worker-protobuf",
+        "fullName": "Azure/azure-functions-language-worker-protobuf",
+        "shortName": "worker-protobuf",
+        "url": "https://github.com/Azure/azure-functions-language-worker-protobuf",
+        "defaultBranch": "dev",
+        "color": "#fbbf24",
+        "pypi": [],
+        "role": "Canonical gRPC wire contract (`FunctionRpc.proto`, `settlement.proto`, `ClaimsIdentityRpc.proto`) shared between `azure-functions-host` and all language workers.",
+    },
     "python-worker": {
         "id": "python-worker",
         "fullName": "Azure/azure-functions-python-worker",
@@ -79,16 +100,6 @@ REPOS: dict[str, dict[str, Any]] = {
             "azurefunctions-agents-extensions-*",
         ],
         "role": "Extension contracts: WebApp HTTP v2 streaming, SdkType deferred bindings, Settlement gRPC client, and Custom/Agent Runtime hooks.",
-    },
-    "language-worker-protobuf": {
-        "id": "language-worker-protobuf",
-        "fullName": "Azure/azure-functions-language-worker-protobuf",
-        "shortName": "worker-protobuf",
-        "url": "https://github.com/Azure/azure-functions-language-worker-protobuf",
-        "defaultBranch": "dev",
-        "color": "#fbbf24",
-        "pypi": [],
-        "role": "Canonical gRPC wire schema (`FunctionRpc.proto`, `settlement.proto`, `ClaimsIdentityRpc.proto`) shared by Host and all language workers.",
     },
 }
 
@@ -339,7 +350,12 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
         "python-worker": git["sha"] if len(git["sha"]) >= 7 else "dev"
     }
     if sibling_root and sibling_root.exists():
-        for rid in ("python-library", "python-extensions", "language-worker-protobuf"):
+        for rid in (
+            "functions-host",
+            "language-worker-protobuf",
+            "python-library",
+            "python-extensions",
+        ):
             cand = sibling_root / rid
             if cand.exists():
                 repo_dirs[rid] = cand
@@ -404,38 +420,40 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
 
     eras = [
         # =====================================================================
-        # VIEW 0: 4-Repository Ecosystem Topology
+        # VIEW 0: 5-Repository Ecosystem Topology
         # =====================================================================
         {
             "id": "ecosystem",
-            "shortTitle": "4-Repo Ecosystem",
-            "title": "Cross-Repository Architecture (Wire, Worker, SDK & Extensions)",
+            "shortTitle": "5-Repo Ecosystem",
+            "title": "Cross-Repository Architecture (Host, Protobuf Contract, Worker, SDK & Extensions)",
             "pythonVersions": "All Supported Versions (3.7 → 3.15+)",
-            "packagePath": "4 Linked GitHub Repositories",
-            "launcherPath": "Host <-> Protobuf <-> Worker <-> Library & Extensions",
-            "status": "Canonical Multi-Repo Map",
-            "tagline": "How language-worker-protobuf, python-worker, python-library, and python-extensions compose the Python Functions runtime.",
+            "packagePath": "5 Linked GitHub Repositories",
+            "launcherPath": "functions-host <-> worker-protobuf <-> python-worker <-> library & extensions",
+            "status": "Canonical 5-Repo Map",
+            "tagline": "How azure-functions-host, language-worker-protobuf, python-worker, python-library, and python-extensions compose the runtime.",
             "summary": (
-                "The Azure Functions Python stack spans four specialized repositories: "
-                "`language-worker-protobuf` defines the cross-language gRPC wire contract; "
-                "`python-worker` implements the transport shells (monolith, proxy_worker, R2P2) and "
-                "execution runtimes (v1/v2); `python-library` provides the `azure-functions` decorator "
-                "model and `Datum` type converters; and `python-extensions` powers HTTP v2 ASGI streaming, "
-                "SDK-type deferred bindings, Settlement gRPC, and pluggable Agent Runtimes."
+                "The Azure Functions Python stack spans five repositories with clean boundaries: "
+                "`azure-functions-host` houses the .NET Script Host runtime (`WorkerChannel`, trigger listeners, "
+                "placeholder specialization, scale probes, and telemetry); `language-worker-protobuf` defines the "
+                "gRPC wire contract (`FunctionRpc.proto`, `settlement.proto`) between Host and workers; "
+                "`python-worker` implements the Python/Rust worker shells and v1/v2 execution runtimes; "
+                "`python-library` ships the `azure-functions` SDK (`@app` decorators & `Datum`); and "
+                "`python-extensions` provides HTTP v2 streaming, `SdkType` deferred bindings, and Agent Runtimes."
             ),
             "tradeoffs": [
-                {"kind": "strength", "text": "Wire contract (`FunctionRpc.proto`) stays identical while worker transport evolves from Python `grpcio` to Rust `tonic`."},
-                {"kind": "strength", "text": "`python-library` and `python-extensions` ship on PyPI independently of Azure Host images."},
-                {"kind": "strength", "text": "Clean extension hooks (`WebApp`, `SdkType`, `RuntimeTrackerMeta`) let FastAPI, Blob SDK types, and Agent Frameworks plug in without forking the worker."},
+                {"kind": "strength", "text": "`azure-functions-host` and `python-worker` evolve independently across the stable `language-worker-protobuf` contract."},
+                {"kind": "strength", "text": "`python-library` and `python-extensions` ship on PyPI independently of Azure Host VM images."},
+                {"kind": "strength", "text": "Extension hooks (`WebApp`, `SdkType`, `RuntimeTrackerMeta`) enable FastAPI, SDK bindings, and Agent Frameworks cleanly."},
             ],
             "erasDiff": {
-                "transport": "Defined in language-worker-protobuf; implemented in python-worker",
-                "boundary": "Datum & Decorator metadata (python-library) + Base metaclasses (python-extensions)",
+                "transport": "Host ServerDuplexChannel <-> FunctionRpc.proto <-> python-worker",
+                "boundary": "Protobuf wire contract (Host<->Worker) + Datum/Metaclass contracts (Worker<->SDK/Ext)",
                 "runtimeLoading": "python-worker runtimes/v1,v2 or python-extensions RuntimeTrackerMeta",
                 "hotPathOverhead": "Datum bindings take R2P2 Hot Path; Extensions (HTTP-v2 / SdkType) take Control Path",
             },
             "containers": [
-                {"id": "ce-proto", "label": "Azure/azure-functions-language-worker-protobuf", "parentId": None, "tone": "proto"},
+                {"id": "ce-host", "label": "Azure/azure-functions-host (.NET Script Host)", "parentId": None, "tone": "host"},
+                {"id": "ce-proto", "label": "Azure/azure-functions-language-worker-protobuf (Contract)", "parentId": None, "tone": "proto"},
                 {"id": "ce-worker", "label": "Azure/azure-functions-python-worker", "parentId": None, "tone": "rust-proc"},
                 {"id": "ce-w-shell", "label": "Worker Transport Shells (workers/)", "parentId": "ce-worker", "tone": "transport"},
                 {"id": "ce-w-rt", "label": "Execution Runtimes (runtimes/v1 & v2)", "parentId": "ce-worker", "tone": "runtime"},
@@ -444,17 +462,44 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
             ],
             "nodes": [
                 {
+                    "id": "ne-host-chan",
+                    "repo": "functions-host",
+                    "containerId": "ce-host",
+                    "label": "Script Host & WorkerChannel",
+                    "badge": "WorkerChannel.cs",
+                    "role": ".NET Script Host orchestrating triggers, worker process lifecycle, placeholder specialization, status probes, and RpcLog telemetry.",
+                    "file": "src/WebJobs.Script.Grpc/Channel/WorkerChannel.cs",
+                    "line": 1,
+                    "details": [
+                        "Spawns worker processes and drives the 7 lifecycle phases (`WorkerInit`, `EnvironmentReload`, `Metadata`, `Load`, `Invoke`, `Status`, `RpcLog`).",
+                        "Proxies HTTP v2 streaming traffic (`HttpWorkerOptions`) and routes `RpcLog` to Application Insights / Kusto.",
+                    ],
+                },
+                {
+                    "id": "ne-host-duplex",
+                    "repo": "functions-host",
+                    "containerId": "ce-host",
+                    "label": "ServerDuplexChannel & ShMem",
+                    "badge": "ServerDuplexChannel.cs",
+                    "role": "Host-side bidirectional gRPC `EventStream` endpoint and POSIX/Windows shared-memory data transfer.",
+                    "file": "src/WebJobs.Script.Grpc/Channel/ServerDuplexChannel.cs",
+                    "line": 1,
+                    "details": [
+                        "Registered in `FunctionRpcChannelEndpoints.cs`; pairs with `RpcSharedMemoryDataExtensions.cs`.",
+                    ],
+                },
+                {
                     "id": "ne-funcrpc",
                     "repo": "language-worker-protobuf",
                     "containerId": "ce-proto",
                     "label": "FunctionRpc.proto",
-                    "badge": "EventStream + StreamingMessage",
-                    "role": "Canonical bidirectional gRPC protocol between the .NET Script Host and all Python workers.",
+                    "badge": "Host ↔ Worker Wire Schema",
+                    "role": "Canonical bidirectional gRPC protocol contract shared between `azure-functions-host` and all out-of-proc language workers.",
                     "file": "src/proto/FunctionRpc.proto",
                     "line": 1,
                     "details": [
-                        "Compiled via `grpcio-tools` for ≤3.14 workers and via `prost-build`/`tonic` (`workers/r2p2/build.rs`) for 3.15+.",
-                        "Defines `WorkerInit`, `FunctionsMetadata`, `FunctionLoad`, `InvocationRequest`, `RpcLog`, `WorkerStatus`.",
+                        "Compiled into C# (`functions-host`), Python `grpcio-tools` (`≤3.14`), and Rust `prost`/`tonic` (`3.15+`).",
+                        "Defines `StreamingMessage`, `TypedData`, `WorkerInit`, `InvocationRequest`, `WorkerStatus`, `RpcLog`.",
                     ],
                 },
                 {
@@ -462,12 +507,12 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                     "repo": "language-worker-protobuf",
                     "containerId": "ce-proto",
                     "label": "settlement.proto & ClaimsIdentity",
-                    "badge": "ServiceBus Settlement",
-                    "role": "gRPC settlement service allowing Python functions to complete/abandon/dead-letter ServiceBus messages.",
+                    "badge": "Settlement Contract",
+                    "role": "Protobuf service schema enabling Python extensions to settle ServiceBus messages directly against the Host.",
                     "file": "src/proto/servicebus/settlement.proto",
                     "line": 1,
                     "details": [
-                        "Consumed by `grpcClientType.py` in `python-extensions` and `get_settlement_client()` in `python-worker`.",
+                        "Implemented by `azure-functions-host` and called by `grpcClientType.py` in `python-extensions`.",
                     ],
                 },
                 {
@@ -560,7 +605,10 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 },
             ],
             "edges": [
-                {"id": "ee-1", "source": "ne-funcrpc", "target": "ne-shells", "kind": "grpc-wire", "label": "prost / grpcio codegen"},
+                {"id": "ee-0a", "source": "ne-host-chan", "target": "ne-host-duplex", "kind": "thread-queue", "label": "dispatch / RpcLog sink"},
+                {"id": "ee-0b", "source": "ne-host-duplex", "target": "ne-funcrpc", "kind": "grpc-wire", "label": "EventStream server"},
+                {"id": "ee-0c", "source": "ne-host-chan", "target": "ne-settle", "kind": "grpc-wire", "label": "Settlement server", "dashed": True},
+                {"id": "ee-1", "source": "ne-funcrpc", "target": "ne-shells", "kind": "grpc-wire", "label": "prost / grpcio client"},
                 {"id": "ee-2", "source": "ne-shells", "target": "ne-runtimes", "kind": "pyo3-hot", "label": "WorkerRequest / PyO3 FFI"},
                 {"id": "ee-3", "source": "ne-runtimes", "target": "ne-lib-dec", "kind": "inproc-contract", "label": "index_function_app()"},
                 {"id": "ee-4", "source": "ne-runtimes", "target": "ne-lib-datum", "kind": "inproc-contract", "label": "Datum <-> Binding decode"},
@@ -572,21 +620,21 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
             "flows": [
                 {
                     "id": "eco_flow",
-                    "title": "End-to-End Cross-Repo Request Lifecycle",
-                    "summary": "How a single HTTP/SDK request traverses contracts defined across all 4 repositories.",
+                    "title": "End-to-End 5-Repo Request Lifecycle",
+                    "summary": "How a trigger event in azure-functions-host crosses the worker-protobuf contract into python-worker, python-library, and python-extensions.",
                     "actors": [
+                        {"id": "host", "label": "functions-host"},
                         {"id": "proto", "label": "worker-protobuf"},
                         {"id": "shell", "label": "python-worker (Shell)"},
                         {"id": "rt", "label": "python-worker (Runtime)"},
-                        {"id": "lib", "label": "python-library"},
-                        {"id": "ext", "label": "python-extensions"},
+                        {"id": "lib", "label": "library & extensions"},
                     ],
                     "steps": [
-                        {"from": "proto", "to": "shell", "message": "FunctionRpc.proto StreamingMessage frame", "activeNodes": ["ne-funcrpc", "ne-shells"], "activeEdges": ["ee-1"], "payload": "Shared wire contract across 3.7 -> 3.15+"},
+                        {"from": "host", "to": "proto", "message": "WorkerChannel serializes event onto ServerDuplexChannel", "activeNodes": ["ne-host-chan", "ne-host-duplex", "ne-funcrpc"], "activeEdges": ["ee-0a", "ee-0b"], "payload": "WebJobs.Script.Grpc"},
+                        {"from": "proto", "to": "shell", "message": "FunctionRpc.proto StreamingMessage frame over HTTP/2", "activeNodes": ["ne-funcrpc", "ne-shells"], "activeEdges": ["ee-1"], "payload": "Shared wire contract across 3.7 -> 3.15+"},
                         {"from": "shell", "to": "rt", "message": "Dispatch WorkerInit / Invocation across seam", "activeNodes": ["ne-shells", "ne-runtimes"], "activeEdges": ["ee-2"], "payload": "WorkerRequest (3.13) or PyO3 Tuple/Dict (3.15)"},
-                        {"from": "rt", "to": "lib", "message": "Index @app decorators & decode Datum inputs", "activeNodes": ["ne-runtimes", "ne-lib-dec", "ne-lib-datum"], "activeEdges": ["ee-3", "ee-4"], "payload": "azure.functions.FunctionApp + meta.Datum"},
-                        {"from": "rt", "to": "ext", "message": "Hydrate SdkType (BlobClient) or stream WebApp (FastAPI)", "activeNodes": ["ne-runtimes", "ne-ext-base", "ne-ext-pkgs"], "activeEdges": ["ee-5", "ee-8"], "payload": "azurefunctions.extensions.base"},
-                        {"from": "ext", "to": "proto", "message": "Optional ServiceBus Settlement gRPC call to Host", "isReturn": True, "activeNodes": ["ne-ext-base", "ne-settle"], "activeEdges": ["ee-7"], "payload": "settlement.proto Complete/Abandon"},
+                        {"from": "rt", "to": "lib", "message": "Decode Datum (python-library) or SdkType/WebApp (python-extensions)", "activeNodes": ["ne-runtimes", "ne-lib-dec", "ne-lib-datum", "ne-ext-base", "ne-ext-pkgs"], "activeEdges": ["ee-3", "ee-4", "ee-5", "ee-8"], "payload": "azure.functions + azurefunctions.extensions"},
+                        {"from": "lib", "to": "host", "message": "InvocationResponse / RpcLog / Settlement back to Host", "isReturn": True, "activeNodes": ["ne-ext-base", "ne-settle", "ne-funcrpc", "ne-host-duplex", "ne-host-chan"], "activeEdges": ["ee-7", "ee-0c", "ee-0b", "ee-0a"], "payload": "StatusResult + OutputBindings + AppInsights"},
                     ],
                 },
             ],
@@ -621,7 +669,8 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 "hotPathOverhead": "grpcio thread -> asyncio -> Python protobuf -> Datum -> handler",
             },
             "containers": [
-                {"id": "c312-host", "label": "Host & Wire Contract", "parentId": None, "tone": "proto"},
+                {"id": "c312-host", "label": "Functions Host (.NET — azure-functions-host)", "parentId": None, "tone": "host"},
+                {"id": "c312-wire", "label": "Wire Contract (worker-protobuf)", "parentId": None, "tone": "proto"},
                 {"id": "c312-worker", "label": "Monolithic Worker Process (workers/azure_functions_worker)", "parentId": None, "tone": "python"},
                 {"id": "c312-trans", "label": "gRPC Transport & Isolation", "parentId": "c312-worker", "tone": "transport"},
                 {"id": "c312-eng", "label": "In-Tree Indexing, Bindings & Executor", "parentId": "c312-worker", "tone": "runtime"},
@@ -629,12 +678,25 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
             ],
             "nodes": [
                 {
+                    "id": "n312-host",
+                    "repo": "functions-host",
+                    "containerId": "c312-host",
+                    "label": "Script Host (WorkerChannel)",
+                    "badge": "WebJobs.Script.Grpc",
+                    "role": ".NET Functions Host runtime spawning `prodV4/worker.py`, driving triggers, scale probes, and telemetry.",
+                    "file": "src/WebJobs.Script.Grpc/Channel/WorkerChannel.cs",
+                    "line": 1,
+                    "details": [
+                        "Hosts `ServerDuplexChannel` and `RpcSharedMemoryDataExtensions`.",
+                    ],
+                },
+                {
                     "id": "n312-proto",
                     "repo": "language-worker-protobuf",
-                    "containerId": "c312-host",
-                    "label": "Host + FunctionRpc.proto",
-                    "badge": "EventStream Server",
-                    "role": "Functions Host spawns `prodV4/worker.py` and streams `StreamingMessage` frames over HTTP/2.",
+                    "containerId": "c312-wire",
+                    "label": "FunctionRpc.proto Contract",
+                    "badge": "StreamingMessage Schema",
+                    "role": "Language-neutral gRPC `.proto` contract between `azure-functions-host` and `azure_functions_worker`.",
                     "file": "src/proto/FunctionRpc.proto",
                     "line": 1,
                     "details": [
@@ -747,6 +809,7 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 },
             ],
             "edges": [
+                {"id": "e312-0", "source": "n312-host", "target": "n312-proto", "kind": "grpc-wire", "label": "ServerDuplexChannel"},
                 {"id": "e312-1", "source": "n312-proto", "target": "n312-grpc", "kind": "grpc-wire", "label": "EventStream (grpcio)"},
                 {"id": "e312-2", "source": "n312-boot", "target": "n312-disp", "kind": "syspath-mutation", "label": "boot + DependencyManager"},
                 {"id": "e312-3", "source": "n312-grpc", "target": "n312-disp", "kind": "thread-queue", "label": "call_soon_threadsafe / Queue"},
@@ -826,7 +889,8 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 "hotPathOverhead": "grpcio thread -> asyncio -> WorkerRequest -> runtime cached protos",
             },
             "containers": [
-                {"id": "c313-host", "label": "Host & Wire Contract", "parentId": None, "tone": "proto"},
+                {"id": "c313-host", "label": "Functions Host (.NET — azure-functions-host)", "parentId": None, "tone": "host"},
+                {"id": "c313-wire", "label": "Wire Contract (worker-protobuf)", "parentId": None, "tone": "proto"},
                 {"id": "c313-worker", "label": "Python Worker Process (proxyV4/worker.py)", "parentId": None, "tone": "python"},
                 {"id": "c313-proxy", "label": "Layer 1: proxy_worker (Transport Shell)", "parentId": "c313-worker", "tone": "transport"},
                 {"id": "c313-rt", "label": "Layer 2: Pluggable Runtime Engine (runtimes/)", "parentId": "c313-worker", "tone": "runtime"},
@@ -834,12 +898,25 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
             ],
             "nodes": [
                 {
+                    "id": "n313-host",
+                    "repo": "functions-host",
+                    "containerId": "c313-host",
+                    "label": "Script Host (WorkerChannel)",
+                    "badge": "WebJobs.Script.Grpc",
+                    "role": ".NET Functions Host runtime spawning `proxyV4/worker.py` (`python -m proxy_worker`) for Python 3.13/3.14.",
+                    "file": "src/WebJobs.Script.Grpc/Channel/WorkerChannel.cs",
+                    "line": 1,
+                    "details": [
+                        "Unchanged .NET Host runtime across Python worker versions.",
+                    ],
+                },
+                {
                     "id": "n313-proto",
                     "repo": "language-worker-protobuf",
-                    "containerId": "c313-host",
-                    "label": "Host + FunctionRpc.proto",
-                    "badge": "EventStream Server",
-                    "role": "Host spawns `proxyV4/worker.py` (`python -m proxy_worker`) for Python 3.13/3.14.",
+                    "containerId": "c313-wire",
+                    "label": "FunctionRpc.proto Contract",
+                    "badge": "StreamingMessage Schema",
+                    "role": "Canonical gRPC wire schema compiled into `proxy_worker/protos` and injected into PyPI runtimes.",
                     "file": "src/proto/FunctionRpc.proto",
                     "line": 1,
                     "details": [
@@ -926,6 +1003,7 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 },
             ],
             "edges": [
+                {"id": "e313-0", "source": "n313-host", "target": "n313-proto", "kind": "grpc-wire", "label": "ServerDuplexChannel"},
                 {"id": "e313-1", "source": "n313-proto", "target": "n313-grpc", "kind": "grpc-wire", "label": "EventStream (grpcio)"},
                 {"id": "e313-2", "source": "n313-grpc", "target": "n313-router", "kind": "thread-queue", "label": "ContextEnabledTask / Queue"},
                 {"id": "e313-3", "source": "n313-router", "target": "n313-rtv2", "kind": "inproc-contract", "label": "WorkerRequest (V2)"},
@@ -1005,7 +1083,8 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 "hotPathOverhead": "Rust prost -> PyO3 tuple -> native_invocation.py -> python-library Datum (0 protobuf)",
             },
             "containers": [
-                {"id": "c315-host", "label": "Host & Wire Contract", "parentId": None, "tone": "proto"},
+                {"id": "c315-host", "label": "Functions Host (.NET — azure-functions-host)", "parentId": None, "tone": "host"},
+                {"id": "c315-wire", "label": "Wire Contract (worker-protobuf)", "parentId": None, "tone": "proto"},
                 {"id": "c315-proc", "label": "R2P2 Worker Process (Rust Binary + Embedded CPython 3.15)", "parentId": None, "tone": "rust-proc"},
                 {"id": "c315-rust", "label": "Layer 1: Native Rust Shell (workers/r2p2/src)", "parentId": "c315-proc", "tone": "rust"},
                 {"id": "c315-ffi", "label": "PyO3 FFI Thin Waist (GIL)", "parentId": "c315-proc", "tone": "bridge"},
@@ -1014,12 +1093,25 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
             ],
             "nodes": [
                 {
+                    "id": "n315-host",
+                    "repo": "functions-host",
+                    "containerId": "c315-host",
+                    "label": "Script Host (WorkerChannel)",
+                    "badge": "WebJobs.Script.Grpc",
+                    "role": ".NET Functions Host runtime spawning the compiled `r2p2` binary with zero Host-side protocol changes.",
+                    "file": "src/WebJobs.Script.Grpc/Channel/WorkerChannel.cs",
+                    "line": 1,
+                    "details": [
+                        "Speaks standard `ServerDuplexChannel` HTTP/2 gRPC to R2P2.",
+                    ],
+                },
+                {
                     "id": "n315-proto",
                     "repo": "language-worker-protobuf",
-                    "containerId": "c315-host",
-                    "label": "Host + FunctionRpc.proto",
+                    "containerId": "c315-wire",
+                    "label": "FunctionRpc.proto Contract",
                     "badge": "prost-build (build.rs)",
-                    "role": "Exact same Host gRPC contract, compiled at Rust build time into native `prost` structs (`pb.rs`).",
+                    "role": "Shared Host ↔ Worker gRPC contract compiled at Rust build time into native `prost` structs (`pb.rs`).",
                     "file": "src/proto/FunctionRpc.proto",
                     "line": 1,
                     "details": [
@@ -1145,6 +1237,7 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 },
             ],
             "edges": [
+                {"id": "e315-0", "source": "n315-host", "target": "n315-proto", "kind": "grpc-wire", "label": "ServerDuplexChannel"},
                 {"id": "e315-1", "source": "n315-proto", "target": "n315-tonic", "kind": "grpc-wire", "label": "EventStream (tonic + BytesCodec)"},
                 {"id": "e315-2", "source": "n315-tonic", "target": "n315-router", "kind": "thread-queue", "label": "tokio::spawn + mpsc<Bytes>"},
                 {"id": "e315-3", "source": "n315-router", "target": "n315-hot-ffi", "kind": "pyo3-hot", "label": "Hot Path: bridge::invoke()"},
@@ -1239,7 +1332,28 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
             flow["sequenceMermaid"] = compile_sequence_mermaid(flow)
 
         era_phases = phases_by_era.get(era["id"], [])
+        prefix_map = {"py312": "312", "py313_314": "313", "py315_r2p2": "315"}
+        pfx = prefix_map.get(era["id"])
         for ph in era_phases:
+            if pfx:
+                host_nid = f"n{pfx}-host"
+                proto_nid = f"n{pfx}-proto"
+                host_eid = f"p{pfx}-{ph['id']}-host"
+                is_reverse_log = ph["id"] == "worker_logs"
+                host_edge = {
+                    "id": host_eid,
+                    "source": proto_nid if is_reverse_log else host_nid,
+                    "target": host_nid if is_reverse_log else proto_nid,
+                    "kind": "grpc-wire",
+                    "label": "AppInsights / Kusto" if is_reverse_log else "WorkerChannel",
+                }
+                ph["topologyEdges"] = [host_edge, *ph["topologyEdges"]]
+                if proto_nid in ph["activeNodes"] and host_nid not in ph["activeNodes"]:
+                    ph["activeNodes"] = [host_nid, *ph["activeNodes"]]
+                for st in ph["steps"]:
+                    if proto_nid in st["activeNodes"] and host_nid not in st["activeNodes"]:
+                        st["activeNodes"] = [host_nid, *st["activeNodes"]]
+                        st["activeEdges"] = [host_eid, *st["activeEdges"]]
             ph["topologyMermaid"] = compile_topology_mermaid(era, ph["topologyEdges"])
             ph["sequenceMermaid"] = compile_sequence_mermaid(ph)
         era["phases"] = era_phases

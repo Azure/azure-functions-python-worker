@@ -2,11 +2,12 @@
 
 Interactive GitHub Pages site documenting the Azure Functions Python runtime architecture across:
 
-- **4 Linked Repositories**:
-  - [`Azure/azure-functions-python-worker`](https://github.com/Azure/azure-functions-python-worker)
-  - [`Azure/azure-functions-python-library`](https://github.com/Azure/azure-functions-python-library)
-  - [`Azure/azure-functions-python-extensions`](https://github.com/Azure/azure-functions-python-extensions)
-  - [`Azure/azure-functions-language-worker-protobuf`](https://github.com/Azure/azure-functions-language-worker-protobuf)
+- **5 Linked Repositories**:
+  - [`Azure/azure-functions-host`](https://github.com/Azure/azure-functions-host) (.NET Script Host runtime)
+  - [`Azure/azure-functions-language-worker-protobuf`](https://github.com/Azure/azure-functions-language-worker-protobuf) (Host ↔ Worker `.proto` contract)
+  - [`Azure/azure-functions-python-worker`](https://github.com/Azure/azure-functions-python-worker) (Worker shells + V1/V2 runtimes)
+  - [`Azure/azure-functions-python-library`](https://github.com/Azure/azure-functions-python-library) (`azure-functions` SDK)
+  - [`Azure/azure-functions-python-extensions`](https://github.com/Azure/azure-functions-python-extensions) (HTTP v2, `SdkType` bindings, Agent runtimes)
 - **3 Worker Generations**: Python `≤ 3.12` (`workers/azure_functions_worker`), Python `3.13–3.14` (`workers/proxy_worker` + `runtimes/`), and Python `3.15+` (`workers/r2p2` + `PyO3` + `runtimes/`).
 - **7 Lifecycle Phases per Generation**: Worker Init, Specialization (Consumption), Metadata & Indexing, Functions Load (V1), Invocation, Worker Status, and Worker Logs (`RpcLog`).
 

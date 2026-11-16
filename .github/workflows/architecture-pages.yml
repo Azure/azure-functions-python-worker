@@ -39,6 +39,14 @@ jobs:
       - name: Checkout python-worker
         uses: actions/checkout@v4
 
+      - name: Checkout azure-functions-host (gRPC channel metadata)
+        uses: actions/checkout@v4
+        with:
+          repository: Azure/azure-functions-host
+          path: _sibling_repos/functions-host
+          depth: 1
+          sparse-checkout: src/WebJobs.Script.Grpc
+
       - name: Checkout azure-functions-python-library
         uses: actions/checkout@v4
         with:

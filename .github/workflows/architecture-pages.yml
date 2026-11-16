@@ -2,7 +2,7 @@ name: Architecture GitHub Pages
 
 on:
   push:
-    branches: [dev]
+    branches: [dev, vrdmr-docs-architecture-pages]
     paths:
       - "workers/**"
       - "runtimes/**"

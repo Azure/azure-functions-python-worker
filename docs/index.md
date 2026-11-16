@@ -22,7 +22,7 @@ Use the interactive explorer below to step through all **7 lifecycle phases** (`
 
 ## Documentation Map
 
-- **[Evolution Overview](architecture/overview.md)** — Side-by-side architectural matrix, performance benchmarks, and design trade-offs across `≤ 3.12`, `3.13–3.14`, and `3.15+`.
+- **[Evolution Overview](architecture/overview.md)** — Side-by-side architectural matrix and design trade-offs across `≤ 3.12`, `3.13–3.14`, and `3.15+`.
 - **[5-Repository Ecosystem](architecture/ecosystem.md)** — How `azure-functions-host`, `azure-functions-language-worker-protobuf`, `azure-functions-python-worker`, `azure-functions-python-library`, and `azure-functions-python-extensions` fit together.
 - **[Python ≤ 3.12 (Monolith)](architecture/python-312.md)** — Single-package `grpcio` + `google.protobuf` worker and its 7 lifecycle flows.
 - **[Python 3.13 – 3.14 (Proxy Split)](architecture/python-313-314.md)** — Decoupled `proxy_worker` transport shell, `WorkerRequest` seam, `protos` injection, and pluggable PyPI runtimes.

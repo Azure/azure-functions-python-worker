@@ -37,7 +37,6 @@ flowchart TB
 | **Customer Protobuf Collisions** | Vulnerable (`google.protobuf` C descriptor pool shared) | Mitigated via isolation, still shares C descriptor pool | **Eliminated permanently** — worker loads zero `google.protobuf` |
 | **`WorkerStatusRequest` Probe** | Handled on Python `asyncio` loop (contends on GIL) | Short-circuited in `proxy_worker` (still contends on GIL) | **Zero-GIL pure Rust reply** (`src/bridge.rs`) |
 | **V2 Function Indexing Phase** | Lazy in `FunctionsMetadataRequest` by default (`PYTHON_ENABLE_INIT_INDEXING` opt-in) | Eager during `WorkerInitRequest` / `EnvironmentReload` | Eager during `WorkerInitRequest` / `EnvironmentReload` |
-| **Measured Throughput (GIL)** | Baseline (~339 req/s, p50 145 ms) | Parity (~339 req/s; PyPI agility win) | **+122% (754 req/s, p50 64 ms)** |
 
 ---
 
@@ -51,4 +50,4 @@ Even with the 3.13 split, `proxy_worker` remained written in Python and linked `
 
 1. **New Python release bottleneck**: `grpcio` and `protobuf` C-extension wheels routinely lag new CPython releases, blocking day-one Python 3.15+ support on Azure Functions.
 2. **Descriptor-pool collisions**: Sharing an interpreter between worker `protobuf` and customer-pinned `protobuf` packages caused recurring packaging friction.
-3. **Transport overhead**: Replacing `grpcio` + Python protobuf marshaling with native `tonic` + `prost` + a direct `PyO3` `Datum`-tuple FFI seam (`native_invocation.py`) delivered **+122% higher throughput** on the standard GIL build while keeping `runtimes/v1`, `runtimes/v2`, and customer code 100% Python.
+3. **Transport overhead**: Replacing `grpcio` + Python protobuf marshaling with native `tonic` + `prost` + a direct `PyO3` `Datum`-tuple FFI seam (`native_invocation.py`) eliminates Python-side wire serialization overhead on the standard GIL build while keeping `runtimes/v1`, `runtimes/v2`, and customer code 100% Python.

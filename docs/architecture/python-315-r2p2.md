@@ -14,7 +14,7 @@ Rust owns every byte on the Host wire using **`tonic`** (HTTP/2 gRPC + `BytesCod
 ### 2. Dual FFI Execution Paths (Hot Native Seam vs Control Adapter)
 After indexing, `main.rs` memoizes `needs_control_path(function_id)` once per function:
 
-- **Hot Native Path (`needs_control_path == false`)**: Standard triggers and bindings (`HttpRequest`, `HttpResponse`, `QueueMessage`, `TimerRequest`, `Out[T]`) are decoded by `prost` in Rust, converted by `src/convert.rs` into compact `(type_tag, primitive_or_dict)` **PyO3 datum tuples**, and passed straight into `azure_functions_runtime.native_invocation`—delivering **+122% higher req/s** (`754` vs `339` req/s on the GIL build).
+- **Hot Native Path (`needs_control_path == false`)**: Standard triggers and bindings (`HttpRequest`, `HttpResponse`, `QueueMessage`, `TimerRequest`, `Out[T]`) are decoded by `prost` in Rust, converted by `src/convert.rs` into compact `(type_tag, primitive_or_dict)` **PyO3 datum tuples**, and passed straight into `azure_functions_runtime.native_invocation` with zero Python protobuf marshaling.
 - **Control & Extensions Path (`needs_control_path == true` or lifecycle messages)**: `WorkerInit`, `EnvironmentReload`, `FunctionsMetadata`, `FunctionLoad`, and functions using `python-extensions` (`http_v2` ASGI/FastAPI streaming or `SdkType` deferred bindings) convert `prost` structs to `PyDict`s (`src/control.rs`) and run the standard `handle_event.py` coroutines against `workers/r2p2/bridge/protos_adapter.py` (a pure-Python `protos` stand-in).
 
 ### 3. Zero-GIL Scale Probes & Lock-Free `LogSink`
@@ -464,7 +464,7 @@ flowchart TB
 
 ---
 
-- **Execution Scope:** Every Trigger Execution (+122% Throughput on Hot Path)
+- **Execution Scope:** Every Function Trigger Execution
 
 
 ---

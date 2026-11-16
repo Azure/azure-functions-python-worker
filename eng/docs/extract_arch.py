@@ -1124,7 +1124,7 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
             "packagePath": "workers/r2p2 + runtimes/{v1,v2}",
             "launcherPath": "workers/r2p2 (compiled native Rust binary)",
             "status": "Next-Gen Architecture (Python 3.15+)",
-            "tagline": "Native Rust (`tonic` + `prost` + `tokio`) embedding CPython via `PyO3` — zero Python `grpcio`/`protobuf`, +122% req/s.",
+            "tagline": "Native Rust (`tonic` + `prost` + `tokio`) embedding CPython via `PyO3` — zero Python `grpcio`/`protobuf`.",
             "summary": (
                 "R2P2 replaces the Python proxy worker with a native Rust binary that compiles "
                 "`FunctionRpc.proto` via `prost`/`tonic` and embeds `libpython` (GIL) via `PyO3`. "
@@ -1135,7 +1135,7 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
             ),
             "tradeoffs": [
                 {"kind": "strength", "text": "Day-1 Python 3.15+ support: zero wait on `grpcio` or `google.protobuf` C-extension wheels."},
-                {"kind": "strength", "text": "+122% throughput (754 vs 339 req/s, p50 64ms vs 145ms) on GIL build via native `tonic`/`prost` + PyO3 datum tuples."},
+                {"kind": "strength", "text": "Native `tonic`/`prost` wire serialization + direct PyO3 datum-tuple invocation on the GIL build."},
                 {"kind": "strength", "text": "Complete transport isolation: zero `google.protobuf` or `grpcio` loaded in `sys.modules`."},
                 {"kind": "pain", "text": "Dual FFI paths (`invoke_native` hot path vs `handle_invocation_control` for HTTP-v2 / `SdkType` extensions)."},
             ],
@@ -1330,7 +1330,7 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                         {"from": "rust", "to": "ffi", "message": "prost decode -> convert::typed_data_to_tuple", "activeNodes": ["n315-router", "n315-hot-ffi"], "activeEdges": ["e315-3"], "payload": "Rust TypedData -> compact PyTuple"},
                         {"from": "ffi", "to": "native", "message": "Python::attach -> invoke_native(fn_id, inputs, meta)", "activeNodes": ["n315-hot-ffi", "n315-native-py"], "activeEdges": ["e315-5"], "payload": "Zero Python protobuf objects created"},
                         {"from": "native", "to": "lib", "message": "Decode azure.functions Datum + execute handler", "activeNodes": ["n315-native-py", "n315-lib"], "activeEdges": ["e315-8"], "payload": "HttpRequest / QueueMessage -> User fn"},
-                        {"from": "lib", "to": "host", "message": "Return tuple -> prost encode -> mpsc tx", "isReturn": True, "activeNodes": ["n315-lib", "n315-native-py", "n315-hot-ffi", "n315-tonic", "n315-proto"], "activeEdges": ["e315-8", "e315-5", "e315-3", "e315-2", "e315-1"], "payload": "+122% throughput vs Python proxy"},
+                        {"from": "lib", "to": "host", "message": "Return tuple -> prost encode -> mpsc tx", "isReturn": True, "activeNodes": ["n315-lib", "n315-native-py", "n315-hot-ffi", "n315-tonic", "n315-proto"], "activeEdges": ["e315-8", "e315-5", "e315-3", "e315-2", "e315-1"], "payload": "StreamingMessage(InvocationResponse) bytes"},
                     ],
                 },
                 {

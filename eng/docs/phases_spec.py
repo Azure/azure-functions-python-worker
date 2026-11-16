@@ -685,7 +685,7 @@ def get_py315_phases() -> list[dict[str, Any]]:
             "id": "invocation",
             "title": "5. Worker Invocation Flow (Dual Path: Native Datum Tuples vs Extensions)",
             "proto": "InvocationRequest → [Hot: bridge::invoke | Ext: bridge::handle] → InvocationResponse",
-            "scope": "Every Trigger Execution (+122% Throughput on Hot Path)",
+            "scope": "Every Function Trigger Execution",
             "summary": (
                 "`main.rs` spawns a concurrent task per request and checks memoized `needs_control_path(function_id)`: "
                 "**(A) Hot Path** (standard V2/V1 `python-library` bindings) converts `prost` `TypedData` directly "
@@ -718,7 +718,7 @@ def get_py315_phases() -> list[dict[str, Any]]:
                 {"from": "rust", "to": "hot", "message": "[Hot Path] spawn_blocking -> bridge::invoke(&req)", "payload": "typed_data_to_tuple() converts inputs in Rust", "activeNodes": ["n315-router", "n315-hot-ffi"], "activeEdges": ["p315-v3"]},
                 {"from": "hot", "to": "native", "message": "Python::attach -> invoke_native(fn_id, inputs, meta)", "payload": "_InvocShim + OTel context; zero Python protobuf", "activeNodes": ["n315-hot-ffi", "n315-native-py"], "activeEdges": ["p315-v4"]},
                 {"from": "native", "to": "app", "message": "Decode python-library Datum + run sync/async handler", "payload": "(Or via handle_invocation_control -> http_v2 / SdkType if Extension)", "activeNodes": ["n315-native-py", "n315-lib", "n315-rt", "n315-ext"], "activeEdges": ["p315-v5", "p315-v8", "p315-v9"]},
-                {"from": "app", "to": "host", "message": "tuple_to_typed_data -> prost encode -> mpsc<Bytes>", "isReturn": True, "payload": "754 req/s vs 339 req/s (+122% on GIL build)", "activeNodes": ["n315-lib", "n315-native-py", "n315-hot-ffi", "n315-tonic", "n315-proto"], "activeEdges": ["p315-v5", "p315-v4", "p315-v3", "p315-v1"]},
+                {"from": "app", "to": "host", "message": "tuple_to_typed_data -> prost encode -> mpsc<Bytes>", "isReturn": True, "payload": "StreamingMessage(InvocationResponse) sent over EventStream", "activeNodes": ["n315-lib", "n315-native-py", "n315-hot-ffi", "n315-tonic", "n315-proto"], "activeEdges": ["p315-v5", "p315-v4", "p315-v3", "p315-v1"]},
             ],
         },
         # 6. Worker Status

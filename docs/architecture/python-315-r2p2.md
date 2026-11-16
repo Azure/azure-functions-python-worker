@@ -30,7 +30,7 @@ After indexing, `main.rs` memoizes `needs_control_path(function_id)` once per fu
 ### Full Static Topology (Mermaid)
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c315_host["Functions Host (.NET — azure-functions-host)"]
     n315_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -52,8 +52,10 @@ flowchart LR
       n315_rt["Runtime handle_event + http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c315_eco["SDK, Extensions & Customer Function App"]
+  subgraph c315_lib["Azure/azure-functions-python-library"]
     n315_lib["azure-functions (Datum + Decorators)<br/>(python-library)"]
+  end
+  subgraph c315_ext["Azure/azure-functions-python-extensions"]
     n315_ext["extensions (HTTP-v2 FastAPI & SdkType)<br/>(python-extensions)"]
   end
   n315_host -->|"ServerDuplexChannel"| n315_proto
@@ -146,7 +148,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c315_host["Functions Host (.NET — azure-functions-host)"]
     n315_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -168,8 +170,10 @@ flowchart LR
       n315_rt["Runtime handle_event + http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c315_eco["SDK, Extensions & Customer Function App"]
+  subgraph c315_lib["Azure/azure-functions-python-library"]
     n315_lib["azure-functions (Datum + Decorators)<br/>(python-library)"]
+  end
+  subgraph c315_ext["Azure/azure-functions-python-extensions"]
     n315_ext["extensions (HTTP-v2 FastAPI & SdkType)<br/>(python-extensions)"]
   end
   n315_host -->|"WorkerChannel"| n315_proto
@@ -235,7 +239,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c315_host["Functions Host (.NET — azure-functions-host)"]
     n315_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -257,8 +261,10 @@ flowchart LR
       n315_rt["Runtime handle_event + http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c315_eco["SDK, Extensions & Customer Function App"]
+  subgraph c315_lib["Azure/azure-functions-python-library"]
     n315_lib["azure-functions (Datum + Decorators)<br/>(python-library)"]
+  end
+  subgraph c315_ext["Azure/azure-functions-python-extensions"]
     n315_ext["extensions (HTTP-v2 FastAPI & SdkType)<br/>(python-extensions)"]
   end
   n315_host -->|"WorkerChannel"| n315_proto
@@ -322,7 +328,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c315_host["Functions Host (.NET — azure-functions-host)"]
     n315_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -344,8 +350,10 @@ flowchart LR
       n315_rt["Runtime handle_event + http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c315_eco["SDK, Extensions & Customer Function App"]
+  subgraph c315_lib["Azure/azure-functions-python-library"]
     n315_lib["azure-functions (Datum + Decorators)<br/>(python-library)"]
+  end
+  subgraph c315_ext["Azure/azure-functions-python-extensions"]
     n315_ext["extensions (HTTP-v2 FastAPI & SdkType)<br/>(python-extensions)"]
   end
   n315_host -->|"WorkerChannel"| n315_proto
@@ -409,7 +417,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c315_host["Functions Host (.NET — azure-functions-host)"]
     n315_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -431,8 +439,10 @@ flowchart LR
       n315_rt["Runtime handle_event + http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c315_eco["SDK, Extensions & Customer Function App"]
+  subgraph c315_lib["Azure/azure-functions-python-library"]
     n315_lib["azure-functions (Datum + Decorators)<br/>(python-library)"]
+  end
+  subgraph c315_ext["Azure/azure-functions-python-extensions"]
     n315_ext["extensions (HTTP-v2 FastAPI & SdkType)<br/>(python-extensions)"]
   end
   n315_host -->|"WorkerChannel"| n315_proto
@@ -497,7 +507,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c315_host["Functions Host (.NET — azure-functions-host)"]
     n315_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -519,8 +529,10 @@ flowchart LR
       n315_rt["Runtime handle_event + http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c315_eco["SDK, Extensions & Customer Function App"]
+  subgraph c315_lib["Azure/azure-functions-python-library"]
     n315_lib["azure-functions (Datum + Decorators)<br/>(python-library)"]
+  end
+  subgraph c315_ext["Azure/azure-functions-python-extensions"]
     n315_ext["extensions (HTTP-v2 FastAPI & SdkType)<br/>(python-extensions)"]
   end
   n315_host -->|"WorkerChannel"| n315_proto
@@ -585,7 +597,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c315_host["Functions Host (.NET — azure-functions-host)"]
     n315_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -607,8 +619,10 @@ flowchart LR
       n315_rt["Runtime handle_event + http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c315_eco["SDK, Extensions & Customer Function App"]
+  subgraph c315_lib["Azure/azure-functions-python-library"]
     n315_lib["azure-functions (Datum + Decorators)<br/>(python-library)"]
+  end
+  subgraph c315_ext["Azure/azure-functions-python-extensions"]
     n315_ext["extensions (HTTP-v2 FastAPI & SdkType)<br/>(python-extensions)"]
   end
   n315_host -->|"WorkerChannel"| n315_proto
@@ -672,7 +686,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c315_host["Functions Host (.NET — azure-functions-host)"]
     n315_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -694,8 +708,10 @@ flowchart LR
       n315_rt["Runtime handle_event + http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c315_eco["SDK, Extensions & Customer Function App"]
+  subgraph c315_lib["Azure/azure-functions-python-library"]
     n315_lib["azure-functions (Datum + Decorators)<br/>(python-library)"]
+  end
+  subgraph c315_ext["Azure/azure-functions-python-extensions"]
     n315_ext["extensions (HTTP-v2 FastAPI & SdkType)<br/>(python-extensions)"]
   end
   n315_proto -->|"AppInsights / Kusto"| n315_host

@@ -15,7 +15,7 @@ Transport (`grpcio` + `google.protobuf`), `DependencyManager`, function indexing
 ### Full Static Topology (Mermaid)
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c312_host["Functions Host (.NET — azure-functions-host)"]
     n312_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -34,8 +34,10 @@ flowchart LR
       n312_bind["Bindings, SharedMem & http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c312_eco["SDK, Extensions & Customer App"]
-    n312_sdk["azure-functions SDK<br/>(python-library)"]
+  subgraph c312_lib["Azure/azure-functions-python-library"]
+    n312_sdk["azure-functions SDK & User App<br/>(python-library)"]
+  end
+  subgraph c312_ext["Azure/azure-functions-python-extensions"]
     n312_ext["azurefunctions-extensions-*<br/>(python-extensions)"]
   end
   n312_host -->|"ServerDuplexChannel"| n312_proto
@@ -61,7 +63,7 @@ flowchart LR
 | **DependencyManager** | `python-worker` | [`workers/azure_functions_worker/utils/dependency.py:L25`](https://github.com/Azure/azure-functions-python-worker/blob/dev/workers/azure_functions_worker/utils/dependency.py#L25) | Manages worker-first placeholder boot vs customer `.python_packages` promotion on Init/Specialization. |
 | **Loader & ExtensionManager** | `python-worker` | [`workers/azure_functions_worker/loader.py:L249`](https://github.com/Azure/azure-functions-python-worker/blob/dev/workers/azure_functions_worker/loader.py#L249) | Indexes V2 `@app` decorators or V1 `function.json` files and invokes `AppExtensionBase` hooks. |
 | **Bindings, SharedMem & http_v2** | `python-worker` | [`workers/azure_functions_worker/http_v2.py:L261`](https://github.com/Azure/azure-functions-python-worker/blob/dev/workers/azure_functions_worker/http_v2.py#L261) | Converts `protos.TypedData` <-> `Datum`, manages shared-memory rings, and coordinates HTTP v2 streaming. |
-| **azure-functions SDK** | `python-library` | [`azure/functions/meta.py`](https://github.com/Azure/azure-functions-python-library/blob/dev/azure/functions/meta.py) | Customer decorators, trigger/binding models (`HttpRequest`, `QueueMessage`), and `Datum` converters. |
+| **azure-functions SDK & User App** | `python-library` | [`azure/functions/meta.py`](https://github.com/Azure/azure-functions-python-library/blob/dev/azure/functions/meta.py) | Customer decorators, trigger/binding models (`HttpRequest`, `QueueMessage`), and `Datum` converters. |
 | **azurefunctions-extensions-*** | `python-extensions` | [`azurefunctions-extensions-base/azurefunctions/extensions/base/sdkType.py`](https://github.com/Azure/azure-functions-python-extensions/blob/dev/azurefunctions-extensions-base/azurefunctions/extensions/base/sdkType.py) | Optional HTTP v2 ASGI streaming (`WebApp`) and deferred SDK bindings (`BlobClient`, etc.). |
 
 <!-- END AUTO-GENERATED: py312-components -->
@@ -128,7 +130,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c312_host["Functions Host (.NET — azure-functions-host)"]
     n312_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -147,8 +149,10 @@ flowchart LR
       n312_bind["Bindings, SharedMem & http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c312_eco["SDK, Extensions & Customer App"]
-    n312_sdk["azure-functions SDK<br/>(python-library)"]
+  subgraph c312_lib["Azure/azure-functions-python-library"]
+    n312_sdk["azure-functions SDK & User App<br/>(python-library)"]
+  end
+  subgraph c312_ext["Azure/azure-functions-python-extensions"]
     n312_ext["azurefunctions-extensions-*<br/>(python-extensions)"]
   end
   n312_host -->|"WorkerChannel"| n312_proto
@@ -214,7 +218,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c312_host["Functions Host (.NET — azure-functions-host)"]
     n312_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -233,8 +237,10 @@ flowchart LR
       n312_bind["Bindings, SharedMem & http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c312_eco["SDK, Extensions & Customer App"]
-    n312_sdk["azure-functions SDK<br/>(python-library)"]
+  subgraph c312_lib["Azure/azure-functions-python-library"]
+    n312_sdk["azure-functions SDK & User App<br/>(python-library)"]
+  end
+  subgraph c312_ext["Azure/azure-functions-python-extensions"]
     n312_ext["azurefunctions-extensions-*<br/>(python-extensions)"]
   end
   n312_host -->|"WorkerChannel"| n312_proto
@@ -299,7 +305,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c312_host["Functions Host (.NET — azure-functions-host)"]
     n312_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -318,8 +324,10 @@ flowchart LR
       n312_bind["Bindings, SharedMem & http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c312_eco["SDK, Extensions & Customer App"]
-    n312_sdk["azure-functions SDK<br/>(python-library)"]
+  subgraph c312_lib["Azure/azure-functions-python-library"]
+    n312_sdk["azure-functions SDK & User App<br/>(python-library)"]
+  end
+  subgraph c312_ext["Azure/azure-functions-python-extensions"]
     n312_ext["azurefunctions-extensions-*<br/>(python-extensions)"]
   end
   n312_host -->|"WorkerChannel"| n312_proto
@@ -383,7 +391,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c312_host["Functions Host (.NET — azure-functions-host)"]
     n312_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -402,8 +410,10 @@ flowchart LR
       n312_bind["Bindings, SharedMem & http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c312_eco["SDK, Extensions & Customer App"]
-    n312_sdk["azure-functions SDK<br/>(python-library)"]
+  subgraph c312_lib["Azure/azure-functions-python-library"]
+    n312_sdk["azure-functions SDK & User App<br/>(python-library)"]
+  end
+  subgraph c312_ext["Azure/azure-functions-python-extensions"]
     n312_ext["azurefunctions-extensions-*<br/>(python-extensions)"]
   end
   n312_host -->|"WorkerChannel"| n312_proto
@@ -467,7 +477,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c312_host["Functions Host (.NET — azure-functions-host)"]
     n312_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -486,8 +496,10 @@ flowchart LR
       n312_bind["Bindings, SharedMem & http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c312_eco["SDK, Extensions & Customer App"]
-    n312_sdk["azure-functions SDK<br/>(python-library)"]
+  subgraph c312_lib["Azure/azure-functions-python-library"]
+    n312_sdk["azure-functions SDK & User App<br/>(python-library)"]
+  end
+  subgraph c312_ext["Azure/azure-functions-python-extensions"]
     n312_ext["azurefunctions-extensions-*<br/>(python-extensions)"]
   end
   n312_host -->|"WorkerChannel"| n312_proto
@@ -549,7 +561,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c312_host["Functions Host (.NET — azure-functions-host)"]
     n312_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -568,8 +580,10 @@ flowchart LR
       n312_bind["Bindings, SharedMem & http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c312_eco["SDK, Extensions & Customer App"]
-    n312_sdk["azure-functions SDK<br/>(python-library)"]
+  subgraph c312_lib["Azure/azure-functions-python-library"]
+    n312_sdk["azure-functions SDK & User App<br/>(python-library)"]
+  end
+  subgraph c312_ext["Azure/azure-functions-python-extensions"]
     n312_ext["azurefunctions-extensions-*<br/>(python-extensions)"]
   end
   n312_host -->|"WorkerChannel"| n312_proto
@@ -631,7 +645,7 @@ sequenceDiagram
 ---
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph c312_host["Functions Host (.NET — azure-functions-host)"]
     n312_host["Script Host (WorkerChannel)<br/>(functions-host)"]
   end
@@ -650,8 +664,10 @@ flowchart LR
       n312_bind["Bindings, SharedMem & http_v2<br/>(python-worker)"]
     end
   end
-  subgraph c312_eco["SDK, Extensions & Customer App"]
-    n312_sdk["azure-functions SDK<br/>(python-library)"]
+  subgraph c312_lib["Azure/azure-functions-python-library"]
+    n312_sdk["azure-functions SDK & User App<br/>(python-library)"]
+  end
+  subgraph c312_ext["Azure/azure-functions-python-extensions"]
     n312_ext["azurefunctions-extensions-*<br/>(python-extensions)"]
   end
   n312_proto -->|"AppInsights / Kusto"| n312_host

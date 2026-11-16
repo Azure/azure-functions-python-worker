@@ -52,7 +52,7 @@ class TestExtractArch(unittest.TestCase):
             for phase in era["phases"]:
                 self.assertTrue(phase["topologyEdges"])
                 self.assertTrue(phase["steps"])
-                self.assertIn("flowchart LR", phase["topologyMermaid"])
+                self.assertIn("flowchart TB", phase["topologyMermaid"])
                 self.assertIn("sequenceDiagram", phase["sequenceMermaid"])
 
     def test_live_rust_and_proto_extraction(self) -> None:

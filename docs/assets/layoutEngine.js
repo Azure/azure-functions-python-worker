@@ -1,12 +1,16 @@
 /**
- * Deterministic Compound Sugiyama / Swimlane Architecture Layout Engine.
+ * Deterministic 2D Tiered Compound Architecture Layout Engine.
  *
- * Computes topological ranks, nested container swimlanes, port ordering, and
- * bidirectional cubic/orthogonal SVG paths with zero hardcoded coordinates.
+ * Balances horizontal and vertical aspect ratio by:
+ *  1. Grouping peer root containers into topological tiers (stacking independent
+ *     repos like `python-library` and `python-extensions` in the same column).
+ *  2. Using orthogonal intra-container stacking (vertical leaf stacks inside
+ *     left-to-right swimlanes) to prevent 1D horizontal sprawl.
+ *  3. Allocating ports per card face (top/bottom/left/right) with non-overlapping corridors.
  */
 (function () {
-  const NODE_W = 252;
-  const NODE_H = 92;
+  const NODE_W = 228;
+  const NODE_H = 86;
 
   function computeRanks(nodes, edges) {
     const ids = nodes.map((n) => n.id);
@@ -36,9 +40,29 @@
     return memo;
   }
 
+  function shiftSubtree(box, dx, dy, subById, nodePositions) {
+    box.x += dx;
+    box.y += dy;
+    for (const sid of box.subIds || []) {
+      const sb = subById.get(sid);
+      if (sb) {
+        sb.x += dx;
+        sb.y += dy;
+      }
+    }
+    for (const lid of box.leafIds || []) {
+      const np = nodePositions.get(lid);
+      if (np) {
+        np.x += dx;
+        np.y += dy;
+      }
+    }
+  }
+
   function layoutCompoundGraph(era, orientation, edgesOverride) {
     const isLR = orientation !== "TB";
     const activeEdgeList = edgesOverride || era.edges;
+    const containerById = new Map(era.containers.map((c) => [c.id, c]));
     const childContainers = new Map();
     for (const c of era.containers) {
       const pid = c.parentId || "__root__";
@@ -64,72 +88,92 @@
       return own;
     }
 
-    const rootContainers = [...(childContainers.get("__root__") || [])].sort((a, b) => {
-      const la = descendantLeaves(a.id);
-      const lb = descendantLeaves(b.id);
-      const avgA = la.length ? la.reduce((s, n) => s + (ranks.get(n.id) || 0), 0) / la.length : 0;
-      const avgB = lb.length ? lb.reduce((s, n) => s + (ranks.get(n.id) || 0), 0) / lb.length : 0;
-      return avgA - avgB;
-    });
+    function rootOfContainer(cid) {
+      let cur = containerById.get(cid);
+      while (cur && cur.parentId) {
+        cur = containerById.get(cur.parentId);
+      }
+      return cur ? cur.id : cid;
+    }
 
-    const PAD_TOP = 44;
-    const PAD_SIDE = 22;
-    const PAD_BOTTOM = 22;
-    const COL_GAP = isLR ? 132 : 44;
-    const ROW_GAP = isLR ? 34 : 84;
-    const SUB_GAP = isLR ? 108 : 64;
-    const ROOT_GAP = isLR ? 138 : 92;
+    const nodeRootMap = new Map(era.nodes.map((n) => [n.id, rootOfContainer(n.containerId)]));
+    const rawRoots = [...(childContainers.get("__root__") || [])];
 
-    function layoutLeafGroup(leaves, originX, originY) {
-      if (!leaves.length) return { w: 180, h: 90 };
-      const uniqueRanks = [...new Set(leaves.map((n) => ranks.get(n.id) || 0))].sort((a, b) => a - b);
-      const rankIndex = new Map(uniqueRanks.map((r, i) => [r, i]));
+    // Compute root-container topological tier from cross-root edges when c.tier is omitted
+    const rootPreds = new Map(rawRoots.map((r) => [r.id, new Set()]));
+    for (const e of era.edges) {
+      const sr = nodeRootMap.get(e.source);
+      const tr = nodeRootMap.get(e.target);
+      if (sr && tr && sr !== tr && rootPreds.has(tr)) {
+        rootPreds.get(tr).add(sr);
+      }
+    }
+    const computedTier = new Map();
+    const visitingRoot = new Set();
+    function getTier(rc) {
+      if (typeof rc.tier === "number") return rc.tier;
+      if (computedTier.has(rc.id)) return computedTier.get(rc.id);
+      if (visitingRoot.has(rc.id)) return 0;
+      visitingRoot.add(rc.id);
+      let t = 0;
+      for (const pId of rootPreds.get(rc.id) || []) {
+        const pObj = containerById.get(pId);
+        if (pObj) t = Math.max(t, getTier(pObj) + 1);
+      }
+      visitingRoot.delete(rc.id);
+      computedTier.set(rc.id, t);
+      return t;
+    }
 
-      const buckets = new Map();
-      for (const n of leaves) {
-        const ri = rankIndex.get(ranks.get(n.id) || 0) || 0;
-        if (!buckets.has(ri)) buckets.set(ri, []);
-        buckets.get(ri).push(n);
+    const tiersMap = new Map();
+    for (const rc of rawRoots) {
+      const t = getTier(rc);
+      if (!tiersMap.has(t)) tiersMap.set(t, []);
+      tiersMap.get(t).push(rc);
+    }
+    const sortedTierKeys = [...tiersMap.keys()].sort((a, b) => a - b);
+
+    const PAD_TOP = 40;
+    const PAD_SIDE = 16;
+    const PAD_BOTTOM = 18;
+    const LEAF_COL_GAP = 48;
+    const LEAF_ROW_GAP = 48;
+    const SUB_GAP = 68;
+    const SUB_STACK_GAP = 48;
+    const PEER_ROOT_GAP = 50;
+    const TIER_GAP = 76;
+
+    // Orthogonal leaf placement: in LR mode leaves stack vertically (up to container.maxCols columns)
+    function layoutLeafGroup(containerObj, leaves, originX, originY) {
+      if (!leaves.length) return { w: NODE_W, h: NODE_H };
+      const ordered = [...leaves].sort((a, b) => (ranks.get(a.id) || 0) - (ranks.get(b.id) || 0));
+      const maxSpan = Math.max(1, containerObj?.maxCols || 1);
+
+      let cols, rows;
+      if (isLR) {
+        cols = Math.min(ordered.length, maxSpan);
+        rows = Math.ceil(ordered.length / cols);
+      } else {
+        rows = Math.min(ordered.length, maxSpan);
+        cols = Math.ceil(ordered.length / rows);
       }
 
-      let maxCrossCount = 1;
-      for (const arr of buckets.values()) {
-        maxCrossCount = Math.max(maxCrossCount, arr.length);
-      }
-
-      const numLayers = uniqueRanks.length;
-      const totalPrimary = isLR
-        ? numLayers * NODE_W + (numLayers - 1) * COL_GAP
-        : numLayers * NODE_H + (numLayers - 1) * ROW_GAP;
-      const totalCross = isLR
-        ? maxCrossCount * NODE_H + (maxCrossCount - 1) * ROW_GAP
-        : maxCrossCount * NODE_W + (maxCrossCount - 1) * COL_GAP;
-
-      for (const [layerIdx, arr] of buckets.entries()) {
-        const spanCross = isLR
-          ? arr.length * NODE_H + (arr.length - 1) * ROW_GAP
-          : arr.length * NODE_W + (arr.length - 1) * COL_GAP;
-        const crossOffset = (totalCross - spanCross) / 2;
-
-        arr.forEach((node, idx) => {
-          const x = isLR
-            ? originX + layerIdx * (NODE_W + COL_GAP)
-            : originX + crossOffset + idx * (NODE_W + COL_GAP);
-          const y = isLR
-            ? originY + crossOffset + idx * (NODE_H + ROW_GAP)
-            : originY + layerIdx * (NODE_H + ROW_GAP);
-          nodePositions.set(node.id, { x, y, w: NODE_W, h: NODE_H, node });
-        });
-      }
+      ordered.forEach((node, idx) => {
+        const c = isLR ? idx % cols : Math.floor(idx / rows);
+        const r = isLR ? Math.floor(idx / cols) : idx % rows;
+        const x = originX + c * (NODE_W + LEAF_COL_GAP);
+        const y = originY + r * (NODE_H + LEAF_ROW_GAP);
+        nodePositions.set(node.id, { x, y, w: NODE_W, h: NODE_H, node });
+      });
 
       return {
-        w: isLR ? totalPrimary : totalCross,
-        h: isLR ? totalCross : totalPrimary,
+        w: cols * NODE_W + (cols - 1) * LEAF_COL_GAP,
+        h: rows * NODE_H + (rows - 1) * LEAF_ROW_GAP,
       };
     }
 
-    let cursorPrimary = 36;
-    const rootMetrics = rootContainers.map((rc) => {
+    // Build a root container at local (0, 0) and then translate into its tier slot
+    function buildRootBoxAtOrigin(rc) {
       const subs = [...(childContainers.get(rc.id) || [])].sort((a, b) => {
         const la = descendantLeaves(a.id);
         const lb = descendantLeaves(b.id);
@@ -137,224 +181,239 @@
         const avgB = lb.length ? lb.reduce((s, n) => s + (ranks.get(n.id) || 0), 0) / lb.length : 0;
         return avgA - avgB;
       });
-      return { rc, subs };
-    });
 
-    const placedRoots = [];
-    for (const { rc, subs } of rootMetrics) {
       if (subs.length === 0) {
         const leaves = leavesByContainer.get(rc.id) || [];
-        const startX = isLR ? cursorPrimary + PAD_SIDE : 36 + PAD_SIDE;
-        const startY = isLR ? 36 + PAD_TOP : cursorPrimary + PAD_TOP;
-        const inner = layoutLeafGroup(leaves, startX, startY);
-        const boxW = inner.w + PAD_SIDE * 2;
-        const boxH = inner.h + PAD_TOP + PAD_BOTTOM;
-        placedRoots.push({
+        const inner = layoutLeafGroup(rc, leaves, PAD_SIDE, PAD_TOP);
+        return {
           id: rc.id,
           label: rc.label,
           tone: rc.tone,
           isNested: false,
-          x: isLR ? cursorPrimary : 36,
-          y: isLR ? 36 : cursorPrimary,
-          w: boxW,
-          h: boxH,
+          x: 0,
+          y: 0,
+          w: inner.w + PAD_SIDE * 2,
+          h: inner.h + PAD_TOP + PAD_BOTTOM,
           leafIds: leaves.map((l) => l.id),
           subIds: [],
+        };
+      }
+
+      const stackSubs = rc.subFlow === "stack";
+      // Flow subs along primary axis unless subFlow === "stack" (which stacks along cross axis)
+      const subsHorizontal = isLR ? !stackSubs : stackSubs;
+      const gap = stackSubs ? SUB_STACK_GAP : SUB_GAP;
+
+      let cursor = subsHorizontal ? PAD_SIDE : PAD_TOP;
+      const localSubs = [];
+      let maxOrtho = 0;
+
+      for (const sub of subs) {
+        const leaves = leavesByContainer.get(sub.id) || [];
+        const sx = subsHorizontal ? cursor : PAD_SIDE;
+        const sy = subsHorizontal ? PAD_TOP : cursor;
+        const inner = layoutLeafGroup(sub, leaves, sx + PAD_SIDE, sy + PAD_TOP);
+        const sw = inner.w + PAD_SIDE * 2;
+        const sh = inner.h + PAD_TOP + PAD_BOTTOM;
+        localSubs.push({
+          id: sub.id,
+          label: sub.label,
+          tone: sub.tone,
+          isNested: true,
+          x: sx,
+          y: sy,
+          w: sw,
+          h: sh,
+          leafIds: leaves.map((l) => l.id),
         });
-        cursorPrimary += (isLR ? boxW : boxH) + ROOT_GAP;
-      } else {
-        let subCursor = (isLR ? cursorPrimary : 36) + PAD_SIDE;
-        if (!isLR) subCursor = cursorPrimary + PAD_TOP;
+        maxOrtho = Math.max(maxOrtho, subsHorizontal ? sh : sw);
+        cursor += (subsHorizontal ? sw : sh) + gap;
+      }
 
-        const subBoxes = [];
-        let maxSubCross = 0;
-
-        for (const sub of subs) {
-          const leaves = leavesByContainer.get(sub.id) || [];
-          const sx = isLR ? subCursor + PAD_SIDE : 36 + PAD_SIDE * 2;
-          const sy = isLR ? 36 + PAD_TOP * 2 : subCursor + PAD_TOP;
-          const inner = layoutLeafGroup(leaves, sx, sy);
-          const sw = inner.w + PAD_SIDE * 2;
-          const sh = inner.h + PAD_TOP + PAD_BOTTOM;
-          subBoxes.push({
-            id: sub.id,
-            label: sub.label,
-            tone: sub.tone,
-            isNested: true,
-            x: isLR ? subCursor : 36 + PAD_SIDE,
-            y: isLR ? 36 + PAD_TOP : subCursor,
-            w: sw,
-            h: sh,
-            leafIds: leaves.map((l) => l.id),
-          });
-          maxSubCross = Math.max(maxSubCross, isLR ? sh : sw);
-          subCursor += (isLR ? sw : sh) + SUB_GAP;
-        }
-
-        for (const sBox of subBoxes) {
-          const delta = isLR ? (maxSubCross - sBox.h) / 2 : (maxSubCross - sBox.w) / 2;
-          if (delta > 0) {
-            if (isLR) sBox.y += delta;
-            else sBox.x += delta;
-            for (const lid of sBox.leafIds) {
-              const np = nodePositions.get(lid);
-              if (np) {
-                if (isLR) np.y += delta;
-                else np.x += delta;
-              }
+      for (const sBox of localSubs) {
+        const delta = subsHorizontal ? (maxOrtho - sBox.h) / 2 : (maxOrtho - sBox.w) / 2;
+        if (delta > 0) {
+          if (subsHorizontal) sBox.y += delta;
+          else sBox.x += delta;
+          for (const lid of sBox.leafIds) {
+            const np = nodePositions.get(lid);
+            if (np) {
+              if (subsHorizontal) np.y += delta;
+              else np.x += delta;
             }
           }
-          containerBoxes.push(sBox);
         }
-
-        const totalSubSpan =
-          subBoxes.reduce((acc, b) => acc + (isLR ? b.w : b.h), 0) +
-          Math.max(0, subBoxes.length - 1) * SUB_GAP;
-        const boxW = isLR ? totalSubSpan + PAD_SIDE * 2 : maxSubCross + PAD_SIDE * 2;
-        const boxH = isLR ? maxSubCross + PAD_TOP + PAD_BOTTOM : totalSubSpan + PAD_TOP + PAD_BOTTOM;
-
-        placedRoots.push({
-          id: rc.id,
-          label: rc.label,
-          tone: rc.tone,
-          isNested: false,
-          x: isLR ? cursorPrimary : 36,
-          y: isLR ? 36 : cursorPrimary,
-          w: boxW,
-          h: boxH,
-          leafIds: descendantLeaves(rc.id).map((l) => l.id),
-          subIds: subBoxes.map((b) => b.id),
-        });
-        cursorPrimary += (isLR ? boxW : boxH) + ROOT_GAP;
+        containerBoxes.push(sBox);
       }
+
+      const totalFlowSpan =
+        localSubs.reduce((acc, b) => acc + (subsHorizontal ? b.w : b.h), 0) +
+        Math.max(0, localSubs.length - 1) * gap;
+
+      return {
+        id: rc.id,
+        label: rc.label,
+        tone: rc.tone,
+        isNested: false,
+        x: 0,
+        y: 0,
+        w: subsHorizontal ? totalFlowSpan + PAD_SIDE * 2 : maxOrtho + PAD_SIDE * 2,
+        h: subsHorizontal ? maxOrtho + PAD_TOP + PAD_BOTTOM : totalFlowSpan + PAD_TOP + PAD_BOTTOM,
+        leafIds: descendantLeaves(rc.id).map((l) => l.id),
+        subIds: localSubs.map((b) => b.id),
+      };
     }
 
-    const maxRootCross = Math.max(...placedRoots.map((r) => (isLR ? r.h : r.w)), 240);
-    const subById = new Map(containerBoxes.map((b) => [b.id, b]));
-    for (const rBox of placedRoots) {
-      const delta = isLR ? (maxRootCross - rBox.h) / 2 : (maxRootCross - rBox.w) / 2;
+    const subById = new Map();
+    const placedTiers = [];
+    const placedRoots = [];
+    let primaryCursor = 36;
+
+    for (const tk of sortedTierKeys) {
+      const peerRoots = tiersMap.get(tk) || [];
+      const builtPeers = peerRoots.map((rc) => {
+        const box = buildRootBoxAtOrigin(rc);
+        for (const sb of containerBoxes) subById.set(sb.id, sb);
+        return box;
+      });
+
+      const tierPrimarySpan = Math.max(...builtPeers.map((b) => (isLR ? b.w : b.h)));
+      let crossCursor = 36;
+
+      for (const pBox of builtPeers) {
+        const primaryAlign = (tierPrimarySpan - (isLR ? pBox.w : pBox.h)) / 2;
+        const dx = isLR ? primaryCursor + primaryAlign : crossCursor;
+        const dy = isLR ? crossCursor : primaryCursor + primaryAlign;
+        shiftSubtree(pBox, dx, dy, subById, nodePositions);
+        crossCursor += (isLR ? pBox.h : pBox.w) + PEER_ROOT_GAP;
+        placedRoots.push(pBox);
+      }
+
+      const tierCrossSpan = crossCursor - 36 - PEER_ROOT_GAP;
+      placedTiers.push({ peers: builtPeers, crossSpan: tierCrossSpan });
+      primaryCursor += tierPrimarySpan + TIER_GAP;
+    }
+
+    // Balance all tier columns along the cross axis
+    const maxTierCross = Math.max(...placedTiers.map((t) => t.crossSpan), 220);
+    for (const tier of placedTiers) {
+      const delta = (maxTierCross - tier.crossSpan) / 2;
       if (delta > 0) {
-        if (isLR) rBox.y += delta;
-        else rBox.x += delta;
-        for (const sid of rBox.subIds) {
-          const sb = subById.get(sid);
-          if (sb) {
-            if (isLR) sb.y += delta;
-            else sb.x += delta;
-          }
-        }
-        for (const lid of rBox.leafIds) {
-          const np = nodePositions.get(lid);
-          if (np) {
-            if (isLR) np.y += delta;
-            else np.x += delta;
-          }
+        for (const pBox of tier.peers) {
+          shiftSubtree(pBox, isLR ? 0 : delta, isLR ? delta : 0, subById, nodePositions);
         }
       }
     }
 
     const allContainers = [...placedRoots, ...containerBoxes];
 
-    const outPorts = new Map();
-    const inPorts = new Map();
-    for (const e of activeEdgeList) {
-      if (!outPorts.has(e.source)) outPorts.set(e.source, []);
-      outPorts.get(e.source).push(e.id);
-      if (!inPorts.has(e.target)) inPorts.set(e.target, []);
-      inPorts.get(e.target).push(e.id);
+    // Classify every edge's exit/entry card faces (top/bottom/left/right) and sort ports per face
+    const facePorts = new Map();
+    const edgeMeta = [];
+
+    function addPort(nodeId, face, edgeId, sortCoord) {
+      const key = `${nodeId}:${face}`;
+      if (!facePorts.has(key)) facePorts.set(key, []);
+      facePorts.get(key).push({ edgeId, sortCoord });
     }
 
-    for (const [, eids] of outPorts.entries()) {
-      eids.sort((a, b) => {
-        const ea = activeEdgeList.find((x) => x.id === a);
-        const eb = activeEdgeList.find((x) => x.id === b);
-        const pa = nodePositions.get(ea.target);
-        const pb = nodePositions.get(eb.target);
-        return isLR ? (pa?.y || 0) - (pb?.y || 0) : (pa?.x || 0) - (pb?.x || 0);
-      });
+    for (const e of activeEdgeList) {
+      const s = nodePositions.get(e.source);
+      const t = nodePositions.get(e.target);
+      if (!s || !t) continue;
+
+      const scx = s.x + s.w / 2;
+      const scy = s.y + s.h / 2;
+      const tcx = t.x + t.w / 2;
+      const tcy = t.y + t.h / 2;
+      const dx = tcx - scx;
+      const dy = tcy - scy;
+
+      let sFace, tFace, mode;
+      if (Math.abs(dx) < NODE_W * 0.68) {
+        mode = "V";
+        sFace = dy >= 0 ? "bottom" : "top";
+        tFace = dy >= 0 ? "top" : "bottom";
+        addPort(e.source, sFace, e.id, tcx);
+        addPort(e.target, tFace, e.id, scx);
+      } else if (dx > 0) {
+        mode = "H_FWD";
+        sFace = "right";
+        tFace = "left";
+        addPort(e.source, sFace, e.id, tcy);
+        addPort(e.target, tFace, e.id, scy);
+      } else {
+        mode = "H_REV";
+        sFace = "left";
+        tFace = "right";
+        addPort(e.source, sFace, e.id, tcy);
+        addPort(e.target, tFace, e.id, scy);
+      }
+      edgeMeta.push({ e, s, t, sFace, tFace, mode });
     }
-    for (const [, eids] of inPorts.entries()) {
-      eids.sort((a, b) => {
-        const ea = activeEdgeList.find((x) => x.id === a);
-        const eb = activeEdgeList.find((x) => x.id === b);
-        const pa = nodePositions.get(ea.source);
-        const pb = nodePositions.get(eb.source);
-        return isLR ? (pa?.y || 0) - (pb?.y || 0) : (pa?.x || 0) - (pb?.x || 0);
-      });
+
+    for (const list of facePorts.values()) {
+      list.sort((a, b) => a.sortCoord - b.sortCoord);
+    }
+
+    function portFraction(nodeId, face, edgeId) {
+      const list = facePorts.get(`${nodeId}:${face}`) || [{ edgeId }];
+      const idx = list.findIndex((x) => x.edgeId === edgeId);
+      return (Math.max(0, idx) + 1) / (list.length + 1);
     }
 
     const pairKeys = new Set(activeEdgeList.map((e) => `${e.source}->${e.target}`));
 
-    const routedEdges = activeEdgeList
-      .map((e, idx) => {
-        const s = nodePositions.get(e.source);
-        const t = nodePositions.get(e.target);
-        if (!s || !t) return null;
+    const routedEdges = edgeMeta.map(({ e, s, t, sFace, tFace, mode }, idx) => {
+      const hasReverse = pairKeys.has(`${e.target}->${e.source}`);
+      const sf = portFraction(e.source, sFace, e.id);
+      const tf = portFraction(e.target, tFace, e.id);
 
-        const hasReverse = pairKeys.has(`${e.target}->${e.source}`);
-        const sList = outPorts.get(e.source) || [e.id];
-        const tList = inPorts.get(e.target) || [e.id];
-        const sSlot = (sList.indexOf(e.id) + 1) / (sList.length + 1);
-        const tSlot = (tList.indexOf(e.id) + 1) / (tList.length + 1);
+      let x1, y1, x2, y2, path, labelX, labelY;
+      if (mode === "V") {
+        const downward = sFace === "bottom";
+        const laneShift = hasReverse ? (downward ? -22 : 22) : 0;
+        x1 = s.x + 28 + sf * (s.w - 56) + laneShift;
+        y1 = downward ? s.y + s.h : s.y;
+        x2 = t.x + 28 + tf * (t.w - 56) + laneShift;
+        y2 = downward ? t.y : t.y + t.h;
+        const dy = Math.max(24, Math.abs(y2 - y1) * 0.45);
+        path = downward
+          ? `M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`
+          : `M ${x1} ${y1} C ${x1} ${y1 - dy}, ${x2} ${y2 + dy}, ${x2} ${y2}`;
+        labelX = (x1 + x2) / 2;
+        labelY = (y1 + y2) / 2;
+      } else if (mode === "H_FWD") {
+        x1 = s.x + s.w;
+        x2 = t.x;
+        const laneShift = hasReverse ? -16 : 0;
+        y1 = s.y + 16 + sf * (s.h - 32) + laneShift;
+        y2 = t.y + 16 + tf * (t.h - 32) + laneShift;
+        const dx = Math.max(42, Math.abs(x2 - x1) * 0.44);
+        const bow = hasReverse ? -20 : 0;
+        path = `M ${x1} ${y1} C ${x1 + dx} ${y1 + bow}, ${x2 - dx} ${y2 + bow}, ${x2} ${y2}`;
+        const tParam = 0.48 + ((idx % 3) - 1) * 0.08;
+        labelX = x1 + (x2 - x1) * tParam;
+        labelY = y1 + (y2 - y1) * tParam + bow * 0.7;
+      } else {
+        x1 = s.x;
+        x2 = t.x + t.w;
+        const laneShift = hasReverse ? 16 : 0;
+        y1 = s.y + 16 + sf * (s.h - 32) + laneShift;
+        y2 = t.y + 16 + tf * (t.h - 32) + laneShift;
+        const dx = Math.max(42, Math.abs(x1 - x2) * 0.44);
+        const bow = hasReverse ? 22 : 0;
+        path = `M ${x1} ${y1} C ${x1 - dx} ${y1 + bow}, ${x2 + dx} ${y2 + bow}, ${x2} ${y2}`;
+        const tParam = 0.5 + ((idx % 3) - 1) * 0.08;
+        labelX = x1 + (x2 - x1) * tParam;
+        labelY = y1 + (y2 - y1) * tParam + bow * 0.7;
+      }
 
-        let x1, y1, x2, y2, path, labelX, labelY;
-        if (isLR) {
-          const sameColumn = Math.abs(s.x - t.x) < 20;
-          if (sameColumn) {
-            const xOff = hasReverse ? (s.y < t.y ? -22 : 22) : 0;
-            x1 = s.x + s.w * 0.5 + xOff;
-            y1 = s.y < t.y ? s.y + s.h : s.y;
-            x2 = t.x + t.w * 0.5 + xOff;
-            y2 = s.y < t.y ? t.y : t.y + t.h;
-            path = `M ${x1} ${y1} L ${x2} ${y2}`;
-            labelX = x1;
-            labelY = (y1 + y2) / 2;
-          } else if (s.x < t.x) {
-            x1 = s.x + s.w;
-            x2 = t.x;
-            const laneShift = hasReverse ? -18 : 0;
-            y1 = s.y + 18 + sSlot * (s.h - 36) + laneShift;
-            y2 = t.y + 18 + tSlot * (t.h - 36) + laneShift;
-            const dx = Math.max(48, Math.abs(x2 - x1) * 0.45);
-            const bow = hasReverse ? -24 : 0;
-            path = `M ${x1} ${y1} C ${x1 + dx} ${y1 + bow}, ${x2 - dx} ${y2 + bow}, ${x2} ${y2}`;
-            const tParam = 0.48 + ((idx % 3) - 1) * 0.06;
-            labelX = x1 + (x2 - x1) * tParam;
-            labelY = y1 + (y2 - y1) * tParam + bow * 0.72;
-          } else {
-            x1 = s.x;
-            x2 = t.x + t.w;
-            const laneShift = hasReverse ? 18 : 0;
-            y1 = s.y + 18 + sSlot * (s.h - 36) + laneShift;
-            y2 = t.y + 18 + tSlot * (t.h - 36) + laneShift;
-            const dx = Math.max(48, Math.abs(x1 - x2) * 0.45);
-            const bow = hasReverse ? 26 : 0;
-            path = `M ${x1} ${y1} C ${x1 - dx} ${y1 + bow}, ${x2 + dx} ${y2 + bow}, ${x2} ${y2}`;
-            const tParam = 0.5 + ((idx % 3) - 1) * 0.06;
-            labelX = x1 + (x2 - x1) * tParam;
-            labelY = y1 + (y2 - y1) * tParam + bow * 0.72;
-          }
-        } else {
-          const forward = s.y <= t.y;
-          const laneShift = hasReverse ? (forward ? -28 : 28) : 0;
-          x1 = s.x + 24 + sSlot * (s.w - 48) + laneShift;
-          y1 = forward ? s.y + s.h : s.y;
-          x2 = t.x + 24 + tSlot * (t.w - 48) + laneShift;
-          y2 = forward ? t.y : t.y + t.h;
-          const dy = Math.max(42, Math.abs(y2 - y1) * 0.45);
-          path = forward
-            ? `M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`
-            : `M ${x1} ${y1} C ${x1} ${y1 - dy}, ${x2} ${y2 + dy}, ${x2} ${y2}`;
-          labelX = (x1 + x2) / 2;
-          labelY = (y1 + y2) / 2;
-        }
+      return { ...e, x1, y1, x2, y2, path, labelX, labelY };
+    });
 
-        return { ...e, x1, y1, x2, y2, path, labelX, labelY };
-      })
-      .filter(Boolean);
-
-    const totalW = Math.max(...allContainers.map((c) => c.x + c.w), 800) + 48;
-    const totalH = Math.max(...allContainers.map((c) => c.y + c.h), 480) + 48;
+    const totalW = Math.max(...allContainers.map((c) => c.x + c.w), 640) + 44;
+    const totalH = Math.max(...allContainers.map((c) => c.y + c.h), 380) + 44;
 
     return {
       width: totalW,

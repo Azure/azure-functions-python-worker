@@ -156,15 +156,19 @@
         .map((c) => {
           const t = CONTAINER_TONES[c.tone] || CONTAINER_TONES.python;
           const r = c.isNested ? 9 : 13;
+          const rawTitle = c.label.toUpperCase();
+          const maxChars = Math.max(16, Math.floor((c.w - 22) / 6.3));
+          const displayTitle = rawTitle.length > maxChars ? rawTitle.slice(0, maxChars - 1) + "…" : rawTitle;
           return `
             <g>
+              <title>${esc(c.label)}</title>
               <rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="${r}"
                 fill="${t.fill}" stroke="${t.stroke}" stroke-opacity="0.52"
                 stroke-width="${c.isNested ? 1.3 : 1.7}"
                 ${c.isNested ? 'stroke-dasharray="6 4"' : ""} />
               <rect x="${c.x}" y="${c.y}" width="${c.w}" height="28" rx="${r}" fill="${t.head}" />
-              <text x="${c.x + 12}" y="${c.y + 18}" fill="${t.text}" font-size="10.5"
-                font-weight="700" letter-spacing="0.04em">${esc(c.label.toUpperCase())}</text>
+              <text x="${c.x + 11}" y="${c.y + 18}" fill="${t.text}" font-size="10.2"
+                font-weight="700" letter-spacing="0.03em">${esc(displayTitle)}</text>
             </g>
           `;
         })
@@ -241,13 +245,13 @@
                 fill="rgba(15,23,42,0.9)" stroke="${repo.color}" stroke-width="0.9" />
               <text x="19" y="20.5" fill="${repo.color}" font-size="9.3"
                 font-family="ui-monospace, Menlo, monospace" font-weight="700">${esc(repo.shortName)}</text>
-              <text x="${p.w - 10}" y="20.5" text-anchor="end" fill="${isBypassed ? "#fbbf24" : "#94a3b8"}" font-size="9.5"
-                font-family="ui-monospace, Menlo, monospace">${esc(isBypassed ? "BYPASSED" : n.badge.slice(0, 22))}</text>
-              <text x="14" y="46" fill="#f8fafc" font-size="12.3" font-weight="700">
-                ${esc(n.label.length > 31 ? n.label.slice(0, 30) + "…" : n.label)}
+              <text x="${p.w - 10}" y="20.5" text-anchor="end" fill="${isBypassed ? "#fbbf24" : "#94a3b8"}" font-size="9.2"
+                font-family="ui-monospace, Menlo, monospace">${esc(isBypassed ? "BYPASSED" : n.badge.slice(0, 17))}</text>
+              <text x="14" y="46" fill="#f8fafc" font-size="11.8" font-weight="700">
+                ${esc(n.label.length > 29 ? n.label.slice(0, 28) + "…" : n.label)}
               </text>
-              <text x="14" y="74" fill="#7dd3fc" font-size="10.2"
-                font-family="ui-monospace, Menlo, monospace">${esc((shortFile + lineTag).slice(0, 33))}</text>
+              <text x="14" y="72" fill="#7dd3fc" font-size="9.8"
+                font-family="ui-monospace, Menlo, monospace">${esc((shortFile + lineTag).slice(0, 29))}</text>
               ${
                 n.extractedSymbols && n.extractedSymbols.length
                   ? `<text x="${p.w - 10}" y="74" text-anchor="end" fill="#64748b" font-size="9.5"

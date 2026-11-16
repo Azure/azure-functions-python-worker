@@ -355,7 +355,7 @@ def sym_line(meta: dict[str, Any], name: str, fallback: int = 1) -> int:
 
 
 def compile_topology_mermaid(era: dict[str, Any], edges_override: list[dict[str, Any]] | None = None) -> str:
-    lines = ["flowchart LR"]
+    lines = ["flowchart TB"]
     by_parent: dict[str | None, list[dict[str, Any]]] = {}
     for c in era["containers"]:
         by_parent.setdefault(c.get("parentId"), []).append(c)
@@ -513,13 +513,13 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 "hotPathOverhead": "Datum bindings take R2P2 Hot Path; Extensions (HTTP-v2 / SdkType) take Control Path",
             },
             "containers": [
-                {"id": "ce-host", "label": "Azure/azure-functions-host (.NET Script Host)", "parentId": None, "tone": "host"},
-                {"id": "ce-proto", "label": "Azure/azure-functions-language-worker-protobuf (Contract)", "parentId": None, "tone": "proto"},
-                {"id": "ce-worker", "label": "Azure/azure-functions-python-worker", "parentId": None, "tone": "rust-proc"},
+                {"id": "ce-host", "label": "Azure/azure-functions-host (.NET Script Host)", "parentId": None, "tone": "host", "tier": 0},
+                {"id": "ce-proto", "label": "Azure/azure-functions-language-worker-protobuf (Contract)", "parentId": None, "tone": "proto", "tier": 1},
+                {"id": "ce-worker", "label": "Azure/azure-functions-python-worker", "parentId": None, "tone": "rust-proc", "tier": 2, "subFlow": "stack"},
                 {"id": "ce-w-shell", "label": "Worker Transport Shells (workers/)", "parentId": "ce-worker", "tone": "transport"},
                 {"id": "ce-w-rt", "label": "Execution Runtimes (runtimes/v1 & v2)", "parentId": "ce-worker", "tone": "runtime"},
-                {"id": "ce-lib", "label": "Azure/azure-functions-python-library", "parentId": None, "tone": "lib"},
-                {"id": "ce-ext", "label": "Azure/azure-functions-python-extensions", "parentId": None, "tone": "ext"},
+                {"id": "ce-lib", "label": "Azure/azure-functions-python-library", "parentId": None, "tone": "lib", "tier": 3},
+                {"id": "ce-ext", "label": "Azure/azure-functions-python-extensions", "parentId": None, "tone": "ext", "tier": 3},
             ],
             "nodes": [
                 {
@@ -730,12 +730,13 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 "hotPathOverhead": "grpcio thread -> asyncio -> Python protobuf -> Datum -> handler",
             },
             "containers": [
-                {"id": "c312-host", "label": "Functions Host (.NET — azure-functions-host)", "parentId": None, "tone": "host"},
-                {"id": "c312-wire", "label": "Wire Contract (worker-protobuf)", "parentId": None, "tone": "proto"},
-                {"id": "c312-worker", "label": "Monolithic Worker Process (workers/azure_functions_worker)", "parentId": None, "tone": "python"},
+                {"id": "c312-host", "label": "Functions Host (.NET — azure-functions-host)", "parentId": None, "tone": "host", "tier": 0},
+                {"id": "c312-wire", "label": "Wire Contract (worker-protobuf)", "parentId": None, "tone": "proto", "tier": 0},
+                {"id": "c312-worker", "label": "Monolithic Worker Process (workers/azure_functions_worker)", "parentId": None, "tone": "python", "tier": 1},
                 {"id": "c312-trans", "label": "gRPC Transport & Isolation", "parentId": "c312-worker", "tone": "transport"},
                 {"id": "c312-eng", "label": "In-Tree Indexing, Bindings & Executor", "parentId": "c312-worker", "tone": "runtime"},
-                {"id": "c312-eco", "label": "SDK, Extensions & Customer App", "parentId": None, "tone": "lib"},
+                {"id": "c312-lib", "label": "Azure/azure-functions-python-library", "parentId": None, "tone": "lib", "tier": 2},
+                {"id": "c312-ext", "label": "Azure/azure-functions-python-extensions", "parentId": None, "tone": "ext", "tier": 2},
             ],
             "nodes": [
                 {
@@ -845,8 +846,8 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 {
                     "id": "n312-sdk",
                     "repo": "python-library",
-                    "containerId": "c312-eco",
-                    "label": "azure-functions SDK",
+                    "containerId": "c312-lib",
+                    "label": "azure-functions SDK & User App",
                     "badge": "FunctionApp + Datum + Out",
                     "role": "Customer decorators, trigger/binding models (`HttpRequest`, `QueueMessage`), and `Datum` converters.",
                     "file": "azure/functions/meta.py",
@@ -858,7 +859,7 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 {
                     "id": "n312-ext",
                     "repo": "python-extensions",
-                    "containerId": "c312-eco",
+                    "containerId": "c312-ext",
                     "label": "azurefunctions-extensions-*",
                     "badge": "http-fastapi + bindings-*",
                     "role": "Optional HTTP v2 ASGI streaming (`WebApp`) and deferred SDK bindings (`BlobClient`, etc.).",
@@ -950,12 +951,13 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 "hotPathOverhead": "grpcio thread -> asyncio -> WorkerRequest -> runtime cached protos",
             },
             "containers": [
-                {"id": "c313-host", "label": "Functions Host (.NET — azure-functions-host)", "parentId": None, "tone": "host"},
-                {"id": "c313-wire", "label": "Wire Contract (worker-protobuf)", "parentId": None, "tone": "proto"},
-                {"id": "c313-worker", "label": "Python Worker Process (proxyV4/worker.py)", "parentId": None, "tone": "python"},
+                {"id": "c313-host", "label": "Functions Host (.NET — azure-functions-host)", "parentId": None, "tone": "host", "tier": 0},
+                {"id": "c313-wire", "label": "Wire Contract (worker-protobuf)", "parentId": None, "tone": "proto", "tier": 0},
+                {"id": "c313-worker", "label": "Python Worker Process (proxyV4/worker.py)", "parentId": None, "tone": "python", "tier": 1},
                 {"id": "c313-proxy", "label": "Layer 1: proxy_worker (Transport Shell)", "parentId": "c313-worker", "tone": "transport"},
                 {"id": "c313-rt", "label": "Layer 2: Pluggable Runtime Engine (runtimes/)", "parentId": "c313-worker", "tone": "runtime"},
-                {"id": "c313-eco", "label": "PyPI SDK, Extensions & Custom Runtimes", "parentId": None, "tone": "lib"},
+                {"id": "c313-lib", "label": "Azure/azure-functions-python-library", "parentId": None, "tone": "lib", "tier": 2},
+                {"id": "c313-ext", "label": "Azure/azure-functions-python-extensions", "parentId": None, "tone": "ext", "tier": 2},
             ],
             "nodes": [
                 {
@@ -1037,22 +1039,9 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                     ],
                 },
                 {
-                    "id": "n313-ext",
-                    "repo": "python-extensions",
-                    "containerId": "c313-eco",
-                    "label": "Agent Runtimes, WebApp & SdkType",
-                    "badge": "runtime.py | web.py | sdkType.py",
-                    "role": "Custom `azurefunctions.runtimes` entry points (`PYTHON_ENABLE_AGENT_RUNTIME`), FastAPI HTTP v2, and SDK bindings.",
-                    "file": "azurefunctions-extensions-base/azurefunctions/extensions/base/runtime.py",
-                    "line": 1,
-                    "details": [
-                        "`RuntimeTrackerMeta` + `entry_points(group='azurefunctions.runtimes')` can replace V1/V2 engine entirely!",
-                    ],
-                },
-                {
                     "id": "n313-lib",
                     "repo": "python-library",
-                    "containerId": "c313-eco",
+                    "containerId": "c313-lib",
                     "label": "azure-functions SDK & User App",
                     "badge": "Decorators + Datum + Handler",
                     "role": "Customer `function_app.py` + `azure-functions` SDK types invoked on asyncio loop or threadpool.",
@@ -1060,6 +1049,19 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                     "line": 1,
                     "details": [
                         "Customer can pin newer `azure-functions` and `azure-functions-runtime` in `requirements.txt`.",
+                    ],
+                },
+                {
+                    "id": "n313-ext",
+                    "repo": "python-extensions",
+                    "containerId": "c313-ext",
+                    "label": "Agent Runtimes, WebApp & SdkType",
+                    "badge": "runtime.py | web.py | sdkType.py",
+                    "role": "Custom `azurefunctions.runtimes` entry points (`PYTHON_ENABLE_AGENT_RUNTIME`), FastAPI HTTP v2, and SDK bindings.",
+                    "file": "azurefunctions-extensions-base/azurefunctions/extensions/base/runtime.py",
+                    "line": 1,
+                    "details": [
+                        "`RuntimeTrackerMeta` + `entry_points(group='azurefunctions.runtimes')` can replace V1/V2 engine entirely!",
                     ],
                 },
             ],
@@ -1144,13 +1146,14 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 "hotPathOverhead": "Rust prost -> PyO3 tuple -> native_invocation.py -> python-library Datum (0 protobuf)",
             },
             "containers": [
-                {"id": "c315-host", "label": "Functions Host (.NET — azure-functions-host)", "parentId": None, "tone": "host"},
-                {"id": "c315-wire", "label": "Wire Contract (worker-protobuf)", "parentId": None, "tone": "proto"},
-                {"id": "c315-proc", "label": "R2P2 Worker Process (Rust Binary + Embedded CPython 3.15)", "parentId": None, "tone": "rust-proc"},
+                {"id": "c315-host", "label": "Functions Host (.NET — azure-functions-host)", "parentId": None, "tone": "host", "tier": 0},
+                {"id": "c315-wire", "label": "Wire Contract (worker-protobuf)", "parentId": None, "tone": "proto", "tier": 0},
+                {"id": "c315-proc", "label": "R2P2 Worker Process (Rust Binary + Embedded CPython 3.15)", "parentId": None, "tone": "rust-proc", "tier": 1},
                 {"id": "c315-rust", "label": "Layer 1: Native Rust Shell (workers/r2p2/src)", "parentId": "c315-proc", "tone": "rust"},
                 {"id": "c315-ffi", "label": "PyO3 FFI Thin Waist (GIL)", "parentId": "c315-proc", "tone": "bridge"},
                 {"id": "c315-py", "label": "Layer 2: Embedded Python Bridge & Runtime", "parentId": "c315-proc", "tone": "runtime"},
-                {"id": "c315-eco", "label": "SDK, Extensions & Customer Function App", "parentId": None, "tone": "lib"},
+                {"id": "c315-lib", "label": "Azure/azure-functions-python-library", "parentId": None, "tone": "lib", "tier": 2},
+                {"id": "c315-ext", "label": "Azure/azure-functions-python-extensions", "parentId": None, "tone": "ext", "tier": 2},
             ],
             "nodes": [
                 {
@@ -1273,7 +1276,7 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 {
                     "id": "n315-lib",
                     "repo": "python-library",
-                    "containerId": "c315-eco",
+                    "containerId": "c315-lib",
                     "label": "azure-functions (Datum + Decorators)",
                     "badge": "Hot-Path Compatible",
                     "role": "Standard V2/V1 triggers & bindings (`HttpRequest`, `QueueMessage`, `TimerRequest`, `Out[T]`) + User App.",
@@ -1286,7 +1289,7 @@ def build_graph(sibling_root: Path | None = None) -> dict[str, Any]:
                 {
                     "id": "n315-ext",
                     "repo": "python-extensions",
-                    "containerId": "c315-eco",
+                    "containerId": "c315-ext",
                     "label": "extensions (HTTP-v2 FastAPI & SdkType)",
                     "badge": "requires_control_path = true",
                     "role": "`WebApp` ASGI streaming (`http-fastapi`) and `SdkType` deferred bindings (`BlobClient`, `ServiceBus`).",

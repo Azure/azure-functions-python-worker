@@ -22,7 +22,7 @@
 
 /* Widen content grid slightly so embedded architecture diagrams breathe */
 .md-grid {
-  max-width: 78rem;
+  max-width: 86rem;
 }
 
 .arch-atlas-widget {
@@ -220,25 +220,31 @@
 }
 
 .aa-split {
-  display: grid;
-  grid-template-columns: 1fr 310px;
-  height: 500px;
+  display: flex;
+  flex-direction: column;
 }
 
 .arch-atlas-widget.is-fullscreen .aa-split {
   flex: 1;
-  height: auto;
   min-height: 0;
 }
 
 .aa-stage {
   position: relative;
+  height: 540px;
+  min-height: 540px;
   overflow: hidden;
   background-color: #060a12;
   background-image: radial-gradient(rgba(148, 163, 184, 0.14) 1px, transparent 1px);
   background-size: 22px 22px;
   cursor: grab;
   touch-action: none;
+}
+
+.arch-atlas-widget.is-fullscreen .aa-stage {
+  flex: 1;
+  height: auto;
+  min-height: 360px;
 }
 
 .md-typeset .arch-atlas-widget .aa-stage > svg,
@@ -293,12 +299,14 @@
 
 .aa-inspector {
   background: var(--aa-elev);
-  border-left: 1px solid var(--aa-border);
-  padding: 12px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+  border-top: 1px solid var(--aa-border);
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 10px;
+  align-items: start;
+  max-height: 230px;
+  overflow-y: auto;
 }
 
 .aa-card {
@@ -387,14 +395,13 @@
 }
 
 @media (max-width: 960px) {
-  .aa-split {
-    grid-template-columns: 1fr;
-    grid-template-rows: 430px 240px;
-    height: auto;
+  .aa-stage {
+    height: 420px;
+    min-height: 420px;
   }
   .aa-inspector {
-    border-left: none;
-    border-top: 1px solid var(--aa-border);
+    grid-template-columns: 1fr;
+    max-height: none;
   }
   .aa-compare-grid {
     grid-template-columns: 1fr;

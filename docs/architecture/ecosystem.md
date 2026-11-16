@@ -21,7 +21,7 @@ The Azure Functions Python stack is cleanly partitioned across **five GitHub rep
 ### Full 5-Repository Topology
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph ce_host["Azure/azure-functions-host (.NET Script Host)"]
     ne_host_chan["Script Host & WorkerChannel<br/>(functions-host)"]
     ne_host_duplex["ServerDuplexChannel & ShMem<br/>(functions-host)"]

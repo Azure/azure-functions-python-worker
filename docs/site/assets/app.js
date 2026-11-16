@@ -133,7 +133,7 @@
       <header class="topbar">
         <div class="brand">
           <button class="ctrl-btn" id="btn-toggle-nav" title="Toggle navigation" style="padding:4px 8px">☰</button>
-          <div class="brand-mark">λ</div>
+          <img class="brand-logo" src="./assets/function-apps.svg" alt="Azure Functions" />
           <div>
             <span class="brand-title">Azure Functions Python Runtime</span>
             <span class="brand-sub">Architecture Atlas</span>

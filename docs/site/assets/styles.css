@@ -67,16 +67,11 @@ body {
   gap: 10px;
 }
 
-.brand-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  background: linear-gradient(135deg, #0ea5e9, #fb923c);
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 13px;
-  color: #070b14;
+.brand-logo {
+  width: 26px;
+  height: 26px;
+  display: block;
+  flex-shrink: 0;
 }
 
 .brand-title {

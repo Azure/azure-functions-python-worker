@@ -1587,7 +1587,7 @@ def sync_markdown_docs(
             open_tag, block_id, _, close_tag = m.groups()
             if block_id not in blocks:
                 raise ValueError(f"Unknown AUTO-GENERATED block '{block_id}' in {md_path}")
-            return f"{open_tag}{blocks[block_id]}\n{close_tag}"
+            return f"{open_tag}\n{blocks[block_id]}\n\n{close_tag}"
 
         updated = marker_re.sub(_repl, original)
         if updated != original:

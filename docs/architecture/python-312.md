@@ -11,6 +11,7 @@ Transport (`grpcio` + `google.protobuf`), `DependencyManager`, function indexing
 ## Architecture & Component Reference
 
 <!-- BEGIN AUTO-GENERATED: py312-components -->
+
 ### Full Static Topology (Mermaid)
 
 ```mermaid
@@ -62,6 +63,7 @@ flowchart LR
 | **Bindings, SharedMem & http_v2** | `python-worker` | [`workers/azure_functions_worker/http_v2.py:L261`](https://github.com/Azure/azure-functions-python-worker/blob/dev/workers/azure_functions_worker/http_v2.py#L261) | Converts `protos.TypedData` <-> `Datum`, manages shared-memory rings, and coordinates HTTP v2 streaming. |
 | **azure-functions SDK** | `python-library` | [`azure/functions/meta.py`](https://github.com/Azure/azure-functions-python-library/blob/dev/azure/functions/meta.py) | Customer decorators, trigger/binding models (`HttpRequest`, `QueueMessage`), and `Datum` converters. |
 | **azurefunctions-extensions-*** | `python-extensions` | [`azurefunctions-extensions-base/azurefunctions/extensions/base/sdkType.py`](https://github.com/Azure/azure-functions-python-extensions/blob/dev/azurefunctions-extensions-base/azurefunctions/extensions/base/sdkType.py) | Optional HTTP v2 ASGI streaming (`WebApp`) and deferred SDK bindings (`BlobClient`, etc.). |
+
 <!-- END AUTO-GENERATED: py312-components -->
 
 ---
@@ -71,6 +73,7 @@ flowchart LR
 Each Host ↔ Worker lifecycle phase exercises a distinct subset of components and interactions in `azure_functions_worker`.
 
 <!-- BEGIN AUTO-GENERATED: py312-phases -->
+
 ### 1. Worker Initialization Flow
 
 
@@ -656,4 +659,5 @@ flowchart LR
   n312_disp -->|"2. stamp invocation_id -> _grpc_resp_queue"| n312_grpc
   n312_grpc -->|"3. StreamingMessage(rpc_log) → Host"| n312_proto
 ```
+
 <!-- END AUTO-GENERATED: py312-phases -->

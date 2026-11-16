@@ -48,6 +48,7 @@ mkdocs serve -a 127.0.0.1:8765
 ## Live Scanned Subsystem Inventory
 
 <!-- BEGIN AUTO-GENERATED: package-inventory -->
+
 | Subsystem | Tracked Source Files | Total Lines (LOC) | Representative Entry |
 | --- | --- | --- | --- |
 | `azure_functions_worker` | 37 | 5,618 | `workers/azure_functions_worker/__init__.py` |
@@ -56,4 +57,5 @@ mkdocs serve -a 127.0.0.1:8765
 | `r2p2_bridge` | 2 | 1,644 | `workers/r2p2/bridge/bridge.py` |
 | `runtime_v2` | 28 | 3,797 | `runtimes/v2/azure_functions_runtime/__init__.py` |
 | `runtime_v1` | 27 | 2,980 | `runtimes/v1/azure_functions_runtime_v1/__init__.py` |
+
 <!-- END AUTO-GENERATED: package-inventory -->

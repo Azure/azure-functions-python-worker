@@ -9,6 +9,7 @@ The Azure Functions Python stack is cleanly partitioned across **five GitHub rep
 ## Repository Boundaries & Cross-Repo Topology
 
 <!-- BEGIN AUTO-GENERATED: ecosystem-reference -->
+
 | Repository | PyPI Packages | Architectural Role |
 | --- | --- | --- |
 | [`Azure/azure-functions-host`](https://github.com/Azure/azure-functions-host) | — | .NET Functions Script Host runtime: event/trigger listeners, WorkerChannel gRPC server, Consumption specialization, scale probes, HTTP v2 proxy, and AppInsights/Kusto telemetry. |
@@ -88,6 +89,7 @@ sequenceDiagram
 | **meta.py Datum & Converters** | `python-library` | [`azure/functions/meta.py`](https://github.com/Azure/azure-functions-python-library/blob/dev/azure/functions/meta.py) | Protobuf-agnostic `Datum` value container and trigger/binding converters (`HttpRequest`, `QueueMessage`, `Blob`). |
 | **extensions-base (WebApp, SdkType, Runtime)** | `python-extensions` | [`azurefunctions-extensions-base/azurefunctions/extensions/base/runtime.py`](https://github.com/Azure/azure-functions-python-extensions/blob/dev/azurefunctions-extensions-base/azurefunctions/extensions/base/runtime.py) | Metaclass registries bridging HTTP v2 ASGI servers, SDK-type deferred bindings, and custom Agent Runtimes. |
 | **FastAPI, SDK Bindings & Agent Runtimes** | `python-extensions` | [`azurefunctions-extensions-http-fastapi/README.md`](https://github.com/Azure/azure-functions-python-extensions/blob/dev/azurefunctions-extensions-http-fastapi/README.md) | Concrete extension packages for FastAPI HTTP streaming, Blob/Cosmos/EventHub/ServiceBus SDK types, and Agents. |
+
 <!-- END AUTO-GENERATED: ecosystem-reference -->
 
 ---

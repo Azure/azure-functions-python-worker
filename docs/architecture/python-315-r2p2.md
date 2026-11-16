@@ -26,6 +26,7 @@ After indexing, `main.rs` memoizes `needs_control_path(function_id)` once per fu
 ## Architecture & Component Reference
 
 <!-- BEGIN AUTO-GENERATED: py315_r2p2-components -->
+
 ### Full Static Topology (Mermaid)
 
 ```mermaid
@@ -83,6 +84,7 @@ flowchart LR
 | **Runtime handle_event + http_v2** | `python-worker` | [`runtimes/v2/azure_functions_runtime/handle_event.py:L69`](https://github.com/Azure/azure-functions-python-worker/blob/dev/runtimes/v2/azure_functions_runtime/handle_event.py#L69) | Handles `WorkerInit`, `FunctionLoad`, `EnvironmentReload`, and fallback invocations for Extensions. |
 | **azure-functions (Datum + Decorators)** | `python-library` | [`azure/functions/meta.py`](https://github.com/Azure/azure-functions-python-library/blob/dev/azure/functions/meta.py) | Standard V2/V1 triggers & bindings (`HttpRequest`, `QueueMessage`, `TimerRequest`, `Out[T]`) + User App. |
 | **extensions (HTTP-v2 FastAPI & SdkType)** | `python-extensions` | [`azurefunctions-extensions-base/azurefunctions/extensions/base/web.py`](https://github.com/Azure/azure-functions-python-extensions/blob/dev/azurefunctions-extensions-base/azurefunctions/extensions/base/web.py) | `WebApp` ASGI streaming (`http-fastapi`) and `SdkType` deferred bindings (`BlobClient`, `ServiceBus`). |
+
 <!-- END AUTO-GENERATED: py315_r2p2-components -->
 
 ---
@@ -90,6 +92,7 @@ flowchart LR
 ## The 7 Worker Lifecycle Phases (Python 3.15+ R2P2)
 
 <!-- BEGIN AUTO-GENERATED: py315_r2p2-phases -->
+
 ### 1. Worker Initialization Flow (Embed CPython + Protobuf-Free Init)
 
 
@@ -702,4 +705,5 @@ flowchart LR
   n315_ctrl_ffi -->|"4. prost encode -> UnboundedSender<Bytes>"| n315_tonic
   n315_tonic -->|"5. StreamingMessage(RpcLog) → Host"| n315_proto
 ```
+
 <!-- END AUTO-GENERATED: py315_r2p2-phases -->

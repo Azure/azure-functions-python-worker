@@ -1542,18 +1542,8 @@ def render_markdown_blocks(graph: dict[str, Any]) -> dict[str, str]:
         "### Key Cross-Repository Components\n\n" + _render_era_components_md(eco),
     ])
 
-    inv_rows = [
-        "| Subsystem | Tracked Source Files | Total Lines (LOC) | Representative Entry |",
-        "| --- | --- | --- | --- |",
-    ]
-    for pkg, files in graph["packageInventories"].items():
-        loc = sum(f["lines"] for f in files)
-        sample = f"`{files[0]['path']}`" if files else "—"
-        inv_rows.append(f"| `{pkg}` | {len(files)} | {loc:,} | {sample} |")
-
     out: dict[str, str] = {
         "ecosystem-reference": eco_md,
-        "package-inventory": "\n".join(inv_rows),
     }
     for eid in ("py312", "py313_314", "py315_r2p2"):
         era = eras_by_id[eid]

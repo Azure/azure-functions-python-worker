@@ -82,4 +82,3 @@ nav:
       - Python 3.13 - 3.14 (Proxy Split): architecture/python-313-314.md
       - Python 3.15+ (R2P2 Rust): architecture/python-315-r2p2.md
       - Dependency Isolation: architecture/dependency-isolation.md
-      - Commit Auto-Sync Pipeline: architecture/auto-sync-pipeline.md

@@ -46,7 +46,7 @@ jobs:
         with:
           repository: Azure/azure-functions-host
           path: _sibling_repos/functions-host
-          depth: 1
+          fetch-depth: 1
           sparse-checkout: src/WebJobs.Script.Grpc
 
       - name: Checkout azure-functions-python-library
@@ -54,21 +54,21 @@ jobs:
         with:
           repository: Azure/azure-functions-python-library
           path: _sibling_repos/python-library
-          depth: 1
+          fetch-depth: 1
 
       - name: Checkout azure-functions-python-extensions
         uses: actions/checkout@v4
         with:
           repository: Azure/azure-functions-python-extensions
           path: _sibling_repos/python-extensions
-          depth: 1
+          fetch-depth: 1
 
       - name: Checkout azure-functions-language-worker-protobuf
         uses: actions/checkout@v4
         with:
           repository: Azure/azure-functions-language-worker-protobuf
           path: _sibling_repos/language-worker-protobuf
-          depth: 1
+          fetch-depth: 1
 
       - name: Set up Python
         uses: actions/setup-python@v5

@@ -241,6 +241,23 @@
   touch-action: none;
 }
 
+.md-typeset .arch-atlas-widget .aa-stage > svg,
+.arch-atlas-widget .aa-stage > svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.md-typeset .arch-atlas-widget .aa-scroll-pane > svg,
+.arch-atlas-widget .aa-scroll-pane > svg {
+  max-width: none !important;
+  height: auto !important;
+}
+
 .aa-stage:active {
   cursor: grabbing;
 }
@@ -333,7 +350,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin-top: 8px;
   padding: 6px 9px;
   background: rgba(56, 189, 248, 0.1);
@@ -344,6 +361,11 @@
   font-family: var(--aa-mono);
   font-size: 10.5px;
   word-break: break-all;
+}
+
+.aa-gh-link > span:last-child {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .aa-scroll-pane {

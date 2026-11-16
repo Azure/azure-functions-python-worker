@@ -28,4 +28,3 @@ Use the interactive explorer below to step through all **7 lifecycle phases** (`
 - **[Python 3.13 – 3.14 (Proxy Split)](architecture/python-313-314.md)** — Decoupled `proxy_worker` transport shell, `WorkerRequest` seam, `protos` injection, and pluggable PyPI runtimes.
 - **[Python 3.15+ (R2P2 Rust Worker)](architecture/python-315-r2p2.md)** — Native Rust `tonic`/`prost` transport, `PyO3` embedded CPython (GIL), hot `Datum` tuple FFI, and zero-protobuf `protos_adapter.py`.
 - **[Dependency Isolation](architecture/dependency-isolation.md)** — Placeholder specialization, `sys.path` ordering, and PEP 420 namespace-safe module eviction.
-- **[Commit Auto-Sync Pipeline](architecture/auto-sync-pipeline.md)** — How `eng/docs/extract_arch.py` keeps static Markdown blocks and interactive AST graphs synchronized on every commit.

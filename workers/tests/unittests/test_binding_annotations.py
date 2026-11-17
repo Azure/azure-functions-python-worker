@@ -166,7 +166,10 @@ def test_out_preserves_sdk_accepted_nested_annotation(
     pytest.param(list[int], id="builtin-list-int"),
     pytest.param(collections.abc.Sequence[int], id="abc-sequence-int"),
     pytest.param(list[list[azf.EventHubEvent]], id="nested-list"),
-    pytest.param(list["EventHubEvent"], id="forward-item"),
+    pytest.param(
+        GenericAlias(list, (typing.ForwardRef("EventHubEvent"),)),
+        id="forward-item",
+    ),
     pytest.param(list[typing.Union[int, str]], id="incompatible-union-item"),
     pytest.param(list[typing.Union[int, list[str]]], id="nonclass-union-item"),
 ])

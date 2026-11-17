@@ -57,12 +57,14 @@ if (-not (Get-Command rustup -ErrorAction SilentlyContinue)) {
     ./rustup-init.exe -y --profile minimal --default-toolchain stable
     $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
 }
-$rustToolchain = if ($Architecture -eq 'x86') {
-    'stable-i686-pc-windows-msvc'
-} else {
-    'stable-x86_64-pc-windows-msvc'
+# Windows x86 remains a supported target, but stable no longer ships x86
+# host tools. Use the x64 compiler/Cargo for all Windows architectures.
+$rustToolchain = 'stable-x86_64-pc-windows-msvc'
+$rustTarget = switch ($Architecture) {
+    'x86' { 'i686-pc-windows-msvc' }
+    'arm64' { 'aarch64-pc-windows-msvc' }
+    default { $null }
 }
-$rustTarget = if ($Architecture -eq 'arm64') { 'aarch64-pc-windows-msvc' } else { $null }
 
 rustup toolchain install $rustToolchain --profile minimal
 if ($rustTarget) {
@@ -72,11 +74,16 @@ rustup run $rustToolchain rustc --version
 rustup run $rustToolchain cargo --version
 
 # --- Compile the release binary against the target interpreter ------------
-# Native builds query the selected interpreter. The ARM64 cross-build instead
-# uses the official target CPython SDK and PyO3's explicit cross configuration.
+# x64 and x86 builds query the selected, runnable interpreter. PyO3 supports
+# querying 32-bit Python from a 64-bit Windows Rust host. The ARM64 cross-build
+# instead uses the official target CPython SDK and explicit cross configuration.
 $cargoArguments = @('build', '--release', '--locked')
 $binaryPath = Join-Path $WORKER 'target\release\r2p2.exe'
 if ($rustTarget) {
+    $cargoArguments += @('--target', $rustTarget)
+    $binaryPath = Join-Path $WORKER "target\$rustTarget\release\r2p2.exe"
+}
+if ($Architecture -eq 'arm64') {
     if ($PythonVersion -match '^(?<major>\d+)\.(?<minor>\d+)$') {
         $requestedMajorMinor = "$($Matches.major).$($Matches.minor)"
         $selectedPythonVersions = python -c 'import sys; v = sys.version_info; suffix = "" if v.releaselevel == "final" else {"alpha": "a", "beta": "b", "candidate": "rc"}[v.releaselevel] + str(v.serial); print(f"{v.major}.{v.minor}.{v.micro}|{v.major}.{v.minor}.{v.micro}{suffix}")'
@@ -132,8 +139,6 @@ if ($rustTarget) {
     $env:PYO3_CROSS_PYTHON_VERSION = $pythonMajorMinor
     $env:PYO3_CROSS_PYTHON_IMPLEMENTATION = 'CPython'
     $env:PYO3_USE_RAW_DYLIB = '0'
-    $cargoArguments += @('--target', $rustTarget)
-    $binaryPath = Join-Path $WORKER "target\$rustTarget\release\r2p2.exe"
 } else {
     $env:PYO3_PYTHON = (Get-Command python).Source
 }

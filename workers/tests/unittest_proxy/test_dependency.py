@@ -2,7 +2,14 @@ import sys
 import os
 from unittest.mock import patch
 
+import pytest
+
 from proxy_worker.utils.dependency import DependencyManager
+
+
+@pytest.fixture(autouse=True)
+def preserve_sys_path(monkeypatch):
+    monkeypatch.setattr(sys, "path", sys.path.copy())
 
 
 @patch("proxy_worker.utils.dependency.DependencyManager._get_cx_deps_path",

@@ -137,3 +137,8 @@ tests/**/extensions.csproj
 __blobstorage__/*
 __queuestorage__/*
 __azurite*
+
+# Generated architecture site artifacts
+docs/assets/architecture-graph.json
+docs/assets/architecture-data.js
+_sibling_repos/

@@ -31,6 +31,8 @@ resources:
 
 variables:
   - template: /eng/templates/utils/byoc-variables.yml@self
+  - ${{ if or(eq(parameters.V1LibraryRelease, true), eq(parameters.V2LibraryRelease, true)) }}:
+    - group: azure-functions-python-release
   - name: codeql.excludePathPatterns
     value: deps/,build/
   # Maps the single ReleaseVersion parameter to the worker release, which
@@ -88,7 +90,6 @@ extends:
               projectDisplayName: 'Azure Functions Runtime V2'
               releaseBranchPrefix: 'release-v2'
               tagPrefix: 'runtimes/v2-'
-              blobPath: 'azure-functions/python/azure-functions-runtime'
               artifactName: 'azure-functions-runtime'
       - stage: ReleasePythonV1Library_BumpVersion
         dependsOn: []
@@ -126,5 +127,4 @@ extends:
               projectDisplayName: 'Azure Functions Runtime V1'
               releaseBranchPrefix: 'release-v1'
               tagPrefix: 'runtimes/v1-'
-              blobPath: 'azure-functions/python/azure-functions-runtime-v1'
               artifactName: 'azure-functions-runtime-v1'

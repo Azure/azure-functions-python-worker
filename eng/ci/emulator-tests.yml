@@ -4,12 +4,24 @@ trigger: # run for sdk and extension release branches
     include:
       - sdk/*
       - extensions/*
+  paths:
+    exclude:
+      - docs/*
+      - eng/docs/*
+      - mkdocs.yml
+      - .github/workflows/architecture-pages.yml
 
 pr:
   branches:
     include:
     - dev
     - release*
+  paths:
+    exclude:
+    - docs/*
+    - eng/docs/*
+    - mkdocs.yml
+    - .github/workflows/architecture-pages.yml
 
 schedules:
   - cron: "0 8 * * 1,2,3,4,5"

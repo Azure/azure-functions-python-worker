@@ -196,7 +196,7 @@ def _build_staged_package(source: Path, output: Path, version_file: Path,
     }
     manifest_bytes = (json.dumps(manifest, indent=2) + "\n").encode("utf-8")
     abi = python_version.replace(".", "")
-    filename = f"{PACKAGE_NAME}-{version}-py{abi}-linux-x64.tar.gz"
+    filename = f"{PACKAGE_NAME}-py{abi}-linux-x64.tar.gz"
     archive_path = output / filename
     checksum_path = output / f"{filename}.sha256"
     archive_entries = [

@@ -1,0 +1,84 @@
+site_name: Azure Functions Python Runtime
+site_description: Architecture and internals of the Azure Functions Python Worker and Runtime across Python <=3.12, 3.13-3.14, and 3.15+ (R2P2).
+site_url: https://azure.github.io/azure-functions-python-worker/
+repo_url: https://github.com/Azure/azure-functions-python-worker
+repo_name: Azure/azure-functions-python-worker
+edit_uri: edit/dev/docs/
+
+exclude_docs: |
+  Makefile
+  make.bat
+  conf.py
+  *.rst
+  CODE_OF_CONDUCT.md
+  Azure.Functions.svg
+  Functions.Fox.Python.png
+
+theme:
+  name: material
+  logo: assets/function-apps.svg
+  favicon: assets/function-apps.svg
+  features:
+    - content.code.copy
+    - content.tabs.link
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - search.highlight
+    - search.suggest
+  palette:
+    - scheme: slate
+      primary: black
+      accent: light blue
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - scheme: default
+      primary: indigo
+      accent: light blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+
+extra_css:
+  - assets/atlas.css
+
+extra_javascript:
+  - assets/architecture-data.js
+  - assets/layoutEngine.js
+  - assets/atlas-embed.js
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - toc:
+      permalink: true
+
+validation:
+  nav:
+    omitted_files: info
+  links:
+    anchors: info
+
+nav:
+  - Home: index.md
+  - Architecture:
+      - Evolution Overview: architecture/overview.md
+      - 5-Repo Ecosystem: architecture/ecosystem.md
+      - Python <= 3.12 (Monolith): architecture/python-312.md
+      - Python 3.13 - 3.14 (Proxy Split): architecture/python-313-314.md
+      - Python 3.15+ (R2P2 Rust): architecture/python-315-r2p2.md
+      - Dependency Isolation: architecture/dependency-isolation.md

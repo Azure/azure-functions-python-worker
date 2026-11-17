@@ -111,7 +111,7 @@ jobs:
       $assets = @(
           foreach ($pythonVersion in $env:BYOC_PYTHON_VERSIONS.Split(' ')) {
               $abi = $pythonVersion.Replace('.', '')
-              $archive = Join-Path '$(Pipeline.Workspace)/byoc-worker' "azure-functions-python-worker-$version-py$abi-linux-x64.tar.gz"
+              $archive = Join-Path '$(Pipeline.Workspace)/byoc-worker' "azure-functions-python-worker-py$abi-linux-x64.tar.gz"
               Get-Item -LiteralPath $archive
               Get-Item -LiteralPath "$archive.sha256"
           }

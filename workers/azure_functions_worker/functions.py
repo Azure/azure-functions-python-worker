@@ -1,16 +1,43 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import collections.abc
 import inspect
-import operator
 import pathlib
+import types
 import typing
 import uuid
 
 from . import bindings as bindings_utils
 from . import protos
-from ._thirdparty import typing_inspect
 from .constants import HTTP_TRIGGER
 from .protos import BindingInfo
+
+
+def _is_class_type(annotation):
+    return (isinstance(annotation, type)
+            and not isinstance(annotation, types.GenericAlias))
+
+
+def _is_supported_annotation(annotation):
+    """Admit class-based aliases; binding converters validate their arguments."""
+    if _is_class_type(annotation):
+        return True
+    origin = typing.get_origin(annotation)
+    return (_is_class_type(origin)
+            and origin not in (tuple, collections.abc.Callable,
+                               typing.Annotated, typing.Union, types.UnionType))
+
+
+def _is_out_annotation(annotation):
+    origin = typing.get_origin(annotation)
+    candidate = annotation if origin is None else origin
+    return _is_class_type(candidate) and candidate.__name__ == 'Out'
+
+
+def _annotation_name(annotation):
+    if typing.get_origin(annotation) is not None:
+        return repr(annotation)
+    return getattr(annotation, '__name__', repr(annotation))
 
 
 class ParamTypeInfo(typing.NamedTuple):
@@ -172,31 +199,12 @@ class Registry:
                     param_anno,
                     fx_deferred_bindings_enabled))
 
-            if param_has_anno:
-                if typing_inspect.is_generic_type(param_anno):
-                    param_anno_origin = typing_inspect.get_origin(param_anno)
-                    if param_anno_origin is not None:
-                        is_param_out = (
-                            isinstance(param_anno_origin, type)
-                            and param_anno_origin.__name__ == 'Out'
-                        )
-                    else:
-                        is_param_out = (
-                            isinstance(param_anno, type)
-                            and param_anno.__name__ == 'Out'
-                        )
-                else:
-                    is_param_out = (
-                        isinstance(param_anno, type)
-                        and param_anno.__name__ == 'Out'
-                    )
-            else:
-                is_param_out = False
+            is_param_out = param_has_anno and _is_out_annotation(param_anno)
 
             is_binding_out = binding.direction == protos.BindingInfo.out
 
             if is_param_out:
-                param_anno_args = typing_inspect.get_args(param_anno)
+                param_anno_args = typing.get_args(param_anno)
                 if len(param_anno_args) != 1:
                     raise FunctionLoadError(
                         func_name,
@@ -204,18 +212,10 @@ class Registry:
                         f'{param_anno!r}')
                 param_py_type = param_anno_args[0]
 
-                # typing_inspect.get_args() returns a flat list,
-                # so if the annotation was func.Out[typing.List[foo]],
-                # we need to reconstruct it.
-                if (isinstance(param_py_type, tuple)
-                        and typing_inspect.is_generic_type(param_py_type[0])):
-                    param_py_type = operator.getitem(
-                        param_py_type[0], *param_py_type[1:])
             else:
                 param_py_type = param_anno
 
-            if (param_has_anno and not isinstance(param_py_type, type)
-                    and not typing_inspect.is_generic_type(param_py_type)):
+            if param_has_anno and not _is_supported_annotation(param_py_type):
                 raise FunctionLoadError(
                     func_name,
                     f'binding {param.name} has invalid non-type annotation '
@@ -259,7 +259,7 @@ class Registry:
                             'function definition (function.json or function '
                             'decorators) do not match the corresponding '
                             f'function parameter\'s Python type '
-                            f'annotation "{param_py_type.__name__}"')
+                            f'annotation "{_annotation_name(param_py_type)}"')
                     else:
                         raise FunctionLoadError(
                             func_name,
@@ -267,7 +267,7 @@ class Registry:
                             'definition (function.json or function '
                             'decorators) '
                             f'"{binding.type}" does not match its Python '
-                            f'annotation "{param_py_type.__name__}"')
+                            f'annotation "{_annotation_name(param_py_type)}"')
 
             param_type_info = ParamTypeInfo(param_bind_type,
                                             param_py_type,
@@ -286,16 +286,13 @@ class Registry:
         return_pytype = None
         if has_explicit_return and 'return' in annotations:
             return_anno = annotations.get('return')
-            if typing_inspect.is_generic_type(
-                    return_anno) and typing_inspect.get_origin(
-                    return_anno) is not None and typing_inspect.get_origin(
-                    return_anno).__name__ == 'Out':
+            if _is_out_annotation(return_anno):
                 raise FunctionLoadError(
                     func_name,
                     'return annotation should not be azure.functions.Out')
 
             return_pytype = return_anno
-            if not isinstance(return_pytype, type):
+            if not _is_supported_annotation(return_pytype):
                 raise FunctionLoadError(
                     func_name,
                     f'has invalid non-type return '
@@ -308,7 +305,7 @@ class Registry:
                     binding_name, return_pytype):
                 raise FunctionLoadError(
                     func_name,
-                    f'Python return annotation "{return_pytype.__name__}" '
+                    f'Python return annotation "{_annotation_name(return_pytype)}" '
                     f'does not match binding type "{binding_name}"')
 
         if has_implicit_return and 'return' in annotations:

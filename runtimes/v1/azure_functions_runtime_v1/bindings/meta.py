@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 import os
 import sys
+from types import GenericAlias
 
 from typing import Any, Dict, Optional
 
@@ -19,11 +20,15 @@ PB_TYPE_RPC_SHARED_MEMORY = 'rpc_shared_memory'
 
 
 def _check_http_input_type_annotation(bind_name: str, pytype: type) -> bool:
+    if not isinstance(pytype, type) or isinstance(pytype, GenericAlias):
+        return False
     binding = get_binding(bind_name)
     return binding.check_input_type_annotation(pytype)
 
 
 def _check_http_output_type_annotation(bind_name: str, pytype: type) -> bool:
+    if not isinstance(pytype, type) or isinstance(pytype, GenericAlias):
+        return False
     binding = get_binding(bind_name)
     return binding.check_output_type_annotation(pytype)
 
@@ -73,12 +78,16 @@ def is_trigger_binding(bind_name: str) -> bool:
 
 def check_input_type_annotation(bind_name: str,
                                 pytype: type) -> bool:
+    if bind_name == 'httpTrigger':
+        return _check_http_input_type_annotation(bind_name, pytype)
     binding = get_binding(bind_name)
 
     return binding.check_input_type_annotation(pytype)
 
 
 def check_output_type_annotation(bind_name: str, pytype: type) -> bool:
+    if bind_name == 'http':
+        return _check_http_output_type_annotation(bind_name, pytype)
     binding = get_binding(bind_name)
     return binding.check_output_type_annotation(pytype)
 

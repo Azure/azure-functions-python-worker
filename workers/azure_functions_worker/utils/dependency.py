@@ -383,10 +383,11 @@ class DependencyManager:
 
         not_builtin = set(sys.modules.keys()) - set(sys.builtin_module_names)
 
-        # Don't reload azure_functions_worker
+        # Don't reload azure_functions_worker or __main__
         to_be_cleared_from_cache = set([
             module_name for module_name in not_builtin
             if not module_name.startswith('azure_functions_worker')
+            and module_name != '__main__'
         ])
 
         for module_name in to_be_cleared_from_cache:

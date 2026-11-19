@@ -42,6 +42,7 @@ import os
 import sys
 import threading
 import traceback
+from importlib.metadata import entry_points
 from types import ModuleType, SimpleNamespace
 
 # Protobuf-free ``protos`` stand-in (see protos_adapter.py). The runtime
@@ -90,7 +91,8 @@ _rt = None
 # configure() selects a runtime.
 _rt_tls = None
 # Fully-qualified package name of the selected runtime, set in configure().
-# "azure_functions_runtime" (v2, default) or "azure_functions_runtime_v1" (v1).
+# "azure_functions_runtime" (v2, default), "azure_functions_runtime_v1" (v1),
+# or a registered custom runtime package.
 # Used to import runtime-specific submodules (native_invocation, datumdef,
 # handle_event) from whichever programming model the app targets.
 _rt_name = "azure_functions_runtime"
@@ -382,7 +384,8 @@ def _prioritize_customer_dependencies(function_app_directory):
       3. customer app dir                     -- function_app.py for indexing
 
     Called from ``configure()`` at startup AND from ``handle_control`` on
-    ``function_environment_reload_request`` so placeholder specialization
+    ``worker_init_request`` and ``function_environment_reload_request`` so
+    the authoritative app directory and placeholder specialization
     (Flex Consumption) re-prioritizes the newly mounted customer deps
     -- the v2 runtime's reload handler only ``sys.path.append``s the app dir and
     would otherwise leave customer packages at the back. Returns the resolved
@@ -417,6 +420,46 @@ def _prioritize_customer_dependencies(function_app_directory):
     return cx_deps
 
 
+def _load_agent_runtime():
+    """Discover a registered runtime, matching the proxy worker's contract.
+
+    Customer dependencies must be on sys.path before discovery. An absent
+    entry point permits the normal v1/v2 fallback; a broken or ambiguous
+    registration must fail startup rather than silently index with v2.
+    """
+    available_runtimes = list(entry_points(group="azurefunctions.runtimes"))
+    if len(available_runtimes) > 1:
+        raise RuntimeError(
+            "Multiple runtimes detected: %s. "
+            "Only one runtime should be defined." %
+            [ep.name for ep in available_runtimes])
+    if not available_runtimes:
+        return None
+
+    try:
+        runtime_base = importlib.import_module("azurefunctions.extensions.base")
+    except ImportError:
+        runtime_base = None
+
+    ep = available_runtimes[0]
+    try:
+        ep.load()
+    except Exception as exc:
+        raise RuntimeError(
+            "Failed to load runtime entry point %s: %s" %
+            (ep.name, exc)) from exc
+
+    if (runtime_base is None
+            or not hasattr(runtime_base, "RuntimeFeatureChecker")
+            or not runtime_base.RuntimeFeatureChecker.runtime_loaded()):
+        raise RuntimeError(
+            "Base extension version is not compatible for custom runtimes. "
+            "Please update to version 1.2.0 or greater.")
+
+    package_name = runtime_base.RuntimeTrackerMeta.get_package_name()
+    return importlib.import_module(package_name)
+
+
 def _select_runtime(function_app_directory, environment_variables=None):
     """Select the runtime for the app currently mounted at *directory*."""
     global _rt, _rt_name, _rt_tls, _function_app_directory, \
@@ -424,15 +467,22 @@ def _select_runtime(function_app_directory, environment_variables=None):
 
     settings = (os.environ if environment_variables is None
                 else environment_variables)
-    script_file = settings.get(
-        "PYTHON_SCRIPT_FILE_NAME", "function_app.py")
-    v2_scriptfile = os.path.join(function_app_directory or "", script_file)
-    if os.path.exists(v2_scriptfile):
-        import azure_functions_runtime as rt  # noqa
-        runtime_name = "azure_functions_runtime"
+    enabled = settings.get("PYTHON_ENABLE_AGENT_RUNTIME", "")
+    rt = (_load_agent_runtime()
+          if enabled.lower().strip() in {"1", "true", "t", "yes", "y"}
+          else None)
+    if rt is not None:
+        runtime_name = rt.__name__
     else:
-        import azure_functions_runtime_v1 as rt  # noqa
-        runtime_name = "azure_functions_runtime_v1"
+        script_file = settings.get(
+            "PYTHON_SCRIPT_FILE_NAME", "function_app.py")
+        v2_scriptfile = os.path.join(function_app_directory or "", script_file)
+        if os.path.exists(v2_scriptfile):
+            import azure_functions_runtime as rt  # noqa
+            runtime_name = "azure_functions_runtime"
+        else:
+            import azure_functions_runtime_v1 as rt  # noqa
+            runtime_name = "azure_functions_runtime_v1"
 
     runtime_changed = _rt is not rt or _rt_name != runtime_name
     app_changed = _function_app_directory != function_app_directory
@@ -455,7 +505,6 @@ def _select_runtime(function_app_directory, environment_variables=None):
 
     if runtime_changed or _rt_tls is None:
         try:
-            import importlib
             _rt_tls = importlib.import_module(
                 f"{_rt_name}.bindings.context")._invocation_id_local
         except Exception as e:
@@ -478,13 +527,9 @@ def configure(workers_dir, function_app_directory, host, request_id="",
     # protobuf-free control-plane surface is fixed before this reordering.
     cx_deps = _prioritize_customer_dependencies(function_app_directory)
 
-    # Select the runtime by programming model, mirroring
-    # proxy_worker/dispatcher.reload_library_worker: if the app ships the v2
-    # script file (``function_app.py`` by default, overridable via
-    # PYTHON_SCRIPT_FILE_NAME) it targets the v2 runtime; otherwise it is a
-    # classic v1 (function.json) app and uses the v1 runtime. Both runtimes
-    # expose the same public API + a ``native_invocation`` fast path, so the
-    # rest of the bridge is runtime-agnostic.
+    # Discover an opted-in custom runtime, otherwise select v2/v1 by script
+    # file, matching proxy_worker/dispatcher.reload_library_worker. Selection
+    # runs again with the authoritative directory from worker_init_request.
     _select_runtime(function_app_directory)
 
     _start_loop()
@@ -539,7 +584,8 @@ def _build_control_message(request_type, req):
             function_app_directory=req.get("function_app_directory", ""),
             host_version=req.get("host_version", ""))
     elif request_type == "functions_metadata_request":
-        msg = SimpleNamespace()
+        msg = SimpleNamespace(
+            function_app_directory=req.get("function_app_directory", ""))
     elif request_type == "function_load_request":
         msg = SimpleNamespace(
             function_id=req.get("function_id", ""),
@@ -615,15 +661,12 @@ def handle_control(request_type, req):
 
     if request_type == "worker_init_request":
         # The Host supplies the function app directory in the init message (not
-        # via CLI). The v2 runtime imports ``function_app`` during indexing but
-        # does NOT add that directory to sys.path, so do it before init runs.
-        # Runtime selection must also use this authoritative directory because
-        # the optional CLI app directory is normally empty at configure time.
+        # via CLI). Add both the app and its installed packages before runtime
+        # discovery and indexing; configure's optional app directory is
+        # normally empty, so its dependency setup cannot find them yet.
         app_dir = req.get("function_app_directory", "")
         if app_dir:
-            if app_dir not in sys.path:
-                sys.path.insert(0, app_dir)
-                _log("added function_app_directory to sys.path: %r", app_dir)
+            _prioritize_customer_dependencies(app_dir)
             _select_runtime(app_dir)
         _log_using_library()
         try:
@@ -755,6 +798,10 @@ def requires_control_path(function_id):
     path (``handle`` -> ``_rt.invocation_request``) instead of the native prost
     path.
 
+    Custom runtimes implement the public invocation_request contract, not the
+    standard runtimes' private registry and native_invocation API. Always use
+    the control path for them without probing standard-runtime internals.
+
     The native path (native_invocation.py) intentionally does NOT support
     deferred (SDK-type) bindings or the http-v2 streaming path; both are handled
     only by the runtime's standard ``invocation_request``. So a function is
@@ -762,6 +809,8 @@ def requires_control_path(function_id):
     is an HTTP function and http-v2 streaming is enabled for the app. Result is
     cached per function_id (the answer is fixed once indexing completes).
     """
+    if _rt_name not in ("azure_functions_runtime", "azure_functions_runtime_v1"):
+        return True
     cached = _control_path_cache.get(function_id)
     if cached is not None:
         return cached

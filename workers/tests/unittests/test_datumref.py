@@ -186,4 +186,4 @@ class TestDatumRef(unittest.TestCase):
         )
 
         self.assertIsNone(
-            parse_to_rpc_http_cookie_list(datum.value.get('cookies'))) 
+            parse_to_rpc_http_cookie_list(datum.value.get('cookies')))

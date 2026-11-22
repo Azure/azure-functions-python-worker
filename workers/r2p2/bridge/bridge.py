@@ -839,7 +839,8 @@ def _flatten_cookies(cookies):
     without any Python protobuf on the native path.
 
     Mirrors the runtime's ``parse_to_rpc_http_cookie_list`` semantics: ``domain``
-    and ``path`` are always emitted (possibly empty), ``secure``/``http_only`` are
+    and ``path`` are emitted when set (``None`` when unset, so the host does
+    not render an empty ``domain=``/``path=`` attribute), ``secure``/``http_only`` are
     always booleans, ``same_site`` is pre-resolved to the RpcHttpCookie.SameSite
     enum integer (None=0, Lax=1, Strict=2, 'none'->ExplicitNone=3), ``expires`` is
     epoch seconds (or None) and ``max_age`` is a float (or None).
@@ -878,8 +879,8 @@ def _flatten_cookies(cookies):
             out.append({
                 'name': name,
                 'value': morsel.value,
-                'domain': morsel['domain'] or '',
-                'path': morsel['path'] or '',
+                'domain': morsel['domain'] or None,
+                'path': morsel['path'] or None,
                 'secure': bool(morsel['secure']),
                 'http_only': bool(morsel['httponly']),
                 'same_site': same_site,
@@ -977,4 +978,4 @@ def shutdown():
     except Exception:
         pass
     if _loop is not None:
-        _loop.call_soon_threadsafe(_loop.stop)
+        _loop.call_soon_threadsafe(_loop.stop) 

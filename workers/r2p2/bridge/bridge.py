@@ -978,4 +978,4 @@ def shutdown():
     except Exception:
         pass
     if _loop is not None:
-        _loop.call_soon_threadsafe(_loop.stop) 
+        _loop.call_soon_threadsafe(_loop.stop)

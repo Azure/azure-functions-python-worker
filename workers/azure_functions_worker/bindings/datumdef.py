@@ -299,4 +299,4 @@ def parse_cookie_attr_same_site(cookie_entity):
     except Exception:
         return same_site
 
-    return same_site 
+    return same_site

@@ -513,4 +513,4 @@ def test_invoke_native_falls_back_to_async_runtime(monkeypatch):
 
     assert result == (True, ("string", "async"), [], None, None)
     assert captured["async_args"][:6] == (
-        "inv", "fid", [], {}, "trace-parent", "trace-state") 
+        "inv", "fid", [], {}, "trace-parent", "trace-state")

@@ -337,6 +337,22 @@ def test_flatten_cookies_maps_same_site_times_and_invalid_values():
     assert bridge._flatten_cookies(None) == []
 
 
+def test_flatten_cookies_issue_1794_value_preserved_and_domain_absent():
+    # Regression test for Azure/azure-functions-python-worker#1794:
+    # `test="hello//world"; Path=/; SameSite=lax` must keep its value
+    # intact and must not gain an empty `domain=`.
+    cookies = [SimpleCookie('test="hello//world"; Path=/; SameSite=lax')]
+
+    flattened = bridge._flatten_cookies(cookies)
+
+    assert len(flattened) == 1
+    assert flattened[0]["name"] == "test"
+    assert flattened[0]["value"] == "hello//world"
+    assert flattened[0]["domain"] is None
+    assert flattened[0]["path"] == "/"
+    assert flattened[0]["same_site"] == 1
+
+
 def test_datum_to_tuple_flattens_http_outputs(monkeypatch):
     cookie = _cookie("session", "Strict")
     datum = _Datum({
@@ -497,4 +513,4 @@ def test_invoke_native_falls_back_to_async_runtime(monkeypatch):
 
     assert result == (True, ("string", "async"), [], None, None)
     assert captured["async_args"][:6] == (
-        "inv", "fid", [], {}, "trace-parent", "trace-state")
+        "inv", "fid", [], {}, "trace-parent", "trace-state") 

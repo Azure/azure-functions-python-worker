@@ -169,6 +169,22 @@ fn http_out_from_dict(py: Python<'_>, d: &Bound<'_, PyAny>) -> Result<RpcHttp> {
     })
 }
 
+/// Map an optional cookie string (`domain`/`path`) to the `NullableString`
+/// the Host expects: Python `None` or an empty string stays `None`, so the
+/// Host leaves the attribute unset instead of rendering `domain=`/`path=`.
+fn optional_nullable_string(obj: Bound<'_, PyAny>) -> Result<Option<NullableString>> {
+    if obj.is_none() {
+        return Ok(None);
+    }
+    let s: String = obj.extract()?;
+    if s.is_empty() {
+        return Ok(None);
+    }
+    Ok(Some(NullableString {
+        string: Some(nullable_string::String::Value(s)),
+    }))
+}
+
 /// Build the `RpcHttpCookie` list from the flat cookie dicts the bridge emits.
 ///
 /// The bridge (bridge.py `_flatten_cookies`) pre-computes every field as a plain
@@ -185,8 +201,11 @@ fn http_cookies_from_list(list_obj: &Bound<'_, PyAny>) -> Result<Vec<RpcHttpCook
         let c = item?;
         let name: String = c.get_item("name")?.extract()?;
         let value: String = c.get_item("value")?.extract()?;
-        let domain: String = c.get_item("domain")?.extract()?;
-        let path: String = c.get_item("path")?.extract()?;
+        // `domain`/`path` are `None` when unset (see bridge.py
+        // `_flatten_cookies`); an empty string is also treated as unset so
+        // the Host does not render an empty `domain=`/`path=` attribute.
+        let domain = optional_nullable_string(c.get_item("domain")?)?;
+        let path = optional_nullable_string(c.get_item("path")?)?;
         let secure: bool = c.get_item("secure")?.extract()?;
         let http_only: bool = c.get_item("http_only")?.extract()?;
         let same_site: i32 = c.get_item("same_site")?.extract()?;
@@ -218,12 +237,8 @@ fn http_cookies_from_list(list_obj: &Bound<'_, PyAny>) -> Result<Vec<RpcHttpCook
         cookies.push(RpcHttpCookie {
             name,
             value,
-            domain: Some(NullableString {
-                string: Some(nullable_string::String::Value(domain)),
-            }),
-            path: Some(NullableString {
-                string: Some(nullable_string::String::Value(path)),
-            }),
+            domain,
+            path,
             expires,
             secure: Some(NullableBool {
                 bool: Some(nullable_bool::Bool::Value(secure)),
@@ -483,6 +498,51 @@ mod tests {
 
             assert!(http.cookies[0].expires.is_none());
             assert!(http.cookies[0].max_age.is_none());
+            // Empty domain/path are sent as `None`, not empty strings, so
+            // the Host does not render `domain=`/`path=` attributes.
+            assert!(http.cookies[0].domain.is_none());
+            assert!(http.cookies[0].path.is_none());
+        });
+    }
+
+    #[test]
+    fn http_output_cookie_value_with_slashes_is_preserved_and_domain_absent() {
+        // Regression test for Azure/azure-functions-python-worker#1794:
+        // a cookie like `test="hello//world"; Path=/; SameSite=lax` must
+        // keep its value intact and must not gain an empty `domain=`.
+        Python::attach(|py| {
+            let cookie = PyDict::new(py);
+            cookie.set_item("name", "test").unwrap();
+            cookie.set_item("value", "hello//world").unwrap();
+            cookie.set_item("domain", py.None()).unwrap();
+            cookie.set_item("path", "/").unwrap();
+            cookie.set_item("secure", false).unwrap();
+            cookie.set_item("http_only", false).unwrap();
+            cookie.set_item("same_site", 1).unwrap();
+            cookie.set_item("expires", py.None()).unwrap();
+            cookie.set_item("max_age", py.None()).unwrap();
+
+            let d = PyDict::new(py);
+            d.set_item("status_code", "200").unwrap();
+            d.set_item("headers", PyDict::new(py)).unwrap();
+            d.set_item("body", py.None()).unwrap();
+            d.set_item("cookies", vec![cookie]).unwrap();
+
+            let tup = datum_tuple(py, "http", d.into_any());
+            let out = tuple_to_typed_data(py, &tup).unwrap();
+            let Some(typed_data::Data::Http(http)) = out.data else {
+                panic!("expected Http variant");
+            };
+
+            assert_eq!(http.cookies.len(), 1);
+            assert_eq!(http.cookies[0].name, "test");
+            assert_eq!(http.cookies[0].value, "hello//world");
+            assert!(http.cookies[0].domain.is_none());
+            assert_eq!(
+                http.cookies[0].path.as_ref().unwrap().string,
+                Some(nullable_string::String::Value("/".to_string()))
+            );
+            assert_eq!(http.cookies[0].same_site, 1);
         });
     }
 
@@ -651,4 +711,4 @@ mod tests {
             assert!(tuple_to_typed_data(py, &tup).is_err());
         });
     }
-}
+} 

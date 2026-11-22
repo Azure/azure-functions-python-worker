@@ -167,6 +167,30 @@ class TestDatumDef(unittest.TestCase):
         self.assertEqual(cookie1, rpc_cookies[0])
         self.assertEqual(cookie2, rpc_cookies[1])
 
+    def test_parse_to_rpc_http_cookie_list_no_domain(self):
+        # Regression test for Azure/azure-functions-python-worker#1794:
+        # a cookie without a Domain (e.g. `test="hello//world"; Path=/;
+        # SameSite=lax`) must keep its value intact and must not gain an
+        # empty `domain=` attribute, so domain is sent as None.
+        cookies = SimpleCookie('test="hello//world"; Path=/; SameSite=lax')
+
+        cookie = protos.RpcHttpCookie(name="test",
+                                      value="hello//world",
+                                      domain=None,
+                                      path=to_nullable_string(
+                                          "/", "cookie.path", protos),
+                                      expires=None,
+                                      secure=to_nullable_bool(
+                                          False, 'cookie.secure', protos),
+                                      http_only=to_nullable_bool(
+                                          False, 'cookie.httpOnly', protos),
+                                      same_site=parse_cookie_attr_same_site(
+                                          {"samesite": "Lax"}, protos),
+                                      max_age=None)
+
+        rpc_cookies = parse_to_rpc_http_cookie_list([cookies], protos)
+        self.assertEqual(cookie, rpc_cookies[0])
+
     def test_parse_to_rpc_http_cookie_list_no_cookie(self):
         datum = Datum(
             type='http',
@@ -178,4 +202,4 @@ class TestDatumDef(unittest.TestCase):
         )
 
         self.assertIsNone(
-            parse_to_rpc_http_cookie_list(datum.value.get('cookies'), protos))
+            parse_to_rpc_http_cookie_list(datum.value.get('cookies'), protos)) 

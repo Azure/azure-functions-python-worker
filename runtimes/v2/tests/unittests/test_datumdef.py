@@ -202,4 +202,4 @@ class TestDatumDef(unittest.TestCase):
         )
 
         self.assertIsNone(
-            parse_to_rpc_http_cookie_list(datum.value.get('cookies'), protos)) 
+            parse_to_rpc_http_cookie_list(datum.value.get('cookies'), protos))

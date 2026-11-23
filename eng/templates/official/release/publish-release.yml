@@ -181,98 +181,16 @@ jobs:
         notifyUsers: ''
         instructions: 'Please head to https://github.com/${{ parameters.githubOrg }}/${{ parameters.githubRepo }}/releases to finish the release note'
 
-  - job: ESRPApproval
-    dependsOn: ['CheckGitHubRelease']
-    displayName: 'Approve PyPI release'
-    timeoutInMinutes: 1440
-    pool: server
-    steps:
-      - task: ManualValidation@1
-        inputs:
-          notifyUsers: ''
-          approvers: '${{ parameters.esrpManualApprovers }}'
-          allowApproversToApproveTheirOwnRuns: false
-          instructions: 'Approve staging the Python package to public/pre-release, then publishing to PyPI through ESRP.'
-
-  - job: ESRPRelease
-    dependsOn: ESRPApproval
-    displayName: 'Publish package to PyPI with ESRP'
-    templateContext:
-      type: releaseJob
-      isProduction: true
-      inputs:
-        - input: pipelineArtifact
-          artifactName: ${{ parameters.artifactName }}
-          targetPath: $(Pipeline.Workspace)/${{ parameters.artifactName }}
-    pool:
-      name: 1es-pool-azfunc
-      image: 1es-ubuntu-22.04
-      os: linux
-    steps:
-      - checkout: none
-      - pwsh: |
-          $ErrorActionPreference = 'Stop'
-          $distFolder = '$(Pipeline.Workspace)/${{ parameters.artifactName }}/dist'
-          # Runtime artifact names match their PyPI project names for V1 and V2.
-          $packageName = '${{ parameters.artifactName }}'
-          $libraryVersion = '${{ parameters.libraryVersion }}'
-
-          if (-not (Test-Path -LiteralPath $distFolder -PathType Container)) {
-              throw "Distribution folder not found: $distFolder"
-          }
-
-          $wheels = @(Get-ChildItem -LiteralPath $distFolder -File -Filter '*.whl')
-          $sourceDistributions = @(Get-ChildItem -LiteralPath $distFolder -File -Filter '*.tar.gz')
-          $unsupportedFiles = @(
-              Get-ChildItem -LiteralPath $distFolder -File |
-                  Where-Object { $_.Name -notlike '*.whl' -and $_.Name -notlike '*.tar.gz' }
-          )
-
-          if ($wheels.Count -ne 1 -or $sourceDistributions.Count -ne 1) {
-              throw "Expected one wheel and one source distribution in $distFolder; found $($wheels.Count) wheel(s) and $($sourceDistributions.Count) source distribution(s)."
-          }
-          if ($unsupportedFiles.Count -ne 0) {
-              throw "Unexpected files found in the ESRP package folder: $($unsupportedFiles.Name -join ', ')"
-          }
-
-          Add-Type -AssemblyName System.IO.Compression.FileSystem
-          $archive = [System.IO.Compression.ZipFile]::OpenRead($wheels[0].FullName)
-          try {
-              $metadataEntry = $archive.Entries |
-                  Where-Object { $_.FullName -like '*.dist-info/METADATA' } |
-                  Select-Object -First 1
-              if (-not $metadataEntry) {
-                  throw "Wheel metadata was not found in $($wheels[0].Name)."
-              }
-
-              $reader = [System.IO.StreamReader]::new($metadataEntry.Open())
-              try {
-                  $metadata = $reader.ReadToEnd()
-              } finally {
-                  $reader.Dispose()
-              }
-          } finally {
-              $archive.Dispose()
-          }
-
-          $actualName = [regex]::Match($metadata, '(?m)^Name:\s*(.+)\r?$').Groups[1].Value.Trim()
-          $actualVersion = [regex]::Match($metadata, '(?m)^Version:\s*(.+)\r?$').Groups[1].Value.Trim()
-          if ($actualName -ne $packageName -or $actualVersion -ne $libraryVersion) {
-              throw "Artifact metadata mismatch. Expected $packageName $libraryVersion; found $actualName $actualVersion."
-          }
-
-          Write-Host "Validated ESRP release contents for $packageName ${libraryVersion}:"
-          Write-Host "  - $($wheels[0].Name)"
-          Write-Host "  - $($sourceDistributions[0].Name)"
-        displayName: 'Validate ESRP package contents'
-
-      - template: /ci/internal/publish-pypi-staging.yml@eng
-        parameters:
-          folderLocation: '$(Pipeline.Workspace)/${{ parameters.artifactName }}/dist'
-
-      - template: /ci/internal/publish-pypi-esrp.yml@eng
-        parameters:
-          folderLocation: '$(Pipeline.Workspace)/${{ parameters.artifactName }}/dist'
-          owners: ${{ parameters.esrpOwners }}
-          approvers: ${{ parameters.esrpApprovers }}
-          displayName: 'ESRP Release ${{ parameters.artifactName }} ${{ parameters.libraryVersion }}'
+  - template: /ci/release-pypi-package.yml@eng
+    parameters:
+      artifact:
+        name: ${{ parameters.artifactName }}
+      packagePath: ''
+      packageName: ${{ parameters.artifactName }}
+      packageVersion: ${{ parameters.libraryVersion }}
+      owners: ${{ parameters.esrpOwners }}
+      approvers: ${{ parameters.esrpApprovers }}
+      manualApprovers: ${{ parameters.esrpManualApprovers }}
+      publishToPyPI: true
+      dependsOn:
+        - CheckGitHubRelease

@@ -241,10 +241,11 @@ def parse_to_rpc_http_cookie_list(cookies: Optional[List[SimpleCookie]]):
                 protos.RpcHttpCookie(name=name,
                                      value=cookie_entity.value,
                                      domain=to_nullable_string(
-                                         cookie_entity['domain'],
+                                         cookie_entity['domain'] or None,
                                          'cookie.domain'),
                                      path=to_nullable_string(
-                                         cookie_entity['path'], 'cookie.path'),
+                                         cookie_entity['path'] or None,
+                                         'cookie.path'),
                                      expires=to_nullable_timestamp(
                                          parse_cookie_attr_expires(
                                              cookie_entity), 'cookie.expires'),

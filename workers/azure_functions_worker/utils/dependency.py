@@ -389,6 +389,12 @@ class DependencyManager:
             if not module_name.startswith('azure_functions_worker')
         ])
 
+        # Snapshot the names present before the purge so the orphan sweep
+        # below can tell a parent that was never imported from one that
+        # this purge just evicted.
+        names_before_purge = set(sys.modules.keys())
+
+        evicted = set()
         for module_name in to_be_cleared_from_cache:
             module = sys.modules.get(module_name)
             if not isinstance(module, ModuleType):
@@ -404,8 +410,77 @@ class DependencyManager:
 
                 if any([p for p in module_paths if p.startswith(path)]):
                     sys.modules.pop(module_name)
+                    evicted.add(module_name)
             except Exception as e:
                 logger.debug(
                     'Attempt to remove module cache for %s but failed with '
                     '%s. Using the original module cache.',
                     module_name, e)
+
+        # A namespace package's __path__ is dynamic: iterating it
+        # re-computes against the just-mutated sys.path, while a regular
+        # subpackage has a static __file__. The purge above can therefore
+        # evict a namespace parent (e.g. `google`) while leaving a regular
+        # child (e.g. `google.protobuf`) cached. CPython's
+        # `import parent.child` then takes the sys.modules fast path and
+        # never re-binds the child onto a fresh parent, so
+        # `parent.child.attr` raises AttributeError (see #1906). Evict
+        # such orphaned children — generically, for any purged parent,
+        # never by special-casing a package name — so they are re-imported
+        # (and re-bound) from the current sys.path on next use.
+        DependencyManager._remove_orphaned_modules(
+            evicted, names_before_purge
+        )
+
+    @staticmethod
+    def _remove_orphaned_modules(evicted, names_before_purge):
+        """Evict modules whose parent package is no longer in sys.modules.
+
+        A module is orphaned when any proper ancestor was evicted by the
+        purge that just ran, or was already absent when the purge started
+        (e.g. evicted by an earlier purge in the same
+        prioritize/use_worker_dependencies sequence). Such a module is
+        already broken for attribute access through its parent, so evicting
+        it can only restore a clean re-import. The check is applied to a
+        fixpoint so grandchildren of an evicted parent are evicted too.
+
+        Modules deliberately aliased under a different name (their
+        ``__name__`` does not match their sys.modules key, e.g. the
+        vendored protobuf alias in ``azure_functions_worker/__init__.py``)
+        are left alone, as are builtin modules and
+        ``azure_functions_worker`` itself.
+        """
+        candidates = [
+            name for name in set(sys.modules.keys())
+            if name not in set(sys.builtin_module_names)
+            and not name.startswith('azure_functions_worker')
+        ]
+
+        orphaned = set()
+        changed = True
+        while changed:
+            changed = False
+            for module_name in candidates:
+                if module_name in orphaned:
+                    continue
+                module = sys.modules.get(module_name)
+                if not isinstance(module, ModuleType):
+                    continue
+                # Deliberate alias: __name__ differs from the cache key.
+                if getattr(module, '__name__', module_name) != module_name:
+                    continue
+                parts = module_name.split('.')
+                for i in range(1, len(parts)):
+                    ancestor = '.'.join(parts[:i])
+                    if (ancestor in evicted or ancestor in orphaned
+                            or ancestor not in names_before_purge):
+                        orphaned.add(module_name)
+                        changed = True
+                        break
+
+        for module_name in orphaned:
+            sys.modules.pop(module_name, None)
+            logger.debug(
+                'Removed orphaned module %s whose parent package is no '
+                'longer in sys.modules.', module_name
+            )

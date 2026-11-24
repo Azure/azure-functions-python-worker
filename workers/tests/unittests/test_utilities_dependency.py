@@ -2,7 +2,9 @@
 # Licensed under the MIT License.
 import importlib.util
 import os
+import shutil
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -642,6 +644,149 @@ class TestDependencyManager(unittest.TestCase):
         # Ensure namespace remains after module cache is removed
         DependencyManager._remove_module_cache(self._customer_deps_path)
         self.assertIsNotNone(common_module)
+
+    def test_remove_module_cache_purges_orphaned_namespace_children(self):
+        # https://github.com/Azure/azure-functions-python-worker/issues/1906
+        # `google` is a namespace package whose __path__ is dynamic, while
+        # `google.protobuf` is a regular subpackage with a static __file__.
+        # Purging the worker tree evicts the parent but used to leave the
+        # child cached, orphaning it: a later `import google.protobuf`
+        # succeeds via the sys.modules fast path without re-binding the
+        # child onto a fresh parent, so `google.protobuf.__version__`
+        # raises AttributeError.
+        _, worker_tree, app_tree, _ = self._create_google_dep_trees()
+        self._import_google_from_fake_trees(app_tree, worker_tree)
+        self.assertIn('google', sys.modules)
+        self.assertIn('google.protobuf', sys.modules)
+        self.assertIn('google._upb', sys.modules)
+
+        # This is the purge _add_to_sys_path(worker_deps_path) performs at
+        # the end of prioritize_customer_dependencies: the worker path is
+        # back on sys.path, so the namespace __path__ re-acquires it.
+        DependencyManager._remove_module_cache(worker_tree)
+
+        # Parent and children must be purged together.
+        self.assertNotIn('google', sys.modules)
+        self.assertNotIn('google.protobuf', sys.modules)
+        self.assertNotIn('google._upb', sys.modules)
+
+    def test_remove_module_cache_keeps_unrelated_namespace_children(self):
+        # The orphan sweep must not evict children whose parent was not
+        # purged: a purge for an unrelated path leaves the namespace
+        # intact and bound.
+        _, worker_tree, app_tree, _ = self._create_google_dep_trees()
+        google = self._import_google_from_fake_trees(app_tree, worker_tree)
+
+        DependencyManager._remove_module_cache('/definitely/not/a/real/path')
+
+        self.assertIn('google', sys.modules)
+        self.assertIn('google.protobuf', sys.modules)
+        self.assertIn('google._upb', sys.modules)
+        self.assertTrue(hasattr(google, 'protobuf'))
+        self.assertEqual(google.protobuf.__version__, '4.25.5')
+
+    def test_remove_module_cache_repairs_preexisting_orphan(self):
+        # If a parent was already evicted by an earlier purge in the same
+        # sequence, its surviving children are already broken for
+        # attribute access; a later purge must evict them too so they are
+        # re-imported (and re-bound) on next use.
+        _, worker_tree, app_tree, _ = self._create_google_dep_trees()
+        self._import_google_from_fake_trees(app_tree, worker_tree)
+        sys.modules.pop('google')
+
+        DependencyManager._remove_module_cache('/definitely/not/a/real/path')
+
+        self.assertNotIn('google.protobuf', sys.modules)
+        self.assertNotIn('google._upb', sys.modules)
+
+    def test_prioritize_customer_dependencies_purges_orphaned_namespace_children(self):
+        # https://github.com/Azure/azure-functions-python-worker/issues/1906
+        _, worker_tree, app_tree, wwwroot = self._create_google_dep_trees()
+        google = self._import_google_from_fake_trees(app_tree, worker_tree)
+        self.assertEqual(google.protobuf.__version__, '4.25.5')
+        self.assertTrue(hasattr(google, 'protobuf'))
+
+        os.environ['PYTHON_ISOLATE_WORKER_DEPENDENCIES'] = 'true'
+        DependencyManager.worker_deps_path = worker_tree
+        DependencyManager.cx_deps_path = app_tree
+        DependencyManager.cx_working_dir = wwwroot
+        DependencyManager.prioritize_customer_dependencies(wwwroot)
+
+        # The namespace parent and its surviving children must be purged
+        # together; leaving a child behind orphans it.
+        self.assertNotIn('google', sys.modules)
+        self.assertNotIn('google.protobuf', sys.modules)
+        self.assertNotIn('google._upb', sys.modules)
+
+        # Re-importing must re-bind the child onto a fresh parent, so the
+        # module-scope attribute read in google.api_core (like
+        # google/api_core/grpc_helpers.py reading
+        # `google.protobuf.__version__`) succeeds.
+        import google.protobuf  # NoQA
+        self.assertTrue(hasattr(sys.modules['google'], 'protobuf'))
+        self.assertEqual(
+            sys.modules['google.protobuf'].__version__, '4.25.5'
+        )
+        import google.api_core  # NoQA
+        self.assertEqual(
+            sys.modules['google.api_core'].PROTOBUF_VERSION, '4.25.5'
+        )
+
+    def _create_google_dep_trees(self):
+        """Create two fake dependency trees mirroring #1906.
+
+        `google` is a namespace package in both trees (no __init__.py).
+        The worker tree holds google._upb (and its own protobuf, which is
+        never imported because the app tree wins on sys.path); the app
+        tree holds google.protobuf and google.api_core, whose __init__
+        reads google.protobuf.__version__ at module scope.
+        Returns (base_dir, worker_tree, app_tree, wwwroot).
+        """
+        base = tempfile.mkdtemp(prefix='test_dependency_1906_')
+        self.addCleanup(shutil.rmtree, base, True)
+        worker_tree = os.path.join(base, 'worker')
+        app_tree = os.path.join(base, 'app')
+        wwwroot = os.path.join(base, 'wwwroot')
+        self._write_file(
+            os.path.join(worker_tree, 'google', '_upb', '__init__.py'),
+            "__version__ = 'worker-upb'\n"
+        )
+        self._write_file(
+            os.path.join(worker_tree, 'google', 'protobuf', '__init__.py'),
+            "__version__ = 'worker-protobuf'\n"
+        )
+        self._write_file(
+            os.path.join(app_tree, 'google', 'protobuf', '__init__.py'),
+            "__version__ = '4.25.5'\n"
+        )
+        self._write_file(
+            os.path.join(app_tree, 'google', 'api_core', '__init__.py'),
+            'import google.protobuf\n'
+            'PROTOBUF_VERSION = google.protobuf.__version__\n'
+        )
+        os.makedirs(wwwroot, exist_ok=True)
+        return base, worker_tree, app_tree, wwwroot
+
+    @staticmethod
+    def _write_file(path, content):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+    def _import_google_from_fake_trees(self, app_tree, worker_tree):
+        """Import google, google.protobuf and google._upb from the fake
+        trees, dropping any real `google` package cached from the
+        environment first. The app tree wins on sys.path, as in the
+        layout the Functions host produces.
+        """
+        for name in [n for n in list(sys.modules)
+                     if n == 'google' or n.startswith('google.')]:
+            sys.modules.pop(name, None)
+        sys.path[:] = [app_tree, worker_tree]
+        import google  # NoQA
+        import google.protobuf  # NoQA
+        import google._upb  # NoQA
+        return google
 
     @unittest.skipIf(sys.version_info.minor >= 13,
                      "The worker brings different protobuf versions"

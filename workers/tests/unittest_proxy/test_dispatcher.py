@@ -601,6 +601,26 @@ class TestInvocationTracking(unittest.TestCase):
         result = get_current_invocation_id()
         self.assertEqual(result, thread_id_value)
 
+    def test_get_current_invocation_id_runtime_thread_local_storage(self):
+        """Documented context.thread_local_storage assignment in a customer
+        thread (e.g. asyncio.to_thread) must be honoured."""
+        runtime_pkg = types.ModuleType("fake_runtime")
+        runtime_context = types.ModuleType("fake_runtime.bindings.context")
+        runtime_context._invocation_id_local = threading.local()
+        dispatcher_module._library_worker = runtime_pkg
+        dispatcher_module._library_worker_has_cv = False
+
+        def work():
+            runtime_context._invocation_id_local.invocation_id = "tls-1860"
+            return get_current_invocation_id()
+
+        async def run():
+            return await asyncio.to_thread(work)
+
+        with patch.dict(sys.modules,
+                        {"fake_runtime.bindings.context": runtime_context}):
+            self.assertEqual(asyncio.run(run()), "tls-1860")
+
     @patch('proxy_worker.dispatcher.asyncio._get_running_loop')
     @patch('proxy_worker.dispatcher.asyncio.current_task')
     def test_get_current_invocation_id_asyncio_task_context(

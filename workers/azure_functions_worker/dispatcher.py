@@ -136,8 +136,7 @@ class Dispatcher(metaclass=DispatcherMeta):
     def get_worker_metadata():
         return protos.WorkerMetadata(
             runtime_name=PYTHON_LANGUAGE_RUNTIME,
-            runtime_version=f"{sys.version_info.major}."
-                            f"{sys.version_info.minor}",
+            runtime_version=platform.python_version(),
             worker_version=VERSION,
             worker_bitness=platform.machine(),
             custom_properties={})

@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import os
+import platform
 import sys
 import typing
 import unittest
@@ -10,6 +11,7 @@ from azure_functions_runtime.utils import (app_setting_manager,
                                            helpers,
                                            validators,
                                            wrappers)
+from tests import protos
 
 TEST_APP_SETTING_NAME = "TEST_APP_SETTING_NAME"
 TEST_FEATURE_FLAG = "APP_SETTING_FEATURE_FLAG"
@@ -88,6 +90,16 @@ class TestUtilities(unittest.TestCase):
         self.mock_sys_path.stop()
         self.mock_sys_module.stop()
         self.mock_environ.stop()
+
+    def test_worker_metadata_runtime_version(self):
+        self.assertEqual(helpers.get_worker_metadata(protos).runtime_version,
+                         platform.python_version())
+        for version in ('3.12.4', '3.13.0rc1'):
+            with self.subTest(version=version), patch(
+                    'azure_functions_runtime.utils.helpers.platform.python_version',
+                    return_value=version):
+                self.assertEqual(
+                    helpers.get_worker_metadata(protos).runtime_version, version)
 
     def test_is_true_like_accepted(self):
         self.assertTrue(app_setting_manager.is_true_like('1'))

@@ -5,6 +5,7 @@ import collections as col
 import concurrent.futures
 import contextvars
 import os
+import platform
 import sys
 import threading
 import unittest
@@ -39,6 +40,18 @@ FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
     'dispatcher_functions_stein'
 HTTPV2_FUNCTION_APP_DIRECTORY = UNIT_TESTS_ROOT / 'dispatcher_functions' / \
     'http_v2' / 'fastapi'
+
+
+class TestWorkerMetadata(unittest.TestCase):
+    def test_runtime_version(self):
+        self.assertEqual(Dispatcher.get_worker_metadata().runtime_version,
+                         platform.python_version())
+        for version in ('3.12.4', '3.13.0rc1'):
+            with self.subTest(version=version), patch(
+                    'azure_functions_worker.dispatcher.platform.python_version',
+                    return_value=version):
+                self.assertEqual(Dispatcher.get_worker_metadata().runtime_version,
+                                 version)
 
 
 class TestThreadPoolSettingsPython37(testutils.AsyncTestCase):

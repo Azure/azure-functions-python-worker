@@ -3,6 +3,7 @@
 import os
 import sys
 import typing
+from types import GenericAlias
 
 from .. import protos
 from ..constants import (
@@ -27,6 +28,8 @@ DEFERRED_BINDING_REGISTRY = None
 
 def _check_http_input_type_annotation(bind_name: str, pytype: type,
                                       is_deferred_binding: bool) -> bool:
+    if not isinstance(pytype, type) or isinstance(pytype, GenericAlias):
+        return False
     if HttpV2Registry.http_v2_enabled():
         return HttpV2Registry.ext_base().RequestTrackerMeta \
             .check_type(pytype)
@@ -36,6 +39,8 @@ def _check_http_input_type_annotation(bind_name: str, pytype: type,
 
 
 def _check_http_output_type_annotation(bind_name: str, pytype: type) -> bool:
+    if not isinstance(pytype, type) or isinstance(pytype, GenericAlias):
+        return False
     if HttpV2Registry.http_v2_enabled():
         return HttpV2Registry.ext_base().ResponseTrackerMeta.check_type(pytype)
 

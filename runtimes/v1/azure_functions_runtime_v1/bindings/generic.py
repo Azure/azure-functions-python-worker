@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 import typing
+from types import GenericAlias
 from typing import Any, Optional
 
 from .datumdef import Datum
@@ -14,11 +15,15 @@ class GenericBinding:
 
     @classmethod
     def check_input_type_annotation(cls, pytype: type) -> bool:
-        return issubclass(pytype, (str, bytes))
+        return (isinstance(pytype, type)
+                and not isinstance(pytype, GenericAlias)
+                and issubclass(pytype, (str, bytes)))
 
     @classmethod
     def check_output_type_annotation(cls, pytype: type) -> bool:
-        return issubclass(pytype, (str, bytes, bytearray))
+        return (isinstance(pytype, type)
+                and not isinstance(pytype, GenericAlias)
+                and issubclass(pytype, (str, bytes, bytearray)))
 
     @classmethod
     def encode(cls, obj: Any, *,
